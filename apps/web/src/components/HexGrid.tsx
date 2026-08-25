@@ -108,6 +108,11 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
         ].join(", ");
         const displayName = place?.name ?? hex.label ?? `Unresolved ${hex.key}`;
+        const locationMeta = place?.kind === "city"
+          ? `city, ${place.marker ?? "benefit not recorded"}`
+          : place?.kind === "mutation"
+            ? "Mutation space"
+            : undefined;
         const baseArt = hex.waterClass === "land"
           ? "/assets/board/grassland.webp"
           : "/assets/board/coast/coast_0deg.webp";
@@ -116,7 +121,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         return (
           <button
             key={hex.key}
-            aria-label={`${displayName}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+            aria-label={`${displayName}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-hex-key={hex.key}
             disabled={!place || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit)}
             className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${placeKey === activePlayer?.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
@@ -130,7 +135,8 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             <span className="tile-content">
               <span className="node" aria-hidden="true">{place?.kind === "city" ? "✦" : place?.kind === "base" ? "⌂" : place?.kind === "infamy" ? "★" : place?.kind === "mutation" ? "✹" : place ? "⚔" : "·"}</span>
               <span>{displayName}</span>
-              {place?.kind === "city" && <i className="city-hp">{place.marker}</i>}
+              {place?.kind === "city" && <i className="city-hp" aria-label={`printed city benefit ${place.marker ?? "not recorded"}`}>{place.marker ?? "benefit n/a"}</i>}
+              {place?.kind === "mutation" && <i className="location-kind">MUTATION</i>}
               {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => {
                 const monsterArt = monsterArtForName(monster.name);
                 return monsterArt

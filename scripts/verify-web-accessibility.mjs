@@ -16,7 +16,7 @@ const failures = [];
 const requiredSourceMarkers = [
   ["main landmark", /<main\b/],
   ["named map group", /aria-label=\"Full honeycomb board coordinate shell\"/],
-  ["hex accessible names", /aria-label=\{`\$\{displayName\}, hex \$\{hex\.key\}/],
+  ["hex accessible names", /aria-label=\{`[\s\S]*\$\{displayName\}[\s\S]*hex \$\{hex\.key\}/],
   ["live match status", /aria-live=\"polite\" aria-label=\"Match status\"/],
   ["alert errors", /className=\"error\" role=\"alert\"/],
   ["keyboard-native controls", /<button[\s\S]*onClick=/],
@@ -24,6 +24,8 @@ const requiredSourceMarkers = [
   ["monster artwork", /\/assets\/monsters\/\$\{slug\}\.webp/],
   ["Infamy token artwork", /\/assets\/board\/tokens\/infamy_token\.webp/],
   ["revealed card artwork", /\/assets\/cards\/monster-mutation-01\.webp/],
+  ["city benefit labels", /printed city benefit/],
+  ["Mutation labels", />MUTATION<\//],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 

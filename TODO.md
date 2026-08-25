@@ -385,8 +385,8 @@ Useful source documents:
     - [ ] [P0] Keep board artwork, piece artwork, markers, and card/component artwork crisp and correctly scaled at the supported zoom levels without obscuring board occupancy or legal interactions.
     - [ ] [P0] Preserve the authored artwork's visual identity and use asset fallbacks only when an asset is genuinely unavailable; do not replace the created assets with generic placeholders in the playable board view.
     - [ ] [P0] Label the board's Mutation spaces and cities clearly in the board view.
-      - [ ] [P0] Show each city's authored name and its relevant printed benefit/number directly on or immediately beside the city hex, using clear notation such as `1 HP` and `1D` where applicable.
-      - [ ] [P0] Keep city and Mutation labels legible at supported zoom levels and available through accessible text/inspection without hiding the underlying hex, piece, or interaction state.
+      - [x] [P0] Show each city's authored name and its relevant printed benefit/number directly on or immediately beside the city hex, using clear notation such as `1 HP` and `1D` where applicable. (`HexGrid` renders the verified development city marker beside the authored city name.)
+      - [x] [P0] Keep city and Mutation labels legible at supported zoom levels and available through accessible text/inspection without hiding the underlying hex, piece, or interaction state. (`HexGrid` renders a Mutation badge and includes city benefit/Mutation context in each hex's accessible name.)
       - [x] [P0] Use only verified board data for city names, Mutation spaces, and benefit values; unresolved values remain visibly marked as `Unresolved <hex key>` rather than guessed. (`HexGrid` preserves authored development labels and marks unresolved shell cells explicitly.)
   - [x] [P0] Remove the background reference-board image from the site and replace it with a generated North America-inspired green hexagon map with a surrounding sea treatment, used only as the decorative background behind the actual map tiles. (`apps/web/src/styles.css`; full verification passes.)
     - [x] [P0] Remove the photographic reference backdrop and use a generated CSS sea, green-land silhouette, and hex-texture treatment beneath the map tiles. (`apps/web/src/main.tsx` and `apps/web/src/styles.css`; web build pass.)
@@ -409,6 +409,7 @@ Useful source documents:
         - [x] Animate the accepted movement route and destination piece only after `sendCommand` or `applyCommand` succeeds; rejected and cancelled paths never arm the animation. (`apps/web/src/main.tsx` and `apps/web/src/components/HexGrid.tsx`; engine/API tests plus web typecheck/build pass.)
     - [ ] [P0] Add a tactile 3D dice graphic that players can roll for combat, encounters, and other dice-based decisions.
       - [x] Present authoritative combat rolls as tactile 3D dice with recorded hit, damage, smash, and modifier outcomes; the presentation cannot determine the result and respects reduced-motion settings. (`TurnPrompt` renders the recorded `fight.resolved` event.)
+      - [ ] [P0] Texture each face of the 3D die with the generated artwork asset for that side, including the correct face orientation and readable scaling during the roll and final result.
       - [ ] [P0] Animate the 3D dice roll and then clearly present the resulting face/value, modifiers, damage, and outcome; the presentation must respect reduced-motion settings.
       - [ ] [P0] Keep the dice result authoritative and deterministic from the engine/server outcome; the 3D animation must be presentation-only and cannot determine or alter the roll.
     - [ ] [P0] Provide a prominent bottom-right action control styled as a push-to-take-action button for the current legal decision.
