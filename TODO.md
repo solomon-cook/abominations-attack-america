@@ -319,6 +319,11 @@ Useful source documents:
 - [x] [P1] Define versioned structured card data separate from presentation copy and artwork. (`CARD_DATA_VERSION` and `CARD_DEFINITIONS` keep source-inventory metadata separate; every effect remains explicitly source-gated)
   - [x] [P1] Represent owner, source deck, zone, visibility, duration, uses, targets, and lifecycle for every card. (`CardDefinition` carries each field; unresolved values remain explicit `unknown`/`source-gated`)
 - [ ] [P1] Implement deterministic shuffle, draw, reveal, discard, exhaust, and permanent-effect handling.
+  - [x] Keep each deck's seeded shuffle and draw cursor authoritative and replay-stable. (`shuffledDeck` uses the recorded seed; replay tests compare both deck states and verify different seeds produce different orders.)
+  - [x] Reveal only the drawn card to the authoritative recipient, record face-up draws, and keep deck order/discard contents out of player and spectator projections. (Mutation and Research draws enter the owning hand or event result; projection tests cover order, discard, hand, and event redaction.)
+  - [x] Discard drawn one-shot cards without reshuffling and set exhaustion when the draw cursor reaches the deck boundary. (Deck primitives and match-level lifecycle tests cover deterministic draw, discard, exhaustion, and rejected duplicate/undrawn discards.)
+  - [x] Apply the permanent effects that have independently verified development implementations while retaining their cards in the authoritative hand. (Guard Commander, movement/stat modifiers, and other listed implemented effects are exercised at their sourced timing; unsupported effects remain unavailable.)
+  - [ ] Complete source-backed visibility, duration, stacking/conflict, and permanent-lifecycle rules for every production card.
   - [x] [P1] Keep deck order private in player and spectator projections. (`projectState` removes internal order and discard contents for both audiences; projection tests cover both.)
 - [ ] [P1] Build a composable effect system for stat modifiers, movement abilities, attack changes, control overrides, placement, and triggered effects.
   - [P1] Define precedence for general rules, component rules, persistent effects, and one-shot effects.
