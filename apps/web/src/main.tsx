@@ -40,6 +40,7 @@ import {
 import { createDevelopmentSetup } from "./development-setup";
 import { buildDisplayHexLayout } from "./board-layout";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
+import { LobbyPanel } from "./components/LobbyPanel";
 import { LogPanel } from "./components/LogPanel";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -579,84 +580,23 @@ function App() {
           </button>
         </div>
       </header>
-      <section className="lobby">
-        <div>
-          <span className="label">ONLINE ROOM</span>
-          <p>
-            {online ? (
-              <>
-                Room <strong>{room?.code}</strong> ·{" "}
-                <span className={`connection ${connectionState}`}>
-                  {connectionState}
-                </span>{" "}
-                ·{" "}
-                {participant?.role === "spectator"
-                  ? "spectating"
-                  : `Player ${(participant?.playerIndex ?? 0) + 1}`}
-              </>
-            ) : (
-              "Play with friends or watch without an account."
-            )}
-          </p>
-        </div>
-        {!online && (
-          <div className="lobby-actions">
-            <input
-              value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
-              placeholder="Display name"
-            />
-            <select
-              aria-label="Player count"
-              value={playerCount}
-              onChange={(event) =>
-                changePlayerCount(Number(event.target.value) as 2 | 3 | 4)
-              }
-            >
-              <option value="2">2 players</option>
-              <option value="3">3 players</option>
-              <option value="4">4 players</option>
-            </select>
-            <input
-              value={roomCode}
-              onChange={(event) =>
-                setRoomCode(event.target.value.toUpperCase())
-              }
-              placeholder="Room code"
-              maxLength={6}
-            />
-            <button onClick={() => startSession("create")}>Create</button>
-            <button onClick={() => startSession("join")}>Join</button>
-            <button className="subtle" onClick={() => startSession("spectate")}>
-              Spectate
-            </button>
-          </div>
-        )}{" "}
-        {online && participant?.role === "player" && (
-          <div className="lobby-actions">
-            <button
-              className="ready-button"
-              disabled={!setupComplete}
-              onClick={() => void toggleReady()}
-            >
-              {participant.ready ? "Unready" : "Ready"}
-            </button>
-            <button className="subtle" onClick={() => void leaveRoom()}>
-              Leave room
-            </button>
-          </div>
-        )}{" "}
-        {online && participant?.role === "spectator" && (
-          <button className="subtle" onClick={() => void leaveRoom()}>
-            Leave room
-          </button>
-        )}{" "}
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
-      </section>
+      <LobbyPanel
+        online={online}
+        room={room}
+        participant={participant}
+        connectionState={connectionState}
+        displayName={displayName}
+        playerCount={playerCount}
+        roomCode={roomCode}
+        setupComplete={setupComplete}
+        error={error}
+        onDisplayNameChange={setDisplayName}
+        onPlayerCountChange={changePlayerCount}
+        onRoomCodeChange={setRoomCode}
+        onStartSession={(kind) => void startSession(kind)}
+        onToggleReady={() => void toggleReady()}
+        onLeaveRoom={() => void leaveRoom()}
+      />
       {settingsOpen && (
         <SettingsPanel largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} togglePreference={togglePreference} />
       )}

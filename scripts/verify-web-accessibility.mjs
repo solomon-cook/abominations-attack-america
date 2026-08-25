@@ -1,9 +1,15 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const mainSource = await readFile(resolve(root, "apps/web/src/main.tsx"), "utf8");
+const componentFiles = (await readdir(resolve(root, "apps/web/src/components")))
+  .filter((file) => file.endsWith(".tsx"))
+  .map((file) => resolve(root, "apps/web/src/components", file));
+const source = [
+  await readFile(resolve(root, "apps/web/src/main.tsx"), "utf8"),
+  ...(await Promise.all(componentFiles.map((file) => readFile(file, "utf8")))),
+].join("\n");
 const styles = await readFile(resolve(root, "apps/web/src/styles.css"), "utf8");
 const failures = [];
 
@@ -16,7 +22,7 @@ const requiredSourceMarkers = [
   ["keyboard-native controls", /<button[\s\S]*onClick=/],
   ["reference image has alt boundary", /className=\"board-photo-backdrop\"[\s\S]{0,180}alt=\"\"[\s\S]{0,80}aria-hidden=\"true\"/],
 ];
-for (const [label, marker] of requiredSourceMarkers) if (!marker.test(mainSource)) failures.push(`missing ${label}`);
+for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 
 const requiredStyleMarkers = [
   ["visible focus treatment", /:focus-visible/],

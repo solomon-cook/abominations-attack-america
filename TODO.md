@@ -369,6 +369,7 @@ Useful source documents:
 - [ ] [P0] Split the monolithic prototype into maintainable lobby, setup, board, turn, battle, card, log, and end-game surfaces.
   - [x] Extract stable settings, board-reference, and terminal-summary surfaces without changing authoritative behavior. (`apps/web/src/components/`; web typecheck/build and browser rendering pass.)
   - [x] Extract the unit, revealed-card, and chronological-log surfaces without moving command authority into the UI. (`apps/web/src/components/UnitCard.tsx`, `RevealedCardsPanel.tsx`, and `LogPanel.tsx`; web typecheck/build pass.)
+  - [x] Extract the online-room lobby surface while keeping session, room, and readiness callbacks in `App`. (`apps/web/src/components/LobbyPanel.tsx`; web typecheck/build pass.)
   - [P0] Render all board hexes, features, barriers, labels, and pieces from the authoritative board and match state.
     - [x] Keep the candidate shell's landscape row geometry, pointy-top orientation, and odd-row offset deterministic and separate from rules coordinates. (`buildDisplayHexLayout`; verified by `npm run web-board-layout:verify`)
   - [x] [P0] Add pan, zoom, fit-to-board, reset-view, and focus-active-area controls. (Accessible board-view controls provide directional pan, bounded zoom, and Fit/reset in the browser; focus-active-area remains the current highlighted selection.)
