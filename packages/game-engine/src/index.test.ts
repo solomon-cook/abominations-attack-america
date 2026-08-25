@@ -495,6 +495,8 @@ test("source-inventoried cards have versioned structured metadata without guesse
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Mecha-Monster"]), ["Mecha-Monster"]);
   assert.throws(() => assertCardsAvailable(["Mecha-Monster"]), /source-gated/);
   assert.deepEqual(SOURCED_CARD_RULES.map((card) => card.id).filter((id) => MILITARY_RESEARCH_CARD_IDS.includes(id as typeof MILITARY_RESEARCH_CARD_IDS[number])).sort(), [...MILITARY_RESEARCH_CARD_IDS].sort());
+  assert.deepEqual(SOURCED_CARD_RULES.map((card) => card.id).sort(), CARD_DEFINITIONS.map((card) => card.id).sort());
+  assert.equal(sourcedCardRule("Fins and Gills")?.effectsImplementation, "implemented");
   assert.equal(sourcedCardRule("Captain Colossal")?.effectsImplementation, "source-gated");
   assert.equal(sourcedCardRule("2nd Generation")?.effectsImplementation, "implemented");
   assert.deepEqual(sourcedCardRule("Guard Commander"), {
