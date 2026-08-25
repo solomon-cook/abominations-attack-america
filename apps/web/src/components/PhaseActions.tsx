@@ -52,6 +52,16 @@ export function PhaseActions({
   const antimatterButton = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Antimatter") ? (
     <button disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Antimatter", battleId: pendingBattle.id })}>Use Antimatter · double first-round damage</button>
   ) : null;
+  const stabilizerMonsterPlayer = pendingBattle ? activeGame.monsters.findIndex((monster) => monster.id === pendingBattle.monsterId) : -1;
+  const stabilizerMutationCards = pendingBattle && pendingBattleDecision
+    ? activeGame.players[stabilizerMonsterPlayer]?.mutationCardIds ?? []
+    : [];
+  const stabilizerButtons = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Stabilizer Ray") && stabilizerMutationCards.length > 0 ? (
+    <div className="battle-choice" aria-label="Choose Mutation for Stabilizer Ray">
+      <span>Stabilizer Ray: choose a Mutation to discard if this battle damages the monster.</span>
+      {stabilizerMutationCards.map((mutationCardId) => <button key={mutationCardId} disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Stabilizer Ray", battleId: pendingBattle.id, mutationCardId })}>{mutationCardId}</button>)}
+    </div>
+  ) : null;
 
   if (activeGame.phase === "fight" && pendingAttackTarget) {
     return (
@@ -107,6 +117,7 @@ export function PhaseActions({
       {mutationButtons(pendingBattle.id)}
       {defenseSatellitesButton}
       {antimatterButton}
+      {stabilizerButtons}
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}>Resolve without spending Infamy</button>
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>
     </div>;

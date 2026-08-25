@@ -393,6 +393,30 @@ test("Antimatter arms a battle and doubles first-round military damage", () => {
   assert.equal(doubledAttack!.modifiers.includes("Antimatter: double first-round damage"), true);
 });
 
+test("Stabilizer Ray discards its selected Mutation only after military damage", () => {
+  const state = createGame(2, 0);
+  state.players[0].researchCardIds = ["Stabilizer Ray"];
+  state.players[0].mutationCardIds = ["Rampage"];
+  state.phase = "fight";
+  const unit = state.units[0];
+  unit.location = state.monsters[0].location;
+  const battleId = "stabilizer-ray";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  const armed = applyCommand(state, { type: "use-research", cardId: "Stabilizer Ray", battleId, mutationCardId: "Rampage" });
+  assert.deepEqual(armed.state.players[0].researchCardIds, []);
+  assert.deepEqual(armed.state.players[0].mutationCardIds, ["Rampage"]);
+  let triggered: GameState | undefined;
+  for (let seed = 0; seed < 128 && !triggered; seed += 1) {
+    const candidate = structuredClone(armed.state);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight", battleId });
+    if ((result.eventPayload.attacks as Array<{ stabilizerMutationCardId?: string }>).some((attack) => attack.stabilizerMutationCardId === "Rampage")) triggered = result.state;
+  }
+  assert.ok(triggered);
+  assert.deepEqual(triggered!.players[0].mutationCardIds, []);
+});
+
 test("a monster may spend Infamy for one recorded extra attack before combat rolls", () => {
   const state = createGame(2, 0);
   const monster = state.monsters[0];
@@ -432,6 +456,7 @@ test("source-inventoried cards have versioned structured metadata without guesse
   assert.deepEqual(unsupportedCardIds(["Guard Commander"]), []);
   assert.deepEqual(unsupportedCardIds(MONSTER_MUTATION_CARD_IDS), []);
   assert.deepEqual(unsupportedCardIds(["Defense Satellites"]), []);
+  assert.deepEqual(unsupportedCardIds(["Antimatter", "Stabilizer Ray"]), []);
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Berserk"]), []);
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Mecha-Monster"]), ["Mecha-Monster"]);
   assert.throws(() => assertCardsAvailable(["Mecha-Monster"]), /source-gated/);

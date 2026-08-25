@@ -313,7 +313,7 @@ Useful source documents:
   - [P1] Define precedence for general rules, component rules, persistent effects, and one-shot effects.
 - [ ] [P1] Define stacking and conflict behaviour from sourced card text rather than generic assumptions.
   - [P1] Add explicit commands for optional card timing windows and target selection.
-- [ ] [P1] Resolve immediate cards before continuing the interrupted attack, encounter, or deployment sequence. (Defense Satellites and Antimatter now resolve at their implemented timing with deterministic outcomes and discard; the remaining immediate/conditional Research windows remain source-gated.)
+- [ ] [P1] Resolve immediate cards before continuing the interrupted attack, encounter, or deployment sequence. (Defense Satellites, Antimatter, and Stabilizer Ray now resolve at their implemented timing with deterministic outcomes and discard; Stabilizer Ray preselects its Mutation target as a documented digital timing adaptation, while the remaining immediate/conditional Research windows remain source-gated.)
   - [P1] Track per-turn and per-game card-use restrictions authoritatively.
 - [x] [P1] Implement every verified Monster Mutation card with isolated tests. (All 16 source-inventoried Mutation cards are now available in the structured catalogue; persistent, triggered, and optional battle effects are covered at the development engine boundary, with card-timing UI and full-board production play still separately gated.)
   - [P1] Implement every verified Military Research card with isolated tests.
