@@ -403,7 +403,9 @@ Useful source documents:
     - [ ] [P0] Add a top phase-progress bar that moves through the phases/substeps of the active player's turn.
       - [x] Render authoritative Move, Fight, Encounter, and Deploy progress plus pending attack/retreat/battle/trophy/reward substeps. (`apps/web/src/components/TurnProgress.tsx`; web typecheck/build pass.)
     - [ ] [P0] Place the player's monster and military branch in circular status controls at bottom left, showing useful summary numbers such as Health, Infamy, deployed groups, and reserve groups.
+      - [x] Add compact monster and branch status controls with health/Infamy and deployed/reserve summaries, plus keyboard-accessible lightbox detail views. (`apps/web/src/components/PlayerStatusControls.tsx`; web typecheck/build pass.)
     - [ ] [P0] Expand the bottom-left monster and military controls into lightbox-style detail views containing the key information without permanently covering the map.
+      - [x] Provide dismissible detail views anchored above the status controls without covering the board by default. (`apps/web/src/components/PlayerStatusControls.tsx`; web typecheck/build pass.)
   - [P0] Render all board hexes, features, barriers, labels, and pieces from the authoritative board and match state.
     - [x] Keep the candidate shell's landscape row geometry, pointy-top orientation, and odd-row offset deterministic and separate from rules coordinates. (`buildDisplayHexLayout`; verified by `npm run web-board-layout:verify`)
   - [x] [P0] Add pan, zoom, fit-to-board, reset-view, and focus-active-area controls. (Accessible board-view controls provide directional pan, bounded zoom, and Fit/reset in the browser; focus-active-area remains the current highlighted selection.)

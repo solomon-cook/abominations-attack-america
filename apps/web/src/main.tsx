@@ -40,6 +40,7 @@ import { LogPanel } from "./components/LogPanel";
 import { MatchStatus } from "./components/MatchStatus";
 import { PhaseActions } from "./components/PhaseActions";
 import { PieceStackInspector } from "./components/PieceStackInspector";
+import { PlayerStatusControls } from "./components/PlayerStatusControls";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { SelectedPieceTray } from "./components/SelectedPieceTray";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -760,6 +761,7 @@ function App() {
               setSelectedUnitPath([]);
             }}
           />
+          <PlayerStatusControls game={activeGame} monster={activePlayer} branch={activeBranch} />
           <PieceStackInspector
             game={activeGame}
             activeMonsterId={activePlayer.id}
