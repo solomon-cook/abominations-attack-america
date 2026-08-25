@@ -502,6 +502,7 @@ Useful source documents:
 - [ ] [P0] First-playable CI is green and a recorded two-player browser playtest reaches a valid winner.
 - [ ] [P1] Full release CI, staging soak, production smoke test, backup/restore drill, and security checklist pass.
 - [ ] [P1] Board audit, tests, build, deployed service health, and browser QA are reported as separate proof levels.
+  - [x] [P1] Generate a deterministic report separating source/data, tests/build, deployed health, and browser evidence. (`npm run release-report:generate` writes `docs/release-proof-report.md`; deployment and source sign-off remain accurately marked unavailable/blocked.)
 - [ ] [P1] No unresolved P0/P1 rule datum, unsupported production card, critical accessibility defect, or release-blocking security issue remains.
 
 ## Milestone 15 — Post-v1 improvements
