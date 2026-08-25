@@ -3,7 +3,7 @@ import test from "node:test";
 import { createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
 import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
-import { DEVELOPMENT_BOARD, locationIdToHexKey } from "./board.js";
+import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
 import { BRANCH_DEPLOYMENT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS } from "./units.js";
 
@@ -796,6 +796,20 @@ test("board-dependent engine helpers resolve the pinned board or fail closed", (
   assert.equal(boardForState(state), DEVELOPMENT_BOARD);
   assert.throws(() => boardForState({ ...state, boardContentHash: "fnv1a:not-the-pinned-board" }), /unavailable/);
   assert.throws(() => boardForState({ ...state, boardVersion: 2 }), /unavailable/);
+});
+
+test("full-board encounter resolution never inherits development features", () => {
+  const state = createGame(2);
+  state.boardId = FULL_HONEYCOMB_BOARD.id;
+  state.boardVersion = FULL_HONEYCOMB_BOARD.version;
+  state.boardContentHash = FULL_HONEYCOMB_BOARD.contentHash;
+  state.phase = "encounter";
+  state.monsters[0].location = "0,0";
+  state.pendingDecision = { type: "encounter-resolution", playerIndex: 0, location: "0,0" };
+  const result = applyCommand(state, { type: "resolve-encounter" });
+  assert.deepEqual(result.eventPayload.effects, []);
+  assert.equal(result.state.stompedLocations.length, 0);
+  assert.equal(result.state.phase, "deploy");
 });
 
 test("movement validates every path edge and the complete path length", () => {

@@ -293,7 +293,7 @@ export function validateInventoryAccounting(state: Pick<GameState, "monsters" | 
     if (unit.location === "permanently-removed" && !removedSet.has(unit.id)) errors.push(`permanently-removed unit ${unit.id} is missing from removedUnitIds`);
   }
   for (const piece of [...state.monsters, ...state.units]) {
-    if (!toDevelopmentSpaceKey(piece.location)) errors.push(`unknown position for piece ${piece.id}: ${piece.location}`);
+    if (!toDevelopmentSpaceKey(piece.location) && !isHexKey(piece.location)) errors.push(`unknown position for piece ${piece.id}: ${piece.location}`);
   }
   for (const battle of state.pendingBattles) {
     if (!monsterIds.includes(battle.monsterId)) errors.push(`battle ${battle.id} references missing monster ${battle.monsterId}`);
