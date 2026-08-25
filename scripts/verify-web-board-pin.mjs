@@ -1,0 +1,22 @@
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const pinSource = await readFile(resolve(root, "apps/web/src/board-pin.ts"), "utf8");
+const gridSource = await readFile(resolve(root, "apps/web/src/components/HexGrid.tsx"), "utf8");
+const mainSource = await readFile(resolve(root, "apps/web/src/main.tsx"), "utf8");
+const required = [
+  ["shared board resolver", /export function boardForGame/],
+  ["full-board ID and hash match", /game\.boardId === FULL_HONEYCOMB_BOARD\.id && game\.boardContentHash === FULL_HONEYCOMB_BOARD\.contentHash/],
+  ["development-board ID and hash match", /game\.boardId === DEVELOPMENT_BOARD\.id && game\.boardContentHash === DEVELOPMENT_BOARD\.contentHash/],
+  ["unknown pin is unavailable", /return undefined/],
+  ["grid uses shared resolver", /import \{ boardForGame \} from "\.\.\/board-pin"/],
+  ["grid hides unknown topology", /className="board-unavailable" role="alert"/],
+  ["map metadata uses resolved board", /data-rendered-board-id=\{renderedBoard\?\.id \?\? "unavailable"\}/],
+  ["map metadata uses resolved hash", /data-rendered-board-content-hash=\{renderedBoard\?\.contentHash \?\? "unavailable"\}/],
+];
+const source = `${pinSource}\n${gridSource}\n${mainSource}`;
+const failures = required.filter(([, marker]) => !marker.test(source)).map(([label]) => label);
+if (failures.length > 0) throw new Error(`Web board-pin contract failed: ${failures.join(", ")}`);
+console.log("Verified exact board ID/hash pin resolution and fail-closed web rendering contract.");
