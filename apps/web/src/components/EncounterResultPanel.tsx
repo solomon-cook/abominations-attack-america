@@ -1,3 +1,5 @@
+import { DieCube } from "./DieCube";
+
 type EncounterEffect = Readonly<{ type: string; amount: number; source: string }>;
 
 type Props = {
@@ -25,17 +27,7 @@ export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped
       <span className="label">LAST ENCOUNTER</span>
       {choices.length > 0 && <p className="encounter-choice-note">A source-backed choice is required before the encounter can continue: {choices.join(" or ")}.</p>}
       {rolls.length > 0 && <div className="combat-roll-list encounter-roll-list" aria-label="Recorded encounter dice rolls">
-        {rolls.map((roll, index) => <span className={`combat-die show-${roll}`} key={`${eventId}-roll-${index}`} aria-label={`Encounter roll ${index + 1}: ${roll}`}>
-          <span className="die-cube" aria-hidden="true">
-            <img className="die-cube-face face-front" src="/assets/dice/d6-face-1.webp" alt="" />
-            <img className="die-cube-face face-back" src="/assets/dice/d6-face-6.webp" alt="" />
-            <img className="die-cube-face face-right" src="/assets/dice/d6-face-2.webp" alt="" />
-            <img className="die-cube-face face-left" src="/assets/dice/d6-face-5.webp" alt="" />
-            <img className="die-cube-face face-top" src="/assets/dice/d6-face-3.webp" alt="" />
-            <img className="die-cube-face face-bottom" src="/assets/dice/d6-face-4.webp" alt="" />
-          </span>
-          <span className="die-value">{roll}</span>
-        </span>)}
+        {rolls.map((roll, index) => <DieCube key={`${eventId}-roll-${index}`} value={roll} label={`Encounter roll ${index + 1}: ${roll}`} />)}
       </div>}
       {effects.length > 0 ? (
         <ul className="encounter-effects">{effects.map((effect, index) => <li key={`${eventId}-effect-${index}`}>{effectLabel(effect)}</li>)}</ul>
