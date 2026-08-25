@@ -137,3 +137,53 @@ test("bounded concurrent rooms fan out WebSocket and polling updates without cro
     await stop(child);
   }
 });
+
+test("bounded reconnect storm restores the same room revision without duplicate actions", async () => {
+  const port = 21000 + (process.pid % 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true" },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  const sockets: WebSocket[] = [];
+  try {
+    await waitForHealth(baseUrl);
+    const response = await fetch(`${baseUrl}/rooms`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ maxPlayers: 2 }),
+    });
+    const created = await response.json() as { room: RoomPayload; token: string; participantId: string };
+    assert.equal(response.ok, true);
+
+    const initial = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((result) => result.json()) as RoomPayload;
+    const setupResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/setup`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-room-token": created.token },
+      body: JSON.stringify({ expectedRevision: initial.version, action: { type: "choose-monster", monsterId: "monster-1" } }),
+    });
+    assert.equal(setupResponse.ok, true);
+    const settled = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((result) => result.json()) as RoomPayload;
+
+    const restored = await Promise.all(Array.from({ length: 12 }, async () => {
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&token=${encodeURIComponent(created.token)}`);
+      sockets.push(socket);
+      const socketRoomPromise = nextWebSocketMessage(socket);
+      await new Promise<void>((resolve, reject) => { socket.once("open", () => resolve()); socket.once("error", reject); });
+      const [socketRoom, polledRoom] = await Promise.all([
+        socketRoomPromise,
+        fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((result) => result.json()) as Promise<RoomPayload>,
+      ]);
+      assert.equal(socketRoom.version, settled.version);
+      assert.equal(polledRoom.version, settled.version);
+      assert.deepEqual(socketRoom.state.setupState, polledRoom.state.setupState);
+      socket.close();
+      return socketRoom.version;
+    }));
+    assert.deepEqual(new Set(restored), new Set([settled.version]));
+  } finally {
+    for (const socket of sockets) socket.terminate();
+    await stop(child);
+  }
+});
