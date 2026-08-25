@@ -1483,6 +1483,27 @@ test("Laser Beam Eyes applies its sourced cruise-missile attack bonus", () => {
   assert.deepEqual(laserAttack?.modifiers, ["Laser Beam Eyes: +2 to hit cruise missiles"]);
 });
 
+test("Radiation Field destroys a military attacker on a roll of one", () => {
+  const state = createGame(2);
+  state.players[0].mutationCardIds = ["Radiation Field"];
+  state.phase = "fight";
+  state.monsters[0].attacks = 0;
+  const unit = state.units[0];
+  unit.location = state.monsters[0].location;
+  const battleId = "radiation-field";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  let radiationAttack: { attackerDestroyed?: boolean; roll: number } | undefined;
+  for (let seed = 0; seed < 128 && !radiationAttack; seed += 1) {
+    const candidate = structuredClone(state);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight" });
+    const attack = (result.eventPayload.attacks as Array<{ attackerId: string; attackerDestroyed?: boolean; roll: number }>).find((entry) => entry.attackerId === unit.id);
+    if (attack?.roll === 1) radiationAttack = attack;
+  }
+  assert.equal(radiationAttack?.attackerDestroyed, true);
+});
+
 test("a rival military player draws Military Research when their attack sends a monster to Hollywood", () => {
   const state = createGame(2, 7);
   state.phase = "fight";

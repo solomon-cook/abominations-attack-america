@@ -886,6 +886,8 @@ export interface BattleAttack {
   readonly damage: number;
   readonly destroyed: boolean;
   readonly mutationCardId?: string;
+  /** Radiation Field may destroy the military attacker after its roll. */
+  readonly attackerDestroyed?: boolean;
   /** Present on Monster Challenge attacks so the UI can animate authoritative Health changes. */
   readonly targetHealthBefore?: number;
   readonly targetHealthAfter?: number;
@@ -1061,7 +1063,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   };
   const performCounterAttacks = () => {
     for (const unit of next.units.filter((candidate) => pending.militaryUnitIds.includes(candidate.id) && candidate.location === pending.location)) {
-      for (let attackIndex = 0; attackIndex < (unit.attacks ?? 1) && monster.health > 0; attackIndex += 1) {
+      for (let attackIndex = 0; attackIndex < (unit.attacks ?? 1) && monster.health > 0 && unit.location === pending.location; attackIndex += 1) {
         const roll = nextD6(next);
         rolls.push(roll);
         const hit = roll >= effectiveMonsterDefense(next, monster);
@@ -1070,8 +1072,14 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
         monster.health = Math.max(0, monster.health - damage);
         const destroyed = monster.health === 0;
         const mutationCardId = unit.unitTypeId === "air-force-cruise-missile" && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
-        attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: [], hit, smash, damage, destroyed, mutationCardId });
-        next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${round}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}`);
+        const attackerDestroyed = roll === 1 && monsterHasMutation(next, monster, "Radiation Field");
+        if (attackerDestroyed) {
+          unit.location = "record-tile";
+          destroyedUnitIds.push(unit.id);
+        }
+        const modifiers = attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : [];
+        attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed });
+        next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${round}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
         sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
       }
     }
@@ -1240,7 +1248,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
       }
       const survivingUnits = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
       for (const unit of survivingUnits) {
-        for (let attackIndex = 0; attackIndex < (unit.attacks ?? 1) && monster.health > 0; attackIndex += 1) {
+        for (let attackIndex = 0; attackIndex < (unit.attacks ?? 1) && monster.health > 0 && unit.location === monster.location; attackIndex += 1) {
           const roll = nextD6(next);
           rolls.push(roll);
           const hit = roll >= effectiveMonsterDefense(next, monster);
@@ -1249,8 +1257,14 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           monster.health = Math.max(0, monster.health - damage);
           const destroyed = monster.health === 0;
           const mutationCardId = unit.unitTypeId === "air-force-cruise-missile" && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
-          attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: [], hit, smash, damage, destroyed, mutationCardId });
-          next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${combatRound}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}`);
+          const attackerDestroyed = roll === 1 && monsterHasMutation(next, monster, "Radiation Field");
+          if (attackerDestroyed) {
+            unit.location = "record-tile";
+            if (!destroyedUnitIds.includes(unit.id)) destroyedUnitIds.push(unit.id);
+          }
+          const modifiers = attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : [];
+          attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed });
+          next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${combatRound}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
           sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
         }
       }
