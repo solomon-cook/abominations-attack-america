@@ -1307,6 +1307,41 @@ test("High-Octane Blood lets a non-challenger attack first in the Monster Challe
   assert.deepEqual(firstAttack.modifiers, ["High-Octane Blood: attacks first"]);
 });
 
+test("It's a Robot! electrocutes a monster after a Monster Challenge miss", () => {
+  const state = createGame(2, 0);
+  state.rulesetVersion = "challenge-0.1";
+  state.players[1].mutationCardIds = ["It's a Robot!"];
+  state.challenge = {
+    declared: true,
+    active: true,
+    challengerMonsterId: "monster-1",
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  state.phase = "challenge";
+  state.currentPlayer = 0;
+  state.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
+  state.monsters[0].health = 2;
+  state.monsters[1].health = 2;
+  state.monsters[1].location = "disappeared";
+  const selected = applyCommand(state, { type: "challenge-opponent", opponentMonsterId: "monster-2" });
+
+  let miss: { hit: boolean; retaliationDamage?: number } | undefined;
+  for (let seed = 0; seed < 128 && !miss; seed += 1) {
+    const candidate = structuredClone(selected.state);
+    candidate.rng.seed = seed;
+    const resolved = applyCommand(candidate, { type: "resolve-challenge" });
+    const attack = (resolved.eventPayload.attacks as Array<{ attackerId: string; roll: number; hit: boolean; retaliationDamage?: number }>)
+      .find((entry) => entry.attackerId === "monster-1");
+    if (attack && attack.roll < 4) miss = attack;
+  }
+
+  assert.equal(miss?.hit, false);
+  assert.equal(miss?.retaliationDamage, 1);
+});
+
 test("a pending challenger lost to Hollywood is cleared while a disappeared monster remains eligible", () => {
   const state = createGame(2, 0);
   state.challenge = {

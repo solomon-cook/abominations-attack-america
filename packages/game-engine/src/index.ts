@@ -901,6 +901,8 @@ export interface BattleAttack {
   readonly mutationCardId?: string;
   /** Radiation Field may destroy the military attacker after its roll. */
   readonly attackerDestroyed?: boolean;
+  /** It's a Robot! deals this much electrocution damage after a Challenge miss. */
+  readonly retaliationDamage?: number;
   /** Present on Monster Challenge attacks so the UI can animate authoritative Health changes. */
   readonly targetHealthBefore?: number;
   readonly targetHealthAfter?: number;
@@ -1680,8 +1682,13 @@ function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
       const damage = hit ? attacker.damage + (smash ? 1 : 0) : 0;
       const targetHealthBefore = defender.health;
       defender.health = Math.max(0, defender.health - damage);
+      const retaliationDamage = !hit && monsterHasMutation(next, defender, "It's a Robot!") ? 1 : 0;
+      if (retaliationDamage > 0) attacker.health = Math.max(0, attacker.health - retaliationDamage);
       rolls.push(roll);
-      attacks.push({ attackerId: attacker.id, targetId: defender.id, controllerPlayer: challengePlayerIndex(next, attacker.id), roll, modifiers: attacker.id === opponent.id && monsterHasMutation(next, opponent, "High-Octane Blood") ? ["High-Octane Blood: attacks first"] : [], hit, smash, damage, destroyed: defender.health === 0, targetHealthBefore, targetHealthAfter: defender.health });
+      attacks.push({ attackerId: attacker.id, targetId: defender.id, controllerPlayer: challengePlayerIndex(next, attacker.id), roll, modifiers: [
+        ...(attacker.id === opponent.id && monsterHasMutation(next, opponent, "High-Octane Blood") ? ["High-Octane Blood: attacks first"] : []),
+        ...(retaliationDamage > 0 ? ["It's a Robot!: 1 electrocution damage"] : []),
+      ], hit, smash, damage, destroyed: defender.health === 0, targetHealthBefore, targetHealthAfter: defender.health, retaliationDamage: retaliationDamage || undefined });
     }
     if (defender.health === 0) break;
     [attacker, defender] = [defender, attacker];
