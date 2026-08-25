@@ -57,6 +57,7 @@ import { HomeScreen } from "./components/HomeScreen";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
+import { playSound, type SoundCategory } from "./audio";
 import "./styles.css";
 
 function supportsPlaytestBrowser(): boolean {
@@ -96,6 +97,11 @@ function safeStorageGet(key: string): string | null {
   }
 }
 
+function safeStoredNumber(key: string, fallback: number): number {
+  const value = Number(safeStorageGet(key));
+  return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
+}
+
 function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -130,6 +136,11 @@ function App() {
   const [showBoardLabels, setShowBoardLabels] = useState(() => safeStorageGet("abominations-board-labels") !== "0");
   const [manualReducedMotion, setManualReducedMotion] = useState(() => safeStorageGet("abominations-reduced-motion") === "1");
   const [confirmIrreversible, setConfirmIrreversible] = useState(() => safeStorageGet("abominations-confirm-irreversible") !== "0");
+  const [masterVolume, setMasterVolume] = useState(() => safeStoredNumber("abominations-master-volume", 1));
+  const [musicVolume, setMusicVolume] = useState(() => safeStoredNumber("abominations-music-volume", 0));
+  const [effectsVolume, setEffectsVolume] = useState(() => safeStoredNumber("abominations-effects-volume", 0.7));
+  const [muted, setMuted] = useState(() => safeStorageGet("abominations-audio-muted") === "1");
+  const lastSoundEventRef = useRef<string | undefined>(undefined);
   const [connectionState, setConnectionState] = useState<
     "online" | "reconnecting" | "stale" | "offline"
   >("offline");
@@ -658,6 +669,10 @@ function App() {
       return next;
     });
   };
+  const setStoredVolume = (key: string, setter: (value: number) => void, value: number) => {
+    setter(value);
+    localStorage.setItem(key, String(value));
+  };
   const runIrreversibleAction = (actionToRun: () => void, message: string) => {
     if (!confirmIrreversible || window.confirm(message)) actionToRun();
   };
@@ -677,6 +692,24 @@ function App() {
     () => (activeGame.eventLog ?? []).slice(-5).reverse(),
     [activeGame.eventLog],
   );
+  const latestEvent = activeGame.eventLog.at(-1);
+  useEffect(() => {
+    if (!latestEvent?.id) return;
+    if (lastSoundEventRef.current === latestEvent.id) return;
+    const category: SoundCategory = latestEvent.action === "fight.resolved" || latestEvent.action === "challenge.resolved"
+      ? "combat"
+      : latestEvent.action === "research.drawn" || latestEvent.action === "mutation.used"
+        ? "cards"
+        : latestEvent.action === "match.conceded" || activeGame.phase === "game-over"
+          ? "victory"
+          : latestEvent.action.includes("rejected") || latestEvent.outcome === "rejected"
+            ? "warnings"
+            : latestEvent.action === "turn.passed"
+              ? "turn"
+              : "dice";
+    playSound(category, { masterVolume, musicVolume, effectsVolume, muted });
+    lastSoundEventRef.current = latestEvent.id;
+  }, [activeGame.eventLog, activeGame.phase, effectsVolume, latestEvent, masterVolume, musicVolume, muted]);
   const turnDescription = activeGame.phase === "move"
     ? selectedUnitId
       ? selectedUnitPath.length > 1
@@ -819,7 +852,7 @@ function App() {
         onLeaveRoom={leaveRoomSafely}
       />
       {settingsOpen && (
-        <SettingsPanel largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} togglePreference={togglePreference} />
+        <SettingsPanel largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} masterVolume={masterVolume} musicVolume={musicVolume} effectsVolume={effectsVolume} muted={muted} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} setMasterVolume={(value) => setStoredVolume("abominations-master-volume", setMasterVolume, value)} setMusicVolume={(value) => setStoredVolume("abominations-music-volume", setMusicVolume, value)} setEffectsVolume={(value) => setStoredVolume("abominations-effects-volume", setEffectsVolume, value)} setMuted={setMuted} togglePreference={togglePreference} />
       )}
       {onboardingOpen && (
         <section className="onboarding" aria-label="First match guide">

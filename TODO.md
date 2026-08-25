@@ -518,10 +518,10 @@ Useful source documents:
 - [x] [P1] Add first-match onboarding for the goal, setup order, four phases, board controls, and current decision. (A dismissible, locally persisted guide is available on first visit and through `How to play`; it describes setup, Move, Fight, Encounter, Deploy, and the current decision without modifying match state.)
   - [x] [P1] Add contextual explanations for why an action is unavailable. (The current-step panel explains waiting for acknowledgement, incomplete setup, spectator permissions, out-of-turn ownership, and completed-match state.)
   - [x] [P1] Add confirmation for destructive or irreversible choices without confirming routine safe actions excessively. (The optional persisted preference confirms monster disappearance only; routine movement, battle, encounter, and deployment choices remain unblocked.)
-- [ ] [P1] Add sound categories for turn, dice, combat, cards, warnings, and victory using original/licensed audio.
-  - [P1] Add master, music, effects, and mute controls persisted per browser.
+- [x] [P1] Add sound categories for turn, dice, combat, cards, warnings, and victory using original/licensed audio. (The web client uses short synthesized tones for each category; no external audio asset or license is assumed, and sound is presentation-only.)
+  - [x] Add master, music, effects, and mute controls persisted per browser. (`SettingsPanel` persists all four browser-local preferences; music remains silent by default while the no-audio path stays complete.)
 - [x] [P1] Provide a complete no-audio experience and never rely on sound alone. (The current client has no audio dependency; every required action, roll, result, warning, and pending decision is rendered as text or an accessible label.)
-  - [ ] [P1] Add settings for motion, volume, text/readability preferences, board labels, and confirmation behaviour. (Persisted Settings now cover manual reduced motion, larger text, board-label visibility, and disappearance confirmation; volume controls remain blocked until sound assets/effects are sourced.)
+  - [x] [P1] Add settings for motion, volume, text/readability preferences, board labels, and confirmation behaviour. (Persisted Settings cover manual reduced motion, master/music/effects volume, mute, larger text, board-label visibility, and disappearance confirmation.)
 
 ### Milestone 13 acceptance
 

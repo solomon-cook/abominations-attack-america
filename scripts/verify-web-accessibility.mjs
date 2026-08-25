@@ -43,6 +43,8 @@ const requiredSourceMarkers = [
   ["on-demand game panel toggle", /aria-controls="game-side-panel"/],
   ["named game controls panel", /id="game-side-panel" className="game-side-panel" aria-label="Game controls and information"/],
   ["private hand details", /aria-label=\{`Private hand for Player/],
+  ["audio feedback categories", /playSound\(category/],
+  ["persisted audio settings", /type="range" min="0" max="1"/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 
@@ -63,6 +65,7 @@ const requiredStyleMarkers = [
   ["viewport-fitted gameplay layout", /\.game-screen\{height:100dvh;max-height:100dvh/],
   ["board-first closed layout", /\.game-screen \.layout\.panel-closed\{grid-template-columns:minmax\(0,1fr\)/],
   ["closed layout hides secondary board details", /\.game-screen \.layout\.panel-closed \.board-secondary\{display:none\}/],
+  ["audio range controls", /\.settings-audio input\[type="range"\]/],
 ];
 for (const [label, marker] of requiredStyleMarkers) if (!marker.test(styles)) failures.push(`missing ${label}`);
 

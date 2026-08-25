@@ -32,6 +32,9 @@ body{min-height:100dvh} @supports(padding:max(0px)){main{padding-inline-start:ma
 .hex-tile .tile-name{min-width:0;overflow:hidden;text-overflow:ellipsis;overflow-wrap:anywhere}
 .hex-tile.unresolved .tile-content{font-size:.38rem}
 .hex-tile.unresolved .tile-name{letter-spacing:.02em}
+.settings-audio{display:grid;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #526e4c}
+.settings-audio label{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;gap:10px;padding:0;border:0;background:none;color:#dce8d8;font-size:.78rem}
+.settings-audio input[type="range"]{accent-color:#d77939;width:100%}
 @media(prefers-reduced-motion:reduce){.combat-result,.combat-roll-list .combat-die{animation:none;transform:none}}
 @media(max-width:900px){.onboarding{grid-template-columns:1fr}.onboarding-actions{grid-template-columns:1fr auto;align-items:center}.onboarding-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.header-actions{justify-content:flex-start;margin-top:20px}.onboarding-grid{grid-template-columns:1fr}.onboarding-actions{grid-template-columns:1fr}}
