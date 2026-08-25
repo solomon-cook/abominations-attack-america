@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "format": "webp",
+  "width": 256,
+  "height": 256,
+  "units": [
+    {
+      "id": "marines-fighter",
+      "branch": "Marines",
+      "unit": "fighter",
+      "color": "#D9483F",
+      "src": "/assets/military/marines-fighter.webp"
+    },
+    {
+      "id": "marines-rocket-launcher",
+      "branch": "Marines",
+      "unit": "rocket-launcher",
+      "color": "#D9483F",
+      "src": "/assets/military/marines-rocket-launcher.webp"
+    },
+    {
+      "id": "air-force-fighter",
+      "branch": "Air Force",
+      "unit": "fighter",
+      "color": "#F2C230",
+      "src": "/assets/military/air-force-fighter.webp"
+    },
+    {
+      "id": "air-force-cruise-missile",
+      "branch": "Air Force",
+      "unit": "cruise-missile",
+      "color": "#F2C230",
+      "src": "/assets/military/air-force-cruise-missile.webp"
+    },
+    {
+      "id": "army-tank",
+      "branch": "Army",
+      "unit": "tank",
+      "color": "#647A2E",
+      "src": "/assets/military/army-tank.webp"
+    },
+    {
+      "id": "army-missile-launcher",
+      "branch": "Army",
+      "unit": "missile-launcher",
+      "color": "#647A2E",
+      "src": "/assets/military/army-missile-launcher.webp"
+    },
+    {
+      "id": "navy-fighter",
+      "branch": "Navy",
+      "unit": "fighter",
+      "color": "#1F78B4",
+      "src": "/assets/military/navy-fighter.webp"
+    },
+    {
+      "id": "navy-nuclear-submarine",
+      "branch": "Navy",
+      "unit": "nuclear-submarine",
+      "state": "submarine",
+      "color": "#1F78B4",
+      "src": "/assets/military/navy-nuclear-submarine.webp"
+    },
+    {
+      "id": "navy-nuclear-submarine-launched",
+      "branch": "Navy",
+      "unit": "nuclear-submarine",
+      "state": "launched-cruise-missile",
+      "color": "#1F78B4",
+      "src": "/assets/military/navy-launched-cruise-missile.webp"
+    },
+    {
+      "id": "national-guard-tank",
+      "branch": "National Guard",
+      "unit": "tank",
+      "color": "#E58A25",
+      "src": "/assets/military/national-guard-tank.webp"
+    },
+    {
+      "id": "national-guard-fighter",
+      "branch": "National Guard",
+      "unit": "fighter",
+      "color": "#E58A25",
+      "src": "/assets/military/national-guard-fighter.webp"
+    }
+  ]
+}

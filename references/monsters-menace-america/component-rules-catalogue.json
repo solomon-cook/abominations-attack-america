@@ -1,0 +1,557 @@
+{
+  "catalogue_version": 1,
+  "source_game": "Monsters Menace America (Avalon Hill, 2005)",
+  "transcription_policy": "Rule text preserves the wording and punctuation visible in the cited source image. Line breaks are represented with \\n where they convey separate printed effects. Normalized fields are interpretations kept separate from the transcription. Empty uncertainty arrays mean the cited image is legible for the recorded rule; no text has been guessed.",
+  "classification_definitions": {
+    "persistent": "The card remains face up and supplies an ongoing rule or modifier.",
+    "immediate": "The instruction is resolved when the card enters play.",
+    "conditional": "The effect applies only when its printed trigger or game state occurs.",
+    "one-use/discard": "The card is discarded when its printed use resolves, or at the printed depletion condition."
+  },
+  "monsters": [
+    {
+      "name": "Gargantis",
+      "starting_health": 10,
+      "move": { "value": 3, "modes": ["fly"] },
+      "defense": 4,
+      "attacks": 3,
+      "damage": 3,
+      "special_ability_transcription": "May discard Mutation cards at any time to gain 3 health apiece.",
+      "source": {
+        "local_image": "components/monster-records/gargantis-record-and-piece.jpg",
+        "web": "https://boardgamegeek.com/image/77516/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "Konk",
+      "starting_health": 10,
+      "move": { "value": 4, "modes": ["land only"] },
+      "defense": 4,
+      "attacks": 3,
+      "damage": 3,
+      "special_ability_transcription": "+1 to hit fighters.",
+      "source": {
+        "local_image": "components/monster-records/konk-record-and-piece.jpg",
+        "web": "https://boardgamegeek.com/image/77518/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "Megaclaw",
+      "starting_health": 12,
+      "move": { "value": 4, "modes": ["land", "lake"] },
+      "defense": 4,
+      "attacks": 3,
+      "damage": 3,
+      "special_ability_transcription": "Get 3 Infamy tokens instead of 2 for stomping an Infamy site.",
+      "source": {
+        "local_image": "components/monster-records/megaclaw-record-and-piece.jpg",
+        "web": "https://boardgamegeek.com/image/77521/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "Tomanagi",
+      "starting_health": 11,
+      "move": { "value": 4, "modes": ["land", "lake", "sea"] },
+      "defense": 4,
+      "attacks": 3,
+      "damage": 3,
+      "special_ability_transcription": "1 extra attack in the first round of combat in a sea or seacoast space.",
+      "source": {
+        "local_image": "components/monster-records/tomanagi-record-and-piece.jpg",
+        "web": "https://boardgamegeek.com/image/77524/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "Toxicor",
+      "starting_health": 9,
+      "move": { "value": 4, "modes": ["land", "lake"] },
+      "defense": 4,
+      "attacks": 3,
+      "damage": 3,
+      "special_ability_transcription": "When this monster mutates, draw 2 Mutation cards and pick one. Shuffle the other one back into the Mutation deck.",
+      "source": {
+        "local_image": "components/monster-records/toxicor-record-and-piece.jpg",
+        "web": "https://boardgamegeek.com/image/77526/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "Zorb",
+      "starting_health": 11,
+      "move": { "value": 4, "modes": ["land only"] },
+      "defense": 4,
+      "attacks": 3,
+      "damage": 3,
+      "special_ability_transcription": "May get 2 Infamy tokens instead of gaining health for stomping a city. If a health roll is needed, decide after rolling.",
+      "source": {
+        "local_image": "components/monster-records/zorb-record-and-piece.jpg",
+        "web": "https://boardgamegeek.com/image/77528/monsters-menace-america"
+      },
+      "uncertainty": []
+    }
+  ],
+  "military_branches": [
+    {
+      "name": "Marines",
+      "deployment_transcription": "PLACE 3 units (either Marines or National Guard) OR DRAW 1 Military Research card.",
+      "units": [
+        {
+          "name": "Fighter",
+          "count": 4,
+          "move": { "value": 5, "modes": ["fly"] },
+          "defense": 4,
+          "damage": 1,
+          "special_rule_transcription": null
+        },
+        {
+          "name": "Rocket Launcher",
+          "count": 4,
+          "move": { "value": 4, "modes": ["land only"] },
+          "defense": 3,
+          "damage": 2,
+          "special_rule_transcription": null
+        }
+      ],
+      "source": {
+        "local_image": "components/military-records/marines-air-force.jpg",
+        "web": "https://boardgamegeek.com/image/239770/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "Air Force",
+      "deployment_transcription": "PLACE 2 units (either Air Force or National Guard) plus 1 National Guard unit OR DRAW 1 Military Research card.",
+      "units": [
+        {
+          "name": "Fighter",
+          "count": 6,
+          "move": { "value": 6, "modes": ["fly"] },
+          "defense": 4,
+          "damage": 1,
+          "special_rule_transcription": null
+        },
+        {
+          "name": "Cruise Missile",
+          "count": 2,
+          "move": { "value": 8, "modes": ["fly"] },
+          "defense": 6,
+          "damage": 3,
+          "special_rule_transcription": "Destroyed after the first round of combat. If the cruise missile attack roll is a 1, the monster mutates."
+        }
+      ],
+      "source": {
+        "local_image": "components/military-records/marines-air-force.jpg",
+        "web": "https://boardgamegeek.com/image/239770/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "Army",
+      "deployment_transcription": "PLACE 2 units (either Army or National Guard) plus 1 National Guard unit OR DRAW 1 Military Research card.",
+      "units": [
+        {
+          "name": "Tank",
+          "count": 5,
+          "move": { "value": 4, "modes": ["land only"] },
+          "defense": 5,
+          "damage": 1,
+          "special_rule_transcription": null
+        },
+        {
+          "name": "Missile Launcher",
+          "count": 3,
+          "move": { "value": 4, "modes": ["land only"] },
+          "defense": 3,
+          "damage": 1,
+          "special_rule_transcription": "Makes 1 extra attack during the first round of combat before the monster attacks."
+        }
+      ],
+      "source": {
+        "local_image": "components/military-records/army-navy.jpg",
+        "web": "https://boardgamegeek.com/image/239771/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "Navy",
+      "deployment_transcription": "PLACE 2 units (either Navy or National Guard) plus 1 National Guard unit OR DRAW 1 Military Research card.",
+      "units": [
+        {
+          "name": "Fighter",
+          "count": 5,
+          "move": { "value": 6, "modes": ["fly"] },
+          "defense": 4,
+          "damage": 1,
+          "special_rule_transcription": null
+        },
+        {
+          "name": "Nuclear Submarine",
+          "count": 3,
+          "move": {
+            "normal": { "value": 4, "modes": ["sea", "seacoast only"] },
+            "launched": { "value": 8, "modes": ["fly"] }
+          },
+          "defense": { "normal": 5, "launched": 6 },
+          "damage": { "normal": 1, "launched": 3 },
+          "special_rule_transcription": "May be launched as a cruise missile into combat against a monster. If launched, use statistics marked with *. The missile is destroyed after the first round of combat. If the cruise missile attack roll is a 1, the monster mutates."
+        }
+      ],
+      "source": {
+        "local_image": "components/military-records/army-navy.jpg",
+        "web": "https://boardgamegeek.com/image/239771/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "National Guard",
+      "placement_transcription": "National Guard units can be placed in any space that has an unstomped city, base, or Infamy site.",
+      "units": [
+        {
+          "name": "Tank",
+          "count": 6,
+          "move": { "value": 0, "modes": [] },
+          "defense": 4,
+          "damage": 1,
+          "special_rule_transcription": "*Only the player with the Guard Commander card can move Guard units."
+        },
+        {
+          "name": "Fighter",
+          "count": 2,
+          "move": { "value": 0, "modes": [] },
+          "defense": 3,
+          "damage": 1,
+          "special_rule_transcription": "*Only the player with the Guard Commander card can move Guard units."
+        }
+      ],
+      "source": {
+        "local_image": "components/military-records/giant-units-national-guard.jpg",
+        "web": "https://boardgamegeek.com/image/239772/monsters-menace-america"
+      },
+      "uncertainty": []
+    }
+  ],
+  "giant_military_units": [
+    {
+      "name": "Mecha-Monster",
+      "health": 6,
+      "move": { "value": 4, "modes": ["land only"] },
+      "defense": 5,
+      "attacks": 1,
+      "damage": 4,
+      "source": {
+        "local_image": "components/military-records/giant-units-national-guard.jpg",
+        "web": "https://boardgamegeek.com/image/239772/monsters-menace-america"
+      },
+      "uncertainty": []
+    },
+    {
+      "name": "Captain Colossal",
+      "health": 8,
+      "move": { "value": 4, "modes": ["land", "lake", "sea"] },
+      "defense": 4,
+      "attacks": 2,
+      "damage": 2,
+      "source": {
+        "local_image": "components/military-records/giant-units-national-guard.jpg",
+        "web": "https://boardgamegeek.com/image/239772/monsters-menace-america"
+      },
+      "uncertainty": []
+    }
+  ],
+  "military_research_cards": [
+    {
+      "name": "Mecha-Monster",
+      "transcription": "You control the Mecha-Monster giant military unit. Place its piece on one of your bases and take its record tile. When Mecha-Monster reaches 0 Health, remove it from the game. DISCARD THIS CARD AFTER USE.",
+      "classification": ["immediate", "one-use/discard"],
+      "timing": "Resolve immediately when drawn; discard after placing the unit and taking its tile.",
+      "duration": "The placed unit remains until it reaches 0 Health.",
+      "source": { "local_image": "components/decks/military-research-01.jpg", "web": "https://boardgamegeek.com/image/77234/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Cutbacks",
+      "transcription": "Use on any of your turns. DISCARD THIS CARD AFTER USE. Remove a Research card from play.",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "Any of your turns.",
+      "duration": "The chosen Research card is removed from play.",
+      "source": { "local_image": "components/decks/military-research-01.jpg", "web": "https://boardgamegeek.com/image/77234/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Laser Fence",
+      "transcription": "Use at any time when a monster ends its move, but before battle. DISCARD THIS CARD AFTER USE. The monster must expend 2 Infamy tokens or retreat to an unoccupied adjacent space. (It doesn't encounter the new space.)",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "After a monster ends its move but before battle.",
+      "duration": "Resolved immediately.",
+      "source": { "local_image": "components/decks/military-research-01.jpg", "web": "https://boardgamegeek.com/image/77234/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Guard Commander",
+      "transcription": "You can move and redeploy Guard units. Tanks have Move 3 (land only). Fighters have Move 5 (fly). Other players can't deploy Guard units.",
+      "classification": ["persistent"],
+      "timing": "Continuous while face up.",
+      "duration": "Until removed from play.",
+      "source": { "local_image": "components/decks/military-research-01.jpg", "web": "https://boardgamegeek.com/image/77234/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Defense Satellites",
+      "transcription": "Use on any of your turns. DISCARD THIS CARD AFTER USE. Roll 1 die for each monster on the game board. That monster takes that much damage. (This doesn't affect Captain Colossal or Mecha-Monster.)",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "Any of your turns.",
+      "duration": "Resolved immediately.",
+      "source": { "local_image": "components/decks/military-research-01.jpg", "web": "https://boardgamegeek.com/image/77234/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Stabilizer Ray",
+      "transcription": "Use on any of your turns at the start of a battle involving your units. DISCARD THIS CARD AFTER USE. If you damage a monster during this battle, choose and discard 1 of its Mutation cards.",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "Start of a battle involving your units, on any of your turns.",
+      "duration": "For that battle.",
+      "source": { "local_image": "components/decks/military-research-01.jpg", "web": "https://boardgamegeek.com/image/77234/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Fusion Cells",
+      "transcription": "Add 1 to the Move value of all of your units.",
+      "classification": ["persistent"],
+      "timing": "Continuous while face up.",
+      "duration": "Until removed from play.",
+      "source": { "local_image": "components/decks/military-research-02.jpg", "web": "https://boardgamegeek.com/image/1144376/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "X-Fighters",
+      "transcription": "Place the 2 black X-fighter pieces on this card. You may deploy an X-fighter instead of a unit from your branch (but not instead of a Guard unit). Remove destroyed X-fighters from the game. (Discard this card after both are destroyed.)\nMove: 6 (fly)   Defense: 5   Damage: 2",
+      "classification": ["immediate", "persistent", "conditional", "one-use/discard"],
+      "timing": "Place both pieces on the card immediately; each may be deployed during a legal deploy in place of a branch unit.",
+      "duration": "Until both X-Fighters are destroyed, then discard.",
+      "source": { "local_image": "components/decks/military-research-02.jpg", "web": "https://boardgamegeek.com/image/1144376/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Molecular Cannon",
+      "transcription": "Use on any of your turns at the start of a battle involving your units. DISCARD THIS CARD AFTER USE. Roll 1 die. The monster takes that much damage and immediately appears on one of its lairs (your choice).",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "Start of a battle involving your units, on any of your turns.",
+      "duration": "Resolved immediately before normal battle resolution.",
+      "source": { "local_image": "components/decks/military-research-02.jpg", "web": "https://boardgamegeek.com/image/1144376/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "2nd Generation",
+      "transcription": "You can deploy 1 extra unit each turn (from your branch or from the National Guard).",
+      "classification": ["persistent"],
+      "timing": "During each of your Deploy steps while face up.",
+      "duration": "Until removed from play.",
+      "source": { "local_image": "components/decks/military-research-02.jpg", "web": "https://boardgamegeek.com/image/1144376/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Blonde Lure",
+      "transcription": "Use on any of your turns. DISCARD THIS CARD AFTER USE. Choose a monster and a space adjacent to it. If it is able to, that monster must end its move on that space during its next turn.",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "Any of your turns; constrains the chosen monster's next turn if movement is possible.",
+      "duration": "Until the chosen monster completes its next Move step or cannot comply.",
+      "source": { "local_image": "components/decks/military-research-02.jpg", "web": "https://boardgamegeek.com/image/1144376/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Anti-Mutagen",
+      "transcription": "At the start of any battle involving your units, the monster loses 1 Health for each Mutation card it has.",
+      "classification": ["persistent", "conditional"],
+      "timing": "Start of any battle involving your units.",
+      "duration": "Resolved at each qualifying battle while face up.",
+      "source": { "local_image": "components/decks/military-research-02.jpg", "web": "https://boardgamegeek.com/image/1144376/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Antimatter",
+      "transcription": "Use on any of your turns at the start of a battle involving your units. DISCARD THIS CARD AFTER USE. Military units deal double damage in the first combat round. Each time the monster is damaged this way, roll 1 die. The monster mutates on a roll of 1.",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "Start of a battle involving your units, on any of your turns.",
+      "duration": "First combat round of that battle.",
+      "source": { "local_image": "components/decks/military-research-03.jpg", "web": "https://boardgamegeek.com/image/1144377/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Scientific Analysis",
+      "transcription": "At the start of any battle involving your units, the monster loses 1 Health.",
+      "classification": ["persistent", "conditional"],
+      "timing": "Start of any battle involving your units.",
+      "duration": "Resolved at each qualifying battle while face up.",
+      "source": { "local_image": "components/decks/military-research-03.jpg", "web": "https://boardgamegeek.com/image/1144377/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Chopper Lift",
+      "transcription": "Use on any of your turns. DISCARD THIS CARD AFTER USE. Roll 1 die. Move a monster up to that many spaces. It loses 1 Infamy. It cannot end this move on a space containing another piece, on a sea space, or on an unstomped city, base, or Infamy site.",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "Any of your turns.",
+      "duration": "Resolved immediately.",
+      "source": { "local_image": "components/decks/military-research-03.jpg", "web": "https://boardgamegeek.com/image/1144377/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Captain Colossal",
+      "transcription": "You control the Captain Colossal giant military unit. Place its piece on one of your bases and take its record tile. When Captain Colossal reaches 0 Health, remove it from the game. DISCARD THIS CARD AFTER USE.",
+      "classification": ["immediate", "one-use/discard"],
+      "timing": "Resolve immediately when drawn; discard after placing the unit and taking its tile.",
+      "duration": "The placed unit remains until it reaches 0 Health.",
+      "source": { "local_image": "components/decks/military-research-03.jpg", "web": "https://boardgamegeek.com/image/1144377/monsters-menace-america" },
+      "uncertainty": []
+    }
+  ],
+  "monster_mutation_cards": [
+    {
+      "name": "Fins and Gills",
+      "transcription": "You can cross water barriers.\n+1 Defense in a space with a water barrier.",
+      "classification": ["persistent", "conditional"],
+      "timing": "Continuous; the Defense modifier is conditional on the monster's space.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-01.jpg", "web": "https://boardgamegeek.com/image/77235/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Rampage",
+      "transcription": "You can move on the same turn you emerge from a lair.",
+      "classification": ["persistent", "conditional"],
+      "timing": "When emerging from a lair.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-01.jpg", "web": "https://boardgamegeek.com/image/77235/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Radiation Field",
+      "transcription": "Any time a military unit gets an attack roll of 1 against you, it destroys itself (you still draw Mutation cards, if applicable).",
+      "classification": ["persistent", "conditional"],
+      "timing": "Immediately after a military unit rolls 1 when attacking this monster.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-01.jpg", "web": "https://boardgamegeek.com/image/77235/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Atomic Recovery",
+      "transcription": "At the beginning of your turn, your Health returns to its starting value if it was lower.",
+      "classification": ["persistent", "conditional"],
+      "timing": "Beginning of your turn, if Health is below starting Health.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-01.jpg", "web": "https://boardgamegeek.com/image/77235/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Berserk",
+      "transcription": "Discard this card for 5 extra attacks at any time during a battle you're in.",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "Any time during a battle involving this monster.",
+      "duration": "For the five additional attacks granted by this use.",
+      "source": { "local_image": "components/decks/monster-mutation-01.jpg", "web": "https://boardgamegeek.com/image/77235/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "War Spikes",
+      "transcription": "Each of your hits deals 4 damage instead of 3.",
+      "classification": ["persistent"],
+      "timing": "Whenever this monster deals damage with a hit.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-01.jpg", "web": "https://boardgamegeek.com/image/77235/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Atomic Breath",
+      "transcription": "You get 1 extra attack in the first combat round of each battle.",
+      "classification": ["persistent", "conditional"],
+      "timing": "First combat round of each battle.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-02.jpg", "web": "https://boardgamegeek.com/image/1144378/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Iron Stomach",
+      "transcription": "Whenever you stomp a military base, you may gain 3 Health instead of 1 Infamy.",
+      "classification": ["persistent", "conditional"],
+      "timing": "When this monster stomps a military base.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-02.jpg", "web": "https://boardgamegeek.com/image/1144378/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Whip Tentacles",
+      "transcription": "Whenever you get an attack roll of 6, you immediately make 1 extra attack (you also smash, if applicable).",
+      "classification": ["persistent", "conditional"],
+      "timing": "Immediately after this monster rolls 6 for an attack.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-02.jpg", "web": "https://boardgamegeek.com/image/1144378/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "High-Octane Blood",
+      "transcription": "+1 Move\nDuring the Monster Challenge, you attack first even if you're not the challenger.",
+      "classification": ["persistent", "conditional"],
+      "timing": "Move modifier is continuous; attack-order effect applies during the Monster Challenge.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-02.jpg", "web": "https://boardgamegeek.com/image/1144378/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Son of a Monster",
+      "transcription": "Discard this card at any time during a battle you're in to get 2 extra attacks and 1 die of Health.",
+      "classification": ["conditional", "one-use/discard"],
+      "timing": "Any time during a battle involving this monster.",
+      "duration": "The attacks are immediate; the Health gained remains until later changed.",
+      "source": { "local_image": "components/decks/monster-mutation-03.jpg", "web": "https://boardgamegeek.com/image/1144379/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Winged Horror",
+      "transcription": "+1 Move\nYou now fly.",
+      "classification": ["persistent"],
+      "timing": "Continuous while face up.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-03.jpg", "web": "https://boardgamegeek.com/image/1144379/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Kinda Friendly",
+      "transcription": "You can move through spaces occupied by National Guard units. If you end your move on a space with any Guard units, return those units to the National Guard record tile without fighting them.",
+      "classification": ["persistent", "conditional"],
+      "timing": "During and immediately after this monster's movement involving National Guard units.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-03.jpg", "web": "https://boardgamegeek.com/image/1144379/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Laser Beam Eyes",
+      "transcription": "+2 to hit cruise missiles.",
+      "classification": ["persistent", "conditional"],
+      "timing": "When this monster attacks cruise missiles.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-03.jpg", "web": "https://boardgamegeek.com/image/1144379/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "Armored Scales",
+      "transcription": "+1 Defense\n-1 Move",
+      "classification": ["persistent"],
+      "timing": "Continuous while face up.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-04.jpg", "web": "https://boardgamegeek.com/image/1144380/monsters-menace-america" },
+      "uncertainty": []
+    },
+    {
+      "name": "It's a Robot!",
+      "transcription": "Each time a monster misses you during the Monster Challenge, it takes 1 damage from electrocution.",
+      "classification": ["persistent", "conditional"],
+      "timing": "Immediately after another monster misses this monster during the Monster Challenge.",
+      "duration": "While face up.",
+      "source": { "local_image": "components/decks/monster-mutation-04.jpg", "web": "https://boardgamegeek.com/image/1144380/monsters-menace-america" },
+      "uncertainty": []
+    }
+  ]
+}

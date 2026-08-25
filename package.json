@@ -1,0 +1,19 @@
+{
+  "name": "abominations-attack-america",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "catalogue:verify": "node scripts/generate-component-rules-catalogue.mjs",
+    "traceability:verify": "node scripts/verify-rules-traceability.mjs",
+    "dev": "npm --workspace @abominations/web run dev",
+    "dev:api": "npm --workspace @abominations/api run dev",
+    "build": "npm --workspace @abominations/web run build",
+    "build:api": "npm --workspace @abominations/api run build",
+    "typecheck": "npm run typecheck:web && npm run typecheck:api",
+    "typecheck:web": "npm --workspace @abominations/web run typecheck",
+    "typecheck:api": "npm --workspace @abominations/api run typecheck",
+    "test": "npm --workspace @abominations/game-engine run test && npm --workspace @abominations/api run test",
+    "prisma:generate": "npm --workspace @abominations/api run prisma:generate",
+    "prisma:push": "npm --workspace @abominations/api run prisma:push"
+  }
+}

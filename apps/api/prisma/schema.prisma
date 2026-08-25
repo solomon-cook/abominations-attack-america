@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoomStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum ParticipantRole {
+  PLAYER
+  SPECTATOR
+}
+
+model GameRoom {
+  id           String       @id @default(cuid())
+  code         String       @unique
+  status       RoomStatus   @default(WAITING)
+  maxPlayers   Int          @default(4)
+  version      Int          @default(0)
+  state        Json
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  completedAt  DateTime?
+  participants Participant[]
+  events       GameEvent[]
+  result       GameResult?
+}
+
+model Participant {
+  id           String            @id @default(cuid())
+  roomId       String
+  room         GameRoom          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  displayName  String
+  role         ParticipantRole
+  playerIndex  Int?
+  tokenHash    String            @unique
+  connectedAt  DateTime?
+  createdAt    DateTime          @default(now())
+  @@index([roomId, role])
+}
+
+model GameEvent {
+  id          String   @id @default(cuid())
+  roomId      String
+  room        GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  version     Int
+  actorId     String
+  type        String
+  payload     Json
+  createdAt   DateTime @default(now())
+  @@unique([roomId, version])
+  @@index([roomId, createdAt])
+}
+
+model GameResult {
+  id          String   @id @default(cuid())
+  roomId      String   @unique
+  room        GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  winnerId    String?
+  winnerName  String?
+  summary     Json
+  createdAt   DateTime @default(now())
+}

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "purpose": "Designated branch colours for generated top-down military sprites.",
+  "measurement_note": "These are project art-direction colours matched visually to the branch cards, not instrument-sampled reproductions of the physical plastic.",
+  "branches": {
+    "marines": {
+      "display_name": "Marines",
+      "colour_name": "coral red",
+      "hex": "#D9483F"
+    },
+    "air-force": {
+      "display_name": "Air Force",
+      "colour_name": "aviation yellow",
+      "hex": "#F2C230"
+    },
+    "army": {
+      "display_name": "Army",
+      "colour_name": "olive green",
+      "hex": "#647A2E"
+    },
+    "navy": {
+      "display_name": "Navy",
+      "colour_name": "deep blue",
+      "hex": "#1F78B4"
+    },
+    "national-guard": {
+      "display_name": "National Guard",
+      "colour_name": "safety orange",
+      "hex": "#E58A25"
+    }
+  }
+}
