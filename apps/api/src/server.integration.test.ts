@@ -78,3 +78,62 @@ test("API WebSocket and polling share revisioned room updates", async () => {
     await stop(child);
   }
 });
+
+test("bounded concurrent rooms fan out WebSocket and polling updates without cross-room state", async () => {
+  const port = 20000 + (process.pid % 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true" },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  const sockets: WebSocket[] = [];
+  try {
+    await waitForHealth(baseUrl);
+    const sessions = await Promise.all(Array.from({ length: 8 }, async (_, index) => {
+      const response = await fetch(`${baseUrl}/rooms`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ maxPlayers: 2 }) });
+      const created = await response.json() as { room: RoomPayload; token: string; participantId: string };
+      assert.equal(response.ok, true);
+      const spectatorResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/spectate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName: `Spectator ${index}` }) });
+      const spectator = await spectatorResponse.json() as { token: string };
+      assert.equal(spectatorResponse.ok, true);
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&token=${encodeURIComponent(created.token)}`);
+      sockets.push(socket);
+      const initialSocketPromise = nextWebSocketMessage(socket);
+      await new Promise<void>((resolve, reject) => { socket.once("open", () => resolve()); socket.once("error", reject); });
+      const initialSocketRoom = await initialSocketPromise;
+      const [polledHost, polledSpectator] = await Promise.all([
+        fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((result) => result.json()) as Promise<RoomPayload>,
+        fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(spectator.token)}`).then((result) => result.json()) as Promise<RoomPayload>,
+      ]);
+      assert.equal(initialSocketRoom.code, created.room.code);
+      assert.equal(polledHost.code, created.room.code);
+      assert.equal(polledSpectator.code, created.room.code);
+      assert.deepEqual(polledSpectator.state.setupState, polledHost.state.setupState);
+      return { ...created, socket, version: polledHost.version };
+    }));
+
+    const updated = await Promise.all(sessions.map(async (session) => {
+      const updatePromise = nextWebSocketMessage(session.socket);
+      const response = await fetch(`${baseUrl}/rooms/${session.room.code}/setup`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-room-token": session.token },
+        body: JSON.stringify({ expectedRevision: session.version, action: { type: "choose-monster", monsterId: "monster-1" } }),
+      });
+      assert.equal(response.ok, true);
+      const [socketRoom, polledRoom] = await Promise.all([
+        updatePromise,
+        fetch(`${baseUrl}/rooms/${session.room.code}/state?token=${encodeURIComponent(session.token)}&afterVersion=${session.version}`).then((result) => result.json()) as Promise<RoomPayload>,
+      ]);
+      assert.equal(socketRoom.code, session.room.code);
+      assert.equal(socketRoom.version, session.version + 1);
+      assert.equal(polledRoom.version, socketRoom.version);
+      assert.deepEqual(polledRoom.state.setupState, socketRoom.state.setupState);
+      return socketRoom;
+    }));
+    assert.equal(new Set(updated.map((room) => room.code)).size, sessions.length);
+  } finally {
+    for (const socket of sockets) socket.terminate();
+    await stop(child);
+  }
+});
