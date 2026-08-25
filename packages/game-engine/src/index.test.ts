@@ -2140,6 +2140,35 @@ test("Air Force Cruise Missile roll of one draws a face-up mutation card before 
   assert.equal(reloaded.decks.mutation.drawIndex, mutationResult!.state.decks.mutation.drawIndex);
 });
 
+test("a Cruise Missile mutation is active for later attacks in the same battle", () => {
+  let resolved: ReturnType<typeof applyCommand> | undefined;
+  for (let seed = 0; seed < 512 && !resolved; seed += 1) {
+    const state = createGame(2, seed);
+    state.currentPlayer = 0;
+    state.monsters[0].attacks = 1;
+    state.monsters[0].defense = 99;
+    state.monsters[0].health = 40;
+    const missile = state.units[5];
+    const laterUnit = state.units[0];
+    missile.location = state.monsters[0].location;
+    laterUnit.location = state.monsters[0].location;
+    missile.defense = 99;
+    laterUnit.defense = 99;
+    state.decks.mutation.order = ["Radiation Field", ...state.decks.mutation.order.filter((cardId) => cardId !== "Radiation Field")];
+    state.phase = "fight";
+    state.pendingBattles = [{ id: "cruise-sequencing-battle", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [missile.id, laterUnit.id] }];
+    state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "cruise-sequencing-battle" };
+    const candidate = applyCommand(state, { type: "resolve-fight", battleId: "cruise-sequencing-battle", targetUnitId: missile.id });
+    const attacks = candidate.eventPayload.attacks as Array<{ attackerId: string; roll: number; hit: boolean; modifiers: string[]; mutationCardId?: string }>;
+    const laterAttack = attacks.find((attack) => attack.attackerId === laterUnit.id && attack.modifiers.includes("Radiation Field: attacker destroyed on roll 1"));
+    const missileMutation = attacks.find((attack) => attack.attackerId === missile.id && attack.roll === 1 && attack.mutationCardId === "Radiation Field");
+    if (laterAttack && missileMutation) resolved = candidate;
+  }
+  assert.ok(resolved, "a deterministic seed should draw Radiation Field before a later unit attack");
+  assert.equal(resolved!.state.players[0].mutationCardIds.includes("Radiation Field"), true);
+  assert.equal((resolved!.eventPayload.attacks as Array<{ modifiers: string[] }>).some((attack) => attack.modifiers.includes("Radiation Field: attacker destroyed on roll 1")), true);
+});
+
 test("encounter rewards, trophy removal, health, mutation history, and stomp state survive save/reload and replay", () => {
   const state = createGame(2, 23);
   state.setupAssignments = [
