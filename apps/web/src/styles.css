@@ -90,3 +90,4 @@ html,body,#root{width:100%;max-width:100%;overflow-x:clip}main{width:100%}
 .game-screen .board-panel{overflow:visible}
 .game-screen .board-panel>.map{width:100%;height:auto;aspect-ratio:1.77646;min-height:0;flex:0 0 auto}
 .game-screen .board-action-bar{position:static}
+.board-unavailable{position:absolute;inset:12% 8%;z-index:5;display:grid;place-items:center;padding:24px;text-align:center;color:#f7e7c9;background:#1d1714e8;border:1px solid #d0b58a;border-radius:6px;font-weight:700}

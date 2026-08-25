@@ -8,17 +8,23 @@ import {
   type GameState,
   type HexKey,
   type BoardHex,
+  type BoardDefinition,
 } from "@abominations/game-engine";
 import { buildDisplayHexLayout } from "../board-layout";
 
-function boardForGame(game: GameState) {
-  return game.boardId === FULL_HONEYCOMB_BOARD.id && game.boardContentHash === FULL_HONEYCOMB_BOARD.contentHash
-    ? FULL_HONEYCOMB_BOARD
-    : DEVELOPMENT_BOARD;
+function boardForGame(game: GameState): BoardDefinition | undefined {
+  if (game.boardId === FULL_HONEYCOMB_BOARD.id && game.boardContentHash === FULL_HONEYCOMB_BOARD.contentHash) {
+    return FULL_HONEYCOMB_BOARD;
+  }
+  if (game.boardId === DEVELOPMENT_BOARD.id && game.boardContentHash === DEVELOPMENT_BOARD.contentHash) {
+    return DEVELOPMENT_BOARD;
+  }
+  return undefined;
 }
 
 function displayHexesForGame(game: GameState) {
   const board = boardForGame(game);
+  if (!board) return [];
   if (board.id === FULL_HONEYCOMB_BOARD.id) {
     return buildDisplayHexLayout(board).map(({ hex, left, top }) => ({
       hex,
@@ -84,7 +90,7 @@ type Props = {
 export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, onSelectUnit, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const board = boardForGame(game);
   const boardHexes = displayHexesForGame(game);
-  const boardIndex = buildBoardIndex(board);
+  const boardIndex = buildBoardIndex(board ?? DEVELOPMENT_BOARD);
   const displayByKey = new Map(boardHexes.map(({ hex, left, top }) => [hex.key, { left, top }]));
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
   const selectedDisplayPath = selectedUnitId ? selectedUnitPath : selectedPath;
@@ -101,6 +107,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
     .join(" ");
   return (
     <div className="hex-grid">
+      {!board && <div className="board-unavailable" role="alert">This match references an unavailable board version. The board is hidden until the matching board definition is loaded.</div>}
       {pathPoints && path.length > 1 && (
         <svg className="path-preview" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           <defs>
@@ -123,7 +130,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         const selectableUnit = game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id));
         const featureText = hex.features.map((feature) => feature.kind).join(", ");
         const neighbourText = (boardIndex.neighbours[placeKey] ?? [])
-          .map((neighbourKey) => board.hexes[neighbourKey]?.label ?? neighbourKey)
+          .map((neighbourKey) => board?.hexes[neighbourKey]?.label ?? neighbourKey)
           .join(", ");
         const occupantText = [
           ...game.monsters.filter((monster) => monster.location === placeKey).map((monster) => monster.name),

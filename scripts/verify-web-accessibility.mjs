@@ -19,6 +19,7 @@ const requiredSourceMarkers = [
   ["hex accessible names", /aria-label=\{`[\s\S]*\$\{displayName\}[\s\S]*hex \$\{hex\.key\}/],
   ["live match status", /aria-live=\"polite\" aria-label=\"Match status\"/],
   ["alert errors", /className=\"error\" role=\"alert\"/],
+  ["unknown board pins fail closed", /className=\"board-unavailable\" role=\"alert\"/],
   ["keyboard-native controls", /<button[\s\S]*onClick=/],
   ["decorative map stays separate from authoritative canvas", /className=\"map-canvas\"/],
   ["monster artwork", /\/assets\/monsters\/\$\{slug\}\.webp/],
