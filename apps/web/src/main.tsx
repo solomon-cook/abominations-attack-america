@@ -560,6 +560,13 @@ function App() {
   const runIrreversibleAction = (actionToRun: () => void, message: string) => {
     if (!confirmIrreversible || window.confirm(message)) actionToRun();
   };
+  const leaveRoomSafely = () => {
+    if (online && activeGame.phase !== "game-over") {
+      runIrreversibleAction(() => void leaveRoom(), "Leave this active match? Your seat will be marked disconnected.");
+      return;
+    }
+    void leaveRoom();
+  };
   const closeOnboarding = () => {
     setOnboardingOpen(false);
     localStorage.setItem("abominations-onboarding-seen", "1");
@@ -677,7 +684,7 @@ function App() {
         onRoomCodeChange={setRoomCode}
         onStartSession={(kind) => void startSession(kind)}
         onToggleReady={() => void toggleReady()}
-        onLeaveRoom={() => void leaveRoom()}
+        onLeaveRoom={leaveRoomSafely}
       />
       {settingsOpen && (
         <SettingsPanel largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} togglePreference={togglePreference} />
@@ -951,7 +958,7 @@ function App() {
                 guardDeploymentAvailable={guardDeploymentAvailable}
               />
             ) : activeGame.phase === "game-over" ? (
-              <TerminalSummary action={action} victoryType={activeGame.victoryType} online={online} onLeaveRoom={() => void leaveRoom()} onResetLocal={resetLocal} />
+              <TerminalSummary action={action} victoryType={activeGame.victoryType} online={online} onLeaveRoom={leaveRoomSafely} onResetLocal={resetLocal} />
             ) : (
               <button
                 disabled={!canAct}

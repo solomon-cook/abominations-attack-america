@@ -437,6 +437,7 @@ Useful source documents:
   - [P1] Add contextual rules help linked to the exact current decision.
 - [x] [P1] Clearly distinguish own pieces, allied branch pieces, enemy pieces, neutral units, active selections, and unavailable actions. (The stack inspector exposes semantic ownership labels and a text legend; unit controls expose selected/available state and disabled action labels, with textual ownership/legality retained independently of colour.)
   - [ ] [P1] Provide safe leave, concede, return-to-room, and rematch flows. (Safe Leave room now marks the participant disconnected when reachable, clears the local session, and returns to the lobby; concede, return-to-room after terminal state, and rematch still require explicit product/rules decisions.)
+    - [x] Confirm leaving an active online match before marking the seat disconnected; terminal return-to-lobby remains immediate. (`leaveRoomSafely` reuses the irreversible-action preference.)
     - [x] [P1] Provide terminal return and local rematch actions. (Completed online rooms expose Return to lobby; local terminal playtests expose Start another local playtest and reset through the same development setup path.)
 
 ### Milestone 11 acceptance
