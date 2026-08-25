@@ -11,7 +11,7 @@ import { ErrorReporter } from "./error-reporting.js";
 
 const port = Number(process.env.PORT ?? 8787);
 const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL;
-const allowDevelopmentFixture = process.env.ALLOW_DEVELOPMENT_FIXTURE === "true";
+const allowDevelopmentFixture = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEVELOPMENT_FIXTURE === "true";
 const store: RoomStore = allowDevelopmentFixture ? new MemoryRoomStore(true) : databaseUrl ? new PrismaRoomStore() : new MemoryRoomStore(false);
 const sockets = new Map<string, Map<WebSocket, string>>();
 const RATE_WINDOW_MS = 60_000;

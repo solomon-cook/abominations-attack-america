@@ -10,10 +10,11 @@ const mainSource = await readFile(resolve(root, "apps/web/src/main.tsx"), "utf8"
 const stylesheetSource = await readFile(resolve(root, "apps/web/src/styles.css"), "utf8");
 const required = [
   ["shared board resolver", /export function boardForGame/],
-  ["full-board ID and hash match", /game\.boardId === FULL_HONEYCOMB_BOARD\.id && game\.boardContentHash === FULL_HONEYCOMB_BOARD\.contentHash/],
-  ["development-board ID and hash match", /game\.boardId === DEVELOPMENT_BOARD\.id && game\.boardContentHash === DEVELOPMENT_BOARD\.contentHash/],
+  ["full-board ID, version, and hash match", /game\.boardId === FULL_HONEYCOMB_BOARD\.id && game\.boardVersion === FULL_HONEYCOMB_BOARD\.version && game\.boardContentHash === FULL_HONEYCOMB_BOARD\.contentHash/],
+  ["development-board ID, version, and hash match", /game\.boardId === DEVELOPMENT_BOARD\.id && game\.boardVersion === DEVELOPMENT_BOARD\.version && game\.boardContentHash === DEVELOPMENT_BOARD\.contentHash/],
   ["unknown pin is unavailable", /return undefined/],
   ["grid uses shared resolver", /import \{ boardForGame \} from "\.\.\/board-pin"/],
+  ["grid does not fall back to development topology", /const boardIndex = board \? buildBoardIndex\(board\) : undefined;/],
   ["full shell does not inherit development locations", /place: undefined,[\s\S]*developmentFixture: false/],
   ["phase actions use shared resolver", /import \{ boardForGame \} from "\.\.\/board-pin"/],
   ["Laser Fence uses resolved board edges", /const activeBoard = boardForGame\(activeGame\);[\s\S]*activeBoard\.edges/],

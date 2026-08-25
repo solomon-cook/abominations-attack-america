@@ -111,6 +111,8 @@ Useful source documents:
 - [x] [P0] Support multiple composable features on one hex. (`BoardHex.features` is a list; validator/index test covers a multi-feature hex)
   - [x] [P0] Create a generated lookup index and content hash for each immutable board version. (`buildBoardIndex`, `boardContentHash`)
 - [x] [P0] Pin board ID, version, ruleset version, and content hash when a match is created. (`createGame` stores all four immutable board pins; engine test covers them)
+- [x] [P0] Make every client-side board resolver require the complete immutable pin and never use the development topology for an unknown board. (`boardForGame` requires ID/version/hash; unknown matches render unavailable and the grid does not build a development-board neighbour index.)
+- [x] [P0] Prevent the development fixture switch from enabling sparse rooms in production. (`ALLOW_DEVELOPMENT_FIXTURE` is ignored when `NODE_ENV=production`; integration tests remain explicitly non-production.)
   - [x] [P0] Build structural validators for keys, coordinates, edges, reciprocity, neighbours, feature requirements, and source references. (`validateBoardDefinition` and board tests cover key/coordinate/source/edge/hash invariants)
 - [x] [P0] Make production validation fail for unresolved rule-bearing board fields. (Production validation rejects unresolved hexes; board test proves the development fixture is not production-ready)
   - [x] [P1] Report disconnected regions, isolated spaces, suspicious duplicates, disabled-only reachability, and feature counts for review. (`diagnoseBoard` and generated `docs/board-review-table.md`; board diagnostics regression test)

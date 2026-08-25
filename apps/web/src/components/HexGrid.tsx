@@ -1,6 +1,5 @@
 import {
   buildBoardIndex,
-  DEVELOPMENT_BOARD,
   FULL_HONEYCOMB_BOARD,
   locationIdToHexKey,
   locations,
@@ -82,7 +81,7 @@ type Props = {
 export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, onSelectUnit, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const board = boardForGame(game);
   const boardHexes = displayHexesForGame(game);
-  const boardIndex = buildBoardIndex(board ?? DEVELOPMENT_BOARD);
+  const boardIndex = board ? buildBoardIndex(board) : undefined;
   const displayByKey = new Map(boardHexes.map(({ hex, left, top }) => [hex.key, { left, top }]));
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
   const selectedDisplayPath = selectedUnitId ? selectedUnitPath : selectedPath;
@@ -121,7 +120,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         const unitLegal = legalUnitDestinations.has(placeKey);
         const selectableUnit = game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id));
         const featureText = hex.features.map((feature) => feature.kind).join(", ");
-        const neighbourText = (boardIndex.neighbours[placeKey] ?? [])
+        const neighbourText = (boardIndex?.neighbours[placeKey] ?? [])
           .map((neighbourKey) => board?.hexes[neighbourKey]?.label ?? neighbourKey)
           .join(", ");
         const occupantText = [
