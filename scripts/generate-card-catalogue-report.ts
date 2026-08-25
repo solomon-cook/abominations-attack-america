@@ -1,9 +1,19 @@
 import { writeFile } from "node:fs/promises";
-import { CARD_DATA_VERSION, CARD_DEFINITIONS, sourcedCardRule } from "../packages/game-engine/src/cards.js";
+import { CARD_DATA_VERSION, CARD_DEFINITIONS, sourcedCardRule, SOURCED_CARD_RULES } from "../packages/game-engine/src/cards.js";
 
 const reportPath = new URL("../docs/card-catalogue-report.md", import.meta.url);
 const available = CARD_DEFINITIONS.filter((card) => card.availability === "implemented");
 const gated = CARD_DEFINITIONS.filter((card) => card.availability === "source-gated");
+
+if (SOURCED_CARD_RULES.length !== CARD_DEFINITIONS.length) {
+  throw new Error(`Source rule coverage mismatch: ${SOURCED_CARD_RULES.length} rules for ${CARD_DEFINITIONS.length} cards.`);
+}
+for (const card of CARD_DEFINITIONS) {
+  const rule = sourcedCardRule(card.id);
+  if (!rule || rule.id !== card.id || !rule.transcription.trim() || !rule.timing.trim() || !rule.duration.trim() || rule.sourceRefs.length === 0 || !rule.effectsImplementation) {
+    throw new Error(`Card ${card.id} is missing complete source-backed rule metadata.`);
+  }
+}
 
 const lines = [
   "# Card catalogue report",

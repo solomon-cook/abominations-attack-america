@@ -348,6 +348,7 @@ Useful source documents:
   - [ ] [P1] Deck exhaustion, interrupted resolution, invalid targets, stacked effects, reconnect, and replay tests pass.
 - [ ] [P1] A card catalogue report shows zero unsupported cards in the selected production ruleset.
   - [x] Generate the explicit development-ruleset catalogue report and enumerate every source-gated card; production zero-unsupported status remains blocked until the gated effects and board are verified. (`docs/card-catalogue-report.md`, `npm run card-catalogue:verify`)
+  - [x] Fail catalogue generation when any inventoried card lacks complete transcription, timing, duration, source reference, or implementation status metadata.
 - [x] [P1] Hidden card and deck information cannot be recovered from room snapshots, events, or browser markup. (Projection and MemoryRoomStore tests cover opponent, spectator, event-log, and room-event redaction.)
 
 ## Milestone 10 — Monster Challenge, victory, and rematches
