@@ -51,27 +51,27 @@ export function LobbyPanel({
       </div>
       {!online && (
         <div className="lobby-actions">
-          <input value={displayName} onChange={(event) => onDisplayNameChange(event.target.value)} placeholder="Display name" />
+          <input aria-label="Display name" value={displayName} onChange={(event) => onDisplayNameChange(event.target.value)} placeholder="Display name" />
           <select aria-label="Player count" value={playerCount} onChange={(event) => onPlayerCountChange(Number(event.target.value) as 2 | 3 | 4)}>
             <option value="2">2 players</option>
             <option value="3">3 players</option>
             <option value="4">4 players</option>
           </select>
-          <input value={roomCode} onChange={(event) => onRoomCodeChange(event.target.value.toUpperCase())} placeholder="Room code" maxLength={6} />
-          <button onClick={() => onStartSession("create")}>Create</button>
-          <button onClick={() => onStartSession("join")}>Join</button>
-          <button className="subtle" onClick={() => onStartSession("spectate")}>Spectate</button>
+          <input aria-label="Room code" value={roomCode} onChange={(event) => onRoomCodeChange(event.target.value.toUpperCase())} placeholder="Room code" maxLength={6} />
+          <button type="button" onClick={() => onStartSession("create")}>Create</button>
+          <button type="button" onClick={() => onStartSession("join")}>Join</button>
+          <button type="button" className="subtle" onClick={() => onStartSession("spectate")}>Spectate</button>
         </div>
       )}
       {online && participant?.role === "player" && (
         <div className="lobby-actions">
-          <button className="ready-button" disabled={!setupComplete} onClick={onToggleReady}>
+          <button type="button" className="ready-button" disabled={!setupComplete} onClick={onToggleReady}>
             {participant.ready ? "Unready" : "Ready"}
           </button>
-          <button className="subtle" onClick={onLeaveRoom}>Leave room</button>
+          <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>
         </div>
       )}
-      {online && participant?.role === "spectator" && <button className="subtle" onClick={onLeaveRoom}>Leave room</button>}
+      {online && participant?.role === "spectator" && <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>}
       {error && <p className="error" role="alert">{error}</p>}
     </section>
   );
