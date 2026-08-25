@@ -559,7 +559,6 @@ export function createNationalGuardInventory(): NationalGuardInventory {
 
 /** Backwards-compatible alias for the explicitly non-production development fixture. */
 export const locations = DEVELOPMENT_LOCATIONS;
-const developmentBoardIndex = buildBoardIndex(DEVELOPMENT_BOARD);
 
 /** Resolve the immutable board selected by a match; never silently fall back to the fixture. */
 export function boardForState(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash">): BoardDefinition {
@@ -1013,7 +1012,7 @@ function effectiveMonsterMovement(state: Pick<GameState, "monsters" | "players">
   return monsterHasMutation(state, monster, "Winged Horror") ? "fly" : monster.movement;
 }
 
-function effectiveMonsterDefense(state: Pick<GameState, "monsters" | "players">, monster: Monster, board: BoardDefinition = DEVELOPMENT_BOARD): number {
+function effectiveMonsterDefense(state: Pick<GameState, "monsters" | "players" | "boardId" | "boardVersion" | "boardContentHash">, monster: Monster, board = boardForState(state)): number {
   const hasWaterBarrier = isHexKey(monster.location) && board.edges.some((edge) => edge.enabled && edge.to === monster.location && (edge.barrier === "lake" || edge.barrier === "sea"));
   return monster.defense
     + (monsterHasMutation(state, monster, "Armored Scales") ? 1 : 0)
@@ -1056,9 +1055,10 @@ function nextD6(state: GameState): number {
 }
 
 function developmentRetreatOptions(state: GameState, battle: PendingBattle, unitIds: readonly string[]): Record<string, readonly HexKey[]> {
+  const boardIndex = buildBoardIndex(boardForState(state));
   const options: Record<string, readonly HexKey[]> = {};
   for (const unitId of unitIds) {
-    options[unitId] = (developmentBoardIndex.neighbours[battle.location] ?? [])
+    options[unitId] = (boardIndex.neighbours[battle.location] ?? [])
       .filter((destination) => !state.monsters.some((monster) => monster.location === destination));
   }
   return options;
@@ -1514,7 +1514,7 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
       nextMonster.infamy -= 2;
       next.log.push(`${nextMonster.name} paid 2 Infamy to pass the Laser Fence.`);
     } else {
-      const adjacent = developmentBoardIndex.neighbours[battle.location] ?? [];
+      const adjacent = buildBoardIndex(boardForState(state)).neighbours[battle.location] ?? [];
       if (!destination || !adjacent.includes(destination) || next.monsters.some((candidate) => candidate.location === destination) || next.units.some((unit) => unit.location === destination)) {
         throw new GameDomainError("ILLEGAL_COMMAND", "Laser Fence retreat must end on an unoccupied adjacent space.");
       }
