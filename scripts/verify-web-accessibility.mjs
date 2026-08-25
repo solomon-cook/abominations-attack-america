@@ -31,6 +31,7 @@ const requiredSourceMarkers = [
   ["hover path preview", /onMouseEnter=\{\(\) => \(monsterLegal \|\| unitLegal\)/],
   ["cream die face textures", /\/assets\/dice\/d6-face-6\.webp/],
   ["authoritative die result label", /aria-label=\{`Roll \$\{index \+ 1\}: \$\{roll\}`\}/],
+  ["recorded encounter result", /aria-label="Recorded encounter result"/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 
@@ -44,6 +45,7 @@ const requiredStyleMarkers = [
   ["touch-drag board viewport", /\.map\{touch-action:none/],
   ["3D die transforms", /transform-style:preserve-3d/],
   ["reduced-motion dice", /\.combat-die \.die-cube\{animation:none\}/],
+  ["encounter result surface", /\.encounter-result\{/],
 ];
 for (const [label, marker] of requiredStyleMarkers) if (!marker.test(styles)) failures.push(`missing ${label}`);
 

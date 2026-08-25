@@ -268,7 +268,7 @@ Useful source documents:
 - [x] [P0] Feature tests cover every authored space category and multi-feature combination. (Development board tests cover city, military-base, Infamy-site, mutation-site, and Challenge-site categories; the board validator covers composable multi-feature hexes. Production-board coverage remains source-gated.)
 - [ ] [P0] Stomp-stack depletion declares exactly one challenger at the correct time.
 - [x] [P0] Trophy, Infamy, Health, mutation history, and stomp state survive save/reload and replay. (An encounter-to-trophy fixture serializes through `migrateGameState`, verifies each persisted field, and applies the same trophy command after reload with byte-equivalent resulting state.)
-- [ ] [P1] Encounter UI exposes each reward, choice, cap, skipped effect, and resulting Challenge state.
+- [ ] [P1] Encounter UI exposes each reward, choice, cap, skipped effect, and resulting Challenge state. (Verified encounter rewards, choices, Stomp state, marker limits, no-effect/gated outcomes, and next phase now render from the authoritative event; resulting Monster Challenge state remains source-gated.)
 
 ## Milestone 8 — Deployment, National Guard, giant units, and research
 

@@ -52,6 +52,7 @@ import { TurnProgress } from "./components/TurnProgress";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
 import { HomeScreen } from "./components/HomeScreen";
+import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import "./styles.css";
 
 function supportsPlaytestBrowser(): boolean {
@@ -181,6 +182,13 @@ function App() {
         const modifiers = Array.isArray(attack.modifiers) ? attack.modifiers.filter((modifier): modifier is string => typeof modifier === "string") : [];
         return `${roll}: ${result}${modifiers.length ? ` (${modifiers.join(", ")})` : ""}`;
       })
+    : [];
+  const lastEncounterEvent = [...activeGame.eventLog].reverse().find((entry) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required"].includes(entry.action));
+  const encounterEffects = Array.isArray(lastEncounterEvent?.detail.effects)
+    ? lastEncounterEvent.detail.effects.filter((effect): effect is { type: string; amount: number; source: string } => Boolean(effect && typeof effect === "object" && typeof effect.type === "string" && typeof effect.amount === "number" && typeof effect.source === "string"))
+    : [];
+  const encounterChoices = Array.isArray(lastEncounterEvent?.detail.choices)
+    ? lastEncounterEvent.detail.choices.filter((choice): choice is string => typeof choice === "string")
     : [];
   const canSpendInfamyOnPendingBattle = Boolean(
     pendingBattle &&
@@ -920,6 +928,14 @@ function App() {
               lastFightEventId={lastFightEvent?.id}
               lastFightRolls={lastFightRolls}
               lastFightOutcomes={lastFightOutcomes}
+            />
+            <EncounterResultPanel
+              eventId={lastEncounterEvent?.id}
+              effects={encounterEffects}
+              choices={encounterChoices}
+              stomped={typeof lastEncounterEvent?.detail.stomped === "boolean" ? lastEncounterEvent.detail.stomped : undefined}
+              remainingStompMarkers={typeof lastEncounterEvent?.detail.remainingStompMarkers === "number" ? lastEncounterEvent.detail.remainingStompMarkers : undefined}
+              nextPhase={typeof lastEncounterEvent?.detail.nextPhase === "string" ? lastEncounterEvent.detail.nextPhase : undefined}
             />
             {activeGame.phase === "move" &&
             selectedUnitId &&
