@@ -491,7 +491,7 @@ Useful source documents:
 - [ ] [P1] Choose hosting only after documenting requirements for static web delivery, WebSockets, durable API compute, Postgres, secrets, and observability.
   - [x] [P1] Document hosting requirements and environment separation before provider selection. (`docs/deployment-requirements.md`; no provider or live environment is claimed.)
   - [P1] Create staging and production environments with separate data, secrets, URLs, and deployment safeguards.
-  - [P1] Add database migration, rollback, backup, and incompatible-match handling to the release process.
+  - [x] [P1] Document database migration, rollback, backup/restore, and incompatible-match handling. (`docs/release-operations.md`; actual managed-Postgres drill remains open.)
 - [ ] [P1] Verify production through real browser create/join/play/reconnect/spectate flows after deployment.
   - [P1] Complete final board-data, rules-fidelity, accessibility, content/IP, privacy, and security sign-offs.
   - [x] [P1] Prepare concise player rules, privacy information, known limitations, and release notes. (`docs/player-rules.md`, `docs/privacy.md`, `docs/known-limitations.md`, and `docs/release-notes.md`; public publication and support contact remain open.)
