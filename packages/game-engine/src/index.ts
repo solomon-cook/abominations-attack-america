@@ -265,8 +265,9 @@ export interface SpaceOccupants {
  * regular catalogue. National Guard record quantities are explicit, while
  * giant quantities and Guard control/placement remain source-gated.
  */
-export function validateInventoryAccounting(state: Pick<GameState, "monsters" | "units" | "nationalGuard" | "removedUnitIds" | "pendingBattles" | "movedPieceIds" | "pendingAttackTarget" | "pendingCombat">): string[] {
+export function validateInventoryAccounting(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "monsters" | "units" | "nationalGuard" | "removedUnitIds" | "pendingBattles" | "movedPieceIds" | "pendingAttackTarget" | "pendingCombat">): string[] {
   const errors: string[] = [];
+  const board = boardForState(state);
   errors.push(...sourceUnitInventoryErrors(state.units));
   errors.push(...sourceNationalGuardInventoryErrors(state.nationalGuard));
   const monsterIds = state.monsters.map((monster) => monster.id);
@@ -293,7 +294,7 @@ export function validateInventoryAccounting(state: Pick<GameState, "monsters" | 
     if (unit.location === "permanently-removed" && !removedSet.has(unit.id)) errors.push(`permanently-removed unit ${unit.id} is missing from removedUnitIds`);
   }
   for (const piece of [...state.monsters, ...state.units]) {
-    if (!toDevelopmentSpaceKey(piece.location) && !isHexKey(piece.location)) errors.push(`unknown position for piece ${piece.id}: ${piece.location}`);
+    if (!toDevelopmentSpaceKey(piece.location) && (!isHexKey(piece.location) || !board.hexes[piece.location])) errors.push(`unknown position for piece ${piece.id}: ${piece.location}`);
   }
   for (const battle of state.pendingBattles) {
     if (!monsterIds.includes(battle.monsterId)) errors.push(`battle ${battle.id} references missing monster ${battle.monsterId}`);
@@ -330,7 +331,7 @@ export function validateInventoryAccounting(state: Pick<GameState, "monsters" | 
   return [...new Set(errors)];
 }
 
-function assertInventoryAccounting(state: Pick<GameState, "monsters" | "units" | "nationalGuard" | "removedUnitIds" | "pendingBattles" | "movedPieceIds" | "pendingAttackTarget" | "pendingCombat">): void {
+function assertInventoryAccounting(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "monsters" | "units" | "nationalGuard" | "removedUnitIds" | "pendingBattles" | "movedPieceIds" | "pendingAttackTarget" | "pendingCombat">): void {
   const errors = validateInventoryAccounting(state);
   if (errors.length > 0) throw new GameDomainError("ILLEGAL_COMMAND", `Inventory invariant failed: ${errors.join("; ")}`);
 }

@@ -168,6 +168,9 @@ test("inventory accounting rejects structural identity and reference drift", () 
   const invalidPosition = structuredClone(state) as any;
   invalidPosition.units[0].location = "permanently-removed";
   assert.deepEqual(validateInventoryAccounting(invalidPosition), ["permanently-removed unit 0-0 is missing from removedUnitIds"]);
+  const invalidBoardPosition = structuredClone(state) as any;
+  invalidBoardPosition.monsters[0].location = "99,99";
+  assert.deepEqual(validateInventoryAccounting(invalidBoardPosition), ["unknown position for piece monster-1: 99,99"]);
   const missingRegularUnit = structuredClone(state) as any;
   missingRegularUnit.units = missingRegularUnit.units.filter((unit: { unitTypeId: string }) => unit.unitTypeId !== "army-tank").slice(0, -1);
   assert.equal(validateInventoryAccounting(missingRegularUnit).some((error) => error.startsWith("army-tank: expected 5")), true);
