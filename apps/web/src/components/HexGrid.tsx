@@ -45,17 +45,19 @@ type Props = {
   canAct: boolean;
   legalDestinations: ReadonlySet<HexKey>;
   legalUnitDestinations: ReadonlySet<HexKey>;
+  selectableUnitIds: ReadonlySet<string>;
   selectedUnitId: string | null;
   selectedPath: readonly HexKey[];
   selectedUnitPath: readonly HexKey[];
   acceptedPath: readonly HexKey[];
   acceptedPieceId?: string;
   acceptedAnimationKey?: number;
+  onSelectUnit: (unitId: string) => void;
   onChoosePath: (destination: HexKey) => void;
   onChooseUnitPath: (destination: HexKey) => void;
 };
 
-export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectedUnitId, selectedPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, onChoosePath, onChooseUnitPath }: Props) {
+export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, onSelectUnit, onChoosePath, onChooseUnitPath }: Props) {
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
   const path = selectedUnitId ? selectedUnitPath : selectedPath;
   const pathPoints = path
@@ -89,6 +91,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         const placeKey = hex.key;
         const monsterLegal = legalDestinations.has(placeKey);
         const unitLegal = legalUnitDestinations.has(placeKey);
+        const selectableUnit = game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id));
         const featureText = hex.features.map((feature) => feature.kind).join(", ");
         const neighbourText = (developmentBoardIndex.neighbours[placeKey] ?? [])
           .map((neighbourKey) => developmentHexes.find((candidate) => candidate.key === neighbourKey)?.label ?? neighbourKey)
@@ -106,12 +109,12 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         return (
           <button
             key={hex.key}
-            aria-label={`${displayName}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+            aria-label={`${displayName}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-hex-key={hex.key}
-            disabled={!place || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal)}
-            className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${placeKey === activePlayer?.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
+            disabled={!place || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit)}
+            className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${placeKey === activePlayer?.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%` }}
-            onClick={() => selectedUnitId ? onChooseUnitPath(placeKey) : onChoosePath(placeKey)}
+            onClick={() => selectableUnit && !monsterLegal && !unitLegal ? onSelectUnit(selectableUnit.id) : selectedUnitId ? onChooseUnitPath(placeKey) : onChoosePath(placeKey)}
           >
             <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />
             {boardArt && <img className="tile-art" src={boardArt} alt="" aria-hidden="true" loading="lazy" />}

@@ -397,6 +397,7 @@ Useful source documents:
     - [ ] [P0] Provide a focused setup screen before the match, then keep the active game view centred on the board/map once gameplay begins.
     - [ ] [P0] Make the in-game map draggable/pannable and zoomable, with the board remaining the primary centre-stage interaction surface.
     - [ ] [P0] Make movement and targeting begin by selecting a piece: highlight the selected piece and show a bottom-of-screen detail tray with its name, role, useful stats, and what it does.
+      - [x] Allow a movable owned or Guard-controlled unit to be selected directly from its board hex; the engine's legal-path selector remains the selection gate. (`HexGrid` uses `legalUnitPaths`-derived selectable IDs.)
       - [x] Show the selected military piece, source-backed movement/combat stats, path-preview state, and a deselect action in a board-bottom detail tray; selection remains parent-owned and authoritative. (`apps/web/src/components/SelectedPieceTray.tsx`; web typecheck/build pass.)
       - [ ] [P0] Show a live arrow/path preview that follows the pointer after selection, then let the player click the intended destination or target to confirm the choice.
         - [x] Draw the selected authoritative path as a visible arrow overlay over the honeycomb before confirmation; clearing the selection removes the preview. (`apps/web/src/components/HexGrid.tsx`; web typecheck/build and board-layout verification pass.)
@@ -414,7 +415,7 @@ Useful source documents:
     - [ ] [P0] Expand the bottom-left monster and military controls into lightbox-style detail views containing the key information without permanently covering the map.
       - [x] Provide dismissible detail views anchored above the status controls without covering the board by default. (`apps/web/src/components/PlayerStatusControls.tsx`; web typecheck/build pass.)
   - [P0] Render all board hexes, features, barriers, labels, and pieces from the authoritative board and match state.
-    - [x] Keep the candidate shell's landscape row geometry, pointy-top orientation, odd-row offset, and non-overlapping tile bounds deterministic and separate from rules coordinates. (`buildDisplayHexLayout`; verified by `npm run web-board-layout:verify`)
+    - [x] Keep the candidate shell's landscape row geometry, flat-top orientation, odd-row offset, and non-overlapping tile bounds deterministic and separate from rules coordinates. (`buildDisplayHexLayout`; verified by `npm run web-board-layout:verify`)
   - [x] [P0] Add pan, zoom, fit-to-board, reset-view, and focus-active-area controls. (Accessible board-view controls provide directional pan, bounded zoom, and Fit/reset in the browser; focus-active-area remains the current highlighted selection.)
 - [x] [P0] Make dense piece stacks selectable and show ownership, branch, Health, and status without obscuring the board. (The accessible Piece Stacks inspector lists occupied hexes and exposes every monster/unit detail without overlaying the board; source-gated fields remain labelled as unavailable.)
   - [P0] Show the active player, phase, current substep, pending decision, round, Stomp stack, and Challenge status persistently.

@@ -134,6 +134,10 @@ function App() {
     () => (selectedUnitId ? legalUnitPaths(activeGame, selectedUnitId) : []),
     [activeGame, selectedUnitId],
   );
+  const selectableUnitIds = useMemo(
+    () => new Set(activeGame.units.filter((unit) => legalUnitPaths(activeGame, unit.id).length > 0).map((unit) => unit.id)),
+    [activeGame],
+  );
   const legalUnitDestinations = useMemo(
     () => new Set(legalUnitPathsForSelection.map((path) => path.at(-1)!)),
     [legalUnitPathsForSelection],
@@ -751,12 +755,18 @@ function App() {
               canAct={canAct}
               legalDestinations={legalDestinations}
               legalUnitDestinations={legalUnitDestinations}
+              selectableUnitIds={selectableUnitIds}
               selectedUnitId={selectedUnitId}
               selectedPath={selectedPath}
               selectedUnitPath={selectedUnitPath}
               acceptedPath={acceptedMoveAnimation?.path ?? []}
               acceptedPieceId={acceptedMoveAnimation?.pieceId}
               acceptedAnimationKey={acceptedMoveAnimation?.key}
+              onSelectUnit={(unitId) => {
+                setSelectedUnitId(unitId);
+                setSelectedPath([]);
+                setSelectedUnitPath([]);
+              }}
               onChoosePath={choosePath}
               onChooseUnitPath={chooseUnitPath}
             />
