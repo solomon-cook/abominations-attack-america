@@ -11,6 +11,23 @@ This pack is the review boundary for promoting the photographed board into the M
 - [Generated 254-hex review table](board-review-table.md)
 - [Generated coordinate/photo comparison overlay](board-comparison-overlay.svg)
 
+## Supplementary public-source reconnaissance
+
+On 2026-08-26, additional publicly accessible setup photographs were reviewed as
+cross-checks, not as replacement rule authority:
+
+- [BoardGameGeek board close-up](https://boardgamegeek.com/image/201674/monsters-menace-america)
+- [Blugee setup photograph](https://blugee.com/cdn/shop/files/Monsters-Menace-America-Board-Game-2_898x600.jpg?v=1711114433)
+- [Independent setup photograph](https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rtYAAOSw9fVmDcjE/%24_3.JPG)
+
+These references independently support the broad filled-board silhouette, blue
+sea/coast boundary, green land field, and presence of printed city/site/base
+families. They are oblique or component-obscured and are not sufficiently aligned
+or legible to assign exact shell coordinates, water classes, barriers, or benefits.
+No rule-bearing datum is promoted from these images; they only increase confidence
+in the broad visual classification and identify the need for an unobscured,
+high-resolution top-down source or human physical-board review.
+
 The optimized WebP files are delivery copies for the browser. The original JPGs remain the source evidence and are not overwritten.
 
 ## Current evidence
