@@ -535,8 +535,8 @@ Useful source documents:
 **Priority:** P0 for first-playable checks; P1 for public release  
 **Depends on:** all release-scope milestones
 
-- [ ] [P0] Expand unit tests for board validators, setup invariants, every phase transition, and deterministic randomness.
-  - [P0] Add table-driven legal/illegal tests for movement, combat, encounters, deployment, and victory.
+- [x] [P0] Expand unit tests for board validators, setup invariants, every phase transition, and deterministic randomness. (Board/setup validators, phase transitions, seeded randomness, replay, and the cross-phase legality matrix are covered in the engine suite; physical-board validation remains source-gated.)
+  - [x] Add table-driven legal/illegal tests for movement, combat, encounters, deployment, and victory. (`table-driven command legality matrix rejects cross-phase and terminal actions` covers all five command families; scenario tests cover their legal and detailed invalid boundaries.)
   - [x] Add API/store contract tests shared by memory and Prisma implementations. (`apps/api/src/store.contract.test.ts` runs the same board-pin, projection-redaction, stale-revision, and idempotent-retry assertions against both public store implementations.)
 - [ ] [P0] Add end-to-end browser tests for local first playable and two-browser online play.
   - [x] Add fixed JSON contract fixtures for board keys, commands, events, errors, projections, and snapshots. (`contracts/development/*.json` is validated by `npm run contracts:verify` against the canonical development engine/API boundary; production board promotion remains source-gated.)

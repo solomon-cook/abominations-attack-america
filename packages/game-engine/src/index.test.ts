@@ -597,6 +597,17 @@ test("phase transitions expose and enforce the authoritative pending decision", 
   }
 });
 
+test("table-driven command legality matrix rejects cross-phase and terminal actions", () => {
+  const cases: Array<{ name: string; state: GameState; command: Parameters<typeof applyCommand>[1]; message: RegExp }> = [
+    { name: "movement during Deploy", state: (() => { const state = createGame(2); state.phase = "deploy"; state.pendingDecision = { type: "deployment", playerIndex: 0 }; return state; })(), command: { type: "move", path: [K("los-angeles"), K("denver")] }, message: /phase|decision|legal/ },
+    { name: "combat during Move", state: createGame(2), command: { type: "resolve-fight" }, message: /phase|decision|battle/ },
+    { name: "Encounter during Move", state: createGame(2), command: { type: "resolve-encounter" }, message: /phase|decision|Encounter/ },
+    { name: "deployment during Move", state: createGame(2), command: { type: "deploy" }, message: /phase|decision|Deploy/ },
+    { name: "action after victory", state: (() => { const state = createGame(2); state.phase = "game-over"; state.winnerPlayer = 0; state.victoryType = "development-stomp-exhaustion"; return state; })(), command: { type: "advance" }, message: /match is complete/ },
+  ];
+  for (const entry of cases) assert.throws(() => applyCommand(entry.state, entry.command), entry.message, entry.name);
+});
+
 test("command receipts record structured actor, action, outcome, and detail", () => {
   const result = applyCommandEnvelope(createGame(2), { actionId: "event-1", actorId: "player-1", expectedRevision: 0, protocolVersion: 1, command: { type: "move", path: ["los-angeles", "denver"] } }, 0);
   const entry = result.state.eventLog.at(-1);
