@@ -1180,6 +1180,30 @@ test("a defeated monster goes to Hollywood and recovers at the start of its next
   assert.equal(nextTurnResult.eventPayload.recoveryReleased, nextTurn.monsters[0].location !== "hollywood");
 });
 
+test("a rival military player draws Military Research when their attack sends a monster to Hollywood", () => {
+  const state = createGame(2, 7);
+  state.phase = "fight";
+  state.currentPlayer = 0;
+  state.monsters[0].health = 1;
+  state.monsters[0].attacks = 0;
+  const battleLocation = state.monsters[0].location as `${number},${number}`;
+  const unit = state.units[0];
+  unit.location = battleLocation;
+  unit.ownerPlayer = 1;
+  unit.defense = 99;
+  unit.attacks = 1;
+  unit.damage = 1;
+  state.pendingBattles = [{ id: "monster-1:1:research", monsterId: "monster-1", location: battleLocation, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "monster-1:1:research" };
+
+  const result = applyCommand(state, { type: "resolve-fight" });
+
+  assert.equal(result.state.monsters[0].location, "hollywood");
+  assert.equal(result.state.players[1].researchCardIds.length, 1);
+  assert.equal(typeof result.eventPayload.hollywoodResearchCardId, "string");
+  assert.equal(result.eventPayload.hollywoodResearchAwarded, true);
+});
+
 test("encounter stomps are persisted once and Infamy is capped", () => {
   let state = createGame(2);
   state.phase = "encounter";

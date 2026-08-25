@@ -795,6 +795,7 @@ interface FightResolution {
   attacks: readonly BattleAttack[];
   combatRounds: number;
   infamySpent: number;
+  hollywoodResearchCardId?: string;
 }
 
 export interface BattleAttack {
@@ -818,6 +819,18 @@ function drawMutationForMonster(state: GameState, monster: Monster): string | un
   state.decks.mutation = result.state;
   if (!result.cardId) return undefined;
   player.mutationCardIds.push(result.cardId);
+  return result.cardId;
+}
+
+function awardHollywoodResearch(state: GameState, controllerPlayer: number | undefined): string | undefined {
+  if (controllerPlayer === undefined || controllerPlayer === state.currentPlayer) return undefined;
+  const player = state.players[controllerPlayer];
+  if (!player) return undefined;
+  const result = drawCardFromDeck(state.decks.research);
+  state.decks.research = result.state;
+  if (!result.cardId) return undefined;
+  player.researchCardIds.push(result.cardId);
+  state.log.push(`Player ${controllerPlayer + 1} drew a Military Research card after sending a monster to Hollywood.`);
   return result.cardId;
 }
 
@@ -889,14 +902,16 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   const rolls = [...combat.rolls];
   const attacks = [...combat.attacks];
   const destroyedUnitIds = [...combat.destroyedUnitIds];
+  let hollywoodResearchCardId: string | undefined;
   let round = combat.round;
   let monsterAttackIndex = combat.monsterAttackIndex;
   let preMonsterResolved = combat.preMonsterResolved;
-  const sendToHollywood = () => {
+  const sendToHollywood = (controllerPlayer?: number) => {
     if (monster.health !== 0 || monster.location === "hollywood") return;
     monster.location = "hollywood";
     monster.infamy = 0;
     next.encounterSuppressed = true;
+    hollywoodResearchCardId = awardHollywoodResearch(next, controllerPlayer);
     next.log.push(`${monster.name} was defeated and went to Hollywood.`);
   };
   const performMonsterAttack = (target: MilitaryUnit) => {
@@ -927,7 +942,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
         const mutationCardId = unit.unitTypeId === "air-force-cruise-missile" && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
         attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: [], hit, smash, damage, destroyed, mutationCardId });
         next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${round}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}`);
-        sendToHollywood();
+        sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
       }
     }
   };
@@ -957,7 +972,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
       const destroyed = monster.health === 0;
       attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster"], hit, smash, damage, destroyed });
       next.log.push(`${unit.branch} missile launcher attacked ${monster.name} before the monster in combat round 1: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).`);
-      sendToHollywood();
+      sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
     }
     preMonsterResolved = true;
   }
@@ -976,7 +991,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     }
     return false;
   };
-  if (runMonsterRemainder()) return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: round, infamySpent: combat.spendInfamy };
+  if (runMonsterRemainder()) return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: round, infamySpent: combat.spendInfamy, hollywoodResearchCardId };
   if (monster.health > 0) performCounterAttacks();
   if (round === 1) {
     for (const unit of next.units.filter((candidate) => pending.militaryUnitIds.includes(candidate.id) && candidate.location === pending.location && candidate.unitTypeId === "air-force-cruise-missile")) {
@@ -989,7 +1004,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   if (round === 1 && monster.health > 0 && survivingTargets.length > 0) {
     round = 2;
     monsterAttackIndex = 0;
-    if (requestNextTarget(survivingTargets, monster.attacks)) return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: 1, infamySpent: combat.spendInfamy };
+    if (requestNextTarget(survivingTargets, monster.attacks)) return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: 1, infamySpent: combat.spendInfamy, hollywoodResearchCardId };
     while (monsterAttackIndex < monster.attacks && monster.health > 0) {
       const target = liveTargets()[0];
       if (!target) break;
@@ -1011,7 +1026,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     next.pendingBattles = next.pendingBattles.filter((battle) => battle.id !== pending.id);
     finishBattleQueue(next);
   }
-  return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: 2, infamySpent: combat.spendInfamy };
+  return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: 2, infamySpent: combat.spendInfamy, hollywoodResearchCardId };
 }
 
 function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0, preferredTargetId?: string): FightResolution {
@@ -1028,11 +1043,13 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
   if (!Number.isInteger(spendInfamy) || spendInfamy < 0 || spendInfamy > monster.infamy) throw new GameDomainError("ILLEGAL_COMMAND", "A monster cannot spend more Infamy than it currently has.");
   monster.infamy -= spendInfamy;
   next.pendingAttackTarget = undefined;
-  const sendToHollywood = () => {
+  let hollywoodResearchCardId: string | undefined;
+  const sendToHollywood = (controllerPlayer?: number) => {
     if (monster.health !== 0 || monster.location === "hollywood") return;
     monster.location = "hollywood";
     monster.infamy = 0;
     next.encounterSuppressed = true;
+    hollywoodResearchCardId = awardHollywoodResearch(next, controllerPlayer);
     next.log.push(`${monster.name} was defeated and went to Hollywood.`);
   };
   sendToHollywood();
@@ -1054,7 +1071,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           const destroyed = monster.health === 0;
           attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster"], hit, smash, damage, destroyed });
           next.log.push(`${unit.branch} missile launcher attacked ${monster.name} before the monster in combat round 1: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).`);
-          sendToHollywood();
+          sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
         }
       }
       const survivingTargets = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
@@ -1097,7 +1114,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           const mutationCardId = unit.unitTypeId === "air-force-cruise-missile" && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
           attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: [], hit, smash, damage, destroyed, mutationCardId });
           next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${combatRound}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}`);
-          sendToHollywood();
+          sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
         }
       }
       if (combatRound === 1) {
@@ -1124,7 +1141,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
       : [];
     finishBattleQueue(next);
   }
-  return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: targets.length > 0 ? 2 : 0, infamySpent: spendInfamy };
+  return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: targets.length > 0 ? 2 : 0, infamySpent: spendInfamy, hollywoodResearchCardId };
 }
 
 export interface EncounterResolution {
@@ -1504,7 +1521,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       if (!selectedUnit || !selectedBattle || selectedUnit.location !== selectedBattle.location) throw new Error("That battle target is no longer present.");
       const result = resolvePendingMultiTargetFight(state, command.targetUnitId);
       const eventType = result.state.pendingAttackTarget ? "battle.target-required" : "fight.resolved";
-      const eventPayload = { battleId: attackDecision.battleId, targetUnitId: command.targetUnitId, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, nextPhase: result.state.phase, nextDecision: result.state.pendingDecision };
+      const eventPayload = { battleId: attackDecision.battleId, targetUnitId: command.targetUnitId, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, hollywoodResearchCardId: result.hollywoodResearchCardId, hollywoodResearchAwarded: Boolean(result.hollywoodResearchCardId), nextPhase: result.state.phase, nextDecision: result.state.pendingDecision };
       return { state: appendEvent(result.state, eventType, eventPayload), eventType, eventPayload };
     }
     requireDecision("battle-resolution");
@@ -1528,7 +1545,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       }
     }
     const result = resolveFightResult(state, command.type === "resolve-fight" ? command.battleId : undefined, command.type === "resolve-fight" ? command.spendInfamy ?? 0 : 0, command.type === "resolve-fight" ? command.targetUnitId : undefined);
-    const eventPayload = { battleId: command.type === "resolve-fight" ? command.battleId : state.pendingBattles[0]?.id, targetUnitId: command.type === "resolve-fight" ? command.targetUnitId : undefined, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, nextPhase: result.state.phase };
+    const eventPayload = { battleId: command.type === "resolve-fight" ? command.battleId : state.pendingBattles[0]?.id, targetUnitId: command.type === "resolve-fight" ? command.targetUnitId : undefined, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, hollywoodResearchCardId: result.hollywoodResearchCardId, hollywoodResearchAwarded: Boolean(result.hollywoodResearchCardId), nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "fight.resolved", eventPayload), eventType: "fight.resolved", eventPayload };
   }
   if (state.phase === "encounter" && (command.type === "resolve-encounter" || command.type === "advance")) {

@@ -962,6 +962,7 @@ function App() {
               lastFightEventId={lastFightEvent?.id}
               lastFightRolls={lastFightRolls}
               lastFightOutcomes={lastFightOutcomes}
+              hollywoodResearchAwarded={lastFightEvent?.detail.hollywoodResearchAwarded === true}
               lastRecoveryEventId={lastRecoveryEvent?.id}
               lastRecoveryRoll={typeof lastRecoveryEvent?.detail.recoveryRoll === "number" ? lastRecoveryEvent.detail.recoveryRoll : undefined}
               lastRecoveryReleased={lastRecoveryEvent?.detail.recoveryReleased === true}

@@ -235,7 +235,7 @@ Useful source documents:
 
 - [x] [P0] Deterministic combat fixtures cover misses, hits, smashes, sequential targeting, mutations, destruction, retreat, and no-retreat disappearance. (Seeded fixtures now explicitly cover the first four outcomes; existing mutation, destruction, retreat, and forced-disappearance fixtures complete the development combat boundary.)
 - [x] [P0] A full normal battle can be completed through commands without automatic hidden choices. (Development multi-unit battles persist each attack target, round, attack number, accumulated rolls, destruction list, and Infamy spend across commands and refresh-compatible state; engine and API regression tests cover completion and continuation. Challenge/full-board source gates remain explicit blockers.)
-- [ ] [P1] Hollywood entry, recovery, release, rewards, and restrictions match the rules reference.
+- [x] [P1] Hollywood entry, recovery, release, rewards, and restrictions match the rules reference. (Development engine now sends defeated pre-Challenge monsters to Hollywood, discards Infamy, awards the rival military controller one Research card, rolls automatic recovery, releases at 5+ Health with Los Angeles/lair fallback, consumes Move, and rejects disappearance; full-board/Challenge exceptions remain separately source-gated.)
 - [x] [P1] The UI and event log identify actor, target, roll, modifiers, damage, destruction, and next required decision. (Structured `fight.resolved` events carry attack-level details and next phase; the web event log renders expandable detail)
 
 ## Milestone 7 — Encounters, stomping, sites, and board rewards

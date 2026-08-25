@@ -9,12 +9,13 @@ type Props = {
   lastFightEventId?: string;
   lastFightRolls: readonly number[];
   lastFightOutcomes: readonly string[];
+  hollywoodResearchAwarded?: boolean;
   lastRecoveryEventId?: string;
   lastRecoveryRoll?: number;
   lastRecoveryReleased?: boolean;
 };
 
-export function TurnPrompt({ actionHeadingRef, action, description, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes, lastRecoveryEventId, lastRecoveryRoll, lastRecoveryReleased }: Props) {
+export function TurnPrompt({ actionHeadingRef, action, description, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes, hollywoodResearchAwarded, lastRecoveryEventId, lastRecoveryRoll, lastRecoveryReleased }: Props) {
   return (
     <>
       <span className="label">CURRENT STEP</span>
@@ -38,6 +39,7 @@ export function TurnPrompt({ actionHeadingRef, action, description, unavailableR
             </span>)}
           </div>
           {lastFightOutcomes.length > 0 && <ul className="combat-outcomes">{lastFightOutcomes.map((outcome, index) => <li key={`${lastFightEventId}-outcome-${index}`}>{outcome}</li>)}</ul>}
+          {hollywoodResearchAwarded && <small>A rival player drew one Military Research card for sending the monster to Hollywood.</small>}
           <small>Recorded by the authoritative fight result; the animation is presentation only.</small>
         </div>
       )}
