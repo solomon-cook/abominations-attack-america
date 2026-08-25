@@ -221,6 +221,14 @@ export interface PendingRetreat {
   readonly battleId: string;
   readonly unitIds: readonly string[];
   readonly options: Readonly<Record<string, readonly HexKey[]>>;
+  /** Player whose units forced the retreat and therefore earns Research. */
+  readonly researchPlayerIndex?: number;
+}
+
+function retreatResearchPlayer(state: GameState, unitIds: readonly string[]): number | undefined {
+  return unitIds
+    .map((unitId) => state.units.find((unit) => unit.id === unitId)?.ownerPlayer)
+    .find((ownerPlayer) => ownerPlayer === state.currentPlayer);
 }
 
 export interface SpaceOccupants {
@@ -822,16 +830,21 @@ function drawMutationForMonster(state: GameState, monster: Monster): string | un
   return result.cardId;
 }
 
-function awardHollywoodResearch(state: GameState, controllerPlayer: number | undefined): string | undefined {
-  if (controllerPlayer === undefined || controllerPlayer === state.currentPlayer) return undefined;
-  const player = state.players[controllerPlayer];
+function drawResearchCardForPlayer(state: GameState, playerIndex: number): string | undefined {
+  const player = state.players[playerIndex];
   if (!player) return undefined;
   const result = drawCardFromDeck(state.decks.research);
   state.decks.research = result.state;
   if (!result.cardId) return undefined;
   player.researchCardIds.push(result.cardId);
-  state.log.push(`Player ${controllerPlayer + 1} drew a Military Research card after sending a monster to Hollywood.`);
   return result.cardId;
+}
+
+function awardHollywoodResearch(state: GameState, controllerPlayer: number | undefined): string | undefined {
+  if (controllerPlayer === undefined || controllerPlayer === state.currentPlayer) return undefined;
+  const cardId = drawResearchCardForPlayer(state, controllerPlayer);
+  if (cardId) state.log.push(`Player ${controllerPlayer + 1} drew a Military Research card after sending a monster to Hollywood.`);
+  return cardId;
 }
 
 function nextD6(state: GameState): number {
@@ -1018,7 +1031,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   next.pendingAttackTarget = undefined;
   if (survivingUnitIds.length > 0) {
     pending.militaryUnitIds = survivingUnitIds;
-    next.pendingRetreat = { battleId: pending.id, unitIds: survivingUnitIds, options: developmentRetreatOptions(next, pending, survivingUnitIds) };
+    next.pendingRetreat = { battleId: pending.id, unitIds: survivingUnitIds, options: developmentRetreatOptions(next, pending, survivingUnitIds), researchPlayerIndex: retreatResearchPlayer(next, survivingUnitIds) };
     next.phase = "fight";
     next.pendingDecision = { type: "retreat", playerIndex: next.currentPlayer, battleId: pending.id, unitIds: survivingUnitIds };
     next.log.push(`${survivingUnitIds.length} military unit${survivingUnitIds.length === 1 ? " requires" : "s require"} retreat after the normal battle.`);
@@ -1131,7 +1144,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
     : [];
   if (pending && survivingUnitIds.length > 0) {
     pending.militaryUnitIds = survivingUnitIds;
-    next.pendingRetreat = { battleId: pending.id, unitIds: survivingUnitIds, options: developmentRetreatOptions(next, pending, survivingUnitIds) };
+    next.pendingRetreat = { battleId: pending.id, unitIds: survivingUnitIds, options: developmentRetreatOptions(next, pending, survivingUnitIds), researchPlayerIndex: retreatResearchPlayer(next, survivingUnitIds) };
     next.phase = "fight";
     next.pendingDecision = { type: "retreat", playerIndex: next.currentPlayer, battleId: pending.id, unitIds: survivingUnitIds };
     next.log.push(`${survivingUnitIds.length} military unit${survivingUnitIds.length === 1 ? " requires" : "s require"} retreat after the normal battle.`);
@@ -1507,8 +1520,10 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     next.pendingBattles = next.pendingBattles.filter((battle) => battle.id !== retreat.battleId);
     next.pendingRetreat = undefined;
     next.encounterSuppressed = true;
+    const researchCardId = retreat.researchPlayerIndex === undefined ? undefined : drawResearchCardForPlayer(next, retreat.researchPlayerIndex);
+    if (researchCardId) next.log.push(`Player ${retreat.researchPlayerIndex! + 1} drew a Military Research card after forcing the monster to retreat.`);
     finishBattleQueue(next);
-    const eventPayload = { battleId: retreat.battleId, destinations: command.destinations, disappearedUnitIds: disappearedIds, nextPhase: next.phase };
+    const eventPayload = { battleId: retreat.battleId, destinations: command.destinations, disappearedUnitIds: disappearedIds, researchCardId, researchAwarded: Boolean(researchCardId), nextPhase: next.phase };
     return { state: appendEvent(next, "retreat.resolved", eventPayload), eventType: "retreat.resolved", eventPayload };
   }
   if (state.phase === "fight" && (command.type === "resolve-fight" || command.type === "advance")) {

@@ -961,6 +961,8 @@ test("surviving normal battle requires retreat and suppresses Encounter", () => 
   assert.equal(retreated.eventType, "retreat.resolved");
   assert.equal(retreated.state.encounterSuppressed, true);
   assert.equal(retreated.state.pendingRetreat, undefined);
+  assert.equal(retreated.eventPayload.researchAwarded, true);
+  assert.equal(retreated.state.players[0].researchCardIds.length, 1);
   assert.ok(retreated.state.phase === "deploy" || retreated.state.phase === "fight");
   if (retreated.state.phase === "deploy") {
     const nextTurn = applyCommand(retreated.state, { type: "pass-deploy" });
