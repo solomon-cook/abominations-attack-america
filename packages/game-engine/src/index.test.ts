@@ -355,6 +355,18 @@ test("Scientific Analysis and Anti-Mutagen resolve at battle start", () => {
   assert.equal(result.state.log.some((entry) => /Scientific Analysis and Anti-Mutagen/.test(entry)), true);
 });
 
+test("Defense Satellites discards and resolves one deterministic roll per board monster", () => {
+  const state = createGame(2, 0);
+  state.players[0].researchCardIds = ["Defense Satellites"];
+  const startingHealth = state.monsters.map((monster) => monster.health);
+  const result = applyCommand(state, { type: "use-research", cardId: "Defense Satellites" });
+  assert.deepEqual(result.state.players[0].researchCardIds, []);
+  assert.deepEqual(result.state.decks.research.discard, ["Defense Satellites"]);
+  assert.equal((result.eventPayload.rolls as number[]).length, 2);
+  assert.deepEqual(result.state.monsters.map((monster) => monster.health < startingHealth[Number(monster.id.split("-")[1]) - 1]), [true, true]);
+  assert.equal(result.eventType, "research.used");
+});
+
 test("a monster may spend Infamy for one recorded extra attack before combat rolls", () => {
   const state = createGame(2, 0);
   const monster = state.monsters[0];
@@ -393,6 +405,7 @@ test("source-inventoried cards have versioned structured metadata without guesse
   assert.equal(cardDefinition("Berserk")?.availability, "implemented");
   assert.deepEqual(unsupportedCardIds(["Guard Commander"]), []);
   assert.deepEqual(unsupportedCardIds(MONSTER_MUTATION_CARD_IDS), []);
+  assert.deepEqual(unsupportedCardIds(["Defense Satellites"]), []);
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Berserk"]), []);
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Mecha-Monster"]), ["Mecha-Monster"]);
   assert.throws(() => assertCardsAvailable(["Mecha-Monster"]), /source-gated/);
@@ -403,7 +416,7 @@ test("source-inventoried cards have versioned structured metadata without guesse
     timing: "Continuous while face up.",
     duration: "Until removed from play.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-01.jpg"],
-    effectsImplementation: "source-gated",
+    effectsImplementation: "implemented",
   });
   assert.equal(cardDefinition("not-a-card"), undefined);
 });

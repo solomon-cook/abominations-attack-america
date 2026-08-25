@@ -46,12 +46,16 @@ export function PhaseActions({
       {optionalMutationCards.map((cardId) => <button key={cardId} disabled={!canAct} onClick={() => void runCommand({ type: "use-mutation", cardId, battleId })}>{cardId === "Berserk" ? "Berserk · +5 attacks" : "Son of a Monster · +2 attacks and d6 Health"}</button>)}
     </div>
   ) : null;
+  const defenseSatellitesButton = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Defense Satellites") ? (
+    <button disabled={!canAct || activeGame.pendingBattles.length > 0 || Boolean(activeGame.pendingRetreat)} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Use Defense Satellites · roll for each monster</button>
+  ) : null;
 
   if (activeGame.phase === "fight" && pendingAttackTarget) {
     return (
       <div className="battle-choice" aria-label="Choose the monster attack target">
         <p>{pendingAttackPrompt}</p>
         {mutationButtons(pendingAttackTarget.battleId)}
+        {defenseSatellitesButton}
         {pendingAttackTarget.targetIds.map((unitId) => {
           const unit = activeGame.units.find((candidate) => candidate.id === unitId);
           return <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingAttackTarget.battleId, targetUnitId: unitId })}>Attack {unit?.branch ?? unitId} ({unit?.unitTypeId ?? "unit"})</button>;
@@ -63,6 +67,7 @@ export function PhaseActions({
   if (activeGame.phase === "fight" && activeGame.pendingDecision?.type === "retreat" && activeGame.pendingRetreat) {
     return (
       <div className="retreat-choice" aria-label="Choose retreat destinations">
+        {defenseSatellitesButton}
         {activeGame.pendingRetreat.unitIds.map((unitId) => {
           const unit = activeGame.units.find((candidate) => candidate.id === unitId);
           const options = activeGame.pendingRetreat?.options[unitId] ?? [];
@@ -82,6 +87,7 @@ export function PhaseActions({
 
   if (activeGame.phase === "fight" && activeGame.pendingBattles.length > 1) {
     return <div className="battle-choice" aria-label="Choose battle resolution order">
+      {defenseSatellitesButton}
       {activeGame.pendingBattles.map((battle) => {
         const monster = activeGame.monsters.find((candidate) => candidate.id === battle.monsterId);
         return <div key={battle.id}>
@@ -96,6 +102,7 @@ export function PhaseActions({
     return <div className="battle-choice" aria-label="Choose whether to spend Infamy on this battle">
       <p>Choose whether to spend one Infamy for an additional monster attack this round.</p>
       {mutationButtons(pendingBattle.id)}
+      {defenseSatellitesButton}
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}>Resolve without spending Infamy</button>
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>
     </div>;
@@ -103,6 +110,7 @@ export function PhaseActions({
 
   if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "trophy-choice") {
     return <div className="battle-choice" aria-label="Choose a military trophy">
+      {defenseSatellitesButton}
       <p>Player {activeGame.pendingDecision.playerIndex + 1}, choose one {activeGame.pendingDecision.branch} unit as the monster&apos;s trophy.</p>
       {activeGame.pendingDecision.unitIds.map((unitId) => {
         const unit = activeGame.units.find((candidate) => candidate.id === unitId);
@@ -113,6 +121,7 @@ export function PhaseActions({
 
   if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "encounter-choice") {
     return <div className="battle-choice" aria-label="Choose Zorb city benefit">
+      {defenseSatellitesButton}
       {activeGame.pendingDecision.choices.map((choice) => <button key={choice} disabled={!canAct} onClick={() => void runCommand({ type: "resolve-encounter", choice })}>{choice === "health" ? "Take the city Health benefit" : "Take 2 Infamy instead"}</button>)}
     </div>;
   }
@@ -126,6 +135,7 @@ export function PhaseActions({
       ? activeGame.units.flatMap((unit) => legalOwnedRedeploymentDestinations(activeGame, unit.id).map((destination) => ({ unit, destination })))
       : [];
     return <div className="path-controls">
+      {defenseSatellitesButton}
       <button disabled={!canAct || !ownDeploymentAvailable} onClick={() => void runCommand({ type: "deploy" })}>{ownDeploymentAvailable ? "Deploy one unit" : "No owned deployment available"}</button>
       {availableGuardUnitId && guardDeploymentDestination && <button disabled={!canAct || !guardDeploymentAvailable} onClick={() => void runCommand({ type: "deploy", unitId: availableGuardUnitId, destination: guardDeploymentDestination })}>Deploy Guard to {getLocationName(guardDeploymentDestination)}</button>}
       {redeploymentChoices.length > 0 && <div className="battle-choice" aria-label="Choose unit redeployment">
@@ -137,5 +147,6 @@ export function PhaseActions({
     </div>;
   }
 
+  if (defenseSatellitesButton) return <div className="path-controls" aria-label="Available Military Research">{defenseSatellitesButton}</div>;
   return null;
 }

@@ -58,7 +58,7 @@ export interface SourcedCardRule {
   readonly timing: string;
   readonly duration: string;
   readonly sourceRefs: readonly string[];
-  readonly effectsImplementation: "source-gated";
+  readonly effectsImplementation: CardAvailability;
 }
 
 const catalogue = "references/monsters-menace-america/component-rules-catalogue.json";
@@ -78,7 +78,7 @@ const implementedCardIds = new Set<string>([
   "Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "War Spikes", "Atomic Breath",
   "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Son of a Monster", "Berserk", "Winged Horror", "Kinda Friendly",
   "Laser Beam Eyes", "Armored Scales", "It's a Robot!", "Guard Commander", "Fusion Cells",
-  "2nd Generation", "Anti-Mutagen", "Scientific Analysis",
+  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites",
 ]);
 
 export const MONSTER_MUTATION_CARD_IDS = mutationIds;
@@ -88,8 +88,17 @@ export const CARD_DEFINITIONS: readonly CardDefinition[] = [
   ...researchIds.map((id) => ({ id, deck: "research" as const, availability: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const, presentationKey: id, sourceCatalogue: catalogue, owner: "unknown" as const, zone: "deck" as const, visibility: "unknown" as const, duration: "unknown" as const, uses: "unknown" as const, targets: "unknown" as const, lifecycle: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const })),
 ];
 
-/** Exact component text promoted from the cited catalogue; execution remains gated. */
+/** Exact component text promoted from the cited catalogue with implementation status. */
 export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
+  {
+    id: "Defense Satellites",
+    transcription: "Use on any of your turns. DISCARD THIS CARD AFTER USE. Roll 1 die for each monster on the game board. That monster takes that much damage. (This doesn't affect Captain Colossal or Mecha-Monster.)",
+    classification: "one-use/discard",
+    timing: "Any of your turns.",
+    duration: "Resolved immediately.",
+    sourceRefs: ["references/monsters-menace-america/components/decks/military-research-01.jpg"],
+    effectsImplementation: "implemented",
+  },
   {
     id: "Guard Commander",
     transcription: "You can move and redeploy Guard units. Tanks have Move 3 (land only). Fighters have Move 5 (fly). Other players can't deploy Guard units.",
@@ -97,7 +106,7 @@ export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
     timing: "Continuous while face up.",
     duration: "Until removed from play.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-01.jpg"],
-    effectsImplementation: "source-gated",
+    effectsImplementation: "implemented",
   },
 ];
 

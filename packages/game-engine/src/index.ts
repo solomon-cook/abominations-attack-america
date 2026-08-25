@@ -406,6 +406,7 @@ export type GameCommand =
   | { type: "pass-move" }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
+  | { type: "use-research"; cardId: "Defense Satellites" }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy"; unitId?: string; destination?: HexKey }
@@ -1364,6 +1365,46 @@ interface MutationUseResolution {
   readonly healthRoll?: number;
 }
 
+interface ResearchUseResolution {
+  readonly state: GameState;
+  readonly cardId: "Defense Satellites";
+  readonly rolls: readonly number[];
+  readonly damagedMonsterIds: readonly string[];
+  readonly defeatedMonsterIds: readonly string[];
+}
+
+function discardResearchFromHand(state: GameState, playerIndex: number, cardId: string): void {
+  const player = state.players[playerIndex];
+  if (!player || !player.researchCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `Player ${playerIndex + 1} does not have ${cardId}.`);
+  player.researchCardIds = player.researchCardIds.filter((candidate) => candidate !== cardId);
+  if (!state.decks.research.discard.includes(cardId)) state.decks.research = { ...state.decks.research, discard: [...state.decks.research.discard, cardId] };
+}
+
+/** Resolve Defense Satellites, which damages each non-giant monster currently on the board. */
+function useResearchCard(state: GameState, cardId: "Defense Satellites"): ResearchUseResolution {
+  if (state.phase === "game-over" || state.phase === "challenge") throw new GameDomainError("ILLEGAL_COMMAND", "Defense Satellites is unavailable during a terminal state or Monster Challenge.");
+  if (state.pendingBattles.length > 0 || state.pendingRetreat) throw new GameDomainError("ILLEGAL_COMMAND", "Defense Satellites must be resolved before an unresolved battle or retreat decision.");
+  const next = structuredClone(state);
+  discardResearchFromHand(next, next.currentPlayer, cardId);
+  const rolls: number[] = [];
+  const damagedMonsterIds: string[] = [];
+  const defeatedMonsterIds: string[] = [];
+  for (const monster of next.monsters) {
+    if (!isHexKey(monster.location) || monster.health <= 0) continue;
+    const roll = nextD6(next);
+    rolls.push(roll);
+    damagedMonsterIds.push(monster.id);
+    monster.health = Math.max(0, monster.health - roll);
+    if (monster.health === 0) {
+      monster.location = "hollywood";
+      monster.infamy = 0;
+      defeatedMonsterIds.push(monster.id);
+    }
+    next.log.push(`Defense Satellites dealt ${roll} damage to ${monster.name}${monster.health === 0 ? "; it went to Hollywood" : ""}.`);
+  }
+  return { state: next, cardId, rolls, damagedMonsterIds, defeatedMonsterIds };
+}
+
 /** Resolve the two sourced optional Mutation windows that add attacks during a normal battle. */
 function useMutationInBattle(state: GameState, cardId: "Berserk" | "Son of a Monster", requestedBattleId?: string): MutationUseResolution {
   if (state.phase !== "fight") throw new GameDomainError("ILLEGAL_COMMAND", "Mutation battle abilities can only be used during Fight.");
@@ -1984,6 +2025,11 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const result = useMutationInBattle(state, command.cardId, command.battleId);
     const eventPayload = { battleId: result.battleId, mutationCardId: result.cardId, extraAttacks: result.extraAttacks, healthRoll: result.healthRoll, nextDecision: result.state.pendingDecision };
     return { state: appendEvent(result.state, "mutation.used", eventPayload), eventType: "mutation.used", eventPayload };
+  }
+  if (command.type === "use-research" && command.cardId === "Defense Satellites") {
+    const result = useResearchCard(state, command.cardId);
+    const eventPayload = { researchCardId: result.cardId, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
+    return { state: appendEvent(result.state, "research.used", eventPayload), eventType: "research.used", eventPayload };
   }
   if (state.phase === "fight" && (command.type === "resolve-fight" || command.type === "advance")) {
     const attackDecision = state.pendingDecision?.type === "attack-target" ? state.pendingDecision : undefined;
