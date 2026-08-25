@@ -908,6 +908,11 @@ function drawResearchCardForPlayer(state: GameState, playerIndex: number): strin
   return result.cardId;
 }
 
+function monsterHasMutation(state: Pick<GameState, "monsters" | "players">, monster: Monster, cardId: string): boolean {
+  const playerIndex = state.monsters.findIndex((candidate) => candidate.id === monster.id);
+  return playerIndex >= 0 && state.players[playerIndex]?.mutationCardIds.includes(cardId) === true;
+}
+
 function awardHollywoodResearch(state: GameState, controllerPlayer: number | undefined): string | undefined {
   if (controllerPlayer === undefined || controllerPlayer === state.currentPlayer) return undefined;
   const cardId = drawResearchCardForPlayer(state, controllerPlayer);
@@ -1621,6 +1626,10 @@ export function drawResearchForDeployment(state: GameState): ResearchDrawResolut
 function prepareMonsterForTurn(state: GameState): { monsterId: string; recoveryRoll?: number; recoveryReleased?: boolean } | undefined {
   const monster = state.monsters[state.currentPlayer];
   if (!monster) return undefined;
+  if (monsterHasMutation(state, monster, "Atomic Recovery") && monster.health < monster.startingHealth) {
+    monster.health = monster.startingHealth;
+    state.log.push(`${monster.name} recovered to its starting Health through Atomic Recovery.`);
+  }
   let recoveryRoll: number | undefined;
   let recoveryReleased = false;
   if (monster.location === "hollywood") {

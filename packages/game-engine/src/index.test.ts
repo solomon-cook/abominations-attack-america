@@ -1412,6 +1412,19 @@ test("a defeated monster goes to Hollywood and recovers at the start of its next
   assert.equal(nextTurnResult.eventPayload.recoveryReleased, nextTurn.monsters[0].location !== "hollywood");
 });
 
+test("Atomic Recovery restores a monster to starting Health at the start of its turn", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  state.currentPlayer = 1;
+  state.pendingDecision = { type: "deployment", playerIndex: 1 };
+  state.players[0].mutationCardIds = ["Atomic Recovery"];
+  state.monsters[0].health = 3;
+  const result = applyCommand(state, { type: "pass-deploy" });
+  assert.equal(result.state.currentPlayer, 0);
+  assert.equal(result.state.monsters[0].health, result.state.monsters[0].startingHealth);
+  assert.equal(result.state.log.some((entry) => /Atomic Recovery/.test(entry)), true);
+});
+
 test("a rival military player draws Military Research when their attack sends a monster to Hollywood", () => {
   const state = createGame(2, 7);
   state.phase = "fight";
