@@ -14,7 +14,7 @@ This deterministic report separates proof levels. It is generated from the curre
 | Source and board audit | Eight documented unresolved source inputs; the 254-cell photographed board candidate has ${boardErrors.length} production validation errors | BLOCKED |
 | Engine and API tests | \`npm test\`; deterministic engine/store/property/fuzz/contract coverage | VERIFIED LOCALLY |
 | Static contracts and build | Catalogue, traceability, source audit, docs, asset, accessibility, JSON contracts, typechecks, and Vite build | VERIFIED LOCALLY |
-| Dependency security | The recorded npm audit --omit=dev run reports three high-severity Prisma/deepmerge findings; no compatible remediation is committed | BLOCKED |
+| Dependency security | The recorded npm audit --omit=dev run reports three high-severity Prisma/deepmerge findings, including GHSA-ggr8-5vv4-36mx; no compatible remediation is committed | BLOCKED |
 | Deployed service health | \`/health\`, \`/metrics\`, Prisma persistence, WSS proxy, backups, and external alerts | NOT RUN: no deployment configured |
 | Browser QA | Local development playtest evidence in \`docs/first-playable-browser-evidence.md\`; generated decorative map background and 254-cell overlay are source/render checks | PARTIAL |
 | Production release | Full board/rules/accessibility/content/IP/privacy/security sign-offs and real online smoke test | BLOCKED |
