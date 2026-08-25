@@ -89,6 +89,14 @@ Useful source documents:
   - [ ] [P0] Make engine, API, and browser MVP matches pin and render the same complete board version and content hash.
   - [ ] [P0] Add a board-comparison evidence pack with annotated full-board imagery, coordinate review, and human sign-off before enabling MVP play. (Generated `docs/board-comparison-overlay.svg` now provides the annotated 254-cell/photo comparison and the review table/checklist; human transcription sign-off remains outstanding.)
     - [x] [P0] Create the source evidence pack, photograph links, 254-cell review summary, and explicit promotion checklist. (`docs/full-honeycomb-board-evidence.md`)
+  - [ ] [P0] Replace the current screenshot-like reconstruction with a source-faithful player board before calling it implemented. The supplied comparison image exposes these concrete failures:
+    - [ ] [P0] Remove `Unresolved <coordinate>` labels and placeholder dots from every player-facing playable hex; each visible cell must show its authored identity or an intentionally blank/sea/boundary treatment backed by reviewed board data.
+    - [ ] [P0] Replace the rectangular candidate-shell presentation with the physical board's verified land/sea/lake/coast/boundary silhouette, disabled cells, and off-board edges; the decorative CSS background must never be mistaken for board topology.
+    - [ ] [P0] Transcribe and render every printed feature, city benefit, base branch, Infamy site, Mutation site, Challenge site, Hollywood/L.A. area, blank space, lair, barrier, and water class in its correct hex; the handful of development overlays visible in the screenshot is not sufficient coverage.
+    - [ ] [P0] Make visual geometry match the authored lattice: no overlapping or clipped hexes, no feature labels or pieces spilling into neighbouring cells, consistent visible gaps, and stable alignment at fit, zoom, desktop, tablet, and mobile sizes.
+    - [ ] [P0] Make labels and markers legible at the supported fit zoom without dense coordinate diagnostics colliding with artwork; provide accessible detail/inspection for information that cannot fit inside a tile.
+    - [ ] [P0] Keep action controls, prompts, and status overlays out of the board's rule-bearing cells; the lower-right action dock in the comparison image must either move to the on-demand controls surface or reserve a verified non-board safe area.
+    - [ ] [P0] Add a before/after visual acceptance comparison at the same aspect ratio and fit state, with reviewer checks for cell count, row staggering, boundary shape, feature placement, label readability, piece containment, and unobscured interaction targets.
 - [ ] [P0] Record lake, sea, seacoast, boundary, disabled, and exceptional edge information.
   - [P0] Record all cities and their exact Health/dice benefits.
 - [ ] [P0] Record all military bases and owning branches.
