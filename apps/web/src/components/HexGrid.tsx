@@ -48,14 +48,22 @@ type Props = {
   selectedUnitId: string | null;
   selectedPath: readonly HexKey[];
   selectedUnitPath: readonly HexKey[];
+  acceptedPath: readonly HexKey[];
+  acceptedPieceId?: string;
+  acceptedAnimationKey?: number;
   onChoosePath: (destination: HexKey) => void;
   onChooseUnitPath: (destination: HexKey) => void;
 };
 
-export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectedUnitId, selectedPath, selectedUnitPath, onChoosePath, onChooseUnitPath }: Props) {
+export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectedUnitId, selectedPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, onChoosePath, onChooseUnitPath }: Props) {
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
   const path = selectedUnitId ? selectedUnitPath : selectedPath;
   const pathPoints = path
+    .map((key) => displayByKey.get(key))
+    .filter((point): point is { left: number; top: number } => Boolean(point))
+    .map(({ left, top }) => `${left},${top}`)
+    .join(" ");
+  const acceptedPathPoints = acceptedPath
     .map((key) => displayByKey.get(key))
     .filter((point): point is { left: number; top: number } => Boolean(point))
     .map(({ left, top }) => `${left},${top}`)
@@ -70,6 +78,11 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             </marker>
           </defs>
           <polyline points={pathPoints} markerEnd="url(#path-arrowhead)" />
+        </svg>
+      )}
+      {acceptedAnimationKey && acceptedPathPoints && acceptedPath.length > 1 && (
+        <svg className="accepted-path" key={acceptedAnimationKey} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points={acceptedPathPoints} />
         </svg>
       )}
       {boardHexes.map(({ hex, place, left, top }) => {
@@ -107,11 +120,11 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
               <span className="node" aria-hidden="true">{place?.kind === "city" ? "✦" : place?.kind === "base" ? "⌂" : place?.kind === "infamy" ? "★" : place?.kind === "mutation" ? "✹" : place ? "⚔" : "·"}</span>
               <span>{displayName}</span>
               {place?.kind === "city" && <i className="city-hp">{place.marker}</i>}
-              {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => <b key={monster.id}>{monster.name.slice(0, 1)}</b>)}
+              {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => <b className={acceptedPieceId === monster.id ? "accepted-arrival" : ""} key={monster.id}>{monster.name.slice(0, 1)}</b>)}
               {game.units.filter((unit) => unit.location === placeKey).map((unit) => {
                 const unitArt = unitArtForType(unit.unitTypeId);
                 return unitArt
-                  ? <img className={`tile-piece ${selectedUnitId === unit.id ? "selected-piece" : ""}`} key={unit.id} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                  ? <img className={`tile-piece ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
                   : <i className="unit-mark" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
               })}
             </span>

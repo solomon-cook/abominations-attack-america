@@ -89,6 +89,7 @@ function App() {
   const [selectedPath, setSelectedPath] = useState<HexKey[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
+  const [acceptedMoveAnimation, setAcceptedMoveAnimation] = useState<{ path: HexKey[]; pieceId: string; key: number } | null>(null);
   const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
   const [retreatChoices, setRetreatChoices] = useState<Record<string, HexKey | "disappeared">>({});
   const [mapZoom, setMapZoom] = useState(1);
@@ -228,6 +229,12 @@ function App() {
   }, [activeGame.currentPlayer, activeGame.phase, activePlayer.location]);
 
   useEffect(() => {
+    if (!acceptedMoveAnimation) return;
+    const timeout = window.setTimeout(() => setAcceptedMoveAnimation(null), 720);
+    return () => window.clearTimeout(timeout);
+  }, [acceptedMoveAnimation]);
+
+  useEffect(() => {
     const saved = safeStorageGet("abominations-session");
     if (!saved) return;
     try {
@@ -325,8 +332,13 @@ function App() {
             ? { type: "resolve-encounter" }
             : { type: "deploy" }
         : command;
+    const acceptedMove = normalized.type === "move"
+      ? { path: normalized.path as HexKey[], pieceId: activePlayer.id }
+      : normalized.type === "move-unit"
+        ? { path: normalized.path as HexKey[], pieceId: normalized.unitId }
+        : undefined;
     try {
-      if (online && session && room)
+      if (online && session && room) {
         setRoom(
           await sendCommand(
             room.code,
@@ -336,7 +348,12 @@ function App() {
             normalized,
           ),
         );
-      else setGame(applyCommand(game, normalized).state);
+        if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
+      } else {
+        const result = applyCommand(game, normalized);
+        setGame(result.state);
+        if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Action failed");
       if (online && session && room) {
@@ -727,6 +744,9 @@ function App() {
               selectedUnitId={selectedUnitId}
               selectedPath={selectedPath}
               selectedUnitPath={selectedUnitPath}
+              acceptedPath={acceptedMoveAnimation?.path ?? []}
+              acceptedPieceId={acceptedMoveAnimation?.pieceId}
+              acceptedAnimationKey={acceptedMoveAnimation?.key}
               onChoosePath={choosePath}
               onChooseUnitPath={chooseUnitPath}
             />
