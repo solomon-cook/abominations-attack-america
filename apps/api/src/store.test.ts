@@ -153,6 +153,37 @@ test("completed terminal results survive player refresh and spectator projection
   assert.deepEqual(spectatorView.state.decks.research.order, []);
 });
 
+test("voluntary concession persists a terminal result through refresh and projection", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2);
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  const active = await store.setReady(host.room.code, guest.token, true);
+  const completed = await store.submitAction(host.room.code, host.token, {
+    actionId: "concede-1",
+    actorId: host.participantId,
+    expectedRevision: active.version,
+    protocolVersion: 1,
+    command: { type: "concede" },
+  });
+  assert.equal(completed.status, "completed");
+  assert.equal(completed.state.phase, "game-over");
+  assert.equal(completed.state.winnerPlayer, 1);
+  assert.equal(completed.state.victoryType, "concession");
+  assert.equal(completed.events[0]?.type, "match.conceded");
+  const refreshed = await store.getRoom(host.room.code, guest.token);
+  assert.equal(refreshed.state.victoryType, "concession");
+  assert.equal(refreshed.state.winnerPlayer, 1);
+  await assert.rejects(() => store.submitAction(host.room.code, host.token, {
+    actionId: "concede-2",
+    actorId: host.participantId,
+    expectedRevision: completed.version,
+    protocolVersion: 1,
+    command: { type: "concede" },
+  }), /completed/);
+});
+
 test("commands reject forged actors and out-of-turn players", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2);

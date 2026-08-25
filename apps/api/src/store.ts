@@ -140,6 +140,7 @@ export class MemoryRoomStore implements RoomStore {
     const room = this.authorize(roomCode, accessToken);
     const actor = room.participants.find((participant) => participant.tokenHash === hash(accessToken));
     if (!actor || actor.role !== "player") throw new Error("Spectators cannot submit game actions.");
+    if (room.status === "completed") throw new Error("This room is completed; no further gameplay actions are legal.");
     if (room.status !== "active") throw new Error("This room is not ready for gameplay.");
     if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
     if (this.actionIds.has(`${room.id}:${envelope.actionId}`)) return this.view(room, 0, "player", actor.playerIndex);

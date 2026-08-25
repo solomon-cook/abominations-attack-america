@@ -129,7 +129,7 @@ export interface GameState {
   stompMarkers: number;
   stompedLocations: HexKey[];
   winnerPlayer?: number;
-  victoryType?: "development-stomp-exhaustion" | "development-board-exhaustion";
+  victoryType?: "development-stomp-exhaustion" | "development-board-exhaustion" | "concession";
   rng: { seed: number; cursor: number };
   nextUnitSequence: number;
   decks: DeckState;
@@ -382,6 +382,7 @@ export type GameCommand =
   | { type: "deploy"; unitId?: string; destination?: HexKey }
   | { type: "draw-research" }
   | { type: "pass-deploy" }
+  | { type: "concede" }
   | { type: "advance" };
 
 export const COMMAND_PROTOCOL_VERSION = 1;
@@ -1375,6 +1376,17 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
   assertSupportedStateVersion(state);
   assertInventoryAccounting(state);
   if (state.phase === "game-over") throw new GameDomainError("ILLEGAL_COMMAND", "The match is complete; no further commands are legal.");
+  if (command.type === "concede") {
+    if (state.players.length < 2) throw new GameDomainError("ILLEGAL_COMMAND", "A match needs another player before a concession can produce a winner.");
+    const next = structuredClone(state);
+    next.phase = "game-over";
+    next.winnerPlayer = (state.currentPlayer + 1) % state.players.length;
+    next.victoryType = "concession";
+    next.pendingDecision = { type: "game-over", playerIndex: next.winnerPlayer, victoryType: next.victoryType };
+    next.log.push(`${state.monsters[state.currentPlayer]?.name ?? `Player ${state.currentPlayer + 1}`} conceded; Player ${next.winnerPlayer + 1} wins.`);
+    const eventPayload = { concedingPlayer: state.currentPlayer, winnerPlayer: next.winnerPlayer, victoryType: next.victoryType };
+    return { state: appendEvent(next, "match.conceded", eventPayload), eventType: "match.conceded", eventPayload };
+  }
   const requireDecision = (type: PendingDecision["type"]) => {
     if (!state.pendingDecision || state.pendingDecision.type !== type || ("playerIndex" in state.pendingDecision && state.pendingDecision.playerIndex !== state.currentPlayer)) {
       throw new Error(`The authoritative pending decision is not ${type}.`);

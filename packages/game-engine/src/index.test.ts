@@ -997,6 +997,17 @@ test("the simplified Stomp exhaustion rule produces one terminal winner and free
   assert.throws(() => applyCommand(state, { type: "advance" }), /match is complete/);
 });
 
+test("a confirmed concession records the next seat as winner and freezes the match", () => {
+  const state = createGame(2);
+  const result = applyCommand(state, { type: "concede" });
+  assert.equal(result.eventType, "match.conceded");
+  assert.equal(result.state.phase, "game-over");
+  assert.equal(result.state.winnerPlayer, 1);
+  assert.equal(result.state.victoryType, "concession");
+  assert.deepEqual(result.state.pendingDecision, { type: "game-over", playerIndex: 1, victoryType: "concession" });
+  assert.throws(() => applyCommand(result.state, { type: "concede" }), /match is complete/);
+});
+
 test("every command is rejected after terminal state without changing the winner", () => {
   let state = createGame(2);
   state.stompMarkers = 1;

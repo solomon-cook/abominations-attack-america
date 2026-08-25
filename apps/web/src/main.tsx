@@ -1354,6 +1354,15 @@ function App() {
                 Resolve {action.toLowerCase()}
               </button>
             )}
+            {setupComplete && activeGame.phase !== "game-over" && (
+              <button
+                className="cancel"
+                disabled={!canAct}
+                onClick={() => runIrreversibleAction(() => void runCommand({ type: "concede" }), "Concede this match? The next player will be recorded as the winner.")}
+              >
+                Concede match
+              </button>
+            )}
           </div>
           <div className="card log">
             <span className="label">TURN LOG</span>

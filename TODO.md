@@ -414,6 +414,7 @@ Useful source documents:
   - [P1] Define session expiry, revocation, token rotation, and room access policy.
 - [x] [P1] Define room status transitions for waiting, active, completed, abandoned, and expired matches. (Memory and Prisma stores implement the documented 24-hour idle expiry and preserve completed terminal rooms; `docs/room-lifecycle.md` records the transition table.)
   - [P1] Define disconnect grace periods, voluntary concede, inactive-player handling, and host departure.
+    - [x] [P1] Implement a confirmed voluntary concession that records a terminal winner and survives room projection/reconnect. (`concede` is an authoritative engine command with `match.conceded` event payload and terminal room status; engine/API coverage added.)
 - [x] [P1] Support safe multi-tab detection or consistent multi-tab command semantics. (Session-scoped connection leases prevent stale-tab presence clears; optimistic revisions and action IDs keep duplicate commands safe.)
   - [x] Project WebSocket snapshots and events separately for each player and spectator connection. (The WebSocket registry now retains each connection token and regenerates `getRoom` per socket on every broadcast, so no player projection is reused for another viewer; HTTP projection tests cover the same redaction boundary.)
   - [P1] Let spectators join without an account while respecting room privacy and hidden information.

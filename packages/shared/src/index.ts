@@ -52,6 +52,7 @@ export type GameCommand =
   | { type: "deploy" }
   | { type: "draw-research" }
   | { type: "pass-deploy" }
+  | { type: "concede" }
   | { type: "advance" };
 
 export interface SessionResponse {
