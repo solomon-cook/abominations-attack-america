@@ -38,6 +38,10 @@ A first-playable browser pass is complete only when a clean supported browser se
 
 ## Latest local renderer regression check
 
+On 2026-08-25, the board-first gameplay shell was checked at 1280×720 after completing the local development setup. With the controls panel closed, the layout measured 1,240px wide and the map surface measured 1,190×405px; the secondary information panel and turn-progress strip were hidden. Opening **Open controls** restored the 340px information panel, turn-progress strip, card/decision controls, and bounded scrolling. This verifies the intended map-first hierarchy for the development fixture only.
+
+The same run opened the private hand surface from the controls panel. Held cards remained visible only to the current player, and expandable entries exposed implemented/source-gated status plus transcribed timing text where available. This is UI evidence; it does not prove that every source-inventoried card is implemented or that production card timing is complete.
+
 On 2026-08-25, a clean local browser session completed the two-player development setup and verified 261 rendered board buttons: 254 candidate-shell cells plus seven development-fixture overlays for the named coordinates outside that shell. Three legal movement destinations were exposed for the active monster; selecting one showed the authoritative path preview and enabled **Confirm monster move**, while **Cancel** cleared both the path and preview. No browser console errors or page alerts were observed. This remains development-fixture evidence, not MVP board or production acceptance.
 
 The same session checked the viewport shell at 1280×720 and 390×844. In both sizes the document stayed at the viewport height with zero page scroll, the board remained visible, and the mobile board panel used its own bounded scroll surface for lower-detail content. This proves the viewport contract for the development UI only; it does not complete the broader keyboard, screen-reader, contrast, or production browser acceptance items.
