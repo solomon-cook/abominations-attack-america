@@ -1,0 +1,75 @@
+import {
+  buildBoardIndex,
+  DEVELOPMENT_BOARD,
+  FULL_HONEYCOMB_BOARD,
+  getLocation,
+  locationIdToHexKey,
+  locations,
+  type GameState,
+  type HexKey,
+} from "@abominations/game-engine";
+import { buildDisplayHexLayout } from "../board-layout";
+
+const developmentHexes = Object.values(DEVELOPMENT_BOARD.hexes);
+const developmentBoardIndex = buildBoardIndex(DEVELOPMENT_BOARD);
+const boardHexes = buildDisplayHexLayout().map(({ hex, left, top }) => ({
+  hex,
+  place: locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key),
+  left,
+  top,
+}));
+
+type Props = {
+  game: GameState;
+  activePlayerId: string;
+  canAct: boolean;
+  legalDestinations: ReadonlySet<HexKey>;
+  legalUnitDestinations: ReadonlySet<HexKey>;
+  selectedUnitId: string | null;
+  selectedPath: readonly HexKey[];
+  selectedUnitPath: readonly HexKey[];
+  onChoosePath: (destination: HexKey) => void;
+  onChooseUnitPath: (destination: HexKey) => void;
+};
+
+export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectedUnitId, selectedPath, selectedUnitPath, onChoosePath, onChooseUnitPath }: Props) {
+  const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
+  const path = selectedUnitId ? selectedUnitPath : selectedPath;
+  return (
+    <div className="hex-grid">
+      {boardHexes.map(({ hex, place, left, top }) => {
+        const placeKey = hex.key;
+        const monsterLegal = legalDestinations.has(placeKey);
+        const unitLegal = legalUnitDestinations.has(placeKey);
+        const featureText = hex.features.map((feature) => feature.kind).join(", ");
+        const neighbourText = (developmentBoardIndex.neighbours[placeKey] ?? [])
+          .map((neighbourKey) => developmentHexes.find((candidate) => candidate.key === neighbourKey)?.label ?? neighbourKey)
+          .join(", ");
+        const occupantText = [
+          ...game.monsters.filter((monster) => monster.location === placeKey).map((monster) => monster.name),
+          ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
+        ].join(", ");
+        const displayName = place?.name ?? hex.label ?? hex.key;
+        return (
+          <button
+            key={hex.key}
+            aria-label={`${displayName}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+            data-hex-key={hex.key}
+            disabled={!place || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal)}
+            className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${placeKey === activePlayer?.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
+            style={{ left: `${left}%`, top: `${top}%` }}
+            onClick={() => selectedUnitId ? onChooseUnitPath(placeKey) : onChoosePath(placeKey)}
+          >
+            <span className="tile-content">
+              <span className="node" aria-hidden="true">{place?.kind === "city" ? "✦" : place?.kind === "base" ? "⌂" : place?.kind === "infamy" ? "★" : place?.kind === "mutation" ? "✹" : place ? "⚔" : "·"}</span>
+              <span>{displayName}</span>
+              {place?.kind === "city" && <i className="city-hp">{place.marker}</i>}
+              {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => <b key={monster.id}>{monster.name.slice(0, 1)}</b>)}
+              {game.units.filter((unit) => unit.location === placeKey).map((unit) => <i className="unit-mark" key={unit.id}>{unit.branch.slice(0, 1)}</i>)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}

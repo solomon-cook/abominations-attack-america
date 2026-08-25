@@ -2,22 +2,18 @@ import { StrictMode, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   applyCommand,
-  buildBoardIndex,
   chooseBranch,
   chooseLair,
   chooseMonster,
   chooseStartingChoice,
   createGame,
   createGameFromSetup,
-  DEVELOPMENT_BOARD,
   FULL_HONEYCOMB_BOARD,
   getLocation,
   legalNationalGuardDeploymentDestinations,
-  locationIdToHexKey,
   legalMonsterDestinations,
   legalMonsterPaths,
   legalUnitPaths,
-  locations,
   BRANCH_DEPLOYMENT_DEFINITIONS,
   type GameCommand,
   type GameState,
@@ -38,7 +34,6 @@ import {
   websocketUrl,
 } from "./api";
 import { createDevelopmentSetup } from "./development-setup";
-import { buildDisplayHexLayout } from "./board-layout";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
 import { LobbyPanel } from "./components/LobbyPanel";
 import { LogPanel } from "./components/LogPanel";
@@ -49,16 +44,8 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { SetupPanel } from "./components/SetupPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
 import { UnitCard } from "./components/UnitCard";
+import { HexGrid } from "./components/HexGrid";
 import "./styles.css";
-
-const developmentHexes = Object.values(DEVELOPMENT_BOARD.hexes);
-const developmentBoardIndex = buildBoardIndex(DEVELOPMENT_BOARD);
-const boardHexes = buildDisplayHexLayout().map(({ hex, left, top }) => ({
-  hex,
-  place: locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key),
-  left,
-  top,
-}));
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -674,69 +661,18 @@ function App() {
               decoding="async"
             />
             <div className="map-canvas" style={{ transform: `translate(${mapPan.x}%, ${mapPan.y}%) scale(${mapZoom})` }}>
-            <div className="hex-grid">
-              {boardHexes.map(({ hex, place, left, top }) => {
-                const placeKey = hex.key;
-                const monsterLegal = legalDestinations.has(placeKey);
-                const unitLegal = legalUnitDestinations.has(placeKey);
-                const path = selectedUnitId ? selectedUnitPath : selectedPath;
-                const featureText = hex.features.map((feature) => feature.kind).join(", ");
-                const neighbourText = (developmentBoardIndex.neighbours[placeKey] ?? [])
-                  .map((neighbourKey) => developmentHexes.find((candidate) => candidate.key === neighbourKey)?.label ?? neighbourKey)
-                  .join(", ");
-                const occupantText = [
-                  ...activeGame.monsters.filter((monster) => monster.location === placeKey).map((monster) => monster.name),
-                  ...activeGame.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
-                ].join(", ");
-                const displayName = place?.name ?? hex.label ?? hex.key;
-                return (
-                  <button
-                    key={hex.key}
-                    aria-label={`${displayName}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
-                    data-hex-key={hex.key}
-                    disabled={
-                      !place ||
-                      !canAct ||
-                      activeGame.phase !== "move" ||
-                      (!monsterLegal && !unitLegal)
-                    }
-                    className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${placeKey === activePlayer.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
-                    style={{ left: `${left}%`, top: `${top}%` }}
-                    onClick={() =>
-                      selectedUnitId ? chooseUnitPath(placeKey) : choosePath(placeKey)
-                    }
-                  >
-                    <span className="tile-content">
-                      <span className="node" aria-hidden="true">
-                        {place?.kind === "city"
-                          ? "✦"
-                          : place?.kind === "base"
-                            ? "⌂"
-                            : place?.kind === "infamy"
-                              ? "★"
-                              : place?.kind === "mutation"
-                                ? "✹"
-                                : place
-                                  ? "⚔"
-                                  : "·"}
-                      </span>
-                      <span>{displayName}</span>
-                      {place?.kind === "city" && <i className="city-hp">{place.marker}</i>}
-                      {activeGame.monsters
-                        .filter((monster) => monster.location === placeKey)
-                        .map((monster) => <b key={monster.id}>{monster.name.slice(0, 1)}</b>)}
-                      {activeGame.units
-                        .filter((unit) => unit.location === placeKey)
-                        .map((unit) => (
-                          <i className="unit-mark" key={unit.id}>
-                            {unit.branch.slice(0, 1)}
-                          </i>
-                        ))}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <HexGrid
+              game={activeGame}
+              activePlayerId={activePlayer.id}
+              canAct={canAct}
+              legalDestinations={legalDestinations}
+              legalUnitDestinations={legalUnitDestinations}
+              selectedUnitId={selectedUnitId}
+              selectedPath={selectedPath}
+              selectedUnitPath={selectedUnitPath}
+              onChoosePath={choosePath}
+              onChooseUnitPath={chooseUnitPath}
+            />
             <div className="map-copy">
               <strong>MONSTERS</strong>
               <span>MENACE AMERICA</span>
