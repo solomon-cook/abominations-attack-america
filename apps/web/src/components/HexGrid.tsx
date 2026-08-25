@@ -39,6 +39,13 @@ function unitArtForType(unitTypeId?: string) {
   return unitTypeId ? `/assets/military/${unitTypeId}.webp` : undefined;
 }
 
+function monsterArtForName(name: string) {
+  const slug = name.toLowerCase().replaceAll(" ", "-");
+  return ["gargantis", "konk", "megaclaw", "tomanagi", "toxicor", "zorb"].includes(slug)
+    ? `/assets/monsters/${slug}.webp`
+    : undefined;
+}
+
 type Props = {
   game: GameState;
   activePlayerId: string;
@@ -123,7 +130,12 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
               <span className="node" aria-hidden="true">{place?.kind === "city" ? "✦" : place?.kind === "base" ? "⌂" : place?.kind === "infamy" ? "★" : place?.kind === "mutation" ? "✹" : place ? "⚔" : "·"}</span>
               <span>{displayName}</span>
               {place?.kind === "city" && <i className="city-hp">{place.marker}</i>}
-              {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => <b className={acceptedPieceId === monster.id ? "accepted-arrival" : ""} key={monster.id}>{monster.name.slice(0, 1)}</b>)}
+              {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => {
+                const monsterArt = monsterArtForName(monster.name);
+                return monsterArt
+                  ? <img className={`tile-monster ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id} src={monsterArt} alt={monster.name} loading="lazy" />
+                  : <b className={acceptedPieceId === monster.id ? "accepted-arrival" : ""} key={monster.id}>{monster.name.slice(0, 1)}</b>;
+              })}
               {game.units.filter((unit) => unit.location === placeKey).map((unit) => {
                 const unitArt = unitArtForType(unit.unitTypeId);
                 return unitArt

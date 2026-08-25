@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "format": "webp",
+  "source": "references/monsters-menace-america/generated/monster-sprites/",
+  "monsters": [
+    { "id": "gargantis", "src": "/assets/monsters/gargantis.webp" },
+    { "id": "konk", "src": "/assets/monsters/konk.webp" },
+    { "id": "megaclaw", "src": "/assets/monsters/megaclaw.webp" },
+    { "id": "tomanagi", "src": "/assets/monsters/tomanagi.webp" },
+    { "id": "toxicor", "src": "/assets/monsters/toxicor.webp" },
+    { "id": "zorb", "src": "/assets/monsters/zorb.webp" }
+  ]
+}

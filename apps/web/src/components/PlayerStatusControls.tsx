@@ -33,7 +33,9 @@ export function PlayerStatusControls({ game, monster, branch }: Props) {
   return (
     <section className="player-status-controls" aria-label="Player status controls">
       <button type="button" className="status-control monster-control" onClick={() => setOpen("monster")} aria-label={`Open ${monster.name} details`}>
-        <span className="status-control-icon">{monster.name.slice(0, 1)}</span>
+        <span className="status-control-icon">
+          <img src={`/assets/monsters/${monster.name.toLowerCase()}.webp`} alt="" aria-hidden="true" />
+        </span>
         <strong>{monster.name}</strong>
         <small>{monster.health} HP · {monster.infamy} INF</small>
       </button>

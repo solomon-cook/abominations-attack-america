@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const scriptDirectory = resolve(fileURLToPath(new URL(".", import.meta.url)));
 const assetRoot = resolve(scriptDirectory, "../apps/web/public/assets/board");
 const cardAssetRoot = resolve(scriptDirectory, "../apps/web/public/assets/cards");
+const monsterAssetRoot = resolve(scriptDirectory, "../apps/web/public/assets/monsters");
 
 async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
@@ -53,6 +54,11 @@ const cardManifest = JSON.parse(await readFile(join(cardAssetRoot, "manifest.jso
 if (cardManifest.format !== "webp" || !Array.isArray(cardManifest.sheets) || cardManifest.sheets.length !== 7) throw new Error("Card asset manifest is incomplete");
 for (const sheet of cardManifest.sheets) await assertFile(join(cardAssetRoot, sheet.id + ".webp"), "Optimized card sheet");
 await assertFile(join(cardAssetRoot, "README.md"), "Card asset provenance README");
+
+const monsterManifest = JSON.parse(await readFile(join(monsterAssetRoot, "manifest.json"), "utf8"));
+if (monsterManifest.format !== "webp" || !Array.isArray(monsterManifest.monsters) || monsterManifest.monsters.length !== 6) throw new Error("Monster asset manifest is incomplete");
+for (const monster of monsterManifest.monsters) await assertFile(join(monsterAssetRoot, monster.id + ".webp"), "Optimized monster sprite");
+await assertFile(join(monsterAssetRoot, "README.md"), "Monster asset provenance README");
 
 const topLevelEntries = await readdir(assetRoot);
 if (!topLevelEntries.includes("README.md")) throw new Error("Board asset provenance README is missing");
