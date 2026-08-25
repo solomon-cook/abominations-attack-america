@@ -15,6 +15,8 @@ const failures = [];
 
 const requiredSourceMarkers = [
   ["main landmark", /<main\b/],
+  ["unsupported browser guard", /if \(!browserSupported\) \{/],
+  ["unsupported browser fallback", /className="unsupported-browser" role="main"[\s\S]*This browser cannot run the playtest[\s\S]*No match state has been started/],
   ["named map group", /aria-label=\"Board coordinate shell\"/],
   ["resolved board description", /const boardDescription = renderedBoard\?\.id === FULL_HONEYCOMB_BOARD\.id[\s\S]*unavailable board version/],
   ["development board disclosure", /unresolved physical-board shell is not rendered as playable topology/],
