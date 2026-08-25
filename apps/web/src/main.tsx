@@ -39,8 +39,11 @@ import {
 } from "./api";
 import { createDevelopmentSetup } from "./development-setup";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
+import { LogPanel } from "./components/LogPanel";
+import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
+import { UnitCard } from "./components/UnitCard";
 import "./styles.css";
 
 const developmentHexes = Object.values(DEVELOPMENT_BOARD.hexes);
@@ -48,24 +51,18 @@ const developmentBoardIndex = buildBoardIndex(DEVELOPMENT_BOARD);
 const fullHoneycombHexes = Object.values(FULL_HONEYCOMB_BOARD.hexes);
 const fullPixelCoords = fullHoneycombHexes.map((hex) => ({
   hex,
-  x: hex.coord.q + hex.coord.r / 2,
-  y: hex.coord.r,
+  // The candidate is authored as alternating landscape rows. Use the row and
+  // column directly so the CSS pointy-top hexes share the same tessellation;
+  // the axial q/r values remain the canonical identity, not display geometry.
+  column: hex.coord.q + Math.floor(hex.coord.r / 2),
+  row: hex.coord.r,
 }));
-const fullMinX = Math.min(...fullPixelCoords.map((entry) => entry.x));
-const fullMaxX = Math.max(...fullPixelCoords.map((entry) => entry.x));
-const fullMinY = Math.min(...fullPixelCoords.map((entry) => entry.y));
-const fullMaxY = Math.max(...fullPixelCoords.map((entry) => entry.y));
-const boardHexes = fullPixelCoords.map(({ hex, x, y }) => ({
+const boardHexes = fullPixelCoords.map(({ hex, column, row }) => ({
   hex,
   place: locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key),
-  left:
-    10 +
-    ((x - fullMinX) / Math.max(1, fullMaxX - fullMinX)) *
-      80,
-  top:
-    14 +
-    ((y - fullMinY) / Math.max(1, fullMaxY - fullMinY)) *
-      68,
+  // Odd rows are half a tile to the right in the landscape honeycomb.
+  left: 4.8 + ((column + (row % 2 ? 0.5 : 0)) / 19.5) * 90.4,
+  top: 10 + (row / 12) * 80,
 }));
 
 function supportsPlaytestBrowser(): boolean {
@@ -1040,51 +1037,20 @@ function App() {
             </div>
           </div>
           <BoardReferenceCard />
-          <div className="card unit-card">
-            <span className="label">MILITARY UNITS</span>
-            {activeGame.units
-              .filter((unit) => unit.ownerPlayer === activeGame.currentPlayer || (unit.branch === "National Guard" && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Guard Commander")))
-              .map((unit) => (
-                <button
-                  key={unit.id}
-                  aria-label={`Your ${unit.branch} unit at ${getLocation(unit.location)?.name ?? unit.location}${legalUnitPaths(activeGame, unit.id).length ? " · movable" : " · already moved or unavailable"}`}
-                  className={selectedUnitId === unit.id ? "unit-selected" : ""}
-                  disabled={
-                    !canAct ||
-                    activeGame.phase !== "move" ||
-                    !legalUnitPaths(activeGame, unit.id).length
-                  }
-                  onClick={() => {
-                    setSelectedUnitId(unit.id);
-                    setSelectedPath([]);
-                    setSelectedUnitPath([]);
-                  }}
-                >
-                  {unit.branch} ·{" "}
-                  {getLocation(unit.location)?.name ?? unit.location}
-                </button>
-              ))}
-          </div>
-          <div className="card revealed-card-panel" aria-label={`Revealed cards for Player ${(participant?.playerIndex ?? activeGame.currentPlayer) + 1}`}>
-            <span className="label">REVEALED CARDS</span>
-            <p className="card-privacy-note">Face-up cards are shown here. Hidden deck order is never rendered.</p>
-            <div className="revealed-card-group">
-              <strong>Monster Mutation</strong>
-              {activeGame.players[participant?.playerIndex ?? activeGame.currentPlayer]?.mutationCardIds.length ? (
-                <ul>
-                  {activeGame.players[participant?.playerIndex ?? activeGame.currentPlayer].mutationCardIds.map((cardId) => <li key={cardId}>{cardId}</li>)}
-                </ul>
-              ) : <span className="empty-card-state">None revealed</span>}
-            </div>
-            <div className="revealed-card-group">
-              <strong>Military Research</strong>
-              {activeGame.players[participant?.playerIndex ?? activeGame.currentPlayer]?.researchCardIds.length ? (
-                <ul>
-                  {activeGame.players[participant?.playerIndex ?? activeGame.currentPlayer].researchCardIds.map((cardId) => <li key={cardId}>{cardId}</li>)}
-                </ul>
-              ) : <span className="empty-card-state">None revealed</span>}
-            </div>
-          </div>
+          <UnitCard
+            game={activeGame}
+            canAct={canAct}
+            selectedUnitId={selectedUnitId}
+            onSelect={(unitId) => {
+              setSelectedUnitId(unitId);
+              setSelectedPath([]);
+              setSelectedUnitPath([]);
+            }}
+          />
+          <RevealedCardsPanel
+            game={activeGame}
+            playerIndex={participant?.playerIndex ?? activeGame.currentPlayer}
+          />
           <div className="card action-card">
             <span className="label">CURRENT STEP</span>
             <h2 ref={actionHeadingRef} tabIndex={-1}>
@@ -1352,20 +1318,7 @@ function App() {
               </button>
             )}
           </div>
-          <div className="card log">
-            <span className="label">TURN LOG</span>
-            {eventLog.length
-              ? eventLog.map((entry) => (
-                  <details key={entry.id}>
-                    <summary>
-                      {entry.actorId ? `${entry.actorId} · ` : ""}
-                      {entry.action} · {entry.outcome}
-                    </summary>
-                    <pre>{JSON.stringify(entry.detail, null, 2)}</pre>
-                  </details>
-                ))
-              : log.map((entry, i) => <p key={i}>{entry}</p>)}
-          </div>
+          <LogPanel eventLog={eventLog} log={log} />
         </aside>
       </section>
     </main>
