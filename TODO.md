@@ -504,6 +504,12 @@ Useful source documents:
 **Priority:** P1  
 **Depends on:** Milestone 11 interaction model
 
+- [ ] [P0] Conduct a dedicated UI visual review and redesign pass against the intended player experience. The existing checked implementation items do not mean the UI is finished; record the issues found, resolve the highest-impact problems, and obtain visual acceptance before calling the interface complete.
+  - [x] Record the first live comparison: at 1280×720 the open controls/action rail reduced the board map to roughly 270px high, while setup content could remain visible beside an already-started Move phase.
+  - [x] Return to the board-first presentation after authoritative setup completes, while retaining the controls toggle for deliberate access to secondary controls.
+  - [x] Overlay the current action dock on the board so it no longer consumes the map's vertical display area.
+  - [ ] Re-run visual review at supported desktop, tablet, and mobile sizes and obtain visual acceptance; this remains separate from source-board fidelity and assistive-technology review.
+
 - [x] [P1] Define supported desktop, tablet, and mobile browser/version targets. (`docs/browser-support.md`)
   - [x] Fit the main decision area within common viewport sizes without mandatory horizontal page scrolling. (The responsive layout was checked at a 390×844 viewport; the scrolling client and content widths match and the compact lobby/guide stack fits the mobile surface.)
   - [x] Create compact mobile layouts for board, hand, prompts, player status, and log. (Responsive CSS collapses the main grid, onboarding, status, and controls; the mobile browser preview rendered the compact stacked layout.)

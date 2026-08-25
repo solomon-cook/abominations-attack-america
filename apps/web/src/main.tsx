@@ -337,6 +337,13 @@ function App() {
   useEffect(() => {
     actionHeadingRef.current?.focus();
   }, [activeGame.phase, activeGame.round, room?.version, localPlaytestStarted]);
+  useEffect(() => {
+    // Setup is intentionally panel-open, but gameplay should return to the
+    // board-first presentation as soon as the authoritative setup completes.
+    if ((localPlaytestStarted || online) && setupComplete) {
+      setGamePanelOpen(false);
+    }
+  }, [localPlaytestStarted, online, setupComplete]);
   const setupSeat =
     activeSetup?.phase === "monster-selection"
       ? activeSetup.seats.find((seat) => !seat.monsterId)
