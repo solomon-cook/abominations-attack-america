@@ -370,11 +370,11 @@ Useful source documents:
   - [x] Extract stable settings, board-reference, and terminal-summary surfaces without changing authoritative behavior. (`apps/web/src/components/`; web typecheck/build and browser rendering pass.)
   - [x] Extract the unit, revealed-card, and chronological-log surfaces without moving command authority into the UI. (`apps/web/src/components/UnitCard.tsx`, `RevealedCardsPanel.tsx`, and `LogPanel.tsx`; web typecheck/build pass.)
   - [x] Extract the online-room lobby surface while keeping session, room, and readiness callbacks in `App`. (`apps/web/src/components/LobbyPanel.tsx`; web typecheck/build pass.)
-  - [ ] [P0] Create a clean, art-led Home Screen that gives players an immediate, uncluttered entry point into the game.
+  - [x] [P0] Create a clean, art-led Home Screen that gives players an immediate, uncluttered entry point into the game. (`apps/web/src/components/HomeScreen.tsx`; full verification passes.)
     - [x] Add an explicit home entry state with the optimized setup artwork, Development Playtest, Create, Join, Spectate, and Rules actions before the board is shown. (`apps/web/src/components/HomeScreen.tsx`; web typecheck/build pass.)
-    - [ ] [P0] Give the Home Screen a strong piece of appropriate game art and a cohesive visual hierarchy without overwhelming the available actions.
-    - [ ] [P0] Make the primary Home Screen actions clearly accessible: Join a game, Create a game, and Rules.
-    - [ ] [P0] Let players open a concise rules reference from the Home Screen so they can remind themselves how to play before joining or creating a match.
+    - [x] [P0] Give the Home Screen a strong piece of appropriate game art and a cohesive visual hierarchy without overwhelming the available actions. (`/assets/board/full-game-setup.webp` is used as the hero artwork.)
+    - [x] [P0] Make the primary Home Screen actions clearly accessible: Join a game, Create a game, and Rules. (`HomeScreen` and `LobbyPanel` expose named keyboard-operable buttons.)
+    - [x] [P0] Let players open a concise rules reference from the Home Screen so they can remind themselves how to play before joining or creating a match. (`HomeScreen` Rules panel.)
   - [ ] [P0] Use the created artwork assets for hexes, Stomps, Infamy, Military Research cards, Mutation cards, monsters, and troops in the gameplay UI, with the relevant assets visible on the board wherever those components are present.
     - [x] Render the available optimized board-feature, Stomp-token, city, and military-piece WebP assets in the authoritative hex renderer without changing board legality or unresolved feature data. (`apps/web/src/components/HexGrid.tsx`; web typecheck/build pass.)
     - [ ] [P0] Render the board as a connected proper game-board layout of hexagons, with a consistent small border/gap between neighbouring hexes so the board structure is immediately legible.
