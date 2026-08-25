@@ -8,12 +8,13 @@ export type DisplayHex = Readonly<{
   top: number;
 }>;
 
-// Flat-top hexes share edges when their centres are 75% of a tile width
-// apart. Keep the pitch derived from the width so geometry cannot drift.
-export const DISPLAY_TILE_WIDTH_PERCENT = 5;
-export const DISPLAY_TILE_STEP_PERCENT = DISPLAY_TILE_WIDTH_PERCENT * 0.75;
+// The player-facing tiles use a flat-top landscape polygon. In this row-major
+// presentation, adjacent tiles use a full-width row pitch; the half-width
+// offset on alternate rows supplies the diagonal connections without overlap.
+export const DISPLAY_TILE_WIDTH_PERCENT = 4.45;
+export const DISPLAY_TILE_STEP_PERCENT = DISPLAY_TILE_WIDTH_PERCENT;
 export const DISPLAY_TILE_ASPECT_RATIO = 1.1547005;
-export const DISPLAY_BOARD_LEFT_PERCENT = 12;
+export const DISPLAY_BOARD_LEFT_PERCENT = 5;
 export const DISPLAY_BOARD_TOP_PERCENT = 4;
 export const DISPLAY_BOARD_TOP_SPAN_PERCENT = (DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO) * 12;
 

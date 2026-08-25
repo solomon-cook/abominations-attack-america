@@ -29,7 +29,7 @@ for (let row = 0; row < 13; row += 1) {
 
 const evenStart = rows.get(0)![0]!.left;
 const oddStart = rows.get(1)![0]!.left;
-assert.equal(Number((oddStart - evenStart).toFixed(2)), Number((DISPLAY_TILE_STEP_PERCENT / 2).toFixed(2)), "odd rows must be offset by half a layout step");
+assert.ok(Math.abs(oddStart - evenStart - DISPLAY_TILE_STEP_PERCENT / 2) < 0.001, "odd rows must be offset by half a layout step");
 assert.ok(layout.every((entry) => entry.left >= DISPLAY_BOARD_LEFT_PERCENT && entry.left <= 95), "horizontal centers must remain inside the board");
 assert.ok(layout.every((entry) => entry.top >= DISPLAY_BOARD_TOP_PERCENT && entry.top <= DISPLAY_BOARD_TOP_PERCENT + DISPLAY_BOARD_TOP_SPAN_PERCENT), "vertical centers must remain inside the board");
 
@@ -37,8 +37,57 @@ const tileHeight = DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO;
 const rowStep = DISPLAY_BOARD_TOP_SPAN_PERCENT / 12;
 assert.ok(DISPLAY_TILE_ASPECT_RATIO > 1, "flat-top landscape tiles must be wider than they are tall");
 assert.ok(Math.abs(rowStep - tileHeight) < 0.01, `row step ${rowStep.toFixed(2)} must match tile height ${tileHeight.toFixed(2)} for shared horizontal edges`);
-assert.ok(Math.abs(DISPLAY_TILE_STEP_PERCENT - DISPLAY_TILE_WIDTH_PERCENT * 0.75) < 0.01, "flat-top centre step must be 75% of tile width for shared vertical edges");
+assert.ok(Math.abs(DISPLAY_TILE_STEP_PERCENT - DISPLAY_TILE_WIDTH_PERCENT) < 0.01, "flat-top row pitch must equal tile width to prevent polygon overlap");
 assert.ok(DISPLAY_BOARD_LEFT_PERCENT - DISPLAY_TILE_WIDTH_PERCENT / 2 > 0, "left tile bounds must remain inside the map");
 assert.ok(layout.find((entry) => entry.row === 0 && entry.column === 19)!.left + DISPLAY_TILE_WIDTH_PERCENT / 2 < 100, "rightmost tile bounds must remain inside the map");
+
+type Point = readonly [number, number];
+
+function hexPolygon(left: number, top: number): readonly Point[] {
+  const halfWidth = DISPLAY_TILE_WIDTH_PERCENT / 2;
+  const halfHeight = tileHeight / 2;
+  return [
+    [left - halfWidth, top],
+    [left - halfWidth / 2, top - halfHeight],
+    [left + halfWidth / 2, top - halfHeight],
+    [left + halfWidth, top],
+    [left + halfWidth / 2, top + halfHeight],
+    [left - halfWidth / 2, top + halfHeight],
+  ];
+}
+
+function polygonAxes(polygon: readonly Point[]): readonly Point[] {
+  return polygon.map((point, index) => {
+    const next = polygon[(index + 1) % polygon.length]!;
+    return [-(next[1] - point[1]), next[0] - point[0]] as const;
+  });
+}
+
+function project(polygon: readonly Point[], axis: Point): readonly [number, number] {
+  const values = polygon.map(([x, y]) => x * axis[0] + y * axis[1]);
+  return [Math.min(...values), Math.max(...values)];
+}
+
+function hasInteriorIntersection(first: readonly Point[], second: readonly Point[]): boolean {
+  for (const axis of [...polygonAxes(first), ...polygonAxes(second)]) {
+    const [firstMin, firstMax] = project(first, axis);
+    const [secondMin, secondMax] = project(second, axis);
+    if (Math.min(firstMax, secondMax) - Math.max(firstMin, secondMin) <= 0.000001) return false;
+  }
+  return true;
+}
+
+const polygons = layout.map((entry) => ({ entry, polygon: hexPolygon(entry.left, entry.top) }));
+for (let firstIndex = 0; firstIndex < polygons.length; firstIndex += 1) {
+  const first = polygons[firstIndex]!;
+  for (let secondIndex = firstIndex + 1; secondIndex < polygons.length; secondIndex += 1) {
+    const second = polygons[secondIndex]!;
+    assert.equal(
+      hasInteriorIntersection(first.polygon, second.polygon),
+      false,
+      `hex polygons ${first.entry.hex.key} and ${second.entry.hex.key} must not overlap`,
+    );
+  }
+}
 
 console.log(`Verified 254-cell flat-top landscape honeycomb display layout with staggered rows, ${tileHeight.toFixed(2)}% tile height, and shared hex edges.`);
