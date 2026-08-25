@@ -971,6 +971,25 @@ test("pass-move explicitly resolves the monster decision while preserving unmove
   assert.equal(passed.eventType, "monster.stayed");
 });
 
+test("the active player can move multiple owned branch units independently during Move", () => {
+  const state = createGame(2);
+  state.units.forEach((unit) => { unit.location = "record-tile"; });
+  const ownedUnits = state.units.filter((unit) => unit.ownerPlayer === state.currentPlayer).slice(0, 2);
+  assert.equal(ownedUnits.length, 2);
+  ownedUnits[0]!.location = K("los-angeles");
+  ownedUnits[1]!.location = K("san-francisco");
+  const firstPath = legalUnitPaths(state, ownedUnits[0]!.id).find((path) => path.length === 2)!;
+  const secondPath = legalUnitPaths(state, ownedUnits[1]!.id).find((path) => path.length === 2)!;
+  assert.ok(firstPath);
+  assert.ok(secondPath);
+  const first = applyCommand(state, { type: "move-unit", unitId: ownedUnits[0]!.id, path: firstPath });
+  const second = applyCommand(first.state, { type: "move-unit", unitId: ownedUnits[1]!.id, path: secondPath });
+  assert.equal(second.state.units.find((unit) => unit.id === ownedUnits[0]!.id)?.location, firstPath.at(-1));
+  assert.equal(second.state.units.find((unit) => unit.id === ownedUnits[1]!.id)?.location, secondPath.at(-1));
+  assert.deepEqual(second.state.movedPieceIds, [ownedUnits[0]!.id, ownedUnits[1]!.id]);
+  assert.throws(() => applyCommand(second.state, { type: "move-unit", unitId: state.units.find((unit) => unit.ownerPlayer !== state.currentPlayer)!.id, path: [K("los-angeles"), K("denver")] }), /not legal/);
+});
+
 test("pass-deploy advances the turn without inventing a deployment", () => {
   const encounter = applyCommand(createGame(2), { type: "pass-move" }).state;
   const deployPhase = applyCommand(encounter, { type: "resolve-encounter", choice: "health" }).state;

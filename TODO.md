@@ -187,7 +187,7 @@ Useful source documents:
 
 - [x] [P0] Replace destination-only movement with commands containing the complete intended path. (`GameCommand.move.path` is wired through engine, API, and client normalization)
   - [x] [P0] Validate every path against enabled authored edges and the piece's effective Move value. (Engine validates each development-fixture edge and Move limit)
-  - [P0] Allow the active player to move their monster and any number of eligible branch units separately.
+  - [x] [P0] Allow the active player to move their monster and any number of eligible branch units separately. (The authoritative `move-unit` command permits multiple owned units to move independently during Move, tracks each ID in `movedPieceIds`, and rejects an opponent's unit; `the active player can move multiple owned branch units independently during Move` covers the boundary.)
 - [x] [P0] Track moved piece IDs so no piece receives two movement allowances in one Move step. (`GameState.movedPieceIds` covers monster and development military-unit commands and resets at Deploy; movement-ledger tests cover rejection)
   - [x] [P0] Support deliberately leaving any eligible piece unmoved. (`pass-move` resolves only the monster decision while preserving every unit position; `pass-deploy` preserves inventory; covered by movement/pass tests.)
 - [x] [P0] Require the monster movement decision to be explicitly resolved before ending Move. (`pass-move` is an explicit engine command and preserves all unselected units; engine-tested)
