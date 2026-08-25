@@ -367,6 +367,32 @@ test("Defense Satellites discards and resolves one deterministic roll per board 
   assert.equal(result.eventType, "research.used");
 });
 
+test("Antimatter arms a battle and doubles first-round military damage", () => {
+  const state = createGame(2, 0);
+  state.players[0].researchCardIds = ["Antimatter"];
+  state.phase = "fight";
+  const unit = state.units[0];
+  unit.location = state.monsters[0].location;
+  const battleId = "antimatter";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  const armed = applyCommand(state, { type: "use-research", cardId: "Antimatter", battleId });
+  assert.deepEqual(armed.state.players[0].researchCardIds, []);
+  assert.deepEqual(armed.state.decks.research.discard, ["Antimatter"]);
+  assert.equal(armed.state.pendingBattles[0].antimatterActive, true);
+  let doubledAttack: { damage: number; modifiers: string[] } | undefined;
+  for (let seed = 0; seed < 128 && !doubledAttack; seed += 1) {
+    const candidate = structuredClone(armed.state);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight", battleId });
+    doubledAttack = (result.eventPayload.attacks as Array<{ attackerId: string; hit: boolean; damage: number; modifiers: string[] }>)
+      .find((attack) => attack.attackerId === unit.id && attack.hit);
+  }
+  assert.ok(doubledAttack);
+  assert.equal(doubledAttack!.damage >= unit.damage * 2, true);
+  assert.equal(doubledAttack!.modifiers.includes("Antimatter: double first-round damage"), true);
+});
+
 test("a monster may spend Infamy for one recorded extra attack before combat rolls", () => {
   const state = createGame(2, 0);
   const monster = state.monsters[0];

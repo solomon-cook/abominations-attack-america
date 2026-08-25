@@ -78,7 +78,7 @@ const implementedCardIds = new Set<string>([
   "Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "War Spikes", "Atomic Breath",
   "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Son of a Monster", "Berserk", "Winged Horror", "Kinda Friendly",
   "Laser Beam Eyes", "Armored Scales", "It's a Robot!", "Guard Commander", "Fusion Cells",
-  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites",
+  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites", "Antimatter",
 ]);
 
 export const MONSTER_MUTATION_CARD_IDS = mutationIds;
@@ -97,6 +97,15 @@ export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
     timing: "Any of your turns.",
     duration: "Resolved immediately.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-01.jpg"],
+    effectsImplementation: "implemented",
+  },
+  {
+    id: "Antimatter",
+    transcription: "Use on any of your turns at the start of a battle involving your units. DISCARD THIS CARD AFTER USE. Military units deal double damage in the first combat round. Each time the monster is damaged this way, roll 1 die. The monster mutates on a roll of 1.",
+    classification: "one-use/discard",
+    timing: "Start of a battle involving your units, on any of your turns.",
+    duration: "Resolved immediately before normal battle resolution.",
+    sourceRefs: ["references/monsters-menace-america/components/decks/military-research-03.jpg"],
     effectsImplementation: "implemented",
   },
   {

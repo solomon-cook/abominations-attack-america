@@ -49,7 +49,7 @@ export type GameCommand =
   | { type: "pass-move" }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
-  | { type: "use-research"; cardId: "Defense Satellites" }
+  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter"; battleId?: string }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy" }
   | { type: "draw-research" }

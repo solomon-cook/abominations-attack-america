@@ -49,6 +49,9 @@ export function PhaseActions({
   const defenseSatellitesButton = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Defense Satellites") ? (
     <button disabled={!canAct || activeGame.pendingBattles.length > 0 || Boolean(activeGame.pendingRetreat)} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Use Defense Satellites · roll for each monster</button>
   ) : null;
+  const antimatterButton = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Antimatter") ? (
+    <button disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Antimatter", battleId: pendingBattle.id })}>Use Antimatter · double first-round damage</button>
+  ) : null;
 
   if (activeGame.phase === "fight" && pendingAttackTarget) {
     return (
@@ -103,6 +106,7 @@ export function PhaseActions({
       <p>Choose whether to spend one Infamy for an additional monster attack this round.</p>
       {mutationButtons(pendingBattle.id)}
       {defenseSatellitesButton}
+      {antimatterButton}
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}>Resolve without spending Infamy</button>
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>
     </div>;

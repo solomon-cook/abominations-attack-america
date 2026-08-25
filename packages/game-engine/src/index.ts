@@ -211,6 +211,8 @@ export interface PendingBattle {
   militaryUnitIds: string[];
   /** Extra monster attacks granted by an optional Mutation before combat resolves. */
   bonusMonsterAttacks?: number;
+  /** Antimatter doubles military damage during this battle's first round. */
+  antimatterActive?: boolean;
 }
 
 export interface PendingAttackTarget {
@@ -406,7 +408,7 @@ export type GameCommand =
   | { type: "pass-move" }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
-  | { type: "use-research"; cardId: "Defense Satellites" }
+  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter"; battleId?: string }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy"; unitId?: string; destination?: HexKey }
@@ -905,6 +907,9 @@ export interface BattleAttack {
   readonly mutationCardId?: string;
   /** Radiation Field may destroy the military attacker after its roll. */
   readonly attackerDestroyed?: boolean;
+  /** Antimatter's additional mutation roll after damaging the monster. */
+  readonly antimatterMutationRoll?: number;
+  readonly antimatterMutationCardId?: string;
   /** It's a Robot! deals this much electrocution damage after a Challenge miss. */
   readonly retaliationDamage?: number;
   /** Present on Monster Challenge attacks so the UI can animate authoritative Health changes. */
@@ -1122,17 +1127,23 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
         rolls.push(roll);
         const hit = roll >= effectiveMonsterDefense(next, monster);
         const smash = hit && roll === 6;
-        const damage = hit ? (unit.damage ?? 1) + (smash ? 1 : 0) : 0;
+        const antimatterActive = pending.antimatterActive === true && round === 1;
+        const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
         monster.health = Math.max(0, monster.health - damage);
         const destroyed = monster.health === 0;
         const mutationCardId = unit.unitTypeId === "air-force-cruise-missile" && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
+        const antimatterMutationRoll = antimatterActive && damage > 0 ? nextD6(next) : undefined;
+        const antimatterMutationCardId = antimatterMutationRoll === 1 ? drawMutationForMonster(next, monster) : undefined;
         const attackerDestroyed = roll === 1 && monsterHasMutation(next, monster, "Radiation Field");
         if (attackerDestroyed) {
           unit.location = "record-tile";
           destroyedUnitIds.push(unit.id);
         }
-        const modifiers = attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : [];
-        attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed });
+        const modifiers = [
+          ...(antimatterActive ? ["Antimatter: double first-round damage"] : []),
+          ...(attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : []),
+        ];
+        attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }) });
         next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${round}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
         sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
       }
@@ -1159,10 +1170,13 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
       rolls.push(roll);
       const hit = roll >= effectiveMonsterDefense(next, monster);
       const smash = hit && roll === 6;
-      const damage = hit ? (unit.damage ?? 1) + (smash ? 1 : 0) : 0;
-      monster.health = Math.max(0, monster.health - damage);
-      const destroyed = monster.health === 0;
-      attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster"], hit, smash, damage, destroyed });
+        const antimatterActive = pending.antimatterActive === true && round === 1;
+        const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
+        monster.health = Math.max(0, monster.health - damage);
+        const destroyed = monster.health === 0;
+        const antimatterMutationRoll = antimatterActive && damage > 0 ? nextD6(next) : undefined;
+        const antimatterMutationCardId = antimatterMutationRoll === 1 ? drawMutationForMonster(next, monster) : undefined;
+        attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster", ...(antimatterActive ? ["Antimatter: double first-round damage"] : [])], hit, smash, damage, destroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }) });
       next.log.push(`${unit.branch} missile launcher attacked ${monster.name} before the monster in combat round 1: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).`);
       sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
     }
@@ -1266,10 +1280,13 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           rolls.push(roll);
           const hit = roll >= effectiveMonsterDefense(next, monster);
           const smash = hit && roll === 6;
-          const damage = hit ? (unit.damage ?? 1) + (smash ? 1 : 0) : 0;
+          const antimatterActive = pending?.antimatterActive === true;
+          const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
           monster.health = Math.max(0, monster.health - damage);
           const destroyed = monster.health === 0;
-          attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster"], hit, smash, damage, destroyed });
+          const antimatterMutationRoll = antimatterActive && damage > 0 ? nextD6(next) : undefined;
+          const antimatterMutationCardId = antimatterMutationRoll === 1 ? drawMutationForMonster(next, monster) : undefined;
+          attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster", ...(antimatterActive ? ["Antimatter: double first-round damage"] : [])], hit, smash, damage, destroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }) });
           next.log.push(`${unit.branch} missile launcher attacked ${monster.name} before the monster in combat round 1: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).`);
           sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
         }
@@ -1315,17 +1332,23 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           rolls.push(roll);
           const hit = roll >= effectiveMonsterDefense(next, monster);
           const smash = hit && roll === 6;
-          const damage = hit ? (unit.damage ?? 1) + (smash ? 1 : 0) : 0;
+          const antimatterActive = pending?.antimatterActive === true && combatRound === 1;
+          const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
           monster.health = Math.max(0, monster.health - damage);
           const destroyed = monster.health === 0;
           const mutationCardId = unit.unitTypeId === "air-force-cruise-missile" && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
+          const antimatterMutationRoll = antimatterActive && damage > 0 ? nextD6(next) : undefined;
+          const antimatterMutationCardId = antimatterMutationRoll === 1 ? drawMutationForMonster(next, monster) : undefined;
           const attackerDestroyed = roll === 1 && monsterHasMutation(next, monster, "Radiation Field");
           if (attackerDestroyed) {
             unit.location = "record-tile";
             if (!destroyedUnitIds.includes(unit.id)) destroyedUnitIds.push(unit.id);
           }
-          const modifiers = attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : [];
-          attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed });
+          const modifiers = [
+            ...(antimatterActive ? ["Antimatter: double first-round damage"] : []),
+            ...(attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : []),
+          ];
+          attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }) });
           next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${combatRound}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
           sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
         }
@@ -1367,7 +1390,8 @@ interface MutationUseResolution {
 
 interface ResearchUseResolution {
   readonly state: GameState;
-  readonly cardId: "Defense Satellites";
+  readonly cardId: "Defense Satellites" | "Antimatter";
+  readonly battleId?: string;
   readonly rolls: readonly number[];
   readonly damagedMonsterIds: readonly string[];
   readonly defeatedMonsterIds: readonly string[];
@@ -1380,9 +1404,23 @@ function discardResearchFromHand(state: GameState, playerIndex: number, cardId: 
   if (!state.decks.research.discard.includes(cardId)) state.decks.research = { ...state.decks.research, discard: [...state.decks.research.discard, cardId] };
 }
 
-/** Resolve Defense Satellites, which damages each non-giant monster currently on the board. */
-function useResearchCard(state: GameState, cardId: "Defense Satellites"): ResearchUseResolution {
-  if (state.phase === "game-over" || state.phase === "challenge") throw new GameDomainError("ILLEGAL_COMMAND", "Defense Satellites is unavailable during a terminal state or Monster Challenge.");
+/** Resolve the currently implemented immediate Research windows. */
+function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter", requestedBattleId?: string): ResearchUseResolution {
+  if (state.phase === "game-over" || state.phase === "challenge") throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} is unavailable during a terminal state or Monster Challenge.`);
+  if (cardId === "Antimatter") {
+    if (state.phase !== "fight" || state.pendingDecision?.type !== "battle-resolution") throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter can only be used at the start of an unresolved battle.");
+    const battleId = requestedBattleId ?? state.pendingDecision.battleId;
+    if (battleId !== state.pendingDecision.battleId) throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter must target the authoritative pending battle.");
+    const battle = state.pendingBattles.find((candidate) => candidate.id === battleId);
+    if (!battle || state.pendingCombat || state.pendingAttackTarget) throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter can only be used before battle resolution begins.");
+    const hasOwnUnit = battle.militaryUnitIds.some((unitId) => state.units.some((unit) => unit.id === unitId && unit.ownerPlayer === state.currentPlayer));
+    if (!hasOwnUnit) throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter requires a battle involving the active player's units.");
+    const next = structuredClone(state);
+    discardResearchFromHand(next, next.currentPlayer, cardId);
+    next.pendingBattles.find((candidate) => candidate.id === battleId)!.antimatterActive = true;
+    next.log.push(`Antimatter armed the first combat round at ${battle.location}.`);
+    return { state: next, cardId, battleId, rolls: [], damagedMonsterIds: [], defeatedMonsterIds: [] };
+  }
   if (state.pendingBattles.length > 0 || state.pendingRetreat) throw new GameDomainError("ILLEGAL_COMMAND", "Defense Satellites must be resolved before an unresolved battle or retreat decision.");
   const next = structuredClone(state);
   discardResearchFromHand(next, next.currentPlayer, cardId);
@@ -2026,9 +2064,9 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const eventPayload = { battleId: result.battleId, mutationCardId: result.cardId, extraAttacks: result.extraAttacks, healthRoll: result.healthRoll, nextDecision: result.state.pendingDecision };
     return { state: appendEvent(result.state, "mutation.used", eventPayload), eventType: "mutation.used", eventPayload };
   }
-  if (command.type === "use-research" && command.cardId === "Defense Satellites") {
-    const result = useResearchCard(state, command.cardId);
-    const eventPayload = { researchCardId: result.cardId, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
+  if (command.type === "use-research") {
+    const result = useResearchCard(state, command.cardId, command.battleId);
+    const eventPayload = { researchCardId: result.cardId, battleId: result.battleId, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "research.used", eventPayload), eventType: "research.used", eventPayload };
   }
   if (state.phase === "fight" && (command.type === "resolve-fight" || command.type === "advance")) {
