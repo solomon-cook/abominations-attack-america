@@ -14,6 +14,8 @@ Participant connectivity and room lifecycle transitions are defined in [the room
 
 The in-memory store remains a development fixture and cannot provide process-restart durability. Production restart/idempotency proof requires the Prisma/Postgres path and a database-backed integration test.
 
+Room snapshots remain authoritative while event history is bounded to the newest 256 events per room in both stores. A read after an older revision receives the current snapshot plus the retained suffix; clients must treat the snapshot as the recovery boundary rather than assuming an unbounded event stream.
+
 The receipt schema is deployed by `apps/api/prisma/migrations/20260825130000_add_command_receipts/migration.sql`. `npm run prisma:validate`, `npm run prisma:generate`, and a migration diff check must pass before applying migrations to a configured database; no destructive reset or force-push is part of this change.
 
 The engine persistence fixture also round-trips an encounter through JSON and `migrateGameState`, preserving Health, Infamy, Mutation history, stomped hexes, pending trophy choice, and permanent trophy removal. Reapplying the same trophy command to the reloaded snapshot produces byte-equivalent state and event history.

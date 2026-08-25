@@ -1,7 +1,7 @@
 import { randomBytes, createHash } from "node:crypto";
 import { applyCommandEnvelope, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { RoomEvent, RoomView, SessionResponse } from "@abominations/shared";
-import { ROOM_IDLE_TIMEOUT_MS, terminalResultSummary, type RoomStore } from "./store.js";
+import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, terminalResultSummary, type RoomStore } from "./store.js";
 import { prisma } from "../lib/prisma.js";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -183,7 +183,7 @@ export class PrismaRoomStore implements RoomStore {
   }
 
   private async view(roomId: string, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number): Promise<RoomView> {
-    const room = await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, include: { participants: true, events: { where: { version: { gt: afterVersion } }, orderBy: { version: "desc" } } } });
+    const room = await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, include: { participants: true, events: { where: { version: { gt: afterVersion } }, orderBy: { version: "desc" }, take: MAX_RETAINED_ROOM_EVENTS } } });
     if (!room) throw new Error("Room not found.");
     const events: RoomEvent[] = room.events.map((event: any) => ({ id: event.id, roomId: event.roomId, version: event.version, actorId: event.actorId, type: event.type, payload: redactCardIdentifiers(event.payload) as Record<string, unknown>, createdAt: event.createdAt.toISOString() }));
     return { id: room.id, code: room.code, status: room.status.toLowerCase() as RoomView["status"], version: room.version, state: projectState(room.state as unknown as GameState, audience, viewerPlayerIndex), participants: room.participants.map((participant: any) => ({ id: participant.id, displayName: participant.displayName, role: participant.role.toLowerCase(), playerIndex: participant.playerIndex ?? undefined, connected: Boolean(participant.connectedAt), ready: Boolean(participant.ready) })), events };

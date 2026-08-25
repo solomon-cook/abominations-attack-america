@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { legalMonsterPaths } from "@abominations/game-engine";
-import { MemoryRoomStore } from "./store.js";
+import { MAX_RETAINED_ROOM_EVENTS, MemoryRoomStore } from "./store.js";
 
 async function completeDevelopmentSetup(store: MemoryRoomStore, sessions: Array<{ token: string; room: { code: string; version: number } }>) {
   const code = sessions[0].room.code;
@@ -345,6 +345,20 @@ test("deterministic reconnect and retry sequence preserves the same snapshot", a
   assert.equal(first.version, active.version + 1);
   assert.equal(retry.version, first.version);
   assert.equal(retry.state.phase, first.state.phase);
+});
+
+test("memory event history keeps the bounded recovery suffix", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2);
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  const active = await store.setReady(host.room.code, guest.token, true);
+  const rooms = (store as unknown as { rooms: Map<string, { events: unknown[] }> }).rooms;
+  const storedRoom = [...rooms.values()][0]!;
+  storedRoom.events = Array.from({ length: MAX_RETAINED_ROOM_EVENTS }, (_, index) => ({ version: index + 1 }));
+  await store.submitAction(host.room.code, host.token, { actionId: "retention-boundary", actorId: host.participantId, expectedRevision: active.version, protocolVersion: 1, command: { type: "pass-move" } });
+  assert.equal(storedRoom.events.length, MAX_RETAINED_ROOM_EVENTS);
 });
 
 test("bounded concurrent room and spectator operations remain isolated", async () => {

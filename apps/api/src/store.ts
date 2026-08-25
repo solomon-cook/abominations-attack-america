@@ -5,6 +5,7 @@ import type { RoomEvent, RoomParticipantView, RoomStatus, RoomView, SessionRespo
 type StoredParticipant = RoomParticipantView & { tokenHash: string; connectionId?: string };
 type StoredRoom = { id: string; code: string; status: RoomStatus; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; lastActivityAt: number };
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+export const MAX_RETAINED_ROOM_EVENTS = 256;
 
 export function terminalResultSummary(state: GameState, terminalEvent: { type: string; version: number }): Record<string, unknown> {
   return {
@@ -139,6 +140,7 @@ export class MemoryRoomStore implements RoomStore {
     this.touch(room);
     room.version += 1;
     room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: participant.id, type: "setup.updated", payload: { phase: nextSetup.phase, action: action.type }, createdAt: now() });
+    room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.refreshStatus(room);
     return this.view(room, 0, "player", participant.playerIndex);
   }
@@ -166,6 +168,7 @@ export class MemoryRoomStore implements RoomStore {
     this.touch(room);
     room.version += 1;
     room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: result.eventType, payload: { ...result.eventPayload, receipt: result.receipt }, createdAt: now() });
+    room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.actionIds.add(`${room.id}:${envelope.actionId}`);
     if (room.state.phase === "game-over") room.status = "completed";
     return this.view(room, 0, "player", actor.playerIndex);
