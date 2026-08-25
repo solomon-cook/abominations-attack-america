@@ -48,7 +48,7 @@ export interface CardDefinition {
   readonly duration: "unknown";
   readonly uses: "unknown";
   readonly targets: "unknown";
-  readonly lifecycle: "source-gated";
+  readonly lifecycle: CardAvailability;
 }
 
 export interface SourcedCardRule {
@@ -73,11 +73,19 @@ const researchIds = [
   "Antimatter", "Scientific Analysis", "Chopper Lift", "Captain Colossal",
 ] as const;
 
+/** Cards whose sourced rules are implemented at the current development ruleset boundary. */
+const implementedCardIds = new Set<string>([
+  "Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "War Spikes", "Atomic Breath",
+  "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Winged Horror", "Kinda Friendly",
+  "Laser Beam Eyes", "Armored Scales", "It's a Robot!", "Guard Commander", "Fusion Cells",
+  "2nd Generation", "Anti-Mutagen", "Scientific Analysis",
+]);
+
 export const MONSTER_MUTATION_CARD_IDS = mutationIds;
 export const MILITARY_RESEARCH_CARD_IDS = researchIds;
 export const CARD_DEFINITIONS: readonly CardDefinition[] = [
-  ...mutationIds.map((id) => ({ id, deck: "mutation" as const, availability: "source-gated" as const, presentationKey: id, sourceCatalogue: catalogue, owner: "unknown" as const, zone: "deck" as const, visibility: "unknown" as const, duration: "unknown" as const, uses: "unknown" as const, targets: "unknown" as const, lifecycle: "source-gated" as const })),
-  ...researchIds.map((id) => ({ id, deck: "research" as const, availability: "source-gated" as const, presentationKey: id, sourceCatalogue: catalogue, owner: "unknown" as const, zone: "deck" as const, visibility: "unknown" as const, duration: "unknown" as const, uses: "unknown" as const, targets: "unknown" as const, lifecycle: "source-gated" as const })),
+  ...mutationIds.map((id) => ({ id, deck: "mutation" as const, availability: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const, presentationKey: id, sourceCatalogue: catalogue, owner: "unknown" as const, zone: "deck" as const, visibility: "unknown" as const, duration: "unknown" as const, uses: "unknown" as const, targets: "unknown" as const, lifecycle: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const })),
+  ...researchIds.map((id) => ({ id, deck: "research" as const, availability: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const, presentationKey: id, sourceCatalogue: catalogue, owner: "unknown" as const, zone: "deck" as const, visibility: "unknown" as const, duration: "unknown" as const, uses: "unknown" as const, targets: "unknown" as const, lifecycle: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const })),
 ];
 
 /** Exact component text promoted from the cited catalogue; execution remains gated. */

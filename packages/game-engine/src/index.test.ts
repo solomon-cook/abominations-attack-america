@@ -387,11 +387,13 @@ test("source-inventoried cards have versioned structured metadata without guesse
   assert.equal(CARD_DEFINITIONS.length, 32);
   assert.equal(CARD_DEFINITIONS.filter((card) => card.deck === "mutation").length, 16);
   assert.equal(CARD_DEFINITIONS.filter((card) => card.deck === "research").length, 16);
-  assert.equal(cardDefinition("Guard Commander")?.availability, "source-gated");
+  assert.equal(cardDefinition("Guard Commander")?.availability, "implemented");
   assert.equal(cardDefinition("Guard Commander")?.visibility, "unknown");
-  assert.equal(cardDefinition("Guard Commander")?.lifecycle, "source-gated");
-  assert.deepEqual(unsupportedCardIds(["Guard Commander"]), ["Guard Commander"]);
-  assert.throws(() => assertCardsAvailable(["Guard Commander"]), /source-gated/);
+  assert.equal(cardDefinition("Guard Commander")?.lifecycle, "implemented");
+  assert.equal(cardDefinition("Berserk")?.availability, "source-gated");
+  assert.deepEqual(unsupportedCardIds(["Guard Commander"]), []);
+  assert.deepEqual(unsupportedCardIds(["Guard Commander", "Berserk"]), ["Berserk"]);
+  assert.throws(() => assertCardsAvailable(["Berserk"]), /source-gated/);
   assert.deepEqual(sourcedCardRule("Guard Commander"), {
     id: "Guard Commander",
     transcription: "You can move and redeploy Guard units. Tanks have Move 3 (land only). Fighters have Move 5 (fly). Other players can't deploy Guard units.",
