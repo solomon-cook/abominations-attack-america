@@ -100,7 +100,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           ...game.monsters.filter((monster) => monster.location === placeKey).map((monster) => monster.name),
           ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
         ].join(", ");
-        const displayName = place?.name ?? hex.label ?? hex.key;
+        const displayName = place?.name ?? hex.label ?? `Unresolved ${hex.key}`;
         const baseArt = hex.waterClass === "land"
           ? "/assets/board/grassland.webp"
           : "/assets/board/coast/coast_0deg.webp";

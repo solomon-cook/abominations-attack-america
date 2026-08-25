@@ -380,10 +380,10 @@ Useful source documents:
     - [x] [P0] Render the board as a connected proper game-board layout of hexagons, with a consistent small border/gap between neighbouring hexes so the board structure is immediately legible. (Flat-top landscape tiles use a 0.15% horizontal micro-gap, staggered rows, and validated bounds.)
     - [ ] [P0] Keep board artwork, piece artwork, markers, and card/component artwork crisp and correctly scaled at the supported zoom levels without obscuring board occupancy or legal interactions.
     - [ ] [P0] Preserve the authored artwork's visual identity and use asset fallbacks only when an asset is genuinely unavailable; do not replace the created assets with generic placeholders in the playable board view.
-  - [ ] [P0] Label the board's Mutation spaces and cities clearly in the board view.
-    - [ ] [P0] Show each city's authored name and its relevant printed benefit/number directly on or immediately beside the city hex, using clear notation such as `1 HP` and `1D` where applicable.
-    - [ ] [P0] Keep city and Mutation labels legible at supported zoom levels and available through accessible text/inspection without hiding the underlying hex, piece, or interaction state.
-    - [ ] [P0] Use only verified board data for city names, Mutation spaces, and benefit values; unresolved values must remain visibly marked as unresolved rather than guessed.
+    - [ ] [P0] Label the board's Mutation spaces and cities clearly in the board view.
+      - [ ] [P0] Show each city's authored name and its relevant printed benefit/number directly on or immediately beside the city hex, using clear notation such as `1 HP` and `1D` where applicable.
+      - [ ] [P0] Keep city and Mutation labels legible at supported zoom levels and available through accessible text/inspection without hiding the underlying hex, piece, or interaction state.
+      - [x] [P0] Use only verified board data for city names, Mutation spaces, and benefit values; unresolved values remain visibly marked as `Unresolved <hex key>` rather than guessed. (`HexGrid` preserves authored development labels and marks unresolved shell cells explicitly.)
   - [x] [P0] Remove the background reference-board image from the site and replace it with a generated North America-inspired green hexagon map with a surrounding sea treatment, used only as the decorative background behind the actual map tiles. (`apps/web/src/styles.css`; full verification passes.)
     - [x] [P0] Remove the photographic reference backdrop and use a generated CSS sea, green-land silhouette, and hex-texture treatment beneath the map tiles. (`apps/web/src/main.tsx` and `apps/web/src/styles.css`; web build pass.)
     - [x] [P0] Render the authoritative playable map tiles above this generated background, with the actual connected hexes, borders, labels, pieces, features, and interactions remaining visible and usable. (`.map-canvas` remains above the decorative layers.)
