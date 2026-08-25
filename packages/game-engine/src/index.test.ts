@@ -1507,6 +1507,26 @@ test("a pending challenger lost to Hollywood is cleared while a disappeared mons
   challengeState.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
   const selected = applyCommand(challengeState, { type: "challenge-opponent", opponentMonsterId: "monster-2" });
   assert.equal(selected.state.challenge?.opponentMonsterId, "monster-2");
+
+  const disappearing = createGame(2);
+  disappearing.challenge = {
+    declared: true,
+    active: false,
+    challengerMonsterId: "monster-1",
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  disappearing.setupAssignments = [
+    { playerIndex: 0, monsterId: "monster-1", branch: "Army", lair: "los-angeles", startingChoice: { kind: "research" }, ready: true },
+    { playerIndex: 1, monsterId: "monster-2", branch: "Navy", lair: "chicago", startingChoice: { kind: "research" }, ready: true },
+  ];
+  disappearing.currentPlayer = 0;
+  disappearing.pendingDecision = { type: "monster-movement", playerIndex: 0, monsterId: "monster-1" };
+  const vanished = applyCommand(disappearing, { type: "disappear-monster" });
+  assert.equal(vanished.state.monsters[0].location, "disappeared");
+  assert.equal(vanished.state.challenge?.challengerMonsterId, undefined);
 });
 
 test("a confirmed concession records the next seat as winner and freezes the match", () => {

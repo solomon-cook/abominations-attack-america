@@ -347,8 +347,8 @@ Useful source documents:
 - [x] [P1] Schedule default Challenge start for the start of that player's next turn. (The challenge-enabled development ruleset waits through the active player's Deploy and starts at the challenger's next turn.)
   - [x] [P1] Allow an eligible monster reaching a Challenge site to replace the challenger and begin the Challenge at turn end. (A post-declaration Challenge-site Encounter replaces the pending challenger and begins after that turn's Deploy.)
 - [x] [P1] Preserve challenger status after forced retreat. (The declared challenger remains unchanged through a normal battle's retreat resolution; the regression fixture covers the authoritative move, fight, and retreat sequence.)
-  - [P1] Clear challenger status after disappearance or Hollywood and wait for a new eligible Challenge-site arrival.
-  - [P1] Exclude Hollywood monsters while keeping disappeared monsters eligible.
+  - [x] [P1] Clear challenger status after disappearance or Hollywood and wait for a new eligible Challenge-site arrival. (Hollywood knockout and disappearance both clear an inactive pending challenger; regression coverage proves both paths.)
+  - [x] [P1] Exclude Hollywood monsters while keeping disappeared monsters eligible. (Challenge opponent selection filters Hollywood/defeated/zero-Health monsters while accepting a disappeared living monster.)
 - [x] [P1] Let the challenger choose the next eligible opponent. (The authoritative `challenge-opponent` command rejects Hollywood, defeated, and self targets; the web exposes the pending choice.)
   - [x] [P1] Move the selected opponent into the Challenge space and record both weigh-in Health values. (Selection persists both Health values before the duel.)
 - [x] [P1] Run unlimited combat rounds with challenger-first attacks and monster-on-monster targeting. (The deterministic `resolve-challenge` command records every round, roll, and attack; giant combat remains source-gated.)
