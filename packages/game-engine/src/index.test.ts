@@ -209,6 +209,25 @@ test("the active player controls neutral National Guard attacks", () => {
   assert.equal(guardAttack?.controllerPlayer, state.currentPlayer);
 });
 
+test("ordinary branch attacks retain their owning player's controller", () => {
+  const state = createGame(2, 4);
+  const unit = state.units[0];
+  unit.ownerPlayer = 1;
+  unit.location = K("los-angeles");
+  unit.attacks = 1;
+  unit.damage = 1;
+  state.monsters[0].location = K("los-angeles");
+  state.monsters[0].attacks = 0;
+  state.monsters[0].defense = 99;
+  state.phase = "fight";
+  state.currentPlayer = 0;
+  state.pendingBattles = [{ id: "monster-1:1:owned", monsterId: "monster-1", location: K("los-angeles"), militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "monster-1:1:owned" };
+  const result = applyCommand(state, { type: "resolve-fight" });
+  const branchAttack = (result.eventPayload.attacks as Array<{ attackerId: string; controllerPlayer: number }>).find((attack) => attack.attackerId === unit.id);
+  assert.equal(branchAttack?.controllerPlayer, 1);
+});
+
 test("National Guard deployment destinations are limited to unstomped city, base, and Infamy spaces", () => {
   const state = createGame(2);
   const destinations = legalNationalGuardDeploymentDestinations(state);
