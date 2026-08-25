@@ -95,7 +95,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
               {game.units.filter((unit) => unit.location === placeKey).map((unit) => {
                 const unitArt = unitArtForType(unit.unitTypeId);
                 return unitArt
-                  ? <img className="tile-piece" key={unit.id} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                  ? <img className={`tile-piece ${selectedUnitId === unit.id ? "selected-piece" : ""}`} key={unit.id} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
                   : <i className="unit-mark" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
               })}
             </span>

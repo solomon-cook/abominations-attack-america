@@ -41,6 +41,7 @@ import { MatchStatus } from "./components/MatchStatus";
 import { PhaseActions } from "./components/PhaseActions";
 import { PieceStackInspector } from "./components/PieceStackInspector";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
+import { SelectedPieceTray } from "./components/SelectedPieceTray";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SetupPanel } from "./components/SetupPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
@@ -718,6 +719,15 @@ function App() {
                   : `Select a highlighted reachable space to preview a path for ${activePlayer.name}.`
               : "Waiting for the active player."}
           </p>
+          <SelectedPieceTray
+            game={activeGame}
+            selectedUnitId={selectedUnitId}
+            selectedUnitPath={selectedUnitPath}
+            onClear={() => {
+              setSelectedUnitId(null);
+              setSelectedUnitPath([]);
+            }}
+          />
           <PieceStackInspector
             game={activeGame}
             activeMonsterId={activePlayer.id}
