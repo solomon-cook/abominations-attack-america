@@ -138,6 +138,35 @@ test("bounded concurrent rooms fan out WebSocket and polling updates without cro
   }
 });
 
+test("same-room command contention commits one revision and rejects the rest", async () => {
+  const port = 20500 + (process.pid % 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true" },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  try {
+    await waitForHealth(baseUrl);
+    const createdResponse = await fetch(`${baseUrl}/rooms`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ maxPlayers: 2 }) });
+    const created = await createdResponse.json() as { room: RoomPayload; token: string; participantId: string };
+    assert.equal(createdResponse.ok, true);
+    const initial = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((response) => response.json()) as RoomPayload;
+    const results = await Promise.all(["contended-a", "contended-b", "contended-c", "contended-d"].map((actionId) => fetch(`${baseUrl}/rooms/${created.room.code}/setup`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-room-token": created.token },
+      body: JSON.stringify({ expectedRevision: initial.version, action: { type: "choose-monster", monsterId: "monster-1" }, actionId }),
+    })));
+    assert.equal(results.filter((response) => response.ok).length, 1);
+    assert.equal(results.filter((response) => response.status === 400).length, 3);
+    const settled = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((response) => response.json()) as RoomPayload;
+    assert.equal(settled.version, initial.version + 1);
+    assert.deepEqual(settled.events.map((event) => event.version), [settled.version]);
+  } finally {
+    await stop(child);
+  }
+});
+
 test("bounded reconnect storm restores the same room revision without duplicate actions", async () => {
   const port = 21000 + (process.pid % 1000);
   const baseUrl = `http://127.0.0.1:${port}`;
