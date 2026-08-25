@@ -42,6 +42,8 @@ The local browser now renders all 254 cells from `FULL_HONEYCOMB_BOARD` as posit
 
 The board notice and accessible tile descriptions identify the nine-space development fixture and its unresolved physical-board cells. Those disclosures do not substitute for verified board data or full-rules browser coverage, and this fixture cannot be used to sign off the MVP playable-game board requirement.
 
+The browser now uses the optimized top-down board photograph as a subdued visual backdrop beneath the interactive 254-cell overlay. The photograph is explicitly labelled as reference-only; the engine still supplies all current legal actions and recorded features.
+
 ## Preference and no-audio check
 
 In the updated local browser run, opening **Settings** exposed four persisted preferences: Larger text, Show board labels, Reduce motion, and Confirm disappearance. Toggling Larger text, hiding labels, and enabling Reduce motion changed the root presentation classes and hid only the visual label span while retaining the accessible tile name. The panel also states that no audio dependency exists; required outcomes remain textual. This is UI evidence, not a WCAG AA sign-off or production release approval.

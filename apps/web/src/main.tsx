@@ -890,6 +890,14 @@ function App() {
             data-rendered-board-id={FULL_HONEYCOMB_BOARD.id}
             data-rendered-board-content-hash={FULL_HONEYCOMB_BOARD.contentHash}
           >
+            <img
+              className="board-photo-backdrop"
+              src="/assets/board/full-board-top-down.webp"
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+            />
             <div className="map-canvas" style={{ transform: `translate(${mapPan.x}%, ${mapPan.y}%) scale(${mapZoom})` }}>
             <div className="hex-grid">
               {boardHexes.map(({ hex, place, left, top }) => {
@@ -964,6 +972,7 @@ function App() {
           <p className="sr-only" id="board-description">
             The full 254-cell honeycomb coordinate shell is rendered from the shared board candidate. The current match is still pinned to the nine-space development board, so only its verified fixture spaces are authoritative and interactive; unknown board spaces remain unavailable until source transcription is complete.
           </p>
+          <p className="map-note">Printed-board photograph is a visual reference backdrop only; legal movement and features come from the canonical engine board.</p>
           <p className="map-note">
             {canAct
               ? selectedUnitId
