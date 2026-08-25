@@ -298,7 +298,7 @@ Useful source documents:
 - [x] [P0] Deployment tests cover every branch, player count, base status, inventory boundary, destination collision, and pass option. (Table-driven engine coverage now exercises 2/3/4-player fixtures and every branch; branches without a verified development base must fail closed, while deployed branches cover inventory, collision, stomp, and explicit pass boundaries.)
 - [ ] [P0] Every physical unit is accounted for before and after deploy, trophy, destruction, redeploy, and removal operations.
 - [ ] [P1] Research, National Guard overrides, and giant-unit lifecycle tests use verified component fixtures.
-- [ ] [P1] The web UI never offers an illegal unit, destination, redeployment, or Research alternative.
+- [x] [P1] The web UI never offers an illegal unit, destination, redeployment, or Research alternative. (`legalOwnedDeploymentDestinations` and `legalNationalGuardDeploymentDestinations` filter verified, unstomped, unused destinations before `PhaseActions` renders deployment controls; Research is disabled from the authoritative exhausted-deck flag; redeployment remains unavailable because it is source-gated.)
 
 ## Milestone 9 — Mutation and Military Research card systems
 

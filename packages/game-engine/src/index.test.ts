@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createCardDeckState, discardCard, drawCard, sourcedCardRule } from "./cards.js";
-import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, locationIdToHexKey } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -219,6 +219,16 @@ test("National Guard deployment destinations are limited to unstomped city, base
   const stomped = { ...state, stompedLocations: [K("denver"), K("infamy-site")] };
   assert.equal(legalNationalGuardDeploymentDestinations(stomped).includes(K("denver")), false);
   assert.equal(legalNationalGuardDeploymentDestinations(stomped).includes(K("infamy-site")), false);
+});
+
+test("owned deployment destinations are verified, unstomped, and unique per Deploy step", () => {
+  const state = createGame(2);
+  assert.deepEqual(legalOwnedDeploymentDestinations(state), [K("denver")]);
+  state.deploymentDestinations = [K("denver")];
+  assert.deepEqual(legalOwnedDeploymentDestinations(state), []);
+  state.deploymentDestinations = [];
+  state.stompedLocations = [K("denver")];
+  assert.deepEqual(legalOwnedDeploymentDestinations(state), []);
 });
 
 test("National Guard deployment creates a neutral unit at a legal destination", () => {

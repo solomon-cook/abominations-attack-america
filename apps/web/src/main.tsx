@@ -11,6 +11,7 @@ import {
   FULL_HONEYCOMB_BOARD,
   getLocation,
   legalNationalGuardDeploymentDestinations,
+  legalOwnedDeploymentDestinations,
   legalMonsterDestinations,
   legalMonsterPaths,
   legalUnitPaths,
@@ -141,7 +142,9 @@ function App() {
   const activeBranch = activeGame.setupAssignments?.[activeGame.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as const)[activeGame.currentPlayer % 4];
   const activeDeploymentDefinition = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === activeBranch);
+  const ownedDeploymentDestinations = legalOwnedDeploymentDestinations(activeGame);
   const ownDeploymentAvailable = activeGame.deploymentsThisTurn < (activeDeploymentDefinition?.ownOrGuardUnits ?? 0)
+    && ownedDeploymentDestinations.length > 0
     && activeGame.units.some((unit) => unit.branch === activeBranch && unit.location === "record-tile" && !activeGame.removedUnitIds.includes(unit.id));
   const guardDeploymentAvailable = Boolean(availableGuardUnitId && guardDeploymentDestination)
     && activeGame.deploymentsThisTurn < ((activeDeploymentDefinition?.ownOrGuardUnits ?? 0) + (activeDeploymentDefinition?.additionalNationalGuardUnits ?? 0));

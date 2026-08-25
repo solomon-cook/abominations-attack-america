@@ -732,10 +732,23 @@ export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
  * Allowance, control overrides, and physical Guard-piece lifecycle remain
  * separate rules-gated concerns.
  */
-export function legalNationalGuardDeploymentDestinations(state: Pick<GameState, "stompedLocations">): HexKey[] {
+export function legalNationalGuardDeploymentDestinations(state: Pick<GameState, "stompedLocations"> & Partial<Pick<GameState, "deploymentDestinations">>): HexKey[] {
   const stomped = new Set(state.stompedLocations ?? []);
+  const deployedThisTurn = new Set(state.deploymentDestinations ?? []);
   return Object.values(DEVELOPMENT_BOARD.hexes)
-    .filter((hex) => !stomped.has(hex.key) && hex.features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site"))
+    .filter((hex) => !stomped.has(hex.key) && !deployedThisTurn.has(hex.key) && hex.features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site"))
+    .map((hex) => hex.key)
+    .sort();
+}
+
+/** Return verified, unstomped, unused destinations for the active owned branch. */
+export function legalOwnedDeploymentDestinations(state: Pick<GameState, "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer">): HexKey[] {
+  const branch = state.setupAssignments?.[state.currentPlayer]?.branch
+    ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[state.currentPlayer % 4];
+  const stomped = new Set(state.stompedLocations ?? []);
+  const deployedThisTurn = new Set(state.deploymentDestinations ?? []);
+  return Object.values(DEVELOPMENT_BOARD.hexes)
+    .filter((hex) => !stomped.has(hex.key) && !deployedThisTurn.has(hex.key) && hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch))
     .map((hex) => hex.key)
     .sort();
 }
@@ -1291,7 +1304,7 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   const baseHex = Object.values(DEVELOPMENT_BOARD.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch));
   const destination = guardDeployment
     ? requested?.destination ?? legalNationalGuardDeploymentDestinations(next)[0]
-    : requested?.destination ?? baseHex?.key;
+    : requested?.destination ?? legalOwnedDeploymentDestinations(next)[0] ?? baseHex?.key;
   if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", `No verified ${guardDeployment ? "National Guard destination" : `${branch} base`} exists in the development board; deployment remains source-gated.`);
   if (guardDeployment) {
     if (!legalNationalGuardDeploymentDestinations(next).includes(destination)) throw new GameDomainError("ILLEGAL_COMMAND", "National Guard may deploy only to an unstomped city, military base, or Infamy site.");
