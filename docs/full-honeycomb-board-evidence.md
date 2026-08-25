@@ -26,6 +26,18 @@ The optimized WebP files are delivery copies for the browser. The original JPGs 
 
 The overlay is deliberately a review aid: it places all 254 candidate coordinate keys over the source photograph, but it does not claim that any printed label, icon, water class, barrier, or edge has been transcribed.
 
+## Evidence-quality assessment
+
+The currently checked-in source photographs are useful for confirming the overall filled-board silhouette, but they are not sufficient by themselves for safe cell-level authoring:
+
+| Asset | Dimensions | Reliable use | Not reliable for |
+| --- | ---: | --- | --- |
+| `full-board-top-down.jpg` | 753 × 623 | Overall lattice, outer water boundary, broad feature placement | Reading every printed label/icon, classifying every edge, or assigning a rule datum to a coordinate |
+| `full-game-setup.jpg` | 2840 × 1752 | Cross-checking the board in a setup context and identifying broad component regions | Cell-by-cell transcription where pieces, cards, glare, or perspective obscure the printed board |
+| User-supplied comparison screenshot | 1280 × 706 | Demonstrating the current candidate-shell rendering failure: unresolved labels, placeholder dots, and rectangular extent | Authoritative physical-board topology; it is a browser reconstruction, not a source photograph |
+
+Promotion therefore requires a higher-resolution, unobscured top-down board reference or a human-reviewed transcription against the original physical board. Image optimisation improves delivery performance only; it does not increase the evidentiary resolution or turn decorative geometry into rules data.
+
 ## Promotion checklist
 
 - [ ] Assign every photographed cell a reviewed label or an explicit blank-space classification.
