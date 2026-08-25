@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -28,6 +28,7 @@ function resolveDevelopmentFight(state: GameState): GameState {
 
 test("MVP room creation rejects the unresolved full honeycomb board", () => {
   assert.throws(() => assertMvpBoardReady(), /MVP board is not ready/);
+  assert.throws(() => createMvpRoomGame(2), /MVP board is not ready/);
 });
 
 test("supported player counts get the correct stomp stack", () => {

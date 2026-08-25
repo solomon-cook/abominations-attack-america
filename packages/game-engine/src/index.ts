@@ -675,7 +675,7 @@ export function assertMvpBoardReady(): void {
 
 export function createMvpRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `mvp-room-${playerCount}-${seed >>> 0}`): GameState {
   assertMvpBoardReady();
-  return createRoomGame(playerCount, seed, matchId);
+  throw new GameDomainError("ILLEGAL_COMMAND", `MVP board data is verified, but the production setup initializer is not yet available for ${matchId}; refusing to fall back to the development fixture.`);
 }
 
 /**
