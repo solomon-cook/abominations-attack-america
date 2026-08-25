@@ -22,6 +22,11 @@ test("production Prisma room creation rejects the unresolved MVP board", async (
   await assert.rejects(() => new PrismaRoomStore(adapter).createRoom(2), /MVP board is not ready/);
 });
 
+test("Prisma store health proves the database adapter is reachable", async () => {
+  const { adapter } = persistentAdapter();
+  assert.deepEqual(await new PrismaRoomStore(adapter).health(), { persistence: "prisma" });
+});
+
 test("terminal command persists completed room status and winner result atomically", async () => {
   const { adapter, room, results } = persistentAdapter();
   room.state.stompMarkers = 1;

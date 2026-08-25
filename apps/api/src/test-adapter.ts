@@ -9,6 +9,7 @@ export function persistentAdapter() {
   const results = new Map<string, unknown>();
   const events: any[] = [];
   const adapter: any = {
+    $queryRaw: async () => [{ "?column?": 1 }],
     gameRoom: {
       findUnique: async ({ include }: { include?: unknown }) => include ? { ...room, participants: [actor], events: [...events].reverse() } : room,
       updateMany: async ({ where, data }: { where: { version: number }; data: { state: unknown; version: number } }) => {
