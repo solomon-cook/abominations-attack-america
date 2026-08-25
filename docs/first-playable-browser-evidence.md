@@ -16,6 +16,27 @@ A first-playable browser pass is complete only when a clean supported browser se
 6. repeat the flow in an online two-browser session; and
 7. repeat the required interaction checks at the supported mobile viewport.
 
+## Exit-evidence checklist
+
+The first-playable claim is allowed only when every row has current evidence at the
+scope shown below. A green build, engine test, or development-fixture smoke cannot
+substitute for a browser, source-data, or production proof row.
+
+| Requirement | Required proof | Current status |
+| --- | --- | --- |
+| Authoritative board | Reviewed full-board transcription, stable IDs/coordinates, water and edge data, validation output, and human sign-off | Blocked: source transcription is incomplete |
+| Shared match board | Engine, API, and browser record the same board ID and content hash; production room creation succeeds only for that board | Blocked: full-board candidate is unresolved and production creation fails closed |
+| Two-player setup and turn loop | Clean supported-browser run covers setup, Move, Fight, Encounter, Deploy, cancellation, invalid/stale recovery, and victory | Partial: development-fixture evidence exists; full-board run is unavailable |
+| Refresh and reconnect | Browser evidence shows the pending decision and terminal result survive refresh/disconnect/reconnect without duplicate actions | Open: engine/API coverage exists, browser proof is missing |
+| Two-browser online play | Two independent supported-browser sessions complete a match and observe the same revisions, decisions, and winner | Open: local setup/reload smoke is partial |
+| Mobile interaction | The same required decisions complete at each supported mobile viewport with no hidden required controls or overflow | Partial: 390×844 development smoke exists; full matrix is open |
+| Accessibility and visual acceptance | Keyboard/screen-reader playthrough, contrast/focus/target review, responsive visual review, and reviewer sign-off | Open: automated source contracts pass; manual review is outstanding |
+| Release evidence | `npm run verify`, deployment health, durable persistence/restart, monitoring, and production smoke evidence | Blocked: no deployed environment or authoritative board promotion |
+
+The checklist is intentionally evidence-based: rows may move from **Blocked** or
+**Open** to **Verified** only when the named proof is recorded in this document or
+its linked source artifact.
+
 ## Current local browser run
 
 | Check | Result | Evidence or limitation |
