@@ -38,6 +38,12 @@ The currently checked-in source photographs are useful for confirming the overal
 
 Promotion therefore requires a higher-resolution, unobscured top-down board reference or a human-reviewed transcription against the original physical board. Image optimisation improves delivery performance only; it does not increase the evidentiary resolution or turn decorative geometry into rules data.
 
+## Comparison-image forensic findings
+
+The supplied browser comparison image is useful as a failure report, but not as board evidence. It shows a dense rectangular 13-row shell with repeated `Unresolved` labels and placeholder centre dots. The visible city and feature overlays are sparse development fixtures placed on top of that shell, so the image does not demonstrate the physical board's land/sea silhouette, disabled cells, printed feature inventory, or authoritative adjacency.
+
+Its geometry problem must be fixed as a layout-system issue: all cells need one flat-top landscape orientation; horizontal pitch must be derived from the tile width and shared-edge relationship; vertical pitch must be derived from tile height; and odd-row staggering must be applied once at row level. Per-cell rotation followed by a compensating whole-board rotation, negative margins, or independent hand-tuned offsets can make the bounding boxes overlap and the rows stack incorrectly. The acceptance comparison must therefore check the same fit state and aspect ratio for shared edges, row pitch, tile containment, label/piece containment, and absence of unintended intersections.
+
 ## Promotion checklist
 
 - [ ] Assign every photographed cell a reviewed label or an explicit blank-space classification.
