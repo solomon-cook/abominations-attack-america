@@ -335,21 +335,21 @@ Useful source documents:
 
 - [x] [P0] Define a temporary first-playable victory condition so a two-player simplified match can end coherently before full Challenge work lands. (Final active Stomp marker ends the development ruleset with one winner)
   - [x] [P0] Display that temporary victory rule clearly and keep it isolated from the production ruleset. (Terminal `Victory · <monster>` phase label and `development-stomp-exhaustion` state)
-  - [P1] Declare the monster taking the final active Stomp marker as challenger.
-- [ ] [P1] Schedule default Challenge start for the start of that player's next turn.
-  - [P1] Allow an eligible monster reaching a Challenge site to replace the challenger and begin the Challenge at turn end.
+  - [x] [P1] Declare the monster taking the final active Stomp marker as challenger. (Challenge-enabled development rules record one challenger and keep post-declaration stomps from declaring a second challenger; the prototype fixture still ends at the temporary victory boundary.)
+- [x] [P1] Schedule default Challenge start for the start of that player's next turn. (The challenge-enabled development ruleset waits through the active player's Deploy and starts at the challenger's next turn.)
+  - [x] [P1] Allow an eligible monster reaching a Challenge site to replace the challenger and begin the Challenge at turn end. (A post-declaration Challenge-site Encounter replaces the pending challenger and begins after that turn's Deploy.)
 - [ ] [P1] Preserve challenger status after forced retreat.
   - [P1] Clear challenger status after disappearance or Hollywood and wait for a new eligible Challenge-site arrival.
   - [P1] Exclude Hollywood monsters while keeping disappeared monsters eligible.
-- [ ] [P1] Let the challenger choose the next eligible opponent.
-  - [P1] Move the selected opponent into the Challenge space and record both weigh-in Health values.
-- [ ] [P1] Run unlimited combat rounds with challenger-first attacks and monster-on-monster targeting.
-  - [P1] Knock out Challenge losers instead of sending them to Hollywood.
-  - [P1] Heal the winner by the loser's weigh-in Health subject to the effective Health cap.
-- [ ] [P1] Continue immediately with the surviving monster as challenger until no eligible monster remains.
+- [x] [P1] Let the challenger choose the next eligible opponent. (The authoritative `challenge-opponent` command rejects Hollywood, defeated, and self targets; the web exposes the pending choice.)
+  - [x] [P1] Move the selected opponent into the Challenge space and record both weigh-in Health values. (Selection persists both Health values before the duel.)
+- [x] [P1] Run unlimited combat rounds with challenger-first attacks and monster-on-monster targeting. (The deterministic `resolve-challenge` command records every round, roll, and attack; giant combat remains source-gated.)
+  - [x] [P1] Knock out Challenge losers instead of sending them to Hollywood. (Defeated monsters move to the explicit `defeated` position and remain excluded.)
+  - [x] [P1] Heal the winner by the loser's weigh-in Health subject to the effective Health cap. (Winner healing is capped at the monster max Health.)
+- [x] [P1] Continue immediately with the surviving monster as challenger until no eligible monster remains. (The surviving monster becomes the persisted challenger and receives the next opponent decision, or the engine records Monster Challenge victory.)
   - [P1] Fight all surviving giant units last in challenger-selected order.
 - [ ] [P1] Award an immediate America-saved victory when a giant unit defeats the monster challenger.
-  - [P1] Otherwise award King of the Giant Monsters victory to the last surviving monster.
+  - [x] [P1] Otherwise award King of the Giant Monsters victory to the last surviving monster. (Monster-only Challenge fixtures record `monster-challenge`; giant-unit victory remains source-gated.)
   - [x] Freeze further gameplay commands after game over while preserving replay and spectator access. (The engine rejects post-terminal commands and the terminal result is persisted/projected by the room stores; terminal freeze is engine-tested)
 - [x] [P1] Store winner, victory type, final standings, duration, ruleset, and terminal event. (Prisma terminal results now persist a structured summary containing all six fields; the terminal-result test verifies the exact summary for the development victory.)
   - [P1] Implement rematch setup that creates a new match without leaking or mutating the completed record.
@@ -438,7 +438,7 @@ Useful source documents:
 - [x] [P0] Add first-playable setup, gameplay, victory, restart, and error states. (Local browser flow now exposes source-gated development setup, persists completed assignments into `GameState`, and retains gameplay/victory/restart/error states; production setup remains blocked by unresolved source data)
   - [x] [P0] Prevent double submission and show pending server acknowledgement. (`pendingAction` disables actionable controls and changes the persistent phase status)
   - [x] [P1] Add private card zones, public persistent effects, timing prompts, and target selection. (Player projections expose only the viewer's face-up card zone; spectators and other players receive redacted hands, while the browser labels revealed cards and source-gated effects explicitly.)
-- [ ] [P1] Add Monster Challenge opponent selection, weigh-in, duel progression, and final victory presentation.
+- [ ] [P1] Add Monster Challenge opponent selection, weigh-in, duel progression, and final victory presentation. (Opponent selection, weigh-in, and duel progression are now implemented in the challenge-enabled development ruleset; the final duel presentation and giant ordering remain.)
   - [ ] [P1] Replace the final Monster Challenge board view with an anime-style split-screen duel: one monster on each half, the dice roll presented in the centre, and turn-by-turn Health drops clearly animated after each authoritative result.
   - [P1] Add contextual rules help linked to the exact current decision.
 - [x] [P1] Clearly distinguish own pieces, allied branch pieces, enemy pieces, neutral units, active selections, and unavailable actions. (The stack inspector exposes semantic ownership labels and a text legend; unit controls expose selected/available state and disabled action labels, with textual ownership/legality retained independently of colour.)

@@ -9,7 +9,7 @@ export { MONSTER_DEFINITIONS, monsterDefinition, type MonsterDefinition, type Mo
 export { UNIT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, BRANCH_DEPLOYMENT_DEFINITIONS, type UnitDefinition, type GiantUnitDefinition, type NationalGuardDefinition, type BranchDeploymentDefinition, type UnitBranch, type UnitMovement } from "./units.js";
 import { createSetup, developmentSetupDefinition, validateSetup, type SetupSeat, type SetupState } from "./setup.js";
 
-export type Phase = "move" | "fight" | "encounter" | "deploy" | "game-over";
+export type Phase = "move" | "fight" | "encounter" | "deploy" | "challenge" | "game-over";
 export type Branch = "Army" | "Navy" | "Air Force" | "Marines";
 export type MilitaryUnitBranch = Branch | "National Guard";
 export const MATCH_STATE_SCHEMA_VERSION = 2 as const;
@@ -129,7 +129,7 @@ export interface GameState {
   stompMarkers: number;
   stompedLocations: HexKey[];
   winnerPlayer?: number;
-  victoryType?: "development-stomp-exhaustion" | "development-board-exhaustion" | "concession";
+  victoryType?: "development-stomp-exhaustion" | "development-board-exhaustion" | "monster-challenge" | "america-saved" | "concession";
   rng: { seed: number; cursor: number };
   nextUnitSequence: number;
   decks: DeckState;
@@ -142,6 +142,8 @@ export interface GameState {
   pendingCombat?: PendingCombat;
   pendingEncounterChoice?: PendingEncounterChoice;
   pendingTrophyChoice?: PendingTrophyChoice;
+  /** Source-backed Monster Challenge declaration and duel state. Giant-unit rules remain source-gated. */
+  challenge?: MonsterChallengeState;
   /** Monster/site keys that have already consumed their one Mutation-site use. */
   mutationSiteUses: Record<string, string[]>;
   pendingRetreat?: PendingRetreat;
@@ -177,6 +179,18 @@ export interface PendingTrophyChoice {
   readonly unitIds: readonly string[];
 }
 
+export interface MonsterChallengeState {
+  readonly declared: boolean;
+  readonly active: boolean;
+  readonly challengerMonsterId: string;
+  readonly declarationPlayerIndex: number;
+  readonly pendingStartPlayerIndex: number;
+  readonly startAtEndOfTurn?: boolean;
+  readonly opponentMonsterId?: string;
+  readonly weighInHealth: Readonly<Record<string, number>>;
+  readonly defeatedMonsterIds: readonly string[];
+}
+
 export type PendingDecision =
   | Readonly<{ type: "monster-movement"; playerIndex: number; pieceId: string }>
   | Readonly<{ type: "battle-resolution"; playerIndex: number; battleId: string }>
@@ -186,6 +200,8 @@ export type PendingDecision =
   | Readonly<{ type: "encounter-choice"; playerIndex: number; location: HexKey; choices: readonly ("health" | "infamy")[] }>
   | Readonly<{ type: "trophy-choice"; playerIndex: number; location: HexKey; branch: Branch; unitIds: readonly string[] }>
   | Readonly<{ type: "deployment"; playerIndex: number }>
+  | Readonly<{ type: "challenge-opponent"; playerIndex: number; challengerMonsterId: string; opponentIds: readonly string[] }>
+  | Readonly<{ type: "challenge-resolution"; playerIndex: number; challengerMonsterId: string; opponentMonsterId: string }>
   | Readonly<{ type: "game-over"; playerIndex: number; victoryType: NonNullable<GameState["victoryType"]> }>;
 
 export interface PendingBattle {
@@ -390,6 +406,8 @@ export type GameCommand =
   | { type: "deploy"; unitId?: string; destination?: HexKey }
   | { type: "draw-research" }
   | { type: "pass-deploy" }
+  | { type: "challenge-opponent"; opponentMonsterId: string }
+  | { type: "resolve-challenge" }
   | { type: "concede" }
   | { type: "advance" };
 
@@ -443,6 +461,7 @@ export function migrateGameState(input: GameState): GameState {
   if (typeof state.deploymentsThisTurn !== "number") state.deploymentsThisTurn = 0;
   if (!Array.isArray(state.deploymentDestinations)) state.deploymentDestinations = [];
   if (!Array.isArray(state.pendingBattles)) state.pendingBattles = [];
+  if (state.challenge && (!Array.isArray(state.challenge.defeatedMonsterIds) || typeof state.challenge.challengerMonsterId !== "string")) state.challenge = undefined;
   if (!state.mutationSiteUses || typeof state.mutationSiteUses !== "object") state.mutationSiteUses = {};
   if (typeof state.encounterSuppressed !== "boolean") state.encounterSuppressed = false;
   state.monsters = state.monsters.map((monster) => {
@@ -473,7 +492,7 @@ export function migrateGameState(input: GameState): GameState {
   return state;
 }
 
-function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer" | "monsters" | "pendingBattles" | "winnerPlayer" | "victoryType" | "pendingRetreat" | "pendingEncounterChoice" | "pendingTrophyChoice" | "pendingAttackTarget">): PendingDecision | undefined {
+function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer" | "monsters" | "pendingBattles" | "winnerPlayer" | "victoryType" | "pendingRetreat" | "pendingEncounterChoice" | "pendingTrophyChoice" | "pendingAttackTarget" | "challenge">): PendingDecision | undefined {
   if (state.pendingRetreat) return { type: "retreat", playerIndex: state.currentPlayer, battleId: state.pendingRetreat.battleId, unitIds: state.pendingRetreat.unitIds };
   if (state.pendingTrophyChoice) return { type: "trophy-choice", playerIndex: state.pendingTrophyChoice.playerIndex, location: state.pendingTrophyChoice.location, branch: state.pendingTrophyChoice.branch, unitIds: state.pendingTrophyChoice.unitIds };
   if (state.pendingAttackTarget) return {
@@ -500,6 +519,15 @@ function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer
     return isHexKey(location) ? { type: "encounter-resolution", playerIndex: state.currentPlayer, location } : undefined;
   }
   if (state.phase === "deploy") return { type: "deployment", playerIndex: state.currentPlayer };
+  if (state.phase === "challenge" && state.challenge?.active) {
+    const challenger = state.monsters.find((monster) => monster.id === state.challenge?.challengerMonsterId);
+    if (!challenger) return undefined;
+    const opponentIds = state.monsters
+      .filter((monster) => monster.id !== challenger.id && !state.challenge?.defeatedMonsterIds.includes(monster.id) && monster.location !== "hollywood")
+      .map((monster) => monster.id);
+    if (state.challenge.opponentMonsterId) return { type: "challenge-resolution", playerIndex: state.currentPlayer, challengerMonsterId: challenger.id, opponentMonsterId: state.challenge.opponentMonsterId };
+    return { type: "challenge-opponent", playerIndex: state.currentPlayer, challengerMonsterId: challenger.id, opponentIds };
+  }
   if (state.phase === "game-over" && state.winnerPlayer !== undefined && state.victoryType) {
     return { type: "game-over", playerIndex: state.winnerPlayer, victoryType: state.victoryType };
   }
@@ -1190,6 +1218,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
   const alreadyStomped = next.stompedLocations.includes(locationKey);
   const features = isHexKey(canonicalLocationKey) ? DEVELOPMENT_BOARD.hexes[canonicalLocationKey]?.features ?? [] : [];
   const stompable = features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site");
+  const challengeSite = features.some((feature) => feature.kind === "challenge-site");
   const mutationFeatures = features.filter((feature): feature is Extract<BoardFeature, { kind: "mutation-site" }> => feature.kind === "mutation-site");
   for (const feature of mutationFeatures) {
     const usedSites = next.mutationSiteUses[monster.id] ?? [];
@@ -1197,6 +1226,15 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     next.mutationSiteUses[monster.id] = [...usedSites, feature.siteId];
     const mutationCardId = drawMutationForMonster(next, monster);
     next.log.push(`${monster.name} used Mutation site ${feature.siteId};${mutationCardId ? " A Mutation card was drawn face up;" : " No Mutation card was available;"} its effect remains source-gated.`);
+  }
+  if (next.challenge?.declared && !next.challenge.active && challengeSite && monster.location !== "hollywood" && !next.challenge.defeatedMonsterIds.includes(monster.id)) {
+    next.challenge = { ...next.challenge, challengerMonsterId: monster.id, pendingStartPlayerIndex: next.currentPlayer, startAtEndOfTurn: true };
+    next.log.push(`${monster.name} reached a Challenge site and replaced the pending challenger; the Monster Challenge begins at the end of this turn.`);
+    next.phase = "deploy";
+    next.deploymentsThisTurn = 0;
+    next.deploymentDestinations = [];
+    next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
+    return { state: next, effects, rolls };
   }
   if (!stompable) {
     next.log.push(`${monster.name} encountered a space with no active encounter effect.`);
@@ -1265,12 +1303,23 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
   }
   next.log.push(`${monster.name} encountered ${place?.name}.`);
   const developmentBoardExhausted = next.rulesetVersion === "prototype-0.1" && locations.every((location) => next.stompedLocations.includes(locationIdToHexKey(location.id)!));
-  if (next.stompMarkers === 0 || developmentBoardExhausted) {
+  const challengeRulesEnabled = next.rulesetVersion !== "prototype-0.1";
+  if (next.stompMarkers === 0 && !next.challenge?.declared) {
+    next.challenge = challengeDeclaration(next, monster);
+    next.log.push(`${monster.name} took the final active Stomp marker and became the Monster Challenge challenger.`);
+  }
+  if (developmentBoardExhausted) {
     next.winnerPlayer = next.currentPlayer;
-    next.victoryType = next.stompMarkers === 0 ? "development-stomp-exhaustion" : "development-board-exhaustion";
+    next.victoryType = "development-board-exhaustion";
     next.phase = "game-over";
     next.pendingDecision = { type: "game-over", playerIndex: next.currentPlayer, victoryType: next.victoryType };
-    next.log.push(next.stompMarkers === 0 ? `${monster.name} wins the development game by taking the final Stomp marker.` : `${monster.name} wins the development fixture by stomping every abstract board space.`);
+    next.log.push(`${monster.name} wins the development fixture by stomping every abstract board space.`);
+  } else if (next.stompMarkers === 0 && !challengeRulesEnabled) {
+    next.winnerPlayer = next.currentPlayer;
+    next.victoryType = "development-stomp-exhaustion";
+    next.phase = "game-over";
+    next.pendingDecision = { type: "game-over", playerIndex: next.currentPlayer, victoryType: next.victoryType };
+    next.log.push(`${monster.name} wins the development game by taking the final Stomp marker; the full Monster Challenge remains source-gated for this fixture.`);
   } else {
     next.phase = "deploy";
     next.deploymentsThisTurn = 0;
@@ -1368,13 +1417,115 @@ interface TurnAdvanceResolution {
   readonly recoveryReleased?: boolean;
 }
 
+function challengeOpponentIds(state: Pick<GameState, "monsters" | "challenge">, challengerMonsterId: string): string[] {
+  const defeated = new Set(state.challenge?.defeatedMonsterIds ?? []);
+  return state.monsters
+    .filter((monster) => monster.id !== challengerMonsterId && !defeated.has(monster.id) && monster.location !== "hollywood")
+    .map((monster) => monster.id);
+}
+
+function challengePlayerIndex(state: Pick<GameState, "monsters">, monsterId: string): number {
+  const playerIndex = state.monsters.findIndex((monster) => monster.id === monsterId);
+  if (playerIndex < 0) throw new GameDomainError("ILLEGAL_COMMAND", `Unknown Challenge monster: ${monsterId}.`);
+  return playerIndex;
+}
+
+function beginMonsterChallenge(state: GameState): void {
+  if (!state.challenge?.declared || state.challenge.active) return;
+  const challengerPlayer = challengePlayerIndex(state, state.challenge.challengerMonsterId);
+  state.challenge = { ...state.challenge, active: true, startAtEndOfTurn: false };
+  state.currentPlayer = challengerPlayer;
+  state.phase = "challenge";
+  state.pendingDecision = pendingDecisionForState(state);
+  state.log.push(`${state.monsters[challengerPlayer].name} begins the Monster Challenge.`);
+}
+
+function challengeDeclaration(state: GameState, monster: Monster): MonsterChallengeState {
+  return {
+    declared: true,
+    active: false,
+    challengerMonsterId: monster.id,
+    declarationPlayerIndex: state.currentPlayer,
+    pendingStartPlayerIndex: state.currentPlayer,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+}
+
+interface ChallengeResolution {
+  readonly state: GameState;
+  readonly rolls: readonly number[];
+  readonly attacks: readonly BattleAttack[];
+  readonly winnerMonsterId: string;
+  readonly defeatedMonsterId: string;
+  readonly winnerPlayer: number;
+}
+
+function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
+  if (state.phase !== "challenge" || !state.challenge?.active || !state.challenge.opponentMonsterId) throw new GameDomainError("ILLEGAL_COMMAND", "There is no Monster Challenge duel to resolve.");
+  const next = structuredClone(state);
+  const challenge = next.challenge!;
+  const challenger = next.monsters.find((monster) => monster.id === challenge.challengerMonsterId);
+  const opponent = next.monsters.find((monster) => monster.id === challenge.opponentMonsterId);
+  if (!challenger || !opponent) throw new GameDomainError("ILLEGAL_COMMAND", "The Monster Challenge duel references an unknown monster.");
+  const challengerWeighIn = challenge.weighInHealth[challenger.id] ?? challenger.health;
+  const opponentWeighIn = challenge.weighInHealth[opponent.id] ?? opponent.health;
+  const rolls: number[] = [];
+  const attacks: BattleAttack[] = [];
+  let attacker = challenger;
+  let defender = opponent;
+  while (attacker.health > 0 && defender.health > 0) {
+    for (let attackIndex = 0; attackIndex < attacker.attacks && defender.health > 0; attackIndex += 1) {
+      const roll = nextD6(next);
+      const hit = roll >= defender.defense;
+      const smash = hit && roll === 6;
+      const damage = hit ? attacker.damage + (smash ? 1 : 0) : 0;
+      defender.health = Math.max(0, defender.health - damage);
+      rolls.push(roll);
+      attacks.push({ attackerId: attacker.id, targetId: defender.id, controllerPlayer: challengePlayerIndex(next, attacker.id), roll, modifiers: [], hit, smash, damage, destroyed: defender.health === 0 });
+    }
+    if (defender.health === 0) break;
+    [attacker, defender] = [defender, attacker];
+  }
+  const winner = challenger.health > 0 ? challenger : opponent;
+  const loser = winner.id === challenger.id ? opponent : challenger;
+  const loserWeighIn = loser.id === challenger.id ? challengerWeighIn : opponentWeighIn;
+  winner.health = Math.min(winner.maxHealth, winner.health + loserWeighIn);
+  loser.location = "defeated";
+  loser.health = 0;
+  const defeatedMonsterIds = [...new Set([...challenge.defeatedMonsterIds, loser.id])];
+  next.challenge = { ...challenge, challengerMonsterId: winner.id, opponentMonsterId: undefined, weighInHealth: {}, defeatedMonsterIds };
+  const nextOpponents = challengeOpponentIds(next, winner.id);
+  if (nextOpponents.length === 0) {
+    next.phase = "game-over";
+    next.winnerPlayer = challengePlayerIndex(next, winner.id);
+    next.victoryType = "monster-challenge";
+    next.pendingDecision = { type: "game-over", playerIndex: next.winnerPlayer, victoryType: next.victoryType };
+    next.log.push(`${winner.name} won the Monster Challenge and became King of the Giant Monsters.`);
+  } else {
+    next.currentPlayer = challengePlayerIndex(next, winner.id);
+    next.phase = "challenge";
+    next.pendingDecision = pendingDecisionForState(next);
+    next.log.push(`${winner.name} defeated ${loser.name} in the Monster Challenge and gained ${loserWeighIn} weigh-in Health.`);
+  }
+  return { state: next, rolls, attacks, winnerMonsterId: winner.id, defeatedMonsterId: loser.id, winnerPlayer: challengePlayerIndex(next, winner.id) };
+}
+
 function advanceAfterDeployment(next: GameState): TurnAdvanceResolution {
+  if (next.challenge?.declared && !next.challenge.active && next.challenge.startAtEndOfTurn) {
+    beginMonsterChallenge(next);
+    return {};
+  }
   next.currentPlayer = (next.currentPlayer + 1) % next.monsters.length;
   next.movedPieceIds = [];
   next.deploymentsThisTurn = 0;
   next.deploymentDestinations = [];
   next.encounterSuppressed = false;
   if (next.currentPlayer === 0) next.round += 1;
+  if (next.challenge?.declared && !next.challenge.active && next.currentPlayer === next.challenge.pendingStartPlayerIndex) {
+    beginMonsterChallenge(next);
+    return {};
+  }
   next.phase = "move";
   const recovery = prepareMonsterForTurn(next);
   next.pendingDecision = { type: "monster-movement", playerIndex: next.currentPlayer, pieceId: next.monsters[next.currentPlayer].id };
@@ -1453,6 +1604,29 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       throw new Error(`The authoritative pending decision is not ${type}.`);
     }
   };
+  if (state.phase === "challenge" && command.type === "challenge-opponent") {
+    requireDecision("challenge-opponent");
+    const challenge = state.challenge;
+    if (!challenge?.active) throw new GameDomainError("ILLEGAL_COMMAND", "The Monster Challenge has not started.");
+    const opponentIds = challengeOpponentIds(state, challenge.challengerMonsterId);
+    if (!opponentIds.includes(command.opponentMonsterId)) throw new GameDomainError("ILLEGAL_COMMAND", "Choose an eligible monster that is not in Hollywood or already defeated.");
+    const next = structuredClone(state);
+    const challenger = next.monsters.find((monster) => monster.id === challenge.challengerMonsterId)!;
+    const opponent = next.monsters.find((monster) => monster.id === command.opponentMonsterId)!;
+    opponent.location = challenger.location;
+    next.challenge = { ...challenge, opponentMonsterId: opponent.id, weighInHealth: { [challenger.id]: challenger.health, [opponent.id]: opponent.health } };
+    next.currentPlayer = challengePlayerIndex(next, challenger.id);
+    next.pendingDecision = pendingDecisionForState(next);
+    next.log.push(`${challenger.name} chose ${opponent.name} as the next Monster Challenge opponent; both monsters weighed in.`);
+    const eventPayload = { challengerMonsterId: challenger.id, opponentMonsterId: opponent.id, challengerWeighIn: challenger.health, opponentWeighIn: opponent.health };
+    return { state: appendEvent(next, "challenge.opponent.selected", eventPayload), eventType: "challenge.opponent.selected", eventPayload };
+  }
+  if (state.phase === "challenge" && command.type === "resolve-challenge") {
+    requireDecision("challenge-resolution");
+    const result = resolveMonsterChallengeDuel(state);
+    const eventPayload = { challengerMonsterId: result.winnerMonsterId, defeatedMonsterId: result.defeatedMonsterId, winnerPlayer: result.winnerPlayer, rolls: result.rolls, attacks: result.attacks, victoryType: result.state.victoryType, nextPhase: result.state.phase };
+    return { state: appendEvent(result.state, "challenge.resolved", eventPayload), eventType: "challenge.resolved", eventPayload };
+  }
   if (command.type === "pass-move") {
     requireDecision("monster-movement");
     if (state.phase !== "move") throw new Error("Move has already been resolved.");

@@ -41,6 +41,7 @@ import { LobbyPanel } from "./components/LobbyPanel";
 import { LogPanel } from "./components/LogPanel";
 import { MatchStatus } from "./components/MatchStatus";
 import { PhaseActions } from "./components/PhaseActions";
+import { ChallengeActions } from "./components/ChallengeActions";
 import { PieceStackInspector } from "./components/PieceStackInspector";
 import { PlayerStatusControls } from "./components/PlayerStatusControls";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
@@ -176,6 +177,8 @@ function App() {
         ? "Fight"
         : activeGame.phase === "encounter"
           ? "Encounter"
+          : activeGame.phase === "challenge"
+            ? "Monster Challenge"
           : activeGame.phase === "game-over"
             ? `Victory · ${activeGame.monsters[activeGame.winnerPlayer ?? 0]?.name}`
             : "Deploy";
@@ -667,6 +670,10 @@ function App() {
             : "Resolve the compulsory battle started by movement."
       : activeGame.phase === "encounter"
         ? "Resolve the space your monster ended on."
+        : activeGame.phase === "challenge"
+          ? activeGame.pendingDecision?.type === "challenge-opponent"
+            ? "Choose the next eligible monster; it will appear in the challenger’s space for weigh-in."
+            : "Resolve the recorded Monster Challenge duel; the challenger attacks first."
         : activeGame.phase === "game-over"
           ? "The development match is complete. Further commands are disabled."
           : `Place a legal military unit, then pass Deploy.${activeGame.deploymentsThisTurn ? ` ${activeGame.deploymentsThisTurn} placed this step.` : ""}`;
@@ -1060,6 +1067,8 @@ function App() {
                 guardDeploymentDestination={guardDeploymentDestination}
                 guardDeploymentAvailable={guardDeploymentAvailable}
               />
+            ) : activeGame.phase === "challenge" ? (
+              <ChallengeActions activeGame={activeGame} canAct={canAct} runCommand={runCommand} />
             ) : activeGame.phase === "game-over" ? (
               <TerminalSummary action={action} victoryType={activeGame.victoryType} online={online} onLeaveRoom={leaveRoomSafely} onResetLocal={resetLocal} />
             ) : (

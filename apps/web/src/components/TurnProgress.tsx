@@ -4,7 +4,7 @@ type Props = {
   game: GameState;
 };
 
-const phases = ["move", "fight", "encounter", "deploy"] as const;
+const phases = ["move", "fight", "encounter", "deploy", "challenge"] as const;
 
 export function TurnProgress({ game }: Props) {
   const currentIndex = game.phase === "game-over" ? phases.length : phases.indexOf(game.phase);

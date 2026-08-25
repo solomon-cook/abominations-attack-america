@@ -1009,6 +1009,58 @@ test("the simplified Stomp exhaustion rule produces one terminal winner and free
   assert.throws(() => applyCommand(state, { type: "advance" }), /match is complete/);
 });
 
+test("the final active Stomp marker declares a delayed Monster Challenge challenger", () => {
+  let state = createGame(2, 0);
+  state.rulesetVersion = "challenge-0.1";
+  state.stompMarkers = 1;
+  state.units.forEach((unit) => { unit.location = "record-tile"; });
+  state = applyCommand(state, { type: "move", path: ["los-angeles", "denver"] }).state;
+  const encounter = applyCommand(state, { type: "advance" });
+  assert.equal(encounter.state.phase, "deploy");
+  assert.deepEqual(encounter.state.challenge, {
+    declared: true,
+    active: false,
+    challengerMonsterId: "monster-1",
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  });
+  const nextTurn = applyCommand(encounter.state, { type: "pass-deploy" }).state;
+  assert.equal(nextTurn.phase, "move");
+  assert.equal(nextTurn.currentPlayer, 1);
+  assert.equal(nextTurn.pendingDecision?.type, "monster-movement");
+});
+
+test("the Monster Challenge chooses eligible opponents, records weigh-in Health, and resolves unlimited monster combat", () => {
+  let state = createGame(2, 0);
+  state.rulesetVersion = "challenge-0.1";
+  state.challenge = {
+    declared: true,
+    active: true,
+    challengerMonsterId: "monster-1",
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  state.phase = "challenge";
+  state.currentPlayer = 0;
+  state.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
+  state.monsters[0].health = 1;
+  state.monsters[1].health = 1;
+  const selected = applyCommand(state, { type: "challenge-opponent", opponentMonsterId: "monster-2" });
+  assert.equal(selected.state.monsters[1].location, selected.state.monsters[0].location);
+  assert.deepEqual(selected.state.challenge?.weighInHealth, { "monster-1": 1, "monster-2": 1 });
+  assert.equal(selected.state.pendingDecision?.type, "challenge-resolution");
+  const resolved = applyCommand(selected.state, { type: "resolve-challenge" });
+  assert.equal(resolved.eventType, "challenge.resolved");
+  assert.equal(resolved.state.phase, "game-over");
+  assert.equal(resolved.state.victoryType, "monster-challenge");
+  assert.equal(resolved.state.challenge?.defeatedMonsterIds.length, 1);
+  assert.equal((resolved.eventPayload.rolls as number[]).length > 0, true);
+});
+
 test("a confirmed concession records the next seat as winner and freezes the match", () => {
   const state = createGame(2);
   const result = applyCommand(state, { type: "concede" });
@@ -1330,6 +1382,31 @@ test("Challenge sites are inert before the Monster Challenge is declared", () =>
   assert.equal(result.state.stompMarkers, state.stompMarkers);
   assert.deepEqual(result.eventPayload.effects, []);
   assert.equal(result.state.phase, "deploy");
+});
+
+test("a post-declaration Challenge-site arrival replaces the pending challenger and starts at turn end", () => {
+  const state = createGame(2);
+  state.phase = "encounter";
+  state.currentPlayer = 0;
+  state.monsters[0].location = K("miami");
+  state.challenge = {
+    declared: true,
+    active: false,
+    challengerMonsterId: "monster-2",
+    declarationPlayerIndex: 1,
+    pendingStartPlayerIndex: 1,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  state.pendingDecision = { type: "encounter-resolution", playerIndex: 0, location: K("miami") };
+  const reached = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(reached.state.challenge?.challengerMonsterId, "monster-1");
+  assert.equal(reached.state.challenge?.startAtEndOfTurn, true);
+  assert.equal(reached.state.phase, "deploy");
+  const started = applyCommand(reached.state, { type: "pass-deploy" });
+  assert.equal(started.state.phase, "challenge");
+  assert.equal(started.state.currentPlayer, 0);
+  assert.equal(started.state.challenge?.active, true);
 });
 
 test("Konk applies its source-backed fighter attack modifier", () => {
