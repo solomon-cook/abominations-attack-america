@@ -12,6 +12,11 @@ const code = () => randomBytes(3).toString("hex").toUpperCase();
 export class PrismaRoomStore implements RoomStore {
   constructor(private readonly prismaClient = prisma, private readonly allowDevelopmentFixture = false) {}
 
+  async health(): Promise<{ persistence: "prisma" }> {
+    await this.prismaClient.$queryRaw`SELECT 1`;
+    return { persistence: "prisma" };
+  }
+
   async createRoom(maxPlayers: number): Promise<SessionResponse> {
     const accessToken = token();
     const roomCode = code();

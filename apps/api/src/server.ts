@@ -69,7 +69,16 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
   const parts = url.pathname.split("/").filter(Boolean);
   try {
-    if (request.method === "GET" && parts[0] === "health") return json(response, 200, { ok: true, persistence: databaseUrl ? "prisma" : "memory" });
+    if (request.method === "GET" && parts[0] === "health") {
+      try {
+        return json(response, 200, { ok: true, ...(await store.health()) });
+      } catch (error) {
+        metrics.requestFailure();
+        metrics.serverError();
+        const reported = errorReporter.report({ category: "persistence", method: request.method, path: url.pathname, message: error instanceof Error ? error.message : "Persistence health check failed" });
+        return json(response, 503, { ok: false, error: "Persistence health check failed", detail: reported.message });
+      }
+    }
     if (request.method === "GET" && parts[0] === "metrics") return json(response, 200, metrics.snapshot());
     if (request.method === "POST" && parts[0] === "rooms" && parts.length === 1) {
       const input = await body(request); return json(response, 201, await store.createRoom(Number(input.maxPlayers ?? 4)));

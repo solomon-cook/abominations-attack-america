@@ -33,6 +33,10 @@ test("players can create, join, and read a room", async () => {
   assert.equal(state.participants.length, 2);
 });
 
+test("memory store health reports its persistence boundary", async () => {
+  assert.deepEqual(await new MemoryRoomStore(true).health(), { persistence: "memory" });
+});
+
 test("production room creation rejects the sparse development fixture", async () => {
   await assert.rejects(() => new MemoryRoomStore().createRoom(2), /MVP board is not ready/);
 });
