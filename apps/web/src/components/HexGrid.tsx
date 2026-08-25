@@ -19,6 +19,25 @@ const boardHexes = buildDisplayHexLayout().map(({ hex, left, top }) => ({
   top,
 }));
 
+function boardArtForHex(hex: (typeof boardHexes)[number]["hex"], place?: (typeof locations)[number]) {
+  if (place?.kind === "city") return "/assets/board/coastal-city/small/coastal_city_0deg.webp";
+  const feature = hex.features[0]?.kind;
+  const featureAssets: Record<string, string> = {
+    "military-base": "/assets/board/features/military_base.webp",
+    "infamy-site": "/assets/board/features/infamy_site.webp",
+    "mutation-site": "/assets/board/features/mutation_site.webp",
+    "challenge-site": "/assets/board/features/challenge_site.webp",
+    lair: "/assets/board/features/lair.webp",
+    hollywood: "/assets/board/features/hollywood.webp",
+    "los-angeles": "/assets/board/features/los_angeles.webp",
+  };
+  return featureAssets[feature ?? ""];
+}
+
+function unitArtForType(unitTypeId?: string) {
+  return unitTypeId ? `/assets/military/${unitTypeId}.webp` : undefined;
+}
+
 type Props = {
   game: GameState;
   activePlayerId: string;
@@ -50,6 +69,11 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
         ].join(", ");
         const displayName = place?.name ?? hex.label ?? hex.key;
+        const baseArt = hex.waterClass === "land"
+          ? "/assets/board/grassland.webp"
+          : "/assets/board/coast/coast_0deg.webp";
+        const boardArt = boardArtForHex(hex, place);
+        const stomped = game.stompedLocations.includes(placeKey);
         return (
           <button
             key={hex.key}
@@ -60,12 +84,20 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             style={{ left: `${left}%`, top: `${top}%` }}
             onClick={() => selectedUnitId ? onChooseUnitPath(placeKey) : onChoosePath(placeKey)}
           >
+            <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />
+            {boardArt && <img className="tile-art" src={boardArt} alt="" aria-hidden="true" loading="lazy" />}
+            {stomped && <img className="tile-stomp" src="/assets/board/tokens/stomp_token.webp" alt="" aria-hidden="true" loading="lazy" />}
             <span className="tile-content">
               <span className="node" aria-hidden="true">{place?.kind === "city" ? "✦" : place?.kind === "base" ? "⌂" : place?.kind === "infamy" ? "★" : place?.kind === "mutation" ? "✹" : place ? "⚔" : "·"}</span>
               <span>{displayName}</span>
               {place?.kind === "city" && <i className="city-hp">{place.marker}</i>}
               {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => <b key={monster.id}>{monster.name.slice(0, 1)}</b>)}
-              {game.units.filter((unit) => unit.location === placeKey).map((unit) => <i className="unit-mark" key={unit.id}>{unit.branch.slice(0, 1)}</i>)}
+              {game.units.filter((unit) => unit.location === placeKey).map((unit) => {
+                const unitArt = unitArtForType(unit.unitTypeId);
+                return unitArt
+                  ? <img className="tile-piece" key={unit.id} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                  : <i className="unit-mark" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
+              })}
             </span>
           </button>
         );
