@@ -464,6 +464,7 @@ Useful source documents:
 - [ ] [P0] The first-playable browser flow renders and uses the fully filled authoritative honeycomb board; the sparse nine-space topology is not exposed as an MVP match option.
 - [ ] [P0] Browser verification covers every first-playable decision, cancellation, invalid action, loading state, and victory state.
 - [ ] [P1] Every full-rules pending-decision type has a dedicated understandable UI and recovery path.
+  - [x] Add a checked-in source contract that keeps all eleven authoritative pending-decision types mapped to web decision surfaces. (`npm run web-pending:verify`; full interactive, assistive-technology, and source-rules recovery review remains open.)
 - [x] [P1] The web client never calculates a rule outcome or maintains independent authoritative state. (`apps/web/src/main.tsx` and `HexGrid` consume engine-provided legal paths and render authoritative snapshots/events; dice, damage, phase transitions, card effects, and victory are never resolved in the client.)
 
 ## Milestone 12 — Online rooms, persistence, reconnection, and spectators
