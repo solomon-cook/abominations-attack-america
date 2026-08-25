@@ -10,8 +10,8 @@ import {
   createGameFromSetup,
   FULL_HONEYCOMB_BOARD,
   getLocation,
-  legalNationalGuardDeploymentDestinations,
-  legalOwnedDeploymentDestinations,
+    legalNationalGuardDeploymentDestinations,
+    legalOwnedDeploymentDestinations,
   legalMonsterDestinations,
   legalMonsterPaths,
   legalUnitPaths,
@@ -75,6 +75,7 @@ function acceptedActionLabel(command: GameCommand): string | undefined {
     case "retreat": return "Retreat resolved";
     case "resolve-encounter": return command.choice ? "Encounter choice resolved" : command.trophyUnitId ? "Trophy choice resolved" : "Encounter resolved";
     case "deploy": return "Deployment resolved";
+    case "redeploy": return "Redeployment resolved";
     case "draw-research": return "Research card drawn";
     case "pass-deploy": return "Deployment passed";
     case "pass-move": return "Move step resolved";

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createCardDeckState, discardCard, drawCard, sourcedCardRule } from "./cards.js";
-import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, locationIdToHexKey } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -229,6 +229,39 @@ test("owned deployment destinations are verified, unstomped, and unique per Depl
   state.deploymentDestinations = [];
   state.stompedLocations = [K("denver")];
   assert.deepEqual(legalOwnedDeploymentDestinations(state), []);
+});
+
+test("redeployment destinations require an active player's ordinary branch unit and unstomped branch base", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  const unit = state.units.find((candidate) => candidate.id === "0-0")!;
+  unit.location = K("chicago");
+  unit.ownerPlayer = 0;
+  assert.deepEqual(legalOwnedRedeploymentDestinations(state, unit.id), [K("denver")]);
+  state.stompedLocations = [K("denver")];
+  assert.deepEqual(legalOwnedRedeploymentDestinations(state, unit.id), []);
+  state.stompedLocations = [];
+  unit.branch = "National Guard";
+  assert.deepEqual(legalOwnedRedeploymentDestinations(state, unit.id), []);
+  unit.branch = "Army";
+  unit.unitTypeId = "mecha-monster";
+  assert.deepEqual(legalOwnedRedeploymentDestinations(state, unit.id), []);
+});
+
+test("redeployment moves one owned branch unit and consumes one branch allowance", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  const unit = state.units.find((candidate) => candidate.id === "0-0")!;
+  unit.location = K("chicago");
+  unit.ownerPlayer = 0;
+  const result = applyCommand(state, { type: "redeploy", unitId: unit.id, destination: K("denver") });
+  assert.equal(result.eventType, "unit.redeployed");
+  assert.equal(result.state.units.find((candidate) => candidate.id === unit.id)?.location, K("denver"));
+  assert.equal(result.state.deploymentsThisTurn, 1);
+  assert.deepEqual(result.eventPayload, { unitId: unit.id, branch: "Army", destination: K("denver"), deploymentsThisTurn: 1, nextPhase: "deploy" });
+  assert.throws(() => applyCommand(result.state, { type: "redeploy", unitId: unit.id, destination: K("denver") }), /unstomped base|allowance|record/i);
 });
 
 test("National Guard deployment creates a neutral unit at a legal destination", () => {

@@ -283,9 +283,9 @@ Useful source documents:
 - [x] [P0] Allow ending Deploy after any legal number of deployments up to the allowance. (`pass-deploy` is an explicit development command; deployment/pass turn coverage is engine-tested)
   - [x] [P0] Implement deployment of neutral National Guard units to unstomped cities, bases, and Infamy sites. (`deploy` accepts a verified Guard unit ID and destination; legal classes, stomp state, collision, and source inventory boundaries are enforced.)
 - [x] [P0] Keep National Guard control neutral after a player deploys it. (Deployed Guard records have no owner player; attacks remain active-player controlled, while Guard Commander is the explicit movement/deployment exception.)
-  - [P1] Implement redeployment from the board to another legal unstomped owned base.
-- [ ] [P1] Count each redeployed unit against the branch allowance.
-  - [P1] Prevent redeployment of National Guard and giant units.
+  - [x] [P1] Implement redeployment from the board to another legal unstomped owned base. (`redeploy` is an authoritative Deploy command with active-branch ownership, board-location, unstomped-base, destination-uniqueness, and pending-battle checks; giant definitions remain source-gated.)
+- [x] [P1] Count each redeployed unit against the branch allowance. (Redeployment increments `deploymentsThisTurn` and rejects further redeployments after the verified branch allowance.)
+  - [x] [P1] Prevent redeployment of National Guard and giant units. (National Guard is rejected at the command boundary; no giant unit can enter the development roster before its verified card effects are sourced.)
   - [x] [P1] Let the active player draw one Military Research card instead of performing any deployment. (Deploy-phase `draw-research` draws deterministically into the active player's face-up Research hand, ends Deploy, and is exposed in the browser; deck exhaustion is rejected without state mutation.)
   - [P1] Apply immediate Research instructions and expose later-use Research choices.
 - [ ] [P1] Introduce Captain Colossal and Mecha-Monster only through their verified card effects.
@@ -298,7 +298,7 @@ Useful source documents:
 - [x] [P0] Deployment tests cover every branch, player count, base status, inventory boundary, destination collision, and pass option. (Table-driven engine coverage now exercises 2/3/4-player fixtures and every branch; branches without a verified development base must fail closed, while deployed branches cover inventory, collision, stomp, and explicit pass boundaries.)
 - [ ] [P0] Every physical unit is accounted for before and after deploy, trophy, destruction, redeploy, and removal operations.
 - [ ] [P1] Research, National Guard overrides, and giant-unit lifecycle tests use verified component fixtures.
-- [x] [P1] The web UI never offers an illegal unit, destination, redeployment, or Research alternative. (`legalOwnedDeploymentDestinations` and `legalNationalGuardDeploymentDestinations` filter verified, unstomped, unused destinations before `PhaseActions` renders deployment controls; Research is disabled from the authoritative exhausted-deck flag; redeployment remains unavailable because it is source-gated.)
+- [x] [P1] The web UI never offers an illegal unit, destination, redeployment, or Research alternative. (`legalOwnedDeploymentDestinations`, `legalOwnedRedeploymentDestinations`, and `legalNationalGuardDeploymentDestinations` filter verified, owned, unstomped, unused destinations before `PhaseActions` renders controls; Research is disabled from the authoritative exhausted-deck flag.)
 
 ## Milestone 9 — Mutation and Military Research card systems
 

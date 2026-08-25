@@ -404,6 +404,7 @@ export type GameCommand =
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy"; unitId?: string; destination?: HexKey }
+  | { type: "redeploy"; unitId: string; destination?: HexKey }
   | { type: "draw-research" }
   | { type: "pass-deploy" }
   | { type: "challenge-opponent"; opponentMonsterId: string }
@@ -773,6 +774,20 @@ export function legalNationalGuardDeploymentDestinations(state: Pick<GameState, 
 export function legalOwnedDeploymentDestinations(state: Pick<GameState, "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer">): HexKey[] {
   const branch = state.setupAssignments?.[state.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[state.currentPlayer % 4];
+  const stomped = new Set(state.stompedLocations ?? []);
+  const deployedThisTurn = new Set(state.deploymentDestinations ?? []);
+  return Object.values(DEVELOPMENT_BOARD.hexes)
+    .filter((hex) => !stomped.has(hex.key) && !deployedThisTurn.has(hex.key) && hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch))
+    .map((hex) => hex.key)
+    .sort();
+}
+
+/** Return legal unstomped bases for one active player's ordinary branch unit. */
+export function legalOwnedRedeploymentDestinations(state: Pick<GameState, "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer" | "units" | "removedUnitIds">, unitId: string): HexKey[] {
+  const branch = state.setupAssignments?.[state.currentPlayer]?.branch
+    ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[state.currentPlayer % 4];
+  const unit = state.units.find((candidate) => candidate.id === unitId);
+  if (!unit || unit.branch !== branch || unit.unitTypeId === "mecha-monster" || unit.unitTypeId === "captain-colossal" || unit.ownerPlayer !== state.currentPlayer || !isHexKey(unit.location) || state.removedUnitIds.includes(unit.id)) return [];
   const stomped = new Set(state.stompedLocations ?? []);
   const deployedThisTurn = new Set(state.deploymentDestinations ?? []);
   return Object.values(DEVELOPMENT_BOARD.hexes)
@@ -1407,6 +1422,36 @@ export function deployUnit(state: GameState): GameState {
   return deployUnitResult(state).state;
 }
 
+export function redeployUnitResult(state: GameState, requested: { unitId: string; destination?: HexKey }): DeploymentResolution {
+  if (state.phase !== "deploy") return { state };
+  const next = structuredClone(state);
+  const branch = next.setupAssignments?.[next.currentPlayer]?.branch
+    ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[next.currentPlayer % 4];
+  const allowance = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === branch)?.ownOrGuardUnits ?? 0;
+  if (next.deploymentsThisTurn >= allowance) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} deployment allowance is exhausted; redeployment counts against the same allowance.`);
+  const destinations = legalOwnedRedeploymentDestinations(next, requested.unitId);
+  const destination = requested.destination ?? destinations[0];
+  if (!destination || !destinations.includes(destination)) throw new GameDomainError("ILLEGAL_COMMAND", "Redeployment is limited to an unstomped base belonging to the active player's branch.");
+  const unit = next.units.find((candidate) => candidate.id === requested.unitId);
+  if (!unit) throw new GameDomainError("ILLEGAL_COMMAND", `Unknown redeployment unit: ${requested.unitId}.`);
+  unit.location = destination;
+  next.deploymentsThisTurn += 1;
+  next.deploymentDestinations.push(destination);
+  next.log.push(`${branch} redeployed ${unit.unitTypeId ?? unit.id} from the board to ${DEVELOPMENT_BOARD.hexes[destination]?.label ?? destination}.`);
+  const occupyingMonster = next.monsters.find((candidate) => candidate.location === destination);
+  if (occupyingMonster) {
+    const existingBattle = next.pendingBattles.find((battle) => battle.monsterId === occupyingMonster.id && battle.location === destination);
+    if (existingBattle) existingBattle.militaryUnitIds = [...new Set([...existingBattle.militaryUnitIds, unit.id])];
+    else next.pendingBattles.push({ id: `${occupyingMonster.id}:${next.round}:${destination}:redeployment`, monsterId: occupyingMonster.id, location: destination, militaryUnitIds: [unit.id] });
+    next.phase = "fight";
+    next.pendingDecision = { type: "battle-resolution", playerIndex: next.currentPlayer, battleId: next.pendingBattles.at(-1)!.id };
+  } else {
+    next.phase = "deploy";
+    next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
+  }
+  return { state: next, unitId: unit.id, branch, destination };
+}
+
 export interface ResearchDrawResolution {
   readonly state: GameState;
   readonly cardId: string;
@@ -1799,6 +1844,12 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const result = drawResearchForDeployment(state);
     const eventPayload = { cardId: result.cardId, playerIndex: state.currentPlayer, nextPlayer: result.state.currentPlayer, nextPhase: result.state.phase, recoveryRoll: result.recoveryRoll, recoveryReleased: result.recoveryReleased };
     return { state: appendEvent(result.state, "research.drawn", eventPayload), eventType: "research.drawn", eventPayload };
+  }
+  if (state.phase === "deploy" && command.type === "redeploy") {
+    requireDecision("deployment");
+    const result = redeployUnitResult(state, command);
+    const eventPayload = { unitId: result.unitId, branch: result.branch, destination: result.destination, deploymentsThisTurn: result.state.deploymentsThisTurn, nextPhase: result.state.phase };
+    return { state: appendEvent(result.state, "unit.redeployed", eventPayload), eventType: "unit.redeployed", eventPayload };
   }
   if (state.phase === "deploy" && (command.type === "deploy" || command.type === "advance")) {
     requireDecision("deployment");

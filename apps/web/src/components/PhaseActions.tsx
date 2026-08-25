@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import type { GameCommand, GameState, HexKey } from "@abominations/game-engine";
+import { BRANCH_DEPLOYMENT_DEFINITIONS, legalOwnedRedeploymentDestinations, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 
 type AttackTargetDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type: "attack-target" }>;
 type BattleDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type: "battle-resolution" }>;
@@ -105,9 +105,20 @@ export function PhaseActions({
   }
 
   if (activeGame.phase === "deploy") {
+    const activeBranch = activeGame.setupAssignments?.[activeGame.currentPlayer]?.branch
+      ?? (["Army", "Navy", "Air Force", "Marines"] as const)[activeGame.currentPlayer % 4];
+    const allowance = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === activeBranch)?.ownOrGuardUnits ?? 0;
+    const canRedeploy = activeGame.deploymentsThisTurn < allowance;
+    const redeploymentChoices = canRedeploy
+      ? activeGame.units.flatMap((unit) => legalOwnedRedeploymentDestinations(activeGame, unit.id).map((destination) => ({ unit, destination })))
+      : [];
     return <div className="path-controls">
       <button disabled={!canAct || !ownDeploymentAvailable} onClick={() => void runCommand({ type: "deploy" })}>{ownDeploymentAvailable ? "Deploy one unit" : "No owned deployment available"}</button>
       {availableGuardUnitId && guardDeploymentDestination && <button disabled={!canAct || !guardDeploymentAvailable} onClick={() => void runCommand({ type: "deploy", unitId: availableGuardUnitId, destination: guardDeploymentDestination })}>Deploy Guard to {getLocationName(guardDeploymentDestination)}</button>}
+      {redeploymentChoices.length > 0 && <div className="battle-choice" aria-label="Choose unit redeployment">
+        <span>Redeploy an owned branch unit to an unstomped base:</span>
+        {redeploymentChoices.map(({ unit, destination }) => <button key={`${unit.id}-${destination}`} disabled={!canAct} onClick={() => void runCommand({ type: "redeploy", unitId: unit.id, destination })}>{unit.unitTypeId ?? unit.id} → {getLocationName(destination)}</button>)}
+      </div>}
       <button disabled={!canAct || activeGame.decks.research.exhausted} onClick={() => void runCommand({ type: "draw-research" })}>{activeGame.decks.research.exhausted ? "Military Research exhausted" : "Draw Military Research instead"}</button>
       <button className="cancel" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Pass deployment</button>
     </div>;
