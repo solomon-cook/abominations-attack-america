@@ -36,9 +36,15 @@ A first-playable browser pass is complete only when a clean supported browser se
 | Two-browser online play | Not yet verified | Requires two live room participants and WebSocket/polling exercise. |
 | Mobile viewport | Not yet verified | Desktop browser evidence does not prove mobile usability. |
 
+## Latest local renderer regression check
+
+On 2026-08-25, a clean local browser session completed the two-player development setup and verified 261 rendered board buttons: 254 candidate-shell cells plus seven development-fixture overlays for the named coordinates outside that shell. Three legal movement destinations were exposed for the active monster; selecting one showed the authoritative path preview and enabled **Confirm monster move**, while **Cancel** cleared both the path and preview. No browser console errors or page alerts were observed. This remains development-fixture evidence, not MVP board or production acceptance.
+
+The same session checked the viewport shell at 1280×720 and 390×844. In both sizes the document stayed at the viewport height with zero page scroll, the board remained visible, and the mobile board panel used its own bounded scroll surface for lower-detail content. This proves the viewport contract for the development UI only; it does not complete the broader keyboard, screen-reader, contrast, or production browser acceptance items.
+
 ## Full-board rendering check
 
-The local browser now renders all 254 cells from `FULL_HONEYCOMB_BOARD` as positioned hex tiles. A DOM check recorded 254 `[data-hex-key]` cells, of which 252 are explicitly unresolved and disabled; the two overlapping development coordinates remain labelled fixture spaces. The map exposes both the development match board ID/hash and the separately rendered candidate board ID/hash, so this visual check does not falsely claim that the current match has been promoted to the authoritative physical board.
+The local browser renders all 254 cells from `FULL_HONEYCOMB_BOARD` as positioned hex tiles and adds seven explicitly labelled development-fixture overlay spaces whose coordinates fall outside that candidate shell. A DOM check therefore records 261 `[data-hex-key]` buttons in the development playtest: 254 candidate cells plus seven named fixture spaces. The map exposes both the development match board ID/hash and the separately rendered candidate board ID/hash, so this visual check does not falsely claim that the current match has been promoted to the authoritative physical board.
 
 The board notice and accessible tile descriptions identify the nine-space development fixture and its unresolved physical-board cells. Those disclosures do not substitute for verified board data or full-rules browser coverage, and this fixture cannot be used to sign off the MVP playable-game board requirement.
 

@@ -12,12 +12,29 @@ import { buildDisplayHexLayout } from "../board-layout";
 
 const developmentHexes = Object.values(DEVELOPMENT_BOARD.hexes);
 const developmentBoardIndex = buildBoardIndex(DEVELOPMENT_BOARD);
-const boardHexes = buildDisplayHexLayout().map(({ hex, left, top }) => ({
+const candidateBoardHexes = buildDisplayHexLayout().map(({ hex, left, top }) => ({
   hex,
   place: locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key),
   left,
   top,
 }));
+const candidateKeys = new Set(candidateBoardHexes.map(({ hex }) => hex.key));
+const developmentOverlayHexes = developmentHexes
+  .filter((hex) => !candidateKeys.has(hex.key))
+  .map((hex) => {
+    const place = locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key);
+    return {
+      hex,
+      place,
+      left: place?.x ?? 50,
+      top: place?.y ?? 50,
+      developmentFixture: true,
+    };
+  });
+const boardHexes = [
+  ...candidateBoardHexes.map((entry) => ({ ...entry, developmentFixture: false })),
+  ...developmentOverlayHexes,
+];
 const displayByKey = new Map(boardHexes.map(({ hex, left, top }) => [hex.key, { left, top }]));
 
 function boardArtForHex(hex: (typeof boardHexes)[number]["hex"], place?: (typeof locations)[number]) {
@@ -98,7 +115,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           <polyline points={acceptedPathPoints} />
         </svg>
       )}
-      {boardHexes.map(({ hex, place, left, top }) => {
+      {boardHexes.map(({ hex, place, left, top, developmentFixture }) => {
         const placeKey = hex.key;
         const monsterLegal = legalDestinations.has(placeKey);
         const unitLegal = legalUnitDestinations.has(placeKey);
@@ -128,7 +145,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             aria-label={`${displayName}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-hex-key={hex.key}
             disabled={!place || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit)}
-            className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${placeKey === activePlayer?.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
+            className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%` }}
             onMouseEnter={() => (monsterLegal || unitLegal) && onPreviewPath(placeKey)}
             onMouseLeave={onClearPreview}

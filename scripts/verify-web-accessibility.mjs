@@ -38,6 +38,8 @@ const requiredSourceMarkers = [
   ["Monster Challenge duel surface", /aria-label="Recorded Monster Challenge duel"/],
   ["authoritative Challenge Health replay", /targetHealthBefore/],
   ["contextual decision rules help", /aria-label="Rules help for current decision"/],
+  ["development fixture overlay", /development-fixture/],
+  ["viewport-fitted gameplay shell", /className=\{`game-screen/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 
@@ -55,6 +57,7 @@ const requiredStyleMarkers = [
   ["accepted action motion", /\.action-resolution-feedback\{/],
   ["uncropped authored artwork", /\.hex-tile \.tile-art\{object-fit:contain;object-position:center\}/],
   ["uncropped revealed cards", /\.revealed-card-art\{object-fit:contain;object-position:center;background:/],
+  ["viewport-fitted gameplay layout", /\.game-screen\{height:100dvh;max-height:100dvh/],
 ];
 for (const [label, marker] of requiredStyleMarkers) if (!marker.test(styles)) failures.push(`missing ${label}`);
 
