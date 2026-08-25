@@ -464,7 +464,7 @@ Useful source documents:
 - [ ] [P0] The first-playable browser flow renders and uses the fully filled authoritative honeycomb board; the sparse nine-space topology is not exposed as an MVP match option.
 - [ ] [P0] Browser verification covers every first-playable decision, cancellation, invalid action, loading state, and victory state.
 - [ ] [P1] Every full-rules pending-decision type has a dedicated understandable UI and recovery path.
-- [ ] [P1] The web client never calculates a rule outcome or maintains independent authoritative state.
+- [x] [P1] The web client never calculates a rule outcome or maintains independent authoritative state. (`apps/web/src/main.tsx` and `HexGrid` consume engine-provided legal paths and render authoritative snapshots/events; dice, damage, phase transitions, card effects, and victory are never resolved in the client.)
 
 ## Milestone 12 — Online rooms, persistence, reconnection, and spectators
 
@@ -497,7 +497,7 @@ Useful source documents:
 - [ ] [P0] Two remote browsers can set up, play, refresh, disconnect, reconnect, and finish a match without state divergence.
 - [x] [P0] WebSocket and polling paths pass the same command/revision/reconnect scenarios. (The API-server integration test creates a development fixture room, compares the initial WebSocket snapshot with HTTP state, applies setup over HTTP, and verifies the WebSocket update matches the revisioned polling response; production-board creation remains source-gated.)
 - [ ] [P1] Prisma/Postgres restart, concurrency, idempotency, retention, and projection suites pass.
-- [ ] [P1] A spectator can follow a complete match but cannot act or view hidden information.
+- [x] [P1] A spectator can follow a complete match but cannot act or view hidden information. (`apps/api/src/store.test.ts` runs a complete development match to terminal victory, compares player and spectator winner projections, asserts deck/hand redaction, and rejects spectator commands.)
 
 ## Milestone 13 — Responsive design, accessibility, onboarding, feedback, audio, and settings
 
