@@ -706,6 +706,36 @@ test("movement matrix covers every implemented movement mode, water class, barri
   offBoard.units[0].location = "record-tile";
   assert.deepEqual(legalMonsterPaths(offBoard), []);
   assert.deepEqual(legalUnitPaths(offBoard, offBoard.units[0].id), []);
+
+  const challengePhase = createGame(2);
+  challengePhase.phase = "challenge";
+  challengePhase.challenge = {
+    declared: true,
+    active: true,
+    challengerMonsterId: challengePhase.monsters[0].id,
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  assert.deepEqual(legalMonsterPaths(challengePhase), []);
+  assert.deepEqual(legalUnitPaths(challengePhase, challengePhase.units[0].id), []);
+
+  const flyingChallenge = createGame(2);
+  flyingChallenge.monsters[0].movement = "fly";
+  flyingChallenge.monsters[0].location = K("los-angeles");
+  flyingChallenge.monsters[1].location = K("denver");
+  flyingChallenge.challenge = {
+    declared: true,
+    active: true,
+    challengerMonsterId: flyingChallenge.monsters[0].id,
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  const challengeFinish = legalMonsterPaths(flyingChallenge).some((path) => path.join(">") === `${K("los-angeles")}>${K("denver")}`);
+  assert.equal(challengeFinish, true);
 });
 
 test("movement stops at military occupancy and rejects monster occupancy", () => {
