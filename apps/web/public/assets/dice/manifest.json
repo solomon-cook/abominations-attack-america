@@ -1,0 +1,12 @@
+{
+  "format": "webp",
+  "source": "output/imagegen/terrain-die-faces/",
+  "faces": [
+    { "value": 1, "file": "d6-face-1.webp" },
+    { "value": 2, "file": "d6-face-2.webp" },
+    { "value": 3, "file": "d6-face-3.webp" },
+    { "value": 4, "file": "d6-face-4.webp" },
+    { "value": 5, "file": "d6-face-5.webp" },
+    { "value": 6, "file": "d6-face-6.webp" }
+  ]
+}

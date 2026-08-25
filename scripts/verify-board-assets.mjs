@@ -6,6 +6,7 @@ const scriptDirectory = resolve(fileURLToPath(new URL(".", import.meta.url)));
 const assetRoot = resolve(scriptDirectory, "../apps/web/public/assets/board");
 const cardAssetRoot = resolve(scriptDirectory, "../apps/web/public/assets/cards");
 const monsterAssetRoot = resolve(scriptDirectory, "../apps/web/public/assets/monsters");
+const diceAssetRoot = resolve(scriptDirectory, "../apps/web/public/assets/dice");
 
 async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
@@ -60,6 +61,11 @@ if (monsterManifest.format !== "webp" || !Array.isArray(monsterManifest.monsters
 for (const monster of monsterManifest.monsters) await assertFile(join(monsterAssetRoot, monster.id + ".webp"), "Optimized monster sprite");
 await assertFile(join(monsterAssetRoot, "README.md"), "Monster asset provenance README");
 
+const diceManifest = JSON.parse(await readFile(join(diceAssetRoot, "manifest.json"), "utf8"));
+if (diceManifest.format !== "webp" || !Array.isArray(diceManifest.faces) || diceManifest.faces.length !== 6) throw new Error("Dice asset manifest is incomplete");
+for (const face of diceManifest.faces) await assertFile(join(diceAssetRoot, face.file), "Optimized die face");
+await assertFile(join(diceAssetRoot, "README.md"), "Dice asset provenance README");
+
 const topLevelEntries = await readdir(assetRoot);
 if (!topLevelEntries.includes("README.md")) throw new Error("Board asset provenance README is missing");
-console.log("Board asset manifests and optimized WebP companions verified.");
+console.log("Board, card, monster, and cream die-face asset manifests verified.");

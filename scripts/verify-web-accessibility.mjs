@@ -29,6 +29,8 @@ const requiredSourceMarkers = [
   ["pointer-drag board controls", /onPointerMove=\{moveMapDrag\}/],
   ["wheel board zoom", /onWheel=\{zoomMapWithWheel\}/],
   ["hover path preview", /onMouseEnter=\{\(\) => \(monsterLegal \|\| unitLegal\)/],
+  ["cream die face textures", /\/assets\/dice\/d6-face-6\.webp/],
+  ["authoritative die result label", /aria-label=\{`Roll \$\{index \+ 1\}: \$\{roll\}`\}/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 
@@ -40,6 +42,8 @@ const requiredStyleMarkers = [
   ["no horizontal overflow", /overflow-x:clip/],
   ["generated decorative map backdrop", /\.map::after\{/],
   ["touch-drag board viewport", /\.map\{touch-action:none/],
+  ["3D die transforms", /transform-style:preserve-3d/],
+  ["reduced-motion dice", /\.combat-die \.die-cube\{animation:none\}/],
 ];
 for (const [label, marker] of requiredStyleMarkers) if (!marker.test(styles)) failures.push(`missing ${label}`);
 
