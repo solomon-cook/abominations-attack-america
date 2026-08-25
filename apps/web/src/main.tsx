@@ -934,6 +934,8 @@ function App() {
             </div>
             <div className="region-label west">HOLLYWOOD</div>
             </div>
+          </div>
+          <div className="board-action-bar">
             <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
           </div>
           <p className="sr-only" id="board-description">
