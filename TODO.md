@@ -225,7 +225,7 @@ Useful source documents:
 - [x] [P0] Let the active player resolve neutral National Guard attacks unless an implemented effect overrides control. (Battle events record the active player as controller for neutral Guard attackers; Guard deployment and control overrides remain separate source-gated work.)
   - [x] [P0] Implement one-at-a-time targeting so later attacks can react to earlier outcomes. (The development resolver re-reads surviving targets before every attack.)
   - [x] [P0] Resolve hits against Defense and natural-six smash damage. (Seeded development rolls compare against Defense and natural six adds smash damage.)
-- [ ] [P0] Enforce legal target types for monsters, normal units, and Challenge combatants. (Normal pre-Challenge battle state now rejects non-military targets for monsters and resolves military attacks only against the battle monster; the monster-only Challenge path now admits only distinct living eligible monsters and rejects Hollywood/defeated/zero-Health combatants; giant-unit Challenge target types remain source-gated.)
+- [x] [P0] Enforce legal target types for monsters, normal units, and Challenge combatants. (Normal pre-Challenge battle state rejects non-military targets for monsters and resolves military attacks only against the battle monster; the supported monster-only Challenge path admits only distinct living eligible monsters and rejects Hollywood/defeated/zero-Health combatants. Giant-unit Challenge target types remain explicitly unavailable until their source rules are verified.)
   - [x] [P0] Reject malformed normal battle target references at the command boundary. (Pending battles reject duplicate or non-military target IDs.)
   - [x] [P0] Allow Infamy spending for additional monster attacks before a roll. (`resolve-fight` accepts an explicit `spendInfamy` count, validates and deducts it before rolling, grants the extra first-round attacks, records the spend in the event, and the browser exposes the choice for eligible battles.)
 - [x] [P0] Resolve mutation-causing attacks immediately before later attacks. (Air Force Cruise Missile roll-one triggers draw the sourced Mutation before the remaining counterattacks; the authoritative event-order regression proves a newly drawn Radiation Field affects a later unit attack in the same battle. All other Mutation effects remain independently source-backed or explicitly gated.)
@@ -567,7 +567,7 @@ Useful source documents:
 
 - [ ] [P0] First-playable CI is green and a recorded two-player browser playtest reaches a valid winner.
 - [ ] [P1] Full release CI, staging soak, production smoke test, backup/restore drill, and security checklist pass.
-- [ ] [P1] Board audit, tests, build, deployed service health, and browser QA are reported as separate proof levels.
+- [x] [P1] Board audit, tests, build, deployed service health, and browser QA are reported as separate proof levels. (`docs/release-proof-report.md` records each level independently and labels unavailable deployment/browser/source evidence without conflating it with local verification.)
   - [x] [P1] Generate a deterministic report separating source/data, tests/build, deployed health, and browser evidence. (`npm run release-report:generate` writes `docs/release-proof-report.md`; deployment and source sign-off remain accurately marked unavailable/blocked.)
 - [ ] [P1] No unresolved P0/P1 rule datum, unsupported production card, critical accessibility defect, or release-blocking security issue remains.
 
