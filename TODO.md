@@ -340,7 +340,8 @@ Useful source documents:
 ### Milestone 9 acceptance
 
 - [ ] [P1] Every production card has structured data, an implemented effect, timing tests, projection tests, and UI coverage.
-- [ ] [P1] Deck exhaustion, interrupted resolution, invalid targets, stacked effects, reconnect, and replay tests pass.
+  - [x] Give every Military Research card its exact catalogue transcription, classification, timing, duration, source reference, and explicit implementation status in `SOURCED_CARD_RULES`; unsupported effects remain source-gated.
+  - [ ] [P1] Deck exhaustion, interrupted resolution, invalid targets, stacked effects, reconnect, and replay tests pass.
 - [ ] [P1] A card catalogue report shows zero unsupported cards in the selected production ruleset.
 - [x] [P1] Hidden card and deck information cannot be recovered from room snapshots, events, or browser markup. (Projection and MemoryRoomStore tests cover opponent, spectator, event-log, and room-event redaction.)
 

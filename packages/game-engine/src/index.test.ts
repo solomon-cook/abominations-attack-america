@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createCardDeckState, discardCard, drawCard, MONSTER_MUTATION_CARD_IDS, sourcedCardRule } from "./cards.js";
+import { createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
 import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, locationIdToHexKey } from "./board.js";
@@ -494,6 +494,9 @@ test("source-inventoried cards have versioned structured metadata without guesse
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Berserk"]), []);
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Mecha-Monster"]), ["Mecha-Monster"]);
   assert.throws(() => assertCardsAvailable(["Mecha-Monster"]), /source-gated/);
+  assert.deepEqual(SOURCED_CARD_RULES.map((card) => card.id).filter((id) => MILITARY_RESEARCH_CARD_IDS.includes(id as typeof MILITARY_RESEARCH_CARD_IDS[number])).sort(), [...MILITARY_RESEARCH_CARD_IDS].sort());
+  assert.equal(sourcedCardRule("Captain Colossal")?.effectsImplementation, "source-gated");
+  assert.equal(sourcedCardRule("2nd Generation")?.effectsImplementation, "implemented");
   assert.deepEqual(sourcedCardRule("Guard Commander"), {
     id: "Guard Commander",
     transcription: "You can move and redeploy Guard units. Tanks have Move 3 (land only). Fighters have Move 5 (fly). Other players can't deploy Guard units.",
