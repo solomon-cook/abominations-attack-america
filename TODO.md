@@ -402,6 +402,7 @@ Useful source documents:
       - [ ] [P0] Animate the selected unit travelling to its confirmed destination, or animate the targeting/action result, only after the authoritative command is accepted; rejected or cancelled choices must not animate as completed actions.
         - [x] Animate the accepted movement route and destination piece only after `sendCommand` or `applyCommand` succeeds; rejected and cancelled paths never arm the animation. (`apps/web/src/main.tsx` and `apps/web/src/components/HexGrid.tsx`; engine/API tests plus web typecheck/build pass.)
     - [ ] [P0] Provide a prominent bottom-right action control styled as a push-to-take-action button for the current legal decision.
+      - [x] Add a bottom-right action dock that confirms selected movement or executes only unambiguous phase commands; unresolved target/choice states remain disabled with an explanatory label. (`apps/web/src/components/ActionDock.tsx`; web typecheck/build pass.)
     - [ ] [P0] Add a top phase-progress bar that moves through the phases/substeps of the active player's turn.
       - [x] Render authoritative Move, Fight, Encounter, and Deploy progress plus pending attack/retreat/battle/trophy/reward substeps. (`apps/web/src/components/TurnProgress.tsx`; web typecheck/build pass.)
     - [ ] [P0] Place the player's monster and military branch in circular status controls at bottom left, showing useful summary numbers such as Health, Infamy, deployed groups, and reserve groups.

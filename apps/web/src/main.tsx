@@ -35,6 +35,7 @@ import {
 } from "./api";
 import { createDevelopmentSetup } from "./development-setup";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
+import { ActionDock } from "./components/ActionDock";
 import { LobbyPanel } from "./components/LobbyPanel";
 import { LogPanel } from "./components/LogPanel";
 import { MatchStatus } from "./components/MatchStatus";
@@ -198,6 +199,23 @@ function App() {
           : activeGame.phase === "game-over"
             ? "The match is complete; gameplay actions are disabled."
             : "";
+  const actionDock = activeGame.phase === "move"
+    ? selectedUnitPath.length > 1
+      ? { label: "Confirm unit move", command: { type: "move-unit", unitId: selectedUnitId!, path: selectedUnitPath } as GameCommand }
+      : selectedPath.length > 1
+        ? { label: "Confirm monster move", command: { type: "move", path: selectedPath } as GameCommand }
+        : { label: "Select a highlighted destination", command: undefined }
+    : activeGame.phase === "fight"
+      ? pendingBattle && !pendingAttackTarget && !activeGame.pendingDecision?.type?.includes("retreat") && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length === 1
+        ? { label: "Resolve fight", command: { type: "resolve-fight", battleId: pendingBattle.id } as GameCommand }
+        : { label: "Choose the Fight decision", command: undefined }
+      : activeGame.phase === "encounter"
+        ? activeGame.pendingDecision
+          ? { label: "Choose the Encounter decision", command: undefined }
+          : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
+        : activeGame.phase === "deploy"
+          ? { label: "Pass deployment", command: { type: "pass-deploy" } as GameCommand }
+          : { label: "Match complete", command: undefined };
   const resetMapView = () => {
     setMapZoom(1);
     setMapPan({ x: 0, y: 0 });
@@ -756,6 +774,7 @@ function App() {
             </div>
             <div className="region-label west">HOLLYWOOD</div>
             </div>
+            <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} onAction={(command) => void runCommand(command)} />
           </div>
           <p className="sr-only" id="board-description">
             The full 254-cell honeycomb coordinate shell is rendered from the shared board candidate. The current match is still pinned to the nine-space development board, so only its verified fixture spaces are authoritative and interactive; unknown board spaces remain unavailable until source transcription is complete.
