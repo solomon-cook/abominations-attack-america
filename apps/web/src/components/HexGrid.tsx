@@ -8,19 +8,9 @@ import {
   type GameState,
   type HexKey,
   type BoardHex,
-  type BoardDefinition,
 } from "@abominations/game-engine";
 import { buildDisplayHexLayout } from "../board-layout";
-
-function boardForGame(game: GameState): BoardDefinition | undefined {
-  if (game.boardId === FULL_HONEYCOMB_BOARD.id && game.boardContentHash === FULL_HONEYCOMB_BOARD.contentHash) {
-    return FULL_HONEYCOMB_BOARD;
-  }
-  if (game.boardId === DEVELOPMENT_BOARD.id && game.boardContentHash === DEVELOPMENT_BOARD.contentHash) {
-    return DEVELOPMENT_BOARD;
-  }
-  return undefined;
-}
+import { boardForGame } from "../board-pin";
 
 function displayHexesForGame(game: GameState) {
   const board = boardForGame(game);

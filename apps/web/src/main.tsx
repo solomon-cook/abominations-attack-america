@@ -8,8 +8,6 @@ import {
   chooseStartingChoice,
   createGame,
   createGameFromSetup,
-  DEVELOPMENT_BOARD,
-  FULL_HONEYCOMB_BOARD,
   getLocation,
     legalNationalGuardDeploymentDestinations,
     legalOwnedDeploymentDestinations,
@@ -36,6 +34,7 @@ import {
   websocketUrl,
 } from "./api";
 import { createDevelopmentSetup } from "./development-setup";
+import { boardForGame } from "./board-pin";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
 import { ActionDock } from "./components/ActionDock";
 import { LobbyPanel } from "./components/LobbyPanel";
@@ -838,6 +837,8 @@ function App() {
     );
   }
 
+  const renderedBoard = boardForGame(activeGame);
+
   return (
     <main className={`game-screen ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}>
       <header>
@@ -958,8 +959,8 @@ function App() {
             aria-describedby="board-description"
             data-board-id={activeGame.boardId}
             data-board-content-hash={activeGame.boardContentHash}
-            data-rendered-board-id={activeGame.boardId === FULL_HONEYCOMB_BOARD.id ? FULL_HONEYCOMB_BOARD.id : DEVELOPMENT_BOARD.id}
-            data-rendered-board-content-hash={activeGame.boardId === FULL_HONEYCOMB_BOARD.id ? FULL_HONEYCOMB_BOARD.contentHash : DEVELOPMENT_BOARD.contentHash}
+            data-rendered-board-id={renderedBoard?.id ?? "unavailable"}
+            data-rendered-board-content-hash={renderedBoard?.contentHash ?? "unavailable"}
             onPointerDown={startMapDrag}
             onPointerMove={moveMapDrag}
             onPointerUp={endMapDrag}
