@@ -169,6 +169,16 @@ function App() {
   const lastFightRolls = Array.isArray(lastFightEvent?.detail.rolls)
     ? lastFightEvent.detail.rolls.filter((roll): roll is number => typeof roll === "number")
     : [];
+  const lastFightOutcomes = Array.isArray(lastFightEvent?.detail.attacks)
+    ? lastFightEvent.detail.attacks
+      .filter((attack): attack is Record<string, unknown> => Boolean(attack && typeof attack === "object"))
+      .map((attack) => {
+        const roll = typeof attack.roll === "number" ? `roll ${attack.roll}` : "recorded roll";
+        const result = attack.hit === true ? `hit for ${typeof attack.damage === "number" ? attack.damage : "recorded damage"}${attack.smash === true ? ", smash" : ""}` : "missed";
+        const modifiers = Array.isArray(attack.modifiers) ? attack.modifiers.filter((modifier): modifier is string => typeof modifier === "string") : [];
+        return `${roll}: ${result}${modifiers.length ? ` (${modifiers.join(", ")})` : ""}`;
+      })
+    : [];
   const canSpendInfamyOnPendingBattle = Boolean(
     pendingBattle &&
     activePlayer.infamy > 0,
@@ -858,6 +868,7 @@ function App() {
               canAct={canAct}
               lastFightEventId={lastFightEvent?.id}
               lastFightRolls={lastFightRolls}
+              lastFightOutcomes={lastFightOutcomes}
             />
             {activeGame.phase === "move" &&
             selectedUnitId &&

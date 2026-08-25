@@ -404,6 +404,7 @@ Useful source documents:
       - [ ] [P0] Animate the selected unit travelling to its confirmed destination, or animate the targeting/action result, only after the authoritative command is accepted; rejected or cancelled choices must not animate as completed actions.
         - [x] Animate the accepted movement route and destination piece only after `sendCommand` or `applyCommand` succeeds; rejected and cancelled paths never arm the animation. (`apps/web/src/main.tsx` and `apps/web/src/components/HexGrid.tsx`; engine/API tests plus web typecheck/build pass.)
     - [ ] [P0] Add a tactile 3D dice graphic that players can roll for combat, encounters, and other dice-based decisions.
+      - [x] Present authoritative combat rolls as tactile 3D dice with recorded hit, damage, smash, and modifier outcomes; the presentation cannot determine the result and respects reduced-motion settings. (`TurnPrompt` renders the recorded `fight.resolved` event.)
       - [ ] [P0] Animate the 3D dice roll and then clearly present the resulting face/value, modifiers, damage, and outcome; the presentation must respect reduced-motion settings.
       - [ ] [P0] Keep the dice result authoritative and deterministic from the engine/server outcome; the 3D animation must be presentation-only and cannot determine or alter the roll.
     - [ ] [P0] Provide a prominent bottom-right action control styled as a push-to-take-action button for the current legal decision.

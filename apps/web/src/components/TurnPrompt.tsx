@@ -8,9 +8,10 @@ type Props = {
   canAct: boolean;
   lastFightEventId?: string;
   lastFightRolls: readonly number[];
+  lastFightOutcomes: readonly string[];
 };
 
-export function TurnPrompt({ actionHeadingRef, action, description, unavailableReason, canAct, lastFightEventId, lastFightRolls }: Props) {
+export function TurnPrompt({ actionHeadingRef, action, description, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes }: Props) {
   return (
     <>
       <span className="label">CURRENT STEP</span>
@@ -21,8 +22,9 @@ export function TurnPrompt({ actionHeadingRef, action, description, unavailableR
         <div className="combat-result" key={lastFightEventId} aria-live="polite">
           <span className="label">LAST COMBAT ROLLS</span>
           <div className="combat-roll-list">
-            {lastFightRolls.map((roll, index) => <span key={`${lastFightEventId}-${index}`} aria-label={`Roll ${index + 1}: ${roll}`}>{roll}</span>)}
+            {lastFightRolls.map((roll, index) => <span className="combat-die" key={`${lastFightEventId}-${index}`} aria-label={`Roll ${index + 1}: ${roll}`}><span className="die-face">{roll}</span></span>)}
           </div>
+          {lastFightOutcomes.length > 0 && <ul className="combat-outcomes">{lastFightOutcomes.map((outcome, index) => <li key={`${lastFightEventId}-outcome-${index}`}>{outcome}</li>)}</ul>}
           <small>Recorded by the authoritative fight result; the animation is presentation only.</small>
         </div>
       )}
