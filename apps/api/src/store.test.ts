@@ -100,6 +100,16 @@ test("disconnect and reconnect preserve setup state and recover an abandoned roo
   assert.equal((await store.reconnect(host.room.code, host.token)).status, "active");
 });
 
+test("session rotation preserves the participant while revoking the old token", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2);
+  const rotated = await store.rotateSession(host.room.code, host.token);
+  assert.equal(rotated.participantId, host.participantId);
+  assert.notEqual(rotated.token, host.token);
+  assert.equal((await store.getRoom(host.room.code, rotated.token)).participants.find((participant) => participant.id === host.participantId)?.role, "player");
+  await assert.rejects(() => store.getRoom(host.room.code, host.token), /Invalid room token/);
+});
+
 test("idle development rooms expire without changing a completed result", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2);

@@ -70,6 +70,15 @@ export class PrismaRoomStore implements RoomStore {
     return this.view(room.id, 0, participant.role === "PLAYER" ? "player" : "spectator", participant.playerIndex ?? undefined);
   }
 
+  async rotateSession(roomCode: string, accessToken: string): Promise<SessionResponse> {
+    const room = await this.authorize(roomCode, accessToken);
+    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
+    if (!participant) throw new Error("Invalid room token.");
+    const replacement = token();
+    await this.prismaClient.participant.update({ where: { id: participant.id }, data: { tokenHash: hash(replacement) } });
+    return { room: await this.view(room.id, 0, participant.role === "PLAYER" ? "player" : "spectator", participant.playerIndex ?? undefined), participantId: participant.id, token: replacement };
+  }
+
   async setReady(roomCode: string, accessToken: string, ready: boolean) {
     const room = await this.authorize(roomCode, accessToken);
     if (room.status !== "WAITING") throw new Error("Readiness can only change while a room is waiting.");

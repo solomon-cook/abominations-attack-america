@@ -33,6 +33,7 @@ export interface RoomStore {
   spectateRoom(code: string, displayName: string): Promise<SessionResponse>;
   disconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
   reconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
+  rotateSession(code: string, token: string): Promise<SessionResponse>;
   setReady(code: string, token: string, ready: boolean): Promise<RoomView>;
   setupAction(code: string, token: string, action: SetupAction, expectedRevision: number): Promise<RoomView>;
   getRoom(code: string, token: string, afterVersion?: number): Promise<RoomView>;
@@ -103,6 +104,15 @@ export class MemoryRoomStore implements RoomStore {
     this.touch(room);
     this.refreshStatus(room);
     return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+  }
+
+  async rotateSession(roomCode: string, accessToken: string): Promise<SessionResponse> {
+    const room = this.authorize(roomCode, accessToken);
+    const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!participant) throw new Error("Invalid room token.");
+    const replacement = token();
+    participant.tokenHash = hash(replacement);
+    return { room: this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex), participantId: participant.id, token: replacement };
   }
 
   async setReady(roomCode: string, accessToken: string, ready: boolean) {

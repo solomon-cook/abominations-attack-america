@@ -27,6 +27,16 @@ test("Prisma store health proves the database adapter is reachable", async () =>
   assert.deepEqual(await new PrismaRoomStore(adapter).health(), { persistence: "prisma" });
 });
 
+test("Prisma session rotation preserves the participant and revokes the old token", async () => {
+  const { adapter, room } = persistentAdapter();
+  const store = new PrismaRoomStore(adapter);
+  const rotated = await store.rotateSession(room.code, "token");
+  assert.equal(rotated.participantId, "player-1");
+  assert.notEqual(rotated.token, "token");
+  await assert.rejects(() => store.getRoom(room.code, "token"), /Invalid room token/);
+  assert.equal((await store.getRoom(room.code, rotated.token)).participants[0]?.id, "player-1");
+});
+
 test("terminal command persists completed room status and winner result atomically", async () => {
   const { adapter, room, results } = persistentAdapter();
   room.state.stompMarkers = 1;

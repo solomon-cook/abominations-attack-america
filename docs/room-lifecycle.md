@@ -29,7 +29,7 @@ The current MVP policy is:
 - Disconnect has no short grace timer: the participant may reconnect during the room's 24-hour idle window. A room becomes abandoned only when every player is disconnected, and can recover when all ready players reconnect.
 - There is no host privilege and no token transfer between participants. A creator's departure therefore follows ordinary disconnect rules.
 - Voluntary concession is the explicit inactive-player resolution; the client never converts a network failure into a concession.
-- Targeted revocation and token rotation are release requirements, not silently assumed behavior. A production implementation must atomically invalidate the old hash, issue the replacement token, preserve the participant/role/seat, and record the security event without exposing either token in projections or logs.
+- The API now exposes `POST /rooms/:code/rotate-session`; both stores atomically replace the stored hash, issue a replacement token, preserve the participant/role/seat, and reject the old token. Security-event/audit delivery and an authenticated automatic-rotation policy remain release requirements; neither token is exposed in projections or logs.
 - Room privacy is bearer-token based in the current guest model: possession of a player token permits that player's projection, while a spectator token permits only the redacted spectator projection. Room codes and tokens are never sufficient to bypass role or revision checks.
 
-The release checklist must revisit the explicit rotation/revocation requirement before production deployment; this document does not claim that a rotation endpoint or external identity provider already exists.
+The release checklist must revisit audit delivery, automatic rotation, and external identity integration before production deployment; the current endpoint is an explicit guest-session primitive, not an identity provider.
