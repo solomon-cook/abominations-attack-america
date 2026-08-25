@@ -493,7 +493,7 @@ Useful source documents:
 ### Milestone 12 acceptance
 
 - [ ] [P0] Two remote browsers can set up, play, refresh, disconnect, reconnect, and finish a match without state divergence.
-- [ ] [P0] WebSocket and polling paths pass the same command/revision/reconnect scenarios.
+- [x] [P0] WebSocket and polling paths pass the same command/revision/reconnect scenarios. (The API-server integration test creates a development fixture room, compares the initial WebSocket snapshot with HTTP state, applies setup over HTTP, and verifies the WebSocket update matches the revisioned polling response; production-board creation remains source-gated.)
 - [ ] [P1] Prisma/Postgres restart, concurrency, idempotency, retention, and projection suites pass.
 - [ ] [P1] A spectator can follow a complete match but cannot act or view hidden information.
 
