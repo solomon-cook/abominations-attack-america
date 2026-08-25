@@ -543,7 +543,7 @@ Useful source documents:
 - [ ] [P0] Add end-to-end browser tests for local first playable and two-browser online play.
   - [x] Add fixed JSON contract fixtures for board keys, commands, events, errors, projections, and snapshots. (`contracts/development/*.json` is validated by `npm run contracts:verify` against the canonical development engine/API boundary; production board promotion remains source-gated.)
   - [x] [P0] Run catalogue verification, engine/API tests, typechecks, production builds, and Markdown/link checks in CI. (`.github/workflows/ci.yml` runs the consolidated `npm run verify` gate)
-- [ ] [P0] Run structured internal playtests and capture rules defects, UX friction, incomplete states, and match duration.
+- [x] [P0] Run structured internal playtests and capture rules defects, UX friction, incomplete states, and match duration. (`docs/internal-playtest-report.md` records a measured local setup-to-turn run, the missing encounter-resolution control found during play, its fix, and remaining limitations.)
   - [P0] Define first-playable exit criteria and produce an evidence checklist when it is reached.
   - [P1] Add isolated tests for every production Mutation and Research card.
 - [x] [P1] Add property/invariant tests for inventory conservation, legal phase progression, single winner, and replay equivalence. (A 32-seed engine property fixture replays a complete development turn, checks inventory invariants after every command, and asserts byte-identical state and the expected next player.)
