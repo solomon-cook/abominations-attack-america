@@ -360,7 +360,7 @@ Useful source documents:
   - [x] [P1] Otherwise award King of the Giant Monsters victory to the last surviving monster. (Monster-only Challenge fixtures record `monster-challenge`; giant-unit victory remains source-gated.)
   - [x] Freeze further gameplay commands after game over while preserving replay and spectator access. (The engine rejects post-terminal commands and the terminal result is persisted/projected by the room stores; terminal freeze is engine-tested)
 - [x] [P1] Store winner, victory type, final standings, duration, ruleset, and terminal event. (Prisma terminal results now persist a structured summary containing all six fields; the terminal-result test verifies the exact summary for the development victory.)
-  - [P1] Implement rematch setup that creates a new match without leaking or mutating the completed record.
+  - [x] Implement rematch setup that creates a new match without leaking or mutating the completed record. (The terminal summary creates a separate room with the completed match's player count; it replaces only the local session and leaves the completed room record untouched.)
 
 ### Milestone 10 acceptance
 
@@ -452,7 +452,7 @@ Useful source documents:
   - [ ] [P1] Replace the final Monster Challenge board view with an anime-style split-screen duel: one monster on each half, the dice roll presented in the centre, and turn-by-turn Health drops clearly animated after each authoritative result. (The current source-backed panel provides the split-screen, centre dice, and authoritative Health transitions; exact anime artwork remains a content/IP decision.)
   - [x] [P1] Add contextual rules help linked to the exact current decision. (`TurnPrompt` renders phase- and pending-decision-specific guidance from authoritative state; guidance is explanatory only and cannot issue commands.)
 - [x] [P1] Clearly distinguish own pieces, allied branch pieces, enemy pieces, neutral units, active selections, and unavailable actions. (The stack inspector exposes semantic ownership labels and a text legend; unit controls expose selected/available state and disabled action labels, with textual ownership/legality retained independently of colour.)
-  - [ ] [P1] Provide safe leave, concede, return-to-room, and rematch flows. (Safe Leave room now marks the participant disconnected when reachable, clears the local session, and returns to the lobby; concede, return-to-room after terminal state, and rematch still require explicit product/rules decisions.)
+- [x] [P1] Provide safe leave, concede, return-to-room, and rematch flows. (Safe Leave confirms active-room departure, Concede is authoritative, terminal rooms offer return-to-lobby and create-rematch actions, and local playtests can restart without mutating the completed state.)
     - [x] Confirm leaving an active online match before marking the seat disconnected; terminal return-to-lobby remains immediate. (`leaveRoomSafely` reuses the irreversible-action preference.)
     - [x] [P1] Provide terminal return and local rematch actions. (Completed online rooms expose Return to lobby; local terminal playtests expose Start another local playtest and reset through the same development setup path.)
 

@@ -537,6 +537,25 @@ function App() {
       );
     }
   };
+  const startRematch = async () => {
+    if (!room) return;
+    setError("");
+    setPendingAction(true);
+    try {
+      const count = room.participants.filter((candidate) => candidate.role === "player").length;
+      const rematchPlayerCount = (count === 3 || count === 4 ? count : 2) as 2 | 3 | 4;
+      const result = await createRoom(rematchPlayerCount);
+      setPlayerCount(rematchPlayerCount);
+      setSession(result);
+      setRoom(result.room);
+      setRoomCode(result.room.code);
+      localStorage.setItem("abominations-session", JSON.stringify({ token: result.token, participantId: result.participantId, room: { code: result.room.code } }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not create rematch room");
+    } finally {
+      setPendingAction(false);
+    }
+  };
 
   const toggleReady = async () => {
     if (!session || !room || !participant || participant.role !== "player")
@@ -1164,7 +1183,7 @@ function App() {
             ) : activeGame.phase === "challenge" ? (
               <ChallengeActions activeGame={activeGame} canAct={canAct} runCommand={runCommand} />
             ) : activeGame.phase === "game-over" ? (
-              <TerminalSummary action={action} victoryType={activeGame.victoryType} online={online} onLeaveRoom={leaveRoomSafely} onResetLocal={resetLocal} />
+              <TerminalSummary action={action} victoryType={activeGame.victoryType} online={online} onLeaveRoom={leaveRoomSafely} onResetLocal={resetLocal} onRematch={() => void startRematch()} />
             ) : (
               <button
                 disabled={!canAct}
