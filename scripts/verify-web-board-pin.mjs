@@ -15,6 +15,8 @@ const required = [
   ["grid uses shared resolver", /import \{ boardForGame \} from "\.\.\/board-pin"/],
   ["phase actions use shared resolver", /import \{ boardForGame \} from "\.\.\/board-pin"/],
   ["Laser Fence uses resolved board edges", /const activeBoard = boardForGame\(activeGame\);[\s\S]*activeBoard\.edges/],
+  ["unresolved shell has no visible placeholder label", /const visibleName = place\?\.name \?\? \(developmentFixture \? hex\.label : ""\);/],
+  ["unresolved shell has no placeholder marker", /\{place && <span className="node"/],
   ["grid hides unknown topology", /className="board-unavailable" role="alert"/],
   ["map metadata uses resolved board", /data-rendered-board-id=\{renderedBoard\?\.id \?\? "unavailable"\}/],
   ["map metadata uses resolved hash", /data-rendered-board-content-hash=\{renderedBoard\?\.contentHash \?\? "unavailable"\}/],
