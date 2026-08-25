@@ -7,7 +7,8 @@ import { MemoryRoomStore, type RoomStore } from "./store.js";
 import { PrismaRoomStore } from "./prisma-store.js";
 
 const port = Number(process.env.PORT ?? 8787);
-const store: RoomStore = process.env.DATABASE_URL ? new PrismaRoomStore() : new MemoryRoomStore();
+const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL;
+const store: RoomStore = databaseUrl ? new PrismaRoomStore() : new MemoryRoomStore();
 const sockets = new Map<string, Set<WebSocket>>();
 
 const json = (response: ServerResponse, status: number, body: unknown) => {
@@ -23,7 +24,7 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
   const parts = url.pathname.split("/").filter(Boolean);
   try {
-    if (request.method === "GET" && parts[0] === "health") return json(response, 200, { ok: true, persistence: process.env.DATABASE_URL ? "prisma" : "memory" });
+    if (request.method === "GET" && parts[0] === "health") return json(response, 200, { ok: true, persistence: databaseUrl ? "prisma" : "memory" });
     if (request.method === "POST" && parts[0] === "rooms" && parts.length === 1) {
       const input = await body(request); return json(response, 201, await store.createRoom(Math.min(4, Math.max(2, Number(input.maxPlayers ?? 4)))));
     }
