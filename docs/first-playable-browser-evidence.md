@@ -51,6 +51,10 @@ A fresh 2026-08-25 local run also completed the ordered setup through the visibl
 
 The same runtime check confirmed the keyboard focus boundary after starting a local playtest: the setup controls surface is visible and the current-step `Move` heading receives focus (`tabindex=-1`) rather than leaving focus on the document body. The compact board-first panel-closed layout remains available after setup; this proves the setup transition only, not a complete keyboard or assistive-technology playthrough.
 
+## Latest two-browser online smoke check
+
+On 2026-08-25, two fresh browser tabs connected to the local API, created and joined room `8A132F`, completed the ordered two-player setup independently, and both reached the setup-complete Move surface. Reloading the second tab restored the same room and retained setup completion without developer-tool intervention. A subsequent Move attempt did not produce a clean observed phase transition in the second tab, so this is partial online setup/reconnect evidence only; the full two-browser play, refresh, disconnect, reconnect, and winner acceptance remains open.
+
 The live development smoke pass then exercised the first complete decision chain after setup: **Move** → **Encounter** → visible **Resolve encounter** control → source-backed city choice (**Take the city Health benefit**) → **Deploy** → **Pass deployment**. Before the fix, the `encounter-resolution` pending decision rendered only a disabled “Choose the Encounter decision” dock label; `PhaseActions` now exposes the authoritative resolution button and the accessibility source contract guards that branch. This remains development-fixture evidence and does not cover every fight/retreat/card/victory path.
 
 ## Full-board rendering check
