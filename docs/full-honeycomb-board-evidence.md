@@ -19,11 +19,14 @@ cross-checks, not as replacement rule authority:
 - [BoardGameGeek board close-up](https://boardgamegeek.com/image/201674/monsters-menace-america)
 - [Blugee setup photograph](https://blugee.com/cdn/shop/files/Monsters-Menace-America-Board-Game-2_898x600.jpg?v=1711114433)
 - [Independent setup photograph](https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rtYAAOSw9fVmDcjE/%24_3.JPG)
+- [Independent setup photograph, 1600px delivery](https://i.ebayimg.com/images/g/rtYAAOSw9fVmDcjE/s-l1600.jpg)
 
 These references independently support the broad filled-board silhouette, blue
 sea/coast boundary, green land field, and presence of printed city/site/base
-families. They are oblique or component-obscured and are not sufficiently aligned
-or legible to assign exact shell coordinates, water classes, barriers, or benefits.
+families. The 1600px delivery makes some printed labels and the coast/land hex
+treatment easier to inspect, but it remains oblique, cropped, and component-obscured;
+it is not sufficiently aligned or complete to assign exact shell coordinates, water
+classes, barriers, or benefits.
 No rule-bearing datum is promoted from these images; they only increase confidence
 in the broad visual classification and identify the need for an unobscured,
 high-resolution top-down source or human physical-board review.
@@ -51,6 +54,7 @@ The currently checked-in source photographs are useful for confirming the overal
 | --- | ---: | --- | --- |
 | `full-board-top-down.jpg` | 753 × 623 | Overall lattice, outer water boundary, broad feature placement | Reading every printed label/icon, classifying every edge, or assigning a rule datum to a coordinate |
 | `full-game-setup.jpg` | 2840 × 1752 | Cross-checking the board in a setup context and identifying broad component regions | Cell-by-cell transcription where pieces, cards, glare, or perspective obscure the printed board |
+| Independent setup photograph, 1600px delivery | 1600 × 1600 | Inspecting some printed labels and the coast/land hex treatment | Complete cell-by-cell transcription; large areas remain covered by components and the board is cropped/perspective-distorted |
 | User-supplied comparison screenshot | 1280 × 706 | Demonstrating the current candidate-shell rendering failure: unresolved labels, placeholder dots, and rectangular extent | Authoritative physical-board topology; it is a browser reconstruction, not a source photograph |
 
 Promotion therefore requires a higher-resolution, unobscured top-down board reference or a human-reviewed transcription against the original physical board. Image optimisation improves delivery performance only; it does not increase the evidentiary resolution or turn decorative geometry into rules data.
