@@ -1211,6 +1211,32 @@ test("the Monster Challenge chooses eligible opponents, records weigh-in Health,
   assert.equal((resolved.eventPayload.rolls as number[]).length > 0, true);
 });
 
+test("High-Octane Blood lets a non-challenger attack first in the Monster Challenge", () => {
+  const state = createGame(2, 0);
+  state.rulesetVersion = "challenge-0.1";
+  state.players[1].mutationCardIds = ["High-Octane Blood"];
+  state.challenge = {
+    declared: true,
+    active: true,
+    challengerMonsterId: "monster-1",
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  state.phase = "challenge";
+  state.currentPlayer = 0;
+  state.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
+  state.monsters[0].health = 2;
+  state.monsters[1].health = 2;
+  state.monsters[1].location = "disappeared";
+  const selected = applyCommand(state, { type: "challenge-opponent", opponentMonsterId: "monster-2" });
+  const resolved = applyCommand(selected.state, { type: "resolve-challenge" });
+  const firstAttack = (resolved.eventPayload.attacks as Array<{ attackerId: string; modifiers: string[] }>)[0];
+  assert.equal(firstAttack.attackerId, "monster-2");
+  assert.deepEqual(firstAttack.modifiers, ["High-Octane Blood: attacks first"]);
+});
+
 test("a pending challenger lost to Hollywood is cleared while a disappeared monster remains eligible", () => {
   const state = createGame(2, 0);
   state.challenge = {

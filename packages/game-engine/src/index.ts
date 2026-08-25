@@ -1639,8 +1639,8 @@ function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
   const opponentWeighIn = challenge.weighInHealth[opponent.id] ?? opponent.health;
   const rolls: number[] = [];
   const attacks: BattleAttack[] = [];
-  let attacker = challenger;
-  let defender = opponent;
+  let attacker = monsterHasMutation(next, opponent, "High-Octane Blood") ? opponent : challenger;
+  let defender = attacker === challenger ? opponent : challenger;
   while (attacker.health > 0 && defender.health > 0) {
     for (let attackIndex = 0; attackIndex < attacker.attacks && defender.health > 0; attackIndex += 1) {
       const roll = nextD6(next);
@@ -1650,7 +1650,7 @@ function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
       const targetHealthBefore = defender.health;
       defender.health = Math.max(0, defender.health - damage);
       rolls.push(roll);
-      attacks.push({ attackerId: attacker.id, targetId: defender.id, controllerPlayer: challengePlayerIndex(next, attacker.id), roll, modifiers: [], hit, smash, damage, destroyed: defender.health === 0, targetHealthBefore, targetHealthAfter: defender.health });
+      attacks.push({ attackerId: attacker.id, targetId: defender.id, controllerPlayer: challengePlayerIndex(next, attacker.id), roll, modifiers: attacker.id === opponent.id && monsterHasMutation(next, opponent, "High-Octane Blood") ? ["High-Octane Blood: attacks first"] : [], hit, smash, damage, destroyed: defender.health === 0, targetHealthBefore, targetHealthAfter: defender.health });
     }
     if (defender.health === 0) break;
     [attacker, defender] = [defender, attacker];
