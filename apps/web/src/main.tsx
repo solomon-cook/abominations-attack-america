@@ -55,6 +55,7 @@ import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
 import { HomeScreen } from "./components/HomeScreen";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
+import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
 import "./styles.css";
 
@@ -210,6 +211,24 @@ function App() {
       })
     : [];
   const lastEncounterEvent = [...activeGame.eventLog].reverse().find((entry) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required"].includes(entry.action));
+  const lastChallengeEvent = [...activeGame.eventLog].reverse().find((entry) => entry.action === "challenge.resolved");
+  const challengeRolls = Array.isArray(lastChallengeEvent?.detail.rolls)
+    ? lastChallengeEvent.detail.rolls.filter((roll): roll is number => typeof roll === "number")
+    : [];
+  const challengeAttacks = Array.isArray(lastChallengeEvent?.detail.attacks)
+    ? lastChallengeEvent.detail.attacks
+      .filter((attack): attack is Record<string, unknown> => Boolean(attack && typeof attack === "object"))
+      .map((attack) => ({
+        attackerId: typeof attack.attackerId === "string" ? attack.attackerId : "monster",
+        targetId: typeof attack.targetId === "string" ? attack.targetId : "monster",
+        roll: typeof attack.roll === "number" ? attack.roll : 0,
+        hit: attack.hit === true,
+        smash: attack.smash === true,
+        damage: typeof attack.damage === "number" ? attack.damage : 0,
+        targetHealthBefore: typeof attack.targetHealthBefore === "number" ? attack.targetHealthBefore : undefined,
+        targetHealthAfter: typeof attack.targetHealthAfter === "number" ? attack.targetHealthAfter : undefined,
+      }))
+    : [];
   const encounterEffects = Array.isArray(lastEncounterEvent?.detail.effects)
     ? lastEncounterEvent.detail.effects.filter((effect): effect is { type: string; amount: number; source: string } => Boolean(effect && typeof effect === "object" && typeof effect.type === "string" && typeof effect.amount === "number" && typeof effect.source === "string"))
     : [];
@@ -979,6 +998,16 @@ function App() {
               lastRecoveryReleased={lastRecoveryEvent?.detail.recoveryReleased === true}
             />
             <ActionResolutionFeedback label={acceptedActionFeedback?.label} animationKey={acceptedActionFeedback?.key} />
+            <ChallengeDuelPanel
+              eventId={lastChallengeEvent?.id}
+              winnerName={typeof lastChallengeEvent?.detail.winnerName === "string" ? lastChallengeEvent.detail.winnerName : undefined}
+              defeatedName={typeof lastChallengeEvent?.detail.defeatedName === "string" ? lastChallengeEvent.detail.defeatedName : undefined}
+              winnerHealth={typeof lastChallengeEvent?.detail.winnerHealth === "number" ? lastChallengeEvent.detail.winnerHealth : undefined}
+              loserWeighIn={typeof lastChallengeEvent?.detail.loserWeighIn === "number" ? lastChallengeEvent.detail.loserWeighIn : undefined}
+              rolls={challengeRolls}
+              attacks={challengeAttacks}
+              victoryType={typeof lastChallengeEvent?.detail.victoryType === "string" ? lastChallengeEvent.detail.victoryType : undefined}
+            />
             <EncounterResultPanel
               eventId={lastEncounterEvent?.id}
               effects={encounterEffects}

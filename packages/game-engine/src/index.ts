@@ -882,6 +882,9 @@ export interface BattleAttack {
   readonly damage: number;
   readonly destroyed: boolean;
   readonly mutationCardId?: string;
+  /** Present on Monster Challenge attacks so the UI can animate authoritative Health changes. */
+  readonly targetHealthBefore?: number;
+  readonly targetHealthAfter?: number;
 }
 
 function drawMutationForMonster(state: GameState, monster: Monster): string | undefined {
@@ -1521,6 +1524,10 @@ interface ChallengeResolution {
   readonly winnerMonsterId: string;
   readonly defeatedMonsterId: string;
   readonly winnerPlayer: number;
+  readonly winnerHealth: number;
+  readonly loserWeighIn: number;
+  readonly winnerName: string;
+  readonly defeatedName: string;
 }
 
 function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
@@ -1542,9 +1549,10 @@ function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
       const hit = roll >= defender.defense;
       const smash = hit && roll === 6;
       const damage = hit ? attacker.damage + (smash ? 1 : 0) : 0;
+      const targetHealthBefore = defender.health;
       defender.health = Math.max(0, defender.health - damage);
       rolls.push(roll);
-      attacks.push({ attackerId: attacker.id, targetId: defender.id, controllerPlayer: challengePlayerIndex(next, attacker.id), roll, modifiers: [], hit, smash, damage, destroyed: defender.health === 0 });
+      attacks.push({ attackerId: attacker.id, targetId: defender.id, controllerPlayer: challengePlayerIndex(next, attacker.id), roll, modifiers: [], hit, smash, damage, destroyed: defender.health === 0, targetHealthBefore, targetHealthAfter: defender.health });
     }
     if (defender.health === 0) break;
     [attacker, defender] = [defender, attacker];
@@ -1570,7 +1578,7 @@ function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
     next.pendingDecision = pendingDecisionForState(next);
     next.log.push(`${winner.name} defeated ${loser.name} in the Monster Challenge and gained ${loserWeighIn} weigh-in Health.`);
   }
-  return { state: next, rolls, attacks, winnerMonsterId: winner.id, defeatedMonsterId: loser.id, winnerPlayer: challengePlayerIndex(next, winner.id) };
+  return { state: next, rolls, attacks, winnerMonsterId: winner.id, defeatedMonsterId: loser.id, winnerPlayer: challengePlayerIndex(next, winner.id), winnerHealth: winner.health, loserWeighIn, winnerName: winner.name, defeatedName: loser.name };
 }
 
 function advanceAfterDeployment(next: GameState): TurnAdvanceResolution {
@@ -1686,7 +1694,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
   if (state.phase === "challenge" && command.type === "resolve-challenge") {
     requireDecision("challenge-resolution");
     const result = resolveMonsterChallengeDuel(state);
-    const eventPayload = { challengerMonsterId: result.winnerMonsterId, defeatedMonsterId: result.defeatedMonsterId, winnerPlayer: result.winnerPlayer, rolls: result.rolls, attacks: result.attacks, victoryType: result.state.victoryType, nextPhase: result.state.phase };
+    const eventPayload = { challengerMonsterId: result.winnerMonsterId, defeatedMonsterId: result.defeatedMonsterId, winnerPlayer: result.winnerPlayer, winnerName: result.winnerName, defeatedName: result.defeatedName, winnerHealth: result.winnerHealth, loserWeighIn: result.loserWeighIn, rolls: result.rolls, attacks: result.attacks, victoryType: result.state.victoryType, nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "challenge.resolved", eventPayload), eventType: "challenge.resolved", eventPayload };
   }
   if (command.type === "pass-move") {

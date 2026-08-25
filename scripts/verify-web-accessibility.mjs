@@ -35,6 +35,8 @@ const requiredSourceMarkers = [
   ["accepted action feedback", /<ActionResolutionFeedback label=\{acceptedActionFeedback\?\.label\}/],
   ["encounter authoritative dice", /aria-label="Recorded encounter dice rolls"/],
   ["Hollywood recovery die", /aria-label="Recorded Hollywood recovery die"/],
+  ["Monster Challenge duel surface", /aria-label="Recorded Monster Challenge duel"/],
+  ["authoritative Challenge Health replay", /targetHealthBefore/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 
