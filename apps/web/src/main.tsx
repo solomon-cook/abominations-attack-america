@@ -49,6 +49,7 @@ import { TurnPrompt } from "./components/TurnPrompt";
 import { TurnProgress } from "./components/TurnProgress";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
+import { HomeScreen } from "./components/HomeScreen";
 import "./styles.css";
 
 function supportsPlaytestBrowser(): boolean {
@@ -73,6 +74,7 @@ function safeStorageGet(key: string): string | null {
 function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const [game, setGame] = useState<GameState>(() => createGame(2));
+  const [localPlaytestStarted, setLocalPlaytestStarted] = useState(false);
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [room, setRoom] = useState<RoomView | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -91,6 +93,7 @@ function App() {
   const [mapZoom, setMapZoom] = useState(1);
   const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
   const [onboardingOpen, setOnboardingOpen] = useState(() => safeStorageGet("abominations-onboarding-seen") !== "1");
+  const [homeRulesOpen, setHomeRulesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
   const [showBoardLabels, setShowBoardLabels] = useState(() => safeStorageGet("abominations-board-labels") !== "0");
@@ -349,6 +352,7 @@ function App() {
 
   const startSession = async (kind: "create" | "join" | "spectate") => {
     setError("");
+    setLocalPlaytestStarted(false);
     try {
       const result =
         kind === "create"
@@ -474,6 +478,7 @@ function App() {
     setGame(createGame(value));
   };
   const resetLocal = () => {
+    setLocalPlaytestStarted(true);
     setSession(null);
     setRoom(null);
     setError("");
@@ -556,6 +561,31 @@ function App() {
         <p className="lede">Use a current Chrome, Edge, Firefox, Safari, or Chromium-based mobile browser with JavaScript, WebSocket, Fetch, CSS Grid, and dynamic viewport support enabled.</p>
         <p className="settings-note">No match state has been started. Update the browser and reload this page.</p>
       </main>
+    );
+  }
+
+  if (!online && !localPlaytestStarted) {
+    return (
+      <HomeScreen
+        online={false}
+        room={null}
+        participant={undefined}
+        connectionState={connectionState}
+        displayName={displayName}
+        playerCount={playerCount}
+        roomCode={roomCode}
+        setupComplete={false}
+        error={error}
+        onDisplayNameChange={setDisplayName}
+        onPlayerCountChange={changePlayerCount}
+        onRoomCodeChange={setRoomCode}
+        onStartSession={(kind) => void startSession(kind)}
+        onToggleReady={() => undefined}
+        onLeaveRoom={() => undefined}
+        rulesOpen={homeRulesOpen}
+        onToggleRules={() => setHomeRulesOpen((open) => !open)}
+        onStartLocal={resetLocal}
+      />
     );
   }
 

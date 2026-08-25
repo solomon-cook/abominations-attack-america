@@ -371,6 +371,7 @@ Useful source documents:
   - [x] Extract the unit, revealed-card, and chronological-log surfaces without moving command authority into the UI. (`apps/web/src/components/UnitCard.tsx`, `RevealedCardsPanel.tsx`, and `LogPanel.tsx`; web typecheck/build pass.)
   - [x] Extract the online-room lobby surface while keeping session, room, and readiness callbacks in `App`. (`apps/web/src/components/LobbyPanel.tsx`; web typecheck/build pass.)
   - [ ] [P0] Create a clean, art-led Home Screen that gives players an immediate, uncluttered entry point into the game.
+    - [x] Add an explicit home entry state with the optimized setup artwork, Development Playtest, Create, Join, Spectate, and Rules actions before the board is shown. (`apps/web/src/components/HomeScreen.tsx`; web typecheck/build pass.)
     - [ ] [P0] Give the Home Screen a strong piece of appropriate game art and a cohesive visual hierarchy without overwhelming the available actions.
     - [ ] [P0] Make the primary Home Screen actions clearly accessible: Join a game, Create a game, and Rules.
     - [ ] [P0] Let players open a concise rules reference from the Home Screen so they can remind themselves how to play before joining or creating a match.

@@ -1,6 +1,6 @@
 import type { RoomView } from "@abominations/shared";
 
-type Props = {
+export type LobbyPanelProps = {
   online: boolean;
   room: RoomView | null;
   participant?: RoomView["participants"][number];
@@ -34,7 +34,7 @@ export function LobbyPanel({
   onStartSession,
   onToggleReady,
   onLeaveRoom,
-}: Props) {
+}: LobbyPanelProps) {
   return (
     <section className="lobby" aria-label="Online room lobby">
       <div>
