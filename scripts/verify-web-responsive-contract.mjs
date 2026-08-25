@@ -13,7 +13,7 @@ const requirements = [
   ["touch-drag board surface", /\.map\{touch-action:none/],
   ["landscape board canvas", /\.game-screen \.hex-grid\{left:2\.2%;right:2\.2%;top:50%;bottom:auto;height:auto;aspect-ratio:1\.77646/],
   ["board-adjacent action bar", /\.game-screen \.board-action-bar\{position:static/],
-  ["compact development pins", /\.hex-tile\.development-fixture\{width:2\.55%;aspect-ratio:1;clip-path:circle\(50%\)/],
+  ["separated hexagonal development pins", /\.hex-tile\.development-fixture\{width:4\.45%;aspect-ratio:1\.1547005;clip-path:polygon\(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%\);border:2px solid #f0d89a/],
   ["horizontal overflow containment", /html,body,#root\{width:100%;max-width:100%;overflow-x:clip\}/],
   ["reduced-motion media contract", /@media\(prefers-reduced-motion:reduce\)/],
 ];

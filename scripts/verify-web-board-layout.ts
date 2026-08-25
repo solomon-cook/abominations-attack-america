@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   buildDisplayHexLayout,
   DISPLAY_BOARD_LEFT_PERCENT,
@@ -90,5 +91,15 @@ for (let firstIndex = 0; firstIndex < polygons.length; firstIndex += 1) {
     );
   }
 }
+
+const styles = readFileSync(new URL("../apps/web/src/styles.css", import.meta.url), "utf8");
+const developmentFixtureStyles = [...styles.matchAll(/\.hex-tile\.development-fixture\{[^}]+\}/g)];
+const developmentFixtureStyle = developmentFixtureStyles.at(-1)?.[0] ?? "";
+assert.match(developmentFixtureStyle, /aspect-ratio:1\.1547005/,
+  "development fixture tiles must retain the landscape hex aspect ratio");
+assert.match(developmentFixtureStyle, /clip-path:polygon\(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%\)/,
+  "development fixture tiles must render as flat-top hexagons");
+assert.doesNotMatch(developmentFixtureStyle, /clip-path:circle/,
+  "development fixture tiles must not regress to circular markers");
 
 console.log(`Verified 254-cell flat-top landscape honeycomb display layout with staggered rows, ${tileHeight.toFixed(2)}% canvas-width tile height, and shared hex edges.`);
