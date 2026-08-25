@@ -561,15 +561,29 @@ export function createNationalGuardInventory(): NationalGuardInventory {
 export const locations = DEVELOPMENT_LOCATIONS;
 const developmentBoardIndex = buildBoardIndex(DEVELOPMENT_BOARD);
 
+/** Resolve the immutable board selected by a match; never silently fall back to the fixture. */
+export function boardForState(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash">): BoardDefinition {
+  const candidates = [DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD];
+  const board = candidates.find((candidate) => candidate.id === state.boardId
+    && candidate.version === state.boardVersion
+    && candidate.contentHash === state.boardContentHash);
+  if (!board) throw new GameDomainError("ILLEGAL_COMMAND", `Board ${state.boardId}@${state.boardVersion} with content hash ${state.boardContentHash} is unavailable.`);
+  return board;
+}
+
 function developmentKey(value: string): HexKey {
   const key = locationIdToHexKey(value) ?? (toDevelopmentSpaceKey(value) as HexKey | undefined);
   if (!key || !DEVELOPMENT_BOARD.hexes[key]) throw new GameDomainError("ILLEGAL_COMMAND", `Unknown development board space: ${value}.`);
   return key;
 }
 
-function canonicalPath(path: readonly string[]): HexKey[] | undefined {
+function canonicalPath(path: readonly string[], board: BoardDefinition = DEVELOPMENT_BOARD): HexKey[] | undefined {
   try {
-    return path.map((space) => developmentKey(space));
+    return path.map((space) => {
+      const key = locationIdToHexKey(space) ?? (toDevelopmentSpaceKey(space) as HexKey | undefined) ?? (isHexKey(space) ? space : undefined);
+      if (!key || !board.hexes[key]) throw new Error("unknown board space");
+      return key;
+    });
   } catch {
     return undefined;
   }
@@ -721,6 +735,8 @@ export function movementPathAllowed(board: BoardDefinition, path: readonly HexKe
 
 export function legalMonsterPaths(state: GameState, monsterId = state.monsters[state.currentPlayer]?.id): HexKey[][] {
   if (state.phase !== "move") return [];
+  const board = boardForState(state);
+  const boardIndex = buildBoardIndex(board);
   const monster = state.monsters.find((candidate) => candidate.id === monsterId);
   if (!monster || !isHexKey(monster.location)) return [];
   const movement = effectiveMonsterMovement(state, monster);
@@ -729,12 +745,12 @@ export function legalMonsterPaths(state: GameState, monsterId = state.monsters[s
   const visit = (path: HexKey[], record = true) => {
     if (record && path.length > 1) paths.push(path);
     if (path.length - 1 >= move) return;
-    for (const next of developmentBoardIndex.neighbours[path.at(-1)!] ?? []) {
+    for (const next of boardIndex.neighbours[path.at(-1)!] ?? []) {
       if (path.includes(next)) continue;
       const otherMonster = state.monsters.some((candidate) => candidate.id !== monster.id && candidate.location === next);
       if (otherMonster && movement !== "fly") continue;
       const nextPath = [...path, next];
-      if (!monsterMovementPathAllowed(state, monster, DEVELOPMENT_BOARD, nextPath)) continue;
+      if (!monsterMovementPathAllowed(state, monster, board, nextPath)) continue;
       const occupiedUnits = state.units.filter((unit) => unit.location === next);
       const occupiedByMilitary = occupiedUnits.length > 0;
       const friendlyGuardPassage = monsterHasMutation(state, monster, "Kinda Friendly") && occupiedUnits.every((unit) => unit.branch === "National Guard");
@@ -755,6 +771,8 @@ export function legalMonsterDestinations(state: GameState, monsterId = state.mon
 
 export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
   if (state.phase !== "move") return [];
+  const board = boardForState(state);
+  const boardIndex = buildBoardIndex(board);
   const unit = state.units.find((candidate) => candidate.id === unitId);
   const movedPieceIds = state.movedPieceIds ?? [];
   const guardControlled = unit?.branch === "National Guard" && state.players[state.currentPlayer]?.researchCardIds.includes("Guard Commander");
@@ -763,10 +781,10 @@ export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
   const visit = (path: HexKey[]) => {
     if (path.length > 1) paths.push(path);
     if (path.length - 1 >= effectiveUnitMove(state, unit)) return;
-    for (const next of developmentBoardIndex.neighbours[path.at(-1)!] ?? []) {
+    for (const next of boardIndex.neighbours[path.at(-1)!] ?? []) {
       if (path.includes(next)) continue;
       const nextPath = [...path, next];
-      if (!movementPathAllowed(DEVELOPMENT_BOARD, nextPath, unit.movement)) continue;
+      if (!movementPathAllowed(board, nextPath, unit.movement)) continue;
       const occupiedByMonster = state.monsters.some((monster) => monster.location === next);
       if (occupiedByMonster && unit.movement !== "fly") { paths.push(nextPath); continue; }
       visit(nextPath);
@@ -781,49 +799,54 @@ export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
  * Allowance, control overrides, and physical Guard-piece lifecycle remain
  * separate rules-gated concerns.
  */
-export function legalNationalGuardDeploymentDestinations(state: Pick<GameState, "stompedLocations"> & Partial<Pick<GameState, "deploymentDestinations">>): HexKey[] {
+export function legalNationalGuardDeploymentDestinations(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "stompedLocations"> & Partial<Pick<GameState, "deploymentDestinations">>): HexKey[] {
+  const board = boardForState(state);
   const stomped = new Set(state.stompedLocations ?? []);
   const deployedThisTurn = new Set(state.deploymentDestinations ?? []);
-  return Object.values(DEVELOPMENT_BOARD.hexes)
+  return Object.values(board.hexes)
     .filter((hex) => !stomped.has(hex.key) && !deployedThisTurn.has(hex.key) && hex.features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site"))
     .map((hex) => hex.key)
     .sort();
 }
 
 /** Return verified, unstomped, unused destinations for the active owned branch. */
-export function legalOwnedDeploymentDestinations(state: Pick<GameState, "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer">): HexKey[] {
+export function legalOwnedDeploymentDestinations(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer">): HexKey[] {
+  const board = boardForState(state);
   const branch = state.setupAssignments?.[state.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[state.currentPlayer % 4];
   const stomped = new Set(state.stompedLocations ?? []);
   const deployedThisTurn = new Set(state.deploymentDestinations ?? []);
-  return Object.values(DEVELOPMENT_BOARD.hexes)
+  return Object.values(board.hexes)
     .filter((hex) => !stomped.has(hex.key) && !deployedThisTurn.has(hex.key) && hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch))
     .map((hex) => hex.key)
     .sort();
 }
 
 /** Return legal unstomped bases for one active player's ordinary branch unit. */
-export function legalOwnedRedeploymentDestinations(state: Pick<GameState, "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer" | "units" | "removedUnitIds">, unitId: string): HexKey[] {
+export function legalOwnedRedeploymentDestinations(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer" | "units" | "removedUnitIds">, unitId: string): HexKey[] {
+  const board = boardForState(state);
   const branch = state.setupAssignments?.[state.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[state.currentPlayer % 4];
   const unit = state.units.find((candidate) => candidate.id === unitId);
   if (!unit || unit.branch !== branch || unit.unitTypeId === "mecha-monster" || unit.unitTypeId === "captain-colossal" || unit.ownerPlayer !== state.currentPlayer || !isHexKey(unit.location) || state.removedUnitIds.includes(unit.id)) return [];
   const stomped = new Set(state.stompedLocations ?? []);
   const deployedThisTurn = new Set(state.deploymentDestinations ?? []);
-  return Object.values(DEVELOPMENT_BOARD.hexes)
+  return Object.values(board.hexes)
     .filter((hex) => !stomped.has(hex.key) && !deployedThisTurn.has(hex.key) && hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch))
     .map((hex) => hex.key)
     .sort();
 }
 
 export function moveUnit(state: GameState, unitId: string, path: string[]): GameState {
+  const board = boardForState(state);
+  const boardIndex = buildBoardIndex(board);
   const unit = state.units.find((candidate) => candidate.id === unitId);
-  const canonical = canonicalPath(path);
+  const canonical = canonicalPath(path, board);
   const destination = canonical?.at(-1);
   const movedPieceIds = state.movedPieceIds ?? [];
   const guardControlled = unit?.branch === "National Guard" && state.players[state.currentPlayer]?.researchCardIds.includes("Guard Commander");
   const controlsUnit = unit && (unit.ownerPlayer === state.currentPlayer || guardControlled);
-  const legalPath = Boolean(unit && canonical && controlsUnit && destination && canonical.length >= 2 && canonical[0] === unit.location && !movedPieceIds.includes(unitId) && canonical.length - 1 <= effectiveUnitMove(state, unit) && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(DEVELOPMENT_BOARD, canonical, unit.movement));
+  const legalPath = Boolean(unit && canonical && controlsUnit && destination && canonical.length >= 2 && canonical[0] === unit.location && !movedPieceIds.includes(unitId) && canonical.length - 1 <= effectiveUnitMove(state, unit) && canonical.every((space, index) => index === 0 || boardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(board, canonical, unit.movement));
   const blockedByMonster = unit?.movement !== "fly" && (canonical ?? []).slice(1, -1).some((space) => occupantsAt(state, space).monsters.length > 0);
   if (!legalPath || blockedByMonster || state.phase !== "move" || !unit || !destination) return state;
   const next = structuredClone(state);
@@ -841,13 +864,15 @@ export function moveUnit(state: GameState, unitId: string, path: string[]): Game
 }
 
 export function moveMonster(state: GameState, monsterId: string, path: string[]): GameState {
+  const board = boardForState(state);
+  const boardIndex = buildBoardIndex(board);
   const monster = state.monsters[state.currentPlayer];
   const movement = effectiveMonsterMovement(state, monster);
   const move = effectiveMonsterMove(state, monster);
-  const canonical = canonicalPath(path);
+  const canonical = canonicalPath(path, board);
   const destination = canonical?.at(-1);
   const movedPieceIds = state.movedPieceIds ?? [];
-  const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= move && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && monsterMovementPathAllowed(state, monster, DEVELOPMENT_BOARD, canonical));
+  const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= move && canonical.every((space, index) => index === 0 || boardIndex.neighbours[canonical[index - 1]]?.includes(space)) && monsterMovementPathAllowed(state, monster, board, canonical));
   const intermediate = (canonical ?? []).slice(1, -1);
   const friendlyGuardPassage = monsterHasMutation(state, monster, "Kinda Friendly");
   const blockedByMilitary = movement !== "fly" && intermediate.some((space) => {
@@ -1562,6 +1587,7 @@ export interface EncounterResolution {
 
 export function resolveEncounterResult(state: GameState, choice?: "health" | "infamy"): EncounterResolution {
   if (state.phase !== "encounter") return { state, effects: [], rolls: [] };
+  const board = boardForState(state);
   const next = structuredClone(state);
   if (!Array.isArray(next.stompedLocations)) next.stompedLocations = [];
   const monster = next.monsters[next.currentPlayer];
@@ -1572,7 +1598,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
   const canonicalLocationKey = (locationIdToHexKey(locationKey) ?? locationKey) as HexKey;
   const locationId = place?.id ?? locationKey;
   const alreadyStomped = next.stompedLocations.includes(locationKey);
-  const features = isHexKey(canonicalLocationKey) ? DEVELOPMENT_BOARD.hexes[canonicalLocationKey]?.features ?? [] : [];
+  const features = isHexKey(canonicalLocationKey) ? board.hexes[canonicalLocationKey]?.features ?? [] : [];
   const stompable = features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site");
   const challengeSite = features.some((feature) => feature.kind === "challenge-site");
   const baseFeature = features.find((feature): feature is Extract<BoardFeature, { kind: "military-base" }> => feature.kind === "military-base");
@@ -1705,6 +1731,7 @@ export interface DeploymentResolution {
 
 export function deployUnitResult(state: GameState, requested?: { unitId?: string; destination?: HexKey }): DeploymentResolution {
   if (state.phase !== "deploy") return { state };
+  const board = boardForState(state);
   const next = structuredClone(state);
   const branch = next.setupAssignments?.[next.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[next.currentPlayer % 4];
@@ -1714,7 +1741,7 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   const allowance = (allowanceDefinition?.ownOrGuardUnits ?? 0) + (guardDeployment ? allowanceDefinition?.additionalNationalGuardUnits ?? 0 : 0) + extraDeployment;
   if (guardDeployment && !next.players[next.currentPlayer]?.researchCardIds.includes("Guard Commander")) throw new GameDomainError("ILLEGAL_COMMAND", "Only the player with the Guard Commander card can deploy National Guard units.");
   if (next.deploymentsThisTurn >= allowance) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} deployment allowance is exhausted; pass Deploy or draw Research when that source rule is implemented.`);
-  const baseHex = Object.values(DEVELOPMENT_BOARD.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch));
+  const baseHex = Object.values(board.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch));
   const destination = guardDeployment
     ? requested?.destination ?? legalNationalGuardDeploymentDestinations(next)[0]
     : requested?.destination ?? legalOwnedDeploymentDestinations(next)[0] ?? baseHex?.key;
@@ -1722,7 +1749,7 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   if (guardDeployment) {
     if (!legalNationalGuardDeploymentDestinations(next).includes(destination)) throw new GameDomainError("ILLEGAL_COMMAND", "National Guard may deploy only to an unstomped city, military base, or Infamy site.");
   } else {
-    const baseHex = DEVELOPMENT_BOARD.hexes[destination];
+    const baseHex = board.hexes[destination];
     if (!baseHex?.features.some((feature) => feature.kind === "military-base" && feature.branch === branch)) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} units may deploy only to their verified base.`);
     if ((next.stompedLocations ?? []).includes(destination)) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} base is stomped and cannot receive a deployment.`);
   }
@@ -1749,7 +1776,7 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   const unitId = unit.id;
   next.deploymentsThisTurn += 1;
   next.deploymentDestinations.push(destination);
-  next.log.push(`${guardDeployment ? "National Guard" : branch} deployed ${unit.unitTypeId ?? unit.id} to ${DEVELOPMENT_BOARD.hexes[destination]?.label ?? destination}.`);
+  next.log.push(`${guardDeployment ? "National Guard" : branch} deployed ${unit.unitTypeId ?? unit.id} to ${board.hexes[destination]?.label ?? destination}.`);
   const occupyingMonster = next.monsters.find((candidate) => candidate.location === destination);
   if (occupyingMonster) {
     const existingBattle = next.pendingBattles.find((battle) => battle.monsterId === occupyingMonster.id && battle.location === destination);
@@ -1757,7 +1784,7 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
     else next.pendingBattles.push({ id: `${occupyingMonster.id}:${next.round}:${destination}:deployment`, monsterId: occupyingMonster.id, location: destination, militaryUnitIds: [unitId] });
     next.phase = "fight";
     next.pendingDecision = { type: "battle-resolution", playerIndex: next.currentPlayer, battleId: next.pendingBattles.at(-1)!.id };
-    next.log.push(`${occupyingMonster.name} must fight the newly deployed unit at ${DEVELOPMENT_BOARD.hexes[destination]?.label ?? destination}.`);
+    next.log.push(`${occupyingMonster.name} must fight the newly deployed unit at ${board.hexes[destination]?.label ?? destination}.`);
   } else {
     next.phase = "deploy";
     next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
@@ -1771,6 +1798,7 @@ export function deployUnit(state: GameState): GameState {
 
 export function redeployUnitResult(state: GameState, requested: { unitId: string; destination?: HexKey }): DeploymentResolution {
   if (state.phase !== "deploy") return { state };
+  const board = boardForState(state);
   const next = structuredClone(state);
   const branch = next.setupAssignments?.[next.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[next.currentPlayer % 4];
@@ -1784,7 +1812,7 @@ export function redeployUnitResult(state: GameState, requested: { unitId: string
   unit.location = destination;
   next.deploymentsThisTurn += 1;
   next.deploymentDestinations.push(destination);
-  next.log.push(`${branch} redeployed ${unit.unitTypeId ?? unit.id} from the board to ${DEVELOPMENT_BOARD.hexes[destination]?.label ?? destination}.`);
+  next.log.push(`${branch} redeployed ${unit.unitTypeId ?? unit.id} from the board to ${board.hexes[destination]?.label ?? destination}.`);
   const occupyingMonster = next.monsters.find((candidate) => candidate.location === destination);
   if (occupyingMonster) {
     const existingBattle = next.pendingBattles.find((battle) => battle.monsterId === occupyingMonster.id && battle.location === destination);
