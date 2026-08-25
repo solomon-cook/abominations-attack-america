@@ -20,7 +20,7 @@ A first-playable browser pass is complete only when a clean supported browser se
 
 | Check | Result | Evidence or limitation |
 | --- | --- | --- |
-| Clean local session | Pass | Opened `http://127.0.0.1:5173/` in a fresh browser tab. |
+| Clean local session | Pass | Opened the current Vite session at `http://127.0.0.1:5177/` in a fresh browser tab. |
 | Ordered monster setup | Pass | Player 1 selected `monster-1`; Player 2 selected `monster-2`. |
 | Reverse branch setup | Pass | Player 2 selected Navy; Player 1 selected Army. |
 | Lair setup | Pass | Player 1 selected Los Angeles; Player 2 selected Miami. |
@@ -46,6 +46,8 @@ On 2026-08-25, a clean local browser session completed the two-player developmen
 
 The same session checked the viewport shell at 1280×720 and 390×844. In both sizes the document stayed at the viewport height with zero page scroll, the board remained visible, and the mobile board panel used its own bounded scroll surface for lower-detail content. This proves the viewport contract for the development UI only; it does not complete the broader keyboard, screen-reader, contrast, or production browser acceptance items.
 
+A fresh 2026-08-25 local run also completed the ordered setup through the visible browser controls: `monster-1` then `monster-2`, Player 2 Army then Player 1 Navy, Player 1 Los Angeles then Player 2 Miami, and Draw Research for both players. The setup screen advanced to the active Move phase with no developer-tool intervention. This is an updated development-fixture smoke pass; it does not satisfy the full-board MVP or two-browser online acceptance criteria.
+
 ## Full-board rendering check
 
 The local browser renders all 254 cells from `FULL_HONEYCOMB_BOARD` as positioned hex tiles and adds seven explicitly labelled development-fixture overlay spaces whose coordinates fall outside that candidate shell. A DOM check therefore records 261 `[data-hex-key]` buttons in the development playtest: 254 candidate cells plus seven named fixture spaces. The map exposes both the development match board ID/hash and the separately rendered candidate board ID/hash, so this visual check does not falsely claim that the current match has been promoted to the authoritative physical board.
@@ -53,6 +55,10 @@ The local browser renders all 254 cells from `FULL_HONEYCOMB_BOARD` as positione
 The board notice and accessible tile descriptions identify the nine-space development fixture and its unresolved physical-board cells. Those disclosures do not substitute for verified board data or full-rules browser coverage, and this fixture cannot be used to sign off the MVP playable-game board requirement.
 
 The browser now uses the optimized top-down board photograph as a subdued visual backdrop beneath the interactive 254-cell overlay. The photograph is explicitly labelled as reference-only; the engine still supplies all current legal actions and recorded features.
+
+## Current geometry correction
+
+After reviewing the supplied 1280×706 comparison image, the candidate layout contract was tightened. The previous 75%-of-width horizontal pitch caused the rendered flat-top polygons to overlap. The shared layout now uses the actual 4.45% landscape tile width as its row pitch, applies only a half-width offset to alternating rows, and checks polygon-level interior intersections across all 254 candidate cells. `npm run web-board-layout:verify` passes this regression. A fresh local browser run at 1280×720 rendered 261 tile buttons (254 unresolved candidate cells plus seven named development overlays); this verifies the corrected candidate geometry, not physical-board topology or MVP promotion.
 
 ## Preference and no-audio check
 
