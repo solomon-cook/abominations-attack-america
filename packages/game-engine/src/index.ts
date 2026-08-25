@@ -1756,6 +1756,7 @@ function prepareMonsterForTurn(state: GameState): { monsterId: string; recoveryR
   }
   let recoveryRoll: number | undefined;
   let recoveryReleased = false;
+  let returnedFromLair = false;
   if (monster.location === "hollywood") {
     const roll = nextD6(state);
     recoveryRoll = roll;
@@ -1778,9 +1779,12 @@ function prepareMonsterForTurn(state: GameState): { monsterId: string; recoveryR
     if (!assignment?.lair) throw new GameDomainError("ILLEGAL_COMMAND", "A disappeared monster cannot return without a verified setup lair.");
     monster.location = developmentKey(assignment.lair);
     if (monster.health < monster.startingHealth) monster.health = monster.startingHealth;
-    state.log.push(`${monster.name} returned to its lair for the entire Move step.`);
+    returnedFromLair = true;
+    state.log.push(`${monster.name} returned to its lair${monsterHasMutation(state, monster, "Rampage") ? " and may move through Rampage" : " for the entire Move step"}.`);
   } else return undefined;
-  state.movedPieceIds = [...new Set([...(state.movedPieceIds ?? []), monster.id])];
+  if (!(returnedFromLair && monsterHasMutation(state, monster, "Rampage"))) {
+    state.movedPieceIds = [...new Set([...(state.movedPieceIds ?? []), monster.id])];
+  }
   state.encounterSuppressed = true;
   return { monsterId: monster.id, recoveryRoll, recoveryReleased };
 }

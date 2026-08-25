@@ -1496,6 +1496,16 @@ test("a monster can disappear, return to its assigned lair, and consume the retu
   const finishedMove = applyCommand(returningPlayer, { type: "pass-move" });
   assert.equal(finishedMove.state.phase, "deploy");
   assert.equal(finishedMove.state.pendingDecision?.type, "deployment");
+
+  const rampageState = structuredClone(disappeared.state);
+  rampageState.players[0].mutationCardIds = ["Rampage"];
+  const rampagePlayerOneMove = applyCommand(rampageState, { type: "pass-deploy" }).state;
+  const rampagePlayerOneEncounter = applyCommand(rampagePlayerOneMove, { type: "pass-move" }).state;
+  const rampagePlayerOneDeploy = applyCommand(rampagePlayerOneEncounter, { type: "resolve-encounter" }).state;
+  const rampageReturn = applyCommand(rampagePlayerOneDeploy, { type: "pass-deploy" }).state;
+  assert.equal(rampageReturn.movedPieceIds.includes("monster-1"), false);
+  const rampageMove = applyCommand(rampageReturn, { type: "move", path: ["los-angeles", "denver"] });
+  assert.equal(rampageMove.state.monsters[0].location, K("denver"));
 });
 
 test("Hollywood monsters cannot disappear", () => {
