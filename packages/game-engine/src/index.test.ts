@@ -1377,6 +1377,34 @@ test("the Monster Challenge chooses eligible opponents, records weigh-in Health,
   assert.equal((resolved.eventPayload.rolls as number[]).length > 0, true);
 });
 
+test("Monster Challenge target validation admits only distinct living eligible monsters", () => {
+  const state = createGame(2, 0);
+  state.rulesetVersion = "challenge-0.1";
+  state.challenge = {
+    declared: true,
+    active: true,
+    challengerMonsterId: "monster-1",
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  state.phase = "challenge";
+  state.currentPlayer = 0;
+  state.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
+  assert.throws(() => applyCommand(state, { type: "challenge-opponent", opponentMonsterId: "monster-1" }), /eligible monster/);
+
+  const unavailable = structuredClone(state);
+  unavailable.monsters[1].location = "hollywood";
+  assert.throws(() => applyCommand(unavailable, { type: "challenge-opponent", opponentMonsterId: "monster-2" }), /eligible monster/);
+
+  const malformedDuel = structuredClone(state);
+  malformedDuel.monsters[1].health = 0;
+  malformedDuel.challenge = { ...malformedDuel.challenge!, opponentMonsterId: "monster-2", weighInHealth: { "monster-1": 5, "monster-2": 0 } };
+  malformedDuel.pendingDecision = { type: "challenge-resolution", playerIndex: 0, challengerMonsterId: "monster-1", opponentMonsterId: "monster-2" };
+  assert.throws(() => applyCommand(malformedDuel, { type: "resolve-challenge" }), /living, eligible monsters/);
+});
+
 test("High-Octane Blood lets a non-challenger attack first in the Monster Challenge", () => {
   const state = createGame(2, 0);
   state.rulesetVersion = "challenge-0.1";

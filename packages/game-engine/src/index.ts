@@ -1814,7 +1814,7 @@ interface TurnAdvanceResolution {
 function challengeOpponentIds(state: Pick<GameState, "monsters" | "challenge">, challengerMonsterId: string): string[] {
   const defeated = new Set(state.challenge?.defeatedMonsterIds ?? []);
   return state.monsters
-    .filter((monster) => monster.id !== challengerMonsterId && !defeated.has(monster.id) && monster.location !== "hollywood")
+    .filter((monster) => monster.id !== challengerMonsterId && monster.health > 0 && !defeated.has(monster.id) && monster.location !== "hollywood" && monster.location !== "defeated")
     .map((monster) => monster.id);
 }
 
@@ -1872,6 +1872,11 @@ function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
   const challenger = next.monsters.find((monster) => monster.id === challenge.challengerMonsterId);
   const opponent = next.monsters.find((monster) => monster.id === challenge.opponentMonsterId);
   if (!challenger || !opponent) throw new GameDomainError("ILLEGAL_COMMAND", "The Monster Challenge duel references an unknown monster.");
+  if (challenger.id === opponent.id) throw new GameDomainError("ILLEGAL_COMMAND", "A Monster Challenge duel requires two different monsters.");
+  const defeated = new Set(challenge.defeatedMonsterIds);
+  if (defeated.has(challenger.id) || defeated.has(opponent.id) || challenger.health <= 0 || opponent.health <= 0 || challenger.location === "hollywood" || challenger.location === "defeated" || opponent.location === "hollywood" || opponent.location === "defeated") {
+    throw new GameDomainError("ILLEGAL_COMMAND", "Monster Challenge combatants must be living, eligible monsters.");
+  }
   const challengerWeighIn = challenge.weighInHealth[challenger.id] ?? challenger.health;
   const opponentWeighIn = challenge.weighInHealth[opponent.id] ?? opponent.health;
   const rolls: number[] = [];
