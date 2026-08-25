@@ -494,7 +494,8 @@ Useful source documents:
   - [P1] Add database migration, rollback, backup, and incompatible-match handling to the release process.
 - [ ] [P1] Verify production through real browser create/join/play/reconnect/spectate flows after deployment.
   - [P1] Complete final board-data, rules-fidelity, accessibility, content/IP, privacy, and security sign-offs.
-  - [P1] Publish concise player rules, privacy information, known limitations, support route, and release notes.
+  - [x] [P1] Prepare concise player rules, privacy information, known limitations, and release notes. (`docs/player-rules.md`, `docs/privacy.md`, `docs/known-limitations.md`, and `docs/release-notes.md`; public publication and support contact remain open.)
+  - [P1] Publish a verified support route and public release documentation.
 
 ### Milestone 14 acceptance
 
