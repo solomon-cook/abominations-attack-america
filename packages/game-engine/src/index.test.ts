@@ -412,6 +412,21 @@ test("Antimatter arms a battle and doubles first-round military damage", () => {
   assert.equal(doubledAttack!.modifiers.includes("Antimatter: double first-round damage"), true);
 });
 
+test("one-shot Research cards cannot be reused after authoritative discard", () => {
+  const state = createGame(2, 0);
+  state.players[0].researchCardIds = ["Antimatter"];
+  state.phase = "fight";
+  const unit = state.units[0];
+  unit.location = state.monsters[0].location;
+  const battleId = "one-shot-research";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  const used = applyCommand(state, { type: "use-research", cardId: "Antimatter", battleId });
+  assert.deepEqual(used.state.players[0].researchCardIds, []);
+  assert.deepEqual(used.state.decks.research.discard, ["Antimatter"]);
+  assert.throws(() => applyCommand(used.state, { type: "use-research", cardId: "Antimatter", battleId }), /does not have Antimatter/);
+});
+
 test("Stabilizer Ray discards its selected Mutation only after military damage", () => {
   const state = createGame(2, 0);
   state.players[0].researchCardIds = ["Stabilizer Ray"];
