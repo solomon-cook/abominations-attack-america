@@ -22,8 +22,17 @@ type Props = {
   victoryType?: string;
 };
 
+const monsterAsset = (name?: string) => {
+  const slug = name?.toLowerCase().replaceAll(" ", "-");
+  return slug && ["gargantis", "konk", "megaclaw", "tomanagi", "toxicor", "zorb"].includes(slug)
+    ? `/assets/monsters/${slug}.webp`
+    : undefined;
+};
+
 export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHealth, loserWeighIn, rolls, attacks, victoryType }: Props) {
   if (!eventId) return null;
+  const winnerAsset = monsterAsset(winnerName);
+  const defeatedAsset = monsterAsset(defeatedName);
   return (
     <section className="challenge-duel-panel" key={eventId} aria-live="polite" aria-label="Recorded Monster Challenge duel">
       <div className="challenge-duel-heading">
@@ -33,6 +42,7 @@ export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHe
       <div className="challenge-duel-sides">
         <div className="challenge-duel-side challenge-duel-winner">
           <span className="label">SURVIVOR</span>
+          {winnerAsset && <img className="challenge-duel-monster-art" src={winnerAsset} alt={`${winnerName} monster artwork`} loading="lazy" />}
           <strong>{winnerName ?? "Winning monster"}</strong>
           <span>{typeof winnerHealth === "number" ? `${winnerHealth} Health after weigh-in recovery` : "Health recorded by the engine"}</span>
         </div>
@@ -42,6 +52,7 @@ export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHe
         </div>
         <div className="challenge-duel-side challenge-duel-defeated">
           <span className="label">DEFEATED</span>
+          {defeatedAsset && <img className="challenge-duel-monster-art" src={defeatedAsset} alt={`${defeatedName} monster artwork`} loading="lazy" />}
           <strong>{defeatedName ?? "Defeated monster"}</strong>
           <span>{typeof loserWeighIn === "number" ? `${loserWeighIn} weigh-in Health` : "Weigh-in Health recorded"}</span>
         </div>
