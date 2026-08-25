@@ -28,6 +28,7 @@ const requiredSourceMarkers = [
   ["Mutation labels", />MUTATION<\//],
   ["pointer-drag board controls", /onPointerMove=\{moveMapDrag\}/],
   ["wheel board zoom", /onWheel=\{zoomMapWithWheel\}/],
+  ["hover path preview", /onMouseEnter=\{\(\) => \(monsterLegal \|\| unitLegal\)/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 

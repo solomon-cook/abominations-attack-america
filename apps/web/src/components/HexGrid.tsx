@@ -55,6 +55,7 @@ type Props = {
   selectableUnitIds: ReadonlySet<string>;
   selectedUnitId: string | null;
   selectedPath: readonly HexKey[];
+  hoveredPath: readonly HexKey[];
   selectedUnitPath: readonly HexKey[];
   acceptedPath: readonly HexKey[];
   acceptedPieceId?: string;
@@ -62,11 +63,14 @@ type Props = {
   onSelectUnit: (unitId: string) => void;
   onChoosePath: (destination: HexKey) => void;
   onChooseUnitPath: (destination: HexKey) => void;
+  onPreviewPath: (destination: HexKey) => void;
+  onClearPreview: () => void;
 };
 
-export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, onSelectUnit, onChoosePath, onChooseUnitPath }: Props) {
+export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, onSelectUnit, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
-  const path = selectedUnitId ? selectedUnitPath : selectedPath;
+  const selectedDisplayPath = selectedUnitId ? selectedUnitPath : selectedPath;
+  const path = hoveredPath.length > 1 ? hoveredPath : selectedDisplayPath;
   const pathPoints = path
     .map((key) => displayByKey.get(key))
     .filter((point): point is { left: number; top: number } => Boolean(point))
@@ -126,6 +130,8 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             disabled={!place || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit)}
             className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${placeKey === activePlayer?.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%` }}
+            onMouseEnter={() => (monsterLegal || unitLegal) && onPreviewPath(placeKey)}
+            onMouseLeave={onClearPreview}
             onClick={() => selectableUnit && !monsterLegal && !unitLegal ? onSelectUnit(selectableUnit.id) : selectedUnitId ? onChooseUnitPath(placeKey) : onChoosePath(placeKey)}
           >
             <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />

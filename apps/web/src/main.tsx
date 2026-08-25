@@ -90,6 +90,7 @@ function App() {
   const [error, setError] = useState("");
   const [pendingAction, setPendingAction] = useState(false);
   const [selectedPath, setSelectedPath] = useState<HexKey[]>([]);
+  const [hoveredPath, setHoveredPath] = useState<HexKey[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
   const [acceptedMoveAnimation, setAcceptedMoveAnimation] = useState<{ path: HexKey[]; pieceId: string; key: number } | null>(null);
@@ -281,6 +282,7 @@ function App() {
           ));
   useEffect(() => {
     setSelectedPath([]);
+    setHoveredPath([]);
     setSelectedUnitId(null);
     setSelectedUnitPath([]);
     setRetreatChoices({});
@@ -635,6 +637,13 @@ function App() {
       .sort((a, b) => a.length - b.length);
     if (options[0]) setSelectedUnitPath(options[0]);
   };
+  const previewPath = (destination: HexKey) => {
+    const paths = selectedUnitId ? legalUnitPathsForSelection : legalPaths;
+    const options = paths
+      .filter((path) => path.at(-1) === destination)
+      .sort((a, b) => a.length - b.length);
+    setHoveredPath(options[0] ?? []);
+  };
 
   if (!browserSupported) {
     return (
@@ -807,6 +816,7 @@ function App() {
               selectableUnitIds={selectableUnitIds}
               selectedUnitId={selectedUnitId}
               selectedPath={selectedPath}
+              hoveredPath={hoveredPath}
               selectedUnitPath={selectedUnitPath}
               acceptedPath={acceptedMoveAnimation?.path ?? []}
               acceptedPieceId={acceptedMoveAnimation?.pieceId}
@@ -818,6 +828,8 @@ function App() {
               }}
               onChoosePath={choosePath}
               onChooseUnitPath={chooseUnitPath}
+              onPreviewPath={previewPath}
+              onClearPreview={() => setHoveredPath([])}
             />
             <div className="map-copy">
               <strong>MONSTERS</strong>
