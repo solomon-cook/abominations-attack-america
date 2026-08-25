@@ -75,6 +75,8 @@ function safeStorageGet(key: string): string | null {
 
 function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapDragRef = useRef<{ pointerId: number; x: number; y: number; panX: number; panY: number } | null>(null);
   const [game, setGame] = useState<GameState>(() => createGame(2));
   const [localPlaytestStarted, setLocalPlaytestStarted] = useState(false);
   const [session, setSession] = useState<SessionResponse | null>(null);
@@ -235,6 +237,30 @@ function App() {
     setMapPan({ x: 0, y: 0 });
   };
   const panMap = (x: number, y: number) => setMapPan((current) => ({ x: current.x + x, y: current.y + y }));
+  const startMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
+    mapDragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, panX: mapPan.x, panY: mapPan.y };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const moveMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = mapDragRef.current;
+    const map = mapRef.current;
+    if (!drag || drag.pointerId !== event.pointerId || !map) return;
+    const bounds = map.getBoundingClientRect();
+    setMapPan({
+      x: drag.panX + ((event.clientX - drag.x) / bounds.width) * 100,
+      y: drag.panY + ((event.clientY - drag.y) / bounds.height) * 100,
+    });
+  };
+  const endMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (mapDragRef.current?.pointerId !== event.pointerId) return;
+    mapDragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+  const zoomMapWithWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setMapZoom((zoom) => Math.min(2.5, Math.max(.75, Number((zoom + (event.deltaY < 0 ? .1 : -.1)).toFixed(2)))));
+  };
 
   useEffect(() => {
     actionHeadingRef.current?.focus();
@@ -756,6 +782,7 @@ function App() {
             <button type="button" className="map-reset" onClick={resetMapView}>Fit / reset</button>
           </div>
           <div
+            ref={mapRef}
             className="map"
             role="group"
             aria-label="Full honeycomb board coordinate shell"
@@ -764,6 +791,11 @@ function App() {
             data-board-content-hash={activeGame.boardContentHash}
             data-rendered-board-id={FULL_HONEYCOMB_BOARD.id}
             data-rendered-board-content-hash={FULL_HONEYCOMB_BOARD.contentHash}
+            onPointerDown={startMapDrag}
+            onPointerMove={moveMapDrag}
+            onPointerUp={endMapDrag}
+            onPointerCancel={endMapDrag}
+            onWheel={zoomMapWithWheel}
           >
             <div className="map-canvas" style={{ transform: `translate(${mapPan.x}%, ${mapPan.y}%) scale(${mapZoom})` }}>
             <HexGrid

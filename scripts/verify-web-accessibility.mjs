@@ -26,6 +26,8 @@ const requiredSourceMarkers = [
   ["revealed card artwork", /\/assets\/cards\/monster-mutation-01\.webp/],
   ["city benefit labels", /printed city benefit/],
   ["Mutation labels", />MUTATION<\//],
+  ["pointer-drag board controls", /onPointerMove=\{moveMapDrag\}/],
+  ["wheel board zoom", /onWheel=\{zoomMapWithWheel\}/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 
@@ -36,6 +38,7 @@ const requiredStyleMarkers = [
   ["touch-sized map controls", /\.map-controls button\{[^}]*min-width:44px[^}]*min-height:44px/],
   ["no horizontal overflow", /overflow-x:clip/],
   ["generated decorative map backdrop", /\.map::after\{/],
+  ["touch-drag board viewport", /\.map\{touch-action:none/],
 ];
 for (const [label, marker] of requiredStyleMarkers) if (!marker.test(styles)) failures.push(`missing ${label}`);
 

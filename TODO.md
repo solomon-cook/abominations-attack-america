@@ -399,7 +399,7 @@ Useful source documents:
   - [x] Extract Fight, Encounter, and Deploy decision controls while keeping command execution and engine legality at the parent boundary. (`apps/web/src/components/PhaseActions.tsx`; web typecheck/build pass.)
   - [ ] [P0] Make the overall UI fit within the viewport as a general rule, with no gameplay page scrolling; scrolling may be used inside menus or other deliberately bounded information panels.
     - [ ] [P0] Provide a focused setup screen before the match, then keep the active game view centred on the board/map once gameplay begins.
-    - [ ] [P0] Make the in-game map draggable/pannable and zoomable, with the board remaining the primary centre-stage interaction surface.
+    - [x] [P0] Make the in-game map draggable/pannable and zoomable, with the board remaining the primary centre-stage interaction surface. (Arrow controls, pointer-drag panning, wheel zoom, and Fit / reset are implemented on the map viewport; hex buttons retain click selection.)
     - [ ] [P0] Make movement and targeting begin by selecting a piece: highlight the selected piece and show a bottom-of-screen detail tray with its name, role, useful stats, and what it does.
       - [x] Allow a movable owned or Guard-controlled unit to be selected directly from its board hex; the engine's legal-path selector remains the selection gate. (`HexGrid` uses `legalUnitPaths`-derived selectable IDs.)
       - [x] Show the selected military piece, source-backed movement/combat stats, path-preview state, and a deselect action in a board-bottom detail tray; selection remains parent-owned and authoritative. (`apps/web/src/components/SelectedPieceTray.tsx`; web typecheck/build pass.)
