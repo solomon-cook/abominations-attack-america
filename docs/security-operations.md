@@ -6,4 +6,4 @@ JSON responses set `no-store`, `nosniff`, `DENY` framing, and `no-referrer` head
 
 Remaining release work includes a deployed reverse-proxy policy, shared/distributed limits, threat-model review, dependency and database permission review, backups, restore, and credential rotation. Those checks require a configured deployment and are intentionally not claimed by the local baseline.
 
-The API also exposes a token-free `/metrics` JSON snapshot with request failures, accepted/failed commands, latency sample totals, reconnects, WebSocket successes/failures, completed/abandoned rooms, and server errors. It is an operational signal surface, not a substitute for durable external metrics or alerting.
+The API also exposes a token-free `/metrics` JSON snapshot with request failures, accepted/failed commands, latency sample totals, reconnects, WebSocket successes/failures, completed/abandoned rooms, and server errors. A bounded local error reporter redacts token-bearing paths, categorizes HTTP/command/WebSocket failures, and emits a threshold alert log event; it is still not a substitute for durable external metrics or alerting.

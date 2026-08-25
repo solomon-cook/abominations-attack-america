@@ -7,6 +7,7 @@ import { MemoryRoomStore, type RoomStore } from "./store.js";
 import { PrismaRoomStore } from "./prisma-store.js";
 import { withinRate, type RateBucket } from "./rate-limit.js";
 import { ApiMetrics } from "./metrics.js";
+import { ErrorReporter } from "./error-reporting.js";
 
 const port = Number(process.env.PORT ?? 8787);
 const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL;
@@ -17,6 +18,7 @@ const RATE_LIMIT = 120;
 const mutationRate = new Map<string, RateBucket>();
 const socketRate = new Map<string, RateBucket>();
 const metrics = new ApiMetrics();
+const errorReporter = new ErrorReporter((report) => operationalLog({ event: report.alert ? "alert.error-threshold" : "error.reported", ...report }));
 
 const json = (response: ServerResponse, status: number, body: unknown) => {
   response.writeHead(status, {
@@ -85,7 +87,7 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
       const input = await body(request); const envelope = (input.envelope ?? { actionId: String(input.actionId ?? randomUUID()), actorId: String(input.actorId ?? ""), expectedRevision: Number(input.expectedRevision), protocolVersion: Number(input.protocolVersion ?? 1), command: input.command }) as GameCommandEnvelope; const result = await store.submitAction(code, tokenFrom(request, url, input), envelope); metrics.commandAccepted(); metrics.latency(Date.now() - requestStartedAt); if (result.status === "completed") metrics.roomCompleted(); if (result.status === "abandoned") metrics.roomAbandoned(); operationalLog({ event: "command.accepted", roomCode: code.toUpperCase(), actionId: envelope.actionId, actorId: envelope.actorId, commandType: envelope.command.type, revision: result.version }); await broadcast(code.toUpperCase()); return json(response, 200, result);
     }
     return json(response, 404, { error: "Not found" });
-  } catch (error) { metrics.requestFailure(); metrics.serverError(); metrics.latency(Date.now() - requestStartedAt); if (parts[2] === "actions") metrics.commandFailed(); operationalLog({ event: "request.failed", method: request.method, path: request.url, error: error instanceof Error ? error.message : "Request failed" }); return json(response, 400, { error: error instanceof Error ? error.message : "Request failed" }); }
+  } catch (error) { metrics.requestFailure(); metrics.serverError(); metrics.latency(Date.now() - requestStartedAt); if (parts[2] === "actions") metrics.commandFailed(); const reported = errorReporter.report({ category: parts[2] === "actions" ? "command" : "http", method: request.method, path: url.pathname, roomCode: parts[1]?.toUpperCase(), message: error instanceof Error ? error.message : "Request failed" }); operationalLog({ event: "request.failed", method: request.method, path: url.pathname, error: reported.message }); return json(response, 400, { error: reported.message }); }
 }
 
 const server = createServer(handler);
@@ -109,6 +111,6 @@ wsServer.on("connection", async (socket, request) => {
       if (group.size === 0) sockets.delete(code);
     });
   }
-  catch { metrics.websocketFailure(); socket.close(1008, "Invalid room token"); }
+  catch (error) { metrics.websocketFailure(); errorReporter.report({ category: "websocket", path: "/ws", roomCode: code, message: error instanceof Error ? error.message : "WebSocket room access failed" }); socket.close(1008, "Invalid room token"); }
 });
 server.listen(port, () => console.log(`API listening on http://localhost:${port}`));
