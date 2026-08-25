@@ -2115,6 +2115,16 @@ test("Mutation sites are usable once per monster and do not invent a Health rewa
   assert.equal(second.state.monsters[0].health, 10);
 });
 
+test("Mutation sites apply implemented card effects immediately and disclose gated cards", () => {
+  const state = createGame(2);
+  state.phase = "encounter";
+  state.monsters[0].location = K("dallas");
+  state.decks.mutation = { order: ["Fins and Gills"], drawIndex: 0, discard: [], exhausted: false };
+  const result = applyCommand(state, { type: "resolve-encounter" });
+  assert.deepEqual(result.state.players[0].mutationCardIds, ["Fins and Gills"]);
+  assert.match(result.state.log.at(-2) ?? "", /implemented effect is active immediately/);
+});
+
 test("Challenge sites are inert before the Monster Challenge is declared", () => {
   const state = createGame(2);
   state.phase = "encounter";

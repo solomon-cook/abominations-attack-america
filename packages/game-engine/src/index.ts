@@ -2,7 +2,7 @@ export * from "./board.js";
 export * from "./cards.js";
 export * from "./setup.js";
 import { buildBoardIndex, DEVELOPMENT_BOARD, DEVELOPMENT_LOCATIONS, FULL_HONEYCOMB_BOARD, hexKeyToLocationId, isHexKey, locationIdToHexKey, toDevelopmentSpaceKey, validateBoardDefinition, type BoardDefinition, type BoardFeature, type HexKey, type SpaceKey, type WaterClass } from "./board.js";
-import { createCardDeckState, discardCard as discardCardFromDeck, drawCard as drawCardFromDeck, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, type CardDeckState } from "./cards.js";
+import { createCardDeckState, discardCard as discardCardFromDeck, drawCard as drawCardFromDeck, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, type CardDeckState } from "./cards.js";
 import { monsterDefinition, type MonsterMovement } from "./monsters.js";
 import { BRANCH_DEPLOYMENT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS, type UnitDefinition, type UnitMovement } from "./units.js";
 export { MONSTER_DEFINITIONS, monsterDefinition, type MonsterDefinition, type MonsterMovement } from "./monsters.js";
@@ -956,6 +956,13 @@ function drawMutationForMonster(state: GameState, monster: Monster): string | un
   return result.cardId;
 }
 
+function mutationDrawStatus(cardId: string | undefined): string {
+  if (!cardId) return "";
+  return sourcedCardRule(cardId)?.effectsImplementation === "implemented"
+    ? " Its implemented effect is active immediately."
+    : " Its effect remains source-gated.";
+}
+
 function drawResearchCardForPlayer(state: GameState, playerIndex: number): string | undefined {
   const player = state.players[playerIndex];
   if (!player) return undefined;
@@ -1183,7 +1190,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
           ...(attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : []),
         ];
         attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
-        next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${round}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
+        next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${round}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? ` A Mutation card was drawn face up.${mutationDrawStatus(mutationCardId)}` : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
         sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
       }
     }
@@ -1401,7 +1408,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
             ...(attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : []),
           ];
           attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
-          next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${combatRound}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? " A Mutation card was drawn face up; its effect remains source-gated." : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
+          next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${combatRound}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? ` A Mutation card was drawn face up.${mutationDrawStatus(mutationCardId)}` : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
           sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
         }
       }
@@ -1608,7 +1615,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     if (usedSites.includes(feature.siteId)) continue;
     next.mutationSiteUses[monster.id] = [...usedSites, feature.siteId];
     const mutationCardId = drawMutationForMonster(next, monster);
-    next.log.push(`${monster.name} used Mutation site ${feature.siteId};${mutationCardId ? " A Mutation card was drawn face up;" : " No Mutation card was available;"} its effect remains source-gated.`);
+        next.log.push(`${monster.name} used Mutation site ${feature.siteId};${mutationCardId ? ` A Mutation card was drawn face up.${mutationDrawStatus(mutationCardId)}` : " No Mutation card was available."}`);
   }
   if (next.challenge?.declared && !next.challenge.active && challengeSite && monster.location !== "hollywood" && !next.challenge.defeatedMonsterIds.includes(monster.id)) {
     next.challenge = { ...next.challenge, challengerMonsterId: monster.id, pendingStartPlayerIndex: next.currentPlayer, startAtEndOfTurn: true };
