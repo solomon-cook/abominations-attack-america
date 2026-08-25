@@ -34,9 +34,9 @@ assert.ok(layout.every((entry) => entry.top >= DISPLAY_BOARD_TOP_PERCENT && entr
 
 const tileHeight = DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO;
 const rowStep = DISPLAY_BOARD_TOP_SPAN_PERCENT / 12;
-assert.ok(DISPLAY_TILE_ASPECT_RATIO > 0 && DISPLAY_TILE_ASPECT_RATIO < 1, "pointy-top tiles must be taller than they are wide");
+assert.ok(DISPLAY_TILE_ASPECT_RATIO > 1, "flat-top landscape tiles must be wider than they are tall");
 assert.ok(rowStep > tileHeight, `row step ${rowStep.toFixed(2)} must exceed tile height ${tileHeight.toFixed(2)} to leave a visible vertical gap`);
 assert.ok(DISPLAY_BOARD_LEFT_PERCENT - DISPLAY_TILE_WIDTH_PERCENT / 2 > 0, "left tile bounds must remain inside the map");
 assert.ok(layout.find((entry) => entry.row === 0 && entry.column === 19)!.left + DISPLAY_TILE_WIDTH_PERCENT / 2 < 100, "rightmost tile bounds must remain inside the map");
 
-console.log(`Verified 254-cell pointy-top honeycomb display layout with staggered landscape rows, ${tileHeight.toFixed(2)}% tile height, and non-overlapping bounds.`);
+console.log(`Verified 254-cell flat-top landscape honeycomb display layout with staggered rows, ${tileHeight.toFixed(2)}% tile height, and non-overlapping bounds.`);

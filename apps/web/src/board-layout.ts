@@ -9,7 +9,7 @@ export type DisplayHex = Readonly<{
 }>;
 
 export const DISPLAY_TILE_WIDTH_PERCENT = 4.6;
-export const DISPLAY_TILE_ASPECT_RATIO = 0.8660254;
+export const DISPLAY_TILE_ASPECT_RATIO = 1.1547005;
 export const DISPLAY_BOARD_LEFT_PERCENT = 5.5;
 export const DISPLAY_BOARD_TOP_PERCENT = 10;
 export const DISPLAY_BOARD_TOP_SPAN_PERCENT = 80;
@@ -19,7 +19,7 @@ export const DISPLAY_BOARD_TOP_SPAN_PERCENT = 80;
  *
  * The board definition remains axial and authoritative for rules. The
  * candidate is displayed as 13 landscape rows of alternating 20/19 cells;
- * pointy-top tiles use a half-cell horizontal offset on odd rows.
+ * flat-top landscape tiles use a half-cell horizontal offset on odd rows.
  */
 export function buildDisplayHexLayout(board: BoardDefinition = FULL_HONEYCOMB_BOARD): DisplayHex[] {
   return Object.values(board.hexes).map((hex) => {
