@@ -21,6 +21,9 @@ const requiredSourceMarkers = [
   ["alert errors", /className=\"error\" role=\"alert\"/],
   ["keyboard-native controls", /<button[\s\S]*onClick=/],
   ["decorative map stays separate from authoritative canvas", /className=\"map-canvas\"/],
+  ["monster artwork", /\/assets\/monsters\/\$\{slug\}\.webp/],
+  ["Infamy token artwork", /\/assets\/board\/tokens\/infamy_token\.webp/],
+  ["revealed card artwork", /\/assets\/cards\/monster-mutation-01\.webp/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 
