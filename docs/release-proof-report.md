@@ -8,7 +8,7 @@ This deterministic report separates proof levels. It is generated from the curre
 | Engine and API tests | `npm test`; deterministic engine/store/property/fuzz/contract coverage | VERIFIED LOCALLY |
 | Static contracts and build | Catalogue, traceability, source audit, docs, asset, accessibility, JSON contracts, typechecks, and Vite build | VERIFIED LOCALLY |
 | Deployed service health | `/health`, `/metrics`, Prisma persistence, WSS proxy, backups, and external alerts | NOT RUN: no deployment configured |
-| Browser QA | Local development playtest evidence in `docs/first-playable-browser-evidence.md`; source photograph backdrop and 254-cell overlay are visual checks | PARTIAL |
+| Browser QA | Local development playtest evidence in `docs/first-playable-browser-evidence.md`; generated decorative map background and 254-cell overlay are source/render checks | PARTIAL |
 | Production release | Full board/rules/accessibility/content/IP/privacy/security sign-offs and real online smoke test | BLOCKED |
 
 ## Promotion condition
