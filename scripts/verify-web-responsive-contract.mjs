@@ -1,0 +1,22 @@
+import { readFile } from "node:fs/promises";
+
+const stylesheet = await readFile(new URL("../apps/web/src/styles.css", import.meta.url), "utf8");
+
+const requirements = [
+  ["dynamic viewport height", /\.game-screen\{height:100dvh;max-height:100dvh/],
+  ["safe-area insets", /safe-area-inset-(top|right|bottom|left)/],
+  ["mobile single-column layout", /@media\(max-width:700px\)[\s\S]*?\.game-screen>.layout\{display:grid;grid-template-columns:1fr/],
+  ["mobile bounded board panel", /@media\(max-width:700px\)[\s\S]*?\.game-screen \.board-panel\{padding:8px;overflow-y:auto/],
+  ["mobile action dock sizing", /@media\(max-width:560px\)\{\.action-dock\{right:10px;bottom:10px;min-width:160px/],
+  ["touch-sized map controls", /\.map-controls button\{[^}]*min-width:44px[^}]*min-height:44px/],
+  ["touch-drag board surface", /\.map\{touch-action:none/],
+  ["horizontal overflow containment", /html,body,#root\{width:100%;max-width:100%;overflow-x:clip\}/],
+  ["reduced-motion media contract", /@media\(prefers-reduced-motion:reduce\)/],
+];
+
+const missing = requirements.filter(([, pattern]) => !pattern.test(stylesheet)).map(([name]) => name);
+if (missing.length > 0) {
+  throw new Error(`Responsive web contract missing: ${missing.join(", ")}`);
+}
+
+console.log(`Verified ${requirements.length} responsive layout contracts; screenshot and manual browser review remain separate.`);
