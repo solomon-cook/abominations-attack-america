@@ -188,7 +188,7 @@ Useful source documents:
   - [x] [P0] Enforce military-unit stops on entering a monster's space. (Movement validation rejects paths that pass through occupied military spaces and resolves final occupancy as a battle)
 - [x] [P0] Allow units to pass through and share spaces with military units. (Development `legalUnitPaths` permits military occupancy while preserving monster stop rules; movement tests cover shared-space passage)
   - [x] [P0] Enforce Lake, Sea, Sea/Seacoast Only, and ordinary water-barrier restrictions for every path step. (Movement now rejects unresolved water classes/barriers and applies movement-specific lake/sea barrier gates; the full board's source values remain an explicit blocker.)
-  - [P0] Implement Fly passage and destination exceptions exactly.
+  - [x] [P0] Implement Fly passage and destination exceptions exactly. (Fly selectors and command validation pass through intermediate military/monster occupants; pre-Challenge flying monsters cannot finish on another monster, while flying units can finish and create the authoritative battle.)
   - [x] [P0] Prevent ordinary movement of National Guard units unless a sourced effect grants it. (The command boundary permits movement only when the active player owns the source-backed Guard Commander card; otherwise Guard IDs are rejected.)
   - [x] [P0] Implement monster disappearance instead of movement. (`disappear-monster` removes the monster for the current turn, consumes Move, and is exposed in the web controls when a verified setup lair exists)
 - [x] [P0] Implement next-turn lair return, starting-Health restoration, and entire-Move-step consumption after disappearance. (Completed setup assignments return the monster to its selected lair and restore Health below the printed starting value; physical-board lairs remain source-gated)
@@ -199,7 +199,7 @@ Useful source documents:
 
 ### Milestone 5 acceptance
 
-- [ ] [P0] Movement matrix tests cover every piece category, ability, barrier, occupancy stop, Challenge state, and off-board state.
+- [ ] [P0] Movement matrix tests cover every piece category, ability, barrier, occupancy stop, Challenge state, and off-board state. (Fly passage and pre-Challenge finish restrictions now have dedicated fixtures; full-board/Challenge/off-board matrix coverage remains source-gated.)
 - [x] [P0] Invalid paths cannot partially move a piece or consume its movement allowance. (Engine test asserts rejected paths leave canonical state byte-identical)
 - [x] [P0] Ending Move preserves every unselected piece and produces exactly the correct pending battles. (`pass-move` preserves unselected units and movement-created battles remain compulsory; engine-tested)
 - [x] [P1] Local and online clients submit the same path command shape and receive the same legality result. (Local and online paths now both use the shared `GameCommand`/`applyCommand` boundary; the API wraps the same command in its revision envelope)

@@ -602,6 +602,28 @@ test("movement modes enforce canonical water classes and allow fly passage", () 
   assert.equal(movementPathAllowed(syntheticBoard, [K("los-angeles"), lakeKey], "sea-seacoast-only"), false);
 });
 
+test("Fly pieces pass through occupants while preserving pre-Challenge monster finish restrictions", () => {
+  const monsterState = createGame(2);
+  monsterState.monsters[0].movement = "fly";
+  monsterState.monsters[0].location = K("los-angeles");
+  monsterState.monsters[1].location = K("denver");
+  const monsterPaths = legalMonsterPaths(monsterState, monsterState.monsters[0].id);
+  assert.equal(monsterPaths.some((path) => path.join(">") === `${K("los-angeles")}>${K("denver")}`), false);
+  assert.equal(monsterPaths.some((path) => path.join(">") === `${K("los-angeles")}>${K("denver")}>${K("chicago")}`), true);
+  const movedMonster = applyCommand(monsterState, { type: "move", path: ["los-angeles", "denver", "chicago"] });
+  assert.equal(movedMonster.state.monsters[0].location, K("chicago"));
+
+  const unitState = createGame(2);
+  const unit = unitState.units[0];
+  unit.location = K("los-angeles");
+  unit.movement = "fly";
+  unitState.monsters[1].location = K("denver");
+  const unitPaths = legalUnitPaths(unitState, unit.id);
+  assert.equal(unitPaths.some((path) => path.join(">") === `${K("los-angeles")}>${K("denver")}>${K("chicago")}`), true);
+  const movedUnit = applyCommand(unitState, { type: "move-unit", unitId: unit.id, path: ["los-angeles", "denver", "chicago"] });
+  assert.equal(movedUnit.state.units.find((candidate) => candidate.id === unit.id)?.location, K("chicago"));
+});
+
 test("movement modes enforce authored water barriers and reject unresolved edges", () => {
   const lakeEdgeBoard = {
     ...DEVELOPMENT_BOARD,

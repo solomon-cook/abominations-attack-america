@@ -714,16 +714,21 @@ export function legalMonsterPaths(state: GameState, monsterId = state.monsters[s
   const monster = state.monsters.find((candidate) => candidate.id === monsterId);
   if (!monster || !isHexKey(monster.location)) return [];
   const paths: HexKey[][] = [];
-  const visit = (path: HexKey[]) => {
-    if (path.length > 1) paths.push(path);
+  const visit = (path: HexKey[], record = true) => {
+    if (record && path.length > 1) paths.push(path);
     if (path.length - 1 >= monster.move) return;
     for (const next of developmentBoardIndex.neighbours[path.at(-1)!] ?? []) {
       if (path.includes(next)) continue;
-      if (state.monsters.some((candidate) => candidate.id !== monster.id && candidate.location === next)) continue;
+      const otherMonster = state.monsters.some((candidate) => candidate.id !== monster.id && candidate.location === next);
+      if (otherMonster && monster.movement !== "fly") continue;
       const nextPath = [...path, next];
       if (!movementPathAllowed(DEVELOPMENT_BOARD, nextPath, monster.movement)) continue;
-      if (state.units.some((unit) => unit.location === next)) { paths.push(nextPath); continue; }
-      visit(nextPath);
+      const occupiedByMilitary = state.units.some((unit) => unit.location === next);
+      const flyMayPass = monster.movement === "fly";
+      const finishForbidden = otherMonster && flyMayPass && !state.challenge?.active;
+      if (!finishForbidden) paths.push(nextPath);
+      if (!flyMayPass && occupiedByMilitary) continue;
+      visit(nextPath, !finishForbidden);
     }
   };
   visit([monster.location]);
@@ -748,7 +753,8 @@ export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
       if (path.includes(next)) continue;
       const nextPath = [...path, next];
       if (!movementPathAllowed(DEVELOPMENT_BOARD, nextPath, unit.movement)) continue;
-      if (state.monsters.some((monster) => monster.location === next)) { paths.push(nextPath); continue; }
+      const occupiedByMonster = state.monsters.some((monster) => monster.location === next);
+      if (occupiedByMonster && unit.movement !== "fly") { paths.push(nextPath); continue; }
       visit(nextPath);
     }
   };
@@ -804,7 +810,7 @@ export function moveUnit(state: GameState, unitId: string, path: string[]): Game
   const guardControlled = unit?.branch === "National Guard" && state.players[state.currentPlayer]?.researchCardIds.includes("Guard Commander");
   const controlsUnit = unit && (unit.ownerPlayer === state.currentPlayer || guardControlled);
   const legalPath = Boolean(unit && canonical && controlsUnit && destination && canonical.length >= 2 && canonical[0] === unit.location && !movedPieceIds.includes(unitId) && canonical.length - 1 <= unit.move && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(DEVELOPMENT_BOARD, canonical, unit.movement));
-  const blockedByMonster = (canonical ?? []).slice(1, -1).some((space) => occupantsAt(state, space).monsters.length > 0);
+  const blockedByMonster = unit?.movement !== "fly" && (canonical ?? []).slice(1, -1).some((space) => occupantsAt(state, space).monsters.length > 0);
   if (!legalPath || blockedByMonster || state.phase !== "move" || !unit || !destination) return state;
   const next = structuredClone(state);
   const moved = next.units.find((candidate) => candidate.id === unitId)!;
@@ -827,8 +833,11 @@ export function moveMonster(state: GameState, monsterId: string, path: string[])
   const movedPieceIds = state.movedPieceIds ?? [];
   const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= monster.move && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(DEVELOPMENT_BOARD, canonical, monster.movement));
   const intermediate = (canonical ?? []).slice(1, -1);
-  const blockedByMilitary = intermediate.some((space) => occupantsAt(state, space).units.length > 0);
-  const entersOtherMonster = (canonical ?? []).slice(1).some((space) => occupantsAt(state, space).monsters.some((candidate) => candidate.id !== monster.id));
+  const blockedByMilitary = monster.movement !== "fly" && intermediate.some((space) => occupantsAt(state, space).units.length > 0);
+  const otherMonsterSpaces = (canonical ?? []).slice(1).filter((space) => occupantsAt(state, space).monsters.some((candidate) => candidate.id !== monster.id));
+  const entersOtherMonster = monster.movement === "fly" && !state.challenge?.active
+    ? otherMonsterSpaces.includes(destination!)
+    : otherMonsterSpaces.length > 0;
   const legal = monster.id === monsterId && destination && !movedPieceIds.includes(monsterId) && legalPath && !blockedByMilitary && !entersOtherMonster;
   if (!legal || state.phase !== "move") return state;
   const next = structuredClone(state);
