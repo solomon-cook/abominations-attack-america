@@ -1655,6 +1655,22 @@ test("military-base Encounter grants Infamy and requires a legal branch trophy",
   assert.equal(chosen.state.phase, "deploy");
 });
 
+test("Iron Stomach lets a monster choose Health instead of military-base Infamy", () => {
+  const state = createGame(2);
+  state.players[0].mutationCardIds = ["Iron Stomach"];
+  state.phase = "encounter";
+  state.currentPlayer = 0;
+  state.monsters[0].location = K("denver");
+  state.monsters[0].health = 5;
+  const pending = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(pending.eventType, "encounter.choice-required");
+  assert.deepEqual(pending.state.pendingEncounterChoice?.choices, ["health", "infamy"]);
+  const resolved = applyCommand(pending.state, { type: "resolve-encounter", choice: "health" });
+  assert.equal(resolved.state.monsters[0].health, 8);
+  assert.equal(resolved.state.monsters[0].infamy, 0);
+  assert.equal((resolved.eventPayload.effects as Array<{ type: string; amount: number }>).some((effect) => effect.type === "health" && effect.amount === 3), true);
+});
+
 test("Mutation sites are usable once per monster and do not invent a Health reward", () => {
   const state = createGame(2);
   state.phase = "encounter";

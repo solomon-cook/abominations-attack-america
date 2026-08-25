@@ -1328,6 +1328,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
   const features = isHexKey(canonicalLocationKey) ? DEVELOPMENT_BOARD.hexes[canonicalLocationKey]?.features ?? [] : [];
   const stompable = features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site");
   const challengeSite = features.some((feature) => feature.kind === "challenge-site");
+  const baseFeature = features.find((feature): feature is Extract<BoardFeature, { kind: "military-base" }> => feature.kind === "military-base");
   const mutationFeatures = features.filter((feature): feature is Extract<BoardFeature, { kind: "mutation-site" }> => feature.kind === "mutation-site");
   for (const feature of mutationFeatures) {
     const usedSites = next.mutationSiteUses[monster.id] ?? [];
@@ -1354,7 +1355,8 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     return { state: next, effects, rolls };
   }
   const zorbCityChoiceRequired = !alreadyStomped && monster.name === "Zorb" && features.some((feature) => feature.kind === "city") && !choice;
-  if (zorbCityChoiceRequired) {
+  const ironStomachChoiceRequired = !alreadyStomped && Boolean(baseFeature) && monsterHasMutation(next, monster, "Iron Stomach") && !choice;
+  if (zorbCityChoiceRequired || ironStomachChoiceRequired) {
     next.pendingEncounterChoice = { playerIndex: next.currentPlayer, location: canonicalLocationKey, choices: ["health", "infamy"] };
     next.pendingDecision = { type: "encounter-choice", playerIndex: next.currentPlayer, location: canonicalLocationKey, choices: ["health", "infamy"] };
     next.log.push(`${monster.name} must choose a city benefit.`);
@@ -1387,6 +1389,12 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
         effects.push({ type: "infamy", amount: monster.infamy - before, source: locationId });
       }
       if (feature.kind === "military-base") {
+        if (monsterHasMutation(next, monster, "Iron Stomach") && choice === "health") {
+          const before = monster.health;
+          monster.health = Math.min(monster.maxHealth, monster.health + 3);
+          effects.push({ type: "health", amount: monster.health - before, source: locationId });
+          continue;
+        }
         const before = monster.infamy;
         monster.infamy = Math.min(15, monster.infamy + 1);
         effects.push({ type: "infamy", amount: monster.infamy - before, source: locationId });
@@ -1397,7 +1405,6 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     next.stompMarkers = Math.max(0, next.stompMarkers - 1);
     effects.push({ type: "stomp", amount: 1, source: locationId });
   }
-  const baseFeature = features.find((feature): feature is Extract<BoardFeature, { kind: "military-base" }> => feature.kind === "military-base");
   if (!alreadyStomped && baseFeature) {
     const branchOwner = next.setupAssignments?.find((seat) => seat.branch === baseFeature.branch);
     const trophyUnitIds = next.units
