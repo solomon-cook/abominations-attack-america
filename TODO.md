@@ -539,6 +539,7 @@ Useful source documents:
 
 - [ ] [P1] Complete keyboard-only and screen-reader playthroughs cover setup through victory.
 - [ ] [P1] Automated accessibility checks and manual contrast, focus, zoom, reduced-motion, and touch-target reviews pass.
+  - [x] Add an automated WCAG AA contrast audit for seven critical gameplay palette pairs, including the tile-label backing surface. (`npm run web-contrast:verify`; full rendered/manual review remains open.)
 - [ ] [P1] Browser QA passes at agreed desktop, tablet, and mobile viewports with no hidden required controls.
 - [x] [P1] Onboarding can be skipped, revisited, and completed without changing authoritative match state. (The guide persists only a browser-local seen flag, is reopened through `How to play`, and browser verification confirmed hide/reopen without changing match data.)
 
