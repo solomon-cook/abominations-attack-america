@@ -231,6 +231,8 @@ export interface PendingCombat {
   readonly rolls: readonly number[];
   readonly attacks: readonly BattleAttack[];
   readonly destroyedUnitIds: readonly string[];
+  /** Extra monster attacks granted by Whip Tentacles rolls already resolved. */
+  readonly bonusAttacks?: number;
 }
 
 export interface PendingRetreat {
@@ -1019,6 +1021,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     rolls: [],
     attacks: [],
     destroyedUnitIds: [],
+    bonusAttacks: 0,
   };
   if (!existing) {
     if (!Number.isInteger(combat.spendInfamy) || combat.spendInfamy < 0 || combat.spendInfamy > monster.infamy) throw new GameDomainError("ILLEGAL_COMMAND", "A monster cannot spend more Infamy than it currently has.");
@@ -1030,6 +1033,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   let hollywoodResearchCardId: string | undefined;
   let round = combat.round;
   let monsterAttackIndex = combat.monsterAttackIndex;
+  let bonusAttacks = combat.bonusAttacks ?? 0;
   let preMonsterResolved = combat.preMonsterResolved;
   const sendToHollywood = (controllerPlayer?: number) => {
     if (monster.health !== 0 || monster.location === "hollywood") return;
@@ -1040,7 +1044,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     hollywoodResearchCardId = awardHollywoodResearch(next, controllerPlayer);
     next.log.push(`${monster.name} was defeated and went to Hollywood.`);
   };
-  const performMonsterAttack = (target: MilitaryUnit) => {
+  const performMonsterAttack = (target: MilitaryUnit): number => {
     const roll = nextD6(next);
     rolls.push(roll);
     const fighterBonus = monster.name === "Konk" && target.unitTypeId?.endsWith("-fighter") ? 1 : 0;
@@ -1060,6 +1064,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
       destroyedUnitIds.push(target.id);
       next.log.push(`${monster.name} destroyed a ${target.branch} unit; it returned to its record tile in combat round ${round} (${roll}${smash ? ", smash" : ""}).`);
     } else next.log.push(`${monster.name} missed a ${target.branch} unit in combat round ${round} (${roll}).`);
+    return roll;
   };
   const performCounterAttacks = () => {
     for (const unit of next.units.filter((candidate) => pending.militaryUnitIds.includes(candidate.id) && candidate.location === pending.location)) {
@@ -1086,7 +1091,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   };
   const liveTargets = () => next.units.filter((unit) => pending.militaryUnitIds.includes(unit.id) && unit.location === pending.location);
   const saveCombat = () => {
-    next.pendingCombat = { ...combat, round, monsterAttackIndex, preMonsterResolved, rolls, attacks, destroyedUnitIds };
+    next.pendingCombat = { ...combat, round, monsterAttackIndex, preMonsterResolved, rolls, attacks, destroyedUnitIds, bonusAttacks };
   };
   const requestNextTarget = (targets: readonly MilitaryUnit[], allowance: number): boolean => {
     if (targets.length <= 1) return false;
@@ -1115,16 +1120,18 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     preMonsterResolved = true;
   }
   if (monster.health > 0) {
-    performMonsterAttack(selectedUnit);
+    const roll = performMonsterAttack(selectedUnit);
+    if (roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles")) bonusAttacks += 1;
     monsterAttackIndex += 1;
   }
   const runMonsterRemainder = (): boolean => {
-    const allowance = effectiveMonsterAttacks(next, monster, round) + (round === 1 ? combat.spendInfamy : 0);
+    const allowance = effectiveMonsterAttacks(next, monster, round) + (round === 1 ? combat.spendInfamy : 0) + bonusAttacks;
     while (monsterAttackIndex < allowance && monster.health > 0) {
       const targets = liveTargets();
       if (targets.length === 0) break;
       if (requestNextTarget(targets, allowance)) return true;
-      performMonsterAttack(targets[0]!);
+      const roll = performMonsterAttack(targets[0]!);
+      if (roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles")) bonusAttacks += 1;
       monsterAttackIndex += 1;
     }
     return false;
@@ -1142,12 +1149,14 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   if (round === 1 && monster.health > 0 && survivingTargets.length > 0) {
     round = 2;
     monsterAttackIndex = 0;
+    bonusAttacks = 0;
     const secondRoundAllowance = effectiveMonsterAttacks(next, monster, round);
-    if (requestNextTarget(survivingTargets, secondRoundAllowance)) return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: 1, infamySpent: combat.spendInfamy, hollywoodResearchCardId };
-    while (monsterAttackIndex < secondRoundAllowance && monster.health > 0) {
+    if (requestNextTarget(survivingTargets, secondRoundAllowance + bonusAttacks)) return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: 1, infamySpent: combat.spendInfamy, hollywoodResearchCardId };
+    while (monsterAttackIndex < secondRoundAllowance + bonusAttacks && monster.health > 0) {
       const target = liveTargets()[0];
       if (!target) break;
-      performMonsterAttack(target);
+      const roll = performMonsterAttack(target);
+      if (roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles")) bonusAttacks += 1;
       monsterAttackIndex += 1;
     }
     if (monster.health > 0) performCounterAttacks();
@@ -1197,6 +1206,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
   const targets = next.units.filter((unit) => targetIds.includes(unit.id));
   if (targets.length === 0) next.log.push("No battle here. Continue to Encounter.");
   else {
+    let whipBonusAttacks = 0;
     for (let combatRound = 1; combatRound <= 2; combatRound += 1) {
       if (combatRound === 1) {
         const preMonsterAttackers = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location && unit.unitTypeId === "army-missile-launcher");
@@ -1215,8 +1225,9 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         }
       }
       const survivingTargets = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
-        const attackAllowance = effectiveMonsterAttacks(next, monster, combatRound) + (combatRound === 1 ? spendInfamy : 0);
-      for (let attackIndex = 0; attackIndex < attackAllowance && survivingTargets.length > 0 && monster.health > 0; attackIndex += 1) {
+      const attackAllowance = effectiveMonsterAttacks(next, monster, combatRound) + (combatRound === 1 ? spendInfamy : 0);
+      whipBonusAttacks = combatRound === 1 ? whipBonusAttacks : 0;
+      for (let attackIndex = 0; attackIndex < attackAllowance + whipBonusAttacks && survivingTargets.length > 0 && monster.health > 0; attackIndex += 1) {
         const currentTargets = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
         if (currentTargets.length === 0) break;
         const orderedTargets = preferredTargetId
@@ -1245,6 +1256,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
         if (destroyed) { target.location = "record-tile"; destroyedUnitIds.push(target.id); next.log.push(`${monster.name} destroyed a ${target.branch} unit; it returned to its record tile in combat round ${combatRound} (${roll}${smash ? ", smash" : ""}).`); }
         else next.log.push(`${monster.name} missed a ${target.branch} unit in combat round ${combatRound} (${roll}).`);
+        if (roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles")) whipBonusAttacks += 1;
       }
       const survivingUnits = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
       for (const unit of survivingUnits) {
