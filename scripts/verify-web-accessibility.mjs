@@ -20,7 +20,7 @@ const requiredSourceMarkers = [
   ["live match status", /aria-live=\"polite\" aria-label=\"Match status\"/],
   ["alert errors", /className=\"error\" role=\"alert\"/],
   ["keyboard-native controls", /<button[\s\S]*onClick=/],
-  ["reference image has alt boundary", /className=\"board-photo-backdrop\"[\s\S]{0,180}alt=\"\"[\s\S]{0,80}aria-hidden=\"true\"/],
+  ["decorative map stays separate from authoritative canvas", /className=\"map-canvas\"/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 
@@ -30,6 +30,7 @@ const requiredStyleMarkers = [
   ["manual reduced motion", /manual-reduced-motion/],
   ["touch-sized map controls", /\.map-controls button\{[^}]*min-width:44px[^}]*min-height:44px/],
   ["no horizontal overflow", /overflow-x:clip/],
+  ["generated decorative map backdrop", /\.map::after\{/],
 ];
 for (const [label, marker] of requiredStyleMarkers) if (!marker.test(styles)) failures.push(`missing ${label}`);
 

@@ -744,14 +744,6 @@ function App() {
             data-rendered-board-id={FULL_HONEYCOMB_BOARD.id}
             data-rendered-board-content-hash={FULL_HONEYCOMB_BOARD.contentHash}
           >
-            <img
-              className="board-photo-backdrop"
-              src="/assets/board/full-board-top-down.webp"
-              alt=""
-              aria-hidden="true"
-              loading="lazy"
-              decoding="async"
-            />
             <div className="map-canvas" style={{ transform: `translate(${mapPan.x}%, ${mapPan.y}%) scale(${mapZoom})` }}>
             <HexGrid
               game={activeGame}

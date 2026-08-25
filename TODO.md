@@ -385,8 +385,9 @@ Useful source documents:
     - [ ] [P0] Keep city and Mutation labels legible at supported zoom levels and available through accessible text/inspection without hiding the underlying hex, piece, or interaction state.
     - [ ] [P0] Use only verified board data for city names, Mutation spaces, and benefit values; unresolved values must remain visibly marked as unresolved rather than guessed.
   - [ ] [P0] Remove the background reference-board image from the site and replace it with a generated North America-inspired green hexagon map with a surrounding sea treatment, used only as the decorative background behind the actual map tiles.
-    - [ ] [P0] Render the authoritative playable map tiles above this generated background, with the actual connected hexes, borders, labels, pieces, features, and interactions remaining visible and usable.
-    - [ ] [P0] Keep the generated background purely visual and separate from authoritative board topology and rule data; the engine remains the source of playable hexes, adjacency, features, and legality.
+    - [x] [P0] Remove the photographic reference backdrop and use a generated CSS sea, green-land silhouette, and hex-texture treatment beneath the map tiles. (`apps/web/src/main.tsx` and `apps/web/src/styles.css`; web build pass.)
+    - [x] [P0] Render the authoritative playable map tiles above this generated background, with the actual connected hexes, borders, labels, pieces, features, and interactions remaining visible and usable. (`.map-canvas` remains above the decorative layers.)
+    - [x] [P0] Keep the generated background purely visual and separate from authoritative board topology and rule data; the engine remains the source of playable hexes, adjacency, features, and legality. (The decorative CSS contains no board keys or rule data.)
   - [x] Extract development setup choices and the online setup summary while keeping setup commands and state transitions in `App`. (`apps/web/src/components/SetupPanel.tsx`; web typecheck/build pass.)
   - [x] Extract match status and piece-stack inspection presentation without moving board selection or engine legality into the component. (`apps/web/src/components/MatchStatus.tsx` and `PieceStackInspector.tsx`; web typecheck/build pass.)
   - [x] Extract the 254-cell hex renderer while keeping path selection and engine-provided legality at the parent boundary. (`apps/web/src/components/HexGrid.tsx`; web typecheck/build and `web-board-layout:verify` pass.)
@@ -401,6 +402,9 @@ Useful source documents:
         - [x] Draw the selected authoritative path as a visible arrow overlay over the honeycomb before confirmation; clearing the selection removes the preview. (`apps/web/src/components/HexGrid.tsx`; web typecheck/build and board-layout verification pass.)
       - [ ] [P0] Animate the selected unit travelling to its confirmed destination, or animate the targeting/action result, only after the authoritative command is accepted; rejected or cancelled choices must not animate as completed actions.
         - [x] Animate the accepted movement route and destination piece only after `sendCommand` or `applyCommand` succeeds; rejected and cancelled paths never arm the animation. (`apps/web/src/main.tsx` and `apps/web/src/components/HexGrid.tsx`; engine/API tests plus web typecheck/build pass.)
+    - [ ] [P0] Add a tactile 3D dice graphic that players can roll for combat, encounters, and other dice-based decisions.
+      - [ ] [P0] Animate the 3D dice roll and then clearly present the resulting face/value, modifiers, damage, and outcome; the presentation must respect reduced-motion settings.
+      - [ ] [P0] Keep the dice result authoritative and deterministic from the engine/server outcome; the 3D animation must be presentation-only and cannot determine or alter the roll.
     - [ ] [P0] Provide a prominent bottom-right action control styled as a push-to-take-action button for the current legal decision.
       - [x] Add a bottom-right action dock that confirms selected movement or executes only unambiguous phase commands; unresolved target/choice states remain disabled with an explanatory label. (`apps/web/src/components/ActionDock.tsx`; web typecheck/build pass.)
     - [ ] [P0] Add a top phase-progress bar that moves through the phases/substeps of the active player's turn.
