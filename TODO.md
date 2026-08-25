@@ -377,7 +377,7 @@ Useful source documents:
     - [x] [P0] Let players open a concise rules reference from the Home Screen so they can remind themselves how to play before joining or creating a match. (`HomeScreen` Rules panel.)
   - [ ] [P0] Use the created artwork assets for hexes, Stomps, Infamy, Military Research cards, Mutation cards, monsters, and troops in the gameplay UI, with the relevant assets visible on the board wherever those components are present.
     - [x] Render the available optimized board-feature, Stomp-token, city, and military-piece WebP assets in the authoritative hex renderer without changing board legality or unresolved feature data. (`apps/web/src/components/HexGrid.tsx`; web typecheck/build pass.)
-    - [ ] [P0] Render the board as a connected proper game-board layout of hexagons, with a consistent small border/gap between neighbouring hexes so the board structure is immediately legible.
+    - [x] [P0] Render the board as a connected proper game-board layout of hexagons, with a consistent small border/gap between neighbouring hexes so the board structure is immediately legible. (Flat-top landscape tiles use a 0.15% horizontal micro-gap, staggered rows, and validated bounds.)
     - [ ] [P0] Keep board artwork, piece artwork, markers, and card/component artwork crisp and correctly scaled at the supported zoom levels without obscuring board occupancy or legal interactions.
     - [ ] [P0] Preserve the authored artwork's visual identity and use asset fallbacks only when an asset is genuinely unavailable; do not replace the created assets with generic placeholders in the playable board view.
   - [ ] [P0] Label the board's Mutation spaces and cities clearly in the board view.

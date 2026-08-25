@@ -8,7 +8,8 @@ export type DisplayHex = Readonly<{
   top: number;
 }>;
 
-export const DISPLAY_TILE_WIDTH_PERCENT = 4.6;
+export const DISPLAY_TILE_WIDTH_PERCENT = 4.45;
+export const DISPLAY_TILE_STEP_PERCENT = 4.6;
 export const DISPLAY_TILE_ASPECT_RATIO = 1.1547005;
 export const DISPLAY_BOARD_LEFT_PERCENT = 5.5;
 export const DISPLAY_BOARD_TOP_PERCENT = 10;
@@ -30,7 +31,7 @@ export function buildDisplayHexLayout(board: BoardDefinition = FULL_HONEYCOMB_BO
       hex,
       row,
       column,
-      left: DISPLAY_BOARD_LEFT_PERCENT + displayColumn * DISPLAY_TILE_WIDTH_PERCENT,
+      left: DISPLAY_BOARD_LEFT_PERCENT + displayColumn * DISPLAY_TILE_STEP_PERCENT,
       top: DISPLAY_BOARD_TOP_PERCENT + (row / 12) * DISPLAY_BOARD_TOP_SPAN_PERCENT,
     };
   });
