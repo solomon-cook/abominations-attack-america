@@ -356,10 +356,9 @@ test("normal battle target validation keeps monster and military target classes 
   assert.throws(() => applyCommand(state, { type: "resolve-fight" }), /non-military target/);
 });
 
-test("Scientific Analysis and Anti-Mutagen resolve at battle start", () => {
+test("Scientific Analysis resolves independently at battle start", () => {
   const state = createGame(2);
-  state.players[0].researchCardIds = ["Scientific Analysis", "Anti-Mutagen"];
-  state.players[0].mutationCardIds = ["Rampage", "War Spikes"];
+  state.players[0].researchCardIds = ["Scientific Analysis"];
   state.phase = "fight";
   state.monsters[0].health = 10;
   state.monsters[0].attacks = 0;
@@ -370,8 +369,26 @@ test("Scientific Analysis and Anti-Mutagen resolve at battle start", () => {
   state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
   state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
   const result = applyCommand(state, { type: "resolve-fight", battleId });
-  assert.equal(result.state.monsters[0].health, 7);
-  assert.equal(result.state.log.some((entry) => /Scientific Analysis and Anti-Mutagen/.test(entry)), true);
+  assert.equal(result.state.monsters[0].health, 9);
+  assert.equal(result.state.log.some((entry) => /Scientific Analysis/.test(entry)), true);
+});
+
+test("Anti-Mutagen resolves independently at battle start", () => {
+  const state = createGame(2);
+  state.players[0].researchCardIds = ["Anti-Mutagen"];
+  state.players[0].mutationCardIds = ["Rampage", "War Spikes"];
+  state.phase = "fight";
+  state.monsters[0].health = 10;
+  state.monsters[0].attacks = 0;
+  const unit = state.units[0];
+  unit.location = state.monsters[0].location;
+  unit.attacks = 0;
+  const battleId = "anti-mutagen-start-effects";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  const result = applyCommand(state, { type: "resolve-fight", battleId });
+  assert.equal(result.state.monsters[0].health, 8);
+  assert.equal(result.state.log.some((entry) => /Anti-Mutagen/.test(entry)), true);
 });
 
 test("Defense Satellites discards and resolves one deterministic roll per board monster", () => {
