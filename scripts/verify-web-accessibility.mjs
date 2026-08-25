@@ -51,6 +51,8 @@ const requiredSourceMarkers = [
   ["private hand details", /aria-label=\{`Private hand for Player/],
   ["card rule metadata", /aria-label=\{`\$\{cardId\} rule metadata`/],
   ["card source and target boundaries", /Target and confirmation:[\s\S]*Source:/],
+  ["implemented card action windows", /Optional Mutation battle abilities[\s\S]*Defense Satellites[\s\S]*Antimatter[\s\S]*Laser Fence[\s\S]*Stabilizer Ray/],
+  ["authoritative card commands", /runCommand\(\{ type: "use-(mutation|research)"/],
   ["encounter resolution action", /activeGame\.pendingDecision\?\.type === "encounter-resolution"[\s\S]*Resolve encounter/],
   ["audio feedback categories", /playSound\(category/],
   ["persisted audio settings", /type="range" min="0" max="1"/],

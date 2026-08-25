@@ -338,7 +338,7 @@ Useful source documents:
 - [x] [P1] Implement every verified Monster Mutation card with isolated tests. (All 16 source-inventoried Mutation cards are now available in the structured catalogue; persistent, triggered, and optional battle effects are covered at the development engine boundary, with card-timing UI and full-board production play still separately gated.)
   - [x] [P1] Implement every verified Military Research card with isolated tests. (The nine currently implemented Research cards each have independent engine coverage, including separate Scientific Analysis and Anti-Mutagen battle-start fixtures; seven source-gated cards remain unavailable.)
 - [x] [P1] Mark unsupported cards unavailable in production setup instead of silently no-oping them. (`assertCardsAvailable` rejects source-gated card IDs before rules execution)
-  - [P1] Add card detail, source, legal timing, target, confirmation, result, and persistent-effect UI.
+  - [x] [P1] Add card detail, source, legal timing, target, confirmation, result, and persistent-effect UI. (`RevealedCardsPanel` exposes the sourced rule metadata and boundaries; `PhaseActions` exposes the authoritative controls for every independently implemented optional card; `web-a11y:verify` checks both surfaces. Source-gated cards remain unavailable.)
 - [x] [P1] Add accessible private-hand/revealed-card presentation without leaking content to opponents or spectators. (The browser shows the viewer's own card surface; viewer-aware engine/API projections redact other hands, deck order, card IDs in event details, and card IDs in room events.)
 
 ### Milestone 9 acceptance
