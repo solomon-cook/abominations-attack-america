@@ -50,6 +50,8 @@ A fresh 2026-08-25 local run also completed the ordered setup through the visibl
 
 The same runtime check confirmed the keyboard focus boundary after starting a local playtest: the setup controls surface is visible and the current-step `Move` heading receives focus (`tabindex=-1`) rather than leaving focus on the document body. The compact board-first panel-closed layout remains available after setup; this proves the setup transition only, not a complete keyboard or assistive-technology playthrough.
 
+The live development smoke pass then exercised the first complete decision chain after setup: **Move** → **Encounter** → visible **Resolve encounter** control → source-backed city choice (**Take the city Health benefit**) → **Deploy** → **Pass deployment**. Before the fix, the `encounter-resolution` pending decision rendered only a disabled “Choose the Encounter decision” dock label; `PhaseActions` now exposes the authoritative resolution button and the accessibility source contract guards that branch. This remains development-fixture evidence and does not cover every fight/retreat/card/victory path.
+
 ## Full-board rendering check
 
 The local browser renders all 254 cells from `FULL_HONEYCOMB_BOARD` as positioned hex tiles and adds seven explicitly labelled development-fixture overlay spaces whose coordinates fall outside that candidate shell. A DOM check therefore records 261 `[data-hex-key]` buttons in the development playtest: 254 candidate cells plus seven named fixture spaces. The map exposes both the development match board ID/hash and the separately rendered candidate board ID/hash, so this visual check does not falsely claim that the current match has been promoted to the authoritative physical board.

@@ -152,6 +152,13 @@ export function PhaseActions({
     </div>;
   }
 
+  if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "encounter-resolution") {
+    return <div className="path-controls" aria-label="Resolve encounter">
+      {defenseSatellitesButton}
+      <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-encounter" })}>Resolve encounter</button>
+    </div>;
+  }
+
   if (activeGame.phase === "deploy") {
     const activeBranch = activeGame.setupAssignments?.[activeGame.currentPlayer]?.branch
       ?? (["Army", "Navy", "Air Force", "Marines"] as const)[activeGame.currentPlayer % 4];

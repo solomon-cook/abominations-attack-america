@@ -45,6 +45,7 @@ const requiredSourceMarkers = [
   ["private hand details", /aria-label=\{`Private hand for Player/],
   ["card rule metadata", /aria-label=\{`\$\{cardId\} rule metadata`/],
   ["card source and target boundaries", /Target and confirmation:[\s\S]*Source:/],
+  ["encounter resolution action", /activeGame\.pendingDecision\?\.type === "encounter-resolution"[\s\S]*Resolve encounter/],
   ["audio feedback categories", /playSound\(category/],
   ["persisted audio settings", /type="range" min="0" max="1"/],
 ];
