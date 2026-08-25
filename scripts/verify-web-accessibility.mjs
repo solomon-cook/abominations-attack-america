@@ -50,6 +50,8 @@ const requiredStyleMarkers = [
   ["reduced-motion dice", /\.combat-die \.die-cube\{animation:none\}/],
   ["encounter result surface", /\.encounter-result\{/],
   ["accepted action motion", /\.action-resolution-feedback\{/],
+  ["uncropped authored artwork", /\.hex-tile \.tile-art\{object-fit:contain;object-position:center\}/],
+  ["uncropped revealed cards", /\.revealed-card-art\{object-fit:contain;object-position:center;background:/],
 ];
 for (const [label, marker] of requiredStyleMarkers) if (!marker.test(styles)) failures.push(`missing ${label}`);
 
