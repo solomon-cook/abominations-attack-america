@@ -494,6 +494,7 @@ Useful source documents:
 - [x] [P1] Add spectator-focused turn following, board focus, event log, and terminal-state presentation. (Spectator projections render the active monster/phase, active-location board focus, chronological event log, and terminal result while `canAct` disables all gameplay controls; spectator-read and terminal projection tests cover the boundary.)
   - [P1] Add bounded snapshot/event retention and recovery for long matches.
 - [ ] [P1] Verify process restart and deployment do not lose durable rooms or command idempotency.
+  - [x] Keep an adapter-level restart regression: two `PrismaRoomStore` instances share the persistent adapter and replay the same action ID without advancing the room twice (`apps/api/src/prisma-store.test.ts`). This is not a real process/deployment or managed-Postgres drill.
   - [x] Add rate limits and abuse controls for create, join, spectate, read, command, and WebSocket operations. (The API applies bounded source-address HTTP and WebSocket handshake limits, returns explicit retry/close signals, and has deterministic limiter tests; distributed production enforcement remains a deployment requirement.)
 
 ### Milestone 12 acceptance
