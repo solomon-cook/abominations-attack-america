@@ -18,6 +18,7 @@ const boardHexes = buildDisplayHexLayout().map(({ hex, left, top }) => ({
   left,
   top,
 }));
+const displayByKey = new Map(boardHexes.map(({ hex, left, top }) => [hex.key, { left, top }]));
 
 function boardArtForHex(hex: (typeof boardHexes)[number]["hex"], place?: (typeof locations)[number]) {
   if (place?.kind === "city") return "/assets/board/coastal-city/small/coastal_city_0deg.webp";
@@ -54,8 +55,23 @@ type Props = {
 export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectedUnitId, selectedPath, selectedUnitPath, onChoosePath, onChooseUnitPath }: Props) {
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
   const path = selectedUnitId ? selectedUnitPath : selectedPath;
+  const pathPoints = path
+    .map((key) => displayByKey.get(key))
+    .filter((point): point is { left: number; top: number } => Boolean(point))
+    .map(({ left, top }) => `${left},${top}`)
+    .join(" ");
   return (
     <div className="hex-grid">
+      {pathPoints && path.length > 1 && (
+        <svg className="path-preview" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <marker id="path-arrowhead" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L5,2.5 L0,5 Z" />
+            </marker>
+          </defs>
+          <polyline points={pathPoints} markerEnd="url(#path-arrowhead)" />
+        </svg>
+      )}
       {boardHexes.map(({ hex, place, left, top }) => {
         const placeKey = hex.key;
         const monsterLegal = legalDestinations.has(placeKey);

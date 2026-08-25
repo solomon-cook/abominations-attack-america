@@ -398,6 +398,7 @@ Useful source documents:
     - [ ] [P0] Make movement and targeting begin by selecting a piece: highlight the selected piece and show a bottom-of-screen detail tray with its name, role, useful stats, and what it does.
       - [x] Show the selected military piece, source-backed movement/combat stats, path-preview state, and a deselect action in a board-bottom detail tray; selection remains parent-owned and authoritative. (`apps/web/src/components/SelectedPieceTray.tsx`; web typecheck/build pass.)
       - [ ] [P0] Show a live arrow/path preview that follows the pointer after selection, then let the player click the intended destination or target to confirm the choice.
+        - [x] Draw the selected authoritative path as a visible arrow overlay over the honeycomb before confirmation; clearing the selection removes the preview. (`apps/web/src/components/HexGrid.tsx`; web typecheck/build and board-layout verification pass.)
       - [ ] [P0] Animate the selected unit travelling to its confirmed destination, or animate the targeting/action result, only after the authoritative command is accepted; rejected or cancelled choices must not animate as completed actions.
     - [ ] [P0] Provide a prominent bottom-right action control styled as a push-to-take-action button for the current legal decision.
     - [ ] [P0] Add a top phase-progress bar that moves through the phases/substeps of the active player's turn.
