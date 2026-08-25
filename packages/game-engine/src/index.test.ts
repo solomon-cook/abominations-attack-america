@@ -1425,6 +1425,42 @@ test("Atomic Recovery restores a monster to starting Health at the start of its 
   assert.equal(result.state.log.some((entry) => /Atomic Recovery/.test(entry)), true);
 });
 
+test("persistent Mutation movement and combat modifiers alter authoritative outcomes", () => {
+  const base = createGame(2);
+  base.monsters[1].location = "record-tile";
+  base.units.forEach((unit) => { unit.location = "record-tile"; });
+  const baseMaxMove = Math.max(...legalMonsterPaths(base).map((path) => path.length - 1));
+
+  const armored = createGame(2);
+  armored.monsters[1].location = "record-tile";
+  armored.units.forEach((unit) => { unit.location = "record-tile"; });
+  armored.players[0].mutationCardIds = ["Armored Scales"];
+  const armoredMaxMove = Math.max(...legalMonsterPaths(armored).map((path) => path.length - 1));
+  assert.equal(armoredMaxMove, baseMaxMove - 1);
+
+  const faster = createGame(2);
+  faster.monsters[1].location = "record-tile";
+  faster.units.forEach((unit) => { unit.location = "record-tile"; });
+  faster.players[0].mutationCardIds = ["High-Octane Blood"];
+  const fasterMaxMove = Math.max(...legalMonsterPaths(faster).map((path) => path.length - 1));
+  assert.equal(fasterMaxMove, baseMaxMove + 1);
+
+  const warSpikes = createGame(2, 3);
+  warSpikes.players[0].mutationCardIds = ["War Spikes"];
+  warSpikes.phase = "fight";
+  warSpikes.pendingBattles = [{ id: "war-spikes", monsterId: "monster-1", location: warSpikes.monsters[0].location as any, militaryUnitIds: [warSpikes.units[0].id] }];
+  warSpikes.units[0].location = warSpikes.monsters[0].location;
+  warSpikes.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "war-spikes" };
+  let attackDamage: number | undefined;
+  for (let seed = 0; seed < 128 && attackDamage === undefined; seed += 1) {
+    const candidate = structuredClone(warSpikes);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight" });
+    attackDamage = (result.eventPayload.attacks as Array<{ attackerId: string; damage: number }>).find((attack) => attack.attackerId === "monster-1")?.damage;
+  }
+  assert.equal(attackDamage, 4);
+});
+
 test("a rival military player draws Military Research when their attack sends a monster to Hollywood", () => {
   const state = createGame(2, 7);
   state.phase = "fight";

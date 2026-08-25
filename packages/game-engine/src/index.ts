@@ -713,18 +713,20 @@ export function legalMonsterPaths(state: GameState, monsterId = state.monsters[s
   if (state.phase !== "move") return [];
   const monster = state.monsters.find((candidate) => candidate.id === monsterId);
   if (!monster || !isHexKey(monster.location)) return [];
+  const movement = effectiveMonsterMovement(state, monster);
+  const move = effectiveMonsterMove(state, monster);
   const paths: HexKey[][] = [];
   const visit = (path: HexKey[], record = true) => {
     if (record && path.length > 1) paths.push(path);
-    if (path.length - 1 >= monster.move) return;
+    if (path.length - 1 >= move) return;
     for (const next of developmentBoardIndex.neighbours[path.at(-1)!] ?? []) {
       if (path.includes(next)) continue;
       const otherMonster = state.monsters.some((candidate) => candidate.id !== monster.id && candidate.location === next);
-      if (otherMonster && monster.movement !== "fly") continue;
+      if (otherMonster && movement !== "fly") continue;
       const nextPath = [...path, next];
-      if (!movementPathAllowed(DEVELOPMENT_BOARD, nextPath, monster.movement)) continue;
+      if (!movementPathAllowed(DEVELOPMENT_BOARD, nextPath, movement)) continue;
       const occupiedByMilitary = state.units.some((unit) => unit.location === next);
-      const flyMayPass = monster.movement === "fly";
+      const flyMayPass = movement === "fly";
       const finishForbidden = otherMonster && flyMayPass && !state.challenge?.active;
       if (!finishForbidden) paths.push(nextPath);
       if (!flyMayPass && occupiedByMilitary) continue;
@@ -828,14 +830,16 @@ export function moveUnit(state: GameState, unitId: string, path: string[]): Game
 
 export function moveMonster(state: GameState, monsterId: string, path: string[]): GameState {
   const monster = state.monsters[state.currentPlayer];
+  const movement = effectiveMonsterMovement(state, monster);
+  const move = effectiveMonsterMove(state, monster);
   const canonical = canonicalPath(path);
   const destination = canonical?.at(-1);
   const movedPieceIds = state.movedPieceIds ?? [];
-  const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= monster.move && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(DEVELOPMENT_BOARD, canonical, monster.movement));
+  const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= move && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(DEVELOPMENT_BOARD, canonical, movement));
   const intermediate = (canonical ?? []).slice(1, -1);
-  const blockedByMilitary = monster.movement !== "fly" && intermediate.some((space) => occupantsAt(state, space).units.length > 0);
+  const blockedByMilitary = movement !== "fly" && intermediate.some((space) => occupantsAt(state, space).units.length > 0);
   const otherMonsterSpaces = (canonical ?? []).slice(1).filter((space) => occupantsAt(state, space).monsters.some((candidate) => candidate.id !== monster.id));
-  const entersOtherMonster = monster.movement === "fly" && !state.challenge?.active
+  const entersOtherMonster = movement === "fly" && !state.challenge?.active
     ? otherMonsterSpaces.includes(destination!)
     : otherMonsterSpaces.length > 0;
   const legal = monster.id === monsterId && destination && !movedPieceIds.includes(monsterId) && legalPath && !blockedByMilitary && !entersOtherMonster;
@@ -911,6 +915,28 @@ function drawResearchCardForPlayer(state: GameState, playerIndex: number): strin
 function monsterHasMutation(state: Pick<GameState, "monsters" | "players">, monster: Monster, cardId: string): boolean {
   const playerIndex = state.monsters.findIndex((candidate) => candidate.id === monster.id);
   return playerIndex >= 0 && state.players[playerIndex]?.mutationCardIds.includes(cardId) === true;
+}
+
+function effectiveMonsterMove(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
+  const bonus = monsterHasMutation(state, monster, "High-Octane Blood") || monsterHasMutation(state, monster, "Winged Horror") ? 1 : 0;
+  const penalty = monsterHasMutation(state, monster, "Armored Scales") ? 1 : 0;
+  return Math.max(1, monster.move + bonus - penalty);
+}
+
+function effectiveMonsterMovement(state: Pick<GameState, "monsters" | "players">, monster: Monster): MonsterMovement {
+  return monsterHasMutation(state, monster, "Winged Horror") ? "fly" : monster.movement;
+}
+
+function effectiveMonsterDefense(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
+  return monster.defense + (monsterHasMutation(state, monster, "Armored Scales") ? 1 : 0);
+}
+
+function effectiveMonsterDamage(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
+  return monsterHasMutation(state, monster, "War Spikes") ? 4 : monster.damage;
+}
+
+function effectiveMonsterAttacks(state: Pick<GameState, "monsters" | "players">, monster: Monster, round: number): number {
+  return monster.attacks + (round === 1 && monsterHasMutation(state, monster, "Atomic Breath") ? 1 : 0);
 }
 
 function awardHollywoodResearch(state: GameState, controllerPlayer: number | undefined): string | undefined {
@@ -1007,9 +1033,13 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     const fighterBonus = monster.name === "Konk" && target.unitTypeId?.endsWith("-fighter") ? 1 : 0;
     const hit = roll + fighterBonus >= target.defense;
     const smash = hit && roll === 6;
-    const damage = hit ? 1 + (smash ? 1 : 0) : 0;
+    const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
     const destroyed = hit;
-    attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers: fighterBonus ? ["+1 to hit fighters"] : [], hit, smash, damage, destroyed });
+    const modifiers = [
+      ...(fighterBonus ? ["+1 to hit fighters"] : []),
+      ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
+    ];
+    attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
     if (destroyed) {
       target.location = "record-tile";
       destroyedUnitIds.push(target.id);
@@ -1021,7 +1051,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
       for (let attackIndex = 0; attackIndex < (unit.attacks ?? 1) && monster.health > 0; attackIndex += 1) {
         const roll = nextD6(next);
         rolls.push(roll);
-        const hit = roll >= monster.defense;
+        const hit = roll >= effectiveMonsterDefense(next, monster);
         const smash = hit && roll === 6;
         const damage = hit ? (unit.damage ?? 1) + (smash ? 1 : 0) : 0;
         monster.health = Math.max(0, monster.health - damage);
@@ -1052,7 +1082,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
       if (monster.health === 0) break;
       const roll = nextD6(next);
       rolls.push(roll);
-      const hit = roll >= monster.defense;
+      const hit = roll >= effectiveMonsterDefense(next, monster);
       const smash = hit && roll === 6;
       const damage = hit ? (unit.damage ?? 1) + (smash ? 1 : 0) : 0;
       monster.health = Math.max(0, monster.health - damage);
@@ -1068,7 +1098,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     monsterAttackIndex += 1;
   }
   const runMonsterRemainder = (): boolean => {
-    const allowance = monster.attacks + (round === 1 ? combat.spendInfamy : 0);
+    const allowance = effectiveMonsterAttacks(next, monster, round) + (round === 1 ? combat.spendInfamy : 0);
     while (monsterAttackIndex < allowance && monster.health > 0) {
       const targets = liveTargets();
       if (targets.length === 0) break;
@@ -1091,8 +1121,9 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   if (round === 1 && monster.health > 0 && survivingTargets.length > 0) {
     round = 2;
     monsterAttackIndex = 0;
-    if (requestNextTarget(survivingTargets, monster.attacks)) return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: 1, infamySpent: combat.spendInfamy, hollywoodResearchCardId };
-    while (monsterAttackIndex < monster.attacks && monster.health > 0) {
+    const secondRoundAllowance = effectiveMonsterAttacks(next, monster, round);
+    if (requestNextTarget(survivingTargets, secondRoundAllowance)) return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: 1, infamySpent: combat.spendInfamy, hollywoodResearchCardId };
+    while (monsterAttackIndex < secondRoundAllowance && monster.health > 0) {
       const target = liveTargets()[0];
       if (!target) break;
       performMonsterAttack(target);
@@ -1152,7 +1183,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           if (monster.health === 0) break;
           const roll = nextD6(next);
           rolls.push(roll);
-          const hit = roll >= monster.defense;
+          const hit = roll >= effectiveMonsterDefense(next, monster);
           const smash = hit && roll === 6;
           const damage = hit ? (unit.damage ?? 1) + (smash ? 1 : 0) : 0;
           monster.health = Math.max(0, monster.health - damage);
@@ -1163,7 +1194,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         }
       }
       const survivingTargets = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
-      const attackAllowance = monster.attacks + (combatRound === 1 ? spendInfamy : 0);
+        const attackAllowance = effectiveMonsterAttacks(next, monster, combatRound) + (combatRound === 1 ? spendInfamy : 0);
       for (let attackIndex = 0; attackIndex < attackAllowance && survivingTargets.length > 0 && monster.health > 0; attackIndex += 1) {
         const currentTargets = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
         if (currentTargets.length === 0) break;
@@ -1182,9 +1213,12 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         const fighterBonus = monster.name === "Konk" && target.unitTypeId?.endsWith("-fighter") ? 1 : 0;
         const hit = roll + fighterBonus >= target.defense;
         const smash = hit && roll === 6;
-        const damage = hit ? 1 + (smash ? 1 : 0) : 0;
+        const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
         const destroyed = hit;
-        const modifiers = fighterBonus ? ["+1 to hit fighters"] : [];
+        const modifiers = [
+          ...(fighterBonus ? ["+1 to hit fighters"] : []),
+          ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
+        ];
         attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
         if (destroyed) { target.location = "record-tile"; destroyedUnitIds.push(target.id); next.log.push(`${monster.name} destroyed a ${target.branch} unit; it returned to its record tile in combat round ${combatRound} (${roll}${smash ? ", smash" : ""}).`); }
         else next.log.push(`${monster.name} missed a ${target.branch} unit in combat round ${combatRound} (${roll}).`);
@@ -1194,7 +1228,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         for (let attackIndex = 0; attackIndex < (unit.attacks ?? 1) && monster.health > 0; attackIndex += 1) {
           const roll = nextD6(next);
           rolls.push(roll);
-          const hit = roll >= monster.defense;
+          const hit = roll >= effectiveMonsterDefense(next, monster);
           const smash = hit && roll === 6;
           const damage = hit ? (unit.damage ?? 1) + (smash ? 1 : 0) : 0;
           monster.health = Math.max(0, monster.health - damage);
