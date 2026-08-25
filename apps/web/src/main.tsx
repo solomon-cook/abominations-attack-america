@@ -53,6 +53,7 @@ import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
 import { HomeScreen } from "./components/HomeScreen";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
+import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
 import "./styles.css";
 
 function supportsPlaytestBrowser(): boolean {
@@ -64,6 +65,23 @@ function supportsPlaytestBrowser(): boolean {
     && typeof localStorage !== "undefined"
     && typeof CSS !== "undefined"
     && CSS.supports("height", "100dvh");
+}
+
+function acceptedActionLabel(command: GameCommand): string | undefined {
+  switch (command.type) {
+    case "resolve-fight": return command.targetUnitId ? "Target resolved" : "Fight resolved";
+    case "retreat": return "Retreat resolved";
+    case "resolve-encounter": return command.choice ? "Encounter choice resolved" : command.trophyUnitId ? "Trophy choice resolved" : "Encounter resolved";
+    case "deploy": return "Deployment resolved";
+    case "draw-research": return "Research card drawn";
+    case "pass-deploy": return "Deployment passed";
+    case "pass-move": return "Move step resolved";
+    case "disappear-monster": return "Monster disappearance resolved";
+    case "concede": return "Concession recorded";
+    case "advance": return "Action resolved";
+    case "move":
+    case "move-unit": return undefined;
+  }
 }
 
 function safeStorageGet(key: string): string | null {
@@ -95,6 +113,7 @@ function App() {
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
   const [acceptedMoveAnimation, setAcceptedMoveAnimation] = useState<{ path: HexKey[]; pieceId: string; key: number } | null>(null);
+  const [acceptedActionFeedback, setAcceptedActionFeedback] = useState<{ label: string; key: number } | null>(null);
   const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
   const [retreatChoices, setRetreatChoices] = useState<Record<string, HexKey | "disappeared">>({});
   const [mapZoom, setMapZoom] = useState(1);
@@ -303,6 +322,12 @@ function App() {
   }, [acceptedMoveAnimation]);
 
   useEffect(() => {
+    if (!acceptedActionFeedback) return;
+    const timeout = window.setTimeout(() => setAcceptedActionFeedback(null), 1100);
+    return () => window.clearTimeout(timeout);
+  }, [acceptedActionFeedback]);
+
+  useEffect(() => {
     const saved = safeStorageGet("abominations-session");
     if (!saved) return;
     try {
@@ -407,20 +432,23 @@ function App() {
         : undefined;
     try {
       if (online && session && room) {
-        setRoom(
-          await sendCommand(
-            room.code,
-            session.token,
-            session.participantId,
-            room.version,
-            normalized,
-          ),
+        const nextRoom = await sendCommand(
+          room.code,
+          session.token,
+          session.participantId,
+          room.version,
+          normalized,
         );
+        setRoom(nextRoom);
         if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
+        const actionLabel = acceptedActionLabel(normalized);
+        if (actionLabel) setAcceptedActionFeedback({ label: actionLabel, key: Date.now() });
       } else {
         const result = applyCommand(game, normalized);
         setGame(result.state);
         if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
+        const actionLabel = acceptedActionLabel(normalized);
+        if (actionLabel) setAcceptedActionFeedback({ label: actionLabel, key: Date.now() });
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Action failed");
@@ -929,6 +957,7 @@ function App() {
               lastFightRolls={lastFightRolls}
               lastFightOutcomes={lastFightOutcomes}
             />
+            <ActionResolutionFeedback label={acceptedActionFeedback?.label} animationKey={acceptedActionFeedback?.key} />
             <EncounterResultPanel
               eventId={lastEncounterEvent?.id}
               effects={encounterEffects}
