@@ -51,6 +51,8 @@ A fresh 2026-08-25 local run also completed the ordered setup through the visibl
 
 The same runtime check confirmed the keyboard focus boundary after starting a local playtest: the setup controls surface is visible and the current-step `Move` heading receives focus (`tabindex=-1`) rather than leaving focus on the document body. The compact board-first panel-closed layout remains available after setup; this proves the setup transition only, not a complete keyboard or assistive-technology playthrough.
 
+On 2026-08-25, a fresh browser session at `http://127.0.0.1:5179/` completed the same visible setup, opened the controls, selected the legal `Los Angeles → San Francisco` destination, confirmed the path, and reached the authoritative Encounter decision with a visible **Resolve encounter** control. The runtime screenshot still shows the unresolved rectangular candidate shell and the source-reference photograph beneath it; this is useful development-flow evidence and direct confirmation that the current browser is not yet the physical MVP board.
+
 ## Latest two-browser online smoke check
 
 On 2026-08-25, two fresh browser tabs connected to the local API, created and joined room `8A132F`, completed the ordered two-player setup independently, and both reached the setup-complete Move surface. Reloading the second tab restored the same room and retained setup completion without developer-tool intervention. A subsequent Move attempt did not produce a clean observed phase transition in the second tab, so this is partial online setup/reconnect evidence only; the full two-browser play, refresh, disconnect, reconnect, and winner acceptance remains open.
