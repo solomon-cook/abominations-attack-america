@@ -1316,9 +1316,16 @@ export function deployUnit(state: GameState): GameState {
 export interface ResearchDrawResolution {
   readonly state: GameState;
   readonly cardId: string;
+  readonly recoveryRoll?: number;
+  readonly recoveryReleased?: boolean;
 }
 
-function advanceAfterDeployment(next: GameState): void {
+interface TurnAdvanceResolution {
+  readonly recoveryRoll?: number;
+  readonly recoveryReleased?: boolean;
+}
+
+function advanceAfterDeployment(next: GameState): TurnAdvanceResolution {
   next.currentPlayer = (next.currentPlayer + 1) % next.monsters.length;
   next.movedPieceIds = [];
   next.deploymentsThisTurn = 0;
@@ -1326,8 +1333,9 @@ function advanceAfterDeployment(next: GameState): void {
   next.encounterSuppressed = false;
   if (next.currentPlayer === 0) next.round += 1;
   next.phase = "move";
-  prepareMonsterForTurn(next);
+  const recovery = prepareMonsterForTurn(next);
   next.pendingDecision = { type: "monster-movement", playerIndex: next.currentPlayer, pieceId: next.monsters[next.currentPlayer].id };
+  return { recoveryRoll: recovery?.recoveryRoll, recoveryReleased: recovery?.recoveryReleased };
 }
 
 /** Draw the current branch's one Military Research alternative and end Deploy. */
@@ -1341,16 +1349,19 @@ export function drawResearchForDeployment(state: GameState): ResearchDrawResolut
   if (!player) throw new GameDomainError("ILLEGAL_COMMAND", "The active player has no Research-card hand.");
   player.researchCardIds.push(result.cardId);
   next.log.push(`Player ${next.currentPlayer + 1} drew a Military Research card instead of deploying.`);
-  advanceAfterDeployment(next);
-  return { state: next, cardId: result.cardId };
+  const recovery = advanceAfterDeployment(next);
+  return { state: next, cardId: result.cardId, ...recovery };
 }
 
 /** Resolve the active monster's automatic off-board recovery at the start of Move. */
-function prepareMonsterForTurn(state: GameState): string | undefined {
+function prepareMonsterForTurn(state: GameState): { monsterId: string; recoveryRoll?: number; recoveryReleased?: boolean } | undefined {
   const monster = state.monsters[state.currentPlayer];
   if (!monster) return undefined;
+  let recoveryRoll: number | undefined;
+  let recoveryReleased = false;
   if (monster.location === "hollywood") {
     const roll = nextD6(state);
+    recoveryRoll = roll;
     monster.health = Math.min(monster.maxHealth, monster.health + roll);
     if (monster.health < 5) {
       state.log.push(`${monster.name} recovered ${roll} Health in Hollywood but remains there.`);
@@ -1362,6 +1373,7 @@ function prepareMonsterForTurn(state: GameState): string | undefined {
         : losAngeles;
       if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", "A Hollywood monster needs a verified lair when Los Angeles is occupied.");
       monster.location = destination;
+      recoveryReleased = true;
       state.log.push(`${monster.name} broke free from Hollywood after recovering ${roll} Health.`);
     }
   } else if (monster.location === "disappeared") {
@@ -1373,7 +1385,7 @@ function prepareMonsterForTurn(state: GameState): string | undefined {
   } else return undefined;
   state.movedPieceIds = [...new Set([...(state.movedPieceIds ?? []), monster.id])];
   state.encounterSuppressed = true;
-  return monster.id;
+  return { monsterId: monster.id, recoveryRoll, recoveryReleased };
 }
 
 /** Apply a client command at the rules boundary. The API should call this function, never mutate state directly. */
@@ -1557,7 +1569,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
   if (state.phase === "deploy" && command.type === "draw-research") {
     requireDecision("deployment");
     const result = drawResearchForDeployment(state);
-    const eventPayload = { cardId: result.cardId, playerIndex: state.currentPlayer, nextPlayer: result.state.currentPlayer, nextPhase: result.state.phase };
+    const eventPayload = { cardId: result.cardId, playerIndex: state.currentPlayer, nextPlayer: result.state.currentPlayer, nextPhase: result.state.phase, recoveryRoll: result.recoveryRoll, recoveryReleased: result.recoveryReleased };
     return { state: appendEvent(result.state, "research.drawn", eventPayload), eventType: "research.drawn", eventPayload };
   }
   if (state.phase === "deploy" && (command.type === "deploy" || command.type === "advance")) {
@@ -1569,9 +1581,9 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
   if (state.phase === "deploy" && command.type === "pass-deploy") {
     requireDecision("deployment");
     const next = structuredClone(state);
-    advanceAfterDeployment(next);
+    const recovery = advanceAfterDeployment(next);
     next.log.push("Deployment passed; the next player begins Move.");
-    const eventPayload = { nextPlayer: next.currentPlayer, nextPhase: next.phase };
+    const eventPayload = { nextPlayer: next.currentPlayer, nextPhase: next.phase, recoveryRoll: recovery.recoveryRoll, recoveryReleased: recovery.recoveryReleased };
     return { state: appendEvent(next, "turn.passed", eventPayload), eventType: "turn.passed", eventPayload };
   }
   throw new Error("There is no advance action available in the current phase.");

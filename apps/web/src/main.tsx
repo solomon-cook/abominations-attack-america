@@ -212,6 +212,9 @@ function App() {
   const encounterChoices = Array.isArray(lastEncounterEvent?.detail.choices)
     ? lastEncounterEvent.detail.choices.filter((choice): choice is string => typeof choice === "string")
     : [];
+  const lastRecoveryEvent = [...activeGame.eventLog].reverse().find((entry) =>
+    ["turn.passed", "research.drawn"].includes(entry.action) && typeof entry.detail.recoveryRoll === "number",
+  );
   const canSpendInfamyOnPendingBattle = Boolean(
     pendingBattle &&
     activePlayer.infamy > 0,
@@ -959,6 +962,9 @@ function App() {
               lastFightEventId={lastFightEvent?.id}
               lastFightRolls={lastFightRolls}
               lastFightOutcomes={lastFightOutcomes}
+              lastRecoveryEventId={lastRecoveryEvent?.id}
+              lastRecoveryRoll={typeof lastRecoveryEvent?.detail.recoveryRoll === "number" ? lastRecoveryEvent.detail.recoveryRoll : undefined}
+              lastRecoveryReleased={lastRecoveryEvent?.detail.recoveryReleased === true}
             />
             <ActionResolutionFeedback label={acceptedActionFeedback?.label} animationKey={acceptedActionFeedback?.key} />
             <EncounterResultPanel

@@ -9,9 +9,12 @@ type Props = {
   lastFightEventId?: string;
   lastFightRolls: readonly number[];
   lastFightOutcomes: readonly string[];
+  lastRecoveryEventId?: string;
+  lastRecoveryRoll?: number;
+  lastRecoveryReleased?: boolean;
 };
 
-export function TurnPrompt({ actionHeadingRef, action, description, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes }: Props) {
+export function TurnPrompt({ actionHeadingRef, action, description, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes, lastRecoveryEventId, lastRecoveryRoll, lastRecoveryReleased }: Props) {
   return (
     <>
       <span className="label">CURRENT STEP</span>
@@ -36,6 +39,25 @@ export function TurnPrompt({ actionHeadingRef, action, description, unavailableR
           </div>
           {lastFightOutcomes.length > 0 && <ul className="combat-outcomes">{lastFightOutcomes.map((outcome, index) => <li key={`${lastFightEventId}-outcome-${index}`}>{outcome}</li>)}</ul>}
           <small>Recorded by the authoritative fight result; the animation is presentation only.</small>
+        </div>
+      )}
+      {lastRecoveryEventId && typeof lastRecoveryRoll === "number" && (
+        <div className="combat-result recovery-result" key={lastRecoveryEventId} aria-live="polite">
+          <span className="label">LAST HOLLYWOOD RECOVERY</span>
+          <div className="combat-roll-list" aria-label="Recorded Hollywood recovery die">
+            <span className={`combat-die show-${lastRecoveryRoll}`} aria-label={`Hollywood recovery roll: ${lastRecoveryRoll}`}>
+              <span className="die-cube" aria-hidden="true">
+                <img className="die-cube-face face-front" src="/assets/dice/d6-face-1.webp" alt="" />
+                <img className="die-cube-face face-back" src="/assets/dice/d6-face-6.webp" alt="" />
+                <img className="die-cube-face face-right" src="/assets/dice/d6-face-2.webp" alt="" />
+                <img className="die-cube-face face-left" src="/assets/dice/d6-face-5.webp" alt="" />
+                <img className="die-cube-face face-top" src="/assets/dice/d6-face-3.webp" alt="" />
+                <img className="die-cube-face face-bottom" src="/assets/dice/d6-face-4.webp" alt="" />
+              </span>
+              <span className="die-value">{lastRecoveryRoll}</span>
+            </span>
+          </div>
+          <small>{lastRecoveryReleased ? "The monster recovered to 5+ Health and left Hollywood." : "The monster recovered Health but remains in Hollywood."}</small>
         </div>
       )}
     </>

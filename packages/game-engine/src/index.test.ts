@@ -1168,12 +1168,16 @@ test("a defeated monster goes to Hollywood and recovers at the start of its next
   const recovering = defeated.state;
   recovering.currentPlayer = 1;
   recovering.pendingDecision = { type: "deployment", playerIndex: 1 };
-  const nextTurn = applyCommand(recovering, { type: "pass-deploy" }).state;
+  const nextTurnResult = applyCommand(recovering, { type: "pass-deploy" });
+  const nextTurn = nextTurnResult.state;
   assert.equal(nextTurn.currentPlayer, 0);
   assert.equal(nextTurn.monsters[0].health > 0, true);
   assert.equal(nextTurn.movedPieceIds.includes("monster-1"), true);
   assert.equal(nextTurn.encounterSuppressed, true);
   assert.equal(nextTurn.phase, "move");
+  assert.equal(typeof nextTurnResult.eventPayload.recoveryRoll, "number");
+  assert.equal((nextTurnResult.eventPayload.recoveryRoll as number) >= 1 && (nextTurnResult.eventPayload.recoveryRoll as number) <= 6, true);
+  assert.equal(nextTurnResult.eventPayload.recoveryReleased, nextTurn.monsters[0].location !== "hollywood");
 });
 
 test("encounter stomps are persisted once and Infamy is capped", () => {
