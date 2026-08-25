@@ -7,37 +7,34 @@ import {
   locations,
   type GameState,
   type HexKey,
+  type BoardHex,
 } from "@abominations/game-engine";
 import { buildDisplayHexLayout } from "../board-layout";
 
-const developmentHexes = Object.values(DEVELOPMENT_BOARD.hexes);
-const developmentBoardIndex = buildBoardIndex(DEVELOPMENT_BOARD);
-const candidateBoardHexes = buildDisplayHexLayout().map(({ hex, left, top }) => ({
-  hex,
-  place: locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key),
-  left,
-  top,
-}));
-const candidateKeys = new Set(candidateBoardHexes.map(({ hex }) => hex.key));
-const developmentOverlayHexes = developmentHexes
-  .filter((hex) => !candidateKeys.has(hex.key))
-  .map((hex) => {
-    const place = locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key);
-    return {
-      hex,
-      place,
-      left: place?.x ?? 50,
-      top: place?.y ?? 50,
-      developmentFixture: true,
-    };
-  });
-const boardHexes = [
-  ...candidateBoardHexes.map((entry) => ({ ...entry, developmentFixture: false })),
-  ...developmentOverlayHexes,
-];
-const displayByKey = new Map(boardHexes.map(({ hex, left, top }) => [hex.key, { left, top }]));
+function boardForGame(game: GameState) {
+  return game.boardId === FULL_HONEYCOMB_BOARD.id && game.boardContentHash === FULL_HONEYCOMB_BOARD.contentHash
+    ? FULL_HONEYCOMB_BOARD
+    : DEVELOPMENT_BOARD;
+}
 
-function boardArtForHex(hex: (typeof boardHexes)[number]["hex"], place?: (typeof locations)[number]) {
+function displayHexesForGame(game: GameState) {
+  const board = boardForGame(game);
+  if (board.id === FULL_HONEYCOMB_BOARD.id) {
+    return buildDisplayHexLayout(board).map(({ hex, left, top }) => ({
+      hex,
+      place: locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key),
+      left,
+      top,
+      developmentFixture: false,
+    }));
+  }
+  return Object.values(board.hexes).map((hex) => {
+    const place = locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key);
+    return { hex, place, left: place?.x ?? 50, top: place?.y ?? 50, developmentFixture: true };
+  });
+}
+
+function boardArtForHex(hex: BoardHex, place?: (typeof locations)[number]) {
   if (place?.kind === "city") return "/assets/board/coastal-city/small/coastal_city_0deg.webp";
   const feature = hex.features[0]?.kind;
   const featureAssets: Record<string, string> = {
@@ -85,6 +82,10 @@ type Props = {
 };
 
 export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, onSelectUnit, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
+  const board = boardForGame(game);
+  const boardHexes = displayHexesForGame(game);
+  const boardIndex = buildBoardIndex(board);
+  const displayByKey = new Map(boardHexes.map(({ hex, left, top }) => [hex.key, { left, top }]));
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
   const selectedDisplayPath = selectedUnitId ? selectedUnitPath : selectedPath;
   const path = hoveredPath.length > 1 ? hoveredPath : selectedDisplayPath;
@@ -121,8 +122,8 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         const unitLegal = legalUnitDestinations.has(placeKey);
         const selectableUnit = game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id));
         const featureText = hex.features.map((feature) => feature.kind).join(", ");
-        const neighbourText = (developmentBoardIndex.neighbours[placeKey] ?? [])
-          .map((neighbourKey) => developmentHexes.find((candidate) => candidate.key === neighbourKey)?.label ?? neighbourKey)
+        const neighbourText = (boardIndex.neighbours[placeKey] ?? [])
+          .map((neighbourKey) => board.hexes[neighbourKey]?.label ?? neighbourKey)
           .join(", ");
         const occupantText = [
           ...game.monsters.filter((monster) => monster.location === placeKey).map((monster) => monster.name),

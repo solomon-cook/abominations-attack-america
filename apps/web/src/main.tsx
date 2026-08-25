@@ -8,6 +8,7 @@ import {
   chooseStartingChoice,
   createGame,
   createGameFromSetup,
+  DEVELOPMENT_BOARD,
   FULL_HONEYCOMB_BOARD,
   getLocation,
     legalNationalGuardDeploymentDestinations,
@@ -953,12 +954,12 @@ function App() {
             ref={mapRef}
             className="map"
             role="group"
-            aria-label="Full honeycomb board coordinate shell"
+            aria-label={activeGame.boardId === FULL_HONEYCOMB_BOARD.id ? "Full honeycomb board" : "Development board fixture"}
             aria-describedby="board-description"
             data-board-id={activeGame.boardId}
             data-board-content-hash={activeGame.boardContentHash}
-            data-rendered-board-id={FULL_HONEYCOMB_BOARD.id}
-            data-rendered-board-content-hash={FULL_HONEYCOMB_BOARD.contentHash}
+            data-rendered-board-id={activeGame.boardId === FULL_HONEYCOMB_BOARD.id ? FULL_HONEYCOMB_BOARD.id : DEVELOPMENT_BOARD.id}
+            data-rendered-board-content-hash={activeGame.boardId === FULL_HONEYCOMB_BOARD.id ? FULL_HONEYCOMB_BOARD.contentHash : DEVELOPMENT_BOARD.contentHash}
             onPointerDown={startMapDrag}
             onPointerMove={moveMapDrag}
             onPointerUp={endMapDrag}

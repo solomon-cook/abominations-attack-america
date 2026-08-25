@@ -120,7 +120,7 @@ Useful source documents:
 ### Milestone 2 acceptance
 
 - [x] [P0] The structural validator passes and the remaining unresolved inventory is empty or explicitly blocks release. (`npm run release-blockers:verify` proves the development board fails production validation and all eight unresolved rule IDs remain documented)
-- [ ] [P0] Engine, API, and web import one immutable board definition and no client maintains independent topology. (The engine/API state pins `DEVELOPMENT_BOARD`, while the browser also renders the separate unresolved `FULL_HONEYCOMB_BOARD` shell; this remains an explicit mismatch until the promoted board exists.)
+- [x] [P0] Engine, API, and web import one immutable board definition per match and no client maintains independent topology. (The browser now selects the pinned development or full-board definition by board ID and content hash; MVP creation still fail-closes until the full board is promoted.)
 - [ ] [P0] A human reviewer signs off every rule-bearing space, feature, connection, and barrier.
 - [x] [P0] The fully filled honeycomb board is the only board accepted by the first-playable MVP gate; the sparse nine-space fixture is rejected outside development-only tests. (Production room creation rejects unresolved board validation; development store tests pass `allowDevelopmentFixture: true` explicitly.)
 - [x] [P1] Changing display size or orientation cannot change legal movement. (Movement is derived from canonical hex keys and the immutable board edge index; display coordinates are not present in `GameState` or movement commands.)

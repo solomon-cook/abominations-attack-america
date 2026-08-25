@@ -19,6 +19,7 @@ This record compares the supplied browser reconstruction against the photographe
 | Vertical fit | Percentage row spacing was calculated in the wrong aspect-ratio space | Landscape canvas preserves the vertical pitch at short viewport heights | Pass for candidate geometry |
 | Development overlays | Named nine-space locations were rendered as a second full-size hex lattice | Seven off-shell locations are compact fixture pins and are not presented as physical cells | Pass for development disclosure |
 | Action controls | Lower-right controls obscured map cells | Action bar sits outside the map surface | Pass for interaction layout |
+| Board identity | Browser rendered the unresolved full shell over a development match | Browser selects the board definition and content hash pinned by the active match | Pass for development boundary; MVP remains source-gated |
 | Physical coastline and silhouette | Rectangular candidate extent did not match the board | Candidate remains a rectangular coordinate shell over a decorative backdrop | Failed; source-gated |
 | Printed names, sites, bases, lairs, and benefits | Most cells showed `UNRESOLVED` and placeholder dots | Those values remain unresolved rather than being guessed | Failed; source-gated |
 | Authored water classes and barriers | Not represented authoritatively | Candidate cells/edges remain unresolved and disabled for production | Failed; source-gated |
