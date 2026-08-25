@@ -103,6 +103,7 @@ Useful source documents:
     - [ ] [P0] Make labels and markers legible at the supported fit zoom without dense coordinate diagnostics colliding with artwork; provide accessible detail/inspection for information that cannot fit inside a tile.
     - [x] [P0] Keep action controls, prompts, and status overlays out of the board's rule-bearing cells; the lower-right action dock in the comparison image now sits in a board-adjacent action bar and no longer covers playable cells. Prompts and secondary controls remain available in the on-demand controls surface.
     - [ ] [P0] Add a before/after visual acceptance comparison at the same aspect ratio and fit state, with reviewer checks for cell count, row staggering, boundary shape, feature placement, label readability, piece containment, and unobscured interaction targets.
+      - [x] Record the before/after acceptance matrix, separating machine-validated candidate geometry from failed/source-gated physical-content checks (`docs/board-visual-acceptance.md`).
 - [ ] [P0] Record lake, sea, seacoast, boundary, disabled, and exceptional edge information.
   - [P0] Record all cities and their exact Health/dice benefits.
 - [ ] [P0] Record all military bases and owning branches.
