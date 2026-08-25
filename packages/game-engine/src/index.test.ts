@@ -1,25 +1,1423 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyCommand, createGame } from "./index.js";
+import { createCardDeckState, discardCard, drawCard, sourcedCardRule } from "./cards.js";
+import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
+import { DEVELOPMENT_BOARD, locationIdToHexKey } from "./board.js";
+import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
+import { BRANCH_DEPLOYMENT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS } from "./units.js";
+
+const K = (id: string) => locationIdToHexKey(id)!;
+
+function resolveDevelopmentRetreat(state: GameState): GameState {
+  if (!state.pendingRetreat) return state;
+  const destinations = Object.fromEntries(state.pendingRetreat.unitIds.map((unitId) => [unitId, state.pendingRetreat!.options[unitId]?.[0] ?? "disappeared"]));
+  return applyCommand(state, { type: "retreat", destinations }).state;
+}
+
+function resolveDevelopmentFight(state: GameState): GameState {
+  let next = resolveDevelopmentRetreat(state);
+  for (let step = 0; next.phase === "fight" && step < 32; step += 1) {
+    next = next.pendingDecision?.type === "attack-target"
+      ? applyCommand(next, { type: "resolve-fight", battleId: next.pendingDecision.battleId, targetUnitId: next.pendingDecision.targetIds[0] }).state
+      : applyCommand(next, { type: "advance" }).state;
+    next = resolveDevelopmentRetreat(next);
+  }
+  return next;
+}
+
+test("MVP room creation rejects the unresolved full honeycomb board", () => {
+  assert.throws(() => assertMvpBoardReady(), /MVP board is not ready/);
+});
+
+test("supported player counts get the correct stomp stack", () => {
+  assert.equal(stompMarkerCount(2), 14);
+  assert.equal(createGame(3).stompMarkers, 17);
+  assert.equal(createGame(4).stompMarkers, 20);
+  assert.throws(() => createGame(1), /exactly 2, 3, or 4/);
+  assert.throws(() => createGame(5), /exactly 2, 3, or 4/);
+});
+
+test("source-backed monster catalogue preserves record statistics and unresolved boundaries", () => {
+  assert.equal(MONSTER_DEFINITIONS.length, 6);
+  assert.deepEqual(MONSTER_DEFINITIONS.map((monster) => monster.id), ["zorb", "tomanagi", "gargantis", "megaclaw", "konk", "toxicor"]);
+  assert.deepEqual(MONSTER_DEFINITIONS.map((monster) => monster.startingHealth), [11, 11, 10, 12, 10, 9]);
+  assert.deepEqual(MONSTER_DEFINITIONS.map((monster) => monster.movement), ["land-only", "land-lake-sea", "fly", "land-lake", "land-only", "land-lake"]);
+  for (const monster of MONSTER_DEFINITIONS) {
+    assert.equal(monster.move >= 3, true);
+    assert.equal(monster.defense, 4);
+    assert.equal(monster.attacks, 3);
+    assert.equal(monster.damage, 3);
+    assert.equal(monster.sourceRefs.length, 1);
+    assert.equal(monster.lairs, "source-gated");
+    assert.equal(monster.specialAbilityImplementation, "source-gated");
+  }
+  assert.match(monsterDefinition("toxicor")!.specialAbilityText, /draw 2 Mutation cards/i);
+  assert.equal(monsterDefinition("unknown"), undefined);
+});
+
+test("development monsters use the source-backed record statistics", () => {
+  const state = createGame(4);
+  assert.deepEqual(state.monsters.map((monster) => [monster.name, monster.health, monster.move, monster.attacks, monster.defense, monster.damage]), [
+    ["Zorb", 11, 4, 3, 4, 3],
+    ["Tomanagi", 11, 4, 3, 4, 3],
+    ["Konk", 10, 4, 3, 4, 3],
+    ["Megaclaw", 12, 4, 3, 4, 3],
+  ]);
+  assert.equal(state.monsters.every((monster) => monster.maxHealth === 40), true);
+});
+
+test("source-backed unit catalogue preserves branch quantities and control boundaries", () => {
+  assert.deepEqual(UNIT_DEFINITIONS.map((unit) => unit.quantity), [5, 3, 5, 3, 4, 4, 6, 2]);
+  assert.deepEqual(UNIT_DEFINITIONS.map((unit) => unit.branch), ["Army", "Army", "Navy", "Navy", "Marines", "Marines", "Air Force", "Air Force"]);
+  assert.equal(UNIT_DEFINITIONS.every((unit) => unit.sourceRefs.length === 1 && unit.effectsImplementation === "source-gated"), true);
+  assert.deepEqual(GIANT_UNIT_DEFINITIONS.map((unit) => [unit.health, unit.move, unit.defense, unit.attacks, unit.damage]), [[6, 4, 5, 1, 4], [8, 4, 4, 2, 2]]);
+  assert.deepEqual(NATIONAL_GUARD_DEFINITIONS.map((unit) => [unit.quantity, unit.move, unit.defense, unit.damage]), [[6, 3, 4, 1], [2, 5, 3, 1]]);
+  assert.equal(NATIONAL_GUARD_DEFINITIONS.every((unit) => unit.specialAbilityText.includes("Guard Commander") && unit.controlImplementation === "source-gated"), true);
+  assert.deepEqual(BRANCH_DEPLOYMENT_DEFINITIONS.map((entry) => [entry.ownOrGuardUnits, entry.additionalNationalGuardUnits]), [[2, 1], [2, 1], [2, 1], [3, 0]]);
+  assert.equal(BRANCH_DEPLOYMENT_DEFINITIONS.every((entry) => entry.canDrawResearchInstead && entry.implementation === "source-gated"), true);
+});
+
+test("development military roster uses source-backed unit records", () => {
+  const state = createGame(2);
+  assert.deepEqual(state.units.slice(0, 8).map((unit) => [unit.unitTypeId, unit.move, unit.defense, unit.damage]), [
+    ["army-tank", 4, 5, 1],
+    ["army-missile-launcher", 4, 3, 1],
+    ["navy-fighter", 6, 4, 1],
+    ["navy-nuclear-submarine", 4, 5, 1],
+    ["air-force-fighter", 6, 4, 1],
+    ["air-force-cruise-missile", 8, 6, 1],
+    ["marines-fighter", 5, 4, 1],
+    ["marines-rocket-launcher", 4, 3, 2],
+  ]);
+  assert.deepEqual(sourceUnitInventoryErrors(state.units), []);
+  assert.equal(state.units.length, 32);
+});
+
+test("National Guard remains neutral on its record tile until sourced", () => {
+  const state = createGame(2);
+  assert.deepEqual(state.nationalGuard, createNationalGuardInventory());
+  assert.equal(state.nationalGuard.branch, "National Guard");
+  assert.equal(state.nationalGuard.control, "neutral");
+  assert.equal(state.nationalGuard.location, "record-tile");
+  assert.equal(state.nationalGuard.quantity, 8);
+  assert.deepEqual(state.nationalGuard.unitIds, [
+    "national-guard-tank-1", "national-guard-tank-2", "national-guard-tank-3", "national-guard-tank-4", "national-guard-tank-5", "national-guard-tank-6",
+    "national-guard-fighter-1", "national-guard-fighter-2",
+  ]);
+  assert.equal(state.nationalGuard.statistics, "source-gated");
+});
+
+test("ordinary movement cannot move a neutral National Guard unit", () => {
+  const state = createGame(2);
+  assert.throws(() => applyCommand(state, { type: "move-unit", unitId: "national-guard-tank-1", path: [K("denver"), K("chicago")] }), /not legal/);
+  assert.deepEqual(state.nationalGuard.unitIds, createNationalGuardInventory().unitIds);
+  assert.equal(state.nationalGuard.control, "neutral");
+});
+
+test("Guard Commander grants only its holder National Guard movement and deployment control", () => {
+  const state = createGame(2);
+  const guard = {
+    ...state.units[0],
+    id: "national-guard-tank-1",
+    branch: "National Guard" as const,
+    unitTypeId: "national-guard-tank",
+    ownerPlayer: undefined,
+    location: K("denver"),
+    move: 3,
+    movement: "land-only" as const,
+  };
+  state.units = [...state.units, guard];
+  state.players[state.currentPlayer].researchCardIds = ["Guard Commander"];
+  assert.ok(legalUnitPaths(state, guard.id).some((path) => path.join(">") === `${K("denver")}>${K("chicago")}`));
+  const moved = applyCommand(state, { type: "move-unit", unitId: guard.id, path: [K("denver"), K("chicago")] });
+  assert.equal(moved.state.units.find((unit) => unit.id === guard.id)?.location, K("chicago"));
+
+  const noCard = createGame(2);
+  noCard.phase = "deploy";
+  noCard.pendingDecision = { type: "deployment", playerIndex: noCard.currentPlayer };
+  assert.throws(() => applyCommand(noCard, { type: "deploy", unitId: "national-guard-tank-1", destination: K("infamy-site") }), /Guard Commander card/);
+});
+
+test("inventory accounting rejects structural identity and reference drift", () => {
+  const state = createGame(2);
+  assert.deepEqual(validateInventoryAccounting(state), []);
+  const invalid = structuredClone(state) as any;
+  invalid.units[1].id = invalid.units[0].id;
+  invalid.nationalGuard.unitIds = [invalid.units[0].id];
+  invalid.movedPieceIds = ["missing-piece"];
+  assert.deepEqual(validateInventoryAccounting(invalid), [
+    "National Guard ID count mismatch: expected 8, got 1",
+    "National Guard inventory mismatch for national-guard-tank-1: expected 1, got 0",
+    "National Guard inventory mismatch for national-guard-tank-2: expected 1, got 0",
+    "National Guard inventory mismatch for national-guard-tank-3: expected 1, got 0",
+    "National Guard inventory mismatch for national-guard-tank-4: expected 1, got 0",
+    "National Guard inventory mismatch for national-guard-tank-5: expected 1, got 0",
+    "National Guard inventory mismatch for national-guard-tank-6: expected 1, got 0",
+    "National Guard inventory mismatch for national-guard-fighter-1: expected 1, got 0",
+    "National Guard inventory mismatch for national-guard-fighter-2: expected 1, got 0",
+    "National Guard inventory mismatch for 0-0: expected 0, got 1",
+    "duplicate piece IDs: 0-0",
+    "National Guard ID collision: 0-0",
+    "movement ledger references missing piece missing-piece",
+  ]);
+  const invalidRemoval = structuredClone(state) as any;
+  invalidRemoval.removedUnitIds = ["missing-unit"];
+  assert.deepEqual(validateInventoryAccounting(invalidRemoval), ["removed unit references missing unit missing-unit"]);
+  const invalidPosition = structuredClone(state) as any;
+  invalidPosition.units[0].location = "permanently-removed";
+  assert.deepEqual(validateInventoryAccounting(invalidPosition), ["permanently-removed unit 0-0 is missing from removedUnitIds"]);
+  const missingRegularUnit = structuredClone(state) as any;
+  missingRegularUnit.units = missingRegularUnit.units.filter((unit: { unitTypeId: string }) => unit.unitTypeId !== "army-tank").slice(0, -1);
+  assert.equal(validateInventoryAccounting(missingRegularUnit).some((error) => error.startsWith("army-tank: expected 5")), true);
+  const invalidPendingTarget = createGame(2);
+  invalidPendingTarget.pendingBattles = [{ id: "pending-battle", monsterId: "monster-1", location: invalidPendingTarget.monsters[0].location as any, militaryUnitIds: ["0-0"] }];
+  invalidPendingTarget.pendingAttackTarget = { battleId: "pending-battle", attackerId: "monster-1", targetIds: ["missing-unit"] };
+  assert.deepEqual(validateInventoryAccounting(invalidPendingTarget), [
+    "pending attack target references non-military target missing-unit",
+    "pending attack target missing-unit is not in battle pending-battle",
+  ]);
+});
+
+test("National Guard source inventory validation rejects quantity and identity drift", () => {
+  const inventory = createNationalGuardInventory();
+  assert.deepEqual(sourceNationalGuardInventoryErrors(inventory), []);
+  assert.ok(sourceNationalGuardInventoryErrors({ quantity: 7, unitIds: inventory.unitIds.slice(1) }).some((error) => error.startsWith("National Guard quantity mismatch")));
+});
+
+test("the active player controls neutral National Guard attacks", () => {
+  const state = createGame(2, 4);
+  const guard = {
+    ...state.units[0],
+    id: "national-guard-tank-1",
+    branch: "National Guard" as const,
+    unitTypeId: "national-guard-tank",
+    ownerPlayer: undefined,
+    location: K("los-angeles"),
+    attacks: 1,
+    damage: 1,
+  };
+  state.units = [...state.units, guard];
+  state.monsters[0].location = K("los-angeles");
+  state.monsters[0].attacks = 0;
+  state.monsters[0].defense = 99;
+  state.phase = "fight";
+  state.pendingBattles = [{ id: "monster-1:1:guard", monsterId: "monster-1", location: K("los-angeles"), militaryUnitIds: [guard.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: state.currentPlayer, battleId: "monster-1:1:guard" };
+  const result = applyCommand(state, { type: "resolve-fight" });
+  const guardAttack = (result.eventPayload.attacks as Array<{ attackerId: string; controllerPlayer: number }>).find((attack) => attack.attackerId === guard.id);
+  assert.equal(guardAttack?.controllerPlayer, state.currentPlayer);
+});
+
+test("National Guard deployment destinations are limited to unstomped city, base, and Infamy spaces", () => {
+  const state = createGame(2);
+  const destinations = legalNationalGuardDeploymentDestinations(state);
+  assert.equal(destinations.includes(K("denver")), true);
+  assert.equal(destinations.includes(K("los-angeles")), true);
+  assert.equal(destinations.includes(K("infamy-site")), true);
+  assert.equal(destinations.includes(K("dallas")), false);
+  const stomped = { ...state, stompedLocations: [K("denver"), K("infamy-site")] };
+  assert.equal(legalNationalGuardDeploymentDestinations(stomped).includes(K("denver")), false);
+  assert.equal(legalNationalGuardDeploymentDestinations(stomped).includes(K("infamy-site")), false);
+});
+
+test("National Guard deployment creates a neutral unit at a legal destination", () => {
+  const state = createGame(2);
+  state.players[state.currentPlayer].researchCardIds = ["Guard Commander"];
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: state.currentPlayer };
+  const result = applyCommand(state, { type: "deploy", unitId: "national-guard-tank-1", destination: K("infamy-site") });
+  const guard = result.state.units.find((unit) => unit.id === "national-guard-tank-1");
+  assert.equal(guard?.branch, "National Guard");
+  assert.equal(guard?.location, K("infamy-site"));
+  assert.equal(guard?.ownerPlayer, undefined);
+  assert.equal(result.state.deploymentDestinations.includes(K("infamy-site")), true);
+});
+
+test("deployment into a monster space creates a compulsory pending battle", () => {
+  const state = createGame(2);
+  state.players[state.currentPlayer].researchCardIds = ["Guard Commander"];
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: state.currentPlayer };
+  state.monsters[state.currentPlayer].location = K("infamy-site");
+  const result = applyCommand(state, { type: "deploy", unitId: "national-guard-tank-1", destination: K("infamy-site") });
+  assert.equal(result.state.phase, "fight");
+  assert.equal(result.state.pendingBattles.length, 1);
+  assert.deepEqual(result.state.pendingBattles[0].militaryUnitIds, ["national-guard-tank-1"]);
+  assert.equal(result.state.pendingDecision?.type, "battle-resolution");
+});
+
+test("normal battle target validation keeps monster and military target classes separate", () => {
+  const state = createGame(2);
+  state.phase = "fight";
+  state.pendingBattles = [{ id: "invalid-target", monsterId: "monster-1", location: state.monsters[0].location as `${number},${number}`, militaryUnitIds: ["monster-1"] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: state.currentPlayer, battleId: "invalid-target" };
+  assert.throws(() => applyCommand(state, { type: "resolve-fight" }), /non-military target/);
+});
+
+test("a monster may spend Infamy for one recorded extra attack before combat rolls", () => {
+  const state = createGame(2, 0);
+  const monster = state.monsters[0];
+  const unit = state.units[0];
+  state.currentPlayer = 0;
+  state.phase = "fight";
+  state.pendingBattles = [{ id: "infamy-battle", monsterId: monster.id, location: monster.location as `${number},${number}`, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "infamy-battle" };
+  state.stompedLocations = [];
+  monster.infamy = 2;
+  monster.defense = 99;
+  unit.location = monster.location;
+  unit.defense = 99;
+  const result = applyCommand(state, { type: "resolve-fight", spendInfamy: 1 });
+  const attacks = result.eventPayload.attacks as Array<{ attackerId: string }>;
+  assert.equal(result.state.monsters[0].infamy, 1);
+  assert.equal(result.eventPayload.infamySpent, 1);
+  assert.equal(attacks.filter((attack) => attack.attackerId === monster.id).length, monster.attacks * 2 + 1);
+});
+
+test("successful command results remain inventory-conserving at the event boundary", () => {
+  const state = createGame(2);
+  const result = applyCommand(state, { type: "pass-move" });
+  assert.deepEqual(validateInventoryAccounting(result.state), []);
+  assert.equal(result.state.eventLog.at(-1)?.action, "monster.stayed");
+});
+
+test("source-inventoried cards have versioned structured metadata without guessed effects", () => {
+  assert.equal(CARD_DATA_VERSION, 1);
+  assert.equal(CARD_DEFINITIONS.length, 32);
+  assert.equal(CARD_DEFINITIONS.filter((card) => card.deck === "mutation").length, 16);
+  assert.equal(CARD_DEFINITIONS.filter((card) => card.deck === "research").length, 16);
+  assert.equal(cardDefinition("Guard Commander")?.availability, "source-gated");
+  assert.equal(cardDefinition("Guard Commander")?.visibility, "unknown");
+  assert.equal(cardDefinition("Guard Commander")?.lifecycle, "source-gated");
+  assert.deepEqual(unsupportedCardIds(["Guard Commander"]), ["Guard Commander"]);
+  assert.throws(() => assertCardsAvailable(["Guard Commander"]), /source-gated/);
+  assert.deepEqual(sourcedCardRule("Guard Commander"), {
+    id: "Guard Commander",
+    transcription: "You can move and redeploy Guard units. Tanks have Move 3 (land only). Fighters have Move 5 (fly). Other players can't deploy Guard units.",
+    classification: "persistent",
+    timing: "Continuous while face up.",
+    duration: "Until removed from play.",
+    sourceRefs: ["references/monsters-menace-america/components/decks/military-research-01.jpg"],
+    effectsImplementation: "source-gated",
+  });
+  assert.equal(cardDefinition("not-a-card"), undefined);
+});
+
+test("card lifecycle primitives draw deterministically and exhaust without reshuffling", () => {
+  let deck = createCardDeckState(["card-a", "card-b"]);
+  const first = drawCard(deck);
+  deck = first.state;
+  assert.equal(first.cardId, "card-a");
+  const second = drawCard(deck);
+  deck = second.state;
+  assert.equal(second.cardId, "card-b");
+  assert.equal(deck.exhausted, true);
+  deck = discardCard(deck, "card-a");
+  assert.deepEqual(deck.discard, ["card-a"]);
+  const exhausted = drawCard(deck);
+  assert.equal(exhausted.cardId, undefined);
+  assert.equal(exhausted.exhausted, true);
+  assert.throws(() => discardCard(deck, "card-a"), /not an available card/);
+});
+
+test("card lifecycle operations update the authoritative match deck", () => {
+  const state = createGame(2, 19);
+  const drawn = drawCardFromGame(state, "research");
+  assert.equal(drawn.cardId, state.decks.research.order[0]);
+  assert.equal(drawn.state.decks.research.drawIndex, 1);
+  const discarded = discardCardFromGame(drawn.state, "research", drawn.cardId!);
+  assert.deepEqual(discarded.decks.research.discard, [drawn.cardId]);
+  assert.deepEqual(state.decks.research.discard, []);
+});
+
+test("recorded seed determines the first player", () => {
+  assert.equal(createGame(2, 0).currentPlayer, 0);
+  assert.equal(createGame(2, 1).currentPlayer, 1);
+  assert.equal(createGame(3, 2).currentPlayer, 2);
+});
+
+test("seeded replay property preserves inventory, phase progression, and identical state", () => {
+  for (let seed = 0; seed < 32; seed += 1) {
+    let first = createGame(2, seed);
+    let replay = createGame(2, seed);
+    assert.deepEqual(validateInventoryAccounting(first), []);
+    assert.deepEqual(validateInventoryAccounting(replay), []);
+    const applySame = (command: Parameters<typeof applyCommand>[1]) => {
+      first = applyCommand(first, command).state;
+      replay = applyCommand(replay, command).state;
+      assert.deepEqual(validateInventoryAccounting(first), []);
+      assert.deepEqual(first, replay, `seed ${seed} diverged after ${command.type}`);
+    };
+    applySame({ type: "pass-move" });
+    for (let step = 0; first.phase !== "move" && step < 4; step += 1) {
+      const command = first.phase === "deploy"
+        ? { type: "pass-deploy" as const }
+        : first.pendingDecision?.type === "encounter-choice"
+          ? { type: "resolve-encounter" as const, choice: "health" as const }
+          : { type: "advance" as const };
+      applySame(command);
+    }
+    assert.equal(first.phase, "move");
+    assert.equal(first.currentPlayer, (seed + 1) % 2);
+  }
+});
+
+test("matches and seats have stable identities without wall-clock IDs", () => {
+  const state = createGame(3, 42, "match-fixed");
+  assert.equal(state.matchId, "match-fixed");
+  assert.deepEqual(state.players, [
+    { id: "player-1", seat: 0, mutationCardIds: [], researchCardIds: [] },
+    { id: "player-2", seat: 1, mutationCardIds: [], researchCardIds: [] },
+    { id: "player-3", seat: 2, mutationCardIds: [], researchCardIds: [] },
+  ]);
+  assert.equal(new Set(state.players.map((player) => player.id)).size, 3);
+  assert.equal(createGame(3, 42).matchId, createGame(3, 42).matchId);
+});
+
+test("phase transitions expose and enforce the authoritative pending decision", () => {
+  const initial = createGame(2);
+  assert.deepEqual(initial.pendingDecision, {
+    type: "monster-movement",
+    playerIndex: initial.currentPlayer,
+    pieceId: initial.monsters[initial.currentPlayer].id,
+  });
+  const moved = applyCommand(initial, { type: "move", path: ["los-angeles", "denver"] });
+  assert.deepEqual(moved.state.pendingDecision, {
+    type: "battle-resolution",
+    playerIndex: moved.state.currentPlayer,
+    battleId: moved.state.pendingBattles[0].id,
+  });
+  const fought = applyCommand(moved.state, { type: "resolve-fight" });
+  assert.ok(fought.state.pendingDecision?.type === "attack-target" || fought.state.pendingDecision?.type === "retreat" || fought.state.pendingDecision?.type === "encounter-resolution");
+  const afterRetreat = resolveDevelopmentFight(fought.state);
+  const legacy = { ...afterRetreat, pendingDecision: { type: "deployment", playerIndex: 99 } } as any;
+  const migrated = migrateGameState(legacy);
+  assert.equal(migrated.pendingDecision?.type, migrated.phase === "encounter" ? "encounter-resolution" : "deployment");
+  if (migrated.phase === "encounter") {
+    const deployed = applyCommand(migrated, { type: "advance" });
+    assert.equal(deployed.state.phase, "deploy");
+    assert.equal(deployed.state.pendingDecision?.type, "deployment");
+  }
+});
+
+test("command receipts record structured actor, action, outcome, and detail", () => {
+  const result = applyCommandEnvelope(createGame(2), { actionId: "event-1", actorId: "player-1", expectedRevision: 0, protocolVersion: 1, command: { type: "move", path: ["los-angeles", "denver"] } }, 0);
+  const entry = result.state.eventLog.at(-1);
+  assert.equal(entry?.actorId, "player-1");
+  assert.equal(entry?.action, "monster.moved");
+  assert.equal(entry?.outcome, "moved");
+  assert.deepEqual(entry?.detail, { path: ["los-angeles", "denver"], destination: "denver" });
+});
+
+test("legacy schema-1 snapshots without eventLog remain command-compatible", () => {
+  const legacy = createGame(2) as any;
+  delete legacy.eventLog;
+  const result = applyCommand(legacy, { type: "move", path: ["los-angeles", "denver"] });
+  assert.equal(result.state.eventLog.length, 1);
+});
+
+test("schema-1 development positions migrate explicitly to hex keys and schema 2", () => {
+  const legacy = createGame(2) as any;
+  legacy.schemaVersion = 1;
+  legacy.monsters[0].location = "los-angeles";
+  legacy.units[0].location = "denver";
+  legacy.stompedLocations = ["chicago"];
+  const migrated = migrateGameState(legacy);
+  assert.equal(migrated.schemaVersion, 2);
+  assert.equal(migrated.monsters[0].location, K("los-angeles"));
+  assert.equal(migrated.units[0].location, K("denver"));
+  assert.deepEqual(migrated.stompedLocations, [K("chicago")]);
+  assert.equal(migrated.nationalGuard.location, "record-tile");
+  assert.equal(migrated.nationalGuard.control, "neutral");
+});
+
+test("older snapshots receive stable identity defaults during migration", () => {
+  const legacy = createGame(2, 7) as any;
+  delete legacy.matchId;
+  delete legacy.players;
+  delete legacy.removedUnitIds;
+  delete legacy.decks.mutation.discard;
+  delete legacy.decks.mutation.exhausted;
+  legacy.schemaVersion = 1;
+  const migrated = migrateGameState(legacy);
+  assert.equal(migrated.matchId, "development-match-7");
+  assert.deepEqual(migrated.players, [
+    { id: "player-1", seat: 0, mutationCardIds: [], researchCardIds: [] },
+    { id: "player-2", seat: 1, mutationCardIds: [], researchCardIds: [] },
+  ]);
+  assert.deepEqual(migrated.decks.mutation.discard, []);
+  assert.equal(migrated.decks.mutation.exhausted, false);
+  assert.deepEqual(migrated.removedUnitIds, []);
+});
+
+test("command envelopes reject malformed identity, revision, and protocol fields", () => {
+  const state = createGame(2);
+  assert.throws(() => applyCommandEnvelope(state, { actionId: "", actorId: "player-1", expectedRevision: 0, protocolVersion: 1, command: { type: "advance" } }, 0), /requires actionId/);
+  assert.throws(() => applyCommandEnvelope(state, { actionId: "bad-revision", actorId: "player-1", expectedRevision: 0.5, protocolVersion: 1, command: { type: "advance" } }, 0), /requires actionId/);
+  assert.throws(() => applyCommandEnvelope(state, { actionId: "bad-protocol", actorId: "player-1", expectedRevision: 0, protocolVersion: 99, command: { type: "advance" } }, 0), /Unsupported command protocol/);
+});
+
+test("deterministic envelope fuzzing rejects malformed and stale retries without mutating state", () => {
+  const state = createGame(2, 123);
+  const baseline = JSON.stringify(state);
+  const malformed = [
+    { actionId: "", actorId: "player-1", expectedRevision: 0, protocolVersion: 1, command: { type: "pass-move" } },
+    { actionId: "missing-actor", actorId: "", expectedRevision: 0, protocolVersion: 1, command: { type: "pass-move" } },
+    { actionId: "bad-revision", actorId: "player-1", expectedRevision: Number.NaN, protocolVersion: 1, command: { type: "pass-move" } },
+    { actionId: "bad-protocol", actorId: "player-1", expectedRevision: 0, protocolVersion: 2, command: { type: "pass-move" } },
+    { actionId: "unknown-command", actorId: "player-1", expectedRevision: 0, protocolVersion: 1, command: { type: "unknown" } },
+    { actionId: "bad-path", actorId: "player-1", expectedRevision: 0, protocolVersion: 1, command: { type: "move", path: ["not-a-hex"] } },
+  ];
+  for (const envelope of malformed) {
+    assert.throws(() => applyCommandEnvelope(state, envelope as any, 0));
+    assert.equal(JSON.stringify(state), baseline, envelope.actionId || "empty action id");
+  }
+  const accepted = applyCommandEnvelope(state, {
+    actionId: "retryable-pass",
+    actorId: "player-1",
+    expectedRevision: 0,
+    protocolVersion: 1,
+    command: { type: "pass-move" },
+  }, 0);
+  assert.equal(accepted.receipt.revision, 1);
+  assert.throws(() => applyCommandEnvelope(accepted.state, {
+    actionId: "retryable-pass",
+    actorId: "player-1",
+    expectedRevision: 0,
+    protocolVersion: 1,
+    command: { type: "pass-move" },
+  }, 1), /Expected revision 0, current revision is 1/);
+});
+
+test("mutation and research decks contain all source-inventoried cards in seed-stable order", () => {
+  const first = createGame(2, 99);
+  const replay = createGame(2, 99);
+  const different = createGame(2, 100);
+  assert.equal(first.decks.mutation.order.length, 16);
+  assert.equal(first.decks.research.order.length, 16);
+  assert.deepEqual(first.decks, replay.decks);
+  assert.notDeepEqual(first.decks, different.decks);
+  assert.equal(new Set(first.decks.mutation.order).size, 16);
+  assert.equal(new Set(first.decks.research.order).size, 16);
+});
+
+test("player and spectator projections redact deck order while internal state retains it", () => {
+  const state = createGame(2, 99);
+  state.players[0].researchCardIds = ["Guard Commander"];
+  state.players[1].mutationCardIds = ["Rampage"];
+  state.eventLog = [{ id: "private-card", action: "research.drawn", outcome: "drawn", detail: { cardId: "Guard Commander", attacks: [{ mutationCardId: "Rampage" }] } }];
+  assert.equal(projectState(state, "internal").decks.mutation.order.length, 16);
+  assert.deepEqual(projectState(state, "player").decks.mutation.order, []);
+  assert.deepEqual(projectState(state, "spectator").decks.research.order, []);
+  const own = projectState(state, "player", 0);
+  assert.deepEqual(own.players[0].researchCardIds, ["Guard Commander"]);
+  assert.deepEqual(own.players[1].mutationCardIds, []);
+  assert.equal(JSON.stringify(own.eventLog).includes("Guard Commander"), false);
+  assert.equal(JSON.stringify(own.eventLog).includes("Rampage"), false);
+  assert.deepEqual(projectState(state, "spectator").players.map((player) => player.researchCardIds), [[], []]);
+  const serialized = JSON.stringify(own);
+  assert.equal(serialized.includes("x:") || serialized.includes("y:"), false);
+});
+
+test("new matches pin board and ruleset metadata and reject unsupported state schemas", () => {
+  const state = createGame(2);
+  assert.equal(state.boardId, "development-nine-location");
+  assert.equal(state.boardVersion, 1);
+  assert.equal(state.rulesetVersion, "prototype-0.1");
+  assert.throws(() => applyCommand({ ...state, schemaVersion: 999 as 1 }, { type: "advance" }), /Unsupported match-state schema/);
+});
+
+test("movement validates every path edge and the complete path length", () => {
+  const state = { ...createGame(2), units: createGame(2).units.map((unit) => ({ ...unit, location: "record-tile" as const })) };
+  const twoStep = applyCommand(state, { type: "move", path: ["los-angeles", "denver", "chicago"] });
+  assert.equal(twoStep.state.monsters[0].location, K("chicago"));
+  assert.deepEqual(twoStep.state.pendingBattles, []);
+  assert.throws(() => applyCommand(createGame(2), { type: "move", path: ["los-angeles", "denver", "new-york"] }));
+  assert.throws(() => applyCommand(createGame(2), { type: "move", path: ["los-angeles", "denver", "chicago", "new-york", "miami"] }));
+});
+
+test("authoritative movement selectors expose reachable destinations and paths", () => {
+  const state = createGame(2);
+  const paths = legalMonsterPaths(state);
+  assert.ok(paths.some((path) => path.join(">") === `${K("los-angeles")}>${K("denver")}`));
+  assert.equal(paths.some((path) => path.join(">") === `${K("los-angeles")}>${K("denver")}>${K("chicago")}`), false);
+  assert.equal(paths.some((path) => path.at(-1) === K("seattle")), false);
+  assert.ok(legalMonsterDestinations(state).includes(K("denver")));
+  assert.equal(legalMonsterDestinations({ ...state, phase: "fight" }).length, 0);
+});
+
+test("movement modes enforce canonical water classes and allow fly passage", () => {
+  const lakeKey = K("denver");
+  const syntheticBoard = {
+    ...DEVELOPMENT_BOARD,
+    hexes: { ...DEVELOPMENT_BOARD.hexes, [lakeKey]: { ...DEVELOPMENT_BOARD.hexes[lakeKey], waterClass: "lake" as const } },
+  };
+  assert.equal(movementPathAllowed(syntheticBoard, [K("los-angeles"), lakeKey], "land-only"), false);
+  assert.equal(movementPathAllowed(syntheticBoard, [K("los-angeles"), lakeKey], "land-lake"), true);
+  assert.equal(movementPathAllowed(syntheticBoard, [K("los-angeles"), lakeKey], "fly"), true);
+  assert.equal(movementPathAllowed(syntheticBoard, [K("los-angeles"), lakeKey], "sea-seacoast-only"), false);
+});
+
+test("movement modes enforce authored water barriers and reject unresolved edges", () => {
+  const lakeEdgeBoard = {
+    ...DEVELOPMENT_BOARD,
+    edges: DEVELOPMENT_BOARD.edges.map((edge) => edge.from === K("los-angeles") && edge.to === K("denver") ? { ...edge, barrier: "lake" as const } : edge),
+  };
+  assert.equal(movementPathAllowed(lakeEdgeBoard, [K("los-angeles"), K("denver")], "land-only"), false);
+  assert.equal(movementPathAllowed(lakeEdgeBoard, [K("los-angeles"), K("denver")], "land-lake"), true);
+  assert.equal(movementPathAllowed(lakeEdgeBoard, [K("los-angeles"), K("denver")], "land-lake-sea"), true);
+  const seaEdgeBoard = {
+    ...DEVELOPMENT_BOARD,
+    hexes: {
+      ...DEVELOPMENT_BOARD.hexes,
+      [K("los-angeles")]: { ...DEVELOPMENT_BOARD.hexes[K("los-angeles")], waterClass: "sea" as const },
+      [K("denver")]: { ...DEVELOPMENT_BOARD.hexes[K("denver")], waterClass: "sea" as const },
+    },
+    edges: DEVELOPMENT_BOARD.edges.map((edge) => edge.from === K("los-angeles") && edge.to === K("denver") ? { ...edge, barrier: "sea" as const } : edge),
+  };
+  assert.equal(movementPathAllowed(seaEdgeBoard, [K("los-angeles"), K("denver")], "sea-seacoast-only"), true);
+  assert.equal(movementPathAllowed(seaEdgeBoard, [K("los-angeles"), K("denver")], "land-lake"), false);
+  const unresolvedBoard = {
+    ...DEVELOPMENT_BOARD,
+    edges: DEVELOPMENT_BOARD.edges.map((edge) => edge.from === K("los-angeles") && edge.to === K("denver") ? { ...edge, barrier: "unresolved" as const } : edge),
+  };
+  assert.equal(movementPathAllowed(unresolvedBoard, [K("los-angeles"), K("denver")], "fly"), false);
+  assert.equal(movementPathAllowed(DEVELOPMENT_BOARD, ["hollywood" as never, K("denver")], "fly"), false);
+});
+
+test("movement matrix covers every implemented movement mode, water class, barrier, and off-board state", () => {
+  const modes = [
+    ["land-only", { land: true, lake: false, sea: false, seacoast: true, unresolved: false }],
+    ["land-lake", { land: true, lake: true, sea: false, seacoast: true, unresolved: false }],
+    ["land-lake-sea", { land: true, lake: true, sea: true, seacoast: true, unresolved: false }],
+    ["fly", { land: true, lake: true, sea: true, seacoast: true, unresolved: false }],
+    ["sea-seacoast-only", { land: false, lake: false, sea: true, seacoast: true, unresolved: false }],
+    ["sea-seacoast-or-fly", { land: false, lake: false, sea: true, seacoast: true, unresolved: false }],
+    ["stationary", { land: false, lake: false, sea: false, seacoast: false, unresolved: false }],
+  ] as const;
+  for (const [movement, expected] of modes) {
+    for (const waterClass of ["land", "lake", "sea", "seacoast", "unresolved"] as const) {
+      const board = {
+        ...DEVELOPMENT_BOARD,
+        hexes: {
+          ...DEVELOPMENT_BOARD.hexes,
+          [K("los-angeles")]: { ...DEVELOPMENT_BOARD.hexes[K("los-angeles")], waterClass },
+          [K("denver")]: { ...DEVELOPMENT_BOARD.hexes[K("denver")], waterClass },
+        },
+      };
+      assert.equal(movementPathAllowed(board, [K("los-angeles"), K("denver")], movement), expected[waterClass], `${movement} -> ${waterClass}`);
+    }
+  }
+  const barriers = [
+    ["none", { "land-only": true, "land-lake": true, "land-lake-sea": true, fly: true, "sea-seacoast-only": false, "sea-seacoast-or-fly": false, stationary: false }],
+    ["lake", { "land-only": false, "land-lake": true, "land-lake-sea": true, fly: true, "sea-seacoast-only": false, "sea-seacoast-or-fly": false, stationary: false }],
+    ["sea", { "land-only": false, "land-lake": false, "land-lake-sea": true, fly: true, "sea-seacoast-only": false, "sea-seacoast-or-fly": false, stationary: false }],
+    ["unresolved", { "land-only": false, "land-lake": false, "land-lake-sea": false, fly: false, "sea-seacoast-only": false, "sea-seacoast-or-fly": false, stationary: false }],
+  ] as const;
+  for (const [barrier, expected] of barriers) {
+    const board = {
+      ...DEVELOPMENT_BOARD,
+      edges: DEVELOPMENT_BOARD.edges.map((edge) => edge.from === K("los-angeles") && edge.to === K("denver") ? { ...edge, barrier } : edge),
+    };
+    for (const [movement, allowed] of modes) assert.equal(movementPathAllowed(board, [K("los-angeles"), K("denver")], movement), expected[movement], `${barrier} -> ${movement}`);
+  }
+  for (const [barrier, expected] of barriers) {
+    const board = {
+      ...DEVELOPMENT_BOARD,
+      hexes: {
+        ...DEVELOPMENT_BOARD.hexes,
+        [K("los-angeles")]: { ...DEVELOPMENT_BOARD.hexes[K("los-angeles")], waterClass: "sea" as const },
+        [K("denver")]: { ...DEVELOPMENT_BOARD.hexes[K("denver")], waterClass: "sea" as const },
+      },
+      edges: DEVELOPMENT_BOARD.edges.map((edge) => edge.from === K("los-angeles") && edge.to === K("denver") ? { ...edge, barrier } : edge),
+    };
+    const expectedSea = barrier === "none" || barrier === "sea";
+    assert.equal(movementPathAllowed(board, [K("los-angeles"), K("denver")], "sea-seacoast-only"), expectedSea, `${barrier} -> sea-seacoast-only`);
+    assert.equal(movementPathAllowed(board, [K("los-angeles"), K("denver")], "sea-seacoast-or-fly"), expectedSea, `${barrier} -> sea-seacoast-or-fly`);
+  }
+  const offBoard = createGame(2);
+  offBoard.monsters[0].location = "hollywood";
+  offBoard.units[0].location = "record-tile";
+  assert.deepEqual(legalMonsterPaths(offBoard), []);
+  assert.deepEqual(legalUnitPaths(offBoard, offBoard.units[0].id), []);
+});
+
+test("movement stops at military occupancy and rejects monster occupancy", () => {
+  const state = createGame(2);
+  assert.throws(() => applyCommand(state, { type: "move", path: ["los-angeles", "denver", "seattle"] }), /not legal/);
+  const stopped = applyCommand(state, { type: "move", path: ["los-angeles", "denver"] });
+  assert.equal(stopped.state.pendingBattles.length, 1);
+  assert.equal(legalMonsterPaths(state).some((path) => path.join(">") === `${K("los-angeles")}>${K("denver")}>${K("chicago")}`), false);
+});
+
+test("occupancy is derived from positions and supports shared spaces", () => {
+  const state = createGame(2);
+  state.units[0].location = state.monsters[0].location;
+  const occupants = occupantsAt(state, state.monsters[0].location);
+  assert.equal(occupants.monsters.length, 1);
+  assert.equal(occupants.units.length, 1);
+  assert.deepEqual(occupantsAt(state, "__empty__"), { monsters: [], units: [] });
+});
+
+test("pass-move explicitly resolves the monster decision while preserving unmoved units", () => {
+  const state = createGame(2);
+  const passed = applyCommand(state, { type: "pass-move" });
+  assert.equal(passed.state.phase, "encounter");
+  assert.deepEqual(passed.state.movedPieceIds, [state.monsters[state.currentPlayer].id]);
+  assert.deepEqual(passed.state.units.map((unit) => unit.location), state.units.map((unit) => unit.location));
+  assert.equal(passed.eventType, "monster.stayed");
+});
+
+test("pass-deploy advances the turn without inventing a deployment", () => {
+  const encounter = applyCommand(createGame(2), { type: "pass-move" }).state;
+  const deployPhase = applyCommand(encounter, { type: "resolve-encounter", choice: "health" }).state;
+  const beforeUnits = deployPhase.units.length;
+  const passed = applyCommand(deployPhase, { type: "pass-deploy" });
+  assert.equal(passed.state.phase, "move");
+  assert.equal(passed.state.currentPlayer, (deployPhase.currentPlayer + 1) % 2);
+  assert.equal(passed.state.units.length, beforeUnits);
+  assert.equal(passed.eventType, "turn.passed");
+});
+
+test("Deploy can draw one deterministic Military Research card instead of deploying", () => {
+  const state = createGame(2, 17);
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: state.currentPlayer };
+  const expectedCard = state.decks.research.order[0];
+  const unitLocations = state.units.map((unit) => unit.location);
+  const result = applyCommand(state, { type: "draw-research" });
+  assert.equal(result.eventType, "research.drawn");
+  assert.equal(result.eventPayload.cardId, expectedCard);
+  assert.deepEqual(result.state.players[0].researchCardIds, state.currentPlayer === 0 ? [expectedCard] : []);
+  assert.equal(result.state.players[1].researchCardIds.length, state.currentPlayer === 1 ? 1 : 0);
+  assert.equal(result.state.decks.research.drawIndex, 1);
+  assert.equal(result.state.phase, "move");
+  assert.equal(result.state.currentPlayer, (state.currentPlayer + 1) % 2);
+  assert.equal(result.state.deploymentsThisTurn, 0);
+  assert.deepEqual(result.state.units.map((unit) => unit.location), unitLocations);
+});
+
+test("exhausted Military Research cannot consume Deploy or mutate the match", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: state.currentPlayer };
+  state.decks.research = { ...state.decks.research, order: [], drawIndex: 0, exhausted: true };
+  const before = JSON.stringify(state);
+  assert.throws(() => applyCommand(state, { type: "draw-research" }), /Research deck is exhausted/);
+  assert.equal(JSON.stringify(state), before);
+});
+
+test("Deploy consumes a typed record unit, enforces destination uniqueness, and requires an explicit pass", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  const sourceUnit = state.units.find((unit) => unit.branch === "Army" && unit.location === "record-tile");
+  assert.ok(sourceUnit);
+  const deployed = applyCommand(state, { type: "deploy" });
+  assert.equal(deployed.eventType, "unit.deployed");
+  assert.equal(deployed.state.phase, "deploy");
+  assert.equal(deployed.state.deploymentsThisTurn, 1);
+  assert.equal(deployed.state.units.find((unit) => unit.id === sourceUnit.id)?.location, K("denver"));
+  assert.throws(() => applyCommand(deployed.state, { type: "deploy" }), /one newly deployed unit/);
+  const passed = applyCommand(deployed.state, { type: "pass-deploy" });
+  assert.equal(passed.state.phase, "move");
+  assert.equal(passed.state.deploymentsThisTurn, 0);
+  assert.deepEqual(sourceUnitInventoryErrors(passed.state.units), []);
+});
+
+test("normal deployment rejects an already stomped branch base", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  state.currentPlayer = 0;
+  state.stompedLocations = [K("denver")];
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  assert.throws(() => applyCommand(state, { type: "deploy" }), /base is stomped/);
+});
+
+test("deployment matrix covers supported player counts, every branch, inventory, collision, and pass boundaries", () => {
+  for (const playerCount of [2, 3, 4] as const) {
+    const state = createGame(playerCount, 31 + playerCount);
+    assert.equal(state.players.length, playerCount);
+    for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) {
+      const branch = state.setupAssignments?.[playerIndex]?.branch
+        ?? (["Army", "Navy", "Air Force", "Marines"] as const)[playerIndex % 4];
+      state.currentPlayer = playerIndex;
+      state.phase = "deploy";
+      state.pendingDecision = { type: "deployment", playerIndex };
+      const sourceUnit = state.units.find((unit) => unit.branch === branch && unit.location === "record-tile");
+      assert.ok(sourceUnit, `${branch} should have a deployable record unit`);
+      const hasVerifiedBase = Object.values(DEVELOPMENT_BOARD.hexes).some((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch));
+      if (!hasVerifiedBase) {
+        assert.throws(() => applyCommand(state, { type: "deploy" }), /No verified .* base exists/);
+        continue;
+      }
+      const deployed = applyCommand(state, { type: "deploy" });
+      assert.equal(deployed.eventType, "unit.deployed");
+      assert.equal(deployed.eventPayload.branch, branch);
+      assert.equal(deployed.state.deploymentsThisTurn, 1);
+      assert.equal(deployed.state.units.find((unit) => unit.id === sourceUnit.id)?.ownerPlayer, playerIndex);
+      assert.deepEqual(sourceUnitInventoryErrors(deployed.state.units), []);
+      assert.throws(() => applyCommand(deployed.state, { type: "deploy" }), /one newly deployed unit/);
+      const passed = applyCommand(deployed.state, { type: "pass-deploy" });
+      assert.equal(passed.eventType, "turn.passed");
+      assert.equal(passed.state.phase, "move");
+      assert.equal(passed.state.deploymentsThisTurn, 0);
+      assert.deepEqual(sourceUnitInventoryErrors(passed.state.units), []);
+    }
+  }
+
+  const exhausted = createGame(2);
+  exhausted.phase = "deploy";
+  exhausted.currentPlayer = 0;
+  exhausted.pendingDecision = { type: "deployment", playerIndex: 0 };
+  for (const unit of exhausted.units.filter((candidate) => candidate.branch === "Army")) {
+    unit.location = "permanently-removed";
+    exhausted.removedUnitIds.push(unit.id);
+  }
+  assert.throws(() => applyCommand(exhausted, { type: "deploy" }), /No Army unit remains/);
+  assert.deepEqual(sourceUnitInventoryErrors(exhausted.units), []);
+
+  const collision = createGame(2);
+  collision.phase = "deploy";
+  collision.currentPlayer = 0;
+  collision.pendingDecision = { type: "deployment", playerIndex: 0 };
+  const first = applyCommand(collision, { type: "deploy" });
+  assert.throws(() => applyCommand(first.state, { type: "deploy", unitId: "0-1" }), /one newly deployed unit/);
+  assert.deepEqual(sourceUnitInventoryErrors(first.state.units), []);
+});
+
+test("military movement has authoritative paths, shared-unit passage, and a movement ledger", () => {
+  const state = createGame(2);
+  const paths = legalUnitPaths(state, "0-0");
+  assert.ok(paths.some((path) => path.join(">") === `${K("denver")}>${K("chicago")}`));
+  const moved = applyCommand(state, { type: "move-unit", unitId: "0-0", path: ["denver", "chicago"] });
+  assert.equal(moved.state.units.find((unit) => unit.id === "0-0")?.location, K("chicago"));
+  assert.deepEqual(moved.state.movedPieceIds, ["0-0"]);
+  assert.equal(moved.state.phase, "move");
+  assert.throws(() => applyCommand(moved.state, { type: "move-unit", unitId: "0-0", path: ["chicago", "new-york"] }), /not legal/);
+  const battle = applyCommand(createGame(2), { type: "move-unit", unitId: "0-0", path: ["denver", "los-angeles"] });
+  assert.equal(battle.state.phase, "move");
+  assert.deepEqual(battle.state.pendingBattles[0]?.militaryUnitIds, ["0-0"]);
+  const resolvedMove = applyCommand(battle.state, { type: "pass-move" });
+  assert.equal(resolvedMove.state.phase, "fight");
+});
+
+test("Move collects multiple compulsory battles and Fight resolves the chosen battle first", () => {
+  const state = createGame(2, 0);
+  state.monsters[1].location = K("new-york");
+  state.units.find((unit) => unit.id === "2-0")!.location = K("chicago");
+  const first = applyCommand(state, { type: "move-unit", unitId: "0-0", path: ["denver", "los-angeles"] });
+  const second = applyCommand(first.state, { type: "move-unit", unitId: "2-0", path: ["chicago", "new-york"] });
+  assert.equal(second.state.phase, "move");
+  assert.equal(second.state.pendingBattles.length, 2);
+  const firstBattleId = second.state.pendingBattles[0].id;
+  const secondBattleId = second.state.pendingBattles[1].id;
+  const fight = applyCommand(second.state, { type: "pass-move" });
+  assert.equal(fight.state.pendingDecision?.type, "battle-resolution");
+  const chosen = applyCommand(fight.state, { type: "resolve-fight", battleId: secondBattleId });
+  assert.equal(chosen.eventPayload.battleId, secondBattleId);
+  assert.deepEqual(chosen.state.pendingBattles.map((battle) => battle.id), [firstBattleId]);
+  assert.equal(chosen.state.phase, "fight");
+  const final = resolveDevelopmentFight(chosen.state);
+  assert.equal(final.pendingBattles.length, 0);
+  assert.ok(final.phase === "encounter" || final.phase === "deploy");
+});
+
+test("legacy snapshots without a movement ledger remain movement-selector compatible", () => {
+  const state = createGame(2);
+  const legacy = { ...state } as GameState & { movedPieceIds?: string[] };
+  delete legacy.movedPieceIds;
+  assert.ok(legalUnitPaths(legacy, "0-0").some((path) => path.at(-1) === K("chicago")));
+  const moved = applyCommand(legacy, { type: "move-unit", unitId: "0-0", path: ["denver", "chicago"] });
+  assert.deepEqual(moved.state.movedPieceIds, ["0-0"]);
+});
+
+test("movement creates and fight resolution consumes a compulsory pending battle", () => {
+  const moved = applyCommand(createGame(2, 6), { type: "move", path: ["los-angeles", "denver"] }).state;
+  assert.equal(moved.pendingBattles.length, 1);
+  assert.equal(moved.pendingBattles[0].militaryUnitIds.length, 2);
+  const resolved = resolveDevelopmentFight(moved);
+  assert.deepEqual(resolved.pendingBattles, []);
+  assert.ok(resolved.phase === "encounter" || resolved.phase === "deploy");
+});
+
+test("multi-target battle requires and persists an explicit first target", () => {
+  const moved = applyCommand(createGame(2, 6), { type: "move", path: ["los-angeles", "denver"] }).state;
+  assert.equal(moved.pendingBattles[0].militaryUnitIds.length, 2);
+  moved.monsters[0].health = 40;
+  for (const unit of moved.units.filter((candidate) => moved.pendingBattles[0].militaryUnitIds.includes(candidate.id))) unit.defense = 99;
+  const requested = applyCommand(moved, { type: "resolve-fight", battleId: moved.pendingBattles[0].id });
+  assert.equal(requested.eventType, "battle.target-required");
+  assert.equal(requested.state.pendingDecision?.type, "attack-target");
+  assert.equal(requested.state.rng.cursor, moved.rng.cursor);
+  const reloaded = migrateGameState(JSON.parse(JSON.stringify(requested.state)) as GameState);
+  assert.deepEqual(reloaded.pendingAttackTarget, requested.state.pendingAttackTarget);
+  assert.deepEqual(reloaded.pendingDecision, requested.state.pendingDecision);
+  const targetId = reloaded.pendingAttackTarget!.targetIds[1];
+  const firstAttack = applyCommand(reloaded, {
+    type: "resolve-fight",
+    battleId: reloaded.pendingAttackTarget!.battleId,
+    targetUnitId: targetId,
+  });
+  assert.equal(firstAttack.eventType, "battle.target-required");
+  assert.equal(firstAttack.state.pendingCombat?.monsterAttackIndex, 1);
+  const continued = migrateGameState(JSON.parse(JSON.stringify(firstAttack.state)) as GameState);
+  assert.deepEqual(continued.pendingCombat, firstAttack.state.pendingCombat);
+  let resolved = firstAttack;
+  while (resolved.state.pendingDecision?.type === "attack-target") {
+    const decision = resolved.state.pendingDecision;
+    resolved = applyCommand(resolved.state, {
+      type: "resolve-fight",
+      battleId: decision.battleId,
+      targetUnitId: decision.targetIds[0],
+    });
+  }
+  assert.equal(resolved.eventType, "fight.resolved");
+  const monsterAttack = (resolved.eventPayload.attacks as Array<{ attackerId: string; targetId: string }>).find(
+    (attack) => attack.attackerId === reloaded.pendingAttackTarget!.attackerId && attack.targetId === targetId,
+  );
+  assert.equal(monsterAttack?.targetId, targetId);
+});
+
+test("multi-target attack sequencing preserves an explicit Infamy spend", () => {
+  const state = createGame(2, 14);
+  state.currentPlayer = 0;
+  state.monsters[0].health = 40;
+  state.monsters[0].infamy = 1;
+  state.units[0].location = state.monsters[0].location;
+  state.units[2].location = state.monsters[0].location;
+  state.units[0].defense = 99;
+  state.units[2].defense = 99;
+  state.phase = "fight";
+  state.pendingBattles = [{ id: "infamy-sequence", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [state.units[0].id, state.units[2].id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "infamy-sequence" };
+  const requested = applyCommand(state, { type: "resolve-fight", battleId: "infamy-sequence", spendInfamy: 1 });
+  assert.equal(requested.state.pendingAttackTarget?.spendInfamy, 1);
+  const first = applyCommand(requested.state, { type: "resolve-fight", battleId: "infamy-sequence", targetUnitId: requested.state.pendingAttackTarget!.targetIds[0] });
+  assert.equal(first.state.monsters[0].infamy, 0);
+  assert.equal(first.state.pendingCombat?.spendInfamy, 1);
+});
+
+test("deterministic combat fixtures cover misses, hits, smashes, and selected-target sequencing", () => {
+  let miss: { hit: boolean; roll: number } | undefined;
+  let hit: { hit: boolean; roll: number } | undefined;
+  let smash: { smash: boolean; roll: number } | undefined;
+  for (let seed = 0; seed < 256 && (!miss || !hit || !smash); seed += 1) {
+    const state = createGame(2, seed);
+    state.currentPlayer = 0;
+    state.monsters[0].health = 40;
+    state.units[0].location = state.monsters[0].location;
+    state.units[0].defense = 4;
+    state.phase = "fight";
+    state.pendingBattles = [{ id: "fixture-battle", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [state.units[0].id] }];
+    state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "fixture-battle" };
+    const result = applyCommand(state, { type: "resolve-fight" });
+    const attack = (result.eventPayload.attacks as Array<{ attackerId: string; hit: boolean; smash: boolean; roll: number }>).find((entry) => entry.attackerId === "monster-1");
+    if (!attack) continue;
+    if (!attack.hit) miss = attack;
+    if (attack.hit && !attack.smash) hit = attack;
+    if (attack.smash) smash = attack;
+  }
+  assert.ok(miss && miss.roll < 4, "a deterministic monster miss fixture should exist");
+  assert.ok(hit && hit.roll >= 4 && hit.roll < 6, "a deterministic monster hit fixture should exist");
+  assert.ok(smash?.smash && smash.roll === 6, "a deterministic natural-six smash fixture should exist");
+
+  const state = createGame(2, 0);
+  state.currentPlayer = 0;
+  state.monsters[0].health = 40;
+  state.units[0].location = state.monsters[0].location;
+  state.units[2].location = state.monsters[0].location;
+  state.units[0].defense = 99;
+  state.units[2].defense = 99;
+  state.phase = "fight";
+  state.pendingBattles = [{ id: "sequence-battle", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [state.units[0].id, state.units[2].id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "sequence-battle" };
+  const requested = applyCommand(state, { type: "resolve-fight" });
+  const firstTarget = requested.state.pendingAttackTarget!.targetIds[1];
+  let resolved = applyCommand(requested.state, { type: "resolve-fight", battleId: "sequence-battle", targetUnitId: firstTarget });
+  let followUpChoice = 0;
+  while (resolved.state.pendingDecision?.type === "attack-target") {
+    const decision = resolved.state.pendingDecision;
+    resolved = applyCommand(resolved.state, { type: "resolve-fight", battleId: "sequence-battle", targetUnitId: decision.targetIds[followUpChoice % decision.targetIds.length] });
+    followUpChoice += 1;
+  }
+  const monsterTargets = (resolved.eventPayload.attacks as Array<{ attackerId: string; targetId: string }>)
+    .filter((entry) => entry.attackerId === "monster-1")
+    .map((entry) => entry.targetId);
+  assert.deepEqual(monsterTargets.slice(0, 3), [firstTarget, requested.state.pendingAttackTarget!.targetIds[0], firstTarget]);
+});
+
+test("surviving normal battle requires retreat and suppresses Encounter", () => {
+  const moved = applyCommand(createGame(2, 8), { type: "move", path: ["los-angeles", "denver"] }).state;
+  moved.monsters[0].health = 40;
+  moved.pendingBattles[0].militaryUnitIds = ["0-0"];
+  moved.units.find((unit) => unit.id === "0-0")!.defense = 99;
+  const fought = applyCommand(moved, { type: "resolve-fight" }).state;
+  assert.equal(fought.pendingDecision?.type, "retreat");
+  assert.ok(fought.pendingRetreat);
+  const destinations = Object.fromEntries(fought.pendingRetreat.unitIds.map((unitId) => [unitId, fought.pendingRetreat!.options[unitId][0] ?? "disappeared"]));
+  const retreated = applyCommand(fought, { type: "retreat", destinations });
+  assert.equal(retreated.eventType, "retreat.resolved");
+  assert.equal(retreated.state.encounterSuppressed, true);
+  assert.equal(retreated.state.pendingRetreat, undefined);
+  assert.ok(retreated.state.phase === "deploy" || retreated.state.phase === "fight");
+  if (retreated.state.phase === "deploy") {
+    const nextTurn = applyCommand(retreated.state, { type: "pass-deploy" });
+    assert.equal(nextTurn.state.encounterSuppressed, false);
+    assert.equal(nextTurn.state.pendingDecision?.type, "monster-movement");
+  }
+});
+
+test("a battle with no legal retreat forces disappearance and skips Encounter", () => {
+  const state = createGame(2);
+  state.phase = "fight";
+  state.monsters[0].location = K("denver");
+  state.units[0].location = K("denver");
+  state.pendingBattles = [{ id: "no-retreat", monsterId: "monster-1", location: K("denver"), militaryUnitIds: ["0-0"] }];
+  state.pendingRetreat = { battleId: "no-retreat", unitIds: ["0-0"], options: { "0-0": [] } };
+  state.pendingDecision = { type: "retreat", playerIndex: state.currentPlayer, battleId: "no-retreat", unitIds: ["0-0"] };
+  const result = applyCommand(state, { type: "retreat", destinations: { "0-0": "disappeared" } });
+  assert.equal(result.state.units.find((unit) => unit.id === "0-0")?.location, "disappeared");
+  assert.equal(result.state.encounterSuppressed, true);
+  assert.equal(result.state.phase, "deploy");
+  assert.equal(result.state.pendingDecision?.type, "deployment");
+  assert.deepEqual(result.eventPayload.disappearedUnitIds, ["0-0"]);
+});
+
+test("the simplified Stomp exhaustion rule produces one terminal winner and freezes commands", () => {
+  let state = createGame(2);
+  state.stompMarkers = 1;
+  state.units.forEach((unit) => { unit.location = "record-tile"; });
+  state = applyCommand(state, { type: "move", path: ["los-angeles", "denver"] }).state;
+  state = applyCommand(state, { type: "advance" }).state;
+  assert.equal(state.phase, "game-over");
+  assert.equal(state.winnerPlayer, 0);
+  assert.equal(state.victoryType, "development-stomp-exhaustion");
+  assert.throws(() => applyCommand(state, { type: "advance" }), /match is complete/);
+});
+
+test("every command is rejected after terminal state without changing the winner", () => {
+  let state = createGame(2);
+  state.stompMarkers = 1;
+  state.units.forEach((unit) => { unit.location = "record-tile"; });
+  state = applyCommand(state, { type: "move", path: ["los-angeles", "denver"] }).state;
+  state = applyCommand(state, { type: "advance" }).state;
+  const snapshot = JSON.stringify(state);
+  const commands = [
+    { type: "move", path: ["los-angeles", "denver"] },
+    { type: "move-unit", unitId: "0-0", path: ["denver", "chicago"] },
+    { type: "pass-move" }, { type: "resolve-fight" }, { type: "resolve-encounter" },
+    { type: "deploy" }, { type: "pass-deploy" }, { type: "advance" }
+  ] as const;
+  for (const command of commands) {
+    assert.throws(() => applyCommand(state, command), /match is complete/);
+    assert.equal(JSON.stringify(state), snapshot);
+  }
+});
+
+test("the development fixture can end when its smaller abstract board is exhausted", () => {
+  const state = createGame(2);
+  state.monsters[0].location = K("los-angeles");
+  state.stompedLocations = locations.filter((location) => location.id !== "los-angeles").map((location) => K(location.id));
+  state.stompMarkers = 14;
+  const result = applyCommand(state, { type: "pass-move" }).state;
+  const encounter = applyCommand(result, { type: "resolve-encounter", choice: "health" }).state;
+  assert.equal(encounter.phase, "game-over");
+  assert.equal(encounter.victoryType, "development-board-exhaustion");
+});
+
+test("phase-specific commands resolve Fight, Encounter, and Deploy explicitly", () => {
+  let state = applyCommand(createGame(2), { type: "move", path: ["los-angeles", "denver"] }).state;
+  state = resolveDevelopmentFight(state);
+  if (state.phase === "encounter") state = applyCommand(state, { type: "resolve-encounter", choice: "health" }).state;
+  else assert.equal(state.phase, "deploy");
+  state = applyCommand(state, { type: "deploy" }).state;
+  if (state.phase === "fight") state = resolveDevelopmentFight(state);
+  assert.equal(state.phase, "deploy");
+  state = applyCommand(state, { type: "pass-deploy" }).state;
+  assert.equal(state.phase, "move");
+});
 
 test("a legal move advances the game to fight", () => {
   const state = createGame(2);
-  const result = applyCommand(state, { type: "move", destination: "denver" });
+  const result = applyCommand(state, { type: "move", path: ["los-angeles", "denver"] });
   assert.equal(result.state.phase, "fight");
-  assert.equal(result.state.monsters[0].location, "denver");
+  assert.equal(result.state.monsters[0].location, K("denver"));
   assert.equal(result.eventType, "monster.moved");
 });
 
 test("an illegal move is rejected", () => {
-  assert.throws(() => applyCommand(createGame(2), { type: "move", destination: "new-york" }));
+  const state = createGame(2);
+  const before = JSON.stringify(state);
+  assert.throws(() => applyCommand(state, { type: "move", path: ["los-angeles", "new-york"] }));
+  assert.equal(JSON.stringify(state), before);
 });
 
 test("a complete turn returns to move for the next player", () => {
   let state = createGame(2);
-  state = applyCommand(state, { type: "move", destination: "denver" }).state;
-  state = applyCommand(state, { type: "advance" }).state;
-  state = applyCommand(state, { type: "advance" }).state;
-  state = applyCommand(state, { type: "advance" }).state;
+  state = applyCommand(state, { type: "move", path: ["los-angeles", "denver"] }).state;
+  state = resolveDevelopmentFight(state);
+  if (state.phase === "encounter") state = applyCommand(state, { type: "advance" }).state;
+  if (state.phase === "deploy") state = applyCommand(state, { type: "pass-deploy" }).state;
   assert.equal(state.phase, "move");
   assert.equal(state.currentPlayer, 1);
+});
+
+test("combat rolls and stomped-base deployment rejection are deterministic and recorded", () => {
+  const initialUnitCount = createGame(2, 76).units.length;
+  const firstMove = applyCommand(createGame(2, 76), { type: "move", path: ["los-angeles", "denver"] });
+  const firstFight = applyCommand(firstMove.state, { type: "advance" });
+  const firstEncounter = applyCommand(firstFight.state, { type: "advance" });
+  const firstDeploy = applyCommand(firstEncounter.state, { type: "pass-deploy" });
+
+  const replayMove = applyCommand(createGame(2, 76), { type: "move", path: ["los-angeles", "denver"] });
+  const replayFight = applyCommand(replayMove.state, { type: "advance" });
+  const replayEncounter = applyCommand(replayFight.state, { type: "advance" });
+  const replayDeploy = applyCommand(replayEncounter.state, { type: "pass-deploy" });
+
+  assert.deepEqual(firstFight.eventPayload, replayFight.eventPayload);
+  assert.equal((firstFight.eventPayload.attacks as Array<{ attackerId: string; targetId: string; modifiers: string[] }>)[0]?.attackerId, "0-1");
+  assert.equal((firstFight.eventPayload.attacks as Array<{ attackerId: string; targetId: string; modifiers: string[] }>)[0]?.targetId, "monster-1");
+  assert.deepEqual((firstFight.eventPayload.attacks as Array<{ modifiers: string[] }>)[0]?.modifiers, ["extra first-round attack before monster"]);
+  assert.equal((firstEncounter.eventPayload.effects as Array<{ type: string }>).some((effect) => effect.type === "stomp"), true);
+  assert.equal(firstDeploy.eventType, "turn.passed");
+  assert.equal(firstDeploy.eventPayload.nextPhase, "move");
+  assert.deepEqual(firstDeploy.state, replayDeploy.state);
+  assert.equal(firstDeploy.state.units.length, initialUnitCount);
+  assert.deepEqual(sourceUnitInventoryErrors(firstDeploy.state.units), []);
+  assert.equal(firstDeploy.state.units.find((unit) => unit.id === "0-0")?.location, "record-tile");
+  assert.equal(firstFight.eventPayload.combatRounds, 2);
+  assert.equal(typeof (firstFight.eventPayload.attacks as Array<{ smash: boolean }>)[0]?.smash, "boolean");
+  assert.equal((firstFight.eventPayload.rolls as number[]).length, 4);
+  assert.equal(JSON.stringify(firstDeploy.state), JSON.stringify(replayDeploy.state));
+});
+
+test("a completed development setup is carried into the local game state", () => {
+  let setup = createSetup({ playerCount: 2, monsterIds: ["monster-1", "monster-2"], eligibleBranches: ["Army", "Navy"], lairsByMonster: { "monster-1": ["los-angeles", "seattle", "denver"], "monster-2": ["chicago", "new-york", "miami"] } });
+  setup = chooseMonster(setup, 0, "monster-1");
+  setup = chooseMonster(setup, 1, "monster-2");
+  setup = chooseBranch(setup, 1, "Army");
+  setup = chooseBranch(setup, 0, "Navy");
+  setup = chooseLair(setup, 0, "los-angeles");
+  setup = chooseLair(setup, 1, "chicago");
+  setup = chooseStartingChoice(setup, 0, { kind: "research" });
+  setup = chooseStartingChoice(setup, 1, { kind: "research" });
+  const game = createGameFromSetup(setup);
+  assert.deepEqual(game.setupAssignments?.map((seat) => seat.monsterId), ["monster-1", "monster-2"]);
+  assert.deepEqual(game.monsters.map((monster) => monster.id), ["monster-1", "monster-2"]);
+});
+
+test("a monster can disappear, return to its assigned lair, and consume the return Move step", () => {
+  const state = createGame(2);
+  state.setupAssignments = [
+    { playerIndex: 0, monsterId: "monster-1", branch: "Army", lair: "los-angeles", startingChoice: { kind: "research" }, ready: true },
+    { playerIndex: 1, monsterId: "monster-2", branch: "Navy", lair: "chicago", startingChoice: { kind: "research" }, ready: true },
+  ];
+  state.currentPlayer = 0;
+  state.monsters[0].health = 1;
+  const disappeared = applyCommand(state, { type: "disappear-monster" });
+  assert.equal(disappeared.eventType, "monster.disappeared");
+  assert.equal(disappeared.state.monsters[0].location, "disappeared");
+  assert.equal(disappeared.state.phase, "deploy");
+
+  const nextPlayer = applyCommand(disappeared.state, { type: "pass-deploy" }).state;
+  const playerOneEncounter = applyCommand(nextPlayer, { type: "pass-move" }).state;
+  const playerOneDeploy = applyCommand(playerOneEncounter, { type: "resolve-encounter" }).state;
+  const returningPlayer = applyCommand(playerOneDeploy, { type: "pass-deploy" }).state;
+  assert.equal(returningPlayer.currentPlayer, 0);
+  assert.equal(returningPlayer.monsters[0].location, K("los-angeles"));
+  assert.equal(returningPlayer.monsters[0].health, returningPlayer.monsters[0].startingHealth);
+  assert.equal(returningPlayer.movedPieceIds.includes("monster-1"), true);
+  const finishedMove = applyCommand(returningPlayer, { type: "pass-move" });
+  assert.equal(finishedMove.state.phase, "deploy");
+  assert.equal(finishedMove.state.pendingDecision?.type, "deployment");
+});
+
+test("Hollywood monsters cannot disappear", () => {
+  const state = createGame(2);
+  state.setupAssignments = [{ playerIndex: 0, monsterId: "monster-1", lair: "los-angeles", ready: true }];
+  state.monsters[0].location = "hollywood";
+  assert.throws(() => applyCommand(state, { type: "disappear-monster" }), /Hollywood monster cannot disappear/);
+});
+
+test("a defeated monster goes to Hollywood and recovers at the start of its next turn", () => {
+  const state = createGame(2);
+  state.phase = "fight";
+  state.currentPlayer = 0;
+  state.monsters[0].health = 0;
+  const battleLocation = state.monsters[0].location as `${number},${number}`;
+  state.pendingBattles = [{ id: "monster-1:1:test", monsterId: "monster-1", location: battleLocation, militaryUnitIds: [] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "monster-1:1:test" };
+  const defeated = applyCommand(state, { type: "resolve-fight" });
+  assert.equal(defeated.state.monsters[0].location, "hollywood");
+  assert.equal(defeated.state.monsters[0].infamy, 0);
+  assert.equal(defeated.state.phase, "deploy");
+
+  const recovering = defeated.state;
+  recovering.currentPlayer = 1;
+  recovering.pendingDecision = { type: "deployment", playerIndex: 1 };
+  const nextTurn = applyCommand(recovering, { type: "pass-deploy" }).state;
+  assert.equal(nextTurn.currentPlayer, 0);
+  assert.equal(nextTurn.monsters[0].health > 0, true);
+  assert.equal(nextTurn.movedPieceIds.includes("monster-1"), true);
+  assert.equal(nextTurn.encounterSuppressed, true);
+  assert.equal(nextTurn.phase, "move");
+});
+
+test("encounter stomps are persisted once and Infamy is capped", () => {
+  let state = createGame(2);
+  state.phase = "encounter";
+  state.monsters[0].location = "infamy-site";
+  state.monsters[0].infamy = 14;
+  const first = applyCommand(state, { type: "resolve-encounter" });
+  assert.deepEqual(first.state.stompedLocations, ["infamy-site"]);
+  assert.equal(first.state.stompMarkers, 13);
+  assert.equal(first.state.monsters[0].infamy, 15);
+  const secondState = { ...first.state, phase: "encounter" as const };
+  const second = applyCommand(secondState, { type: "resolve-encounter" });
+  assert.equal(second.state.stompMarkers, 13);
+  assert.equal(second.state.monsters[0].infamy, 15);
+  assert.equal(second.eventPayload.stomped, false);
+});
+
+test("Megaclaw receives its source-backed three-Infamy site benefit", () => {
+  const state = createGame(4);
+  state.currentPlayer = 3;
+  state.phase = "encounter";
+  state.monsters[3].name = "Megaclaw";
+  state.monsters[3].location = K("infamy-site");
+  state.monsters[3].infamy = 12;
+  const result = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(result.state.monsters[3].infamy, 15);
+  assert.deepEqual(result.eventPayload.effects, [
+    { type: "infamy", amount: 3, source: "infamy-site" },
+    { type: "stomp", amount: 1, source: "infamy-site" },
+  ]);
+});
+
+test("Zorb city encounter exposes and applies its source-backed benefit choice", () => {
+  const state = createGame(2);
+  state.phase = "encounter";
+  state.monsters[0].location = K("los-angeles");
+  state.monsters[0].health = 11;
+  const pending = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(pending.state.phase, "encounter");
+  assert.equal(pending.state.pendingDecision?.type, "encounter-choice");
+  assert.deepEqual(pending.state.pendingEncounterChoice?.choices, ["health", "infamy"]);
+  assert.throws(() => applyCommand(pending.state, { type: "advance" }), /city benefit choice is required/);
+  const resolved = applyCommand(pending.state, { type: "resolve-encounter", choice: "infamy" });
+  assert.equal(resolved.state.monsters[0].infamy, 2);
+  assert.equal(resolved.state.monsters[0].health, 11);
+  assert.equal(resolved.state.pendingDecision?.type, "deployment");
+});
+
+test("Encounter is gated by movement and pending battles, and development features are covered", () => {
+  const featureKinds = new Set(Object.values(DEVELOPMENT_BOARD.hexes).flatMap((hex) => hex.features.map((feature) => feature.kind)));
+  assert.deepEqual([...featureKinds].sort(), ["challenge-site", "city", "infamy-site", "military-base", "mutation-site"]);
+
+  const initial = createGame(2);
+  assert.throws(() => applyCommand(initial, { type: "resolve-encounter" }), /advance action available|pending decision/);
+
+  const moved = applyCommand(initial, { type: "move", path: ["los-angeles", "denver"] }).state;
+  assert.equal(moved.phase, "fight");
+  assert.equal(moved.pendingBattles.length, 1);
+  assert.throws(() => applyCommand(moved, { type: "resolve-encounter" }), /advance action available|pending decision/);
+});
+
+test("stomped spaces do not consume another Stomp marker", () => {
+  const state = createGame(2);
+  state.phase = "encounter";
+  state.monsters[0].location = K("seattle");
+  state.stompedLocations = [K("seattle")];
+  const result = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(result.state.stompMarkers, state.stompMarkers);
+  assert.deepEqual(result.eventPayload.effects, []);
+  assert.equal(result.state.phase, "deploy");
+});
+
+test("military-base Encounter grants Infamy and requires a legal branch trophy", () => {
+  const state = createGame(2);
+  state.setupAssignments = [
+    { playerIndex: 0, monsterId: "monster-1", branch: "Navy", lair: "los-angeles", ready: true },
+    { playerIndex: 1, monsterId: "monster-2", branch: "Army", lair: "chicago", ready: true },
+  ];
+  state.phase = "encounter";
+  state.currentPlayer = 0;
+  state.monsters[0].location = K("denver");
+  const pending = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(pending.eventType, "trophy.choice-required");
+  assert.equal(pending.state.monsters[0].infamy, 1);
+  assert.equal(pending.state.pendingDecision?.type, "trophy-choice");
+  const trophyId = pending.state.pendingTrophyChoice!.unitIds[0];
+  const chosen = applyCommand(pending.state, { type: "resolve-encounter", trophyUnitId: trophyId });
+  assert.equal(chosen.eventType, "trophy.chosen");
+  assert.equal(chosen.state.units.find((unit) => unit.id === trophyId)?.location, "permanently-removed");
+  assert.equal(chosen.state.removedUnitIds.includes(trophyId), true);
+  assert.equal(chosen.state.phase, "deploy");
+});
+
+test("Mutation sites are usable once per monster and do not invent a Health reward", () => {
+  const state = createGame(2);
+  state.phase = "encounter";
+  state.monsters[0].location = K("dallas");
+  state.monsters[0].health = 10;
+  const first = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(first.state.monsters[0].health, 10);
+  assert.deepEqual(first.state.mutationSiteUses["monster-1"], ["dallas"]);
+  const secondState = { ...first.state, phase: "encounter" as const, pendingDecision: { type: "encounter-resolution" as const, playerIndex: 0, location: K("dallas") } };
+  const second = applyCommand(secondState, { type: "resolve-encounter" });
+  assert.deepEqual(second.state.mutationSiteUses["monster-1"], ["dallas"]);
+  assert.equal(second.state.monsters[0].health, 10);
+});
+
+test("Challenge sites are inert before the Monster Challenge is declared", () => {
+  const state = createGame(2);
+  state.phase = "encounter";
+  state.monsters[0].location = K("miami");
+  const result = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(result.state.stompMarkers, state.stompMarkers);
+  assert.deepEqual(result.eventPayload.effects, []);
+  assert.equal(result.state.phase, "deploy");
+});
+
+test("Konk applies its source-backed fighter attack modifier", () => {
+  let attack: any;
+  for (let seed = 0; seed < 128 && !attack; seed += 1) {
+    const state = createGame(2, seed);
+    state.currentPlayer = 0;
+    state.monsters[0].name = "Konk";
+    state.units[0].location = state.monsters[0].location;
+    const navyFighter = state.units.find((unit) => unit.unitTypeId === "navy-fighter" && unit.id !== state.units[0].id)!;
+    const originalType = state.units[0].unitTypeId;
+    state.units[0].unitTypeId = "navy-fighter";
+    navyFighter.unitTypeId = originalType;
+    state.units[0].defense = 5;
+    state.phase = "fight";
+    state.pendingBattles = [{ id: "test-battle", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [state.units[0].id] }];
+    state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "test-battle" };
+    const result = applyCommand(state, { type: "resolve-fight" });
+    const first = (result.eventPayload.attacks as Array<{ roll: number; hit: boolean; modifiers: readonly string[] }>)[0];
+    if (first?.roll === 4) attack = first;
+  }
+  assert.ok(attack, "a deterministic fixture with a roll of four should exist");
+  assert.equal(attack.hit, true);
+  assert.deepEqual(attack.modifiers, ["+1 to hit fighters"]);
+});
+
+test("Army Missile Launcher makes its source-backed pre-monster first-round attack", () => {
+  const state = createGame(2, 0);
+  state.currentPlayer = 0;
+  state.monsters[0].health = 40;
+  state.units[1].location = state.monsters[0].location;
+  state.phase = "fight";
+  state.pendingBattles = [{ id: "missile-battle", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [state.units[1].id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "missile-battle" };
+  const result = applyCommand(state, { type: "resolve-fight" });
+  const first = (result.eventPayload.attacks as Array<{ attackerId: string; modifiers: readonly string[] }>)[0];
+  assert.equal(first.attackerId, state.units[1].id);
+  assert.deepEqual(first.modifiers, ["extra first-round attack before monster"]);
+});
+
+test("Air Force Cruise Missile is source-backed one-round hardware", () => {
+  const state = createGame(2, 0);
+  state.currentPlayer = 0;
+  state.monsters[0].health = 40;
+  state.units[5].location = state.monsters[0].location;
+  state.phase = "fight";
+  state.pendingBattles = [{ id: "cruise-battle", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [state.units[5].id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "cruise-battle" };
+  const result = applyCommand(state, { type: "resolve-fight" });
+  assert.equal(result.state.units[5].location, "record-tile");
+  assert.ok((result.eventPayload.destroyedUnitIds as string[]).includes(state.units[5].id));
+  assert.equal((result.eventPayload.attacks as Array<{ attackerId: string }>).filter((attack) => attack.attackerId === state.units[5].id).length, 1);
+});
+
+test("Air Force Cruise Missile roll of one draws a face-up mutation card before later attacks", () => {
+  let mutationResult: ReturnType<typeof applyCommand> | undefined;
+  let missileId = "";
+  for (let seed = 0; seed < 256 && !mutationResult; seed += 1) {
+    const state = createGame(2, seed);
+    state.currentPlayer = 0;
+    state.monsters[0].health = 40;
+    state.monsters[0].defense = 99;
+    state.units[5].location = state.monsters[0].location;
+    missileId = state.units[5].id;
+    state.units[5].defense = 99;
+    state.phase = "fight";
+    state.pendingBattles = [{ id: "cruise-mutation-battle", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [state.units[5].id] }];
+    state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "cruise-mutation-battle" };
+    const result = applyCommand(state, { type: "resolve-fight" });
+    if ((result.eventPayload.attacks as Array<{ attackerId: string; roll: number }>).some((attack) => attack.attackerId === state.units[5].id && attack.roll === 1)) mutationResult = result;
+  }
+  assert.ok(mutationResult, "a deterministic seed with a cruise-missile mutation roll should exist");
+  const mutationAttack = (mutationResult!.eventPayload.attacks as Array<{ attackerId: string; mutationCardId?: string }>).find((attack) => attack.attackerId === missileId && attack.mutationCardId);
+  assert.ok(mutationAttack?.mutationCardId);
+  assert.equal(mutationResult!.state.players[0].mutationCardIds.length, 1);
+  assert.equal(mutationResult!.state.decks.mutation.drawIndex, 1);
+  const reloaded = migrateGameState(JSON.parse(JSON.stringify(mutationResult!.state)) as GameState);
+  assert.deepEqual(reloaded.players[0].mutationCardIds, mutationResult!.state.players[0].mutationCardIds);
+  assert.equal(reloaded.decks.mutation.drawIndex, mutationResult!.state.decks.mutation.drawIndex);
+});
+
+test("encounter rewards, trophy removal, health, mutation history, and stomp state survive save/reload and replay", () => {
+  const state = createGame(2, 23);
+  state.setupAssignments = [
+    { playerIndex: 0, monsterId: "monster-1", branch: "Army", lair: "los-angeles", startingChoice: { kind: "research" }, ready: true },
+    { playerIndex: 1, monsterId: "monster-2", branch: "Navy", lair: "chicago", startingChoice: { kind: "research" }, ready: true },
+  ];
+  state.currentPlayer = 0;
+  state.phase = "encounter";
+  state.pendingDecision = { type: "encounter-resolution", playerIndex: 0, location: K("denver") };
+  state.monsters[0].location = K("denver");
+  state.monsters[0].health = 23;
+  state.monsters[0].infamy = 14;
+  state.stompedLocations = [K("infamy-site")];
+  state.mutationSiteUses = { "monster-1": ["dallas"] };
+  state.players[0].mutationCardIds = ["Rampage"];
+
+  const encountered = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(encountered.state.monsters[0].health, 23);
+  assert.equal(encountered.state.monsters[0].infamy, 15);
+  assert.deepEqual(encountered.state.stompedLocations, [K("infamy-site"), K("denver")]);
+  assert.equal(encountered.state.pendingDecision?.type, "trophy-choice");
+  const trophyUnitId = encountered.state.pendingTrophyChoice!.unitIds[0];
+
+  const reloaded = migrateGameState(JSON.parse(JSON.stringify(encountered.state)) as GameState);
+  assert.equal(reloaded.monsters[0].health, encountered.state.monsters[0].health);
+  assert.equal(reloaded.monsters[0].infamy, encountered.state.monsters[0].infamy);
+  assert.deepEqual(reloaded.stompedLocations, encountered.state.stompedLocations);
+  assert.deepEqual(reloaded.mutationSiteUses, encountered.state.mutationSiteUses);
+  assert.deepEqual(reloaded.players[0].mutationCardIds, encountered.state.players[0].mutationCardIds);
+  assert.deepEqual(reloaded.pendingTrophyChoice, encountered.state.pendingTrophyChoice);
+
+  const chosen = applyCommand(encountered.state, { type: "resolve-encounter", trophyUnitId });
+  const replayed = applyCommand(reloaded, { type: "resolve-encounter", trophyUnitId });
+  assert.equal(JSON.stringify(replayed.state), JSON.stringify(chosen.state));
+  assert.equal(replayed.state.removedUnitIds.includes(trophyUnitId), true);
+  assert.equal(replayed.state.units.find((unit) => unit.id === trophyUnitId)?.location, "permanently-removed");
+});
+
+test("development city markers resolve fixed and dice health benefits with the cap", () => {
+  const fixed = createGame(2, 11);
+  fixed.currentPlayer = 0;
+  fixed.phase = "encounter";
+  fixed.monsters[0].location = K("chicago");
+  fixed.monsters[0].health = 10;
+  const fixedResult = applyCommand(fixed, { type: "resolve-encounter", choice: "health" });
+  assert.equal(fixedResult.state.monsters[0].health, 12);
+  assert.deepEqual(fixedResult.eventPayload.effects, [
+    { type: "health", amount: 2, source: "chicago" },
+    { type: "stomp", amount: 1, source: "chicago" },
+  ]);
+
+  const dice = createGame(2, 11);
+  dice.currentPlayer = 0;
+  dice.phase = "encounter";
+  dice.monsters[0].location = K("los-angeles");
+  dice.monsters[0].health = 39;
+  const diceResult = applyCommand(dice, { type: "resolve-encounter", choice: "health" });
+  assert.equal(diceResult.state.monsters[0].health, 40);
+  assert.equal(diceResult.state.rng.cursor, 3);
+  assert.equal((diceResult.eventPayload.effects as Array<{ type: string; amount: number }>).find((effect) => effect.type === "health")?.amount, 1);
 });

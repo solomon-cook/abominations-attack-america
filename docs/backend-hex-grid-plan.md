@@ -26,7 +26,7 @@ This is a backend and domain-data plan. It does not prescribe client artwork, ca
 
 The current prototype has two separate map concepts:
 
-- `apps/web/src/main.tsx` draws a decorative 12 by 19 offset grid and assigns water cells in client code.
+- `apps/web/src/main.tsx` renders a neutral staggered 13-row visual lattice (alternating 20 and 19 cells) for board orientation and overlays the nine `DEVELOPMENT_BOARD.hexes` as interactive development spaces; the lattice cells are explicitly non-authoritative and carry no inferred water, feature, or movement data.
 - `packages/game-engine/src/index.ts` defines a small abstract set of locations using percentage `x`/`y` positions and manually authored `links`.
 
 The API already has useful foundations:
@@ -37,6 +37,8 @@ The API already has useful foundations:
 - optimistic concurrency prevents two commands from committing the same revision;
 - action IDs provide partial retry protection;
 - HTTP, WebSockets and polling support online players and spectators.
+
+The first schema implementation now lives in `packages/game-engine/src/board.ts`. It provides axial identity, explicit edges, composable features, immutable metadata/hash generation, a generated lookup index, and structural validation. `DEVELOPMENT_BOARD` is deliberately marked unresolved and is not a production board; the physical-board transcription remains a release blocker.
 
 The migration will preserve those strengths while making the board definition canonical, moving all legal-map knowledge out of the web client, and expanding commands to model the actual Move, Fight, Encounter and Deploy steps.
 
@@ -668,6 +670,8 @@ Export fixed JSON fixtures containing board coordinates, legal paths, accepted c
 - Add unit tests and a board-validation script.
 
 **Exit criteria:** typecheck and tests pass; both server and web can import the same read-only board definition.
+
+Current development implementation status: the engine and web import `DEVELOPMENT_BOARD`; authoritative monster, military-unit, pending-battle, and stomp positions use canonical `HexKey` values; legal movement walks the immutable board edge index; and the web converts display labels to keys only at the presentation/command boundary. The nine location names remain as explicitly named setup/display aliases. `OffBoardPosition` values are defined for record-tile, Hollywood, disappeared, trophy, defeated, and permanently removed states, while source-gated rules determine when each may be used.
 
 ### Phase 2: Migrate engine positions and state
 

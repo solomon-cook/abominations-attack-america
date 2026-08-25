@@ -360,10 +360,6 @@ export type GameResultUncheckedUpdateOneWithoutRoomNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.GameResultUpdateToOneWithWhereWithoutRoomInput, Prisma.GameResultUpdateWithoutRoomInput>, Prisma.GameResultUncheckedUpdateWithoutRoomInput>
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type GameResultCreateWithoutRoomInput = {
   id?: string
   winnerId?: string | null

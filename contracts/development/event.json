@@ -1,0 +1,13 @@
+{
+  "eventType": "monster.moved",
+  "eventPayload": {
+    "path": ["-2,2", "-3,1"],
+    "destination": "-3,1"
+  },
+  "receipt": {
+    "actionId": "contract-action-1",
+    "actorId": "player-1",
+    "revision": 1,
+    "eventType": "monster.moved"
+  }
+}

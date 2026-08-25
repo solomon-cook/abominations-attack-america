@@ -10,7 +10,7 @@ export interface RoomParticipant {
 
 import type { GameState } from "@abominations/game-engine";
 
-export type RoomStatus = "waiting" | "active" | "completed" | "abandoned";
+export type RoomStatus = "waiting" | "active" | "completed" | "abandoned" | "expired";
 export type ParticipantRole = "player" | "spectator";
 
 export interface RoomEvent {
@@ -29,6 +29,7 @@ export interface RoomParticipantView {
   role: ParticipantRole;
   playerIndex?: number;
   connected: boolean;
+  ready: boolean;
 }
 
 export interface RoomView {
@@ -42,7 +43,15 @@ export interface RoomView {
 }
 
 export type GameCommand =
-  | { type: "move"; destination: string }
+  | { type: "move"; path: string[] }
+  | { type: "move-unit"; unitId: string; path: string[] }
+  | { type: "disappear-monster" }
+  | { type: "pass-move" }
+  | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
+  | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
+  | { type: "deploy" }
+  | { type: "draw-research" }
+  | { type: "pass-deploy" }
   | { type: "advance" };
 
 export interface SessionResponse {

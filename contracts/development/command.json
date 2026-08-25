@@ -1,0 +1,10 @@
+{
+  "protocolVersion": 1,
+  "actionId": "contract-action-1",
+  "actorId": "player-1",
+  "expectedRevision": 0,
+  "command": {
+    "type": "move",
+    "path": ["-2,2", "-3,1"]
+  }
+}

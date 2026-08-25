@@ -1,0 +1,6 @@
+{
+  "invalidCommandEnvelope": "INVALID_COMMAND_ENVELOPE",
+  "unsupportedProtocol": "UNSUPPORTED_PROTOCOL",
+  "staleRevision": "STALE_REVISION",
+  "illegalCommand": "ILLEGAL_COMMAND"
+}

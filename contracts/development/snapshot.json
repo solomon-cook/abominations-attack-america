@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "boardId": "development-nine-location",
+  "boardVersion": 1,
+  "boardContentHash": "fnv1a:89d56f63",
+  "rulesetVersion": "prototype-0.1",
+  "phase": "move",
+  "round": 1,
+  "currentPlayer": 0
+}

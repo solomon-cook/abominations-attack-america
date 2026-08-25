@@ -12,6 +12,7 @@ enum RoomStatus {
   ACTIVE
   COMPLETED
   ABANDONED
+  EXPIRED
 }
 
 enum ParticipantRole {
@@ -28,9 +29,11 @@ model GameRoom {
   state        Json
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  lastActivityAt DateTime   @default(now())
   completedAt  DateTime?
   participants Participant[]
   events       GameEvent[]
+  receipts     CommandReceipt[]
   result       GameResult?
 }
 
@@ -43,6 +46,8 @@ model Participant {
   playerIndex  Int?
   tokenHash    String            @unique
   connectedAt  DateTime?
+  connectionId String?
+  ready        Boolean           @default(false)
   createdAt    DateTime          @default(now())
   @@index([roomId, role])
 }
@@ -58,6 +63,19 @@ model GameEvent {
   createdAt   DateTime @default(now())
   @@unique([roomId, version])
   @@index([roomId, createdAt])
+}
+
+model CommandReceipt {
+  id         String   @id @default(cuid())
+  roomId     String
+  room       GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  actionId   String
+  actorId    String
+  version    Int
+  eventType  String
+  createdAt  DateTime @default(now())
+  @@unique([roomId, actionId])
+  @@index([roomId, version])
 }
 
 model GameResult {

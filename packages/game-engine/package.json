@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.ts" },
-  "scripts": { "test": "tsx --test src/index.test.ts" },
+  "scripts": { "test": "tsx --test src/*.test.ts" },
   "devDependencies": { "tsx": "latest", "typescript": "latest" }
 }

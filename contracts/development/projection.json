@@ -1,0 +1,7 @@
+{
+  "audience": "spectator",
+  "redactedDeckOrder": true,
+  "redactedPrivateCards": true,
+  "preservesBoardMetadata": true,
+  "preservesPendingDecision": true
+}

@@ -1,84 +1,1381 @@
-import { StrictMode, useEffect, useMemo, useState } from "react";
+import { StrictMode, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { createGame, deployUnit, getLocation, locations, moveMonster, resolveEncounter, resolveFight, type GameState } from "@abominations/game-engine";
+import {
+  applyCommand,
+  buildBoardIndex,
+  chooseBranch,
+  chooseLair,
+  chooseMonster,
+  chooseStartingChoice,
+  createGame,
+  createGameFromSetup,
+  DEVELOPMENT_BOARD,
+  FULL_HONEYCOMB_BOARD,
+  getLocation,
+  legalNationalGuardDeploymentDestinations,
+  locationIdToHexKey,
+  legalMonsterDestinations,
+  legalMonsterPaths,
+  legalUnitPaths,
+  locations,
+  BRANCH_DEPLOYMENT_DEFINITIONS,
+  type GameCommand,
+  type GameState,
+  type HexKey,
+  type SetupState,
+} from "@abominations/game-engine";
 import type { RoomView, SessionResponse } from "@abominations/shared";
-import { createRoom, joinRoom, readRoom, sendCommand, spectateRoom, websocketUrl } from "./api";
+import {
+  createRoom,
+  joinRoom,
+  markDisconnected,
+  markReconnected,
+  readRoom,
+  sendCommand,
+  sendSetupAction,
+  setReady,
+  spectateRoom,
+  websocketUrl,
+} from "./api";
+import { createDevelopmentSetup } from "./development-setup";
 import "./styles.css";
 
-const boardRows = 12;
-const boardCols = 19;
-const waterEdge = new Set(["0-0", "0-1", "0-2", "0-3", "0-17", "0-18", "1-0", "1-1", "1-18", "2-0", "2-18", "3-0", "3-18", "4-0", "4-18", "5-0", "5-18", "6-0", "6-18", "7-0", "7-18", "8-0", "8-18", "9-0", "9-1", "9-17", "9-18", "10-0", "10-1", "10-17", "10-18", "11-0", "11-1", "11-2", "11-16", "11-17", "11-18"]);
-const boardHexes = Array.from({ length: boardRows * boardCols }, (_, index) => {
-  const row = Math.floor(index / boardCols);
-  const col = index % boardCols;
-  return { row, col, water: waterEdge.has(`${row}-${col}`) };
-});
+const developmentHexes = Object.values(DEVELOPMENT_BOARD.hexes);
+const developmentBoardIndex = buildBoardIndex(DEVELOPMENT_BOARD);
+const fullHoneycombHexes = Object.values(FULL_HONEYCOMB_BOARD.hexes);
+const fullPixelCoords = fullHoneycombHexes.map((hex) => ({
+  hex,
+  x: hex.coord.q + hex.coord.r / 2,
+  y: hex.coord.r,
+}));
+const fullMinX = Math.min(...fullPixelCoords.map((entry) => entry.x));
+const fullMaxX = Math.max(...fullPixelCoords.map((entry) => entry.x));
+const fullMinY = Math.min(...fullPixelCoords.map((entry) => entry.y));
+const fullMaxY = Math.max(...fullPixelCoords.map((entry) => entry.y));
+const boardHexes = fullPixelCoords.map(({ hex, x, y }) => ({
+  hex,
+  place: locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key),
+  left:
+    10 +
+    ((x - fullMinX) / Math.max(1, fullMaxX - fullMinX)) *
+      80,
+  top:
+    14 +
+    ((y - fullMinY) / Math.max(1, fullMaxY - fullMinY)) *
+      68,
+}));
+
+function supportsPlaytestBrowser(): boolean {
+  return typeof window !== "undefined"
+    && typeof WebSocket !== "undefined"
+    && typeof fetch !== "undefined"
+    && typeof crypto !== "undefined"
+    && typeof crypto.randomUUID === "function"
+    && typeof localStorage !== "undefined"
+    && typeof CSS !== "undefined"
+    && CSS.supports("height", "100dvh");
+}
+
+function safeStorageGet(key: string): string | null {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
 
 function App() {
+  const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const [game, setGame] = useState<GameState>(() => createGame(2));
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [room, setRoom] = useState<RoomView | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState("");
+  const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(2);
+  const [localSetup, setLocalSetup] = useState<SetupState>(() =>
+    createDevelopmentSetup(2),
+  );
   const [error, setError] = useState("");
+  const [pendingAction, setPendingAction] = useState(false);
+  const [selectedPath, setSelectedPath] = useState<HexKey[]>([]);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
+  const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
+  const [retreatChoices, setRetreatChoices] = useState<Record<string, HexKey | "disappeared">>({});
+  const [mapZoom, setMapZoom] = useState(1);
+  const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
+  const [onboardingOpen, setOnboardingOpen] = useState(() => safeStorageGet("abominations-onboarding-seen") !== "1");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
+  const [showBoardLabels, setShowBoardLabels] = useState(() => safeStorageGet("abominations-board-labels") !== "0");
+  const [manualReducedMotion, setManualReducedMotion] = useState(() => safeStorageGet("abominations-reduced-motion") === "1");
+  const [confirmIrreversible, setConfirmIrreversible] = useState(() => safeStorageGet("abominations-confirm-irreversible") !== "0");
+  const [connectionState, setConnectionState] = useState<
+    "online" | "reconnecting" | "stale" | "offline"
+  >("offline");
   const online = Boolean(session && room);
+  const browserSupported = supportsPlaytestBrowser();
   const activeGame = room?.state ?? game;
   const activePlayer = activeGame.monsters[activeGame.currentPlayer];
   const activeLocation = getLocation(activePlayer.location);
-  const action = activeGame.phase === "move" ? "Move" : activeGame.phase === "fight" ? "Fight" : activeGame.phase === "encounter" ? "Encounter" : "Deploy";
-  const participant = room && session ? room.participants.find((candidate) => candidate.id === session.participantId) : undefined;
-  const canAct = !online || (participant?.role === "player" && participant.playerIndex === activeGame.currentPlayer);
+  const guardCommanderActive = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Guard Commander") ?? false;
+  const availableGuardUnitId = guardCommanderActive
+    ? activeGame.nationalGuard.unitIds.find((unitId) => !activeGame.units.some((unit) => unit.id === unitId))
+    : undefined;
+  const guardDeploymentDestination = legalNationalGuardDeploymentDestinations(activeGame).at(0);
+  const activeBranch = activeGame.setupAssignments?.[activeGame.currentPlayer]?.branch
+    ?? (["Army", "Navy", "Air Force", "Marines"] as const)[activeGame.currentPlayer % 4];
+  const activeDeploymentDefinition = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === activeBranch);
+  const ownDeploymentAvailable = activeGame.deploymentsThisTurn < (activeDeploymentDefinition?.ownOrGuardUnits ?? 0)
+    && activeGame.units.some((unit) => unit.branch === activeBranch && unit.location === "record-tile" && !activeGame.removedUnitIds.includes(unit.id));
+  const guardDeploymentAvailable = Boolean(availableGuardUnitId && guardDeploymentDestination)
+    && activeGame.deploymentsThisTurn < ((activeDeploymentDefinition?.ownOrGuardUnits ?? 0) + (activeDeploymentDefinition?.additionalNationalGuardUnits ?? 0));
+  const legalPaths = useMemo(
+    () => legalMonsterPaths(activeGame, activePlayer.id),
+    [activeGame, activePlayer.id],
+  );
+  const legalDestinations = useMemo(
+    () => new Set(legalMonsterDestinations(activeGame, activePlayer.id)),
+    [activeGame, activePlayer.id],
+  );
+  const legalUnitPathsForSelection = useMemo(
+    () => (selectedUnitId ? legalUnitPaths(activeGame, selectedUnitId) : []),
+    [activeGame, selectedUnitId],
+  );
+  const legalUnitDestinations = useMemo(
+    () => new Set(legalUnitPathsForSelection.map((path) => path.at(-1)!)),
+    [legalUnitPathsForSelection],
+  );
+  const occupiedStackKeys = useMemo(
+    () => [...new Set([
+      ...activeGame.monsters.filter((monster) => typeof monster.location === "string" && monster.location.includes(",")).map((monster) => monster.location as HexKey),
+      ...activeGame.units.filter((unit) => typeof unit.location === "string" && unit.location.includes(",")).map((unit) => unit.location as HexKey),
+    ])],
+    [activeGame.monsters, activeGame.units],
+  );
+  const selectedStackMonsters = selectedStackKey
+    ? activeGame.monsters.filter((monster) => monster.location === selectedStackKey)
+    : [];
+  const selectedStackUnits = selectedStackKey
+    ? activeGame.units.filter((unit) => unit.location === selectedStackKey)
+    : [];
+  const action = pendingAction
+    ? "Waiting for server…"
+    : activeGame.phase === "move"
+      ? "Move"
+      : activeGame.phase === "fight"
+        ? "Fight"
+        : activeGame.phase === "encounter"
+          ? "Encounter"
+          : activeGame.phase === "game-over"
+            ? `Victory · ${activeGame.monsters[activeGame.winnerPlayer ?? 0]?.name}`
+            : "Deploy";
+  const pendingAttackTarget = activeGame.pendingDecision?.type === "attack-target"
+    ? activeGame.pendingDecision
+    : undefined;
+  const pendingAttackPrompt = pendingAttackTarget
+    ? `Choose the target for attack ${pendingAttackTarget.attackNumber ?? 1}${pendingAttackTarget.attackTotal ? ` of ${pendingAttackTarget.attackTotal}` : ""} in combat round ${pendingAttackTarget.round ?? 1}.`
+    : "Choose the target for the monster attack.";
+  const pendingBattleDecision = activeGame.pendingDecision?.type === "battle-resolution"
+    ? activeGame.pendingDecision
+    : undefined;
+  const pendingBattle = pendingBattleDecision
+    ? activeGame.pendingBattles.find((battle) => battle.id === pendingBattleDecision.battleId)
+    : undefined;
+  const lastFightEvent = [...activeGame.eventLog].reverse().find((entry) => entry.action === "fight.resolved");
+  const lastFightRolls = Array.isArray(lastFightEvent?.detail.rolls)
+    ? lastFightEvent.detail.rolls.filter((roll): roll is number => typeof roll === "number")
+    : [];
+  const canSpendInfamyOnPendingBattle = Boolean(
+    pendingBattle &&
+    activePlayer.infamy > 0,
+  );
+  const participant =
+    room && session
+      ? room.participants.find(
+          (candidate) => candidate.id === session.participantId,
+        )
+      : undefined;
+  const activeSetup = online ? activeGame.setupState : localSetup;
+  const localSetupComplete = localSetup.phase === "complete";
+  const setupComplete = !activeSetup || activeSetup.phase === "complete";
+  const decisionPlayer = activeGame.pendingDecision?.type === "trophy-choice"
+    ? activeGame.pendingDecision.playerIndex
+    : activeGame.currentPlayer;
+  const canAct =
+    setupComplete &&
+    !pendingAction &&
+    activeGame.phase !== "game-over" &&
+    (!online ||
+      (participant?.role === "player" &&
+        participant.playerIndex === decisionPlayer));
+  const unavailableReason = pendingAction
+    ? "Waiting for the authoritative server acknowledgement."
+    : !setupComplete
+      ? "Complete setup before taking a gameplay action."
+      : online && participant?.role !== "player"
+        ? "Spectators can follow the match but cannot submit actions."
+        : online && participant?.playerIndex !== decisionPlayer
+          ? `Waiting for Player ${decisionPlayer + 1} to make the current decision.`
+          : activeGame.phase === "game-over"
+            ? "The match is complete; gameplay actions are disabled."
+            : "";
+  const resetMapView = () => {
+    setMapZoom(1);
+    setMapPan({ x: 0, y: 0 });
+  };
+  const panMap = (x: number, y: number) => setMapPan((current) => ({ x: current.x + x, y: current.y + y }));
 
   useEffect(() => {
-    const saved = localStorage.getItem("abominations-session");
+    actionHeadingRef.current?.focus();
+  }, [activeGame.phase, activeGame.round, room?.version]);
+  const setupSeat =
+    activeSetup?.phase === "monster-selection"
+      ? activeSetup.seats.find((seat) => !seat.monsterId)
+      : activeSetup?.phase === "branch-selection"
+        ? [...activeSetup.seats]
+            .sort((a, b) => b.playerIndex - a.playerIndex)
+            .find((seat) => !seat.branch)
+        : (activeSetup?.seats.find(
+            (seat) => !seat.lair && activeSetup.phase === "lair-selection",
+          ) ??
+          activeSetup?.seats.find(
+            (seat) =>
+              !seat.startingChoice && activeSetup.phase === "starting-choice",
+          ));
+  useEffect(() => {
+    setSelectedPath([]);
+    setSelectedUnitId(null);
+    setSelectedUnitPath([]);
+    setRetreatChoices({});
+  }, [activeGame.currentPlayer, activeGame.phase, activePlayer.location]);
+
+  useEffect(() => {
+    const saved = safeStorageGet("abominations-session");
     if (!saved) return;
     try {
-      const stored = JSON.parse(saved) as { token: string; participantId: string; room?: { code: string } };
+      const stored = JSON.parse(saved) as {
+        token: string;
+        participantId: string;
+        room?: { code: string };
+      };
       if (!stored.token || !stored.room?.code) return;
-      void readRoom(stored.room.code, stored.token).then((restoredRoom) => {
-        setSession({ token: stored.token, participantId: stored.participantId, room: restoredRoom });
-        setRoom(restoredRoom); setRoomCode(restoredRoom.code);
-      }).catch(() => localStorage.removeItem("abominations-session"));
-    } catch { localStorage.removeItem("abominations-session"); }
+      void readRoom(stored.room.code, stored.token)
+        .then((restoredRoom) => {
+          setSession({
+            token: stored.token,
+            participantId: stored.participantId,
+            room: restoredRoom,
+          });
+          setRoom(restoredRoom);
+          setRoomCode(restoredRoom.code);
+        })
+        .catch(() => localStorage.removeItem("abominations-session"));
+    } catch {
+      localStorage.removeItem("abominations-session");
+    }
   }, []);
 
   useEffect(() => {
     if (!session || !room) return;
     const socket = new WebSocket(websocketUrl(room.code, session.token));
     let polling: ReturnType<typeof setInterval> | undefined;
-    const refresh = () => readRoom(room.code, session.token, room.version).then(setRoom).catch(() => undefined);
-    socket.onmessage = (event) => { const message = JSON.parse(event.data) as { type: string; room: RoomView }; if (message.type === "room.updated") setRoom(message.room); };
-    socket.onerror = () => { polling = setInterval(refresh, 2000); };
-    socket.onclose = () => { if (!polling) polling = setInterval(refresh, 2000); };
-    return () => { socket.close(); if (polling) clearInterval(polling); };
+    let disconnected = false;
+    const markOffline = () => {
+      if (disconnected) return;
+      disconnected = true;
+      void markDisconnected(room.code, session.token).catch(() => undefined);
+    };
+    const startPolling = () => {
+      if (polling) return;
+      setConnectionState("reconnecting");
+      polling = setInterval(() => {
+        readRoom(room.code, session.token, room.version)
+          .then((nextRoom) => markReconnected(room.code, session.token).then((reconnectedRoom) => {
+            setRoom(reconnectedRoom ?? nextRoom);
+            disconnected = false;
+            setConnectionState("online");
+          }))
+          .catch(() => setConnectionState("stale"));
+      }, 2000);
+    };
+    socket.onopen = () => {
+      void markReconnected(room.code, session.token)
+        .then((nextRoom) => {
+          setRoom(nextRoom);
+          setConnectionState("online");
+          if (polling) {
+            clearInterval(polling);
+            polling = undefined;
+          }
+        })
+        .catch(() => setConnectionState("stale"));
+    };
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data) as {
+        type: string;
+        room: RoomView;
+      };
+      if (message.type === "room.updated") {
+        setRoom(message.room);
+        setConnectionState("online");
+      }
+    };
+    socket.onerror = () => {
+      markOffline();
+      startPolling();
+    };
+    socket.onclose = () => {
+      markOffline();
+      startPolling();
+    };
+    return () => {
+      markOffline();
+      socket.close();
+      if (polling) clearInterval(polling);
+    };
   }, [session?.token, room?.code]);
 
-  const runCommand = async (command: Parameters<typeof sendCommand>[2]) => {
+  const runCommand = async (command: GameCommand) => {
+    if (pendingAction) return;
     setError("");
+    setPendingAction(true);
+    const normalized: GameCommand =
+      command.type === "advance"
+        ? activeGame.phase === "fight"
+          ? { type: "resolve-fight" }
+          : activeGame.phase === "encounter"
+            ? { type: "resolve-encounter" }
+            : { type: "deploy" }
+        : command;
     try {
-      if (online && session && room) setRoom(await sendCommand(room.code, session.token, command));
-      else if (command.type === "move") setGame(moveMonster(game, activePlayer.id, command.destination));
-      else setGame(activeGame.phase === "fight" ? resolveFight(activeGame) : activeGame.phase === "encounter" ? resolveEncounter(activeGame) : deployUnit(activeGame));
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Action failed"); }
+      if (online && session && room)
+        setRoom(
+          await sendCommand(
+            room.code,
+            session.token,
+            session.participantId,
+            room.version,
+            normalized,
+          ),
+        );
+      else setGame(applyCommand(game, normalized).state);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Action failed");
+      if (online && session && room) {
+        try {
+          setRoom(await readRoom(room.code, session.token));
+        } catch {
+          /* retain the original action error when refresh also fails */
+        }
+      }
+    } finally {
+      setPendingAction(false);
+    }
   };
 
   const startSession = async (kind: "create" | "join" | "spectate") => {
     setError("");
     try {
-      const result = kind === "create" ? await createRoom(2) : kind === "join" ? await joinRoom(roomCode, displayName || "Player") : await spectateRoom(roomCode, displayName || "Spectator");
-      setSession(result); setRoom(result.room); setRoomCode(result.room.code); localStorage.setItem("abominations-session", JSON.stringify({ token: result.token, participantId: result.participantId, room: { code: result.room.code } }));
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Could not join room"); }
+      const result =
+        kind === "create"
+          ? await createRoom(playerCount)
+          : kind === "join"
+            ? await joinRoom(roomCode, displayName || "Player")
+            : await spectateRoom(roomCode, displayName || "Spectator");
+      setSession(result);
+      setRoom(result.room);
+      setRoomCode(result.room.code);
+      localStorage.setItem(
+        "abominations-session",
+        JSON.stringify({
+          token: result.token,
+          participantId: result.participantId,
+          room: { code: result.room.code },
+        }),
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Could not join room",
+      );
+    }
   };
 
-  const resetLocal = () => { setSession(null); setRoom(null); setError(""); setGame(createGame(2)); localStorage.removeItem("abominations-session"); };
-  const log = useMemo(() => activeGame.log.slice(0, 5), [activeGame.log]);
+  const toggleReady = async () => {
+    if (!session || !room || !participant || participant.role !== "player")
+      return;
+    try {
+      setRoom(await setReady(room.code, session.token, !participant.ready));
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Could not update readiness",
+      );
+    }
+  };
 
-  return <main>
-    <header><div><p className="eyebrow">ABOMINATIONS ATTACK AMERICA · WEB PLAYTEST</p><h1>Take the city. Become the legend.</h1><p className="lede">A digital monster-versus-military strategy game. Local play and online rooms share the same rules engine.</p></div><button className="ghost" onClick={resetLocal}>Local game</button></header>
-    <section className="lobby"><div><span className="label">ONLINE ROOM</span><p>{online ? <>Room <strong>{room?.code}</strong> · {participant?.role === "spectator" ? "spectating" : `Player ${(participant?.playerIndex ?? 0) + 1}`}</> : "Play with friends or watch without an account."}</p></div>{!online && <div className="lobby-actions"><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Display name" /><input value={roomCode} onChange={(event) => setRoomCode(event.target.value.toUpperCase())} placeholder="Room code" maxLength={6} /><button onClick={() => startSession("create")}>Create</button><button onClick={() => startSession("join")}>Join</button><button className="subtle" onClick={() => startSession("spectate")}>Spectate</button></div>} {error && <p className="error">{error}</p>}</section>
-    <section className="status"><div><span className="label">ROUND</span><strong>{activeGame.round}</strong></div><div><span className="label">ACTIVE MONSTER</span><strong>{activePlayer.name}</strong></div><div><span className="label">PHASE</span><strong>{action}</strong></div><div><span className="label">STOMP MARKERS</span><strong>{activeGame.stompMarkers}</strong></div></section>
-    <section className="layout"><div className="board-panel"><div className="panel-heading"><div><span className="label">TACTICAL MAP · RULE SPACE RECONSTRUCTION</span><h2>{activeLocation?.name}</h2></div><span className="chip">{online ? `ROOM ${room?.code}` : `PLAYER ${activeGame.currentPlayer + 1}`}</span></div><div className="map"><div className="hex-grid" aria-hidden="true">{boardHexes.map((hex) => <span key={`${hex.row}-${hex.col}`} className={`hex ${hex.water ? "water" : "land"}`} style={{ gridColumn: hex.col + 1, gridRow: hex.row + 1 }} />)}</div><div className="map-copy"><strong>MONSTERS</strong><span>MENACE AMERICA</span></div><div className="region-label west">HOLLYWOOD</div>{locations.map((place) => <button key={place.id} disabled={!canAct || activeGame.phase !== "move"} className={`location ${place.kind} ${place.id === activePlayer.location ? "active" : ""}`} style={{ left: `${place.x}%`, top: `${place.y}%` }} onClick={() => void runCommand({ type: "move", destination: place.id })}><span className="node">{place.kind === "city" ? "✦" : place.kind === "base" ? "⌂" : place.kind === "infamy" ? "★" : place.kind === "mutation" ? "✹" : "⚔"}</span><span>{place.name}</span>{place.kind === "city" && <i className="city-hp">{place.marker}</i>}{activeGame.monsters.filter((m) => m.location === place.id).map((m) => <b key={m.id}>{m.name.slice(0, 1)}</b>)}</button>)}</div><p className="map-note">{canAct ? `Select a linked rule space to move ${activePlayer.name}. City markers show printed HP or dice values; stomp markers are gameplay tokens, not base-map art.` : "Waiting for the active player."}</p></div>
-      <aside><div className="card monster-card"><span className="label">MONSTER RECORD</span><h2>{activePlayer.name}</h2><div className="meter"><span style={{ width: `${activePlayer.health / activePlayer.maxHealth * 100}%` }} /></div><div className="stats"><span><b>{activePlayer.health}</b> health</span><span><b>{activePlayer.infamy}</b> infamy</span><span><b>{activePlayer.move}</b> move</span></div></div><div className="card action-card"><span className="label">CURRENT STEP</span><h2>{action}</h2><p>{activeGame.phase === "move" ? `Move up to ${activePlayer.move} spaces. Choose a connected location on the map.` : activeGame.phase === "fight" ? "Resolve battles started by movement." : activeGame.phase === "encounter" ? "Resolve the space your monster ended on." : "Place one military unit, then pass the turn."}</p>{activeGame.phase !== "move" && <button disabled={!canAct} onClick={() => void runCommand({ type: "advance" })}>{activeGame.phase === "deploy" ? "Deploy & pass turn" : `Resolve ${action.toLowerCase()}`}</button>}</div><div className="card log"><span className="label">TURN LOG</span>{log.map((entry, i) => <p key={i}>{entry}</p>)}</div></aside></section>
-  </main>;
+  const applyLocalSetup = (next: SetupState) => {
+    setLocalSetup(next);
+    if (next.phase === "complete") setGame(createGameFromSetup(next));
+  };
+  const chooseSetupOption = async (value: string) => {
+    if (
+      !setupSeat ||
+      !activeSetup ||
+      (online && participant?.playerIndex !== setupSeat.playerIndex)
+    )
+      return;
+    if (online && session && room) {
+      try {
+        setRoom(
+          await sendSetupAction(
+            room.code,
+            session.token,
+            room.version,
+            activeSetup.phase === "monster-selection"
+              ? { type: "choose-monster", monsterId: value }
+              : activeSetup.phase === "branch-selection"
+                ? {
+                    type: "choose-branch",
+                    branch: value as "Army" | "Navy" | "Air Force" | "Marines",
+                  }
+                : { type: "choose-lair", lair: value },
+          ),
+        );
+      } catch (caught) {
+        setError(
+          caught instanceof Error ? caught.message : "Could not update setup",
+        );
+      }
+      return;
+    }
+    if (localSetup.phase === "monster-selection")
+      applyLocalSetup(chooseMonster(localSetup, setupSeat.playerIndex, value));
+    if (localSetup.phase === "branch-selection")
+      applyLocalSetup(
+        chooseBranch(
+          localSetup,
+          setupSeat.playerIndex,
+          value as "Army" | "Navy" | "Air Force" | "Marines",
+        ),
+      );
+    if (localSetup.phase === "lair-selection")
+      applyLocalSetup(chooseLair(localSetup, setupSeat.playerIndex, value));
+  };
+  const chooseSetupStartingChoice = async (kind: "research" | "deploy") => {
+    if (
+      !setupSeat ||
+      !activeSetup ||
+      (online && participant?.playerIndex !== setupSeat.playerIndex)
+    )
+      return;
+    const startingChoice =
+      kind === "research"
+        ? ({ kind } as const)
+        : ({
+            kind,
+            unitId: "development-unit-0",
+            destination: "denver",
+          } as const);
+    if (online && session && room) {
+      try {
+        setRoom(
+          await sendSetupAction(room.code, session.token, room.version, {
+            type: "choose-starting-choice",
+            startingChoice,
+          }),
+        );
+      } catch (caught) {
+        setError(
+          caught instanceof Error ? caught.message : "Could not update setup",
+        );
+      }
+      return;
+    }
+    applyLocalSetup(
+      chooseStartingChoice(localSetup, setupSeat.playerIndex, startingChoice),
+    );
+  };
+  const changePlayerCount = (value: 2 | 3 | 4) => {
+    setPlayerCount(value);
+    setLocalSetup(createDevelopmentSetup(value));
+    setGame(createGame(value));
+  };
+  const resetLocal = () => {
+    setSession(null);
+    setRoom(null);
+    setError("");
+    setPlayerCount(2);
+    setLocalSetup(createDevelopmentSetup(2));
+    setGame(createGame(2));
+    localStorage.removeItem("abominations-session");
+  };
+  const leaveRoom = async () => {
+    if (session && room) {
+      try {
+        await markDisconnected(room.code, session.token);
+      } catch {
+        // Returning to the lobby is still safe when the network is unavailable.
+      }
+    }
+    setSession(null);
+    setRoom(null);
+    setError("");
+    localStorage.removeItem("abominations-session");
+  };
+  const togglePreference = (key: string, setter: (value: boolean | ((current: boolean) => boolean)) => void) => {
+    setter((current: boolean) => {
+      const next = !current;
+      localStorage.setItem(key, next ? "1" : "0");
+      return next;
+    });
+  };
+  const runIrreversibleAction = (actionToRun: () => void, message: string) => {
+    if (!confirmIrreversible || window.confirm(message)) actionToRun();
+  };
+  const closeOnboarding = () => {
+    setOnboardingOpen(false);
+    localStorage.setItem("abominations-onboarding-seen", "1");
+  };
+  const log = useMemo(() => activeGame.log.slice(-5), [activeGame.log]);
+  const eventLog = useMemo(
+    () => (activeGame.eventLog ?? []).slice(-5).reverse(),
+    [activeGame.eventLog],
+  );
+  const choosePath = (destination: HexKey) => {
+    const options = legalPaths
+      .filter((path) => path.at(-1) === destination)
+      .sort((a, b) => a.length - b.length);
+    if (options[0]) setSelectedPath(options[0]);
+  };
+  const chooseUnitPath = (destination: HexKey) => {
+    const options = legalUnitPathsForSelection
+      .filter((path) => path.at(-1) === destination)
+      .sort((a, b) => a.length - b.length);
+    if (options[0]) setSelectedUnitPath(options[0]);
+  };
+
+  if (!browserSupported) {
+    return (
+      <main className="unsupported-browser" role="main">
+        <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · BROWSER SUPPORT</p>
+        <h1>This browser cannot run the playtest</h1>
+        <p className="lede">Use a current Chrome, Edge, Firefox, Safari, or Chromium-based mobile browser with JavaScript, WebSocket, Fetch, CSS Grid, and dynamic viewport support enabled.</p>
+        <p className="settings-note">No match state has been started. Update the browser and reload this page.</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className={`${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}>
+      <header>
+        <div>
+          <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · WEB PLAYTEST</p>
+          <h1>Take the city. Become the legend.</h1>
+          <p className="lede">
+            A digital monster-versus-military strategy game. Local play and
+            online rooms share the same rules engine.
+          </p>
+        </div>
+        <div className="header-actions">
+          <button className="ghost" onClick={() => setOnboardingOpen(true)}>
+            How to play
+          </button>
+          <button className="ghost" onClick={() => setSettingsOpen((open) => !open)} aria-expanded={settingsOpen}>
+            Settings
+          </button>
+          <button className="ghost" onClick={resetLocal}>
+            Development playtest
+          </button>
+        </div>
+      </header>
+      <section className="lobby">
+        <div>
+          <span className="label">ONLINE ROOM</span>
+          <p>
+            {online ? (
+              <>
+                Room <strong>{room?.code}</strong> ·{" "}
+                <span className={`connection ${connectionState}`}>
+                  {connectionState}
+                </span>{" "}
+                ·{" "}
+                {participant?.role === "spectator"
+                  ? "spectating"
+                  : `Player ${(participant?.playerIndex ?? 0) + 1}`}
+              </>
+            ) : (
+              "Play with friends or watch without an account."
+            )}
+          </p>
+        </div>
+        {!online && (
+          <div className="lobby-actions">
+            <input
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              placeholder="Display name"
+            />
+            <select
+              aria-label="Player count"
+              value={playerCount}
+              onChange={(event) =>
+                changePlayerCount(Number(event.target.value) as 2 | 3 | 4)
+              }
+            >
+              <option value="2">2 players</option>
+              <option value="3">3 players</option>
+              <option value="4">4 players</option>
+            </select>
+            <input
+              value={roomCode}
+              onChange={(event) =>
+                setRoomCode(event.target.value.toUpperCase())
+              }
+              placeholder="Room code"
+              maxLength={6}
+            />
+            <button onClick={() => startSession("create")}>Create</button>
+            <button onClick={() => startSession("join")}>Join</button>
+            <button className="subtle" onClick={() => startSession("spectate")}>
+              Spectate
+            </button>
+          </div>
+        )}{" "}
+        {online && participant?.role === "player" && (
+          <div className="lobby-actions">
+            <button
+              className="ready-button"
+              disabled={!setupComplete}
+              onClick={() => void toggleReady()}
+            >
+              {participant.ready ? "Unready" : "Ready"}
+            </button>
+            <button className="subtle" onClick={() => void leaveRoom()}>
+              Leave room
+            </button>
+          </div>
+        )}{" "}
+        {online && participant?.role === "spectator" && (
+          <button className="subtle" onClick={() => void leaveRoom()}>
+            Leave room
+          </button>
+        )}{" "}
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+      </section>
+      {settingsOpen && (
+        <section className="settings-panel" aria-label="Play preferences">
+          <span className="label">PLAY PREFERENCES</span>
+          <h2>Readable, controllable play</h2>
+          <div className="settings-grid">
+            <label><input type="checkbox" checked={largeText} onChange={() => togglePreference("abominations-large-text", setLargeText)} /> Larger text</label>
+            <label><input type="checkbox" checked={showBoardLabels} onChange={() => togglePreference("abominations-board-labels", setShowBoardLabels)} /> Show board labels</label>
+            <label><input type="checkbox" checked={manualReducedMotion} onChange={() => togglePreference("abominations-reduced-motion", setManualReducedMotion)} /> Reduce motion</label>
+            <label><input type="checkbox" checked={confirmIrreversible} onChange={() => togglePreference("abominations-confirm-irreversible", setConfirmIrreversible)} /> Confirm disappearance</label>
+          </div>
+          <p className="settings-note">The game currently has no audio dependency; every result and required action is available as text.</p>
+        </section>
+      )}
+      {onboardingOpen && (
+        <section className="onboarding" aria-label="First match guide">
+          <div>
+            <span className="label">FIRST MATCH GUIDE</span>
+            <h2>One turn, four decisions</h2>
+            <p>Choose a monster and setup options, then use the shared board controls to move, resolve compulsory battles, take an Encounter, and Deploy. The current prompt always identifies the next authoritative decision.</p>
+            <div className="onboarding-grid">
+              <div><strong>Move</strong><span>Choose a highlighted path, confirm it, or leave the monster in place.</span></div>
+              <div><strong>Fight</strong><span>Resolve every compulsory battle, choose targets or retreat destinations when prompted.</span></div>
+              <div><strong>Encounter</strong><span>Take the available site reward or make the displayed choice.</span></div>
+              <div><strong>Deploy</strong><span>Place a legal unit or Research card, then pass to the next player.</span></div>
+            </div>
+          </div>
+          <div className="onboarding-actions">
+            <span>Current decision: {action}</span>
+            <button className="subtle" onClick={closeOnboarding}>Got it · hide guide</button>
+          </div>
+        </section>
+      )}
+      {!setupComplete && activeSetup && (
+        <section className="setup-panel" aria-label="Development setup">
+          <span className="label">DEVELOPMENT SETUP · SOURCE-GATED</span>
+          <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
+          <p>
+            This fixture exercises the authoritative setup state machine.
+            Production monster, lair, branch, and board definitions remain
+            blocked pending source review.
+          </p>
+          {setupSeat && (
+            <p className="setup-turn">
+              Choosing for Player {setupSeat.playerIndex + 1}
+              {online && participant?.playerIndex !== setupSeat.playerIndex
+                ? " · waiting"
+                : ""}
+            </p>
+          )}
+          <div className="setup-options">
+            {activeSetup.phase === "monster-selection" &&
+              activeSetup.definition.monsterIds
+                .filter(
+                  (id) =>
+                    !activeSetup.seats.some((seat) => seat.monsterId === id),
+                )
+                .map((id) => (
+                  <button
+                    key={id}
+                    disabled={
+                      online &&
+                      participant?.playerIndex !== setupSeat?.playerIndex
+                    }
+                    onClick={() => void chooseSetupOption(id)}
+                  >
+                    {id}
+                  </button>
+                ))}
+            {activeSetup.phase === "branch-selection" &&
+              activeSetup.definition.eligibleBranches
+                .filter(
+                  (branch) =>
+                    !activeSetup.seats.some((seat) => seat.branch === branch),
+                )
+                .map((branch) => (
+                  <button
+                    key={branch}
+                    disabled={
+                      online &&
+                      participant?.playerIndex !== setupSeat?.playerIndex
+                    }
+                    onClick={() => void chooseSetupOption(branch)}
+                  >
+                    {branch}
+                  </button>
+                ))}
+            {activeSetup.phase === "lair-selection" &&
+              setupSeat?.monsterId &&
+              activeSetup.definition.lairsByMonster[setupSeat.monsterId]
+                ?.filter(
+                  (lair) =>
+                    !activeSetup.seats.some((seat) => seat.lair === lair),
+                )
+                .map((lair) => (
+                  <button
+                    key={lair}
+                    disabled={
+                      online &&
+                      participant?.playerIndex !== setupSeat?.playerIndex
+                    }
+                    onClick={() => void chooseSetupOption(lair)}
+                  >
+                    {lair}
+                  </button>
+                ))}
+            {activeSetup.phase === "starting-choice" && (
+              <>
+                <button
+                  disabled={
+                    online &&
+                    participant?.playerIndex !== setupSeat?.playerIndex
+                  }
+                  onClick={() => void chooseSetupStartingChoice("research")}
+                >
+                  Draw Research
+                </button>
+                <button
+                  disabled={
+                    online &&
+                    participant?.playerIndex !== setupSeat?.playerIndex
+                  }
+                  onClick={() => void chooseSetupStartingChoice("deploy")}
+                >
+                  Development Deploy
+                </button>
+              </>
+            )}
+          </div>
+          <p className="setup-progress">
+            {activeSetup.seats.filter((seat) => seat.ready).length}/
+            {activeSetup.seats.length} starting choices confirmed
+          </p>
+        </section>
+      )}
+      {online && activeSetup?.phase === "complete" && (
+        <section className="setup-summary" aria-label="Setup summary">
+          <span className="label">SETUP LOCKED · DEVELOPMENT FIXTURE</span>
+          <h2>Match configuration</h2>
+          <p>
+            All assignments are recorded. Each player must still press Ready
+            before gameplay can begin.
+          </p>
+          <div className="setup-summary-grid">
+            {activeSetup.seats.map((seat) => (
+              <div key={seat.playerIndex}>
+                <strong>Player {seat.playerIndex + 1}</strong>
+                <span>
+                  {seat.monsterId} · {seat.branch}
+                </span>
+                <span>Lair: {seat.lair}</span>
+                <span>
+                  {room?.participants.find(
+                    (candidate) => candidate.playerIndex === seat.playerIndex,
+                  )?.ready
+                    ? "Ready"
+                    : "Not ready"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      <section className="status" aria-live="polite" aria-label="Match status">
+        <div>
+          <span className="label">ROUND</span>
+          <strong>{activeGame.round}</strong>
+        </div>
+        <div>
+          <span className="label">ACTIVE MONSTER</span>
+          <strong>{activePlayer.name}</strong>
+        </div>
+        <div>
+          <span className="label">PHASE</span>
+          <strong>{action}</strong>
+        </div>
+        <div>
+          <span className="label">STOMP MARKERS</span>
+          <strong>{activeGame.stompMarkers}</strong>
+        </div>
+      </section>
+      <section className="development-notice" aria-label="Development ruleset notice">
+        <span className="label">DEVELOPMENT RULESET · PROTOTYPE 0.1</span>
+        <p>
+          This playtest uses the nine-space development fixture over a rendered full honeycomb coordinate shell. The physical board transcription,
+          full combat, card effects, National Guard rules, and Monster Challenge are not yet production-verified.
+          The temporary victory condition ends the fixture when its active Stomp spaces are exhausted.
+        </p>
+      </section>
+      <section className="layout">
+        <div className="board-panel">
+          <div className="panel-heading">
+            <div>
+              <span className="label">
+                TACTICAL MAP · RULE SPACE RECONSTRUCTION
+              </span>
+              <h2>{activeLocation?.name}</h2>
+            </div>
+            <span className="chip">
+              {online
+                ? `ROOM ${room?.code}`
+                : `PLAYER ${activeGame.currentPlayer + 1}`}
+            </span>
+          </div>
+          <div className="map-controls" aria-label="Board view controls">
+            <span className="label">BOARD VIEW</span>
+            <button type="button" aria-label="Pan board left" onClick={() => panMap(-8, 0)}>←</button>
+            <button type="button" aria-label="Pan board up" onClick={() => panMap(0, -8)}>↑</button>
+            <button type="button" aria-label="Pan board down" onClick={() => panMap(0, 8)}>↓</button>
+            <button type="button" aria-label="Pan board right" onClick={() => panMap(8, 0)}>→</button>
+            <button type="button" aria-label="Zoom board out" onClick={() => setMapZoom((zoom) => Math.max(.75, Number((zoom - .25).toFixed(2))))}>−</button>
+            <span className="map-zoom" aria-live="polite">{Math.round(mapZoom * 100)}%</span>
+            <button type="button" aria-label="Zoom board in" onClick={() => setMapZoom((zoom) => Math.min(2.5, Number((zoom + .25).toFixed(2))))}>+</button>
+            <button type="button" className="map-reset" onClick={resetMapView}>Fit / reset</button>
+          </div>
+          <div
+            className="map"
+            role="group"
+            aria-label="Full honeycomb board coordinate shell"
+            aria-describedby="board-description"
+            data-board-id={activeGame.boardId}
+            data-board-content-hash={activeGame.boardContentHash}
+            data-rendered-board-id={FULL_HONEYCOMB_BOARD.id}
+            data-rendered-board-content-hash={FULL_HONEYCOMB_BOARD.contentHash}
+          >
+            <div className="map-canvas" style={{ transform: `translate(${mapPan.x}%, ${mapPan.y}%) scale(${mapZoom})` }}>
+            <div className="hex-grid">
+              {boardHexes.map(({ hex, place, left, top }) => {
+                const placeKey = hex.key;
+                const monsterLegal = legalDestinations.has(placeKey);
+                const unitLegal = legalUnitDestinations.has(placeKey);
+                const path = selectedUnitId ? selectedUnitPath : selectedPath;
+                const featureText = hex.features.map((feature) => feature.kind).join(", ");
+                const neighbourText = (developmentBoardIndex.neighbours[placeKey] ?? [])
+                  .map((neighbourKey) => developmentHexes.find((candidate) => candidate.key === neighbourKey)?.label ?? neighbourKey)
+                  .join(", ");
+                const occupantText = [
+                  ...activeGame.monsters.filter((monster) => monster.location === placeKey).map((monster) => monster.name),
+                  ...activeGame.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
+                ].join(", ");
+                const displayName = place?.name ?? hex.label ?? hex.key;
+                return (
+                  <button
+                    key={hex.key}
+                    aria-label={`${displayName}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+                    data-hex-key={hex.key}
+                    disabled={
+                      !place ||
+                      !canAct ||
+                      activeGame.phase !== "move" ||
+                      (!monsterLegal && !unitLegal)
+                    }
+                    className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${placeKey === activePlayer.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
+                    style={{ left: `${left}%`, top: `${top}%` }}
+                    onClick={() =>
+                      selectedUnitId ? chooseUnitPath(placeKey) : choosePath(placeKey)
+                    }
+                  >
+                    <span className="tile-content">
+                      <span className="node" aria-hidden="true">
+                        {place?.kind === "city"
+                          ? "✦"
+                          : place?.kind === "base"
+                            ? "⌂"
+                            : place?.kind === "infamy"
+                              ? "★"
+                              : place?.kind === "mutation"
+                                ? "✹"
+                                : place
+                                  ? "⚔"
+                                  : "·"}
+                      </span>
+                      <span>{displayName}</span>
+                      {place?.kind === "city" && <i className="city-hp">{place.marker}</i>}
+                      {activeGame.monsters
+                        .filter((monster) => monster.location === placeKey)
+                        .map((monster) => <b key={monster.id}>{monster.name.slice(0, 1)}</b>)}
+                      {activeGame.units
+                        .filter((unit) => unit.location === placeKey)
+                        .map((unit) => (
+                          <i className="unit-mark" key={unit.id}>
+                            {unit.branch.slice(0, 1)}
+                          </i>
+                        ))}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="map-copy">
+              <strong>MONSTERS</strong>
+              <span>MENACE AMERICA</span>
+            </div>
+            <div className="region-label west">HOLLYWOOD</div>
+            </div>
+          </div>
+          <p className="sr-only" id="board-description">
+            The full 254-cell honeycomb coordinate shell is rendered from the shared board candidate. The current match is still pinned to the nine-space development board, so only its verified fixture spaces are authoritative and interactive; unknown board spaces remain unavailable until source transcription is complete.
+          </p>
+          <p className="map-note">
+            {canAct
+              ? selectedUnitId
+                ? selectedUnitPath.length > 1
+                  ? `Previewing ${selectedUnitPath.length - 1}-space unit path to ${getLocation(selectedUnitPath.at(-1)!)?.name}. Confirm or cancel below.`
+                  : "Select a highlighted reachable space for the selected unit."
+                : selectedPath.length > 1
+                  ? `Previewing ${selectedPath.length - 1}-space path to ${getLocation(selectedPath.at(-1)!)?.name}. Confirm or cancel below.`
+                  : `Select a highlighted reachable space to preview a path for ${activePlayer.name}.`
+              : "Waiting for the active player."}
+          </p>
+          <section className="stack-inspector" aria-label="Piece stack inspector">
+            <div className="stack-inspector-heading">
+              <div>
+                <span className="label">PIECE STACKS</span>
+                <p>Select an occupied hex to inspect every piece without changing the board.</p>
+              </div>
+              {selectedStackKey && <button type="button" className="stack-clear" onClick={() => setSelectedStackKey(null)}>Clear</button>}
+            </div>
+            <div className="stack-location-list">
+              {occupiedStackKeys.length === 0 ? <span className="empty-card-state">No pieces on the board.</span> : occupiedStackKeys.map((key) => (
+                <button
+                  type="button"
+                  key={key}
+                  className={selectedStackKey === key ? "selected-choice" : ""}
+                  onClick={() => setSelectedStackKey(key)}
+                >
+                  {getLocation(key)?.name ?? `Hex ${key}`} · {activeGame.monsters.filter((monster) => monster.location === key).length + activeGame.units.filter((unit) => unit.location === key).length} piece(s)
+                </button>
+              ))}
+            </div>
+            <div className="piece-legend" aria-label="Piece ownership legend">
+              <span><i className="legend-dot own" /> Own</span>
+              <span><i className="legend-dot allied" /> Allied</span>
+              <span><i className="legend-dot enemy" /> Enemy</span>
+              <span><i className="legend-dot neutral" /> Neutral</span>
+            </div>
+            {selectedStackKey && (
+              <div className="stack-details" aria-live="polite">
+                <strong>{getLocation(selectedStackKey)?.name ?? `Hex ${selectedStackKey}`}</strong>
+                {[...selectedStackMonsters.map((monster) => ({ id: monster.id, role: monster.id === activePlayer.id ? "Own monster" : "Enemy monster", title: monster.name, detail: `${monster.health}/${monster.maxHealth} Health · ${monster.infamy} Infamy · ${monster.location === "hollywood" ? "Hollywood" : "on board"}` })), ...selectedStackUnits.map((unit) => ({ id: unit.id, role: unit.ownerPlayer === undefined ? "Neutral unit" : unit.ownerPlayer === activeGame.currentPlayer ? "Own unit" : "Allied unit", title: unit.unitTypeId ?? unit.branch, detail: `${unit.branch} · ${unit.ownerPlayer === undefined ? "Neutral" : `Player ${unit.ownerPlayer + 1}`} · ${unit.health === undefined ? "Health not tracked" : `${unit.health} Health`} · ${activeGame.movedPieceIds.includes(unit.id) ? "moved" : "available"}` }))].map((piece) => (
+                  <div key={piece.id}>
+                    <span>{piece.role} · {piece.title}</span>
+                    <small>{piece.detail}</small>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+        <aside>
+          <div className="card monster-card">
+            <span className="label">MONSTER RECORD</span>
+            <h2>{activePlayer.name}</h2>
+            <div className="meter">
+              <span
+                style={{
+                  width: `${(activePlayer.health / activePlayer.maxHealth) * 100}%`,
+                }}
+              />
+            </div>
+            <div className="stats">
+              <span>
+                <b>{activePlayer.health}</b> health
+              </span>
+              <span>
+                <b>{activePlayer.infamy}</b> infamy
+              </span>
+              <span>
+                <b>{activePlayer.move}</b> move
+              </span>
+            </div>
+          </div>
+          <figure className="card board-reference-card">
+            <span className="label">BOARD REFERENCE PHOTO</span>
+            <img
+              src="/assets/board/full-board-top-down.webp"
+              alt="Top-down photograph of the Monsters Menace America honeycomb board"
+              loading="lazy"
+            />
+            <figcaption>
+              Source reference only · the interactive shell above is the current
+              shared board candidate.
+            </figcaption>
+          </figure>
+          <div className="card unit-card">
+            <span className="label">MILITARY UNITS</span>
+            {activeGame.units
+              .filter((unit) => unit.ownerPlayer === activeGame.currentPlayer || (unit.branch === "National Guard" && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Guard Commander")))
+              .map((unit) => (
+                <button
+                  key={unit.id}
+                  aria-label={`Your ${unit.branch} unit at ${getLocation(unit.location)?.name ?? unit.location}${legalUnitPaths(activeGame, unit.id).length ? " · movable" : " · already moved or unavailable"}`}
+                  className={selectedUnitId === unit.id ? "unit-selected" : ""}
+                  disabled={
+                    !canAct ||
+                    activeGame.phase !== "move" ||
+                    !legalUnitPaths(activeGame, unit.id).length
+                  }
+                  onClick={() => {
+                    setSelectedUnitId(unit.id);
+                    setSelectedPath([]);
+                    setSelectedUnitPath([]);
+                  }}
+                >
+                  {unit.branch} ·{" "}
+                  {getLocation(unit.location)?.name ?? unit.location}
+                </button>
+              ))}
+          </div>
+          <div className="card revealed-card-panel" aria-label={`Revealed cards for Player ${(participant?.playerIndex ?? activeGame.currentPlayer) + 1}`}>
+            <span className="label">REVEALED CARDS</span>
+            <p className="card-privacy-note">Face-up cards are shown here. Hidden deck order is never rendered.</p>
+            <div className="revealed-card-group">
+              <strong>Monster Mutation</strong>
+              {activeGame.players[participant?.playerIndex ?? activeGame.currentPlayer]?.mutationCardIds.length ? (
+                <ul>
+                  {activeGame.players[participant?.playerIndex ?? activeGame.currentPlayer].mutationCardIds.map((cardId) => <li key={cardId}>{cardId}</li>)}
+                </ul>
+              ) : <span className="empty-card-state">None revealed</span>}
+            </div>
+            <div className="revealed-card-group">
+              <strong>Military Research</strong>
+              {activeGame.players[participant?.playerIndex ?? activeGame.currentPlayer]?.researchCardIds.length ? (
+                <ul>
+                  {activeGame.players[participant?.playerIndex ?? activeGame.currentPlayer].researchCardIds.map((cardId) => <li key={cardId}>{cardId}</li>)}
+                </ul>
+              ) : <span className="empty-card-state">None revealed</span>}
+            </div>
+          </div>
+          <div className="card action-card">
+            <span className="label">CURRENT STEP</span>
+            <h2 ref={actionHeadingRef} tabIndex={-1}>
+              {action}
+            </h2>
+            <p>
+            {activeGame.phase === "move"
+                ? selectedUnitId
+                  ? selectedUnitPath.length > 1
+                    ? `${selectedUnitPath.map((id) => getLocation(id)?.name ?? id).join(" → ")} · ${selectedUnitPath.length - 1} movement ${selectedUnitPath.length - 1 === 1 ? "space" : "spaces"}`
+                    : "Move the selected military unit along a highlighted path."
+                  : selectedPath.length > 1
+                    ? `${selectedPath.map((id) => getLocation(id)?.name ?? id).join(" → ")} · ${selectedPath.length - 1} movement ${selectedPath.length - 1 === 1 ? "space" : "spaces"}`
+                    : `Move up to ${activePlayer.move} spaces. Choose a connected location on the map.`
+                : activeGame.phase === "fight"
+                  ? activeGame.pendingDecision?.type === "attack-target"
+                    ? pendingAttackPrompt
+                    : activeGame.pendingDecision?.type === "retreat"
+                    ? "Choose a legal retreat for every surviving military unit."
+                    : activeGame.pendingBattles.length > 1
+                    ? `Choose which of ${activeGame.pendingBattles.length} compulsory battles to resolve first.`
+                    : "Resolve the compulsory battle started by movement."
+                  : activeGame.phase === "encounter"
+                    ? "Resolve the space your monster ended on."
+                    : activeGame.phase === "game-over"
+                      ? "The development match is complete. Further commands are disabled."
+                : `Place a legal military unit, then pass Deploy.${activeGame.deploymentsThisTurn ? ` ${activeGame.deploymentsThisTurn} placed this step.` : ""}`}
+            </p>
+            {unavailableReason && !canAct && (
+              <p className="unavailable-reason" role="status">
+                {unavailableReason}
+              </p>
+            )}
+            {lastFightEvent && lastFightRolls.length > 0 && (
+              <div className="combat-result" key={lastFightEvent.id} aria-live="polite">
+                <span className="label">LAST COMBAT ROLLS</span>
+                <div className="combat-roll-list">
+                  {lastFightRolls.map((roll, index) => <span key={`${lastFightEvent.id}-${index}`} aria-label={`Roll ${index + 1}: ${roll}`}>{roll}</span>)}
+                </div>
+                <small>Recorded by the authoritative fight result; the animation is presentation only.</small>
+              </div>
+            )}
+            {activeGame.phase === "move" &&
+            selectedUnitId &&
+            selectedUnitPath.length > 1 ? (
+              <div className="path-controls">
+                <button
+                  disabled={!canAct}
+                  onClick={() =>
+                    void runCommand({
+                      type: "move-unit",
+                      unitId: selectedUnitId,
+                      path: selectedUnitPath,
+                    })
+                  }
+                >
+                  Confirm unit path
+                </button>
+                <button
+                  className="cancel"
+                  disabled={pendingAction}
+                  onClick={() => {
+                    setSelectedUnitId(null);
+                    setSelectedUnitPath([]);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : activeGame.phase === "move" && selectedPath.length > 1 ? (
+              <div className="path-controls">
+                <button
+                  disabled={!canAct}
+                  onClick={() =>
+                    void runCommand({ type: "move", path: selectedPath })
+                  }
+                >
+                  Confirm path
+                </button>
+                <button
+                  className="cancel"
+                  disabled={pendingAction}
+                  onClick={() => setSelectedPath([])}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : activeGame.phase === "move" ? (
+              <div className="move-actions">
+                {activeGame.setupAssignments?.[activeGame.currentPlayer]?.lair && activeGame.monsters[activeGame.currentPlayer]?.location !== "hollywood" && (
+                  <button
+                    disabled={!canAct}
+                    onClick={() => runIrreversibleAction(() => void runCommand({ type: "disappear-monster" }), "Leave the monster in its lair and consume the Move step?")}
+                  >
+                    Disappear instead of moving
+                  </button>
+                )}
+                <button
+                  disabled={!canAct}
+                  onClick={() => void runCommand({ type: "pass-move" })}
+                >
+                  Leave monster here & finish Move
+                </button>
+              </div>
+            ) : activeGame.phase === "fight" && pendingAttackTarget ? (
+              <div className="battle-choice" aria-label="Choose the monster attack target">
+                <p>{pendingAttackPrompt}</p>
+                {pendingAttackTarget.targetIds.map((unitId) => {
+                  const unit = activeGame.units.find((candidate) => candidate.id === unitId);
+                  return (
+                    <button
+                      key={unitId}
+                      disabled={!canAct}
+                      onClick={() => void runCommand({
+                        type: "resolve-fight",
+                        battleId: pendingAttackTarget.battleId,
+                        targetUnitId: unitId,
+                      })}
+                    >
+                      Attack {unit?.branch ?? unitId} ({unit?.unitTypeId ?? "unit"})
+                    </button>
+                  );
+                })}
+              </div>
+            ) : activeGame.phase === "fight" && activeGame.pendingDecision?.type === "retreat" && activeGame.pendingRetreat ? (
+              <div className="retreat-choice" aria-label="Choose retreat destinations">
+                {activeGame.pendingRetreat.unitIds.map((unitId) => {
+                  const unit = activeGame.units.find((candidate) => candidate.id === unitId);
+                  const options = activeGame.pendingRetreat?.options[unitId] ?? [];
+                  const selected = retreatChoices[unitId] ?? (options.length === 0 ? "disappeared" : undefined);
+                  return (
+                    <div className="retreat-unit" key={unitId}>
+                      <span>{unit?.branch ?? unitId}</span>
+                      {options.length === 0 ? (
+                        <strong>Forced disappearance</strong>
+                      ) : options.map((destination) => (
+                        <button
+                          className={selected === destination ? "selected-choice" : ""}
+                          key={destination}
+                          disabled={!canAct}
+                          onClick={() => setRetreatChoices((current) => ({ ...current, [unitId]: destination }))}
+                        >
+                          {getLocation(destination)?.name ?? destination}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
+                <button
+                  disabled={!canAct || activeGame.pendingRetreat.unitIds.some((unitId) => !retreatChoices[unitId] && (activeGame.pendingRetreat?.options[unitId]?.length ?? 0) > 0)}
+                  onClick={() => {
+                    const destinations = Object.fromEntries(activeGame.pendingRetreat!.unitIds.map((unitId) => [unitId, retreatChoices[unitId] ?? "disappeared"]));
+                    void runCommand({ type: "retreat", destinations });
+                  }}
+                >
+                  Confirm retreat
+                </button>
+              </div>
+            ) : activeGame.phase === "fight" && activeGame.pendingBattles.length > 1 ? (
+              <div className="battle-choice" aria-label="Choose battle resolution order">
+                {activeGame.pendingBattles.map((battle) => {
+                  const monster = activeGame.monsters.find((candidate) => candidate.id === battle.monsterId);
+                  return (
+                    <button
+                      key={battle.id}
+                      disabled={!canAct}
+                      onClick={() => void runCommand({ type: "resolve-fight", battleId: battle.id })}
+                    >
+                      Resolve {monster?.name ?? battle.monsterId} at {getLocation(battle.location)?.name ?? battle.location} ({battle.militaryUnitIds.length} unit{battle.militaryUnitIds.length === 1 ? "" : "s"})
+                    </button>
+                  );
+                })}
+              </div>
+            ) : activeGame.phase === "fight" && pendingBattle && canSpendInfamyOnPendingBattle ? (
+              <div className="battle-choice" aria-label="Choose whether to spend Infamy on this battle">
+                <p>Choose whether to spend one Infamy for an additional monster attack this round.</p>
+                <button
+                  disabled={!canAct}
+                  onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}
+                >
+                  Resolve without spending Infamy
+                </button>
+                <button
+                  disabled={!canAct}
+                  onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}
+                >
+                  Spend 1 Infamy · add one attack
+                </button>
+              </div>
+            ) : activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "trophy-choice" ? (
+              <div className="battle-choice" aria-label="Choose a military trophy">
+                <p>Player {activeGame.pendingDecision.playerIndex + 1}, choose one {activeGame.pendingDecision.branch} unit as the monster&apos;s trophy.</p>
+                {activeGame.pendingDecision.unitIds.map((unitId) => {
+                  const unit = activeGame.units.find((candidate) => candidate.id === unitId);
+                  return (
+                    <button
+                      key={unitId}
+                      disabled={!canAct}
+                      onClick={() => void runCommand({ type: "resolve-encounter", trophyUnitId: unitId })}
+                    >
+                      Take {unit?.unitTypeId ?? unitId} ({unit?.location === "record-tile" ? "record tile" : "board"})
+                    </button>
+                  );
+                })}
+              </div>
+            ) : activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "encounter-choice" ? (
+              <div className="battle-choice" aria-label="Choose Zorb city benefit">
+                {activeGame.pendingDecision.choices.map((choice) => (
+                  <button
+                    key={choice}
+                    disabled={!canAct}
+                    onClick={() => void runCommand({ type: "resolve-encounter", choice })}
+                  >
+                    {choice === "health" ? "Take the city Health benefit" : "Take 2 Infamy instead"}
+                  </button>
+                ))}
+              </div>
+            ) : activeGame.phase === "deploy" ? (
+              <div className="path-controls">
+                <button
+                  disabled={!canAct || !ownDeploymentAvailable}
+                  onClick={() => void runCommand({ type: "deploy" })}
+                >
+                  {ownDeploymentAvailable ? "Deploy one unit" : "No owned deployment available"}
+                </button>
+                {availableGuardUnitId && guardDeploymentDestination && (
+                  <button
+                    disabled={!canAct || !guardDeploymentAvailable}
+                    onClick={() => void runCommand({ type: "deploy", unitId: availableGuardUnitId, destination: guardDeploymentDestination })}
+                  >
+                    Deploy Guard to {getLocation(guardDeploymentDestination)?.name ?? guardDeploymentDestination}
+                  </button>
+                )}
+                <button
+                  disabled={!canAct || activeGame.decks.research.exhausted}
+                  onClick={() => void runCommand({ type: "draw-research" })}
+                >
+                  {activeGame.decks.research.exhausted ? "Military Research exhausted" : "Draw Military Research instead"}
+                </button>
+                <button
+                  className="cancel"
+                  disabled={!canAct}
+                  onClick={() => void runCommand({ type: "pass-deploy" })}
+                >
+                  Pass deployment
+                </button>
+              </div>
+            ) : activeGame.phase === "game-over" ? (
+              <div className="victory-summary">
+                <strong>{action}</strong>
+                <span>Victory type: {activeGame.victoryType ?? "recorded terminal result"}</span>
+              </div>
+            ) : (
+              <button
+                disabled={!canAct}
+                onClick={() => void runCommand({ type: "advance" })}
+              >
+                Resolve {action.toLowerCase()}
+              </button>
+            )}
+          </div>
+          <div className="card log">
+            <span className="label">TURN LOG</span>
+            {eventLog.length
+              ? eventLog.map((entry) => (
+                  <details key={entry.id}>
+                    <summary>
+                      {entry.actorId ? `${entry.actorId} · ` : ""}
+                      {entry.action} · {entry.outcome}
+                    </summary>
+                    <pre>{JSON.stringify(entry.detail, null, 2)}</pre>
+                  </details>
+                ))
+              : log.map((entry, i) => <p key={i}>{entry}</p>)}
+          </div>
+        </aside>
+      </section>
+    </main>
+  );
 }
-createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);

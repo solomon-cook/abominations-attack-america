@@ -11,5 +11,6 @@
 export type * from './models/GameRoom.js'
 export type * from './models/Participant.js'
 export type * from './models/GameEvent.js'
+export type * from './models/CommandReceipt.js'
 export type * from './models/GameResult.js'
 export type * from './commonInputTypes.js'

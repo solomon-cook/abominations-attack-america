@@ -1,0 +1,14 @@
+{
+  "type": "seacoast",
+  "source": "coast_0deg.png",
+  "preferredExtension": ".webp",
+  "rotationStepDegrees": 60,
+  "tiles": [
+    { "file": "coast_0deg.png", "rotationDegrees": 0 },
+    { "file": "coast_60deg.png", "rotationDegrees": 60 },
+    { "file": "coast_120deg.png", "rotationDegrees": 120 },
+    { "file": "coast_180deg.png", "rotationDegrees": 180 },
+    { "file": "coast_240deg.png", "rotationDegrees": 240 },
+    { "file": "coast_300deg.png", "rotationDegrees": 300 }
+  ]
+}

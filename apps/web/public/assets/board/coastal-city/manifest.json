@@ -1,0 +1,37 @@
+{
+  "type": "coastal-city",
+  "rotationStepDegrees": 60,
+  "preferredExtension": ".webp",
+  "sizes": {
+    "small": {
+      "tiles": [
+        { "file": "small/coastal_city_0deg.png", "rotationDegrees": 0 },
+        { "file": "small/coastal_city_60deg.png", "rotationDegrees": 60 },
+        { "file": "small/coastal_city_120deg.png", "rotationDegrees": 120 },
+        { "file": "small/coastal_city_180deg.png", "rotationDegrees": 180 },
+        { "file": "small/coastal_city_240deg.png", "rotationDegrees": 240 },
+        { "file": "small/coastal_city_300deg.png", "rotationDegrees": 300 }
+      ]
+    },
+    "medium": {
+      "tiles": [
+        { "file": "medium/coastal_city_0deg.png", "rotationDegrees": 0 },
+        { "file": "medium/coastal_city_60deg.png", "rotationDegrees": 60 },
+        { "file": "medium/coastal_city_120deg.png", "rotationDegrees": 120 },
+        { "file": "medium/coastal_city_180deg.png", "rotationDegrees": 180 },
+        { "file": "medium/coastal_city_240deg.png", "rotationDegrees": 240 },
+        { "file": "medium/coastal_city_300deg.png", "rotationDegrees": 300 }
+      ]
+    },
+    "large": {
+      "tiles": [
+        { "file": "large/coastal_city_0deg.png", "rotationDegrees": 0 },
+        { "file": "large/coastal_city_60deg.png", "rotationDegrees": 60 },
+        { "file": "large/coastal_city_120deg.png", "rotationDegrees": 120 },
+        { "file": "large/coastal_city_180deg.png", "rotationDegrees": 180 },
+        { "file": "large/coastal_city_240deg.png", "rotationDegrees": 240 },
+        { "file": "large/coastal_city_300deg.png", "rotationDegrees": 300 }
+      ]
+    }
+  }
+}

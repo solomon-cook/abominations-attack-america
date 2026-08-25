@@ -1,0 +1,7 @@
+{
+  "preferredExtension": ".webp",
+  "tokens": [
+    { "id": "stomp-token", "file": "stomp_token.png", "kind": "round-token" },
+    { "id": "infamy-token", "file": "infamy_token.png", "kind": "round-token" }
+  ]
+}

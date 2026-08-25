@@ -54,6 +54,7 @@ export const ModelName = {
   GameRoom: 'GameRoom',
   Participant: 'Participant',
   GameEvent: 'GameEvent',
+  CommandReceipt: 'CommandReceipt',
   GameResult: 'GameResult'
 } as const
 
@@ -82,6 +83,7 @@ export const GameRoomScalarFieldEnum = {
   state: 'state',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  lastActivityAt: 'lastActivityAt',
   completedAt: 'completedAt'
 } as const
 
@@ -96,6 +98,8 @@ export const ParticipantScalarFieldEnum = {
   playerIndex: 'playerIndex',
   tokenHash: 'tokenHash',
   connectedAt: 'connectedAt',
+  connectionId: 'connectionId',
+  ready: 'ready',
   createdAt: 'createdAt'
 } as const
 
@@ -113,6 +117,19 @@ export const GameEventScalarFieldEnum = {
 } as const
 
 export type GameEventScalarFieldEnum = (typeof GameEventScalarFieldEnum)[keyof typeof GameEventScalarFieldEnum]
+
+
+export const CommandReceiptScalarFieldEnum = {
+  id: 'id',
+  roomId: 'roomId',
+  actionId: 'actionId',
+  actorId: 'actorId',
+  version: 'version',
+  eventType: 'eventType',
+  createdAt: 'createdAt'
+} as const
+
+export type CommandReceiptScalarFieldEnum = (typeof CommandReceiptScalarFieldEnum)[keyof typeof CommandReceiptScalarFieldEnum]
 
 
 export const GameResultScalarFieldEnum = {

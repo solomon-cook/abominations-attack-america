@@ -57,6 +57,11 @@ export type Participant = Prisma.ParticipantModel
  */
 export type GameEvent = Prisma.GameEventModel
 /**
+ * Model CommandReceipt
+ * 
+ */
+export type CommandReceipt = Prisma.CommandReceiptModel
+/**
  * Model GameResult
  * 
  */

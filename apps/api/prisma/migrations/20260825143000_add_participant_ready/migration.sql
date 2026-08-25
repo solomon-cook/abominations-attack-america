@@ -1,0 +1,1 @@
+ALTER TABLE "Participant" ADD COLUMN "ready" BOOLEAN NOT NULL DEFAULT false;

@@ -13,7 +13,8 @@ export const RoomStatus = {
   WAITING: 'WAITING',
   ACTIVE: 'ACTIVE',
   COMPLETED: 'COMPLETED',
-  ABANDONED: 'ABANDONED'
+  ABANDONED: 'ABANDONED',
+  EXPIRED: 'EXPIRED'
 } as const
 
 export type RoomStatus = (typeof RoomStatus)[keyof typeof RoomStatus]

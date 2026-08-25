@@ -1,0 +1,7 @@
+{
+  "boardId": "development-nine-location",
+  "boardVersion": 1,
+  "contentHash": "fnv1a:89d56f63",
+  "hexKeys": ["-1,0", "-1,1", "-2,2", "-3,0", "-3,1", "0,2", "1,-1", "2,1", "3,-1"],
+  "productionReady": false
+}

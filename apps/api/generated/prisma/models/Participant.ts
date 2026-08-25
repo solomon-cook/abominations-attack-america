@@ -42,6 +42,8 @@ export type ParticipantMinAggregateOutputType = {
   playerIndex: number | null
   tokenHash: string | null
   connectedAt: Date | null
+  connectionId: string | null
+  ready: boolean | null
   createdAt: Date | null
 }
 
@@ -53,6 +55,8 @@ export type ParticipantMaxAggregateOutputType = {
   playerIndex: number | null
   tokenHash: string | null
   connectedAt: Date | null
+  connectionId: string | null
+  ready: boolean | null
   createdAt: Date | null
 }
 
@@ -64,6 +68,8 @@ export type ParticipantCountAggregateOutputType = {
   playerIndex: number
   tokenHash: number
   connectedAt: number
+  connectionId: number
+  ready: number
   createdAt: number
   _all: number
 }
@@ -85,6 +91,8 @@ export type ParticipantMinAggregateInputType = {
   playerIndex?: true
   tokenHash?: true
   connectedAt?: true
+  connectionId?: true
+  ready?: true
   createdAt?: true
 }
 
@@ -96,6 +104,8 @@ export type ParticipantMaxAggregateInputType = {
   playerIndex?: true
   tokenHash?: true
   connectedAt?: true
+  connectionId?: true
+  ready?: true
   createdAt?: true
 }
 
@@ -107,6 +117,8 @@ export type ParticipantCountAggregateInputType = {
   playerIndex?: true
   tokenHash?: true
   connectedAt?: true
+  connectionId?: true
+  ready?: true
   createdAt?: true
   _all?: true
 }
@@ -205,6 +217,8 @@ export type ParticipantGroupByOutputType = {
   playerIndex: number | null
   tokenHash: string
   connectedAt: Date | null
+  connectionId: string | null
+  ready: boolean
   createdAt: Date
   _count: ParticipantCountAggregateOutputType | null
   _avg: ParticipantAvgAggregateOutputType | null
@@ -239,6 +253,8 @@ export type ParticipantWhereInput = {
   playerIndex?: Prisma.IntNullableFilter<"Participant"> | number | null
   tokenHash?: Prisma.StringFilter<"Participant"> | string
   connectedAt?: Prisma.DateTimeNullableFilter<"Participant"> | Date | string | null
+  connectionId?: Prisma.StringNullableFilter<"Participant"> | string | null
+  ready?: Prisma.BoolFilter<"Participant"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Participant"> | Date | string
   room?: Prisma.XOR<Prisma.GameRoomScalarRelationFilter, Prisma.GameRoomWhereInput>
 }
@@ -251,6 +267,8 @@ export type ParticipantOrderByWithRelationInput = {
   playerIndex?: Prisma.SortOrderInput | Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  connectionId?: Prisma.SortOrderInput | Prisma.SortOrder
+  ready?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   room?: Prisma.GameRoomOrderByWithRelationInput
 }
@@ -266,6 +284,8 @@ export type ParticipantWhereUniqueInput = Prisma.AtLeast<{
   role?: Prisma.EnumParticipantRoleFilter<"Participant"> | $Enums.ParticipantRole
   playerIndex?: Prisma.IntNullableFilter<"Participant"> | number | null
   connectedAt?: Prisma.DateTimeNullableFilter<"Participant"> | Date | string | null
+  connectionId?: Prisma.StringNullableFilter<"Participant"> | string | null
+  ready?: Prisma.BoolFilter<"Participant"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Participant"> | Date | string
   room?: Prisma.XOR<Prisma.GameRoomScalarRelationFilter, Prisma.GameRoomWhereInput>
 }, "id" | "tokenHash">
@@ -278,6 +298,8 @@ export type ParticipantOrderByWithAggregationInput = {
   playerIndex?: Prisma.SortOrderInput | Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  connectionId?: Prisma.SortOrderInput | Prisma.SortOrder
+  ready?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.ParticipantCountOrderByAggregateInput
   _avg?: Prisma.ParticipantAvgOrderByAggregateInput
@@ -297,6 +319,8 @@ export type ParticipantScalarWhereWithAggregatesInput = {
   playerIndex?: Prisma.IntNullableWithAggregatesFilter<"Participant"> | number | null
   tokenHash?: Prisma.StringWithAggregatesFilter<"Participant"> | string
   connectedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Participant"> | Date | string | null
+  connectionId?: Prisma.StringNullableWithAggregatesFilter<"Participant"> | string | null
+  ready?: Prisma.BoolWithAggregatesFilter<"Participant"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Participant"> | Date | string
 }
 
@@ -307,6 +331,8 @@ export type ParticipantCreateInput = {
   playerIndex?: number | null
   tokenHash: string
   connectedAt?: Date | string | null
+  connectionId?: string | null
+  ready?: boolean
   createdAt?: Date | string
   room: Prisma.GameRoomCreateNestedOneWithoutParticipantsInput
 }
@@ -319,6 +345,8 @@ export type ParticipantUncheckedCreateInput = {
   playerIndex?: number | null
   tokenHash: string
   connectedAt?: Date | string | null
+  connectionId?: string | null
+  ready?: boolean
   createdAt?: Date | string
 }
 
@@ -329,6 +357,8 @@ export type ParticipantUpdateInput = {
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   room?: Prisma.GameRoomUpdateOneRequiredWithoutParticipantsNestedInput
 }
@@ -341,6 +371,8 @@ export type ParticipantUncheckedUpdateInput = {
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -352,6 +384,8 @@ export type ParticipantCreateManyInput = {
   playerIndex?: number | null
   tokenHash: string
   connectedAt?: Date | string | null
+  connectionId?: string | null
+  ready?: boolean
   createdAt?: Date | string
 }
 
@@ -362,6 +396,8 @@ export type ParticipantUpdateManyMutationInput = {
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -373,6 +409,8 @@ export type ParticipantUncheckedUpdateManyInput = {
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -394,6 +432,8 @@ export type ParticipantCountOrderByAggregateInput = {
   playerIndex?: Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrder
+  connectionId?: Prisma.SortOrder
+  ready?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -409,6 +449,8 @@ export type ParticipantMaxOrderByAggregateInput = {
   playerIndex?: Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrder
+  connectionId?: Prisma.SortOrder
+  ready?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -420,6 +462,8 @@ export type ParticipantMinOrderByAggregateInput = {
   playerIndex?: Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrder
+  connectionId?: Prisma.SortOrder
+  ready?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -481,6 +525,14 @@ export type NullableIntFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
 export type ParticipantCreateWithoutRoomInput = {
   id?: string
   displayName: string
@@ -488,6 +540,8 @@ export type ParticipantCreateWithoutRoomInput = {
   playerIndex?: number | null
   tokenHash: string
   connectedAt?: Date | string | null
+  connectionId?: string | null
+  ready?: boolean
   createdAt?: Date | string
 }
 
@@ -498,6 +552,8 @@ export type ParticipantUncheckedCreateWithoutRoomInput = {
   playerIndex?: number | null
   tokenHash: string
   connectedAt?: Date | string | null
+  connectionId?: string | null
+  ready?: boolean
   createdAt?: Date | string
 }
 
@@ -538,6 +594,8 @@ export type ParticipantScalarWhereInput = {
   playerIndex?: Prisma.IntNullableFilter<"Participant"> | number | null
   tokenHash?: Prisma.StringFilter<"Participant"> | string
   connectedAt?: Prisma.DateTimeNullableFilter<"Participant"> | Date | string | null
+  connectionId?: Prisma.StringNullableFilter<"Participant"> | string | null
+  ready?: Prisma.BoolFilter<"Participant"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Participant"> | Date | string
 }
 
@@ -548,6 +606,8 @@ export type ParticipantCreateManyRoomInput = {
   playerIndex?: number | null
   tokenHash: string
   connectedAt?: Date | string | null
+  connectionId?: string | null
+  ready?: boolean
   createdAt?: Date | string
 }
 
@@ -558,6 +618,8 @@ export type ParticipantUpdateWithoutRoomInput = {
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -568,6 +630,8 @@ export type ParticipantUncheckedUpdateWithoutRoomInput = {
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -578,6 +642,8 @@ export type ParticipantUncheckedUpdateManyWithoutRoomInput = {
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -591,6 +657,8 @@ export type ParticipantSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   playerIndex?: boolean
   tokenHash?: boolean
   connectedAt?: boolean
+  connectionId?: boolean
+  ready?: boolean
   createdAt?: boolean
   room?: boolean | Prisma.GameRoomDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["participant"]>
@@ -603,6 +671,8 @@ export type ParticipantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   playerIndex?: boolean
   tokenHash?: boolean
   connectedAt?: boolean
+  connectionId?: boolean
+  ready?: boolean
   createdAt?: boolean
   room?: boolean | Prisma.GameRoomDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["participant"]>
@@ -615,6 +685,8 @@ export type ParticipantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   playerIndex?: boolean
   tokenHash?: boolean
   connectedAt?: boolean
+  connectionId?: boolean
+  ready?: boolean
   createdAt?: boolean
   room?: boolean | Prisma.GameRoomDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["participant"]>
@@ -627,10 +699,12 @@ export type ParticipantSelectScalar = {
   playerIndex?: boolean
   tokenHash?: boolean
   connectedAt?: boolean
+  connectionId?: boolean
+  ready?: boolean
   createdAt?: boolean
 }
 
-export type ParticipantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "displayName" | "role" | "playerIndex" | "tokenHash" | "connectedAt" | "createdAt", ExtArgs["result"]["participant"]>
+export type ParticipantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "displayName" | "role" | "playerIndex" | "tokenHash" | "connectedAt" | "connectionId" | "ready" | "createdAt", ExtArgs["result"]["participant"]>
 export type ParticipantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   room?: boolean | Prisma.GameRoomDefaultArgs<ExtArgs>
 }
@@ -654,6 +728,8 @@ export type $ParticipantPayload<ExtArgs extends runtime.Types.Extensions.Interna
     playerIndex: number | null
     tokenHash: string
     connectedAt: Date | null
+    connectionId: string | null
+    ready: boolean
     createdAt: Date
   }, ExtArgs["result"]["participant"]>
   composites: {}
@@ -1086,6 +1162,8 @@ export interface ParticipantFieldRefs {
   readonly playerIndex: Prisma.FieldRef<"Participant", 'Int'>
   readonly tokenHash: Prisma.FieldRef<"Participant", 'String'>
   readonly connectedAt: Prisma.FieldRef<"Participant", 'DateTime'>
+  readonly connectionId: Prisma.FieldRef<"Participant", 'String'>
+  readonly ready: Prisma.FieldRef<"Participant", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Participant", 'DateTime'>
 }
     

@@ -400,6 +400,7 @@ export const ModelName = {
   GameRoom: 'GameRoom',
   Participant: 'Participant',
   GameEvent: 'GameEvent',
+  CommandReceipt: 'CommandReceipt',
   GameResult: 'GameResult'
 } as const
 
@@ -416,7 +417,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "gameRoom" | "participant" | "gameEvent" | "gameResult"
+    modelProps: "gameRoom" | "participant" | "gameEvent" | "commandReceipt" | "gameResult"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -642,6 +643,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CommandReceipt: {
+      payload: Prisma.$CommandReceiptPayload<ExtArgs>
+      fields: Prisma.CommandReceiptFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CommandReceiptFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CommandReceiptFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload>
+        }
+        findFirst: {
+          args: Prisma.CommandReceiptFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CommandReceiptFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload>
+        }
+        findMany: {
+          args: Prisma.CommandReceiptFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload>[]
+        }
+        create: {
+          args: Prisma.CommandReceiptCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload>
+        }
+        createMany: {
+          args: Prisma.CommandReceiptCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CommandReceiptCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload>[]
+        }
+        delete: {
+          args: Prisma.CommandReceiptDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload>
+        }
+        update: {
+          args: Prisma.CommandReceiptUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload>
+        }
+        deleteMany: {
+          args: Prisma.CommandReceiptDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CommandReceiptUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CommandReceiptUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload>[]
+        }
+        upsert: {
+          args: Prisma.CommandReceiptUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CommandReceiptPayload>
+        }
+        aggregate: {
+          args: Prisma.CommandReceiptAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCommandReceipt>
+        }
+        groupBy: {
+          args: Prisma.CommandReceiptGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CommandReceiptGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CommandReceiptCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CommandReceiptCountAggregateOutputType> | number
+        }
+      }
+    }
     GameResult: {
       payload: Prisma.$GameResultPayload<ExtArgs>
       fields: Prisma.GameResultFieldRefs
@@ -764,6 +839,7 @@ export const GameRoomScalarFieldEnum = {
   state: 'state',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  lastActivityAt: 'lastActivityAt',
   completedAt: 'completedAt'
 } as const
 
@@ -778,6 +854,8 @@ export const ParticipantScalarFieldEnum = {
   playerIndex: 'playerIndex',
   tokenHash: 'tokenHash',
   connectedAt: 'connectedAt',
+  connectionId: 'connectionId',
+  ready: 'ready',
   createdAt: 'createdAt'
 } as const
 
@@ -795,6 +873,19 @@ export const GameEventScalarFieldEnum = {
 } as const
 
 export type GameEventScalarFieldEnum = (typeof GameEventScalarFieldEnum)[keyof typeof GameEventScalarFieldEnum]
+
+
+export const CommandReceiptScalarFieldEnum = {
+  id: 'id',
+  roomId: 'roomId',
+  actionId: 'actionId',
+  actorId: 'actorId',
+  version: 'version',
+  eventType: 'eventType',
+  createdAt: 'createdAt'
+} as const
+
+export type CommandReceiptScalarFieldEnum = (typeof CommandReceiptScalarFieldEnum)[keyof typeof CommandReceiptScalarFieldEnum]
 
 
 export const GameResultScalarFieldEnum = {
@@ -936,6 +1027,13 @@ export type EnumParticipantRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$
  * Reference to a field of type 'ParticipantRole[]'
  */
 export type ListEnumParticipantRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ParticipantRole[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -1106,6 +1204,7 @@ export type GlobalOmitConfig = {
   gameRoom?: Prisma.GameRoomOmit
   participant?: Prisma.ParticipantOmit
   gameEvent?: Prisma.GameEventOmit
+  commandReceipt?: Prisma.CommandReceiptOmit
   gameResult?: Prisma.GameResultOmit
 }
 

@@ -1,0 +1,13 @@
+{
+  "baseTile": "../grassland.png",
+  "preferredExtension": ".webp",
+  "features": [
+    { "id": "military-base", "file": "military_base.png", "kind": "hex-feature" },
+    { "id": "infamy-site", "file": "infamy_site.png", "kind": "hex-feature" },
+    { "id": "mutation-site", "file": "mutation_site.png", "kind": "hex-feature" },
+    { "id": "challenge-site", "file": "challenge_site.png", "kind": "hex-feature" },
+    { "id": "lair", "file": "lair.png", "kind": "hex-feature" },
+    { "id": "hollywood", "file": "hollywood.png", "kind": "hex-feature" },
+    { "id": "los-angeles", "file": "los_angeles.png", "kind": "hex-feature" }
+  ]
+}
