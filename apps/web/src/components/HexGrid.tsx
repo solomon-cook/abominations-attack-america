@@ -129,6 +129,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
         ].join(", ");
         const displayName = place?.name ?? hex.label ?? `Unresolved ${hex.key}`;
+        const visibleName = place?.name ?? (developmentFixture ? hex.label : "UNRESOLVED");
         const locationMeta = place?.kind === "city"
           ? `city, ${place.marker ?? "benefit not recorded"}`
           : place?.kind === "mutation"
@@ -157,7 +158,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             {place?.kind === "infamy" && <img className="tile-infamy" src="/assets/board/tokens/infamy_token.webp" alt="" aria-hidden="true" loading="lazy" />}
             <span className="tile-content">
               <span className="node" aria-hidden="true">{place?.kind === "city" ? "✦" : place?.kind === "base" ? "⌂" : place?.kind === "infamy" ? "★" : place?.kind === "mutation" ? "✹" : place ? "⚔" : "·"}</span>
-              <span>{displayName}</span>
+              <span className="tile-name">{visibleName}</span>
               {place?.kind === "city" && <i className="city-hp" aria-label={`printed city benefit ${place.marker ?? "not recorded"}`}>{place.marker ?? "benefit n/a"}</i>}
               {place?.kind === "mutation" && <i className="location-kind">MUTATION</i>}
               {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => {

@@ -8,12 +8,14 @@ export type DisplayHex = Readonly<{
   top: number;
 }>;
 
-export const DISPLAY_TILE_WIDTH_PERCENT = 4.45;
-export const DISPLAY_TILE_STEP_PERCENT = 4.6;
+// Flat-top hexes share edges when their centres are 75% of a tile width
+// apart. Keep the pitch derived from the width so geometry cannot drift.
+export const DISPLAY_TILE_WIDTH_PERCENT = 5;
+export const DISPLAY_TILE_STEP_PERCENT = DISPLAY_TILE_WIDTH_PERCENT * 0.75;
 export const DISPLAY_TILE_ASPECT_RATIO = 1.1547005;
-export const DISPLAY_BOARD_LEFT_PERCENT = 5.5;
-export const DISPLAY_BOARD_TOP_PERCENT = 10;
-export const DISPLAY_BOARD_TOP_SPAN_PERCENT = 80;
+export const DISPLAY_BOARD_LEFT_PERCENT = 12;
+export const DISPLAY_BOARD_TOP_PERCENT = 4;
+export const DISPLAY_BOARD_TOP_SPAN_PERCENT = (DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO) * 12;
 
 /**
  * Presentation-only layout for the photographed board candidate.
