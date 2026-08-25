@@ -38,6 +38,7 @@ import {
   websocketUrl,
 } from "./api";
 import { createDevelopmentSetup } from "./development-setup";
+import { buildDisplayHexLayout } from "./board-layout";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
 import { LogPanel } from "./components/LogPanel";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
@@ -48,21 +49,11 @@ import "./styles.css";
 
 const developmentHexes = Object.values(DEVELOPMENT_BOARD.hexes);
 const developmentBoardIndex = buildBoardIndex(DEVELOPMENT_BOARD);
-const fullHoneycombHexes = Object.values(FULL_HONEYCOMB_BOARD.hexes);
-const fullPixelCoords = fullHoneycombHexes.map((hex) => ({
-  hex,
-  // The candidate is authored as alternating landscape rows. Use the row and
-  // column directly so the CSS pointy-top hexes share the same tessellation;
-  // the axial q/r values remain the canonical identity, not display geometry.
-  column: hex.coord.q + Math.floor(hex.coord.r / 2),
-  row: hex.coord.r,
-}));
-const boardHexes = fullPixelCoords.map(({ hex, column, row }) => ({
+const boardHexes = buildDisplayHexLayout().map(({ hex, left, top }) => ({
   hex,
   place: locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key),
-  // Odd rows are half a tile to the right in the landscape honeycomb.
-  left: 4.8 + ((column + (row % 2 ? 0.5 : 0)) / 19.5) * 90.4,
-  top: 10 + (row / 12) * 80,
+  left,
+  top,
 }));
 
 function supportsPlaytestBrowser(): boolean {

@@ -370,6 +370,7 @@ Useful source documents:
   - [x] Extract stable settings, board-reference, and terminal-summary surfaces without changing authoritative behavior. (`apps/web/src/components/`; web typecheck/build and browser rendering pass.)
   - [x] Extract the unit, revealed-card, and chronological-log surfaces without moving command authority into the UI. (`apps/web/src/components/UnitCard.tsx`, `RevealedCardsPanel.tsx`, and `LogPanel.tsx`; web typecheck/build pass.)
   - [P0] Render all board hexes, features, barriers, labels, and pieces from the authoritative board and match state.
+    - [x] Keep the candidate shell's landscape row geometry, pointy-top orientation, and odd-row offset deterministic and separate from rules coordinates. (`buildDisplayHexLayout`; verified by `npm run web-board-layout:verify`)
   - [x] [P0] Add pan, zoom, fit-to-board, reset-view, and focus-active-area controls. (Accessible board-view controls provide directional pan, bounded zoom, and Fit/reset in the browser; focus-active-area remains the current highlighted selection.)
 - [x] [P0] Make dense piece stacks selectable and show ownership, branch, Health, and status without obscuring the board. (The accessible Piece Stacks inspector lists occupied hexes and exposes every monster/unit detail without overlaying the board; source-gated fields remain labelled as unavailable.)
   - [P0] Show the active player, phase, current substep, pending decision, round, Stomp stack, and Challenge status persistently.
