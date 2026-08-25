@@ -26,6 +26,7 @@ A first-playable browser pass is complete only when a clean supported browser se
 | Lair setup | Pass | Player 1 selected Los Angeles; Player 2 selected Miami. |
 | Starting choice | Pass | Both players selected Draw Research. |
 | Path preview and confirmation | Pass | Los Angeles → San Francisco; the action card exposed Confirm path and Cancel. |
+| Path preview cancellation | Pass | A live run selected the legal San Francisco destination, observed selected/path-highlighted tiles and both confirmation controls, then clicked Cancel; the Cancel control disappeared and selected/path-highlighted tile counts returned to zero without changing the turn log. |
 | Fight decision | Pass | Resolve fight advanced the phase. |
 | Encounter decision | Pass | Resolve encounter advanced the phase. |
 | Deploy decision | Pass | Pass deployment advanced the turn. |
