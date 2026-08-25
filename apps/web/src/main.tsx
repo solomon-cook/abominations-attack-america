@@ -125,6 +125,7 @@ function App() {
   const [onboardingOpen, setOnboardingOpen] = useState(() => safeStorageGet("abominations-onboarding-seen") !== "1");
   const [homeRulesOpen, setHomeRulesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [gamePanelOpen, setGamePanelOpen] = useState(false);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
   const [showBoardLabels, setShowBoardLabels] = useState(() => safeStorageGet("abominations-board-labels") !== "0");
   const [manualReducedMotion, setManualReducedMotion] = useState(() => safeStorageGet("abominations-reduced-motion") === "1");
@@ -499,6 +500,8 @@ function App() {
   const startSession = async (kind: "create" | "join" | "spectate") => {
     setError("");
     setLocalPlaytestStarted(false);
+    setOnboardingOpen(false);
+    setGamePanelOpen(false);
     try {
       const result =
         kind === "create"
@@ -625,6 +628,8 @@ function App() {
   };
   const resetLocal = () => {
     setLocalPlaytestStarted(true);
+    setOnboardingOpen(false);
+    setGamePanelOpen(false);
     setSession(null);
     setRoom(null);
     setError("");
@@ -771,7 +776,7 @@ function App() {
   }
 
   return (
-    <main className={`game-screen ${online ? "online-game" : "local-game"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}>
+    <main className={`game-screen ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}>
       <header>
         <div>
           <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · WEB PLAYTEST</p>
@@ -782,6 +787,9 @@ function App() {
           </p>
         </div>
         <div className="header-actions">
+          <button className="ghost game-panel-toggle" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="game-side-panel">
+            {gamePanelOpen ? "Hide controls" : "Open controls"}
+          </button>
           <button className="ghost" onClick={() => setOnboardingOpen(true)}>
             How to play
           </button>
@@ -853,7 +861,7 @@ function App() {
           The temporary victory condition ends the fixture when its active Stomp spaces are exhausted.
         </p>
       </section>
-      <section className="layout">
+      <section className={`layout ${gamePanelOpen ? "panel-open" : "panel-closed"}`}>
         <div className="board-panel">
           <div className="panel-heading">
             <div>
@@ -926,42 +934,44 @@ function App() {
             </div>
             <div className="region-label west">HOLLYWOOD</div>
             </div>
-            <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} onAction={(command) => void runCommand(command)} />
+            <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
           </div>
           <p className="sr-only" id="board-description">
             The full 254-cell honeycomb coordinate shell is rendered from the shared board candidate. The current match is still pinned to the nine-space development board, so only its verified fixture spaces are authoritative and interactive; unknown board spaces remain unavailable until source transcription is complete.
           </p>
-          <p className="map-note">Printed-board photograph is a visual reference backdrop only; legal movement and features come from the canonical engine board.</p>
-          <p className="map-note">
-            {canAct
-              ? selectedUnitId
-                ? selectedUnitPath.length > 1
-                  ? `Previewing ${selectedUnitPath.length - 1}-space unit path to ${getLocation(selectedUnitPath.at(-1)!)?.name}. Confirm or cancel below.`
-                  : "Select a highlighted reachable space for the selected unit."
-                : selectedPath.length > 1
-                  ? `Previewing ${selectedPath.length - 1}-space path to ${getLocation(selectedPath.at(-1)!)?.name}. Confirm or cancel below.`
-                  : `Select a highlighted reachable space to preview a path for ${activePlayer.name}.`
-              : "Waiting for the active player."}
-          </p>
-          <SelectedPieceTray
-            game={activeGame}
-            selectedUnitId={selectedUnitId}
-            selectedUnitPath={selectedUnitPath}
-            onClear={() => {
-              setSelectedUnitId(null);
-              setSelectedUnitPath([]);
-            }}
-          />
-          <PlayerStatusControls game={activeGame} monster={activePlayer} branch={activeBranch} />
-          <PieceStackInspector
-            game={activeGame}
-            activeMonsterId={activePlayer.id}
-            selectedStackKey={selectedStackKey}
-            onSelect={setSelectedStackKey}
-            onClear={() => setSelectedStackKey(null)}
-          />
+          <div className="board-secondary">
+            <p className="map-note">Printed-board photograph is a visual reference backdrop only; legal movement and features come from the canonical engine board.</p>
+            <p className="map-note">
+              {canAct
+                ? selectedUnitId
+                  ? selectedUnitPath.length > 1
+                    ? `Previewing ${selectedUnitPath.length - 1}-space unit path to ${getLocation(selectedUnitPath.at(-1)!)?.name}. Confirm or cancel below.`
+                    : "Select a highlighted reachable space for the selected unit."
+                  : selectedPath.length > 1
+                    ? `Previewing ${selectedPath.length - 1}-space path to ${getLocation(selectedPath.at(-1)!)?.name}. Confirm or cancel below.`
+                    : `Select a highlighted reachable space to preview a path for ${activePlayer.name}.`
+                : "Waiting for the active player."}
+            </p>
+            <SelectedPieceTray
+              game={activeGame}
+              selectedUnitId={selectedUnitId}
+              selectedUnitPath={selectedUnitPath}
+              onClear={() => {
+                setSelectedUnitId(null);
+                setSelectedUnitPath([]);
+              }}
+            />
+            <PlayerStatusControls game={activeGame} monster={activePlayer} branch={activeBranch} />
+            <PieceStackInspector
+              game={activeGame}
+              activeMonsterId={activePlayer.id}
+              selectedStackKey={selectedStackKey}
+              onSelect={setSelectedStackKey}
+              onClear={() => setSelectedStackKey(null)}
+            />
+          </div>
         </div>
-        <aside>
+        <aside id="game-side-panel" className="game-side-panel" aria-label="Game controls and information">
           <div className="card monster-card">
             <span className="label">MONSTER RECORD</span>
             <h2>{activePlayer.name}</h2>

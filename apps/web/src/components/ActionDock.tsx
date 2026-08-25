@@ -5,14 +5,18 @@ type Props = {
   canAct: boolean;
   command?: GameCommand;
   onAction: (command: GameCommand) => void;
+  onOpenPanel: () => void;
 };
 
-export function ActionDock({ label, canAct, command, onAction }: Props) {
+export function ActionDock({ label, canAct, command, onAction, onOpenPanel }: Props) {
   return (
     <div className="action-dock" aria-label="Current action control">
       <span className="label">TAKE ACTION</span>
       <button type="button" disabled={!canAct || !command} onClick={() => command && onAction(command)}>
         {label}
+      </button>
+      <button type="button" className="action-dock-secondary" onClick={onOpenPanel}>
+        Open controls
       </button>
     </div>
   );
