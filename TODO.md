@@ -347,6 +347,7 @@ Useful source documents:
   - [x] Give every Mutation card its exact catalogue transcription, classification, timing, duration, source reference, and explicit implementation status in `SOURCED_CARD_RULES`; effect timing remains bounded by the existing development ruleset tests.
   - [ ] [P1] Deck exhaustion, interrupted resolution, invalid targets, stacked effects, reconnect, and replay tests pass.
 - [ ] [P1] A card catalogue report shows zero unsupported cards in the selected production ruleset.
+  - [x] Generate the explicit development-ruleset catalogue report and enumerate every source-gated card; production zero-unsupported status remains blocked until the gated effects and board are verified. (`docs/card-catalogue-report.md`, `npm run card-catalogue:verify`)
 - [x] [P1] Hidden card and deck information cannot be recovered from room snapshots, events, or browser markup. (Projection and MemoryRoomStore tests cover opponent, spectator, event-log, and room-event redaction.)
 
 ## Milestone 10 — Monster Challenge, victory, and rematches
