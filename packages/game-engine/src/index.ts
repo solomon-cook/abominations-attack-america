@@ -932,6 +932,27 @@ function monsterHasMutation(state: Pick<GameState, "monsters" | "players">, mons
   return playerIndex >= 0 && state.players[playerIndex]?.mutationCardIds.includes(cardId) === true;
 }
 
+function applyBattleResearchEffects(state: GameState, pending: PendingBattle, monster: Monster): void {
+  const involvedPlayers = new Set(
+    state.units
+      .filter((unit) => pending.militaryUnitIds.includes(unit.id) && unit.location === pending.location && unit.ownerPlayer !== undefined)
+      .map((unit) => unit.ownerPlayer!),
+  );
+  for (const playerIndex of involvedPlayers) {
+    const cards = state.players[playerIndex]?.researchCardIds ?? [];
+    const scientificAnalysis = cards.includes("Scientific Analysis") ? 1 : 0;
+    const antiMutagen = cards.includes("Anti-Mutagen") ? (state.players[monsterPlayerIndex(state, monster)]?.mutationCardIds.length ?? 0) : 0;
+    const damage = scientificAnalysis + antiMutagen;
+    if (damage <= 0) continue;
+    monster.health = Math.max(0, monster.health - damage);
+    state.log.push(`${monster.name} lost ${damage} Health from ${[scientificAnalysis ? "Scientific Analysis" : "", antiMutagen ? "Anti-Mutagen" : ""].filter(Boolean).join(" and ")}.`);
+  }
+}
+
+function monsterPlayerIndex(state: Pick<GameState, "monsters">, monster: Monster): number {
+  return state.monsters.findIndex((candidate) => candidate.id === monster.id);
+}
+
 function effectiveMonsterMove(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
   const bonus = monsterHasMutation(state, monster, "High-Octane Blood") || monsterHasMutation(state, monster, "Winged Horror") ? 1 : 0;
   const penalty = monsterHasMutation(state, monster, "Armored Scales") ? 1 : 0;
@@ -1055,6 +1076,10 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     hollywoodResearchCardId = awardHollywoodResearch(next, controllerPlayer);
     next.log.push(`${monster.name} was defeated and went to Hollywood.`);
   };
+  if (!existing) {
+    applyBattleResearchEffects(next, pending, monster);
+    sendToHollywood();
+  }
   const performMonsterAttack = (target: MilitaryUnit): number => {
     const roll = nextD6(next);
     rolls.push(roll);
@@ -1212,6 +1237,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
     hollywoodResearchCardId = awardHollywoodResearch(next, controllerPlayer);
     next.log.push(`${monster.name} was defeated and went to Hollywood.`);
   };
+  if (pending) applyBattleResearchEffects(next, pending, monster);
   sendToHollywood();
   const targetIds = pending?.militaryUnitIds ?? next.units.filter((unit) => unit.location === monster.location).map((unit) => unit.id);
   const targets = next.units.filter((unit) => targetIds.includes(unit.id));

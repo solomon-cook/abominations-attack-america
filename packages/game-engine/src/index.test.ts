@@ -337,6 +337,24 @@ test("normal battle target validation keeps monster and military target classes 
   assert.throws(() => applyCommand(state, { type: "resolve-fight" }), /non-military target/);
 });
 
+test("Scientific Analysis and Anti-Mutagen resolve at battle start", () => {
+  const state = createGame(2);
+  state.players[0].researchCardIds = ["Scientific Analysis", "Anti-Mutagen"];
+  state.players[0].mutationCardIds = ["Rampage", "War Spikes"];
+  state.phase = "fight";
+  state.monsters[0].health = 10;
+  state.monsters[0].attacks = 0;
+  const unit = state.units[0];
+  unit.location = state.monsters[0].location;
+  unit.attacks = 0;
+  const battleId = "research-start-effects";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  const result = applyCommand(state, { type: "resolve-fight", battleId });
+  assert.equal(result.state.monsters[0].health, 7);
+  assert.equal(result.state.log.some((entry) => /Scientific Analysis and Anti-Mutagen/.test(entry)), true);
+});
+
 test("a monster may spend Infamy for one recorded extra attack before combat rolls", () => {
   const state = createGame(2, 0);
   const monster = state.monsters[0];
