@@ -79,6 +79,31 @@ test("API WebSocket and polling share revisioned room updates", async () => {
   }
 });
 
+test("API responses expose the documented security and CORS headers", async () => {
+  const port = 19500 + (process.pid % 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true", ALLOWED_ORIGIN: "https://example.test" },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  try {
+    await waitForHealth(baseUrl);
+    const response = await fetch(`${baseUrl}/health`);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(response.headers.get("x-frame-options"), "DENY");
+    assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+    assert.equal(response.headers.get("access-control-allow-origin"), "https://example.test");
+    const preflight = await fetch(`${baseUrl}/health`, { method: "OPTIONS" });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get("access-control-allow-methods"), "GET,POST,OPTIONS");
+    assert.equal(preflight.headers.get("access-control-allow-headers"), "content-type,x-room-token");
+  } finally {
+    await stop(child);
+  }
+});
+
 test("bounded concurrent rooms fan out WebSocket and polling updates without cross-room state", async () => {
   const port = 20000 + (process.pid % 1000);
   const baseUrl = `http://127.0.0.1:${port}`;

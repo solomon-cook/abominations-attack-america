@@ -582,6 +582,7 @@ Useful source documents:
   - [x] Emit local redacted reports for WebSocket projection divergence and API listen/deployment failures, with category coverage tests. (External routing, durable aggregation, and deployed regression monitors remain open.)
   - [x] [P1] Document the threat model for room codes, session tokens, command authorization, enumeration, replay, injection, rate abuse, and secret handling. (`docs/security-threat-model.md`; external production review remains open.)
   - [P1] Validate CORS, security headers, dependency risks, database permissions, backups, restore, and credential rotation.
+    - [x] Add an integration check for the implemented CORS allow-origin, preflight methods/headers, no-store, no-referrer, frame-deny, and MIME-sniffing response headers (`apps/api/src/server.integration.test.ts`); dependency, database, backup, restore, and credential-rotation review remains deployment work.
 - [ ] [P1] Choose hosting only after documenting requirements for static web delivery, WebSockets, durable API compute, Postgres, secrets, and observability.
   - [x] [P1] Document hosting requirements and environment separation before provider selection. (`docs/deployment-requirements.md`; no provider or live environment is claimed.)
   - [P1] Create staging and production environments with separate data, secrets, URLs, and deployment safeguards.
