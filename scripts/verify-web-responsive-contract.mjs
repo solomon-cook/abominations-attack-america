@@ -11,6 +11,9 @@ const requirements = [
   ["touch-sized map controls", /\.map-controls button\{[^}]*min-width:44px[^}]*min-height:44px/],
   ["touch-sized gameplay controls", /\.game-screen \.setup-options button,[\s\S]*?\.game-screen \.settings-grid label\{min-height:44px\}/],
   ["touch-drag board surface", /\.map\{touch-action:none/],
+  ["landscape board canvas", /\.game-screen \.hex-grid\{left:2\.2%;right:2\.2%;top:50%;bottom:auto;height:auto;aspect-ratio:1\.77646/],
+  ["board-adjacent action bar", /\.game-screen \.board-action-bar\{position:static/],
+  ["compact development pins", /\.hex-tile\.development-fixture\{width:2\.55%;aspect-ratio:1;clip-path:circle\(50%\)/],
   ["horizontal overflow containment", /html,body,#root\{width:100%;max-width:100%;overflow-x:clip\}/],
   ["reduced-motion media contract", /@media\(prefers-reduced-motion:reduce\)/],
 ];
