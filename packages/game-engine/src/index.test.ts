@@ -828,6 +828,24 @@ test("Kinda Friendly passes through and returns National Guard without creating 
   assert.match(moved.state.log.at(-1) ?? "", /Kinda Friendly returned National Guard/);
 });
 
+test("Fusion Cells adds one Move to the cardholder's unit selectors and commands", () => {
+  const base = createGame(2);
+  base.monsters[1].location = "record-tile";
+  base.units.forEach((unit) => { unit.location = "record-tile"; });
+  const unitId = base.units[0].id;
+  base.units[0].location = K("los-angeles");
+  const baseMaxMove = Math.max(...legalUnitPaths(base, unitId).map((path) => path.length - 1));
+
+  const fused = structuredClone(base);
+  fused.players[0].researchCardIds = ["Fusion Cells"];
+  const fusedPaths = legalUnitPaths(fused, unitId);
+  const fusedMaxMove = Math.max(...fusedPaths.map((path) => path.length - 1));
+  assert.equal(fusedMaxMove, baseMaxMove + 1);
+  const longestPath = fusedPaths.find((path) => path.length - 1 === fusedMaxMove)!;
+  const moved = applyCommand(fused, { type: "move-unit", unitId, path: longestPath });
+  assert.equal(moved.state.units.find((unit) => unit.id === unitId)?.location, longestPath.at(-1));
+});
+
 test("occupancy is derived from positions and supports shared spaces", () => {
   const state = createGame(2);
   state.units[0].location = state.monsters[0].location;

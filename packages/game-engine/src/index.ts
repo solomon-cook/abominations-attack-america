@@ -754,7 +754,7 @@ export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
   const paths: HexKey[][] = [];
   const visit = (path: HexKey[]) => {
     if (path.length > 1) paths.push(path);
-    if (path.length - 1 >= unit.move) return;
+    if (path.length - 1 >= effectiveUnitMove(state, unit)) return;
     for (const next of developmentBoardIndex.neighbours[path.at(-1)!] ?? []) {
       if (path.includes(next)) continue;
       const nextPath = [...path, next];
@@ -815,7 +815,7 @@ export function moveUnit(state: GameState, unitId: string, path: string[]): Game
   const movedPieceIds = state.movedPieceIds ?? [];
   const guardControlled = unit?.branch === "National Guard" && state.players[state.currentPlayer]?.researchCardIds.includes("Guard Commander");
   const controlsUnit = unit && (unit.ownerPlayer === state.currentPlayer || guardControlled);
-  const legalPath = Boolean(unit && canonical && controlsUnit && destination && canonical.length >= 2 && canonical[0] === unit.location && !movedPieceIds.includes(unitId) && canonical.length - 1 <= unit.move && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(DEVELOPMENT_BOARD, canonical, unit.movement));
+  const legalPath = Boolean(unit && canonical && controlsUnit && destination && canonical.length >= 2 && canonical[0] === unit.location && !movedPieceIds.includes(unitId) && canonical.length - 1 <= effectiveUnitMove(state, unit) && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(DEVELOPMENT_BOARD, canonical, unit.movement));
   const blockedByMonster = unit?.movement !== "fly" && (canonical ?? []).slice(1, -1).some((space) => occupantsAt(state, space).monsters.length > 0);
   if (!legalPath || blockedByMonster || state.phase !== "move" || !unit || !destination) return state;
   const next = structuredClone(state);
@@ -951,6 +951,10 @@ function applyBattleResearchEffects(state: GameState, pending: PendingBattle, mo
 
 function monsterPlayerIndex(state: Pick<GameState, "monsters">, monster: Monster): number {
   return state.monsters.findIndex((candidate) => candidate.id === monster.id);
+}
+
+function effectiveUnitMove(state: Pick<GameState, "players">, unit: MilitaryUnit): number {
+  return unit.move + (unit.ownerPlayer !== undefined && state.players[unit.ownerPlayer]?.researchCardIds.includes("Fusion Cells") ? 1 : 0);
 }
 
 function effectiveMonsterMove(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
