@@ -370,6 +370,14 @@ Useful source documents:
   - [x] Extract stable settings, board-reference, and terminal-summary surfaces without changing authoritative behavior. (`apps/web/src/components/`; web typecheck/build and browser rendering pass.)
   - [x] Extract the unit, revealed-card, and chronological-log surfaces without moving command authority into the UI. (`apps/web/src/components/UnitCard.tsx`, `RevealedCardsPanel.tsx`, and `LogPanel.tsx`; web typecheck/build pass.)
   - [x] Extract the online-room lobby surface while keeping session, room, and readiness callbacks in `App`. (`apps/web/src/components/LobbyPanel.tsx`; web typecheck/build pass.)
+  - [x] Extract development setup choices and the online setup summary while keeping setup commands and state transitions in `App`. (`apps/web/src/components/SetupPanel.tsx`; web typecheck/build pass.)
+  - [ ] [P0] Make the overall UI fit within the viewport as a general rule, with no gameplay page scrolling; scrolling may be used inside menus or other deliberately bounded information panels.
+    - [ ] [P0] Provide a focused setup screen before the match, then keep the active game view centred on the board/map once gameplay begins.
+    - [ ] [P0] Make the in-game map draggable/pannable and zoomable, with the board remaining the primary centre-stage interaction surface.
+    - [ ] [P0] Provide a prominent bottom-right action control styled as a push-to-take-action button for the current legal decision.
+    - [ ] [P0] Add a top phase-progress bar that moves through the phases/substeps of the active player's turn.
+    - [ ] [P0] Place the player's monster and military branch in circular status controls at bottom left, showing useful summary numbers such as Health, Infamy, deployed groups, and reserve groups.
+    - [ ] [P0] Expand the bottom-left monster and military controls into lightbox-style detail views containing the key information without permanently covering the map.
   - [P0] Render all board hexes, features, barriers, labels, and pieces from the authoritative board and match state.
     - [x] Keep the candidate shell's landscape row geometry, pointy-top orientation, and odd-row offset deterministic and separate from rules coordinates. (`buildDisplayHexLayout`; verified by `npm run web-board-layout:verify`)
   - [x] [P0] Add pan, zoom, fit-to-board, reset-view, and focus-active-area controls. (Accessible board-view controls provide directional pan, bounded zoom, and Fit/reset in the browser; focus-active-area remains the current highlighted selection.)

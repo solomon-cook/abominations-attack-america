@@ -44,6 +44,7 @@ import { LobbyPanel } from "./components/LobbyPanel";
 import { LogPanel } from "./components/LogPanel";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { SetupPanel } from "./components/SetupPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
 import { UnitCard } from "./components/UnitCard";
 import "./styles.css";
@@ -619,135 +620,16 @@ function App() {
           </div>
         </section>
       )}
-      {!setupComplete && activeSetup && (
-        <section className="setup-panel" aria-label="Development setup">
-          <span className="label">DEVELOPMENT SETUP · SOURCE-GATED</span>
-          <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
-          <p>
-            This fixture exercises the authoritative setup state machine.
-            Production monster, lair, branch, and board definitions remain
-            blocked pending source review.
-          </p>
-          {setupSeat && (
-            <p className="setup-turn">
-              Choosing for Player {setupSeat.playerIndex + 1}
-              {online && participant?.playerIndex !== setupSeat.playerIndex
-                ? " · waiting"
-                : ""}
-            </p>
-          )}
-          <div className="setup-options">
-            {activeSetup.phase === "monster-selection" &&
-              activeSetup.definition.monsterIds
-                .filter(
-                  (id) =>
-                    !activeSetup.seats.some((seat) => seat.monsterId === id),
-                )
-                .map((id) => (
-                  <button
-                    key={id}
-                    disabled={
-                      online &&
-                      participant?.playerIndex !== setupSeat?.playerIndex
-                    }
-                    onClick={() => void chooseSetupOption(id)}
-                  >
-                    {id}
-                  </button>
-                ))}
-            {activeSetup.phase === "branch-selection" &&
-              activeSetup.definition.eligibleBranches
-                .filter(
-                  (branch) =>
-                    !activeSetup.seats.some((seat) => seat.branch === branch),
-                )
-                .map((branch) => (
-                  <button
-                    key={branch}
-                    disabled={
-                      online &&
-                      participant?.playerIndex !== setupSeat?.playerIndex
-                    }
-                    onClick={() => void chooseSetupOption(branch)}
-                  >
-                    {branch}
-                  </button>
-                ))}
-            {activeSetup.phase === "lair-selection" &&
-              setupSeat?.monsterId &&
-              activeSetup.definition.lairsByMonster[setupSeat.monsterId]
-                ?.filter(
-                  (lair) =>
-                    !activeSetup.seats.some((seat) => seat.lair === lair),
-                )
-                .map((lair) => (
-                  <button
-                    key={lair}
-                    disabled={
-                      online &&
-                      participant?.playerIndex !== setupSeat?.playerIndex
-                    }
-                    onClick={() => void chooseSetupOption(lair)}
-                  >
-                    {lair}
-                  </button>
-                ))}
-            {activeSetup.phase === "starting-choice" && (
-              <>
-                <button
-                  disabled={
-                    online &&
-                    participant?.playerIndex !== setupSeat?.playerIndex
-                  }
-                  onClick={() => void chooseSetupStartingChoice("research")}
-                >
-                  Draw Research
-                </button>
-                <button
-                  disabled={
-                    online &&
-                    participant?.playerIndex !== setupSeat?.playerIndex
-                  }
-                  onClick={() => void chooseSetupStartingChoice("deploy")}
-                >
-                  Development Deploy
-                </button>
-              </>
-            )}
-          </div>
-          <p className="setup-progress">
-            {activeSetup.seats.filter((seat) => seat.ready).length}/
-            {activeSetup.seats.length} starting choices confirmed
-          </p>
-        </section>
-      )}
-      {online && activeSetup?.phase === "complete" && (
-        <section className="setup-summary" aria-label="Setup summary">
-          <span className="label">SETUP LOCKED · DEVELOPMENT FIXTURE</span>
-          <h2>Match configuration</h2>
-          <p>
-            All assignments are recorded. Each player must still press Ready
-            before gameplay can begin.
-          </p>
-          <div className="setup-summary-grid">
-            {activeSetup.seats.map((seat) => (
-              <div key={seat.playerIndex}>
-                <strong>Player {seat.playerIndex + 1}</strong>
-                <span>
-                  {seat.monsterId} · {seat.branch}
-                </span>
-                <span>Lair: {seat.lair}</span>
-                <span>
-                  {room?.participants.find(
-                    (candidate) => candidate.playerIndex === seat.playerIndex,
-                  )?.ready
-                    ? "Ready"
-                    : "Not ready"}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
+      {activeSetup && (
+        <SetupPanel
+          activeSetup={activeSetup}
+          setupSeat={setupSeat}
+          online={online}
+          playerIndex={participant?.playerIndex}
+          participants={room?.participants ?? []}
+          onChooseOption={(value) => void chooseSetupOption(value)}
+          onChooseStartingChoice={(kind) => void chooseSetupStartingChoice(kind)}
+        />
       )}
       <section className="status" aria-live="polite" aria-label="Match status">
         <div>
