@@ -39,10 +39,19 @@ export function PhaseActions({
   guardDeploymentDestination,
   guardDeploymentAvailable,
 }: Props) {
+  const optionalMutationCards = activeGame.players[activeGame.currentPlayer]?.mutationCardIds.filter((cardId) => cardId === "Berserk" || cardId === "Son of a Monster") ?? [];
+  const mutationButtons = (battleId: string) => optionalMutationCards.length > 0 ? (
+    <div className="battle-choice" aria-label="Optional Mutation battle abilities">
+      <span>Optional Mutation:</span>
+      {optionalMutationCards.map((cardId) => <button key={cardId} disabled={!canAct} onClick={() => void runCommand({ type: "use-mutation", cardId, battleId })}>{cardId === "Berserk" ? "Berserk · +5 attacks" : "Son of a Monster · +2 attacks and d6 Health"}</button>)}
+    </div>
+  ) : null;
+
   if (activeGame.phase === "fight" && pendingAttackTarget) {
     return (
       <div className="battle-choice" aria-label="Choose the monster attack target">
         <p>{pendingAttackPrompt}</p>
+        {mutationButtons(pendingAttackTarget.battleId)}
         {pendingAttackTarget.targetIds.map((unitId) => {
           const unit = activeGame.units.find((candidate) => candidate.id === unitId);
           return <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingAttackTarget.battleId, targetUnitId: unitId })}>Attack {unit?.branch ?? unitId} ({unit?.unitTypeId ?? "unit"})</button>;
@@ -75,7 +84,10 @@ export function PhaseActions({
     return <div className="battle-choice" aria-label="Choose battle resolution order">
       {activeGame.pendingBattles.map((battle) => {
         const monster = activeGame.monsters.find((candidate) => candidate.id === battle.monsterId);
-        return <button key={battle.id} disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: battle.id })}>Resolve {monster?.name ?? battle.monsterId} at {getLocationName(battle.location)} ({battle.militaryUnitIds.length} unit{battle.militaryUnitIds.length === 1 ? "" : "s"})</button>;
+        return <div key={battle.id}>
+          <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: battle.id })}>Resolve {monster?.name ?? battle.monsterId} at {getLocationName(battle.location)} ({battle.militaryUnitIds.length} unit{battle.militaryUnitIds.length === 1 ? "" : "s"})</button>
+          {mutationButtons(battle.id)}
+        </div>;
       })}
     </div>;
   }
@@ -83,6 +95,7 @@ export function PhaseActions({
   if (activeGame.phase === "fight" && pendingBattle && pendingBattleDecision && canSpendInfamyOnPendingBattle) {
     return <div className="battle-choice" aria-label="Choose whether to spend Infamy on this battle">
       <p>Choose whether to spend one Infamy for an additional monster attack this round.</p>
+      {mutationButtons(pendingBattle.id)}
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}>Resolve without spending Infamy</button>
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>
     </div>;

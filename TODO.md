@@ -315,7 +315,7 @@ Useful source documents:
   - [P1] Add explicit commands for optional card timing windows and target selection.
 - [ ] [P1] Resolve immediate cards before continuing the interrupted attack, encounter, or deployment sequence.
   - [P1] Track per-turn and per-game card-use restrictions authoritatively.
-- [ ] [P1] Implement every verified Monster Mutation card with isolated tests.
+- [x] [P1] Implement every verified Monster Mutation card with isolated tests. (All 16 source-inventoried Mutation cards are now available in the structured catalogue; persistent, triggered, and optional battle effects are covered at the development engine boundary, with card-timing UI and full-board production play still separately gated.)
   - [P1] Implement every verified Military Research card with isolated tests.
 - [x] [P1] Mark unsupported cards unavailable in production setup instead of silently no-oping them. (`assertCardsAvailable` rejects source-gated card IDs before rules execution)
   - [P1] Add card detail, source, legal timing, target, confirmation, result, and persistent-effect UI.
@@ -438,6 +438,7 @@ Useful source documents:
 - [x] [P0] Add first-playable setup, gameplay, victory, restart, and error states. (Local browser flow now exposes source-gated development setup, persists completed assignments into `GameState`, and retains gameplay/victory/restart/error states; production setup remains blocked by unresolved source data)
   - [x] [P0] Prevent double submission and show pending server acknowledgement. (`pendingAction` disables actionable controls and changes the persistent phase status)
   - [x] [P1] Add private card zones, public persistent effects, timing prompts, and target selection. (Player projections expose only the viewer's face-up card zone; spectators and other players receive redacted hands, while the browser labels revealed cards and source-gated effects explicitly.)
+    - [ ] [P1] Let players view the cards in their own hand and play any card whose effect is not passive or immediate, with legal timing, targets, confirmation, and authoritative resolution shown in the UI.
 - [x] [P1] Add Monster Challenge opponent selection, weigh-in, duel progression, and final victory presentation. (Opponent selection, weigh-in, duel progression, and a stylized split-screen result surface are implemented in the challenge-enabled development ruleset; giant ordering and exact source-art direction remain.)
   - [ ] [P1] Replace the final Monster Challenge board view with an anime-style split-screen duel: one monster on each half, the dice roll presented in the centre, and turn-by-turn Health drops clearly animated after each authoritative result. (The current source-backed panel provides the split-screen, centre dice, and authoritative Health transitions; exact anime artwork remains a content/IP decision.)
   - [x] [P1] Add contextual rules help linked to the exact current decision. (`TurnPrompt` renders phase- and pending-decision-specific guidance from authoritative state; guidance is explanatory only and cannot issue commands.)

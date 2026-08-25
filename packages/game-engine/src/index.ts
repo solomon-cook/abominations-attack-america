@@ -209,6 +209,8 @@ export interface PendingBattle {
   monsterId: string;
   location: HexKey;
   militaryUnitIds: string[];
+  /** Extra monster attacks granted by an optional Mutation before combat resolves. */
+  bonusMonsterAttacks?: number;
 }
 
 export interface PendingAttackTarget {
@@ -403,6 +405,7 @@ export type GameCommand =
   | { type: "disappear-monster" }
   | { type: "pass-move" }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
+  | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy"; unitId?: string; destination?: HexKey }
@@ -969,8 +972,11 @@ function effectiveMonsterMovement(state: Pick<GameState, "monsters" | "players">
   return monsterHasMutation(state, monster, "Winged Horror") ? "fly" : monster.movement;
 }
 
-function effectiveMonsterDefense(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
-  return monster.defense + (monsterHasMutation(state, monster, "Armored Scales") ? 1 : 0);
+function effectiveMonsterDefense(state: Pick<GameState, "monsters" | "players">, monster: Monster, board: BoardDefinition = DEVELOPMENT_BOARD): number {
+  const hasWaterBarrier = isHexKey(monster.location) && board.edges.some((edge) => edge.enabled && edge.to === monster.location && (edge.barrier === "lake" || edge.barrier === "sea"));
+  return monster.defense
+    + (monsterHasMutation(state, monster, "Armored Scales") ? 1 : 0)
+    + (monsterHasMutation(state, monster, "Fins and Gills") && hasWaterBarrier ? 1 : 0);
 }
 
 function effectiveMonsterDamage(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
@@ -1059,7 +1065,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     rolls: [],
     attacks: [],
     destroyedUnitIds: [],
-    bonusAttacks: 0,
+    bonusAttacks: pending.bonusMonsterAttacks ?? 0,
   };
   if (!existing) {
     if (!Number.isInteger(combat.spendInfamy) || combat.spendInfamy < 0 || combat.spendInfamy > monster.infamy) throw new GameDomainError("ILLEGAL_COMMAND", "A monster cannot spend more Infamy than it currently has.");
@@ -1268,7 +1274,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         }
       }
       const survivingTargets = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
-      const attackAllowance = effectiveMonsterAttacks(next, monster, combatRound) + (combatRound === 1 ? spendInfamy : 0);
+      const attackAllowance = effectiveMonsterAttacks(next, monster, combatRound) + (combatRound === 1 ? spendInfamy + (pending?.bonusMonsterAttacks ?? 0) : 0);
       whipBonusAttacks = combatRound === 1 ? whipBonusAttacks : 0;
       for (let attackIndex = 0; attackIndex < attackAllowance + whipBonusAttacks && survivingTargets.length > 0 && monster.health > 0; attackIndex += 1) {
         const currentTargets = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
@@ -1348,6 +1354,52 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
     finishBattleQueue(next);
   }
   return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: targets.length > 0 ? 2 : 0, infamySpent: spendInfamy, hollywoodResearchCardId };
+}
+
+interface MutationUseResolution {
+  readonly state: GameState;
+  readonly battleId: string;
+  readonly cardId: "Berserk" | "Son of a Monster";
+  readonly extraAttacks: number;
+  readonly healthRoll?: number;
+}
+
+/** Resolve the two sourced optional Mutation windows that add attacks during a normal battle. */
+function useMutationInBattle(state: GameState, cardId: "Berserk" | "Son of a Monster", requestedBattleId?: string): MutationUseResolution {
+  if (state.phase !== "fight") throw new GameDomainError("ILLEGAL_COMMAND", "Mutation battle abilities can only be used during Fight.");
+  const decision = state.pendingDecision;
+  if (!decision || (decision.type !== "battle-resolution" && decision.type !== "attack-target")) {
+    throw new GameDomainError("ILLEGAL_COMMAND", "A Mutation battle ability is only available before the battle's next attack target is resolved.");
+  }
+  const battleId = requestedBattleId ?? decision.battleId;
+  const battle = state.pendingBattles.find((candidate) => candidate.id === battleId);
+  if (!battle) throw new GameDomainError("ILLEGAL_COMMAND", "The Mutation ability references an unknown pending battle.");
+  const monster = state.monsters.find((candidate) => candidate.id === battle.monsterId);
+  if (!monster || monsterPlayerIndex(state, monster) !== state.currentPlayer) throw new GameDomainError("ILLEGAL_COMMAND", "Only the active monster can use this Mutation ability.");
+  const player = state.players[state.currentPlayer];
+  if (!player?.mutationCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `The active monster does not have ${cardId}.`);
+  const next = structuredClone(state);
+  const nextPlayer = next.players[next.currentPlayer]!;
+  const nextMonster = next.monsters.find((candidate) => candidate.id === monster.id)!;
+  nextPlayer.mutationCardIds = nextPlayer.mutationCardIds.filter((id) => id !== cardId);
+  const extraAttacks = cardId === "Berserk" ? 5 : 2;
+  const nextBattle = next.pendingBattles.find((candidate) => candidate.id === battleId)!;
+  const combat = next.pendingCombat;
+  if (combat?.battleId === battleId) {
+    next.pendingCombat = { ...combat, bonusAttacks: (combat.bonusAttacks ?? 0) + extraAttacks };
+    if (next.pendingDecision?.type === "attack-target") {
+      next.pendingDecision = { ...next.pendingDecision, attackTotal: (next.pendingDecision.attackTotal ?? 0) + extraAttacks };
+    }
+  } else {
+    nextBattle.bonusMonsterAttacks = (nextBattle.bonusMonsterAttacks ?? 0) + extraAttacks;
+  }
+  let healthRoll: number | undefined;
+  if (cardId === "Son of a Monster") {
+    healthRoll = nextD6(next);
+    nextMonster.health = Math.min(nextMonster.maxHealth, nextMonster.health + healthRoll);
+  }
+  next.log.push(`${nextMonster.name} discarded ${cardId} for ${extraAttacks} extra attacks${healthRoll === undefined ? "" : ` and gained ${healthRoll} Health`}.`);
+  return { state: next, battleId, cardId, extraAttacks, healthRoll };
 }
 
 export interface EncounterResolution {
@@ -1927,6 +1979,11 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     finishBattleQueue(next);
     const eventPayload = { battleId: retreat.battleId, destinations: command.destinations, disappearedUnitIds: disappearedIds, researchCardId, researchAwarded: Boolean(researchCardId), nextPhase: next.phase };
     return { state: appendEvent(next, "retreat.resolved", eventPayload), eventType: "retreat.resolved", eventPayload };
+  }
+  if (state.phase === "fight" && command.type === "use-mutation") {
+    const result = useMutationInBattle(state, command.cardId, command.battleId);
+    const eventPayload = { battleId: result.battleId, mutationCardId: result.cardId, extraAttacks: result.extraAttacks, healthRoll: result.healthRoll, nextDecision: result.state.pendingDecision };
+    return { state: appendEvent(result.state, "mutation.used", eventPayload), eventType: "mutation.used", eventPayload };
   }
   if (state.phase === "fight" && (command.type === "resolve-fight" || command.type === "advance")) {
     const attackDecision = state.pendingDecision?.type === "attack-target" ? state.pendingDecision : undefined;

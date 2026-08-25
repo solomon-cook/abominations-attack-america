@@ -76,7 +76,7 @@ const researchIds = [
 /** Cards whose sourced rules are implemented at the current development ruleset boundary. */
 const implementedCardIds = new Set<string>([
   "Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "War Spikes", "Atomic Breath",
-  "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Winged Horror", "Kinda Friendly",
+  "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Son of a Monster", "Berserk", "Winged Horror", "Kinda Friendly",
   "Laser Beam Eyes", "Armored Scales", "It's a Robot!", "Guard Commander", "Fusion Cells",
   "2nd Generation", "Anti-Mutagen", "Scientific Analysis",
 ]);

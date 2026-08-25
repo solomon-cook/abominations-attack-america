@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createCardDeckState, discardCard, drawCard, sourcedCardRule } from "./cards.js";
+import { createCardDeckState, discardCard, drawCard, MONSTER_MUTATION_CARD_IDS, sourcedCardRule } from "./cards.js";
 import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, locationIdToHexKey } from "./board.js";
@@ -390,10 +390,12 @@ test("source-inventoried cards have versioned structured metadata without guesse
   assert.equal(cardDefinition("Guard Commander")?.availability, "implemented");
   assert.equal(cardDefinition("Guard Commander")?.visibility, "unknown");
   assert.equal(cardDefinition("Guard Commander")?.lifecycle, "implemented");
-  assert.equal(cardDefinition("Berserk")?.availability, "source-gated");
+  assert.equal(cardDefinition("Berserk")?.availability, "implemented");
   assert.deepEqual(unsupportedCardIds(["Guard Commander"]), []);
-  assert.deepEqual(unsupportedCardIds(["Guard Commander", "Berserk"]), ["Berserk"]);
-  assert.throws(() => assertCardsAvailable(["Berserk"]), /source-gated/);
+  assert.deepEqual(unsupportedCardIds(MONSTER_MUTATION_CARD_IDS), []);
+  assert.deepEqual(unsupportedCardIds(["Guard Commander", "Berserk"]), []);
+  assert.deepEqual(unsupportedCardIds(["Guard Commander", "Mecha-Monster"]), ["Mecha-Monster"]);
+  assert.throws(() => assertCardsAvailable(["Mecha-Monster"]), /source-gated/);
   assert.deepEqual(sourcedCardRule("Guard Commander"), {
     id: "Guard Commander",
     transcription: "You can move and redeploy Guard units. Tanks have Move 3 (land only). Fighters have Move 5 (fly). Other players can't deploy Guard units.",
@@ -1627,6 +1629,33 @@ test("persistent Mutation movement and combat modifiers alter authoritative outc
     attackDamage = (result.eventPayload.attacks as Array<{ attackerId: string; damage: number }>).find((attack) => attack.attackerId === "monster-1")?.damage;
   }
   assert.equal(attackDamage, 4);
+});
+
+test("Berserk and Son of a Monster resolve their sourced optional battle windows", () => {
+  const berserk = createGame(2, 0);
+  berserk.players[0].mutationCardIds = ["Berserk"];
+  berserk.phase = "fight";
+  berserk.pendingBattles = [{ id: "berserk", monsterId: "monster-1", location: berserk.monsters[0].location as any, militaryUnitIds: [berserk.units[0].id] }];
+  berserk.units[0].location = berserk.monsters[0].location;
+  berserk.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "berserk" };
+  const berserkResult = applyCommand(berserk, { type: "use-mutation", cardId: "Berserk", battleId: "berserk" });
+  assert.deepEqual(berserkResult.state.players[0].mutationCardIds, []);
+  assert.equal(berserkResult.state.pendingBattles[0].bonusMonsterAttacks, 5);
+  assert.equal(berserkResult.eventType, "mutation.used");
+  assert.equal(berserkResult.eventPayload.extraAttacks, 5);
+
+  const son = createGame(2, 0);
+  son.players[0].mutationCardIds = ["Son of a Monster"];
+  son.monsters[0].health = 1;
+  son.phase = "fight";
+  son.pendingBattles = [{ id: "son", monsterId: "monster-1", location: son.monsters[0].location as any, militaryUnitIds: [son.units[0].id] }];
+  son.units[0].location = son.monsters[0].location;
+  son.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "son" };
+  const sonResult = applyCommand(son, { type: "use-mutation", cardId: "Son of a Monster", battleId: "son" });
+  assert.deepEqual(sonResult.state.players[0].mutationCardIds, []);
+  assert.equal(sonResult.state.pendingBattles[0].bonusMonsterAttacks, 2);
+  assert.equal(sonResult.state.monsters[0].health, 1 + (sonResult.eventPayload.healthRoll as number));
+  assert.equal((sonResult.eventPayload.healthRoll as number) >= 1, true);
 });
 
 test("Laser Beam Eyes applies its sourced cruise-missile attack bonus", () => {
