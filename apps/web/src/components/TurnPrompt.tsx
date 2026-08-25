@@ -5,6 +5,7 @@ type Props = {
   actionHeadingRef: RefObject<HTMLHeadingElement | null>;
   action: string;
   description: string;
+  rulesHelp: { readonly title: string; readonly body: string };
   unavailableReason: string;
   canAct: boolean;
   lastFightEventId?: string;
@@ -16,12 +17,17 @@ type Props = {
   lastRecoveryReleased?: boolean;
 };
 
-export function TurnPrompt({ actionHeadingRef, action, description, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes, hollywoodResearchAwarded, lastRecoveryEventId, lastRecoveryRoll, lastRecoveryReleased }: Props) {
+export function TurnPrompt({ actionHeadingRef, action, description, rulesHelp, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes, hollywoodResearchAwarded, lastRecoveryEventId, lastRecoveryRoll, lastRecoveryReleased }: Props) {
   return (
     <>
       <span className="label">CURRENT STEP</span>
       <h2 ref={actionHeadingRef} tabIndex={-1}>{action}</h2>
       <p>{description}</p>
+      <aside className="decision-rules-help" aria-label="Rules help for current decision">
+        <span className="label">DECISION HELP</span>
+        <strong>{rulesHelp.title}</strong>
+        <p>{rulesHelp.body}</p>
+      </aside>
       {unavailableReason && !canAct && <p className="unavailable-reason" role="status">{unavailableReason}</p>}
       {lastFightEventId && lastFightRolls.length > 0 && (
         <div className="combat-result" key={lastFightEventId} aria-live="polite">

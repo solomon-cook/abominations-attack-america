@@ -697,6 +697,23 @@ function App() {
         : activeGame.phase === "game-over"
           ? "The development match is complete. Further commands are disabled."
           : `Place a legal military unit, then pass Deploy.${activeGame.deploymentsThisTurn ? ` ${activeGame.deploymentsThisTurn} placed this step.` : ""}`;
+  const rulesHelp = activeGame.phase === "move"
+    ? { title: "Move", body: "Select a highlighted monster or an owned or authorised unit, choose a connected legal destination, then confirm the previewed path. Pass Move when no further movement is required." }
+    : activeGame.phase === "fight"
+      ? activeGame.pendingDecision?.type === "attack-target"
+        ? { title: "Choose an attack target", body: "Select one of the highlighted military units in the current battle. The recorded attack result is resolved by the shared engine after the target is confirmed." }
+        : activeGame.pendingDecision?.type === "retreat"
+          ? { title: "Resolve retreat", body: "Assign every surviving military unit a highlighted legal destination. Disappearance is offered only when the authoritative option set is empty." }
+          : { title: "Resolve the compulsory Fight", body: "Choose a pending battle when more than one is available, then resolve the recorded monster-first combat sequence." }
+      : activeGame.phase === "encounter"
+        ? { title: "Resolve Encounter", body: "Resolve the space where the monster ended movement. Choose only from the reward, trophy, or city options shown by the engine." }
+        : activeGame.phase === "challenge"
+          ? activeGame.pendingDecision?.type === "challenge-opponent"
+            ? { title: "Choose the next challenger", body: "Select an eligible monster shown by the engine. Hollywood, defeated, and self targets are not offered." }
+            : { title: "Resolve Monster Challenge", body: "The challenger attacks first. Review the recorded dice and Health transitions; this presentation cannot change the authoritative duel." }
+          : activeGame.phase === "game-over"
+            ? { title: "Match complete", body: "The terminal result is authoritative. No further commands can change the winner or victory type." }
+            : { title: "Deploy", body: "Choose a legal deployment or redeployment, draw Research when the action is available, or pass Deploy to begin the next turn." };
   const choosePath = (destination: HexKey) => {
     const options = legalPaths
       .filter((path) => path.at(-1) === destination)
@@ -987,6 +1004,7 @@ function App() {
               actionHeadingRef={actionHeadingRef}
               action={action}
               description={turnDescription}
+              rulesHelp={rulesHelp}
               unavailableReason={unavailableReason}
               canAct={canAct}
               lastFightEventId={lastFightEvent?.id}
