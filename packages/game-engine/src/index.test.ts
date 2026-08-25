@@ -1178,6 +1178,28 @@ test("surviving normal battle requires retreat and suppresses Encounter", () => 
   }
 });
 
+test("forced retreat preserves the declared Monster Challenge challenger", () => {
+  const state = createGame(2, 8);
+  state.challenge = {
+    declared: true,
+    active: false,
+    challengerMonsterId: "monster-1",
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  const moved = applyCommand(state, { type: "move", path: ["los-angeles", "denver"] }).state;
+  moved.monsters[0].health = 40;
+  moved.pendingBattles[0].militaryUnitIds = ["0-0"];
+  moved.units.find((unit) => unit.id === "0-0")!.defense = 99;
+  const fought = applyCommand(moved, { type: "resolve-fight" }).state;
+  const destinations = Object.fromEntries(fought.pendingRetreat!.unitIds.map((unitId) => [unitId, fought.pendingRetreat!.options[unitId][0] ?? "disappeared"]));
+  const retreated = applyCommand(fought, { type: "retreat", destinations });
+  assert.equal(retreated.state.challenge?.challengerMonsterId, "monster-1");
+  assert.equal(retreated.state.challenge?.declared, true);
+});
+
 test("a battle with no legal retreat forces disappearance and skips Encounter", () => {
   const state = createGame(2);
   state.phase = "fight";
