@@ -549,6 +549,7 @@ Useful source documents:
   - [x] Add an automated WCAG AA contrast audit for seven critical gameplay palette pairs, including the tile-label backing surface. (`npm run web-contrast:verify`; full rendered/manual review remains open.)
   - [x] Enforce 44px minimum targets on setup, phase, retreat, action-dock, header, and settings controls while leaving compact hex-tile buttons excluded from the generic rule.
 - [ ] [P1] Browser QA passes at agreed desktop, tablet, and mobile viewports with no hidden required controls.
+  - [x] Run a 390×844 compact runtime smoke: setup completed, legal path preview exposed Confirm/Cancel, and the document had no horizontal or page overflow. (Development-fixture evidence recorded in `docs/first-playable-browser-evidence.md`; browser matrix and manual accessibility review remain open.)
 - [x] [P1] Onboarding can be skipped, revisited, and completed without changing authoritative match state. (The guide persists only a browser-local seen flag, is reopened through `How to play`, and browser verification confirmed hide/reopen without changing match data.)
 
 ## Milestone 14 — Tests, playtesting, operations, security, deployment, and release

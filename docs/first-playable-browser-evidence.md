@@ -35,7 +35,7 @@ A first-playable browser pass is complete only when a clean supported browser se
 | Full cancellation matrix | Not yet verified | One path cancellation and every invalid-action/loading case still need a dedicated run. |
 | Refresh/reconnect | Not yet verified in this run | Engine/store coverage exists; browser proof remains separate. |
 | Two-browser online play | Not yet verified | Requires two live room participants and WebSocket/polling exercise. |
-| Mobile viewport | Not yet verified | Desktop browser evidence does not prove mobile usability. |
+| Mobile viewport | Partial pass | A fresh 390×844 runtime completed setup and exposed `Confirm path`/`Cancel`; the document remained exactly 390px wide with no page or horizontal overflow. This is development-fixture evidence, not the full supported-browser matrix or accessibility sign-off. |
 
 ## Latest local renderer regression check
 
@@ -50,6 +50,8 @@ The same session checked the viewport shell at 1280×720 and 390×844. In both s
 A fresh 2026-08-25 local run also completed the ordered setup through the visible browser controls: `monster-1` then `monster-2`, Player 2 Army then Player 1 Navy, Player 1 Los Angeles then Player 2 Miami, and Draw Research for both players. The setup screen advanced to the active Move phase with no developer-tool intervention. This is an updated development-fixture smoke pass; it does not satisfy the full-board MVP or two-browser online acceptance criteria.
 
 The same runtime check confirmed the keyboard focus boundary after starting a local playtest: the setup controls surface is visible and the current-step `Move` heading receives focus (`tabindex=-1`) rather than leaving focus on the document body. The compact board-first panel-closed layout remains available after setup; this proves the setup transition only, not a complete keyboard or assistive-technology playthrough.
+
+The compact 2026-08-25 runtime check at 390×844 also completed ordered setup, opened the action controls, selected the legal San Francisco destination, and exposed both **Confirm path** and **Cancel** without horizontal or document overflow (`scrollWidth=clientWidth=390`, `scrollHeight=clientHeight=844`). The map remained the unresolved candidate shell, so this does not promote the physical MVP board or complete the supported mobile-browser matrix.
 
 On 2026-08-25, a fresh browser session at `http://127.0.0.1:5179/` completed the same visible setup, opened the controls, selected the legal `Los Angeles → San Francisco` destination, confirmed the path, and reached the authoritative Encounter decision with a visible **Resolve encounter** control. The runtime screenshot still shows the unresolved rectangular candidate shell and the source-reference photograph beneath it; this is useful development-flow evidence and direct confirmation that the current browser is not yet the physical MVP board.
 
