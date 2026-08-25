@@ -78,7 +78,7 @@ const implementedCardIds = new Set<string>([
   "Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "War Spikes", "Atomic Breath",
   "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Son of a Monster", "Berserk", "Winged Horror", "Kinda Friendly",
   "Laser Beam Eyes", "Armored Scales", "It's a Robot!", "Guard Commander", "Fusion Cells",
-  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites", "Antimatter", "Stabilizer Ray",
+  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence",
 ]);
 
 export const MONSTER_MUTATION_CARD_IDS = mutationIds;
@@ -114,6 +114,15 @@ export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
     classification: "one-use/discard",
     timing: "Start of a battle involving your units, on any of your turns.",
     duration: "For that battle.",
+    sourceRefs: ["references/monsters-menace-america/components/decks/military-research-01.jpg"],
+    effectsImplementation: "implemented",
+  },
+  {
+    id: "Laser Fence",
+    transcription: "Use at any time when a monster ends its move, but before battle. DISCARD THIS CARD AFTER USE. The monster must expend 2 Infamy tokens or retreat to an unoccupied adjacent space. (It doesn't encounter the new space.)",
+    classification: "one-use/discard",
+    timing: "After a monster ends its move but before battle.",
+    duration: "Resolved immediately.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-01.jpg"],
     effectsImplementation: "implemented",
   },

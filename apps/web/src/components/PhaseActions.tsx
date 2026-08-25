@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import { BRANCH_DEPLOYMENT_DEFINITIONS, legalOwnedRedeploymentDestinations, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
+import { BRANCH_DEPLOYMENT_DEFINITIONS, DEVELOPMENT_BOARD, legalOwnedRedeploymentDestinations, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 
 type AttackTargetDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type: "attack-target" }>;
 type BattleDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type: "battle-resolution" }>;
@@ -51,6 +51,16 @@ export function PhaseActions({
   ) : null;
   const antimatterButton = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Antimatter") ? (
     <button disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Antimatter", battleId: pendingBattle.id })}>Use Antimatter · double first-round damage</button>
+  ) : null;
+  const fenceDestinations = pendingBattle && pendingBattleDecision
+    ? (DEVELOPMENT_BOARD.edges.filter((edge) => edge.enabled && edge.from === pendingBattle.location).map((edge) => edge.to).filter((destination) => !activeGame.monsters.some((monster) => monster.location === destination) && !activeGame.units.some((unit) => unit.location === destination)))
+    : [];
+  const laserFenceButtons = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Laser Fence") ? (
+    <div className="battle-choice" aria-label="Choose Laser Fence outcome">
+      <span>Laser Fence:</span>
+      <button disabled={!canAct || (activeGame.monsters.find((monster) => monster.id === pendingBattle.monsterId)?.infamy ?? 0) < 2} onClick={() => void runCommand({ type: "use-research", cardId: "Laser Fence", battleId: pendingBattle.id, choice: "infamy" })}>Pay 2 Infamy and fight</button>
+      {fenceDestinations.map((destination) => <button key={destination} disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Laser Fence", battleId: pendingBattle.id, choice: "retreat", destination })}>Retreat to {getLocationName(destination)}</button>)}
+    </div>
   ) : null;
   const stabilizerMonsterPlayer = pendingBattle ? activeGame.monsters.findIndex((monster) => monster.id === pendingBattle.monsterId) : -1;
   const stabilizerMutationCards = pendingBattle && pendingBattleDecision
@@ -117,6 +127,7 @@ export function PhaseActions({
       {mutationButtons(pendingBattle.id)}
       {defenseSatellitesButton}
       {antimatterButton}
+      {laserFenceButtons}
       {stabilizerButtons}
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}>Resolve without spending Infamy</button>
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>

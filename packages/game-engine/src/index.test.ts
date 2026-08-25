@@ -456,7 +456,7 @@ test("source-inventoried cards have versioned structured metadata without guesse
   assert.deepEqual(unsupportedCardIds(["Guard Commander"]), []);
   assert.deepEqual(unsupportedCardIds(MONSTER_MUTATION_CARD_IDS), []);
   assert.deepEqual(unsupportedCardIds(["Defense Satellites"]), []);
-  assert.deepEqual(unsupportedCardIds(["Antimatter", "Stabilizer Ray"]), []);
+  assert.deepEqual(unsupportedCardIds(["Antimatter", "Stabilizer Ray", "Laser Fence"]), []);
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Berserk"]), []);
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Mecha-Monster"]), ["Mecha-Monster"]);
   assert.throws(() => assertCardsAvailable(["Mecha-Monster"]), /source-gated/);
@@ -470,6 +470,34 @@ test("source-inventoried cards have versioned structured metadata without guesse
     effectsImplementation: "implemented",
   });
   assert.equal(cardDefinition("not-a-card"), undefined);
+});
+
+test("Laser Fence either spends 2 Infamy or retreats and suppresses the new Encounter", () => {
+  const paid = createGame(2, 0);
+  paid.players[0].researchCardIds = ["Laser Fence"];
+  paid.monsters[0].infamy = 2;
+  paid.phase = "fight";
+  paid.units[0].location = paid.monsters[0].location;
+  paid.pendingBattles = [{ id: "laser-fence-paid", monsterId: "monster-1", location: paid.monsters[0].location as any, militaryUnitIds: [paid.units[0].id] }];
+  paid.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "laser-fence-paid" };
+  const paidResult = applyCommand(paid, { type: "use-research", cardId: "Laser Fence", battleId: "laser-fence-paid", choice: "infamy" });
+  assert.equal(paidResult.state.monsters[0].infamy, 0);
+  assert.equal(paidResult.state.pendingBattles.length, 1);
+  assert.deepEqual(paidResult.state.players[0].researchCardIds, []);
+
+  const retreated = createGame(2, 0);
+  retreated.players[0].researchCardIds = ["Laser Fence"];
+  retreated.phase = "fight";
+  retreated.units[0].location = retreated.monsters[0].location;
+  const destination = DEVELOPMENT_BOARD.edges.find((edge) => edge.from === retreated.monsters[0].location)?.to;
+  assert.ok(destination);
+  retreated.pendingBattles = [{ id: "laser-fence-retreat", monsterId: "monster-1", location: retreated.monsters[0].location as any, militaryUnitIds: [retreated.units[0].id] }];
+  retreated.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "laser-fence-retreat" };
+  const retreatResult = applyCommand(retreated, { type: "use-research", cardId: "Laser Fence", battleId: "laser-fence-retreat", choice: "retreat", destination });
+  assert.equal(retreatResult.state.monsters[0].location, destination);
+  assert.equal(retreatResult.state.pendingBattles.length, 0);
+  assert.equal(retreatResult.state.encounterSuppressed, true);
+  assert.equal(retreatResult.state.phase, "deploy");
 });
 
 test("card lifecycle primitives draw deterministically and exhaust without reshuffling", () => {

@@ -410,7 +410,7 @@ export type GameCommand =
   | { type: "pass-move" }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
-  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray"; battleId?: string; mutationCardId?: string }
+  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy"; unitId?: string; destination?: HexKey }
@@ -1417,7 +1417,7 @@ interface MutationUseResolution {
 
 interface ResearchUseResolution {
   readonly state: GameState;
-  readonly cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray";
+  readonly cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence";
   readonly battleId?: string;
   readonly rolls: readonly number[];
   readonly damagedMonsterIds: readonly string[];
@@ -1432,7 +1432,7 @@ function discardResearchFromHand(state: GameState, playerIndex: number, cardId: 
 }
 
 /** Resolve the currently implemented immediate Research windows. */
-function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray", requestedBattleId?: string, mutationCardId?: string): ResearchUseResolution {
+function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey): ResearchUseResolution {
   if (state.phase === "game-over" || state.phase === "challenge") throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} is unavailable during a terminal state or Monster Challenge.`);
   if (cardId === "Antimatter") {
     if (state.phase !== "fight" || state.pendingDecision?.type !== "battle-resolution") throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter can only be used at the start of an unresolved battle.");
@@ -1462,6 +1462,36 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
     discardResearchFromHand(next, next.currentPlayer, cardId);
     next.pendingBattles.find((candidate) => candidate.id === battleId)!.stabilizerRayMutationCardId = mutationCardId;
     next.log.push(`Stabilizer Ray is armed against ${mutationCardId} for ${monster.name}'s battle.`);
+    return { state: next, cardId, battleId, rolls: [], damagedMonsterIds: [], defeatedMonsterIds: [] };
+  }
+  if (cardId === "Laser Fence") {
+    if (state.phase !== "fight" || state.pendingDecision?.type !== "battle-resolution") throw new GameDomainError("ILLEGAL_COMMAND", "Laser Fence can only be used after movement and before an unresolved battle.");
+    const battleId = requestedBattleId ?? state.pendingDecision.battleId;
+    const battle = state.pendingBattles.find((candidate) => candidate.id === battleId);
+    if (battleId !== state.pendingDecision.battleId || !battle || state.pendingCombat || state.pendingAttackTarget) throw new GameDomainError("ILLEGAL_COMMAND", "Laser Fence can only be used before battle resolution begins.");
+    const monster = state.monsters.find((candidate) => candidate.id === battle.monsterId);
+    if (!monster) throw new GameDomainError("ILLEGAL_COMMAND", "Laser Fence references an unknown monster.");
+    const hasOwnUnit = battle.militaryUnitIds.some((unitId) => state.units.some((unit) => unit.id === unitId && unit.ownerPlayer === state.currentPlayer));
+    if (!hasOwnUnit) throw new GameDomainError("ILLEGAL_COMMAND", "Laser Fence requires a battle involving the active player's units.");
+    if (choice !== "infamy" && choice !== "retreat") throw new GameDomainError("ILLEGAL_COMMAND", "Choose whether the monster spends Infamy or retreats from Laser Fence.");
+    const next = structuredClone(state);
+    const nextMonster = next.monsters.find((candidate) => candidate.id === monster.id)!;
+    discardResearchFromHand(next, next.currentPlayer, cardId);
+    if (choice === "infamy") {
+      if (nextMonster.infamy < 2) throw new GameDomainError("ILLEGAL_COMMAND", "Laser Fence requires at least 2 Infamy to pay its cost.");
+      nextMonster.infamy -= 2;
+      next.log.push(`${nextMonster.name} paid 2 Infamy to pass the Laser Fence.`);
+    } else {
+      const adjacent = developmentBoardIndex.neighbours[battle.location] ?? [];
+      if (!destination || !adjacent.includes(destination) || next.monsters.some((candidate) => candidate.location === destination) || next.units.some((unit) => unit.location === destination)) {
+        throw new GameDomainError("ILLEGAL_COMMAND", "Laser Fence retreat must end on an unoccupied adjacent space.");
+      }
+      nextMonster.location = destination;
+      next.pendingBattles = next.pendingBattles.filter((candidate) => candidate.id !== battleId);
+      next.encounterSuppressed = true;
+      next.log.push(`${nextMonster.name} retreated through the Laser Fence to ${destination}; it will not Encounter that space.`);
+      finishBattleQueue(next);
+    }
     return { state: next, cardId, battleId, rolls: [], damagedMonsterIds: [], defeatedMonsterIds: [] };
   }
   if (state.pendingBattles.length > 0 || state.pendingRetreat) throw new GameDomainError("ILLEGAL_COMMAND", "Defense Satellites must be resolved before an unresolved battle or retreat decision.");
@@ -2108,8 +2138,8 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     return { state: appendEvent(result.state, "mutation.used", eventPayload), eventType: "mutation.used", eventPayload };
   }
   if (command.type === "use-research") {
-    const result = useResearchCard(state, command.cardId, command.battleId, command.mutationCardId);
-    const eventPayload = { researchCardId: result.cardId, battleId: result.battleId, mutationCardId: command.mutationCardId, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
+    const result = useResearchCard(state, command.cardId, command.battleId, command.mutationCardId, command.choice, command.destination);
+    const eventPayload = { researchCardId: result.cardId, battleId: result.battleId, mutationCardId: command.mutationCardId, choice: command.choice, destination: command.destination, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "research.used", eventPayload), eventType: "research.used", eventPayload };
   }
   if (state.phase === "fight" && (command.type === "resolve-fight" || command.type === "advance")) {
