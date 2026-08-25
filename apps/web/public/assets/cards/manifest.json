@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "format": "webp",
+  "source": "references/monsters-menace-america/components/decks/",
+  "sheets": [
+    { "id": "military-research-01", "deck": "Military Research", "src": "/assets/cards/military-research-01.webp" },
+    { "id": "military-research-02", "deck": "Military Research", "src": "/assets/cards/military-research-02.webp" },
+    { "id": "military-research-03", "deck": "Military Research", "src": "/assets/cards/military-research-03.webp" },
+    { "id": "monster-mutation-01", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-01.webp" },
+    { "id": "monster-mutation-02", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-02.webp" },
+    { "id": "monster-mutation-03", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-03.webp" },
+    { "id": "monster-mutation-04", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-04.webp" }
+  ]
+}
