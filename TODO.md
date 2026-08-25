@@ -382,13 +382,14 @@ Useful source documents:
     - [ ] [P0] Show each city's authored name and its relevant printed benefit/number directly on or immediately beside the city hex, using clear notation such as `1 HP` and `1D` where applicable.
     - [ ] [P0] Keep city and Mutation labels legible at supported zoom levels and available through accessible text/inspection without hiding the underlying hex, piece, or interaction state.
     - [ ] [P0] Use only verified board data for city names, Mutation spaces, and benefit values; unresolved values must remain visibly marked as unresolved rather than guessed.
-  - [ ] [P0] Remove the background reference-board image from the site and replace it with a generated North America-inspired map made from green hexagons, with a surrounding sea treatment.
-    - [ ] [P0] Make the generated hex map the visible board surface, with connected hexes, clear borders, and sea surrounding the landmass rather than using the photographed/reference board as a backdrop.
-    - [ ] [P0] Keep this generated visual treatment separate from authoritative board topology and rule data; the engine remains the source of playable hexes, adjacency, features, and legality.
+  - [ ] [P0] Remove the background reference-board image from the site and replace it with a generated North America-inspired green hexagon map with a surrounding sea treatment, used only as the decorative background behind the actual map tiles.
+    - [ ] [P0] Render the authoritative playable map tiles above this generated background, with the actual connected hexes, borders, labels, pieces, features, and interactions remaining visible and usable.
+    - [ ] [P0] Keep the generated background purely visual and separate from authoritative board topology and rule data; the engine remains the source of playable hexes, adjacency, features, and legality.
   - [x] Extract development setup choices and the online setup summary while keeping setup commands and state transitions in `App`. (`apps/web/src/components/SetupPanel.tsx`; web typecheck/build pass.)
   - [x] Extract match status and piece-stack inspection presentation without moving board selection or engine legality into the component. (`apps/web/src/components/MatchStatus.tsx` and `PieceStackInspector.tsx`; web typecheck/build pass.)
   - [x] Extract the 254-cell hex renderer while keeping path selection and engine-provided legality at the parent boundary. (`apps/web/src/components/HexGrid.tsx`; web typecheck/build and `web-board-layout:verify` pass.)
   - [x] Extract the current-step prompt, unavailable-action explanation, and recorded combat-result presentation without moving action controls. (`apps/web/src/components/TurnPrompt.tsx`; web typecheck/build pass.)
+  - [x] Extract Fight, Encounter, and Deploy decision controls while keeping command execution and engine legality at the parent boundary. (`apps/web/src/components/PhaseActions.tsx`; web typecheck/build pass.)
   - [ ] [P0] Make the overall UI fit within the viewport as a general rule, with no gameplay page scrolling; scrolling may be used inside menus or other deliberately bounded information panels.
     - [ ] [P0] Provide a focused setup screen before the match, then keep the active game view centred on the board/map once gameplay begins.
     - [ ] [P0] Make the in-game map draggable/pannable and zoomable, with the board remaining the primary centre-stage interaction surface.

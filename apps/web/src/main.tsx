@@ -38,6 +38,7 @@ import { BoardReferenceCard } from "./components/BoardReferenceCard";
 import { LobbyPanel } from "./components/LobbyPanel";
 import { LogPanel } from "./components/LogPanel";
 import { MatchStatus } from "./components/MatchStatus";
+import { PhaseActions } from "./components/PhaseActions";
 import { PieceStackInspector } from "./components/PieceStackInspector";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -835,149 +836,24 @@ function App() {
                   Leave monster here & finish Move
                 </button>
               </div>
-            ) : activeGame.phase === "fight" && pendingAttackTarget ? (
-              <div className="battle-choice" aria-label="Choose the monster attack target">
-                <p>{pendingAttackPrompt}</p>
-                {pendingAttackTarget.targetIds.map((unitId) => {
-                  const unit = activeGame.units.find((candidate) => candidate.id === unitId);
-                  return (
-                    <button
-                      key={unitId}
-                      disabled={!canAct}
-                      onClick={() => void runCommand({
-                        type: "resolve-fight",
-                        battleId: pendingAttackTarget.battleId,
-                        targetUnitId: unitId,
-                      })}
-                    >
-                      Attack {unit?.branch ?? unitId} ({unit?.unitTypeId ?? "unit"})
-                    </button>
-                  );
-                })}
-              </div>
-            ) : activeGame.phase === "fight" && activeGame.pendingDecision?.type === "retreat" && activeGame.pendingRetreat ? (
-              <div className="retreat-choice" aria-label="Choose retreat destinations">
-                {activeGame.pendingRetreat.unitIds.map((unitId) => {
-                  const unit = activeGame.units.find((candidate) => candidate.id === unitId);
-                  const options = activeGame.pendingRetreat?.options[unitId] ?? [];
-                  const selected = retreatChoices[unitId] ?? (options.length === 0 ? "disappeared" : undefined);
-                  return (
-                    <div className="retreat-unit" key={unitId}>
-                      <span>{unit?.branch ?? unitId}</span>
-                      {options.length === 0 ? (
-                        <strong>Forced disappearance</strong>
-                      ) : options.map((destination) => (
-                        <button
-                          className={selected === destination ? "selected-choice" : ""}
-                          key={destination}
-                          disabled={!canAct}
-                          onClick={() => setRetreatChoices((current) => ({ ...current, [unitId]: destination }))}
-                        >
-                          {getLocation(destination)?.name ?? destination}
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })}
-                <button
-                  disabled={!canAct || activeGame.pendingRetreat.unitIds.some((unitId) => !retreatChoices[unitId] && (activeGame.pendingRetreat?.options[unitId]?.length ?? 0) > 0)}
-                  onClick={() => {
-                    const destinations = Object.fromEntries(activeGame.pendingRetreat!.unitIds.map((unitId) => [unitId, retreatChoices[unitId] ?? "disappeared"]));
-                    void runCommand({ type: "retreat", destinations });
-                  }}
-                >
-                  Confirm retreat
-                </button>
-              </div>
-            ) : activeGame.phase === "fight" && activeGame.pendingBattles.length > 1 ? (
-              <div className="battle-choice" aria-label="Choose battle resolution order">
-                {activeGame.pendingBattles.map((battle) => {
-                  const monster = activeGame.monsters.find((candidate) => candidate.id === battle.monsterId);
-                  return (
-                    <button
-                      key={battle.id}
-                      disabled={!canAct}
-                      onClick={() => void runCommand({ type: "resolve-fight", battleId: battle.id })}
-                    >
-                      Resolve {monster?.name ?? battle.monsterId} at {getLocation(battle.location)?.name ?? battle.location} ({battle.militaryUnitIds.length} unit{battle.militaryUnitIds.length === 1 ? "" : "s"})
-                    </button>
-                  );
-                })}
-              </div>
-            ) : activeGame.phase === "fight" && pendingBattle && canSpendInfamyOnPendingBattle ? (
-              <div className="battle-choice" aria-label="Choose whether to spend Infamy on this battle">
-                <p>Choose whether to spend one Infamy for an additional monster attack this round.</p>
-                <button
-                  disabled={!canAct}
-                  onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}
-                >
-                  Resolve without spending Infamy
-                </button>
-                <button
-                  disabled={!canAct}
-                  onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}
-                >
-                  Spend 1 Infamy · add one attack
-                </button>
-              </div>
-            ) : activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "trophy-choice" ? (
-              <div className="battle-choice" aria-label="Choose a military trophy">
-                <p>Player {activeGame.pendingDecision.playerIndex + 1}, choose one {activeGame.pendingDecision.branch} unit as the monster&apos;s trophy.</p>
-                {activeGame.pendingDecision.unitIds.map((unitId) => {
-                  const unit = activeGame.units.find((candidate) => candidate.id === unitId);
-                  return (
-                    <button
-                      key={unitId}
-                      disabled={!canAct}
-                      onClick={() => void runCommand({ type: "resolve-encounter", trophyUnitId: unitId })}
-                    >
-                      Take {unit?.unitTypeId ?? unitId} ({unit?.location === "record-tile" ? "record tile" : "board"})
-                    </button>
-                  );
-                })}
-              </div>
-            ) : activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "encounter-choice" ? (
-              <div className="battle-choice" aria-label="Choose Zorb city benefit">
-                {activeGame.pendingDecision.choices.map((choice) => (
-                  <button
-                    key={choice}
-                    disabled={!canAct}
-                    onClick={() => void runCommand({ type: "resolve-encounter", choice })}
-                  >
-                    {choice === "health" ? "Take the city Health benefit" : "Take 2 Infamy instead"}
-                  </button>
-                ))}
-              </div>
-            ) : activeGame.phase === "deploy" ? (
-              <div className="path-controls">
-                <button
-                  disabled={!canAct || !ownDeploymentAvailable}
-                  onClick={() => void runCommand({ type: "deploy" })}
-                >
-                  {ownDeploymentAvailable ? "Deploy one unit" : "No owned deployment available"}
-                </button>
-                {availableGuardUnitId && guardDeploymentDestination && (
-                  <button
-                    disabled={!canAct || !guardDeploymentAvailable}
-                    onClick={() => void runCommand({ type: "deploy", unitId: availableGuardUnitId, destination: guardDeploymentDestination })}
-                  >
-                    Deploy Guard to {getLocation(guardDeploymentDestination)?.name ?? guardDeploymentDestination}
-                  </button>
-                )}
-                <button
-                  disabled={!canAct || activeGame.decks.research.exhausted}
-                  onClick={() => void runCommand({ type: "draw-research" })}
-                >
-                  {activeGame.decks.research.exhausted ? "Military Research exhausted" : "Draw Military Research instead"}
-                </button>
-                <button
-                  className="cancel"
-                  disabled={!canAct}
-                  onClick={() => void runCommand({ type: "pass-deploy" })}
-                >
-                  Pass deployment
-                </button>
-              </div>
+            ) : activeGame.phase === "fight" || activeGame.phase === "encounter" || activeGame.phase === "deploy" ? (
+              <PhaseActions
+                activeGame={activeGame}
+                canAct={canAct}
+                runCommand={runCommand}
+                getLocationName={(key) => getLocation(key)?.name ?? key}
+                pendingAttackTarget={pendingAttackTarget}
+                pendingAttackPrompt={pendingAttackPrompt}
+                pendingBattle={pendingBattle}
+                pendingBattleDecision={pendingBattleDecision}
+                canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle}
+                retreatChoices={retreatChoices}
+                setRetreatChoices={setRetreatChoices}
+                ownDeploymentAvailable={ownDeploymentAvailable}
+                availableGuardUnitId={availableGuardUnitId}
+                guardDeploymentDestination={guardDeploymentDestination}
+                guardDeploymentAvailable={guardDeploymentAvailable}
+              />
             ) : activeGame.phase === "game-over" ? (
               <TerminalSummary action={action} victoryType={activeGame.victoryType} online={online} onLeaveRoom={() => void leaveRoom()} onResetLocal={resetLocal} />
             ) : (
