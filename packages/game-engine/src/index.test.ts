@@ -1461,6 +1461,28 @@ test("persistent Mutation movement and combat modifiers alter authoritative outc
   assert.equal(attackDamage, 4);
 });
 
+test("Laser Beam Eyes applies its sourced cruise-missile attack bonus", () => {
+  const state = createGame(2);
+  state.players[0].mutationCardIds = ["Laser Beam Eyes"];
+  state.phase = "fight";
+  state.monsters[0].attacks = 1;
+  const missile = state.units.find((unit) => unit.unitTypeId === "air-force-cruise-missile")!;
+  missile.location = state.monsters[0].location;
+  const battleId = "laser-eyes";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [missile.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  let laserAttack: { hit: boolean; roll: number; modifiers: string[] } | undefined;
+  for (let seed = 0; seed < 128 && !laserAttack; seed += 1) {
+    const candidate = structuredClone(state);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight" });
+    const attack = (result.eventPayload.attacks as Array<{ attackerId: string; hit: boolean; roll: number; modifiers: string[] }>).find((entry) => entry.attackerId === "monster-1");
+    if (attack && attack.roll === 4) laserAttack = attack;
+  }
+  assert.equal(laserAttack?.hit, true);
+  assert.deepEqual(laserAttack?.modifiers, ["Laser Beam Eyes: +2 to hit cruise missiles"]);
+});
+
 test("a rival military player draws Military Research when their attack sends a monster to Hollywood", () => {
   const state = createGame(2, 7);
   state.phase = "fight";

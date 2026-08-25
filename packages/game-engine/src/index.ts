@@ -724,7 +724,7 @@ export function legalMonsterPaths(state: GameState, monsterId = state.monsters[s
       const otherMonster = state.monsters.some((candidate) => candidate.id !== monster.id && candidate.location === next);
       if (otherMonster && movement !== "fly") continue;
       const nextPath = [...path, next];
-      if (!movementPathAllowed(DEVELOPMENT_BOARD, nextPath, movement)) continue;
+      if (!monsterMovementPathAllowed(state, monster, DEVELOPMENT_BOARD, nextPath)) continue;
       const occupiedByMilitary = state.units.some((unit) => unit.location === next);
       const flyMayPass = movement === "fly";
       const finishForbidden = otherMonster && flyMayPass && !state.challenge?.active;
@@ -835,7 +835,7 @@ export function moveMonster(state: GameState, monsterId: string, path: string[])
   const canonical = canonicalPath(path);
   const destination = canonical?.at(-1);
   const movedPieceIds = state.movedPieceIds ?? [];
-  const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= move && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(DEVELOPMENT_BOARD, canonical, movement));
+  const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= move && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && monsterMovementPathAllowed(state, monster, DEVELOPMENT_BOARD, canonical));
   const intermediate = (canonical ?? []).slice(1, -1);
   const blockedByMilitary = movement !== "fly" && intermediate.some((space) => occupantsAt(state, space).units.length > 0);
   const otherMonsterSpaces = (canonical ?? []).slice(1).filter((space) => occupantsAt(state, space).monsters.some((candidate) => candidate.id !== monster.id));
@@ -939,6 +939,17 @@ function effectiveMonsterAttacks(state: Pick<GameState, "monsters" | "players">,
   return monster.attacks + (round === 1 && monsterHasMutation(state, monster, "Atomic Breath") ? 1 : 0);
 }
 
+function monsterMovementPathAllowed(state: Pick<GameState, "monsters" | "players">, monster: Monster, board: BoardDefinition, path: readonly HexKey[]): boolean {
+  const movement = effectiveMonsterMovement(state, monster);
+  const crossesWaterBarriers = monsterHasMutation(state, monster, "Fins and Gills");
+  return path.every((space, index) => {
+    if (index === 0) return Boolean(board.hexes[space]) && waterClassAllowed(movement, board.hexes[space].waterClass);
+    const previous = path[index - 1];
+    const edge = board.edges.find((candidate) => candidate.from === previous && candidate.to === space && candidate.enabled);
+    return Boolean(edge && (crossesWaterBarriers || waterBarrierAllowed(movement, edge.barrier)) && board.hexes[space] && waterClassAllowed(movement, board.hexes[space].waterClass));
+  });
+}
+
 function awardHollywoodResearch(state: GameState, controllerPlayer: number | undefined): string | undefined {
   if (controllerPlayer === undefined || controllerPlayer === state.currentPlayer) return undefined;
   const cardId = drawResearchCardForPlayer(state, controllerPlayer);
@@ -1031,12 +1042,14 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     const roll = nextD6(next);
     rolls.push(roll);
     const fighterBonus = monster.name === "Konk" && target.unitTypeId?.endsWith("-fighter") ? 1 : 0;
-    const hit = roll + fighterBonus >= target.defense;
+    const laserBonus = target.unitTypeId === "air-force-cruise-missile" && monsterHasMutation(next, monster, "Laser Beam Eyes") ? 2 : 0;
+    const hit = roll + fighterBonus + laserBonus >= target.defense;
     const smash = hit && roll === 6;
     const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
     const destroyed = hit;
     const modifiers = [
       ...(fighterBonus ? ["+1 to hit fighters"] : []),
+      ...(laserBonus ? ["Laser Beam Eyes: +2 to hit cruise missiles"] : []),
       ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
     ];
     attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
@@ -1211,12 +1224,14 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         const roll = nextD6(next);
         rolls.push(roll);
         const fighterBonus = monster.name === "Konk" && target.unitTypeId?.endsWith("-fighter") ? 1 : 0;
-        const hit = roll + fighterBonus >= target.defense;
+        const laserBonus = target.unitTypeId === "air-force-cruise-missile" && monsterHasMutation(next, monster, "Laser Beam Eyes") ? 2 : 0;
+        const hit = roll + fighterBonus + laserBonus >= target.defense;
         const smash = hit && roll === 6;
         const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
         const destroyed = hit;
         const modifiers = [
           ...(fighterBonus ? ["+1 to hit fighters"] : []),
+          ...(laserBonus ? ["Laser Beam Eyes: +2 to hit cruise missiles"] : []),
           ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
         ];
         attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
