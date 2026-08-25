@@ -7,6 +7,7 @@ const pinSource = await readFile(resolve(root, "apps/web/src/board-pin.ts"), "ut
 const gridSource = await readFile(resolve(root, "apps/web/src/components/HexGrid.tsx"), "utf8");
 const phaseActionsSource = await readFile(resolve(root, "apps/web/src/components/PhaseActions.tsx"), "utf8");
 const mainSource = await readFile(resolve(root, "apps/web/src/main.tsx"), "utf8");
+const stylesheetSource = await readFile(resolve(root, "apps/web/src/styles.css"), "utf8");
 const required = [
   ["shared board resolver", /export function boardForGame/],
   ["full-board ID and hash match", /game\.boardId === FULL_HONEYCOMB_BOARD\.id && game\.boardContentHash === FULL_HONEYCOMB_BOARD\.contentHash/],
@@ -18,11 +19,12 @@ const required = [
   ["unresolved shell has no visible placeholder label", /const visibleName = place\?\.name \?\? \(developmentFixture \? hex\.label : ""\);/],
   ["unresolved shell has no placeholder marker", /\{place && <span className="node"/],
   ["unresolved shell has no implied terrain artwork", /const baseArt = hex\.waterClass === "unresolved"\s*\? undefined/],
+  ["unresolved shell has neutral hatch treatment", /\.hex-tile\.unresolved\{background:repeating-linear-gradient/],
   ["grid hides unknown topology", /className="board-unavailable" role="alert"/],
   ["map metadata uses resolved board", /data-rendered-board-id=\{renderedBoard\?\.id \?\? "unavailable"\}/],
   ["map metadata uses resolved hash", /data-rendered-board-content-hash=\{renderedBoard\?\.contentHash \?\? "unavailable"\}/],
 ];
-const source = `${pinSource}\n${gridSource}\n${phaseActionsSource}\n${mainSource}`;
+const source = `${pinSource}\n${gridSource}\n${phaseActionsSource}\n${mainSource}\n${stylesheetSource}`;
 const failures = required.filter(([, marker]) => !marker.test(source)).map(([label]) => label);
 if (failures.length > 0) throw new Error(`Web board-pin contract failed: ${failures.join(", ")}`);
 console.log("Verified exact board ID/hash pin resolution and fail-closed web rendering contract.");
