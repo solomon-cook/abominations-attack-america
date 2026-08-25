@@ -486,9 +486,10 @@ Useful source documents:
   - [x] Add logging with match/action correlation while redacting tokens and private game information. (HTTP command/setup/ready acceptance and request failures emit structured room/action/revision metadata without tokens or private state/card payloads.)
   - [x] Add metrics for command failures, latency, reconnects, room completion, abandonment, and server errors. (`ApiMetrics` records these counters and latency samples; `/metrics` exposes a token-free snapshot, while deterministic unit tests verify isolation and accumulation. External scraping/alert delivery remains deployment work.)
 - [ ] [P1] Add error reporting and alerts for API health, persistence failures, event/snapshot divergence, and deployment regressions.
-  - [P1] Threat-model room codes, session tokens, command authorization, enumeration, replay, injection, rate abuse, and secret handling.
+  - [x] [P1] Document the threat model for room codes, session tokens, command authorization, enumeration, replay, injection, rate abuse, and secret handling. (`docs/security-threat-model.md`; external production review remains open.)
   - [P1] Validate CORS, security headers, dependency risks, database permissions, backups, restore, and credential rotation.
 - [ ] [P1] Choose hosting only after documenting requirements for static web delivery, WebSockets, durable API compute, Postgres, secrets, and observability.
+  - [x] [P1] Document hosting requirements and environment separation before provider selection. (`docs/deployment-requirements.md`; no provider or live environment is claimed.)
   - [P1] Create staging and production environments with separate data, secrets, URLs, and deployment safeguards.
   - [P1] Add database migration, rollback, backup, and incompatible-match handling to the release process.
 - [ ] [P1] Verify production through real browser create/join/play/reconnect/spectate flows after deployment.
