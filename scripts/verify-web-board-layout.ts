@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   buildDisplayHexLayout,
   DISPLAY_BOARD_LEFT_PERCENT,
+  DISPLAY_BOARD_ASPECT_RATIO,
   DISPLAY_BOARD_TOP_PERCENT,
   DISPLAY_BOARD_TOP_SPAN_PERCENT,
   DISPLAY_TILE_ASPECT_RATIO,
@@ -36,7 +37,7 @@ assert.ok(layout.every((entry) => entry.top >= DISPLAY_BOARD_TOP_PERCENT && entr
 const tileHeight = DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO;
 const rowStep = DISPLAY_BOARD_TOP_SPAN_PERCENT / 12;
 assert.ok(DISPLAY_TILE_ASPECT_RATIO > 1, "flat-top landscape tiles must be wider than they are tall");
-assert.ok(Math.abs(rowStep - tileHeight) < 0.01, `row step ${rowStep.toFixed(2)} must match tile height ${tileHeight.toFixed(2)} for shared horizontal edges`);
+assert.ok(Math.abs(rowStep - tileHeight * DISPLAY_BOARD_ASPECT_RATIO) < 0.01, `row step ${rowStep.toFixed(2)} must match the canvas-scaled tile height ${(tileHeight * DISPLAY_BOARD_ASPECT_RATIO).toFixed(2)} for shared horizontal edges`);
 assert.ok(Math.abs(DISPLAY_TILE_STEP_PERCENT - DISPLAY_TILE_WIDTH_PERCENT) < 0.01, "flat-top row pitch must equal tile width to prevent polygon overlap");
 assert.ok(DISPLAY_BOARD_LEFT_PERCENT - DISPLAY_TILE_WIDTH_PERCENT / 2 > 0, "left tile bounds must remain inside the map");
 assert.ok(layout.find((entry) => entry.row === 0 && entry.column === 19)!.left + DISPLAY_TILE_WIDTH_PERCENT / 2 < 100, "rightmost tile bounds must remain inside the map");
@@ -90,4 +91,4 @@ for (let firstIndex = 0; firstIndex < polygons.length; firstIndex += 1) {
   }
 }
 
-console.log(`Verified 254-cell flat-top landscape honeycomb display layout with staggered rows, ${tileHeight.toFixed(2)}% tile height, and shared hex edges.`);
+console.log(`Verified 254-cell flat-top landscape honeycomb display layout with staggered rows, ${tileHeight.toFixed(2)}% canvas-width tile height, and shared hex edges.`);

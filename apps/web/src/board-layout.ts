@@ -16,14 +16,23 @@ export const DISPLAY_TILE_STEP_PERCENT = DISPLAY_TILE_WIDTH_PERCENT;
 export const DISPLAY_TILE_ASPECT_RATIO = 1.1547005;
 export const DISPLAY_BOARD_LEFT_PERCENT = 5;
 export const DISPLAY_BOARD_TOP_PERCENT = 4;
-export const DISPLAY_BOARD_TOP_SPAN_PERCENT = (DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO) * 12;
+/** The photographed 20-by-13 lattice is rendered in a landscape canvas. */
+export const DISPLAY_BOARD_ASPECT_RATIO = (20 * DISPLAY_TILE_ASPECT_RATIO) / 13;
+/**
+ * Top coordinates are percentages of canvas height, while tile width is a
+ * percentage of canvas width. Convert the shared-edge tile height into the
+ * canvas' vertical percentage before laying out the rows.
+ */
+export const DISPLAY_BOARD_TOP_SPAN_PERCENT =
+  (DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO) * DISPLAY_BOARD_ASPECT_RATIO * 12;
 
 /**
  * Presentation-only layout for the photographed board candidate.
  *
  * The board definition remains axial and authoritative for rules. The
- * candidate is displayed as 13 landscape rows of alternating 20/19 cells;
- * flat-top landscape tiles use a half-cell horizontal offset on odd rows.
+ * candidate is displayed as 13 landscape rows of alternating 20/19 cells in
+ * a fixed-aspect landscape canvas; flat-top landscape tiles use a half-cell
+ * horizontal offset on odd rows.
  */
 export function buildDisplayHexLayout(board: BoardDefinition = FULL_HONEYCOMB_BOARD): DisplayHex[] {
   return Object.values(board.hexes).map((hex) => {
