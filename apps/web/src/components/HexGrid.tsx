@@ -126,6 +126,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />
             {boardArt && <img className="tile-art" src={boardArt} alt="" aria-hidden="true" loading="lazy" />}
             {stomped && <img className="tile-stomp" src="/assets/board/tokens/stomp_token.webp" alt="" aria-hidden="true" loading="lazy" />}
+            {place?.kind === "infamy" && <img className="tile-infamy" src="/assets/board/tokens/infamy_token.webp" alt="" aria-hidden="true" loading="lazy" />}
             <span className="tile-content">
               <span className="node" aria-hidden="true">{place?.kind === "city" ? "✦" : place?.kind === "base" ? "⌂" : place?.kind === "infamy" ? "★" : place?.kind === "mutation" ? "✹" : place ? "⚔" : "·"}</span>
               <span>{displayName}</span>
