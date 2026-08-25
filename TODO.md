@@ -296,7 +296,7 @@ Useful source documents:
 ### Milestone 8 acceptance
 
 - [x] [P0] Deployment tests cover every branch, player count, base status, inventory boundary, destination collision, and pass option. (Table-driven engine coverage now exercises 2/3/4-player fixtures and every branch; branches without a verified development base must fail closed, while deployed branches cover inventory, collision, stomp, and explicit pass boundaries.)
-- [ ] [P0] Every physical unit is accounted for before and after deploy, trophy, destruction, redeploy, and removal operations.
+- [x] [P0] Every physical unit is accounted for before and after deploy, trophy, destruction, redeploy, and removal operations. (`validateInventoryAccounting` is enforced at the command boundary; the lifecycle fixture covers deployment, redeployment, trophy removal, and cruise-missile destruction while preserving the source-counted regular roster and National Guard inventory.)
 - [ ] [P1] Research, National Guard overrides, and giant-unit lifecycle tests use verified component fixtures.
 - [x] [P1] The web UI never offers an illegal unit, destination, redeployment, or Research alternative. (`legalOwnedDeploymentDestinations`, `legalOwnedRedeploymentDestinations`, and `legalNationalGuardDeploymentDestinations` filter verified, owned, unstomped, unused destinations before `PhaseActions` renders controls; Research is disabled from the authoritative exhausted-deck flag.)
 

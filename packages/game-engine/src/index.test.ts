@@ -264,6 +264,45 @@ test("redeployment moves one owned branch unit and consumes one branch allowance
   assert.throws(() => applyCommand(result.state, { type: "redeploy", unitId: unit.id, destination: K("denver") }), /unstomped base|allowance|record/i);
 });
 
+test("inventory accounting remains exact across deploy, trophy, destruction, and redeploy boundaries", () => {
+  const deployedState = createGame(2);
+  deployedState.phase = "deploy";
+  deployedState.pendingDecision = { type: "deployment", playerIndex: 0 };
+  const deployed = applyCommand(deployedState, { type: "deploy" });
+  assert.deepEqual(validateInventoryAccounting(deployed.state), []);
+
+  const redeployState = createGame(2);
+  redeployState.phase = "deploy";
+  redeployState.pendingDecision = { type: "deployment", playerIndex: 0 };
+  const redeployUnit = redeployState.units.find((unit) => unit.id === "0-0")!;
+  redeployUnit.location = K("chicago");
+  redeployUnit.ownerPlayer = 0;
+  const redeployed = applyCommand(redeployState, { type: "redeploy", unitId: redeployUnit.id, destination: K("denver") });
+  assert.deepEqual(validateInventoryAccounting(redeployed.state), []);
+
+  const trophyState = createGame(2);
+  trophyState.setupAssignments = [
+    { playerIndex: 0, monsterId: "monster-1", branch: "Navy", lair: "los-angeles", ready: true },
+    { playerIndex: 1, monsterId: "monster-2", branch: "Army", lair: "chicago", ready: true },
+  ];
+  trophyState.phase = "encounter";
+  trophyState.monsters[0].location = K("denver");
+  const trophyPending = applyCommand(trophyState, { type: "resolve-encounter" });
+  const trophyId = trophyPending.state.pendingTrophyChoice!.unitIds[0];
+  const trophy = applyCommand(trophyPending.state, { type: "resolve-encounter", trophyUnitId: trophyId });
+  assert.deepEqual(validateInventoryAccounting(trophy.state), []);
+
+  const destructionState = createGame(2, 0);
+  destructionState.currentPlayer = 0;
+  destructionState.monsters[0].health = 40;
+  destructionState.units[5].location = destructionState.monsters[0].location;
+  destructionState.phase = "fight";
+  destructionState.pendingBattles = [{ id: "inventory-destruction", monsterId: "monster-1", location: destructionState.monsters[0].location as any, militaryUnitIds: [destructionState.units[5].id] }];
+  destructionState.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "inventory-destruction" };
+  const destruction = applyCommand(destructionState, { type: "resolve-fight" });
+  assert.deepEqual(validateInventoryAccounting(destruction.state), []);
+});
+
 test("National Guard deployment creates a neutral unit at a legal destination", () => {
   const state = createGame(2);
   state.players[state.currentPlayer].researchCardIds = ["Guard Commander"];
