@@ -8,6 +8,12 @@ export type DisplayHex = Readonly<{
   top: number;
 }>;
 
+export const DISPLAY_TILE_WIDTH_PERCENT = 4.6;
+export const DISPLAY_TILE_ASPECT_RATIO = 0.8660254;
+export const DISPLAY_BOARD_LEFT_PERCENT = 5.5;
+export const DISPLAY_BOARD_TOP_PERCENT = 10;
+export const DISPLAY_BOARD_TOP_SPAN_PERCENT = 80;
+
 /**
  * Presentation-only layout for the photographed board candidate.
  *
@@ -24,8 +30,8 @@ export function buildDisplayHexLayout(board: BoardDefinition = FULL_HONEYCOMB_BO
       hex,
       row,
       column,
-      left: 5.5 + displayColumn * 4.6,
-      top: 10 + (row / 12) * 80,
+      left: DISPLAY_BOARD_LEFT_PERCENT + displayColumn * DISPLAY_TILE_WIDTH_PERCENT,
+      top: DISPLAY_BOARD_TOP_PERCENT + (row / 12) * DISPLAY_BOARD_TOP_SPAN_PERCENT,
     };
   });
 }
