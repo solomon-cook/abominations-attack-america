@@ -9,6 +9,7 @@ const requirements = [
   ["mobile bounded board panel", /@media\(max-width:700px\)[\s\S]*?\.game-screen \.board-panel\{padding:8px;overflow-y:auto/],
   ["mobile action dock sizing", /@media\(max-width:560px\)\{\.action-dock\{right:10px;bottom:10px;min-width:160px/],
   ["touch-sized map controls", /\.map-controls button\{[^}]*min-width:44px[^}]*min-height:44px/],
+  ["touch-sized gameplay controls", /\.game-screen \.setup-options button,[\s\S]*?\.game-screen \.settings-grid label\{min-height:44px\}/],
   ["touch-drag board surface", /\.map\{touch-action:none/],
   ["horizontal overflow containment", /html,body,#root\{width:100%;max-width:100%;overflow-x:clip\}/],
   ["reduced-motion media contract", /@media\(prefers-reduced-motion:reduce\)/],
