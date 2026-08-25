@@ -727,11 +727,13 @@ export function legalMonsterPaths(state: GameState, monsterId = state.monsters[s
       if (otherMonster && movement !== "fly") continue;
       const nextPath = [...path, next];
       if (!monsterMovementPathAllowed(state, monster, DEVELOPMENT_BOARD, nextPath)) continue;
-      const occupiedByMilitary = state.units.some((unit) => unit.location === next);
+      const occupiedUnits = state.units.filter((unit) => unit.location === next);
+      const occupiedByMilitary = occupiedUnits.length > 0;
+      const friendlyGuardPassage = monsterHasMutation(state, monster, "Kinda Friendly") && occupiedUnits.every((unit) => unit.branch === "National Guard");
       const flyMayPass = movement === "fly";
       const finishForbidden = otherMonster && flyMayPass && !state.challenge?.active;
       if (!finishForbidden) paths.push(nextPath);
-      if (!flyMayPass && occupiedByMilitary) continue;
+      if (!flyMayPass && occupiedByMilitary && !friendlyGuardPassage) continue;
       visit(nextPath, !finishForbidden);
     }
   };
@@ -839,7 +841,11 @@ export function moveMonster(state: GameState, monsterId: string, path: string[])
   const movedPieceIds = state.movedPieceIds ?? [];
   const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= move && canonical.every((space, index) => index === 0 || developmentBoardIndex.neighbours[canonical[index - 1]]?.includes(space)) && monsterMovementPathAllowed(state, monster, DEVELOPMENT_BOARD, canonical));
   const intermediate = (canonical ?? []).slice(1, -1);
-  const blockedByMilitary = movement !== "fly" && intermediate.some((space) => occupantsAt(state, space).units.length > 0);
+  const friendlyGuardPassage = monsterHasMutation(state, monster, "Kinda Friendly");
+  const blockedByMilitary = movement !== "fly" && intermediate.some((space) => {
+    const units = occupantsAt(state, space).units;
+    return units.length > 0 && !(friendlyGuardPassage && units.every((unit) => unit.branch === "National Guard"));
+  });
   const otherMonsterSpaces = (canonical ?? []).slice(1).filter((space) => occupantsAt(state, space).monsters.some((candidate) => candidate.id !== monster.id));
   const entersOtherMonster = movement === "fly" && !state.challenge?.active
     ? otherMonsterSpaces.includes(destination!)
@@ -849,7 +855,12 @@ export function moveMonster(state: GameState, monsterId: string, path: string[])
   const next = structuredClone(state);
   next.monsters[state.currentPlayer].location = destination;
   next.movedPieceIds = [...movedPieceIds, monsterId];
-  const militaryUnitIds = occupantsAt(next, destination).units.map((unit) => unit.id);
+  const destinationUnits = occupantsAt(next, destination).units;
+  const returnedGuardIds = friendlyGuardPassage
+    ? destinationUnits.filter((unit) => unit.branch === "National Guard").map((unit) => unit.id)
+    : [];
+  for (const unit of next.units) if (returnedGuardIds.includes(unit.id)) unit.location = "record-tile";
+  const militaryUnitIds = destinationUnits.filter((unit) => !returnedGuardIds.includes(unit.id)).map((unit) => unit.id);
   if (militaryUnitIds.length > 0) {
     const existing = next.pendingBattles.find((battle) => battle.monsterId === monster.id && battle.location === destination);
     if (existing) existing.militaryUnitIds = [...new Set([...existing.militaryUnitIds, ...militaryUnitIds])];
@@ -859,7 +870,7 @@ export function moveMonster(state: GameState, monsterId: string, path: string[])
   next.pendingDecision = next.pendingBattles[0]
     ? { type: "battle-resolution", playerIndex: next.currentPlayer, battleId: next.pendingBattles[0].id }
     : { type: "encounter-resolution", playerIndex: next.currentPlayer, location: destination };
-  next.log.push(`${monster.name} moved to ${getLocation(destination)?.name}. Fight any units in the space.`);
+  next.log.push(`${monster.name} moved to ${getLocation(destination)?.name}.${returnedGuardIds.length > 0 ? " Kinda Friendly returned National Guard units to their record tile." : " Fight any units in the space."}`);
   return next;
 }
 

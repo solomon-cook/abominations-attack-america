@@ -785,6 +785,31 @@ test("movement stops at military occupancy and rejects monster occupancy", () =>
   assert.equal(legalMonsterPaths(state).some((path) => path.join(">") === `${K("los-angeles")}>${K("denver")}>${K("chicago")}`), false);
 });
 
+test("Kinda Friendly passes through and returns National Guard without creating a battle", () => {
+  const state = createGame(2);
+  state.players[0].mutationCardIds = ["Kinda Friendly"];
+  state.monsters[1].location = "record-tile";
+  state.units.forEach((unit) => { unit.location = "record-tile"; });
+  const guard = {
+    id: "national-guard-tank-1",
+    branch: "National Guard" as const,
+    unitTypeId: "national-guard-tank",
+    move: 3,
+    movement: "land-only" as const,
+    attacks: 1,
+    damage: 1,
+    health: 1,
+    defense: 4,
+    location: K("denver") as any,
+  };
+  state.units.push(guard);
+  const moved = applyCommand(state, { type: "move", path: ["los-angeles", "denver"] });
+  assert.equal(moved.state.phase, "encounter");
+  assert.deepEqual(moved.state.pendingBattles, []);
+  assert.equal(moved.state.units.find((unit) => unit.id === guard.id)?.location, "record-tile");
+  assert.match(moved.state.log.at(-1) ?? "", /Kinda Friendly returned National Guard/);
+});
+
 test("occupancy is derived from positions and supports shared spaces", () => {
   const state = createGame(2);
   state.units[0].location = state.monsters[0].location;
