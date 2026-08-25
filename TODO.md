@@ -214,7 +214,7 @@ Useful source documents:
 
 ### Milestone 5 acceptance
 
-- [ ] [P0] Movement matrix tests cover every piece category, ability, barrier, occupancy stop, Challenge state, and off-board state. (Development fixtures now explicitly cover every implemented movement mode/barrier, off-board Hollywood/record-tile positions, inactive Challenge-phase selectors, active-Challenge flying-monster finishes, and pre-Challenge finish restrictions; physical-board movement remains source-gated.)
+- [x] [P0] Movement matrix tests cover every piece category, ability, barrier, occupancy stop, Challenge state, and off-board state. (The table-driven development matrix covers every implemented movement mode/barrier, off-board Hollywood/record-tile positions, inactive Challenge-phase selectors, active-Challenge flying-monster finishes, and pre-Challenge finish restrictions; physical-board movement remains source-gated.)
 - [x] [P0] Invalid paths cannot partially move a piece or consume its movement allowance. (Engine test asserts rejected paths leave canonical state byte-identical)
 - [x] [P0] Ending Move preserves every unselected piece and produces exactly the correct pending battles. (`pass-move` preserves unselected units and movement-created battles remain compulsory; engine-tested)
 - [x] [P1] Local and online clients submit the same path command shape and receive the same legality result. (Local and online paths now both use the shared `GameCommand`/`applyCommand` boundary; the API wraps the same command in its revision envelope)
