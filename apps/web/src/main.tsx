@@ -771,7 +771,7 @@ function App() {
   }
 
   return (
-    <main className={`${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}>
+    <main className={`game-screen ${online ? "online-game" : "local-game"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}>
       <header>
         <div>
           <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · WEB PLAYTEST</p>
