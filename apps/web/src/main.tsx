@@ -954,7 +954,7 @@ function App() {
             ref={mapRef}
             className="map"
             role="group"
-            aria-label={activeGame.boardId === FULL_HONEYCOMB_BOARD.id ? "Full honeycomb board" : "Development board fixture"}
+            aria-label="Full honeycomb board coordinate shell"
             aria-describedby="board-description"
             data-board-id={activeGame.boardId}
             data-board-content-hash={activeGame.boardContentHash}
