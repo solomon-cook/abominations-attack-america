@@ -9,6 +9,7 @@ type Props = {
   choices: readonly string[];
   stomped?: boolean;
   remainingStompMarkers?: number;
+  challenge?: Readonly<{ declared: boolean; active: boolean; challengerMonsterId?: string; pendingStartPlayerIndex: number; startAtEndOfTurn?: boolean }>;
   nextPhase?: string;
 };
 
@@ -20,7 +21,7 @@ function effectLabel(effect: EncounterEffect) {
   return `${effect.type} effect recorded (${amount})`;
 }
 
-export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped, remainingStompMarkers, nextPhase }: Props) {
+export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped, remainingStompMarkers, challenge, nextPhase }: Props) {
   if (!eventId) return null;
   return (
     <section className="encounter-result" key={eventId} aria-live="polite" aria-label="Recorded encounter result">
@@ -36,6 +37,7 @@ export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped
       ) : null}
       {typeof stomped === "boolean" && <p className="encounter-state">{stomped ? "The space consumed a Stomp marker." : "The space was already stomped; no new Stomp marker was consumed."}</p>}
       {typeof remainingStompMarkers === "number" && <p className="encounter-state">{remainingStompMarkers} Stomp marker{remainingStompMarkers === 1 ? "" : "s"} remain; the engine enforces the Infamy cap and marker limits.</p>}
+      {challenge?.declared && <p className="encounter-state">Monster Challenge: {challenge.active ? "active" : challenge.startAtEndOfTurn ? "new challenger starts at the end of this turn" : challenge.challengerMonsterId ? "challenger scheduled for their next turn" : "waiting for an eligible Challenge-site arrival"}.</p>}
       {nextPhase && <small>Next authoritative phase: {nextPhase}.</small>}
     </section>
   );

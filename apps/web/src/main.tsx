@@ -985,6 +985,7 @@ function App() {
               choices={encounterChoices}
               stomped={typeof lastEncounterEvent?.detail.stomped === "boolean" ? lastEncounterEvent.detail.stomped : undefined}
               remainingStompMarkers={typeof lastEncounterEvent?.detail.remainingStompMarkers === "number" ? lastEncounterEvent.detail.remainingStompMarkers : undefined}
+              challenge={lastEncounterEvent?.detail.challenge && typeof lastEncounterEvent.detail.challenge === "object" ? lastEncounterEvent.detail.challenge as { declared: boolean; active: boolean; challengerMonsterId?: string; pendingStartPlayerIndex: number; startAtEndOfTurn?: boolean } : undefined}
               nextPhase={typeof lastEncounterEvent?.detail.nextPhase === "string" ? lastEncounterEvent.detail.nextPhase : undefined}
             />
             {activeGame.phase === "move" &&

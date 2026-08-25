@@ -1049,6 +1049,7 @@ test("the Monster Challenge chooses eligible opponents, records weigh-in Health,
   state.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
   state.monsters[0].health = 1;
   state.monsters[1].health = 1;
+  state.monsters[1].location = "disappeared";
   const selected = applyCommand(state, { type: "challenge-opponent", opponentMonsterId: "monster-2" });
   assert.equal(selected.state.monsters[1].location, selected.state.monsters[0].location);
   assert.deepEqual(selected.state.challenge?.weighInHealth, { "monster-1": 1, "monster-2": 1 });
@@ -1059,6 +1060,49 @@ test("the Monster Challenge chooses eligible opponents, records weigh-in Health,
   assert.equal(resolved.state.victoryType, "monster-challenge");
   assert.equal(resolved.state.challenge?.defeatedMonsterIds.length, 1);
   assert.equal((resolved.eventPayload.rolls as number[]).length > 0, true);
+});
+
+test("a pending challenger lost to Hollywood is cleared while a disappeared monster remains eligible", () => {
+  const state = createGame(2, 0);
+  state.challenge = {
+    declared: true,
+    active: false,
+    challengerMonsterId: "monster-1",
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  state.phase = "fight";
+  state.currentPlayer = 0;
+  state.monsters[0].health = 1;
+  state.monsters[0].defense = 1;
+  const unit = state.units[0];
+  unit.location = state.monsters[0].location;
+  unit.attacks = 1;
+  unit.defense = 99;
+  state.pendingBattles = [{ id: "pending-hollywood", monsterId: state.monsters[0].id, location: state.monsters[0].location as `${number},${number}`, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "pending-hollywood" };
+  const result = applyCommand(state, { type: "resolve-fight" });
+  assert.equal(result.state.monsters[0].location, "hollywood");
+  assert.equal(result.state.challenge?.challengerMonsterId, undefined);
+  assert.equal(result.state.log.some((entry) => entry.includes("pending Challenger status")), true);
+  const challengeState = createGame(2);
+  challengeState.challenge = {
+    declared: true,
+    active: true,
+    challengerMonsterId: "monster-1",
+    declarationPlayerIndex: 0,
+    pendingStartPlayerIndex: 0,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  challengeState.phase = "challenge";
+  challengeState.currentPlayer = 0;
+  challengeState.monsters[1].location = "disappeared";
+  challengeState.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
+  const selected = applyCommand(challengeState, { type: "challenge-opponent", opponentMonsterId: "monster-2" });
+  assert.equal(selected.state.challenge?.opponentMonsterId, "monster-2");
 });
 
 test("a confirmed concession records the next seat as winner and freezes the match", () => {

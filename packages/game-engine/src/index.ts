@@ -182,7 +182,7 @@ export interface PendingTrophyChoice {
 export interface MonsterChallengeState {
   readonly declared: boolean;
   readonly active: boolean;
-  readonly challengerMonsterId: string;
+  readonly challengerMonsterId?: string;
   readonly declarationPlayerIndex: number;
   readonly pendingStartPlayerIndex: number;
   readonly startAtEndOfTurn?: boolean;
@@ -461,7 +461,7 @@ export function migrateGameState(input: GameState): GameState {
   if (typeof state.deploymentsThisTurn !== "number") state.deploymentsThisTurn = 0;
   if (!Array.isArray(state.deploymentDestinations)) state.deploymentDestinations = [];
   if (!Array.isArray(state.pendingBattles)) state.pendingBattles = [];
-  if (state.challenge && (!Array.isArray(state.challenge.defeatedMonsterIds) || typeof state.challenge.challengerMonsterId !== "string")) state.challenge = undefined;
+  if (state.challenge && (!Array.isArray(state.challenge.defeatedMonsterIds) || (state.challenge.challengerMonsterId !== undefined && typeof state.challenge.challengerMonsterId !== "string"))) state.challenge = undefined;
   if (!state.mutationSiteUses || typeof state.mutationSiteUses !== "object") state.mutationSiteUses = {};
   if (typeof state.encounterSuppressed !== "boolean") state.encounterSuppressed = false;
   state.monsters = state.monsters.map((monster) => {
@@ -964,6 +964,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     if (monster.health !== 0 || monster.location === "hollywood") return;
     monster.location = "hollywood";
     monster.infamy = 0;
+    clearPendingChallengerIfLost(next, monster.id);
     next.encounterSuppressed = true;
     hollywoodResearchCardId = awardHollywoodResearch(next, controllerPlayer);
     next.log.push(`${monster.name} was defeated and went to Hollywood.`);
@@ -1102,6 +1103,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
     if (monster.health !== 0 || monster.location === "hollywood") return;
     monster.location = "hollywood";
     monster.infamy = 0;
+    clearPendingChallengerIfLost(next, monster.id);
     next.encounterSuppressed = true;
     hollywoodResearchCardId = awardHollywoodResearch(next, controllerPlayer);
     next.log.push(`${monster.name} was defeated and went to Hollywood.`);
@@ -1424,6 +1426,12 @@ function challengeOpponentIds(state: Pick<GameState, "monsters" | "challenge">, 
     .map((monster) => monster.id);
 }
 
+function clearPendingChallengerIfLost(state: GameState, monsterId: string): void {
+  if (!state.challenge?.declared || state.challenge.active || state.challenge.challengerMonsterId !== monsterId) return;
+  state.challenge = { ...state.challenge, challengerMonsterId: undefined, startAtEndOfTurn: false };
+  state.log.push(`${state.monsters.find((monster) => monster.id === monsterId)?.name ?? monsterId} lost pending Challenger status; the next eligible Challenge-site arrival may replace it.`);
+}
+
 function challengePlayerIndex(state: Pick<GameState, "monsters">, monsterId: string): number {
   const playerIndex = state.monsters.findIndex((monster) => monster.id === monsterId);
   if (playerIndex < 0) throw new GameDomainError("ILLEGAL_COMMAND", `Unknown Challenge monster: ${monsterId}.`);
@@ -1431,7 +1439,7 @@ function challengePlayerIndex(state: Pick<GameState, "monsters">, monsterId: str
 }
 
 function beginMonsterChallenge(state: GameState): void {
-  if (!state.challenge?.declared || state.challenge.active) return;
+  if (!state.challenge?.declared || state.challenge.active || !state.challenge.challengerMonsterId) return;
   const challengerPlayer = challengePlayerIndex(state, state.challenge.challengerMonsterId);
   state.challenge = { ...state.challenge, active: true, startAtEndOfTurn: false };
   state.currentPlayer = challengerPlayer;
@@ -1607,7 +1615,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
   if (state.phase === "challenge" && command.type === "challenge-opponent") {
     requireDecision("challenge-opponent");
     const challenge = state.challenge;
-    if (!challenge?.active) throw new GameDomainError("ILLEGAL_COMMAND", "The Monster Challenge has not started.");
+    if (!challenge?.active || !challenge.challengerMonsterId) throw new GameDomainError("ILLEGAL_COMMAND", "The Monster Challenge has not started.");
     const opponentIds = challengeOpponentIds(state, challenge.challengerMonsterId);
     if (!opponentIds.includes(command.opponentMonsterId)) throw new GameDomainError("ILLEGAL_COMMAND", "Choose an eligible monster that is not in Hollywood or already defeated.");
     const next = structuredClone(state);
@@ -1657,6 +1665,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     if (!state.setupAssignments?.some((seat) => seat.monsterId === monster.id && seat.lair)) throw new Error("Monster disappearance requires a verified setup lair.");
     const next = structuredClone(state);
     next.monsters[next.currentPlayer].location = "disappeared";
+    clearPendingChallengerIfLost(next, next.monsters[next.currentPlayer].id);
     next.movedPieceIds = [...(next.movedPieceIds ?? []), monster.id];
     next.encounterSuppressed = true;
     next.phase = "deploy";
@@ -1781,7 +1790,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     }
     const result = resolveEncounterResult(state, command.type === "resolve-encounter" ? command.choice : undefined);
     const location = state.monsters[state.currentPlayer]?.location;
-    const eventPayload = { location, stomped: isHexKey(location) && !(state.stompedLocations ?? []).includes(location), effects: result.effects, rolls: result.rolls, remainingStompMarkers: result.state.stompMarkers, choices: result.state.pendingEncounterChoice?.choices, nextPhase: result.state.phase };
+    const eventPayload = { location, stomped: isHexKey(location) && !(state.stompedLocations ?? []).includes(location), effects: result.effects, rolls: result.rolls, remainingStompMarkers: result.state.stompMarkers, choices: result.state.pendingEncounterChoice?.choices, challenge: result.state.challenge ? { declared: result.state.challenge.declared, active: result.state.challenge.active, challengerMonsterId: result.state.challenge.challengerMonsterId, pendingStartPlayerIndex: result.state.challenge.pendingStartPlayerIndex, startAtEndOfTurn: result.state.challenge.startAtEndOfTurn } : undefined, nextPhase: result.state.phase };
     const eventType = result.state.pendingEncounterChoice ? "encounter.choice-required" : result.state.pendingTrophyChoice ? "trophy.choice-required" : "encounter.resolved";
     return { state: appendEvent(result.state, eventType, eventPayload), eventType, eventPayload };
   }

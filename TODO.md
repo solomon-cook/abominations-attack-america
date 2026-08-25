@@ -258,7 +258,7 @@ Useful source documents:
   - [x] [P1] Track Mutation-site use independently for every monster and site. (`mutationSiteUses` prevents repeat use while leaving card draw/effects source-gated.)
 - [ ] [P1] Draw and immediately apply a Mutation card on first use of a site. (First-use site draws are now recorded face up; immediate card effects remain source-gated.)
   - [x] [P1] Treat Challenge sites as blank before declaration. (Challenge-site Encounter is inert and does not consume a Stomp marker.)
-  - [ ] [P1] Apply challenger replacement after declaration. (Full Monster Challenge state is still source-backed implementation work.)
+  - [x] [P1] Apply challenger replacement after declaration. (The challenge-enabled development engine replaces the pending challenger at a Challenge site, records the transition in the encounter event, and exposes it in the Encounter result surface.)
 - [x] [P1] Make stomped spaces produce no encounter effect. (A second Encounter on an already stomped development space consumes no marker and applies no benefit.)
   - [ ] [P1] Make blank spaces and lairs produce no encounter effect once those physical board features are transcribed. (The current board fixture has no verified blank/lair hexes.)
   - [x] [P1] Handle exhausted decks without reshuffling discards. (`drawCard` exhausts without moving discard cards back into the deck; lifecycle tests cover this.)
@@ -266,9 +266,9 @@ Useful source documents:
 ### Milestone 7 acceptance
 
 - [x] [P0] Feature tests cover every authored space category and multi-feature combination. (Development board tests cover city, military-base, Infamy-site, mutation-site, and Challenge-site categories; the board validator covers composable multi-feature hexes. Production-board coverage remains source-gated.)
-- [ ] [P0] Stomp-stack depletion declares exactly one challenger at the correct time.
+- [x] [P0] Stomp-stack depletion declares exactly one challenger at the correct time. (The challenge-enabled development rules decrement the player-count stack, declare only on the transition to zero, and preserve extra post-declaration stomps; the prototype fixture retains its isolated temporary terminal behavior.)
 - [x] [P0] Trophy, Infamy, Health, mutation history, and stomp state survive save/reload and replay. (An encounter-to-trophy fixture serializes through `migrateGameState`, verifies each persisted field, and applies the same trophy command after reload with byte-equivalent resulting state.)
-- [ ] [P1] Encounter UI exposes each reward, choice, cap, skipped effect, and resulting Challenge state. (Verified encounter rewards, choices, Stomp state, marker limits, no-effect/gated outcomes, and next phase now render from the authoritative event; resulting Monster Challenge state remains source-gated.)
+- [x] [P1] Encounter UI exposes each reward, choice, cap, skipped effect, and resulting Challenge state. (Encounter results now render the authoritative Challenge declaration, pending challenger replacement, start timing, and active/waiting state alongside rewards, choices, Stomp state, caps, skipped effects, and next phase.)
 
 ## Milestone 8 — Deployment, National Guard, giant units, and research
 
