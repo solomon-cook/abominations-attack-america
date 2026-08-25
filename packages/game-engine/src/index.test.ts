@@ -1626,6 +1626,30 @@ test("a post-declaration Challenge-site arrival replaces the pending challenger 
   assert.equal(started.state.challenge?.active, true);
 });
 
+test("stomps after Challenge declaration use extra markers without redeclaring", () => {
+  const state = createGame(2);
+  state.phase = "encounter";
+  state.currentPlayer = 0;
+  state.stompMarkers = 0;
+  state.monsters[0].location = K("infamy-site");
+  state.challenge = {
+    declared: true,
+    active: false,
+    challengerMonsterId: "monster-2",
+    declarationPlayerIndex: 1,
+    pendingStartPlayerIndex: 1,
+    weighInHealth: {},
+    defeatedMonsterIds: [],
+  };
+  state.pendingDecision = { type: "encounter-resolution", playerIndex: 0, location: K("infamy-site") };
+  const result = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(result.state.stompMarkers, 0);
+  assert.deepEqual(result.state.stompedLocations, [K("infamy-site")]);
+  assert.equal(result.state.challenge?.challengerMonsterId, "monster-2");
+  assert.equal(result.state.challenge?.declared, true);
+  assert.equal((result.eventPayload.effects as Array<{ type: string }>).some((effect) => effect.type === "stomp"), true);
+});
+
 test("Konk applies its source-backed fighter attack modifier", () => {
   let attack: any;
   for (let seed = 0; seed < 128 && !attack; seed += 1) {

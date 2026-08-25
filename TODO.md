@@ -246,8 +246,8 @@ Useful source documents:
 - [x] [P0] Enter Encounter only when movement and all required battles permit it. (Phase-specific pending decisions prevent Encounter commands during Move/Fight; the gate and the development feature inventory are regression-tested.)
   - [P0] Resolve every eligible feature on a multi-feature final space in documented order.
   - [x] [P0] Store stomp state on the hex and prevent the same space being stomped twice. (`GameState.stompedLocations` is persisted and encounter tests prove duplicate encounters do not consume a marker twice)
-- [ ] [P0] Take Stomp markers from the active player-count stack before Challenge declaration.
-  - [P0] Use extra markers for later stomps without creating a second declaration.
+- [x] [P0] Take Stomp markers from the active player-count stack before Challenge declaration. (The player-count stack is created by `stompMarkerCount`, decremented only for an unstomped encounter, and the final active marker declares the Challenge in the deterministic declaration fixture.)
+  - [x] [P0] Use extra markers for later stomps without creating a second declaration. (Post-declaration stomps remain recorded at zero active markers and preserve the original challenger without redeclaring the Challenge.)
 - [x] [P0] Apply fixed, one-die, two-dice, and three-dice city Health gains with the 40-Health cap. (Existing development markers are structured as `CityBenefit` data and resolved with seeded dice; Zorb's source-backed city choice is authoritative and UI-exposed; physical-board city benefits remain source-gated.)
   - [x] [P0] Grant one Infamy and the correct branch trophy when stomping a military base. (Development base Encounters grant one Infamy and pause for the owning branch's trophy decision when completed setup assignments are present.)
 - [x] [P0] Let the branch owner choose a legal trophy from board or record tile. (The pending trophy decision is owned by the branch participant and offers only eligible branch units.)
