@@ -9,8 +9,9 @@ export function BoardReferenceCard() {
         decoding="async"
       />
       <figcaption>
-        Source reference only · the interactive shell above is the current
-        shared board candidate.
+        Source reference only · the interactive board above is the pinned
+        development fixture. The physical board remains source-gated until
+        cell data is transcribed and signed off.
       </figcaption>
     </figure>
   );
