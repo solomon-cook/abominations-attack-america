@@ -839,8 +839,12 @@ function App() {
   }
 
   const renderedBoard = boardForGame(activeGame);
-  const boardDescription = renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
+  const fullBoardVerified = renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
+    && Object.values(renderedBoard.hexes).every((hex) => hex.verification === "verified");
+  const boardDescription = fullBoardVerified
     ? "The reviewed full honeycomb board is rendered from the pinned board definition; its cells are interactive only where the authoritative rules expose a legal action."
+    : renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
+      ? "The full honeycomb coordinate shell is unresolved review tooling and is not a playable board; physical cell data remains unavailable until source transcription and sign-off are complete."
     : renderedBoard
       ? "The nine-space development board is rendered from the pinned development fixture. The unresolved physical-board shell is not part of this match; unknown physical-board data remains unavailable until source transcription is complete."
       : "This match references an unavailable board version, so board interaction is disabled until the matching definition is loaded.";
