@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Shared deterministic engine, HTTP rooms, WebSocket updates, polling fallback, persistence boundaries, spectator projections, and reconnect-safe command receipts are implemented for the development fixture.
-- The browser renders the complete 254-cell honeycomb coordinate shell with the optimized source-board photograph beneath the interactive overlay.
+- The browser renders only the board definition pinned by the active match. Development playtests use the nine-space fixture; the unresolved 254-cell shell remains review tooling and is not playable.
 - Settings include larger text, board-label visibility, reduced motion, and disappearance/concession confirmation behavior.
 - Voluntary concession, safe terminal return, local rematch, deterministic malformed-command coverage, bounded concurrency coverage, asset checks, and accessibility source checks are included.
 

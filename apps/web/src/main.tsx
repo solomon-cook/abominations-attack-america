@@ -926,7 +926,7 @@ function App() {
       <section className="development-notice" aria-label="Development ruleset notice">
         <span className="label">DEVELOPMENT RULESET · PROTOTYPE 0.1</span>
         <p>
-          This playtest uses the nine-space development fixture over a rendered full honeycomb coordinate shell. The physical board transcription,
+          This playtest uses only the nine-space development fixture; the unresolved physical-board shell is not rendered as playable topology. The physical board transcription,
           full combat, card effects, National Guard rules, and Monster Challenge are not yet production-verified.
           The temporary victory condition ends the fixture when its active Stomp spaces are exhausted.
         </p>
