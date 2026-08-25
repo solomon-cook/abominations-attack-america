@@ -19,4 +19,17 @@ The web client's **Leave room** action is a safe local exit: it attempts to mark
 
 The expiry window is an operational policy, not a game rule: `ROOM_IDLE_TIMEOUT_MS` is 24 hours, and meaningful room activity refreshes the deadline. Disconnect/reconnect does not bypass an expired room.
 
-Not yet defined: disconnect grace periods and token expiry/rotation. These remain operational decisions rather than invented game rules.
+## Session and access policy
+
+Guest access is bearer-token access: the room code identifies the room and the session token identifies the participant. Tokens are generated with 192 bits of random entropy and only their SHA-256 hashes are retained by the stores. A token never grants authority beyond its participant role, seat, current room status, and the authoritative revision/actor checks.
+
+The current MVP policy is:
+
+- A session remains valid only while its room is not expired; a completed room remains readable, while an expired room rejects reads, reconnects, and gameplay.
+- Disconnect has no short grace timer: the participant may reconnect during the room's 24-hour idle window. A room becomes abandoned only when every player is disconnected, and can recover when all ready players reconnect.
+- There is no host privilege and no token transfer between participants. A creator's departure therefore follows ordinary disconnect rules.
+- Voluntary concession is the explicit inactive-player resolution; the client never converts a network failure into a concession.
+- Targeted revocation and token rotation are release requirements, not silently assumed behavior. A production implementation must atomically invalidate the old hash, issue the replacement token, preserve the participant/role/seat, and record the security event without exposing either token in projections or logs.
+- Room privacy is bearer-token based in the current guest model: possession of a player token permits that player's projection, while a spectator token permits only the redacted spectator projection. Room codes and tokens are never sufficient to bypass role or revision checks.
+
+The release checklist must revisit the explicit rotation/revocation requirement before production deployment; this document does not claim that a rotation endpoint or external identity provider already exists.
