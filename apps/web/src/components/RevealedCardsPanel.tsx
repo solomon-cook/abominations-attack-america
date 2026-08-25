@@ -17,7 +17,24 @@ export function RevealedCardsPanel({ game, playerIndex }: Props) {
         <summary>{cardId}</summary>
         <div className="hand-card-detail">
           <span>{definition?.availability === "implemented" ? "Implemented in this ruleset" : "Source-gated · unavailable"}</span>
-          {rule ? <><strong>{rule.timing}</strong><p>{rule.transcription}</p></> : <p>Detailed timing and source text are not yet transcribed into the digital rules reference.</p>}
+          {rule ? (
+            <>
+              <div className="hand-card-meta" aria-label={`${cardId} rule metadata`}>
+                <span>Classification: {rule.classification}</span>
+                <span>Timing: {rule.timing}</span>
+                <span>Duration: {rule.duration}</span>
+                <span>Target and confirmation: {definition?.targets && definition.targets !== "unknown" ? definition.targets : "source-gated"}</span>
+                <span>Result: {rule.effectsImplementation === "implemented" ? "authoritative result shown in the phase log" : "source-gated"}</span>
+                <span>Persistent effect: {rule.classification === "persistent" ? "active while held" : "no · resolved through a legal timing window"}</span>
+                <span>Source: {rule.sourceRefs.join(", ")}</span>
+              </div>
+              <strong>{rule.timing}</strong>
+              <p>{rule.transcription}</p>
+              <small>{rule.classification === "persistent" ? "Keep this card face up while its sourced continuous effect applies." : "When this card is usable, the authoritative phase controls provide its legal target and confirmation."}</small>
+            </>
+          ) : (
+            <p>Detailed timing, target, confirmation, result, and source text are not yet transcribed into the digital rules reference.</p>
+          )}
         </div>
       </details>
     );

@@ -43,6 +43,8 @@ const requiredSourceMarkers = [
   ["on-demand game panel toggle", /aria-controls="game-side-panel"/],
   ["named game controls panel", /id="game-side-panel" className="game-side-panel" aria-label="Game controls and information"/],
   ["private hand details", /aria-label=\{`Private hand for Player/],
+  ["card rule metadata", /aria-label=\{`\$\{cardId\} rule metadata`/],
+  ["card source and target boundaries", /Target and confirmation:[\s\S]*Source:/],
   ["audio feedback categories", /playSound\(category/],
   ["persisted audio settings", /type="range" min="0" max="1"/],
 ];
