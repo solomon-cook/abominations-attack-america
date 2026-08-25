@@ -8,6 +8,7 @@ import {
   chooseStartingChoice,
   createGame,
   createGameFromSetup,
+  FULL_HONEYCOMB_BOARD,
   getLocation,
     legalNationalGuardDeploymentDestinations,
     legalOwnedDeploymentDestinations,
@@ -838,6 +839,11 @@ function App() {
   }
 
   const renderedBoard = boardForGame(activeGame);
+  const boardDescription = renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
+    ? "The reviewed full honeycomb board is rendered from the pinned board definition; its cells are interactive only where the authoritative rules expose a legal action."
+    : renderedBoard
+      ? "The nine-space development board is rendered from the pinned development fixture. The unresolved physical-board shell is not part of this match; unknown physical-board data remains unavailable until source transcription is complete."
+      : "This match references an unavailable board version, so board interaction is disabled until the matching definition is loaded.";
 
   return (
     <main className={`game-screen ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}>
@@ -955,7 +961,7 @@ function App() {
             ref={mapRef}
             className="map"
             role="group"
-            aria-label="Full honeycomb board coordinate shell"
+            aria-label="Board coordinate shell"
             aria-describedby="board-description"
             data-board-id={activeGame.boardId}
             data-board-content-hash={activeGame.boardContentHash}
@@ -1003,7 +1009,7 @@ function App() {
             <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
           </div>
           <p className="sr-only" id="board-description">
-            The full 254-cell honeycomb coordinate shell is rendered from the shared board candidate. The current match is still pinned to the nine-space development board, so only its verified fixture spaces are authoritative and interactive; unknown board spaces remain unavailable until source transcription is complete.
+            {boardDescription}
           </p>
           <div className="board-secondary">
             <p className="map-note">Printed-board photograph is a visual reference backdrop only; legal movement and features come from the canonical engine board.</p>

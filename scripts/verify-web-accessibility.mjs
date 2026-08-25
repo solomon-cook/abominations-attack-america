@@ -15,7 +15,8 @@ const failures = [];
 
 const requiredSourceMarkers = [
   ["main landmark", /<main\b/],
-  ["named map group", /aria-label=\"Full honeycomb board coordinate shell\"/],
+  ["named map group", /aria-label=\"Board coordinate shell\"/],
+  ["resolved board description", /const boardDescription = renderedBoard\?\.id === FULL_HONEYCOMB_BOARD\.id[\s\S]*unavailable board version/],
   ["hex accessible names", /aria-label=\{`[\s\S]*\$\{displayName\}[\s\S]*hex \$\{hex\.key\}/],
   ["live match status", /aria-live=\"polite\" aria-label=\"Match status\"/],
   ["alert errors", /className=\"error\" role=\"alert\"/],
