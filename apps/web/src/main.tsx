@@ -336,7 +336,7 @@ function App() {
 
   useEffect(() => {
     actionHeadingRef.current?.focus();
-  }, [activeGame.phase, activeGame.round, room?.version]);
+  }, [activeGame.phase, activeGame.round, room?.version, localPlaytestStarted]);
   const setupSeat =
     activeSetup?.phase === "monster-selection"
       ? activeSetup.seats.find((seat) => !seat.monsterId)
@@ -659,7 +659,10 @@ function App() {
   const resetLocal = () => {
     setLocalPlaytestStarted(true);
     setOnboardingOpen(false);
-    setGamePanelOpen(false);
+    // Setup is a focused decision screen: keep the current-step prompt visible
+    // so focus can move to it. The board-first closed layout returns after the
+    // authoritative setup completes or the player closes the panel.
+    setGamePanelOpen(true);
     setSession(null);
     setRoom(null);
     setError("");

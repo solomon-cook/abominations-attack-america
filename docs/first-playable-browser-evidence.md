@@ -48,6 +48,8 @@ The same session checked the viewport shell at 1280×720 and 390×844. In both s
 
 A fresh 2026-08-25 local run also completed the ordered setup through the visible browser controls: `monster-1` then `monster-2`, Player 2 Army then Player 1 Navy, Player 1 Los Angeles then Player 2 Miami, and Draw Research for both players. The setup screen advanced to the active Move phase with no developer-tool intervention. This is an updated development-fixture smoke pass; it does not satisfy the full-board MVP or two-browser online acceptance criteria.
 
+The same runtime check confirmed the keyboard focus boundary after starting a local playtest: the setup controls surface is visible and the current-step `Move` heading receives focus (`tabindex=-1`) rather than leaving focus on the document body. The compact board-first panel-closed layout remains available after setup; this proves the setup transition only, not a complete keyboard or assistive-technology playthrough.
+
 ## Full-board rendering check
 
 The local browser renders all 254 cells from `FULL_HONEYCOMB_BOARD` as positioned hex tiles and adds seven explicitly labelled development-fixture overlay spaces whose coordinates fall outside that candidate shell. A DOM check therefore records 261 `[data-hex-key]` buttons in the development playtest: 254 candidate cells plus seven named fixture spaces. The map exposes both the development match board ID/hash and the separately rendered candidate board ID/hash, so this visual check does not falsely claim that the current match has been promoted to the authoritative physical board.

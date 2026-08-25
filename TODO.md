@@ -508,7 +508,7 @@ Useful source documents:
   - [x] Fit the main decision area within common viewport sizes without mandatory horizontal page scrolling. (The responsive layout was checked at a 390×844 viewport; the scrolling client and content widths match and the compact lobby/guide stack fits the mobile surface.)
   - [x] Create compact mobile layouts for board, hand, prompts, player status, and log. (Responsive CSS collapses the main grid, onboarding, status, and controls; the mobile browser preview rendered the compact stacked layout.)
 - [x] [P1] Respect safe areas and dynamic viewport height on installed/mobile browsers. (Uses `100dvh` and safe-area insets)
-  - [P1] Make all setup and gameplay actions operable by keyboard alone.
+  - [x] [P1] Make all setup and gameplay actions operable by keyboard alone. (Setup choices, phase actions, board controls, and dialogs use native buttons/inputs; the local-playtest transition now moves focus to the current-step heading so keyboard users are not left on the document body.)
 - [x] [P1] Provide visible focus states. (Global `:focus-visible` treatment)
   - [x] [P1] Add predictable focus movement after dialogs and server updates. (The current-step heading receives focus after phase, round, and authoritative room-version changes)
   - [x] [P1] Add semantic labels, landmarks, headings, live regions, and useful control names for screen readers. (Status is a polite live region, errors use alerts, and map controls have accessible names)
