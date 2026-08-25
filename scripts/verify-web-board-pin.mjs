@@ -17,6 +17,7 @@ const required = [
   ["Laser Fence uses resolved board edges", /const activeBoard = boardForGame\(activeGame\);[\s\S]*activeBoard\.edges/],
   ["unresolved shell has no visible placeholder label", /const visibleName = place\?\.name \?\? \(developmentFixture \? hex\.label : ""\);/],
   ["unresolved shell has no placeholder marker", /\{place && <span className="node"/],
+  ["unresolved shell has no implied terrain artwork", /const baseArt = hex\.waterClass === "unresolved"\s*\? undefined/],
   ["grid hides unknown topology", /className="board-unavailable" role="alert"/],
   ["map metadata uses resolved board", /data-rendered-board-id=\{renderedBoard\?\.id \?\? "unavailable"\}/],
   ["map metadata uses resolved hash", /data-rendered-board-content-hash=\{renderedBoard\?\.contentHash \?\? "unavailable"\}/],

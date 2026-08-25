@@ -133,9 +133,11 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           : place?.kind === "mutation"
             ? "Mutation space"
             : undefined;
-        const baseArt = hex.waterClass === "land"
-          ? "/assets/board/grassland.webp"
-          : "/assets/board/coast/coast_0deg.webp";
+        const baseArt = hex.waterClass === "unresolved"
+          ? undefined
+          : hex.waterClass === "land"
+            ? "/assets/board/grassland.webp"
+            : "/assets/board/coast/coast_0deg.webp";
         const boardArt = boardArtForHex(hex, place);
         const stomped = game.stompedLocations.includes(placeKey);
         return (
@@ -151,7 +153,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             onMouseLeave={onClearPreview}
             onClick={() => selectableUnit && !monsterLegal && !unitLegal ? onSelectUnit(selectableUnit.id) : selectedUnitId ? onChooseUnitPath(placeKey) : onChoosePath(placeKey)}
           >
-            <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />
+            {baseArt && <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />}
             {boardArt && <img className="tile-art" src={boardArt} alt="" aria-hidden="true" loading="lazy" />}
             {stomped && <img className="tile-stomp" src="/assets/board/tokens/stomp_token.webp" alt="" aria-hidden="true" loading="lazy" />}
             {place?.kind === "infamy" && <img className="tile-infamy" src="/assets/board/tokens/infamy_token.webp" alt="" aria-hidden="true" loading="lazy" />}
