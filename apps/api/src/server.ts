@@ -50,7 +50,8 @@ const broadcast = async (roomCode: string) => {
     try {
       const room = await store.getRoom(roomCode, accessToken);
       socket.send(JSON.stringify({ type: "room.updated", room }));
-    } catch {
+    } catch (error) {
+      errorReporter.report({ category: "divergence", path: "/ws", roomCode: roomCode.toUpperCase(), message: error instanceof Error ? `WebSocket projection divergence: ${error.message}` : "WebSocket projection divergence" });
       group.delete(socket);
       socket.close(1008, "Room access is no longer valid");
     }
@@ -102,6 +103,11 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
 }
 
 const server = createServer(handler);
+server.on("error", (error) => {
+  errorReporter.report({ category: "deployment", path: "/listen", message: error instanceof Error ? `API listen failure: ${error.message}` : "API listen failure" });
+  operationalLog({ event: "deployment.failure", message: error instanceof Error ? error.message : "API listen failure" });
+  process.exitCode = 1;
+});
 const wsServer = new WebSocketServer({ server, path: "/ws" });
 wsServer.on("connection", async (socket, request) => {
   if (!withinRate(socketRate, requestAddress(request), Date.now(), RATE_WINDOW_MS, 30)) {

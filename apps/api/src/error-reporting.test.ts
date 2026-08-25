@@ -23,3 +23,10 @@ test("error reporter redacts token-bearing paths and emits bounded alerts", () =
     recentByCategory: { http: 4, command: 0, persistence: 1, websocket: 0, divergence: 0, deployment: 0 },
   });
 });
+
+test("error reporter preserves divergence and deployment categories for operational routing", () => {
+  const reporter = new ErrorReporter(() => undefined);
+  reporter.report({ category: "divergence", path: "/ws", message: "projection mismatch" });
+  reporter.report({ category: "deployment", path: "/listen", message: "bind failed" });
+  assert.deepEqual(reporter.snapshot().recentByCategory, { http: 0, command: 0, persistence: 0, websocket: 0, divergence: 1, deployment: 1 });
+});
