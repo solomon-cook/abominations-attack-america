@@ -371,6 +371,7 @@ Useful source documents:
   - [x] Extract the unit, revealed-card, and chronological-log surfaces without moving command authority into the UI. (`apps/web/src/components/UnitCard.tsx`, `RevealedCardsPanel.tsx`, and `LogPanel.tsx`; web typecheck/build pass.)
   - [x] Extract the online-room lobby surface while keeping session, room, and readiness callbacks in `App`. (`apps/web/src/components/LobbyPanel.tsx`; web typecheck/build pass.)
   - [x] Extract development setup choices and the online setup summary while keeping setup commands and state transitions in `App`. (`apps/web/src/components/SetupPanel.tsx`; web typecheck/build pass.)
+  - [x] Extract match status and piece-stack inspection presentation without moving board selection or engine legality into the component. (`apps/web/src/components/MatchStatus.tsx` and `PieceStackInspector.tsx`; web typecheck/build pass.)
   - [ ] [P0] Make the overall UI fit within the viewport as a general rule, with no gameplay page scrolling; scrolling may be used inside menus or other deliberately bounded information panels.
     - [ ] [P0] Provide a focused setup screen before the match, then keep the active game view centred on the board/map once gameplay begins.
     - [ ] [P0] Make the in-game map draggable/pannable and zoomable, with the board remaining the primary centre-stage interaction surface.

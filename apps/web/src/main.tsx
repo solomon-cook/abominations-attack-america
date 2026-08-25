@@ -42,6 +42,8 @@ import { buildDisplayHexLayout } from "./board-layout";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
 import { LobbyPanel } from "./components/LobbyPanel";
 import { LogPanel } from "./components/LogPanel";
+import { MatchStatus } from "./components/MatchStatus";
+import { PieceStackInspector } from "./components/PieceStackInspector";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SetupPanel } from "./components/SetupPanel";
@@ -139,19 +141,6 @@ function App() {
     () => new Set(legalUnitPathsForSelection.map((path) => path.at(-1)!)),
     [legalUnitPathsForSelection],
   );
-  const occupiedStackKeys = useMemo(
-    () => [...new Set([
-      ...activeGame.monsters.filter((monster) => typeof monster.location === "string" && monster.location.includes(",")).map((monster) => monster.location as HexKey),
-      ...activeGame.units.filter((unit) => typeof unit.location === "string" && unit.location.includes(",")).map((unit) => unit.location as HexKey),
-    ])],
-    [activeGame.monsters, activeGame.units],
-  );
-  const selectedStackMonsters = selectedStackKey
-    ? activeGame.monsters.filter((monster) => monster.location === selectedStackKey)
-    : [];
-  const selectedStackUnits = selectedStackKey
-    ? activeGame.units.filter((unit) => unit.location === selectedStackKey)
-    : [];
   const action = pendingAction
     ? "Waiting for server…"
     : activeGame.phase === "move"
@@ -631,24 +620,7 @@ function App() {
           onChooseStartingChoice={(kind) => void chooseSetupStartingChoice(kind)}
         />
       )}
-      <section className="status" aria-live="polite" aria-label="Match status">
-        <div>
-          <span className="label">ROUND</span>
-          <strong>{activeGame.round}</strong>
-        </div>
-        <div>
-          <span className="label">ACTIVE MONSTER</span>
-          <strong>{activePlayer.name}</strong>
-        </div>
-        <div>
-          <span className="label">PHASE</span>
-          <strong>{action}</strong>
-        </div>
-        <div>
-          <span className="label">STOMP MARKERS</span>
-          <strong>{activeGame.stompMarkers}</strong>
-        </div>
-      </section>
+      <MatchStatus game={activeGame} action={action} />
       <section className="development-notice" aria-label="Development ruleset notice">
         <span className="label">DEVELOPMENT RULESET · PROTOTYPE 0.1</span>
         <p>
@@ -787,44 +759,13 @@ function App() {
                   : `Select a highlighted reachable space to preview a path for ${activePlayer.name}.`
               : "Waiting for the active player."}
           </p>
-          <section className="stack-inspector" aria-label="Piece stack inspector">
-            <div className="stack-inspector-heading">
-              <div>
-                <span className="label">PIECE STACKS</span>
-                <p>Select an occupied hex to inspect every piece without changing the board.</p>
-              </div>
-              {selectedStackKey && <button type="button" className="stack-clear" onClick={() => setSelectedStackKey(null)}>Clear</button>}
-            </div>
-            <div className="stack-location-list">
-              {occupiedStackKeys.length === 0 ? <span className="empty-card-state">No pieces on the board.</span> : occupiedStackKeys.map((key) => (
-                <button
-                  type="button"
-                  key={key}
-                  className={selectedStackKey === key ? "selected-choice" : ""}
-                  onClick={() => setSelectedStackKey(key)}
-                >
-                  {getLocation(key)?.name ?? `Hex ${key}`} · {activeGame.monsters.filter((monster) => monster.location === key).length + activeGame.units.filter((unit) => unit.location === key).length} piece(s)
-                </button>
-              ))}
-            </div>
-            <div className="piece-legend" aria-label="Piece ownership legend">
-              <span><i className="legend-dot own" /> Own</span>
-              <span><i className="legend-dot allied" /> Allied</span>
-              <span><i className="legend-dot enemy" /> Enemy</span>
-              <span><i className="legend-dot neutral" /> Neutral</span>
-            </div>
-            {selectedStackKey && (
-              <div className="stack-details" aria-live="polite">
-                <strong>{getLocation(selectedStackKey)?.name ?? `Hex ${selectedStackKey}`}</strong>
-                {[...selectedStackMonsters.map((monster) => ({ id: monster.id, role: monster.id === activePlayer.id ? "Own monster" : "Enemy monster", title: monster.name, detail: `${monster.health}/${monster.maxHealth} Health · ${monster.infamy} Infamy · ${monster.location === "hollywood" ? "Hollywood" : "on board"}` })), ...selectedStackUnits.map((unit) => ({ id: unit.id, role: unit.ownerPlayer === undefined ? "Neutral unit" : unit.ownerPlayer === activeGame.currentPlayer ? "Own unit" : "Allied unit", title: unit.unitTypeId ?? unit.branch, detail: `${unit.branch} · ${unit.ownerPlayer === undefined ? "Neutral" : `Player ${unit.ownerPlayer + 1}`} · ${unit.health === undefined ? "Health not tracked" : `${unit.health} Health`} · ${activeGame.movedPieceIds.includes(unit.id) ? "moved" : "available"}` }))].map((piece) => (
-                  <div key={piece.id}>
-                    <span>{piece.role} · {piece.title}</span>
-                    <small>{piece.detail}</small>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <PieceStackInspector
+            game={activeGame}
+            activeMonsterId={activePlayer.id}
+            selectedStackKey={selectedStackKey}
+            onSelect={setSelectedStackKey}
+            onClear={() => setSelectedStackKey(null)}
+          />
         </div>
         <aside>
           <div className="card monster-card">
