@@ -1504,7 +1504,8 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
     ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[next.currentPlayer % 4];
   const guardDeployment = requested?.unitId?.startsWith("national-guard-") ?? false;
   const allowanceDefinition = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === branch);
-  const allowance = (allowanceDefinition?.ownOrGuardUnits ?? 0) + (guardDeployment ? allowanceDefinition?.additionalNationalGuardUnits ?? 0 : 0);
+  const extraDeployment = next.players[next.currentPlayer]?.researchCardIds.includes("2nd Generation") ? 1 : 0;
+  const allowance = (allowanceDefinition?.ownOrGuardUnits ?? 0) + (guardDeployment ? allowanceDefinition?.additionalNationalGuardUnits ?? 0 : 0) + extraDeployment;
   if (guardDeployment && !next.players[next.currentPlayer]?.researchCardIds.includes("Guard Commander")) throw new GameDomainError("ILLEGAL_COMMAND", "Only the player with the Guard Commander card can deploy National Guard units.");
   if (next.deploymentsThisTurn >= allowance) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} deployment allowance is exhausted; pass Deploy or draw Research when that source rule is implemented.`);
   const baseHex = Object.values(DEVELOPMENT_BOARD.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch));

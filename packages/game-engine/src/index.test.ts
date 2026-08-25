@@ -921,6 +921,18 @@ test("Deploy consumes a typed record unit, enforces destination uniqueness, and 
   assert.deepEqual(sourceUnitInventoryErrors(passed.state.units), []);
 });
 
+test("2nd Generation grants one additional deployment slot", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  state.players[0].researchCardIds = ["2nd Generation"];
+  state.deploymentsThisTurn = 2;
+  state.deploymentDestinations = [K("chicago")];
+  const result = applyCommand(state, { type: "deploy", destination: K("denver") });
+  assert.equal(result.eventType, "unit.deployed");
+  assert.equal(result.state.deploymentsThisTurn, 3);
+});
+
 test("normal deployment rejects an already stomped branch base", () => {
   const state = createGame(2);
   state.phase = "deploy";
