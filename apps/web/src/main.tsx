@@ -1345,6 +1345,17 @@ function App() {
               <div className="victory-summary">
                 <strong>{action}</strong>
                 <span>Victory type: {activeGame.victoryType ?? "recorded terminal result"}</span>
+                <div className="path-controls">
+                  {online ? (
+                    <button className="subtle" onClick={() => void leaveRoom()}>
+                      Return to lobby
+                    </button>
+                  ) : (
+                    <button className="subtle" onClick={resetLocal}>
+                      Start another local playtest
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <button
