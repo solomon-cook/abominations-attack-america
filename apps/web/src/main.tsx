@@ -46,6 +46,7 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { SetupPanel } from "./components/SetupPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
 import { TurnPrompt } from "./components/TurnPrompt";
+import { TurnProgress } from "./components/TurnProgress";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
 import "./styles.css";
@@ -632,6 +633,7 @@ function App() {
         />
       )}
       <MatchStatus game={activeGame} action={action} />
+      <TurnProgress game={activeGame} />
       <section className="development-notice" aria-label="Development ruleset notice">
         <span className="label">DEVELOPMENT RULESET · PROTOTYPE 0.1</span>
         <p>
