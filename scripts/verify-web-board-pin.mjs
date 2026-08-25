@@ -14,6 +14,7 @@ const required = [
   ["development-board ID and hash match", /game\.boardId === DEVELOPMENT_BOARD\.id && game\.boardContentHash === DEVELOPMENT_BOARD\.contentHash/],
   ["unknown pin is unavailable", /return undefined/],
   ["grid uses shared resolver", /import \{ boardForGame \} from "\.\.\/board-pin"/],
+  ["full shell does not inherit development locations", /place: undefined,[\s\S]*developmentFixture: false/],
   ["phase actions use shared resolver", /import \{ boardForGame \} from "\.\.\/board-pin"/],
   ["Laser Fence uses resolved board edges", /const activeBoard = boardForGame\(activeGame\);[\s\S]*activeBoard\.edges/],
   ["unresolved shell has no visible placeholder label", /const visibleName = place\?\.name \?\? \(developmentFixture \? hex\.label : ""\);/],

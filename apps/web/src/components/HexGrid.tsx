@@ -2,7 +2,6 @@ import {
   buildBoardIndex,
   DEVELOPMENT_BOARD,
   FULL_HONEYCOMB_BOARD,
-  getLocation,
   locationIdToHexKey,
   locations,
   type GameState,
@@ -18,7 +17,10 @@ function displayHexesForGame(game: GameState) {
   if (board.id === FULL_HONEYCOMB_BOARD.id) {
     return buildDisplayHexLayout(board).map(({ hex, left, top }) => ({
       hex,
-      place: locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key),
+      // The candidate shell must not inherit the development fixture's named
+      // locations or artwork. Those overlays are only authoritative for the
+      // explicitly pinned development board until the physical cells are reviewed.
+      place: undefined,
       left,
       top,
       developmentFixture: false,
