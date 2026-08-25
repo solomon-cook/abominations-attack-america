@@ -1409,6 +1409,20 @@ test("encounter rewards, trophy removal, health, mutation history, and stomp sta
   assert.equal(replayed.state.units.find((unit) => unit.id === trophyUnitId)?.location, "permanently-removed");
 });
 
+test("encounter health-roll dice are recorded in the authoritative event payload", () => {
+  const state = createGame(2, 29);
+  state.currentPlayer = 0;
+  state.phase = "encounter";
+  state.pendingDecision = { type: "encounter-resolution", playerIndex: 0, location: K("san-francisco") };
+  state.monsters[0].location = K("san-francisco");
+  state.monsters[0].health = 10;
+  const result = applyCommand(state, { type: "resolve-encounter", choice: "health" });
+  const rolls = result.eventPayload.rolls as number[];
+  assert.equal(rolls.length, 2);
+  assert.ok(rolls.every((roll) => roll >= 1 && roll <= 6));
+  assert.equal(result.eventType, "encounter.resolved");
+});
+
 test("development city markers resolve fixed and dice health benefits with the cap", () => {
   const fixed = createGame(2, 11);
   fixed.currentPlayer = 0;

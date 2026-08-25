@@ -33,6 +33,7 @@ const requiredSourceMarkers = [
   ["authoritative die result label", /aria-label=\{`Roll \$\{index \+ 1\}: \$\{roll\}`\}/],
   ["recorded encounter result", /aria-label="Recorded encounter result"/],
   ["accepted action feedback", /<ActionResolutionFeedback label=\{acceptedActionFeedback\?\.label\}/],
+  ["encounter authoritative dice", /aria-label="Recorded encounter dice rolls"/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 

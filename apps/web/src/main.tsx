@@ -206,6 +206,9 @@ function App() {
   const encounterEffects = Array.isArray(lastEncounterEvent?.detail.effects)
     ? lastEncounterEvent.detail.effects.filter((effect): effect is { type: string; amount: number; source: string } => Boolean(effect && typeof effect === "object" && typeof effect.type === "string" && typeof effect.amount === "number" && typeof effect.source === "string"))
     : [];
+  const encounterRolls = Array.isArray(lastEncounterEvent?.detail.rolls)
+    ? lastEncounterEvent.detail.rolls.filter((roll): roll is number => typeof roll === "number")
+    : [];
   const encounterChoices = Array.isArray(lastEncounterEvent?.detail.choices)
     ? lastEncounterEvent.detail.choices.filter((choice): choice is string => typeof choice === "string")
     : [];
@@ -961,6 +964,7 @@ function App() {
             <EncounterResultPanel
               eventId={lastEncounterEvent?.id}
               effects={encounterEffects}
+              rolls={encounterRolls}
               choices={encounterChoices}
               stomped={typeof lastEncounterEvent?.detail.stomped === "boolean" ? lastEncounterEvent.detail.stomped : undefined}
               remainingStompMarkers={typeof lastEncounterEvent?.detail.remainingStompMarkers === "number" ? lastEncounterEvent.detail.remainingStompMarkers : undefined}
