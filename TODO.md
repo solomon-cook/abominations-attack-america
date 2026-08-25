@@ -367,6 +367,7 @@ Useful source documents:
 **Depends on:** each corresponding engine capability
 
 - [ ] [P0] Split the monolithic prototype into maintainable lobby, setup, board, turn, battle, card, log, and end-game surfaces.
+  - [x] Extract stable settings, board-reference, and terminal-summary surfaces without changing authoritative behavior. (`apps/web/src/components/`; web typecheck/build and browser rendering pass.)
   - [P0] Render all board hexes, features, barriers, labels, and pieces from the authoritative board and match state.
   - [x] [P0] Add pan, zoom, fit-to-board, reset-view, and focus-active-area controls. (Accessible board-view controls provide directional pan, bounded zoom, and Fit/reset in the browser; focus-active-area remains the current highlighted selection.)
 - [x] [P0] Make dense piece stacks selectable and show ownership, branch, Health, and status without obscuring the board. (The accessible Piece Stacks inspector lists occupied hexes and exposes every monster/unit detail without overlaying the board; source-gated fields remain labelled as unavailable.)

@@ -38,6 +38,9 @@ import {
   websocketUrl,
 } from "./api";
 import { createDevelopmentSetup } from "./development-setup";
+import { BoardReferenceCard } from "./components/BoardReferenceCard";
+import { SettingsPanel } from "./components/SettingsPanel";
+import { TerminalSummary } from "./components/TerminalSummary";
 import "./styles.css";
 
 const developmentHexes = Object.values(DEVELOPMENT_BOARD.hexes);
@@ -667,17 +670,7 @@ function App() {
         )}
       </section>
       {settingsOpen && (
-        <section className="settings-panel" aria-label="Play preferences">
-          <span className="label">PLAY PREFERENCES</span>
-          <h2>Readable, controllable play</h2>
-          <div className="settings-grid">
-            <label><input type="checkbox" checked={largeText} onChange={() => togglePreference("abominations-large-text", setLargeText)} /> Larger text</label>
-            <label><input type="checkbox" checked={showBoardLabels} onChange={() => togglePreference("abominations-board-labels", setShowBoardLabels)} /> Show board labels</label>
-            <label><input type="checkbox" checked={manualReducedMotion} onChange={() => togglePreference("abominations-reduced-motion", setManualReducedMotion)} /> Reduce motion</label>
-            <label><input type="checkbox" checked={confirmIrreversible} onChange={() => togglePreference("abominations-confirm-irreversible", setConfirmIrreversible)} /> Confirm disappearance</label>
-          </div>
-          <p className="settings-note">The game currently has no audio dependency; every result and required action is available as text.</p>
-        </section>
+        <SettingsPanel largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} togglePreference={togglePreference} />
       )}
       {onboardingOpen && (
         <section className="onboarding" aria-label="First match guide">
@@ -1046,18 +1039,7 @@ function App() {
               </span>
             </div>
           </div>
-          <figure className="card board-reference-card">
-            <span className="label">BOARD REFERENCE PHOTO</span>
-            <img
-              src="/assets/board/full-board-top-down.webp"
-              alt="Top-down photograph of the Monsters Menace America honeycomb board"
-              loading="lazy"
-            />
-            <figcaption>
-              Source reference only · the interactive shell above is the current
-              shared board candidate.
-            </figcaption>
-          </figure>
+          <BoardReferenceCard />
           <div className="card unit-card">
             <span className="label">MILITARY UNITS</span>
             {activeGame.units
@@ -1351,21 +1333,7 @@ function App() {
                 </button>
               </div>
             ) : activeGame.phase === "game-over" ? (
-              <div className="victory-summary">
-                <strong>{action}</strong>
-                <span>Victory type: {activeGame.victoryType ?? "recorded terminal result"}</span>
-                <div className="path-controls">
-                  {online ? (
-                    <button className="subtle" onClick={() => void leaveRoom()}>
-                      Return to lobby
-                    </button>
-                  ) : (
-                    <button className="subtle" onClick={resetLocal}>
-                      Start another local playtest
-                    </button>
-                  )}
-                </div>
-              </div>
+              <TerminalSummary action={action} victoryType={activeGame.victoryType} online={online} onLeaveRoom={() => void leaveRoom()} onResetLocal={resetLocal} />
             ) : (
               <button
                 disabled={!canAct}
