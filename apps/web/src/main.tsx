@@ -43,6 +43,7 @@ import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SetupPanel } from "./components/SetupPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
+import { TurnPrompt } from "./components/TurnPrompt";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
 import "./styles.css";
@@ -510,6 +511,27 @@ function App() {
     () => (activeGame.eventLog ?? []).slice(-5).reverse(),
     [activeGame.eventLog],
   );
+  const turnDescription = activeGame.phase === "move"
+    ? selectedUnitId
+      ? selectedUnitPath.length > 1
+        ? `${selectedUnitPath.map((id) => getLocation(id)?.name ?? id).join(" → ")} · ${selectedUnitPath.length - 1} movement ${selectedUnitPath.length - 1 === 1 ? "space" : "spaces"}`
+        : "Move the selected military unit along a highlighted path."
+      : selectedPath.length > 1
+        ? `${selectedPath.map((id) => getLocation(id)?.name ?? id).join(" → ")} · ${selectedPath.length - 1} movement ${selectedPath.length - 1 === 1 ? "space" : "spaces"}`
+        : `Move up to ${activePlayer.move} spaces. Choose a connected location on the map.`
+    : activeGame.phase === "fight"
+      ? activeGame.pendingDecision?.type === "attack-target"
+        ? pendingAttackPrompt
+        : activeGame.pendingDecision?.type === "retreat"
+          ? "Choose a legal retreat for every surviving military unit."
+          : activeGame.pendingBattles.length > 1
+            ? `Choose which of ${activeGame.pendingBattles.length} compulsory battles to resolve first.`
+            : "Resolve the compulsory battle started by movement."
+      : activeGame.phase === "encounter"
+        ? "Resolve the space your monster ended on."
+        : activeGame.phase === "game-over"
+          ? "The development match is complete. Further commands are disabled."
+          : `Place a legal military unit, then pass Deploy.${activeGame.deploymentsThisTurn ? ` ${activeGame.deploymentsThisTurn} placed this step.` : ""}`;
   const choosePath = (destination: HexKey) => {
     const options = legalPaths
       .filter((path) => path.at(-1) === destination)
@@ -742,47 +764,15 @@ function App() {
             playerIndex={participant?.playerIndex ?? activeGame.currentPlayer}
           />
           <div className="card action-card">
-            <span className="label">CURRENT STEP</span>
-            <h2 ref={actionHeadingRef} tabIndex={-1}>
-              {action}
-            </h2>
-            <p>
-            {activeGame.phase === "move"
-                ? selectedUnitId
-                  ? selectedUnitPath.length > 1
-                    ? `${selectedUnitPath.map((id) => getLocation(id)?.name ?? id).join(" → ")} · ${selectedUnitPath.length - 1} movement ${selectedUnitPath.length - 1 === 1 ? "space" : "spaces"}`
-                    : "Move the selected military unit along a highlighted path."
-                  : selectedPath.length > 1
-                    ? `${selectedPath.map((id) => getLocation(id)?.name ?? id).join(" → ")} · ${selectedPath.length - 1} movement ${selectedPath.length - 1 === 1 ? "space" : "spaces"}`
-                    : `Move up to ${activePlayer.move} spaces. Choose a connected location on the map.`
-                : activeGame.phase === "fight"
-                  ? activeGame.pendingDecision?.type === "attack-target"
-                    ? pendingAttackPrompt
-                    : activeGame.pendingDecision?.type === "retreat"
-                    ? "Choose a legal retreat for every surviving military unit."
-                    : activeGame.pendingBattles.length > 1
-                    ? `Choose which of ${activeGame.pendingBattles.length} compulsory battles to resolve first.`
-                    : "Resolve the compulsory battle started by movement."
-                  : activeGame.phase === "encounter"
-                    ? "Resolve the space your monster ended on."
-                    : activeGame.phase === "game-over"
-                      ? "The development match is complete. Further commands are disabled."
-                : `Place a legal military unit, then pass Deploy.${activeGame.deploymentsThisTurn ? ` ${activeGame.deploymentsThisTurn} placed this step.` : ""}`}
-            </p>
-            {unavailableReason && !canAct && (
-              <p className="unavailable-reason" role="status">
-                {unavailableReason}
-              </p>
-            )}
-            {lastFightEvent && lastFightRolls.length > 0 && (
-              <div className="combat-result" key={lastFightEvent.id} aria-live="polite">
-                <span className="label">LAST COMBAT ROLLS</span>
-                <div className="combat-roll-list">
-                  {lastFightRolls.map((roll, index) => <span key={`${lastFightEvent.id}-${index}`} aria-label={`Roll ${index + 1}: ${roll}`}>{roll}</span>)}
-                </div>
-                <small>Recorded by the authoritative fight result; the animation is presentation only.</small>
-              </div>
-            )}
+            <TurnPrompt
+              actionHeadingRef={actionHeadingRef}
+              action={action}
+              description={turnDescription}
+              unavailableReason={unavailableReason}
+              canAct={canAct}
+              lastFightEventId={lastFightEvent?.id}
+              lastFightRolls={lastFightRolls}
+            />
             {activeGame.phase === "move" &&
             selectedUnitId &&
             selectedUnitPath.length > 1 ? (

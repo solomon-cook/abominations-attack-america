@@ -374,9 +374,21 @@ Useful source documents:
     - [ ] [P0] Give the Home Screen a strong piece of appropriate game art and a cohesive visual hierarchy without overwhelming the available actions.
     - [ ] [P0] Make the primary Home Screen actions clearly accessible: Join a game, Create a game, and Rules.
     - [ ] [P0] Let players open a concise rules reference from the Home Screen so they can remind themselves how to play before joining or creating a match.
+  - [ ] [P0] Use the created artwork assets for hexes, Stomps, Infamy, Military Research cards, Mutation cards, monsters, and troops in the gameplay UI, with the relevant assets visible on the board wherever those components are present.
+    - [ ] [P0] Render the board as a connected proper game-board layout of hexagons, with a consistent small border/gap between neighbouring hexes so the board structure is immediately legible.
+    - [ ] [P0] Keep board artwork, piece artwork, markers, and card/component artwork crisp and correctly scaled at the supported zoom levels without obscuring board occupancy or legal interactions.
+    - [ ] [P0] Preserve the authored artwork's visual identity and use asset fallbacks only when an asset is genuinely unavailable; do not replace the created assets with generic placeholders in the playable board view.
+  - [ ] [P0] Label the board's Mutation spaces and cities clearly in the board view.
+    - [ ] [P0] Show each city's authored name and its relevant printed benefit/number directly on or immediately beside the city hex, using clear notation such as `1 HP` and `1D` where applicable.
+    - [ ] [P0] Keep city and Mutation labels legible at supported zoom levels and available through accessible text/inspection without hiding the underlying hex, piece, or interaction state.
+    - [ ] [P0] Use only verified board data for city names, Mutation spaces, and benefit values; unresolved values must remain visibly marked as unresolved rather than guessed.
+  - [ ] [P0] Remove the background reference-board image from the site and replace it with a generated North America-inspired map made from green hexagons, with a surrounding sea treatment.
+    - [ ] [P0] Make the generated hex map the visible board surface, with connected hexes, clear borders, and sea surrounding the landmass rather than using the photographed/reference board as a backdrop.
+    - [ ] [P0] Keep this generated visual treatment separate from authoritative board topology and rule data; the engine remains the source of playable hexes, adjacency, features, and legality.
   - [x] Extract development setup choices and the online setup summary while keeping setup commands and state transitions in `App`. (`apps/web/src/components/SetupPanel.tsx`; web typecheck/build pass.)
   - [x] Extract match status and piece-stack inspection presentation without moving board selection or engine legality into the component. (`apps/web/src/components/MatchStatus.tsx` and `PieceStackInspector.tsx`; web typecheck/build pass.)
   - [x] Extract the 254-cell hex renderer while keeping path selection and engine-provided legality at the parent boundary. (`apps/web/src/components/HexGrid.tsx`; web typecheck/build and `web-board-layout:verify` pass.)
+  - [x] Extract the current-step prompt, unavailable-action explanation, and recorded combat-result presentation without moving action controls. (`apps/web/src/components/TurnPrompt.tsx`; web typecheck/build pass.)
   - [ ] [P0] Make the overall UI fit within the viewport as a general rule, with no gameplay page scrolling; scrolling may be used inside menus or other deliberately bounded information panels.
     - [ ] [P0] Provide a focused setup screen before the match, then keep the active game view centred on the board/map once gameplay begins.
     - [ ] [P0] Make the in-game map draggable/pannable and zoomable, with the board remaining the primary centre-stage interaction surface.
