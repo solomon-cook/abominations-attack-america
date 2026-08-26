@@ -48,6 +48,10 @@ const command = (method, params = {}) => new Promise((resolve, reject) => {
   pending.set(id, { resolve, reject });
   socket.send(JSON.stringify({ id, method, params }));
 });
+socket.on("message", (raw) => {
+  const message = JSON.parse(raw.toString());
+  if (message.method === "Page.javascriptDialogOpening") void command("Page.handleJavaScriptDialog", { accept: true });
+});
 await command("Page.enable");
 await command("Runtime.enable");
 await command("Page.navigate", { url });
@@ -172,8 +176,13 @@ try {
     await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "next Move phase after Deploy");
     finalPhase = await phase();
   }
+  if (finalPhase !== "Move") throw new Error(`Expected the development turn to return to Move before terminal-state coverage, got ${finalPhase || "no phase"}.`);
+  if (!await clickButton("Concede match")) throw new Error("Local browser smoke exposed no Concede match control.");
+  await waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "concession terminal phase");
+  const concessionTerminal = await evaluate(`Boolean(document.querySelector(".victory-summary")) && Boolean([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Start another local playtest"))`);
+  if (!concessionTerminal) throw new Error("Concession did not expose the terminal victory summary and restart control.");
 
-  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", invalidAction: "disabled-unreachable-destination", loadingState: "verified", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, nextPhase: finalPhase }));
+  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", invalidAction: "disabled-unreachable-destination", loadingState: "verified", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, concessionTerminal: "verified", nextPhase: finalPhase }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");
