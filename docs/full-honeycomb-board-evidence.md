@@ -78,6 +78,16 @@ an unobscured, aligned cell map, so those rules terms cannot be assigned to the
 254 candidate coordinates without a reviewed transcription against the physical
 board.
 
+A further focused search on 2026-08-26 found no qualifying aligned scan or
+printable board map. The [BoardGameGeek game overview](https://boardgamegeek.com/boardgame/17835/monsters-menace-america)
+also describes the 2005 edition as removing terrain effects, while the scanned
+[Italian rulebook](https://www.goblins.net/files/downloads/MonsterMenaceAmerica_Regolamento.pdf)
+uses lake, sea, sea-coast, flight, and water-barrier movement vocabulary. This
+may describe a distinction between terrain effects and movement restrictions,
+but the sources are not sufficient to resolve that distinction for the digital
+board. The implementation therefore keeps water classes and barriers
+source-gated rather than selecting an interpretation.
+
 ## Current evidence
 
 | Question | Current evidence | Status |
