@@ -233,7 +233,7 @@ try {
     ].join(",");
   })()`);
   const [spectating, enabledActionCount, enabledLegalTileCount, enabledActionLabels] = String(spectatorMoveControls ?? "false,99,99,unknown").split(",");
-  if (spectating !== "true" || Number(enabledActionCount) > 0 || Number(enabledLegalTileCount) > 0) throw new Error(`enabled spectator action: ${enabledActionLabels}`);
+  if (spectating !== "true" || Number(enabledActionCount) > 0 || Number(enabledLegalTileCount) > 0) throw new Error(`enabled spectator action: count=${enabledActionCount}, legalTiles=${enabledLegalTileCount}, labels=${enabledActionLabels}`);
   const savedSession = await first.evaluate(`localStorage.getItem("abominations-session")`);
   if (!savedSession) throw new Error("First browser did not expose its persisted room session before restart.");
   const reconnectedFirst = await first.restart();

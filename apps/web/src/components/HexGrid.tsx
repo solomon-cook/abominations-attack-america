@@ -158,9 +158,9 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
       )}
       {boardHexes.map(({ hex, place, left, top, developmentFixture }) => {
         const placeKey = hex.key;
-        const monsterLegal = legalDestinations.has(placeKey);
-        const unitLegal = legalUnitDestinations.has(placeKey);
-        const selectableUnit = game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id));
+        const monsterLegal = canAct && legalDestinations.has(placeKey);
+        const unitLegal = canAct && legalUnitDestinations.has(placeKey);
+        const selectableUnit = canAct ? game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id)) : undefined;
         const featureText = hex.features.map((feature) => feature.kind).join(", ");
         const neighbourText = (boardIndex?.neighbours[placeKey] ?? [])
           .map((neighbourKey) => board?.hexes[neighbourKey]?.label ?? neighbourKey)
