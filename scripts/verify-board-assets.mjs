@@ -20,6 +20,15 @@ async function assertFile(path, label) {
   }
 }
 
+async function assertMissing(path, label) {
+  try {
+    await readFile(path);
+  } catch {
+    return;
+  }
+  throw new Error(`${label} must not be shipped: ${relative(assetRoot, path)}`);
+}
+
 async function checkManifest(directory, manifestName = "manifest.json") {
   const manifestPath = join(directory, manifestName);
   const manifest = await readJson(manifestPath);
@@ -48,8 +57,9 @@ await checkManifest(join(assetRoot, "coast"));
 await checkManifest(join(assetRoot, "coastal-city"));
 await checkManifest(join(assetRoot, "features"));
 await checkManifest(join(assetRoot, "tokens"));
-await assertFile(join(assetRoot, "full-board-top-down.webp"), "Optimized board reference");
-await assertFile(join(assetRoot, "full-game-setup.webp"), "Optimized setup reference");
+await assertFile(join(assetRoot, "original-game-hero.webp"), "Original hero artwork");
+await assertMissing(join(assetRoot, "full-board-top-down.webp"), "Internal board reference");
+await assertMissing(join(assetRoot, "full-game-setup.webp"), "Internal setup reference");
 
 const cardManifest = JSON.parse(await readFile(join(cardAssetRoot, "manifest.json"), "utf8"));
 if (cardManifest.format !== "webp" || !Array.isArray(cardManifest.sheets) || cardManifest.sheets.length !== 7) throw new Error("Card asset manifest is incomplete");

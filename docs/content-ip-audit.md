@@ -6,7 +6,9 @@ The photographs in `references/monsters-menace-america/` depict third-party game
 
 ## Original or project-owned material
 
-The current web presentation, CSS, layout, generated military sprite studies, and game-engine implementation are project-authored. They still require a release review for names, wording, and any embedded third-party material before public distribution.
+The current web presentation, CSS, layout, generated military sprite studies, original generated hero artwork (`apps/web/public/assets/board/original-game-hero.webp`), and game-engine implementation are project-authored. They still require a release review for names, wording, and any embedded third-party material before public distribution.
+
+The playable web client does not ship the internal board photographs. The Home Screen uses the original hero artwork, while the in-game board source-status card reports the unresolved transcription boundary without embedding a reference image.
 
 ## Release gate
 

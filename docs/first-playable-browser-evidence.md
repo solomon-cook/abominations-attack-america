@@ -74,7 +74,7 @@ The same runtime check confirmed the keyboard focus boundary after starting a lo
 
 The compact 2026-08-25 runtime check at 390×844 also completed ordered setup, opened the action controls, selected the legal San Francisco destination, and exposed both **Confirm path** and **Cancel** without horizontal or document overflow (`scrollWidth=clientWidth=390`, `scrollHeight=clientHeight=844`). The map remained the unresolved candidate shell, so this does not promote the physical MVP board or complete the supported mobile-browser matrix.
 
-On 2026-08-25, a fresh browser session at `http://127.0.0.1:5179/` completed the same visible setup, opened the controls, selected the legal `Los Angeles → San Francisco` destination, confirmed the path, and reached the authoritative Encounter decision with a visible **Resolve encounter** control. The runtime screenshot still shows the unresolved rectangular candidate shell and the source-reference photograph beneath it; this is useful development-flow evidence and direct confirmation that the current browser is not yet the physical MVP board.
+On 2026-08-25, a fresh browser session at `http://127.0.0.1:5179/` completed the same visible setup, opened the controls, selected the legal `Los Angeles → San Francisco` destination, confirmed the path, and reached the authoritative Encounter decision with a visible **Resolve encounter** control. The runtime screenshot still shows the unresolved rectangular candidate shell over the generated decorative map treatment; this is useful development-flow evidence and direct confirmation that the current browser is not yet the physical MVP board.
 
 ## Latest two-browser online smoke check
 
@@ -90,7 +90,7 @@ The browser selects its renderer from the active match's immutable board ID and 
 
 The board notice and accessible tile descriptions identify the nine-space development fixture and its unresolved physical-board cells. Those disclosures do not substitute for verified board data or full-rules browser coverage, and this fixture cannot be used to sign off the MVP playable-game board requirement.
 
-The browser now uses the optimized top-down board photograph as a subdued visual backdrop beneath the interactive 254-cell overlay. The photograph is explicitly labelled as reference-only; the engine still supplies all current legal actions and recorded features.
+The browser uses a generated decorative sea-and-land treatment beneath the interactive 254-cell overlay. It contains no board keys or rule data; the engine still supplies all current legal actions and recorded features. Internal reference photographs are not shipped in the web client.
 
 ## Current geometry correction
 

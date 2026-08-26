@@ -1016,7 +1016,7 @@ function App() {
             {boardDescription}
           </p>
           <div className="board-secondary">
-            <p className="map-note">Printed-board photograph is a visual reference backdrop only; legal movement and features come from the canonical engine board.</p>
+            <p className="map-note">The sea-and-land treatment is decorative only; legal movement and features come from the canonical engine board.</p>
             <p className="map-note">
               {canAct
                 ? selectedUnitId

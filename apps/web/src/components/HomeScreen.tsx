@@ -10,7 +10,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, ...lobbyPro
   return (
     <main className="home-screen">
       <section className="home-hero" aria-labelledby="home-title">
-        <img src="/assets/board/full-game-setup.webp" alt="Monster and military pieces arranged around the game board" />
+        <img src="/assets/board/original-game-hero.webp" alt="Original illustrated monster and military hex strategy game board with sculpted pieces" />
         <div className="home-hero-copy">
           <p className="eyebrow">ABOMINATIONS ATTACK AMERICA</p>
           <h1 id="home-title">Take the city.<br />Become the legend.</h1>

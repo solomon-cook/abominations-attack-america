@@ -1,8 +1,8 @@
 # Board image assets
 
-These WebP files are optimized delivery copies of the board evidence photographs.
+These files are original or generated delivery assets safe for the web client.
 
-- `full-board-top-down.webp`: 753 × 623, WebP quality 82
-- `full-game-setup.webp`: 2048 × 1263, WebP quality 82
+- `original-game-hero.webp`: original generated hero artwork; no reference photograph, logo, or copied board layout.
+- Feature, token, coast, and city WebP files: optimized renderer assets with provenance recorded in their manifests.
 
-The original JPGs in `references/monsters-menace-america/components/board/` remain authoritative source evidence.
+The physical-board JPGs in `references/monsters-menace-america/components/board/` remain internal source evidence and are not shipped by the web client.

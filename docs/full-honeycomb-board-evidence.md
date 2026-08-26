@@ -6,8 +6,7 @@ This pack is the review boundary for promoting the photographed board into the M
 
 - [Full board top-down reference](../references/monsters-menace-america/components/board/full-board-top-down.jpg)
 - [Full game setup reference](../references/monsters-menace-america/components/board/full-game-setup.jpg)
-- [Optimized top-down board asset](../apps/web/public/assets/board/full-board-top-down.webp)
-- [Optimized full-game setup asset](../apps/web/public/assets/board/full-game-setup.webp)
+- The optimized reference photographs are intentionally not shipped in the web client; the source JPGs above remain internal evidence only.
 - [Generated 254-hex review table](board-review-table.md)
 - [Generated coordinate/photo comparison overlay](board-comparison-overlay.svg)
 
