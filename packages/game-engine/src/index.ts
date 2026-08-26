@@ -9,7 +9,7 @@ export { MONSTER_DEFINITIONS, monsterDefinition, type MonsterDefinition, type Mo
 export { UNIT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, BRANCH_DEPLOYMENT_DEFINITIONS, type UnitDefinition, type GiantUnitDefinition, type NationalGuardDefinition, type BranchDeploymentDefinition, type UnitBranch, type UnitMovement } from "./units.js";
 import { createSetup, developmentSetupDefinition, validateSetup, type SetupSeat, type SetupState } from "./setup.js";
 import { composeContinuousEffects, type ContinuousEffectAccumulator } from "./effects.js";
-export { EFFECT_BOUNDARIES, composeContinuousEffects, type ContinuousEffectAccumulator, type ContinuousEffectContribution, type EffectAvailability, type EffectBoundary, type EffectCategory } from "./effects.js";
+export { EFFECT_BOUNDARIES, assertEffectPlanAvailable, composeContinuousEffects, composeEffectPlan, type ComposedEffectPlan, type ContinuousEffectAccumulator, type ContinuousEffectContribution, type EffectAvailability, type EffectBoundary, type EffectCategory, type EffectInstance, type EffectInstanceBase } from "./effects.js";
 
 export type Phase = "move" | "fight" | "encounter" | "deploy" | "challenge" | "game-over";
 export type Branch = "Army" | "Navy" | "Air Force" | "Marines";

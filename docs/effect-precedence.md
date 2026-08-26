@@ -36,3 +36,11 @@ permanent-lifecycle questions unavailable rather than applying this order to
 them. The authoritative projections and timing regressions are covered by the
 continuous-effect, battle-start, combat-trigger, card-lifecycle, and replay
 tests in `packages/game-engine/src/index.test.ts`.
+
+The shared effect boundary is represented by `EffectInstance` and
+`composeEffectPlan` in `packages/game-engine/src/effects.ts`. The plan retains
+available and blocked instances separately and groups stat, movement, attack,
+control, placement, and triggered effects without resolving their rules. Any
+caller that is ready to resolve a plan must call `assertEffectPlanAvailable`
+first; source-gated instances therefore fail closed instead of receiving
+generic target, stacking, or lifecycle behaviour.

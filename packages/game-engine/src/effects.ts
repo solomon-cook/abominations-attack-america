@@ -11,6 +11,60 @@ export interface EffectBoundary {
   readonly sourceRefs: readonly string[];
 }
 
+export interface EffectInstanceBase {
+  readonly id: string;
+  readonly category: EffectCategory;
+  readonly availability: EffectAvailability;
+  readonly timing: string;
+  readonly sourceRefs: readonly string[];
+}
+
+export type EffectInstance =
+  | (EffectInstanceBase & { readonly category: "stat-modifier"; readonly operation: "add" | "replace"; readonly key: keyof ContinuousEffectAccumulator; readonly value: number })
+  | (EffectInstanceBase & { readonly category: "movement-ability"; readonly operation: "grant" | "replace"; readonly ability: "fly" | "crosses-water-barriers" })
+  | (EffectInstanceBase & { readonly category: "attack-change"; readonly operation: "add" | "replace"; readonly key: "damagePerHit" | "firstRoundAttackBonus"; readonly value: number })
+  | (EffectInstanceBase & { readonly category: "control-override"; readonly permission: "canControlNationalGuard" | "canDeployNationalGuard"; readonly enabled: boolean })
+  | (EffectInstanceBase & { readonly category: "placement"; readonly operation: "place" | "remove"; readonly targetId: string })
+  | (EffectInstanceBase & { readonly category: "triggered"; readonly trigger: string; readonly eventType: string });
+
+export interface ComposedEffectPlan {
+  readonly available: readonly EffectInstance[];
+  readonly blocked: readonly EffectInstance[];
+  readonly byCategory: Readonly<Record<EffectCategory, readonly EffectInstance[]>>;
+}
+
+/**
+ * Group effect instances by their authoritative timing category without
+ * resolving any source-gated rule. This keeps placement and trigger effects
+ * composable while preventing a generic helper from inventing their targets
+ * or lifecycle.
+ */
+export function composeEffectPlan(effects: readonly EffectInstance[]): ComposedEffectPlan {
+  const byCategory = Object.fromEntries(
+    (Object.keys(EFFECT_CATEGORY_ORDER) as EffectCategory[]).map((category) => [category, [] as EffectInstance[]]),
+  ) as Record<EffectCategory, EffectInstance[]>;
+  for (const effect of effects) byCategory[effect.category].push(effect);
+  return {
+    available: effects.filter((effect) => effect.availability === "implemented"),
+    blocked: effects.filter((effect) => effect.availability === "source-gated"),
+    byCategory,
+  };
+}
+
+export function assertEffectPlanAvailable(effects: readonly EffectInstance[]): void {
+  const blocked = effects.filter((effect) => effect.availability === "source-gated");
+  if (blocked.length > 0) throw new Error(`Source-gated effects are unavailable: ${blocked.map((effect) => effect.id).join(", ")}`);
+}
+
+const EFFECT_CATEGORY_ORDER: Readonly<Record<EffectCategory, true>> = {
+  "stat-modifier": true,
+  "movement-ability": true,
+  "attack-change": true,
+  "control-override": true,
+  placement: true,
+  triggered: true,
+};
+
 /** The engine may only resolve an effect after its source boundary is explicit. */
 export const EFFECT_BOUNDARIES: readonly EffectBoundary[] = [
   { id: "continuous-projection", category: "stat-modifier", availability: "implemented", timing: "before selectors and combat", sourceRefs: ["docs/effect-precedence.md"] },
