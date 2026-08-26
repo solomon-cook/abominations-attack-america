@@ -361,10 +361,10 @@ const PROVISIONAL_BOARD_FEATURES: Readonly<Record<string, readonly BoardFeature[
   "3/8": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
   "5/8": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
   "6/8": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
-  "3/13": [{ kind: "city", benefit: { kind: "health", amount: 2 } }],
-  "4/17": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "3/13": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "4/17": [{ kind: "city", benefit: { kind: "health-roll", dice: 3 } }],
   "5/16": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
-  "7/13": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "7/13": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
   "7/11": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
   "2/5": [{ kind: "infamy-site" }],
   "4/8": [{ kind: "infamy-site" }],
@@ -410,9 +410,9 @@ function provisionalBoardHexes(): Record<HexKey, BoardHex> {
 
 const provisionalBoardCore = {
   id: "provisional-authoritative-honeycomb-board",
-  version: 1,
+  version: 2,
   name: "Promoted photographed honeycomb board playtest definition",
-  rulesetVersion: "playtest-0.2-promoted-guess",
+  rulesetVersion: "playtest-0.3-physical-board-values",
   hexes: provisionalBoardHexes(),
   edges: FULL_HONEYCOMB_BOARD.edges.map((edge) => ({
     ...edge,

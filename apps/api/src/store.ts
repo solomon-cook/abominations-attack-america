@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { applyCommandEnvelope, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
+import { applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicRoomSummary, RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 
@@ -148,6 +148,10 @@ export class MemoryRoomStore implements RoomStore {
     participant.ready = ready;
     this.touch(room);
     this.refreshStatus(room);
+    if ((room.status as RoomStatus) === "active" && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
+      room.state = applyCompletedSetup(room.state);
+      room.version += 1;
+    }
     return this.view(room, 0, "player", participant.playerIndex);
   }
 

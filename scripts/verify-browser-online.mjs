@@ -207,7 +207,8 @@ try {
   for (let attempt = 0; attempt < 60; attempt += 1) {
     let progressed = false;
     for (const browser of [first, second]) {
-      const clicked = await browser.evaluate(`(() => { const button = [...document.querySelectorAll(".setup-options button")].find((candidate) => !candidate.disabled); if (!button) return false; button.click(); return true; })()`);
+      const preferredStartingChoice = browser === first ? "Development Deploy" : "Draw Research";
+      const clicked = await browser.evaluate(`(() => { const phase = document.querySelector(".setup-panel h2")?.textContent?.trim(); const buttons = [...document.querySelectorAll(".setup-options button")].filter((candidate) => !candidate.disabled); const button = phase === "starting choice" ? buttons.find((candidate) => candidate.textContent?.trim() === ${JSON.stringify(preferredStartingChoice)}) : buttons[0]; if (!button) return false; button.click(); return true; })()`);
       if (clicked) { setupClicks += 1; progressed = true; await wait(120); break; }
     }
     if (!progressed) {
@@ -270,7 +271,7 @@ try {
   await second.evaluate("location.reload()");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
   await first.waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "online legal movement destination");
-  if (!await first.evaluate(`(() => { const tiles = [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")]; const tile = tiles.find((candidate) => candidate.getAttribute("data-location-name") === "Denver") ?? tiles[0]; tile?.click(); return Boolean(tile); })()`)) throw new Error("First browser could not select an online legal destination.");
+  if (!await first.evaluate(`(() => { const tiles = [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")]; const tile = tiles.find((candidate) => candidate.querySelector('img[alt^="Navy "]')) ?? tiles.find((candidate) => candidate.getAttribute("data-location-name") === "Denver") ?? tiles[0]; tile?.click(); return Boolean(tile); })()`)) throw new Error("First browser could not select an online legal destination.");
   await first.waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "online path confirmation");
   if (!await first.click("Confirm path")) throw new Error("First browser could not confirm the online path.");
   await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase !== "Move" && phase !== "Waiting for server…"; })()`, "first settled post-move phase");

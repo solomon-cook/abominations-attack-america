@@ -1,5 +1,5 @@
 import { randomBytes, createHash } from "node:crypto";
-import { applyCommandEnvelope, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
+import { applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicRoomSummary, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, terminalResultSummary, type RoomStore } from "./store.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
@@ -121,6 +121,11 @@ export class PrismaRoomStore implements RoomStore {
     await this.prismaClient.participant.update({ where: { id: participant.id }, data: { ready } });
     await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { lastActivityAt: new Date() } });
     await this.refreshStatus(room.id, room.maxPlayers, room.state as unknown as GameState);
+    const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { status: true, state: true, version: true } });
+    if (activated?.status === "ACTIVE" && (activated.state as unknown as GameState).setupState?.phase === "complete" && !(activated.state as unknown as GameState).setupApplied) {
+      const nextState = applyCompletedSetup(activated.state as unknown as GameState);
+      await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { state: nextState as any, version: activated.version + 1 } });
+    }
     return this.view(room.id, 0, "player", participant.playerIndex ?? undefined);
   }
 

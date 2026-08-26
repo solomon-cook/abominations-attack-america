@@ -115,7 +115,13 @@ if (process.env.BROWSER_TEST_REDUCED_MOTION === "1") {
 }
 await command("Emulation.setDeviceMetricsOverride", { width: viewportWidth, height: viewportHeight, deviceScaleFactor: 1, mobile: viewportWidth <= 600 });
 await command("Page.navigate", { url });
-const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
+const evaluate = async (expression) => {
+  try {
+    return (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
+  } catch (error) {
+    throw new Error(`${error instanceof Error ? error.message : String(error)} while evaluating ${expression.slice(0, 180)}`);
+  }
+};
 const waitFor = async (expression, label) => {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (await evaluate(expression)) return;
@@ -169,6 +175,16 @@ try {
   })()`);
   if (!closedPanelDecision?.closed || !closedPanelDecision.decisionVisible) {
     throw new Error(`Closed board view hid the authoritative decision tray: ${JSON.stringify(closedPanelDecision)}`);
+  }
+  const closedViewportContract = JSON.parse(await evaluate(`(() => { const shell = document.querySelector(".game-screen"); const map = document.querySelector(".game-screen .map"); const html = document.documentElement; const body = document.body; const rect = map?.getBoundingClientRect(); return JSON.stringify({ fixed: getComputedStyle(shell).position === "fixed", pageOverflow: html.scrollHeight <= innerHeight + 1 && body.scrollHeight <= innerHeight + 1, rect: rect && { left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) } }); })()`));
+  if (!closedViewportContract?.fixed || !closedViewportContract.pageOverflow || !closedViewportContract.rect) throw new Error(`Fixed viewport contract failed before opening details: ${JSON.stringify(closedViewportContract)}`);
+  if (viewportWidth >= 701) {
+    if (!await clickButton("Show details")) throw new Error("Fixed-shell smoke could not open the details rail.");
+    await waitFor(`Boolean(document.querySelector(".game-screen.game-panel-open"))`, "details rail open");
+    const openViewportContract = JSON.parse(await evaluate(`(() => { const map = document.querySelector(".game-screen .map"); const html = document.documentElement; const body = document.body; const rect = map?.getBoundingClientRect(); return JSON.stringify({ pageOverflow: html.scrollHeight <= innerHeight + 1 && body.scrollHeight <= innerHeight + 1, rect: rect && { left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) } }); })()`));
+    if (!openViewportContract?.pageOverflow || JSON.stringify(openViewportContract.rect) !== JSON.stringify(closedViewportContract.rect)) { const layout = await evaluate(`(() => [...document.querySelectorAll(".game-screen > .turn-progress, .game-screen > .status, .game-screen > .layout, .game-screen .board-panel")].map((node) => { const rect = node.getBoundingClientRect(); return { className: String(node.className), top: Math.round(rect.top), height: Math.round(rect.height), display: getComputedStyle(node).display, visibility: getComputedStyle(node).visibility }; }))()`); console.error("DETAILS_CONTRACT", JSON.stringify({ closed: closedViewportContract, open: openViewportContract, layout })); throw new Error("Opening details reflowed the fixed board surface."); }
+    if (!await clickButton("Hide details")) throw new Error("Fixed-shell smoke could not close the details rail.");
+    await waitFor(`Boolean(document.querySelector(".game-screen.game-panel-closed"))`, "details rail closed");
   }
   const activeHexKey = await evaluate(`document.querySelector('.hex-tile[data-stack-count]:not(:disabled):not(.selectable)')?.dataset.hexKey ?? ""`);
   if (activeHexKey) {

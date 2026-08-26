@@ -169,6 +169,8 @@ export interface GameState {
   setupAssignments?: readonly SetupSeat[];
   /** Present only for rooms that are still completing the development setup flow. */
   setupState?: SetupState;
+  /** Set once the completed setup choices have been materialized into the match state. */
+  setupApplied?: boolean;
   /** Explicit local-only scenario switch; never valid for production rooms. */
   developmentScenario?: "temporary-victory";
 }
@@ -737,9 +739,10 @@ export function createRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `deve
 }
 
 /**
- * MVP room creation uses the explicitly versioned best-guess honeycomb bridge.
- * The physical-board validator remains stricter and continues to reject this
- * board for verified release promotion.
+ * Provisional production promotion gate for the explicitly versioned
+ * best-guess honeycomb board. The board is immutable and match-pinned; strict
+ * verified-board validation remains available for the future source-faithful
+ * board version.
  */
 export function assertMvpBoardReady(): void {
   const errors = validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD, { production: true, allowProvisional: true });
@@ -766,11 +769,72 @@ export function createGameFromSetup(setup: SetupState, seed = 0): GameState {
     return { ...monster };
   });
   const state = createGame(setup.definition.playerCount, seed);
-  state.monsters = selectedMonsters.map((monster, index) => ({ ...monster, location: developmentKey(index === 0 ? "los-angeles" : "seattle") }));
+  state.monsters = selectedMonsters.map((monster, index) => ({ ...monster, location: developmentKey(setup.seats[index]?.lair ?? (index === 0 ? "los-angeles" : "seattle")) }));
   state.setupAssignments = structuredClone(setup.seats);
+  state.setupState = structuredClone(setup);
+  const applied = applyCompletedSetup(state);
   assertInventoryAccounting(state);
-  state.log.unshift("Development setup complete. Production component verification is still required.");
-  return state;
+  applied.log.unshift("Development setup complete. Production component verification is still required.");
+  return applied;
+}
+
+/**
+ * Materialize the choices made by the setup state machine into a playable
+ * development/provisional match. This is intentionally limited to the
+ * explicitly labelled MVP fixture; verified physical-board setup remains
+ * source-gated.
+ */
+export function applyCompletedSetup(state: GameState): GameState {
+  if (!state.setupState || state.setupState.phase !== "complete" || state.setupApplied) return state;
+  validateSetup(state.setupState);
+  const next = structuredClone(state);
+  const completedSetup = next.setupState;
+  if (!completedSetup) return next;
+  next.setupAssignments = structuredClone(completedSetup.seats);
+  const board = boardForState(next);
+  const normalizeLocation = (value: string): HexKey => {
+    if (isHexKey(value) && board.hexes[value]) return value;
+    const development = locationIdToHexKey(value);
+    if (development && board.hexes[development]) return development;
+    throw new GameDomainError("ILLEGAL_COMMAND", `Setup location ${value} is not present on the active board.`);
+  };
+
+  next.setupAssignments.forEach((assignment, playerIndex) => {
+    const monster = next.monsters[playerIndex];
+    if (!monster || !assignment.lair) throw new GameDomainError("ILLEGAL_COMMAND", "Completed setup is missing a monster lair.");
+    monster.location = normalizeLocation(assignment.lair);
+  });
+
+  for (const assignment of next.setupAssignments) {
+    const player = next.players[assignment.playerIndex];
+    const choice = assignment.startingChoice;
+    if (!player || !choice) throw new GameDomainError("ILLEGAL_COMMAND", "Completed setup is missing a starting choice.");
+    if (choice.kind === "research") {
+      const drawn = drawCardFromDeck(next.decks.research);
+      if (!drawn.cardId) throw new GameDomainError("ILLEGAL_COMMAND", "The Military Research deck is exhausted during setup.");
+      next.decks.research = drawn.state;
+      player.researchCardIds.push(drawn.cardId);
+      next.log.push(`Player ${assignment.playerIndex + 1} drew ${drawn.cardId} as their starting Research card.`);
+      continue;
+    }
+
+    const destination = normalizeLocation(choice.destination);
+    const unit = next.units.find((candidate) => candidate.id === choice.unitId && candidate.branch === assignment.branch && candidate.location === "record-tile" && !next.removedUnitIds.includes(candidate.id));
+    const base = board.hexes[destination]?.features.some((feature) => feature.kind === "military-base" && feature.branch === assignment.branch);
+    if (!unit || !base || next.units.some((candidate) => candidate.location === destination)) {
+      throw new GameDomainError("ILLEGAL_COMMAND", `Initial ${assignment.branch ?? "branch"} deployment is not legal at ${destination}.`);
+    }
+    unit.location = destination;
+    unit.ownerPlayer = assignment.playerIndex;
+    next.log.push(`Player ${assignment.playerIndex + 1} deployed ${unit.unitTypeId ?? unit.id} to ${board.hexes[destination]?.label ?? destination} during setup.`);
+  }
+
+  next.setupApplied = true;
+  next.phase = "move";
+  next.currentPlayer = 0;
+  next.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: next.monsters[0]!.id };
+  next.log.unshift("Setup choices applied. The provisional match is ready for Move.");
+  return next;
 }
 
 export function getLocation(id: string) {

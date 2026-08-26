@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { FULL_HONEYCOMB_BOARD, validateBoardDefinition } from "../packages/game-engine/src/board.ts";
+import { FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, validateBoardDefinition } from "../packages/game-engine/src/board.ts";
 
 const root = resolve(".");
 const unresolved = readFileSync(resolve(root, "docs/unresolved-rules-inventory.md"), "utf8");
@@ -15,4 +15,6 @@ for (const marker of ["Status: **pending human review**", "**Decision:** pending
 const productionErrors = validateBoardDefinition(FULL_HONEYCOMB_BOARD, { production: true });
 if (productionErrors.length === 0) throw new Error("The unresolved full honeycomb board unexpectedly passed production validation.");
 if (!productionErrors.some((error) => error.includes("unresolved"))) throw new Error("Production board validation did not report unresolved board data.");
-console.log(`Verified ${requiredIds.length} explicit release blockers and ${productionErrors.length} production board validation errors.`);
+const provisional = validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD, { production: true, allowProvisional: true });
+if (provisional.length > 0) throw new Error(`The promoted provisional release board failed its explicit provisional gate: ${provisional.length} errors.`);
+console.log(`Verified provisional release board and ${requiredIds.length} remaining source/release blockers; strict physical-board validation still reports ${productionErrors.length} errors.`);

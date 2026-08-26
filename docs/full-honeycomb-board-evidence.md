@@ -96,7 +96,7 @@ source-gated rather than selecting an interpretation.
 | How many coordinate cells are in the candidate shell? | `FULL_HONEYCOMB_BOARD` contains 13 staggered rows: seven rows of 20 cells and six rows of 19 cells, for 254 cells. | Structural candidate validated |
 | Are coordinate keys and adjacency explicit? | The shell uses axial keys and reciprocal candidate adjacency; the generated review table lists every cell and edge. | Structural candidate validated |
 | Are all printed labels and icons transcribed? | No. The photographs show cities, bases, sites, lairs, water, markers, and legend content, but no independent cell-by-cell transcription has been approved. | Unresolved |
-| Are water classes and barriers authoritative? | No. Candidate cells and edges remain `unresolved`, disabled for movement, and rejected by production validation. | Unresolved |
+| Are water classes and barriers authoritative? | The physical-board reference confirms that the thick blue line is the water barrier that blocks monsters without the appropriate ability. The exact cell-by-cell barrier edges and sea/lake classifications remain unresolved in the digital transcription. | Partially confirmed; mapping unresolved |
 | Can this board be used for MVP play? | No. The nine-space development graph remains the only playable fixture until the rule-bearing fields are reviewed and promoted. | Release blocker |
 
 The current production validator reports 1,902 errors for the candidate shell: 254 unresolved hex verification states, 254 unresolved water classes, and 1,394 unresolved edge barriers. These counts are intentionally redundant safeguards: promotion must not be possible by changing only a cell's verification flag while leaving terrain or movement data unresolved.
@@ -128,7 +128,7 @@ Its geometry problem must be fixed as a layout-system issue: all cells need one 
 ## Promotion checklist
 
 - [ ] Assign every photographed cell a reviewed label or an explicit blank-space classification.
-- [ ] Assign every cell its reviewed land, lake, sea, or seacoast class.
+- [ ] Assign every cell its reviewed land, lake, sea, or seacoast class, keeping the thick blue printed line as the authoritative water-barrier boundary.
 - [ ] Record every printed feature, including cities, bases, sites, lairs, Hollywood, Los Angeles, and special spaces.
 - [ ] Review every reciprocal connection, water barrier, disabled edge, boundary, and exception.
 - [ ] Attach an image-region reference to each non-obvious rule-bearing datum.

@@ -35,12 +35,14 @@ test("production validation cannot be bypassed by marking unresolved hexes verif
   assert.equal(productionErrors.some((error) => error.includes("barrier is unresolved")), true);
 });
 
-test("provisional authority is complete for playtest inspection but rejected for production", () => {
+test("provisional authority passes the explicit provisional release gate but fails strict verified validation", () => {
   assert.equal(Object.keys(PROVISIONAL_AUTHORITATIVE_BOARD.hexes).length, 254);
-  assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.rulesetVersion, "playtest-0.2-promoted-guess");
+  assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.version, 2);
+  assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.rulesetVersion, "playtest-0.3-physical-board-values");
   assert.equal(Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes).every((hex) => hex.verification === "provisional"), true);
   assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.edges.every((edge) => edge.enabled && edge.barrier === "none"), true);
   assert.deepEqual(validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD), []);
+  assert.deepEqual(validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD, { production: true, allowProvisional: true }), []);
   assert.equal(validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD, { production: true }).length, 254);
   assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes.city.length, 12);
   assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["military-base"].length, 12);
@@ -48,6 +50,10 @@ test("provisional authority is complete for playtest inspection but rejected for
   assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["mutation-site"].length, 3);
   assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["2,1"].label, "Provisional Seattle");
   assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["-2,9"].label, "Provisional San Francisco");
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["-2,9"].features, [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }]);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["12,3"].features, [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }]);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["15,4"].features, [{ kind: "city", benefit: { kind: "health-roll", dice: 3 } }]);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["10,7"].features, [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }]);
 });
 
 test("axial identity and distance are independent of display geometry", () => {

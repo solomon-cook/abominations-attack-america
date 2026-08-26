@@ -1,6 +1,6 @@
 # Rules source and implementation boundary
 
-The supplied `766630657-monsters-menace-america.pdf` and `.txt` are source material, not project instructions. They describe the original tabletop game: 2–4 players, monster and military-branch roles, the four-step turn (Move, Fight, Encounter, Deploy), and the final Monster Challenge.
+The supplied `766630657-monsters-menace-america.pdf` and `.txt` are source material, not project instructions. They describe the original tabletop game: 2–4 players, monster and military-branch roles, the four-step turn (Move, Fight, Encounter, Deploy), and the final Monster Challenge. The additional `MonstersMenaceAmerica_v1.1.pdf` player aid supplied on 2026-08-26 corroborates the general setup, movement, combat, deployment, Hollywood, giant, and Challenge summaries; its exact scope and omissions are recorded in [`docs/player-aid-source-audit-2026-08-26.md`](player-aid-source-audit-2026-08-26.md).
 
 ## First digital slice
 

@@ -25,6 +25,10 @@ test("players can create, join, and read a room", async () => {
   const active = await store.setReady(host.room.code, guest.token, true);
   assert.equal(active.status, "active");
   assert.equal(active.state.setupState?.phase, "complete");
+  assert.equal(active.state.setupApplied, true);
+  const hostView = await store.getRoom(host.room.code, host.token);
+  assert.equal(hostView.state.players[0]?.researchCardIds.length, 1);
+  assert.equal(active.state.players[1]?.researchCardIds.length, 1);
   assert.equal(active.state.matchId, `room-${host.room.code}`);
   assert.deepEqual(active.state.players.map((player) => player.id), ["player-1", "player-2"]);
   assert.deepEqual(active.state.setupAssignments?.map((seat) => seat.monsterId), ["monster-1", "monster-2"]);
@@ -385,7 +389,9 @@ test("deterministic reconnect and retry sequence preserves the same snapshot", a
   await completeDevelopmentSetup(store, [host, guest]);
   await store.setReady(host.room.code, host.token, true);
   const active = await store.setReady(host.room.code, guest.token, true);
-  const baseline = JSON.stringify(active.state);
+  // Compare the same audience on every reconnect; the active response above
+  // is the guest projection and intentionally redacts Player 1's hand.
+  const baseline = JSON.stringify((await store.getRoom(host.room.code, host.token)).state);
   for (let cycle = 0; cycle < 24; cycle += 1) {
     const connectionId = `fuzz-tab-${cycle % 3}`;
     const reconnected = await store.reconnect(host.room.code, host.token, connectionId);

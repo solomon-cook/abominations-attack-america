@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CARD_STACKING_RULES, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -30,8 +30,7 @@ test("MVP room creation uses the pinned best-guess honeycomb board", () => {
   assert.doesNotThrow(() => assertMvpBoardReady());
   const state = createMvpRoomGame(2, 7, "best-guess-mvp");
   assert.equal(state.boardId, "provisional-authoritative-honeycomb-board");
-  assert.equal(state.boardVersion, 1);
-  assert.equal(state.boardContentHash, "fnv1a:acc73e31");
+  assert.equal(state.boardVersion, 2);
   assert.equal(state.setupState?.phase, "monster-selection");
   assert.equal(state.setupState?.definition.lairsByMonster["monster-1"]?.length, 3);
 });
@@ -852,7 +851,7 @@ test("new matches pin board and ruleset metadata and reject unsupported state sc
 test("provisional playtest factory pins the complete guessed board without promoting it", () => {
   const state = createProvisionalPlaytestGame(2, 7);
   assert.equal(state.boardId, "provisional-authoritative-honeycomb-board");
-  assert.equal(boardForState(state).rulesetVersion, "playtest-0.2-promoted-guess");
+  assert.equal(boardForState(state).rulesetVersion, "playtest-0.3-physical-board-values");
   assert.equal(state.monsters.every((monster) => typeof monster.location === "string" && monster.location.includes(",")), true);
   assert.equal(state.units.every((unit) => unit.location === "record-tile"), true);
   assert.deepEqual(validateInventoryAccounting(state), []);
@@ -2015,6 +2014,33 @@ test("a completed development setup is carried into the local game state", () =>
   const game = createGameFromSetup(setup);
   assert.deepEqual(game.setupAssignments?.map((seat) => seat.monsterId), ["monster-1", "monster-2"]);
   assert.deepEqual(game.monsters.map((monster) => monster.id), ["monster-1", "monster-2"]);
+  assert.equal(game.setupApplied, true);
+  assert.deepEqual(game.monsters.map((monster) => monster.location), [K("los-angeles"), K("chicago")]);
+  assert.equal(game.players.every((player) => player.researchCardIds.length === 1), true);
+});
+
+test("completed provisional setup materializes mixed Research and initial Deploy choices", () => {
+  const state = createMvpRoomGame(2, 19, "mixed-setup");
+  const definition = provisionalMvpSetupDefinition(2);
+  let setup = createSetup(definition);
+  setup = chooseMonster(setup, 0, "monster-1");
+  setup = chooseMonster(setup, 1, "monster-2");
+  setup = chooseBranch(setup, 1, "Army");
+  setup = chooseBranch(setup, 0, "Navy");
+  setup = chooseLair(setup, 0, definition.lairsByMonster["monster-1"]![0]!);
+  setup = chooseLair(setup, 1, definition.lairsByMonster["monster-2"]![0]!);
+  const navyUnit = state.units.find((unit) => unit.branch === "Navy" && unit.location === "record-tile")!;
+  const navyBase = Object.values(boardForState(state).hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === "Navy"))!.key;
+  setup = chooseStartingChoice(setup, 0, { kind: "deploy", unitId: navyUnit.id, destination: navyBase });
+  setup = chooseStartingChoice(setup, 1, { kind: "research" });
+  state.setupState = setup;
+
+  const applied = applyCompletedSetup(state);
+  assert.equal(applied.setupApplied, true);
+  assert.equal(applied.units.find((unit) => unit.id === navyUnit.id)?.location, navyBase);
+  assert.equal(applied.units.find((unit) => unit.id === navyUnit.id)?.ownerPlayer, 0);
+  assert.equal(applied.players[1]?.researchCardIds.length, 1);
+  assert.equal(applied.phase, "move");
 });
 
 test("a monster can disappear, return to its assigned lair, and consume the return Move step", () => {

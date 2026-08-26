@@ -71,6 +71,7 @@ import { AttentionBanner } from "./components/AttentionBanner";
 import { playSound, type SoundCategory } from "./audio";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
+import "./fullscreen-shell.css";
 
 const MAP_ZOOM_MIN = 0.9;
 const MAP_ZOOM_MAX = 1.75;
@@ -703,14 +704,20 @@ function App() {
       (online && participant?.playerIndex !== setupSeat.playerIndex)
     )
       return;
-    const startingChoice =
-      kind === "research"
-        ? ({ kind } as const)
-        : ({
-            kind,
-            unitId: "development-unit-0",
-            destination: "denver",
-          } as const);
+    const startingChoice = kind === "research"
+      ? ({ kind } as const)
+      : (() => {
+          const branch = setupSeat.branch;
+          const board = boardForGame(activeGame);
+          const unit = activeGame.units.find((candidate) => candidate.branch === branch && candidate.location === "record-tile" && !activeGame.removedUnitIds.includes(candidate.id));
+          const destination = board && branch
+            ? Object.values(board.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch))?.key
+            : undefined;
+          if (!branch || !unit || !destination) {
+            throw new Error("This branch has no provisional base available for initial deployment.");
+          }
+          return { kind, unitId: unit.id, destination } as const;
+        })();
     if (online && session && room) {
       try {
         setRoom(
