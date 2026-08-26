@@ -128,10 +128,11 @@ try {
       playableTiles: document.querySelectorAll(".hex-tile, .location").length,
       unresolvedLabels: [...document.querySelectorAll("[aria-label]")].filter((node) => /Unresolved/i.test(node.getAttribute("aria-label") ?? "")).length,
       denseStackCounts: [...document.querySelectorAll('.dense-stack-fixture')].map((fixture) => Number(fixture.dataset.stackCount)),
+      denseStackImagesLoaded: [...document.querySelectorAll('.dense-stack-fixture img')].every((piece) => piece.complete && piece.naturalWidth > 0),
       denseStackContained: [...document.querySelectorAll('.dense-stack-fixture')].every((fixture) => [...fixture.querySelectorAll('img')].every((piece) => { const outer = fixture.getBoundingClientRect(); const inner = piece.getBoundingClientRect(); return inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom; })),
     };
   })()`);
-  if (!result || result.count !== 254 || result.rows !== 13 || result.minimumSameRowGap <= 0 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0 || JSON.stringify(result.denseStackCounts) !== JSON.stringify([1,2,3,4,5,6,7,8]) || !result.denseStackContained) {
+  if (!result || result.count !== 254 || result.rows !== 13 || result.minimumSameRowGap <= 0 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0 || JSON.stringify(result.denseStackCounts) !== JSON.stringify([1,2,3,4,5,6,7,8]) || !result.denseStackImagesLoaded || !result.denseStackContained) {
     throw new Error(`Board review browser contract failed: ${JSON.stringify(result)}`);
   }
   if (screenshotPath) {
