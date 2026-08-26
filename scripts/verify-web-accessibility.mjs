@@ -55,6 +55,7 @@ const requiredSourceMarkers = [
   ["canonical adjacency styling", /activeNeighbours\.has\(placeKey\)/],
   ["selected piece contextual tray", /className="piece-detail-tray"[\s\S]*Selected Piece details|className="piece-detail-tray"[\s\S]*SELECTED PIECE/],
   ["hex hover and focus explanations", /title=\{tooltipText\}/],
+  ["consistent metric icon treatment", /className="metric-icon"[\s\S]*aria-hidden="true"/],
   ["viewport-fitted gameplay shell", /className=\{`game-screen/],
   ["on-demand game details toggle", /aria-controls="game-side-panel"/],
   ["named game controls panel", /id="game-side-panel" className="game-side-panel" aria-label="Game controls and information"/],
