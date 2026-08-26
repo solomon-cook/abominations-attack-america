@@ -33,6 +33,6 @@ The asset gate also checks every manifest-declared PNG/WebP pair and fails if th
 
 The home screen exposes `Review full board shell`, and the development match now also renders the same 254 separated cream candidate faces as a disabled visual shell. Nine canonical development spaces are overlaid at their fixture positions and remain the only enabled gameplay destinations. The read-only review surface supports keyboard/click selection of an individual face and exposes its canonical key, coordinate, verification state, feature state, and source references. Neither surface promotes unresolved physical content to playable board data.
 
-On 2026-08-26, a fresh local browser session opened that control and verified 254 rendered `.board-review-hex` faces, the source-gated warning, and a landscape review canvas. The screenshot is evidence of candidate geometry only; it is not physical-board acceptance or MVP playability.
+On 2026-08-26, fresh Chrome sessions opened that control at 1280×720, 834×1112, and 390×844 and verified 254 rendered `.board-review-hex` faces, 13 rows, the cream-face treatment, cell containment, individual-cell inspection, no playable tiles, no unresolved labels, and no horizontal overflow. The screenshot and runtime results are evidence of candidate geometry only; they are not physical-board acceptance or MVP playability.
 
 Promotion requires the failed/source-gated rows above to be replaced with reviewed board data, followed by human sign-off and a regenerated immutable board content hash.
