@@ -69,3 +69,12 @@ the review cannot silently use a stale development server. The deterministic
 Chrome hashes were intentionally regenerated after this visible UI fix. This
 remains development-fixture evidence; human visual acceptance and physical
 board fidelity remain open.
+
+On 2026-08-26, a live in-app-browser review of `Review full board shell` at the
+desktop viewport confirmed 254 separated cream faces in 13 staggered rows, with
+flat-top landscape orientation, consistent visible seams, no visible same-row
+overlap, and no `Unresolved` labels rendered on the faces. The same review also
+confirmed the remaining source-fidelity defect: the shell is a neutral
+rectangle, not the physical board's authored coast/sea cut-outs, feature art,
+labels, barriers, or off-board boundary. The surface correctly presents this as
+read-only review tooling and does not expose it as MVP play.
