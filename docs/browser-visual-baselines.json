@@ -2,10 +2,9 @@
   "desktop": {
     "width": 1280,
     "height": 720,
-    "sha256": "7fc428e7f1b285429cbf371c1e6ebd00ab4dcdeae1bd4dbdcf357d95376b54c5",
+    "sha256": "78bf73c66bb7fbef88cf30fa7b5754c040d565c7e90fdaec687b8646e3f72188",
     "smoke": {
       "ok": true,
-      "url": "http://127.0.0.1:5177/",
       "viewport": "1280x720",
       "setup": "complete",
       "accessibleControls": "verified",
@@ -24,10 +23,9 @@
   "tablet": {
     "width": 834,
     "height": 1112,
-    "sha256": "dddb5d36272047234d30737bdae0d5016e0de7b61b2c32af3fa95f67be51d3da",
+    "sha256": "15919c9aa8709040bed242fe9c58060fa25c665dd5cde9d9e61ec432624bae9c",
     "smoke": {
       "ok": true,
-      "url": "http://127.0.0.1:5177/",
       "viewport": "834x1112",
       "setup": "complete",
       "accessibleControls": "verified",
@@ -46,10 +44,9 @@
   "mobile": {
     "width": 390,
     "height": 844,
-    "sha256": "56d21ef26c9bff2c4d87c12a82c01ca4be22c5c03890015585cc9e375d93e7a5",
+    "sha256": "71a0758310d0273542c86141449baf26c52da3f21040f966a318b65897ec4cb8",
     "smoke": {
       "ok": true,
-      "url": "http://127.0.0.1:5177/",
       "viewport": "390x844",
       "setup": "complete",
       "accessibleControls": "verified",

@@ -1,13 +1,27 @@
 import { spawn } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import WebSocket from "ws";
 import { chromePath } from "./chrome-path.mjs";
 
-const port = Number(process.env.BROWSER_LOCAL_PORT ?? 5177);
 const ownsServer = !process.env.BROWSER_TEST_URL;
+const freePort = () => new Promise((resolve, reject) => {
+  const probe = createNetServer();
+  probe.once("error", reject);
+  probe.listen(0, "127.0.0.1", () => {
+    const address = probe.address();
+    if (!address || typeof address === "string") {
+      probe.close();
+      reject(new Error("Could not determine an ephemeral browser-test port."));
+      return;
+    }
+    probe.close((error) => error ? reject(error) : resolve(address.port));
+  });
+});
+const port = Number(process.env.BROWSER_LOCAL_PORT ?? (ownsServer ? await freePort() : 5177));
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${port}/`;
 const server = ownsServer
   ? spawn(process.execPath, [join(process.cwd(), "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(port)], { cwd: join(process.cwd(), "apps/web"), stdio: ["ignore", "pipe", "pipe"] })
@@ -19,7 +33,7 @@ const viewportWidth = Number(process.env.BROWSER_TEST_WIDTH ?? 1280);
 const viewportHeight = Number(process.env.BROWSER_TEST_HEIGHT ?? 720);
 const viewport = `${viewportWidth}x${viewportHeight}`;
 const screenshotPath = process.env.BROWSER_TEST_SCREENSHOT_PATH;
-const debugPort = Number(process.env.BROWSER_DEBUG_PORT ?? 9229);
+const debugPort = Number(process.env.BROWSER_DEBUG_PORT ?? await freePort());
 const profile = await mkdtemp(join(tmpdir(), "abominations-browser-"));
 const chrome = spawn(chromePath, [
   "--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", `--window-size=${viewport}`,
@@ -35,12 +49,13 @@ if (server) {
       ready = true;
       break;
     } catch {
+      if (server.exitCode !== null) break;
       await wait(100);
     }
   }
   if (!ready) {
     server.kill("SIGTERM");
-    throw new Error(`Vite did not become ready at ${url}.\n${serverOutput}`);
+    throw new Error(`Vite did not become ready at ${url}; the child may have exited or failed to bind.\n${serverOutput}`);
   }
 }
 const debugUrl = `http://127.0.0.1:${debugPort}/json/list`;

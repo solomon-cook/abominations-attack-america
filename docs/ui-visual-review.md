@@ -55,3 +55,13 @@ runtime smoke now fail if either overlay is reintroduced. The home-screen hero
 still provides the separate art-led title treatment; the gameplay map is kept
 to the candidate faces, authored development pins, pieces, and explicit source
 status.
+
+On 2026-08-26, the supported Chrome screenshots were reviewed at desktop,
+tablet, and mobile sizes. The mobile review found the compact header's flex rule
+could clip the `Open controls` action when the title wrapped; the header now
+returns to normal flow below 700px, with the action row below the title. The
+local screenshot runner also allocates isolated Vite and Chrome debug ports so
+the review cannot silently use a stale development server. The deterministic
+Chrome hashes were intentionally regenerated after this visible UI fix. This
+remains development-fixture evidence; human visual acceptance and physical
+board fidelity remain open.

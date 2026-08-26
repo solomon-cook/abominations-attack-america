@@ -41,11 +41,13 @@ try {
     const screenshotPath = join(tempDirectory, `${testCase.name}.png`);
     const output = await runCase(testCase, screenshotPath);
     const image = await readFile(screenshotPath);
+    const smoke = JSON.parse(output);
+    delete smoke.url;
     observed[testCase.name] = {
       width: testCase.width,
       height: testCase.height,
       sha256: createHash("sha256").update(image).digest("hex"),
-      smoke: JSON.parse(output),
+      smoke,
     };
   }
 
