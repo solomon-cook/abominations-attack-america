@@ -46,7 +46,7 @@ if (server) {
 }
 const debugUrl = `http://127.0.0.1:${debugPort}/json/list`;
 let page;
-for (let attempt = 0; attempt < 80; attempt += 1) {
+for (let attempt = 0; attempt < 300; attempt += 1) {
   try {
     const response = await fetch(debugUrl);
     page = (await response.json()).find((candidate) => candidate.type === "page");
