@@ -14,4 +14,4 @@ The web client enforces this boundary at startup with a capability check for Fet
 
 ## Current local evidence
 
-Chrome/Chromium runtime smoke and visual baselines pass at the checked desktop, tablet, and mobile viewports. On 2026-08-26, the local Safari 26.6.2 WebDriver service reported ready, but a bounded `POST /session` probe timed out without creating a session. Safari compatibility is therefore not claimed; retry the probe on a host where Safari Remote Automation is permitted before closing the cross-engine QA item.
+Chrome/Chromium runtime smoke and visual baselines pass at the checked desktop, tablet, and mobile viewports. `npm run browser:safari:verify` now exercises the same Vite review surface through Safari WebDriver and runs strictly in the macOS CI job. On 2026-08-26, the local Safari 26.6.2 WebDriver service reported ready, but a bounded `POST /session` probe timed out without creating a session. Safari compatibility is therefore not claimed locally; the CI job must complete on a host where Safari Remote Automation is permitted before closing the cross-engine QA item.
