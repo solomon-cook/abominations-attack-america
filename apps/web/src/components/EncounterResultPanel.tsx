@@ -23,6 +23,13 @@ function effectLabel(effect: EncounterEffect) {
   return `${effect.type} effect recorded (${amount})`;
 }
 
+function effectIcon(type: string) {
+  if (type === "health") return "♥";
+  if (type === "infamy") return "◎";
+  if (type === "stomp") return "●";
+  return "•";
+}
+
 export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped, remainingStompMarkers, challenge, mutationDraws, nextPhase }: Props) {
   if (!eventId) return null;
   return (
@@ -33,7 +40,7 @@ export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped
         {rolls.map((roll, index) => <DieCube key={`${eventId}-roll-${index}`} value={roll} label={`Encounter roll ${index + 1}: ${roll}`} />)}
       </div>}
       {effects.length > 0 ? (
-        <ul className="encounter-effects">{effects.map((effect, index) => <li key={`${eventId}-effect-${index}`}>{effectLabel(effect)}</li>)}</ul>
+        <ul className="encounter-effects">{effects.map((effect, index) => <li key={`${eventId}-effect-${index}`}><span className="metric-icon" aria-hidden="true">{effectIcon(effect.type)}</span> {effectLabel(effect)}</li>)}</ul>
       ) : choices.length === 0 ? (
         <p className="encounter-no-effect">No active encounter reward was applied; any gated or skipped effect remains recorded in the turn log.</p>
       ) : null}
@@ -47,7 +54,7 @@ export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped
         </li>)}
       </ul>}
       {typeof stomped === "boolean" && <p className="encounter-state">{stomped ? "The space consumed a Stomp marker." : "The space was already stomped; no new Stomp marker was consumed."}</p>}
-      {typeof remainingStompMarkers === "number" && <p className="encounter-state">{remainingStompMarkers} Stomp marker{remainingStompMarkers === 1 ? "" : "s"} remain; the engine enforces the Infamy cap and marker limits.</p>}
+      {typeof remainingStompMarkers === "number" && <p className="encounter-state"><span className="metric-icon" aria-hidden="true">●</span> {remainingStompMarkers} Stomp marker{remainingStompMarkers === 1 ? "" : "s"} remain; the engine enforces the Infamy cap and marker limits.</p>}
       {challenge?.declared && <p className="encounter-state">Monster Challenge: {challenge.active ? "active" : challenge.startAtEndOfTurn ? "new challenger starts at the end of this turn" : challenge.challengerMonsterId ? "challenger scheduled for their next turn" : "waiting for an eligible Challenge-site arrival"}.</p>}
       {nextPhase && <small>Next authoritative phase: {nextPhase}.</small>}
     </section>
