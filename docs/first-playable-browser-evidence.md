@@ -1,6 +1,6 @@
 # First-playable browser evidence
 
-This checklist records browser evidence separately from engine, build, and source-data verification. It is currently an evidence-in-progress artifact for the development fixture, not a release sign-off. The development fixture is not the MVP board: first-playable acceptance requires the fully filled authoritative honeycomb board.
+This checklist records browser evidence separately from engine, build, and source-data verification. It is currently an evidence-in-progress artifact for the best-guess MVP, not a verified-release sign-off. The development fixture is not the MVP board: first-playable acceptance uses the fully filled provisional honeycomb board.
 
 MVP room creation now uses `createMvpRoomGame` with the pinned 254-cell `PROVISIONAL_AUTHORITATIVE_BOARD`; both Memory and Prisma room stores use that constructor unless a test explicitly opts into `allowDevelopmentFixture`. The browser labels the board as a best-guess provisional MVP while physical source transcription remains incomplete. Strict verified-release validation still rejects provisional content.
 
