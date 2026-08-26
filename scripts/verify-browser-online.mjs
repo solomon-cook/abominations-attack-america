@@ -193,6 +193,13 @@ try {
   if (new Set(boardIdentityKeys).size !== 1 || boardIdentities[0]?.id !== "provisional-authoritative-honeycomb-board" || boardIdentities[0]?.renderedId !== boardIdentities[0]?.id || boardIdentities[0]?.renderedHash !== boardIdentities[0]?.hash) {
     throw new Error(`Online sessions did not share the pinned MVP board identity: ${JSON.stringify(boardIdentities)}`);
   }
+  const renderedBoardCells = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`(() => {
+    const cells = [...document.querySelectorAll("main.game-screen .hex-tile")];
+    return { count: cells.length, unresolvedLabels: cells.filter((cell) => cell.textContent.includes("Unresolved")).length };
+  })()`)));
+  if (renderedBoardCells.some((board) => board?.count !== 254 || board.unresolvedLabels !== 0)) {
+    throw new Error(`Online sessions did not render the complete 254-cell MVP honeycomb: ${JSON.stringify(renderedBoardCells)}`);
+  }
   const spectatorSetupControls = await spectator.evaluate(`(() => [...document.querySelectorAll(".setup-options button")].length > 0 && [...document.querySelectorAll(".setup-options button")].every((button) => button.disabled))()`);
   if (!spectatorSetupControls) throw new Error("Spectator exposed an enabled setup control.");
 
@@ -329,7 +336,7 @@ try {
   await second.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "reloaded second terminal");
   const reloadedTerminal = await second.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
   if (!reloadedTerminal) throw new Error("Reloaded second browser lost the terminal result.");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: "verified", onlineConcession: "verified", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-best-guess-honeycomb", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: "verified", onlineConcession: "verified", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
 } finally {
   await Promise.all([first?.close(), second?.close(), spectator?.close()]);
   await Promise.all([stopServer(apiServer), stopServer(webServer)]);
