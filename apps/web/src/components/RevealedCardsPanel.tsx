@@ -1,15 +1,24 @@
-import { cardDefinition, sourcedCardRule, type GameState } from "@abominations/game-engine";
+import { cardDefinition, sourcedCardRule, type GameCommand, type GameState } from "@abominations/game-engine";
 
 type Props = {
   game: GameState;
   playerIndex: number;
+  canAct: boolean;
+  runCommand: (command: GameCommand) => void | Promise<void>;
 };
 
-export function RevealedCardsPanel({ game, playerIndex }: Props) {
+export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Props) {
   const player = game.players[playerIndex];
   const isActivePlayer = playerIndex === game.currentPlayer;
   const revealedMutationCards = player?.mutationCardIds ?? [];
   const revealedResearchCards = player?.researchCardIds ?? [];
+  const pendingBattleId = game.pendingDecision && (game.pendingDecision.type === "battle-resolution" || game.pendingDecision.type === "attack-target")
+    ? game.pendingDecision.battleId
+    : undefined;
+  const pendingBattle = pendingBattleId ? game.pendingBattles.find((battle) => battle.id === pendingBattleId) : undefined;
+  const activeMonsterOwnsPendingBattle = pendingBattle?.monsterId === game.monsters[playerIndex]?.id;
+  const canUseMutation = canAct && isActivePlayer && game.phase === "fight" && Boolean(activeMonsterOwnsPendingBattle);
+  const canUseDefenseSatellites = canAct && isActivePlayer && game.phase !== "challenge" && game.phase !== "game-over" && game.pendingBattles.length === 0 && !game.pendingRetreat;
   const cardDetails = (cardId: string) => {
     const definition = cardDefinition(cardId);
     const rule = sourcedCardRule(cardId);
@@ -22,6 +31,13 @@ export function RevealedCardsPanel({ game, playerIndex }: Props) {
       : cardId === "Antimatter" || cardId === "Stabilizer Ray" || cardId === "Laser Fence"
           ? "Fight · battle setup window"
           : undefined;
+    const directAction = cardId === "Berserk" || cardId === "Son of a Monster"
+      ? canUseMutation && pendingBattleId
+        ? <button type="button" className="hand-card-play" disabled={!canUseMutation} onClick={() => void runCommand({ type: "use-mutation", cardId, battleId: pendingBattleId })}>Play {cardId}</button>
+        : undefined
+      : cardId === "Defense Satellites"
+        ? <button type="button" className="hand-card-play" disabled={!canUseDefenseSatellites} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Play Defense Satellites</button>
+        : undefined;
     return (
       <details className="hand-card" key={cardId}>
         <summary>{cardId}</summary>
@@ -30,6 +46,7 @@ export function RevealedCardsPanel({ game, playerIndex }: Props) {
           {rule ? (
             <>
               {actionWindow && <span className="hand-card-action-status">{isActivePlayer ? `Playable through current controls: ${actionWindow}` : `Playable by the active player: ${actionWindow}`}</span>}
+              {directAction}
               <div className="hand-card-meta" aria-label={`${cardId} rule metadata`}>
                 <span>Classification: {rule.classification}</span>
                 <span>Timing: {rule.timing}</span>
@@ -41,7 +58,7 @@ export function RevealedCardsPanel({ game, playerIndex }: Props) {
               </div>
               <strong>{rule.timing}</strong>
               <p>{rule.transcription}</p>
-              <small>{rule.classification === "persistent" ? "Keep this card face up while its sourced continuous effect applies." : actionWindow ? "Use the matching authoritative action in the current decision controls; the hand never issues an independent command." : "When this card is usable, the authoritative phase controls provide its legal target and confirmation."}</small>
+              <small>{rule.classification === "persistent" ? "Keep this card face up while its sourced continuous effect applies." : directAction ? "This direct action is legal in the current authoritative window." : actionWindow ? "Use the matching authoritative action in the current decision controls; the hand never issues an independent command." : "When this card is usable, the authoritative phase controls provide its legal target and confirmation."}</small>
             </>
           ) : (
             <p>Detailed timing, target, confirmation, result, and source text are not yet transcribed into the digital rules reference.</p>

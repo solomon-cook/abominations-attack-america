@@ -1131,6 +1131,8 @@ function App() {
           <RevealedCardsPanel
             game={activeGame}
             playerIndex={participant?.playerIndex ?? activeGame.currentPlayer}
+            canAct={canAct}
+            runCommand={runCommand}
           />
           <div className="card action-card">
             <TurnPrompt
