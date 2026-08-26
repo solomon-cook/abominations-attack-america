@@ -153,6 +153,7 @@ function App() {
   const [acceptedMoveAnimation, setAcceptedMoveAnimation] = useState<{ path: HexKey[]; pieceId: string; key: number } | null>(null);
   const [acceptedActionFeedback, setAcceptedActionFeedback] = useState<{ label: string; key: number } | null>(null);
   const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
+  const [focusedHexKey, setFocusedHexKey] = useState<HexKey | null>(null);
   const [retreatChoices, setRetreatChoices] = useState<Record<string, HexKey | "disappeared">>({});
   const [mapZoom, setMapZoom] = useState(1);
   const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
@@ -182,6 +183,7 @@ function App() {
   const cameraMode = mapZoom >= 1.25 ? "Tactical detail" : "Strategic overview";
   const activeBoard = boardForGame(activeGame);
   const activeBoardHex = activeBoard && isHexKey(activePlayer.location) ? activeBoard.hexes[activePlayer.location] : undefined;
+  const focusedBoardHex = focusedHexKey && activeBoard?.hexes[focusedHexKey] ? activeBoard.hexes[focusedHexKey] : activeBoardHex;
   const guardCommanderActive = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Guard Commander") ?? false;
   const availableGuardUnitId = guardCommanderActive
     ? activeGame.nationalGuard.unitIds.find((unitId) => !activeGame.units.some((unit) => unit.id === unitId))
@@ -1098,9 +1100,11 @@ function App() {
               selectedPath={selectedPath}
               hoveredPath={hoveredPath}
               selectedUnitPath={selectedUnitPath}
+              focusedHexKey={focusedHexKey}
               acceptedPath={acceptedMoveAnimation?.path ?? []}
               acceptedPieceId={acceptedMoveAnimation?.pieceId}
               acceptedAnimationKey={acceptedMoveAnimation?.key}
+              onFocusHex={setFocusedHexKey}
               onSelectUnit={(unitId) => {
                 setSelectedUnitId(unitId);
                 setSelectedPath([]);
@@ -1117,7 +1121,7 @@ function App() {
             <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
           </div>
           <AttentionBanner game={activeGame} action={action} canAct={canAct} online={online} />
-          <BoardContextTray game={activeGame} board={activeBoard} hex={activeBoardHex} />
+          <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} />
           <SelectedPieceTray
             game={activeGame}
             selectedUnitId={selectedUnitId}

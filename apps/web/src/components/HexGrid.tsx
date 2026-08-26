@@ -9,6 +9,7 @@ import {
   type HexKey,
   type BoardHex,
 } from "@abominations/game-engine";
+import { useRef } from "react";
 import { buildDisplayHexLayout } from "../board-layout";
 import { boardForGame } from "../board-pin";
 
@@ -105,16 +106,19 @@ type Props = {
   acceptedPath: readonly HexKey[];
   acceptedPieceId?: string;
   acceptedAnimationKey?: number;
+  focusedHexKey?: HexKey | null;
   onSelectUnit: (unitId: string) => void;
+  onFocusHex: (hexKey: HexKey) => void;
   onChoosePath: (destination: HexKey) => void;
   onChooseUnitPath: (destination: HexKey) => void;
   onPreviewPath: (destination: HexKey) => void;
   onClearPreview: () => void;
 };
 
-export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, onSelectUnit, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
+export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const board = boardForGame(game);
   const boardHexes = displayHexesForGame(game);
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const boardIndex = board ? buildBoardIndex(board) : undefined;
   const activeNeighbours = new Set(board && isHexKey(game.monsters.find((monster) => monster.id === activePlayerId)?.location ?? "")
     ? boardIndex?.neighbours[game.monsters.find((monster) => monster.id === activePlayerId)!.location as HexKey] ?? []
@@ -205,19 +209,60 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         const monstersHere = game.monsters.filter((monster) => monster.location === placeKey);
         const unitsHere = game.units.filter((unit) => unit.location === placeKey);
         const occupantCount = monstersHere.length + unitsHere.length;
+        const provisionalBoard = board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id;
+        const actionUnavailable = !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit);
+        const moveFocus = (direction: "left" | "right" | "up" | "down") => {
+          if (!provisionalBoard) return;
+          const origin = displayByKey.get(placeKey);
+          if (!origin) return;
+          const neighbours = (boardIndex?.neighbours[placeKey] ?? [])
+            .map((key) => ({ key, point: displayByKey.get(key) }))
+            .filter((candidate): candidate is { key: HexKey; point: { left: number; top: number } } => Boolean(candidate.point));
+          const directionVector = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[direction];
+          const ordered = neighbours
+            .map((candidate) => {
+              const dx = candidate.point.left - origin.left;
+              const dy = candidate.point.top - origin.top;
+              const forward = dx * directionVector[0] + dy * directionVector[1];
+              return { ...candidate, forward, distance: Math.abs(dx) + Math.abs(dy) };
+            })
+            .filter((candidate) => candidate.forward > 0)
+            .sort((a, b) => b.forward - a.forward || a.distance - b.distance);
+          const next = ordered[0];
+          if (!next) return;
+          onFocusHex(next.key);
+          buttonRefs.current[next.key]?.focus();
+        };
         return (
           <button
             key={hex.key}
             aria-label={`${displayName}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-hex-key={hex.key}
             data-location-name={place?.name}
+            data-stack-count={occupantCount || undefined}
             title={tooltipText}
-            disabled={(!place && board?.id !== PROVISIONAL_AUTHORITATIVE_BOARD.id) || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit)}
+            aria-disabled={actionUnavailable || (!place && !provisionalBoard) ? true : undefined}
+            disabled={(!place && !provisionalBoard) || (!provisionalBoard && actionUnavailable)}
+            tabIndex={provisionalBoard ? (placeKey === (focusedHexKey ?? (isHexKey(activePlayer?.location ?? "") ? activePlayer?.location : undefined)) ? 0 : -1) : undefined}
             className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%` }}
+            ref={(node) => { buttonRefs.current[placeKey] = node; }}
+            onFocus={() => onFocusHex(placeKey)}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowLeft" || event.key === "ArrowRight" || event.key === "ArrowUp" || event.key === "ArrowDown") {
+                event.preventDefault();
+                moveFocus(event.key.slice(5).toLowerCase() as "left" | "right" | "up" | "down");
+              }
+            }}
             onMouseEnter={() => (monsterLegal || unitLegal) && onPreviewPath(placeKey)}
             onMouseLeave={onClearPreview}
-            onClick={() => selectableUnit && !monsterLegal && !unitLegal ? onSelectUnit(selectableUnit.id) : selectedUnitId ? onChooseUnitPath(placeKey) : onChoosePath(placeKey)}
+            onClick={() => {
+              if (selectableUnit && !monsterLegal && !unitLegal) onSelectUnit(selectableUnit.id);
+              else if (monsterLegal || unitLegal) {
+                if (selectedUnitId) onChooseUnitPath(placeKey);
+                else onChoosePath(placeKey);
+              } else onFocusHex(placeKey);
+            }}
           >
             {baseArt && <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />}
             {boardArt && <img className="tile-art" src={boardArt} alt="" aria-hidden="true" loading="lazy" />}

@@ -114,7 +114,7 @@ The browser uses a generated decorative sea-and-land treatment beneath the inter
 
 ## Current geometry correction
 
-After reviewing the supplied 1280×706 comparison image, the candidate layout contract was tightened. The previous 75%-of-width horizontal pitch caused the rendered flat-top polygons to overlap. The shared layout now uses a 4.45% landscape centre pitch with narrower 4.2% faces, locks the board to a landscape aspect-ratio canvas so vertical percentage coordinates cannot compress the rows, applies only a half-pitch offset to alternating rows, and checks polygon-level interior intersections across all 254 candidate cells. `npm run web-board-layout:verify` passes this regression. A fresh local browser run at 1280×720 rendered 254 candidate faces plus nine canonical development overlays; this verifies the corrected visible honeycomb presentation, not physical-board topology or MVP promotion.
+After reviewing the supplied 1280×706 comparison image and the responsive-grid reference, the candidate layout contract was tightened. The previous 75%-of-width horizontal pitch caused the rendered flat-top polygons to overlap, and the subsequent 4.45% pitch with 4.2% faces read too sparsely. The shared layout now uses a 4.8% fixed row-slot pitch with narrower 4.6% faces, a half-slot offset on alternating rows, and a landscape aspect-ratio canvas so vertical percentage coordinates cannot compress the rows. `npm run web-board-layout:verify` checks polygon-level interior intersections across all 254 candidate cells. This verifies the corrected visible honeycomb presentation, not physical-board topology or MVP promotion.
 
 ## Preference and no-audio check
 

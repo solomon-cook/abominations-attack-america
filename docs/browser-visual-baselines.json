@@ -2,7 +2,7 @@
   "desktop": {
     "width": 1280,
     "height": 720,
-    "sha256": "eaace2727ca42ae2b28ffcbe51af1b3f37e74853bfd7e7bfcfa17b76026d8f05",
+    "sha256": "a699cd255f15be9da29b5a6fc96b7c11a05d5573d3d51a85d79d74012e733b8b",
     "smoke": {
       "ok": true,
       "viewport": "1280x720",
@@ -14,6 +14,7 @@
       "pathCancel": "verified",
       "pathConfirmation": "verified",
       "fight": "verified",
+      "fightSurface": "verified",
       "encounter": "verified",
       "deployment": "verified",
       "concessionTerminal": "verified",
@@ -23,7 +24,7 @@
   "tablet": {
     "width": 834,
     "height": 1112,
-    "sha256": "dd6bc2d81e9785a90945f8df86c8159e2863dae92770eee9beac6e69fd8316bd",
+    "sha256": "6645f28aa55d1463f7c35b06252f90d701e0c4982f8872bc5f2e486ea4383c13",
     "smoke": {
       "ok": true,
       "viewport": "834x1112",
@@ -35,6 +36,7 @@
       "pathCancel": "verified",
       "pathConfirmation": "verified",
       "fight": "verified",
+      "fightSurface": "verified",
       "encounter": "verified",
       "deployment": "verified",
       "concessionTerminal": "verified",
@@ -44,7 +46,7 @@
   "mobile": {
     "width": 390,
     "height": 844,
-    "sha256": "b1335018ba7526ae317db0781182106e9cdea17aaec3a1f4b1b584709e20ea47",
+    "sha256": "f253069deecbf1bba8570bee5399bf6c11e1687674c5c3741f548ed2f4821912",
     "smoke": {
       "ok": true,
       "viewport": "390x844",
@@ -56,6 +58,7 @@
       "pathCancel": "verified",
       "pathConfirmation": "verified",
       "fight": "verified",
+      "fightSurface": "verified",
       "encounter": "verified",
       "deployment": "verified",
       "concessionTerminal": "verified",

@@ -32,13 +32,13 @@ for (let row = 0; row < 13; row += 1) {
 const evenStart = rows.get(0)![0]!.left;
 const oddStart = rows.get(1)![0]!.left;
 assert.ok(Math.abs(oddStart - evenStart - DISPLAY_TILE_STEP_PERCENT / 2) < 0.001, "odd rows must be offset by half a layout step");
-assert.ok(layout.every((entry) => entry.left >= DISPLAY_BOARD_LEFT_PERCENT && entry.left <= 95), "horizontal centers must remain inside the board");
+assert.ok(layout.every((entry) => entry.left >= DISPLAY_BOARD_LEFT_PERCENT && entry.left <= 100 - DISPLAY_TILE_WIDTH_PERCENT / 2), "horizontal centers must remain inside the board");
 assert.ok(layout.every((entry) => entry.top >= DISPLAY_BOARD_TOP_PERCENT && entry.top <= DISPLAY_BOARD_TOP_PERCENT + DISPLAY_BOARD_TOP_SPAN_PERCENT), "vertical centers must remain inside the board");
 
 const tileHeight = DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO;
 const rowStep = DISPLAY_BOARD_TOP_SPAN_PERCENT / 12;
 assert.ok(DISPLAY_TILE_ASPECT_RATIO > 1, "flat-top landscape tiles must be wider than they are tall");
-assert.ok(Math.abs(rowStep - tileHeight * DISPLAY_BOARD_ASPECT_RATIO) < 0.01, `row step ${rowStep.toFixed(2)} must match the canvas-scaled tile height ${(tileHeight * DISPLAY_BOARD_ASPECT_RATIO).toFixed(2)} for shared horizontal edges`);
+assert.ok(Math.abs(rowStep - tileHeight * DISPLAY_BOARD_ASPECT_RATIO * 0.75) < 0.01, `row step ${rowStep.toFixed(2)} must match the 0.75 hex-grid interlock advance ${(tileHeight * DISPLAY_BOARD_ASPECT_RATIO * 0.75).toFixed(2)}`);
 assert.ok(DISPLAY_TILE_STEP_PERCENT > DISPLAY_TILE_WIDTH_PERCENT, "face width must be smaller than the row pitch so cream seams remain visible");
 assert.ok(DISPLAY_TILE_STEP_PERCENT - DISPLAY_TILE_WIDTH_PERCENT >= 0.2, "seam must remain visible at the rendered map scale");
 assert.ok(DISPLAY_BOARD_LEFT_PERCENT - DISPLAY_TILE_WIDTH_PERCENT / 2 > 0, "left tile bounds must remain inside the map");
@@ -96,7 +96,7 @@ for (let firstIndex = 0; firstIndex < polygons.length; firstIndex += 1) {
 const styles = readFileSync(new URL("../apps/web/src/styles.css", import.meta.url), "utf8");
 const renderedHexStyles = [...styles.matchAll(/\.hex-tile\{[^}]+\}/g)];
 const renderedHexStyle = renderedHexStyles.at(-1)?.[0] ?? "";
-assert.match(renderedHexStyle, /width:4\.2%/,
+assert.match(renderedHexStyle, /width:4\.6%/,
   "rendered candidate faces must use the narrower cream-face width so neighbouring faces remain separated");
 assert.match(renderedHexStyle, /aspect-ratio:1\.1547005/,
   "rendered candidate faces must retain the flat-top landscape aspect ratio");
