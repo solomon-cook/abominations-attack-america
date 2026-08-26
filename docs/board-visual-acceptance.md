@@ -29,6 +29,8 @@ This record compares the supplied browser reconstruction against the photographe
 
 The candidate geometry is now validated by `npm run web-board-layout:verify`, and the responsive source contract guards the aspect-ratio canvas, action-bar placement, and fixture-pin treatment. The physical-board checks intentionally remain open: the source photograph shows enough to establish the filled honeycomb and irregular water boundary, but not enough to safely assign every printed rule datum and edge to a stable coordinate without aligned cell-level review.
 
+The asset gate also checks every manifest-declared PNG/WebP pair and fails if the WebP derivative is missing or not smaller than its source. This protects the cream-face and board-art delivery path from silently regressing to oversized source assets; it does not establish final art licensing or physical-board fidelity.
+
 The home screen exposes `Review full board shell`, and the development match now also renders the same 254 separated cream candidate faces as a disabled visual shell. Nine canonical development spaces are overlaid at their fixture positions and remain the only enabled gameplay destinations. The read-only review surface supports keyboard/click selection of an individual face and exposes its canonical key, coordinate, verification state, feature state, and source references. Neither surface promotes unresolved physical content to playable board data.
 
 On 2026-08-26, a fresh local browser session opened that control and verified 254 rendered `.board-review-hex` faces, the source-gated warning, and a landscape review canvas. The screenshot is evidence of candidate geometry only; it is not physical-board acceptance or MVP playability.

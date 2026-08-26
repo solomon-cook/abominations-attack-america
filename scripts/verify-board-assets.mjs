@@ -1,4 +1,4 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,6 +7,9 @@ const assetRoot = resolve(scriptDirectory, "../apps/web/public/assets/board");
 const cardAssetRoot = resolve(scriptDirectory, "../apps/web/public/assets/cards");
 const monsterAssetRoot = resolve(scriptDirectory, "../apps/web/public/assets/monsters");
 const diceAssetRoot = resolve(scriptDirectory, "../apps/web/public/assets/dice");
+let optimizedPairs = 0;
+let sourceBytes = 0;
+let optimizedBytes = 0;
 
 async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
@@ -48,7 +51,15 @@ async function checkManifest(directory, manifestName = "manifest.json") {
     await assertFile(sourcePath, "Source asset");
     const extension = sourceFile.toLowerCase().endsWith(".png") ? ".webp" : null;
     if (extension && manifest.preferredExtension === extension) {
-      await assertFile(sourcePath.slice(0, -4) + extension, "Optimized asset");
+      const optimizedPath = sourcePath.slice(0, -4) + extension;
+      await assertFile(optimizedPath, "Optimized asset");
+      const [sourceStats, optimizedStats] = await Promise.all([stat(sourcePath), stat(optimizedPath)]);
+      if (optimizedStats.size >= sourceStats.size) {
+        throw new Error(`Optimized asset is not smaller than its source: ${relative(assetRoot, optimizedPath)} (${optimizedStats.size} >= ${sourceStats.size} bytes)`);
+      }
+      optimizedPairs += 1;
+      sourceBytes += sourceStats.size;
+      optimizedBytes += optimizedStats.size;
     }
   }
 }
@@ -89,4 +100,5 @@ await assertFile(join(diceAssetRoot, "README.md"), "Dice asset provenance README
 
 const topLevelEntries = await readdir(assetRoot);
 if (!topLevelEntries.includes("README.md")) throw new Error("Board asset provenance README is missing");
-console.log("Board, card, monster, and cream die-face asset manifests verified.");
+const savedBytes = sourceBytes - optimizedBytes;
+console.log(`Board, card, monster, and cream die-face asset manifests verified (${optimizedPairs} PNG/WebP pairs; ${savedBytes} bytes saved by WebP derivatives).`);

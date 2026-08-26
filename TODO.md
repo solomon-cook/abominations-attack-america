@@ -37,7 +37,7 @@ Useful source documents:
 | Spectators | Local projection verified | No-login spectators can join and read a room; hidden-information redaction and disabled setup/move controls are covered locally, while complete manual UX and deployed-browser acceptance remain open. |
 | Rules research | Strong reference base | A consolidated rules reference and component catalogue exist, but several board, record-tile, and card facts remain unresolved. |
 | Board | MVP blocker | A staggered 13-row visual lattice (alternating 20/19 cells) and several rule-space markers exist, but the fully filled honeycomb board is not yet authoritatively transcribed, validated, or used for MVP play. |
-| Military art | Foundation exists | Original/generated transparent military sprites and a manifest exist; optimized board tiles, military states, and reference photographs are manifest-checked, while completeness, consistency, attribution, and final licensing still require review. |
+| Military art | Foundation exists | Original/generated transparent military sprites and a manifest exist; optimized board tiles, military states, and reference photographs are manifest-checked with a source-size regression guard, while completeness, consistency, attribution, and final licensing still require review. |
 | Automated checks | Broad local foundation | Engine/API tests, deterministic properties/fuzzing, typechecks, builds, catalogue/source contracts, responsive/accessibility contracts, Chrome local/online/browser-review harnesses, bounded API load, and projection checks pass locally; full source rules, physical-board promotion, cross-engine/manual acceptance, managed production, and release evidence remain open. |
 
 ---
