@@ -38,8 +38,21 @@ const command = (method, params = {}) => new Promise((resolve, reject) => {
 });
 await command("Page.enable");
 await command("Runtime.enable");
+await command("Accessibility.enable");
 await command("Page.navigate", { url });
 const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
+const accessibilityTree = async () => (await command("Accessibility.getFullAXTree")).nodes ?? [];
+const axValue = (entry) => typeof entry?.value === "object" ? entry.value.value : entry?.value;
+const axText = (node) => ({
+  role: axValue(node.role) ?? "",
+  name: axValue(node.name) ?? "",
+});
+const assertAccessibility = async (label, checks) => {
+  const nodes = (await accessibilityTree()).map(axText);
+  for (const check of checks) {
+    if (!nodes.some(check)) throw new Error(`Accessibility tree missing ${label}: ${check.description ?? "required semantic"}.`);
+  }
+};
 const waitFor = async (expression, label) => {
   for (let attempt = 0; attempt < 120; attempt += 1) {
     if (await evaluate(expression)) return;
@@ -71,14 +84,26 @@ const phase = () => evaluate(`document.querySelector(".action-card h2")?.textCon
 
 try {
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Run temporary victory test")`, "home screen");
+  await assertAccessibility("home", [
+    Object.assign((node) => node.role === "main", { description: "main landmark" }),
+    Object.assign((node) => node.role === "button" && node.name === "Run temporary victory test", { description: "temporary victory control" }),
+  ]);
   await activate("(element) => element.textContent.trim() === \"Run temporary victory test\"", "temporary victory start");
   await waitFor(`!document.querySelector(".setup-panel") && document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "temporary victory scenario");
+  await assertAccessibility("Move phase", [
+    Object.assign((node) => node.role === "heading" && node.name === "Move", { description: "Move heading" }),
+    Object.assign((node) => node.role === "button" && /San Francisco/.test(node.name), { description: "named San Francisco hex control" }),
+    Object.assign((node) => /Match status/i.test(node.name), { description: "named match status live region" }),
+  ]);
 
   const route = ["San Francisco", "Denver", "Seattle", "Chicago", "Infamy Site", "New York", "Los Angeles"];
   for (const destination of route) {
     await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, `${destination} Move phase`);
     await activate(`(element) => element.matches(".hex-tile.legal:not(:disabled)") && element.getAttribute("data-location-name") === ${JSON.stringify(destination)}`, `${destination} destination`);
     await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm monster move" && !button.disabled && button.getBoundingClientRect().width > 0)`, `${destination} path confirmation control`);
+    await assertAccessibility(`${destination} path`, [
+      Object.assign((node) => node.role === "button" && node.name === "Confirm monster move", { description: "named movement confirmation" }),
+    ]);
     await activate("(element) => element.tagName === \"BUTTON\" && element.textContent.trim() === \"Confirm monster move\" && !element.disabled && element.getBoundingClientRect().width > 0", `${destination} path confirmation`);
     await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${destination} movement result`);
     if (await phase() === "Encounter") {
@@ -86,6 +111,9 @@ try {
       for (let attempt = 0; attempt < 4 && await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Encounter"`); attempt += 1) {
         await activate("(element) => element.matches(\".action-dock .action-dock-secondary\") && element.getBoundingClientRect().width > 0", `${destination} open encounter controls`);
         await waitFor(`!![...document.querySelectorAll(".action-card button")].find((button) => !button.disabled && button.getBoundingClientRect().width > 0)`, `${destination} encounter control`);
+        await assertAccessibility(`${destination} encounter`, [
+          Object.assign((node) => node.role === "button" && /Resolve encounter|Take the city Health benefit|Take 2 Infamy instead|Take /.test(node.name), { description: "named encounter decision" }),
+        ]);
         await activate("(element) => element.matches(\".action-card button:not(:disabled)\") && element.getBoundingClientRect().width > 0", `${destination} encounter control`);
         await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${destination} encounter result`);
       }
@@ -100,7 +128,11 @@ try {
   await waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "temporary victory terminal phase");
   const terminal = await evaluate(`Boolean(document.querySelector(".victory-summary")) && /temporary|development/i.test(document.body.textContent ?? "")`);
   if (!terminal) throw new Error("Keyboard playthrough did not expose its terminal summary.");
-  console.log(JSON.stringify({ ok: true, url, input: "keyboard-tab-space", route, terminal: "verified" }));
+  await assertAccessibility("terminal", [
+    Object.assign((node) => node.role === "heading" && /^Victory · /.test(node.name), { description: "Victory heading" }),
+    Object.assign((node) => node.role === "button" && node.name === "Start another local playtest", { description: "terminal restart control" }),
+  ]);
+  console.log(JSON.stringify({ ok: true, url, input: "keyboard-tab-space", route, accessibilityTree: "verified", terminal: "verified" }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");
