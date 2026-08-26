@@ -55,6 +55,7 @@ import { TurnProgress } from "./components/TurnProgress";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
 import { HomeScreen } from "./components/HomeScreen";
+import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
@@ -131,6 +132,7 @@ function App() {
   const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
   const [onboardingOpen, setOnboardingOpen] = useState(() => safeStorageGet("abominations-onboarding-seen") !== "1");
   const [homeRulesOpen, setHomeRulesOpen] = useState(false);
+  const [boardReviewOpen, setBoardReviewOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [gamePanelOpen, setGamePanelOpen] = useState(false);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
@@ -817,6 +819,9 @@ function App() {
     );
   }
 
+  if (boardReviewOpen) {
+    return <BoardReview onClose={() => setBoardReviewOpen(false)} />;
+  }
   if (!online && !localPlaytestStarted) {
     return (
       <HomeScreen
@@ -838,6 +843,7 @@ function App() {
         rulesOpen={homeRulesOpen}
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
         onStartLocal={resetLocal}
+        onOpenBoardReview={() => setBoardReviewOpen(true)}
       />
     );
   }
