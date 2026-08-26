@@ -242,8 +242,7 @@ try {
   })()`);
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "path confirmation after cancel");
   await clickButton("Confirm path");
-  await wait(0);
-  if (!await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Waiting for server…"`)) throw new Error("Local browser smoke did not expose the pending-action loading state.");
+  await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Waiting for server…"`, "pending-action loading state");
   await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "movement result");
   const afterMove = await phase();
   if (!afterMove) throw new Error("No phase prompt remained after confirming movement.");
