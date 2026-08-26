@@ -792,7 +792,7 @@ export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
   const boardIndex = buildBoardIndex(board);
   const unit = state.units.find((candidate) => candidate.id === unitId);
   const movedPieceIds = state.movedPieceIds ?? [];
-  const guardControlled = unit?.branch === "National Guard" && state.players[state.currentPlayer]?.researchCardIds.includes("Guard Commander");
+  const guardControlled = unit?.branch === "National Guard" && researchContinuousEffects(state, state.currentPlayer).canControlNationalGuard;
   if (!unit || !isHexKey(unit.location) || (!guardControlled && unit.ownerPlayer !== state.currentPlayer) || movedPieceIds.includes(unitId) || !Number.isInteger(unit.move) || unit.move <= 0) return [];
   const paths: HexKey[][] = [];
   const visit = (path: HexKey[]) => {
@@ -872,7 +872,7 @@ export function moveUnit(state: GameState, unitId: string, path: string[]): Game
   const canonical = canonicalPath(path, board);
   const destination = canonical?.at(-1);
   const movedPieceIds = state.movedPieceIds ?? [];
-  const guardControlled = unit?.branch === "National Guard" && state.players[state.currentPlayer]?.researchCardIds.includes("Guard Commander");
+  const guardControlled = unit?.branch === "National Guard" && researchContinuousEffects(state, state.currentPlayer).canControlNationalGuard;
   const controlsUnit = unit && (unit.ownerPlayer === state.currentPlayer || guardControlled);
   const legalPath = Boolean(unit && canonical && controlsUnit && destination && canonical.length >= 2 && canonical[0] === unit.location && !movedPieceIds.includes(unitId) && canonical.length - 1 <= effectiveUnitMove(state, unit) && canonical.every((space, index) => index === 0 || boardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(board, canonical, unit.movement));
   const blockedByMonster = unit?.movement !== "fly" && (canonical ?? []).slice(1, -1).some((space) => occupantsAt(state, space).monsters.length > 0);
@@ -1074,8 +1074,31 @@ function monsterPlayerIndex(state: Pick<GameState, "monsters">, monster: Monster
   return state.monsters.findIndex((candidate) => candidate.id === monster.id);
 }
 
+interface ResearchContinuousEffects {
+  readonly moveBonus: number;
+  readonly extraDeployments: number;
+  readonly canControlNationalGuard: boolean;
+  readonly canDeployNationalGuard: boolean;
+}
+
+/**
+ * Compose the independently sourced continuous Research effects in one place.
+ * One-use, triggered, and source-gated Research cards stay at their explicit
+ * timing boundaries rather than being inferred into this projection.
+ */
+function researchContinuousEffects(state: Pick<GameState, "players">, playerIndex: number): ResearchContinuousEffects {
+  const cards = state.players[playerIndex]?.researchCardIds ?? [];
+  const canControlNationalGuard = cards.includes("Guard Commander");
+  return {
+    moveBonus: cards.includes("Fusion Cells") ? 1 : 0,
+    extraDeployments: cards.includes("2nd Generation") ? 1 : 0,
+    canControlNationalGuard,
+    canDeployNationalGuard: canControlNationalGuard,
+  };
+}
+
 function effectiveUnitMove(state: Pick<GameState, "players">, unit: MilitaryUnit): number {
-  return unit.move + (unit.ownerPlayer !== undefined && state.players[unit.ownerPlayer]?.researchCardIds.includes("Fusion Cells") ? 1 : 0);
+  return unit.move + (unit.ownerPlayer === undefined ? 0 : researchContinuousEffects(state, unit.ownerPlayer).moveBonus);
 }
 
 function effectiveMonsterMove(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
@@ -1877,9 +1900,10 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   const guardDeployment = requested?.unitId?.startsWith("national-guard-") ?? false;
   const xFighterDeployment = requested?.unitId?.startsWith("x-fighter-") ?? false;
   const allowanceDefinition = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === branch);
-  const extraDeployment = next.players[next.currentPlayer]?.researchCardIds.includes("2nd Generation") ? 1 : 0;
+  const researchEffects = researchContinuousEffects(next, next.currentPlayer);
+  const extraDeployment = researchEffects.extraDeployments;
   const allowance = (allowanceDefinition?.ownOrGuardUnits ?? 0) + (guardDeployment ? allowanceDefinition?.additionalNationalGuardUnits ?? 0 : 0) + extraDeployment;
-  if (guardDeployment && !next.players[next.currentPlayer]?.researchCardIds.includes("Guard Commander")) throw new GameDomainError("ILLEGAL_COMMAND", "Only the player with the Guard Commander card can deploy National Guard units.");
+  if (guardDeployment && !researchEffects.canDeployNationalGuard) throw new GameDomainError("ILLEGAL_COMMAND", "Only the player with the Guard Commander card can deploy National Guard units.");
   if (next.deploymentsThisTurn >= allowance) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} deployment allowance is exhausted; pass Deploy or draw Research when that source rule is implemented.`);
   const baseHex = Object.values(board.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch));
   const destination = guardDeployment

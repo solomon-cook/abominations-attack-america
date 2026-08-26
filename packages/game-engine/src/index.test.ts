@@ -1047,6 +1047,33 @@ test("Fusion Cells adds one Move to the cardholder's unit selectors and commands
   assert.equal(moved.state.units.find((unit) => unit.id === unitId)?.location, longestPath.at(-1));
 });
 
+test("continuous Research effects compose through the shared projection", () => {
+  const state = createGame(2, 0);
+  state.players[0].researchCardIds = ["Fusion Cells", "2nd Generation", "Guard Commander"];
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  state.deploymentsThisTurn = 2;
+  state.deploymentDestinations = [K("chicago")];
+
+  const result = applyCommand(state, { type: "deploy", destination: K("denver") });
+  assert.equal(result.state.deploymentsThisTurn, 3);
+
+  const guard = {
+    ...result.state.units[0],
+    id: "research-projection-guard",
+    branch: "National Guard" as const,
+    unitTypeId: "national-guard-tank",
+    ownerPlayer: undefined,
+    location: K("denver"),
+    move: 3,
+    movement: "land-only" as const,
+  };
+  result.state.units.push(guard);
+  result.state.phase = "move";
+  result.state.currentPlayer = 0;
+  assert.ok(legalUnitPaths(result.state, guard.id).some((path) => path.join(">") === `${K("denver")}>${K("chicago")}`));
+});
+
 test("occupancy is derived from positions and supports shared spaces", () => {
   const state = createGame(2);
   state.units[0].location = state.monsters[0].location;
