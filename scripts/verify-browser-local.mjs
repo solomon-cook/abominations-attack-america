@@ -66,7 +66,10 @@ if (server) {
 }
 const debugUrl = `http://127.0.0.1:${debugPort}/json/list`;
 let page;
-for (let attempt = 0; attempt < 300; attempt += 1) {
+// Edge can take longer than the default Linux Chromium startup window to
+// expose its first DevTools page on a shared CI runner. Keep the browser
+// assertions unchanged, but allow a bounded 60-second discovery period.
+for (let attempt = 0; attempt < 600; attempt += 1) {
   try {
     const response = await fetch(debugUrl);
     const pages = await response.json();
