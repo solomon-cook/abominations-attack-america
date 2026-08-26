@@ -20,6 +20,7 @@ type Props = {
   rolls: readonly number[];
   attacks: readonly ChallengeAttack[];
   victoryType?: string;
+  onClose?: () => void;
 };
 
 const monsterAsset = (name?: string) => {
@@ -29,12 +30,13 @@ const monsterAsset = (name?: string) => {
     : undefined;
 };
 
-export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHealth, loserWeighIn, rolls, attacks, victoryType }: Props) {
+export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHealth, loserWeighIn, rolls, attacks, victoryType, onClose }: Props) {
   if (!eventId) return null;
   const winnerAsset = monsterAsset(winnerName);
   const defeatedAsset = monsterAsset(defeatedName);
   return (
-    <section className="challenge-duel-panel" key={eventId} aria-live="polite" aria-label="Recorded Monster Challenge duel">
+    <section className={`challenge-duel-panel ${onClose ? "challenge-duel-fullscreen" : ""}`} key={eventId} aria-live="polite" aria-label="Recorded Monster Challenge duel">
+      {onClose && <button type="button" className="challenge-duel-return" onClick={onClose}>Return to board</button>}
       <div className="challenge-duel-heading">
         <span className="label">MONSTER CHALLENGE</span>
         <strong>{victoryType === "monster-challenge" ? "King of the Giant Monsters" : "Authoritative duel result"}</strong>

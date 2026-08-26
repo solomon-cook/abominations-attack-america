@@ -158,6 +158,7 @@ function App() {
   const [onboardingOpen, setOnboardingOpen] = useState(() => safeStorageGet("abominations-onboarding-seen") !== "1");
   const [homeRulesOpen, setHomeRulesOpen] = useState(false);
   const [boardReviewOpen, setBoardReviewOpen] = useState(false);
+  const [challengeDuelOpen, setChallengeDuelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [gamePanelOpen, setGamePanelOpen] = useState(false);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
@@ -264,6 +265,9 @@ function App() {
     : [];
   const lastEncounterEvent = [...activeGame.eventLog].reverse().find((entry) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required"].includes(entry.action));
   const lastChallengeEvent = [...activeGame.eventLog].reverse().find((entry) => entry.action === "challenge.resolved");
+  useEffect(() => {
+    if (lastChallengeEvent?.id) setChallengeDuelOpen(true);
+  }, [lastChallengeEvent?.id]);
   const challengeRolls = Array.isArray(lastChallengeEvent?.detail.rolls)
     ? lastChallengeEvent.detail.rolls.filter((roll): roll is number => typeof roll === "number")
     : [];
@@ -1338,6 +1342,21 @@ function App() {
           <LogPanel eventLog={eventLog} log={log} />
         </aside>
       </section>
+      {challengeDuelOpen && lastChallengeEvent && (
+        <div className="challenge-duel-overlay" role="dialog" aria-modal="true" aria-label="Monster Challenge result">
+          <ChallengeDuelPanel
+            eventId={lastChallengeEvent.id}
+            winnerName={typeof lastChallengeEvent.detail.winnerName === "string" ? lastChallengeEvent.detail.winnerName : undefined}
+            defeatedName={typeof lastChallengeEvent.detail.defeatedName === "string" ? lastChallengeEvent.detail.defeatedName : undefined}
+            winnerHealth={typeof lastChallengeEvent.detail.winnerHealth === "number" ? lastChallengeEvent.detail.winnerHealth : undefined}
+            loserWeighIn={typeof lastChallengeEvent.detail.loserWeighIn === "number" ? lastChallengeEvent.detail.loserWeighIn : undefined}
+            rolls={challengeRolls}
+            attacks={challengeAttacks}
+            victoryType={typeof lastChallengeEvent.detail.victoryType === "string" ? lastChallengeEvent.detail.victoryType : undefined}
+            onClose={() => setChallengeDuelOpen(false)}
+          />
+        </div>
+      )}
     </main>
   );
 }
