@@ -35,8 +35,11 @@ const viewport = `${viewportWidth}x${viewportHeight}`;
 const screenshotPath = process.env.BROWSER_TEST_SCREENSHOT_PATH;
 const debugPort = Number(process.env.BROWSER_DEBUG_PORT ?? await freePort());
 const profile = await mkdtemp(join(tmpdir(), "abominations-browser-"));
+// The Ubuntu Edge package in CI can expose DevTools reliably with the legacy
+// headless switch, while Chromium/Chrome use the newer implementation.
+const headlessFlag = process.env.BROWSER_BINARY === "microsoft-edge" ? "--headless" : "--headless=new";
 const chrome = spawn(chromePath, [
-  "--headless=new", "--disable-gpu", "--disable-dev-shm-usage", "--disable-features=UseDBus", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--remote-allow-origins=*", "--remote-debugging-address=127.0.0.1", `--window-size=${viewport}`,
+  headlessFlag, "--disable-gpu", "--disable-dev-shm-usage", "--disable-features=UseDBus", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--remote-allow-origins=*", "--remote-debugging-address=127.0.0.1", `--window-size=${viewport}`,
   `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, "about:blank",
 ], { stdio: ["ignore", "pipe", "pipe"] });
 let chromeOutput = "";
