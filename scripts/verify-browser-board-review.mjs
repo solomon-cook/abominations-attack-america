@@ -65,6 +65,8 @@ try {
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board shell")`, "home board-review control");
   await evaluate(`([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board shell"))?.click()`);
   await waitFor(`document.querySelectorAll(".board-review-hex").length === 254`, "254 board-review faces");
+  await evaluate(`document.querySelectorAll(".board-review-hex")[42]?.click()`);
+  await waitFor(`document.querySelectorAll('.board-review-hex[data-selected="true"]').length === 1 && Boolean(document.querySelector(".board-review-inspector"))`, "selected-cell review inspector");
   const result = await evaluate(`(() => {
     const cells = [...document.querySelectorAll(".board-review-hex")];
     const tops = new Set(cells.map((cell) => cell.style.top));
@@ -79,12 +81,14 @@ try {
       creamFace: style.backgroundImage.includes("linear-gradient"),
       visible,
       contained,
+      selectedCells: cells.filter((cell) => cell.dataset.selected === "true").length,
+      inspector: Boolean(document.querySelector(".board-review-inspector")),
       horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
       playableTiles: document.querySelectorAll(".hex-tile, .location").length,
       unresolvedLabels: [...document.querySelectorAll("[aria-label]")].filter((node) => /Unresolved/i.test(node.getAttribute("aria-label") ?? "")).length,
     };
   })()`);
-  if (!result || result.count !== 254 || result.rows !== 13 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0) {
+  if (!result || result.count !== 254 || result.rows !== 13 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0) {
     throw new Error(`Board review browser contract failed: ${JSON.stringify(result)}`);
   }
   if (screenshotPath) {
