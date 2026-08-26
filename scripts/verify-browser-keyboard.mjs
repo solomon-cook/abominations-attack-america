@@ -87,9 +87,17 @@ const axText = (node) => ({
   name: axValue(node.name) ?? "",
 });
 const assertAccessibility = async (label, checks) => {
-  const nodes = (await accessibilityTree()).map(axText);
   for (const check of checks) {
-    if (!nodes.some(check)) throw new Error(`Accessibility tree missing ${label}: ${check.description ?? "required semantic"}.`);
+    let found = false;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const nodes = (await accessibilityTree()).map(axText);
+      if (nodes.some(check)) {
+        found = true;
+        break;
+      }
+      await wait(50);
+    }
+    if (!found) throw new Error(`Accessibility tree missing ${label}: ${check.description ?? "required semantic"}.`);
   }
 };
 const waitFor = async (expression, label) => {

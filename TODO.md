@@ -517,6 +517,7 @@ Useful source documents:
     - [x] Add event, pending-decision, and terminal-state icons to the board-adjacent attention banner while retaining complete text announcements and live-region semantics (`AttentionBanner`).
   - [ ] Keep one predictable, persistent primary action affordance for the current legal decision, including a clear End/Pass/Resolve equivalent where applicable.
     - [x] Keep the board-adjacent action dock present with an accessible readiness or unavailable-reason line derived from authoritative command availability (`ActionDock`); phase-specific command coverage remains source/ruleset-gated.
+    - [x] Add command-type icons to the persistent action dock without changing its accessible text labels or authoritative enablement (`ActionDock`).
   - [x] Provide temporary movement paths, targeting previews, selection highlights, accepted-action feedback, and recorded dice/combat-result presentation. (Current development flows implement these presentation states.)
   - [ ] Ensure temporary visual feedback explains what changed, then settles cleanly without permanently increasing map clutter or delaying authoritative state.
   - [x] Support map pan, zoom, fit, reset, and active-area focus. (Current controls support these operations.)
