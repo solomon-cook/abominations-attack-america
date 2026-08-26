@@ -37,7 +37,7 @@ Useful source documents:
 | Spectators | Foundation exists | No-login spectators can join and read a room; hidden-information projections and complete spectator UX are not yet proven. |
 | Rules research | Strong reference base | A consolidated rules reference and component catalogue exist, but several board, record-tile, and card facts remain unresolved. |
 | Board | MVP blocker | A staggered 13-row visual lattice (alternating 20/19 cells) and several rule-space markers exist, but the fully filled honeycomb board is not yet authoritatively transcribed, validated, or used for MVP play. |
-| Military art | Foundation exists | Original/generated transparent military sprites and a manifest exist; optimized board tiles and reference photographs are manifest-checked, while completeness, consistency, attribution, and final licensing still require review. |
+| Military art | Foundation exists | Original/generated transparent military sprites and a manifest exist; optimized board tiles, military states, and reference photographs are manifest-checked, while completeness, consistency, attribution, and final licensing still require review. |
 | Automated checks | Thin foundation | Engine and store tests, typechecks, builds, and catalogue verification exist; full rules, browser, persistence, and end-to-end coverage do not. |
 
 ---

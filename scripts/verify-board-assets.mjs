@@ -71,6 +71,17 @@ if (monsterManifest.format !== "webp" || !Array.isArray(monsterManifest.monsters
 for (const monster of monsterManifest.monsters) await assertFile(join(monsterAssetRoot, monster.id + ".webp"), "Optimized monster sprite");
 await assertFile(join(monsterAssetRoot, "README.md"), "Monster asset provenance README");
 
+const militaryManifest = JSON.parse(await readFile(join(scriptDirectory, "../apps/web/public/assets/military/manifest.json"), "utf8"));
+if (militaryManifest.format !== "webp" || !Array.isArray(militaryManifest.units) || militaryManifest.units.length !== 11) throw new Error("Military asset manifest is incomplete");
+const militaryIds = new Set();
+for (const unit of militaryManifest.units) {
+  if (typeof unit.id !== "string" || militaryIds.has(unit.id)) throw new Error(`Military asset manifest has an invalid or duplicate ID: ${unit.id ?? "missing"}`);
+  militaryIds.add(unit.id);
+  if (typeof unit.src !== "string" || !unit.src.startsWith("/assets/military/") || !unit.src.endsWith(".webp")) throw new Error(`Military asset manifest has an invalid source for ${unit.id}`);
+  await assertFile(join(scriptDirectory, "../apps/web/public/assets", unit.src.slice("/assets/".length)), "Optimized military sprite");
+}
+await assertFile(join(scriptDirectory, "../apps/web/public/assets/military/README.md"), "Military asset provenance README");
+
 const diceManifest = JSON.parse(await readFile(join(diceAssetRoot, "manifest.json"), "utf8"));
 if (diceManifest.format !== "webp" || !Array.isArray(diceManifest.faces) || diceManifest.faces.length !== 6) throw new Error("Dice asset manifest is incomplete");
 for (const face of diceManifest.faces) await assertFile(join(diceAssetRoot, face.file), "Optimized die face");
