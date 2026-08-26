@@ -32,6 +32,13 @@ high-resolution top-down source or human physical-board review.
 
 The optimized WebP files are delivery copies for the browser. The original JPGs remain the source evidence and are not overwritten.
 
+## Additional source search
+
+On 2026-08-26, a further public-source search checked the BoardGameGeek image listing and an independent board-game setup photograph. Both provide useful context for the board family and filled honeycomb appearance, but neither is an aligned, unobscured top-down scan suitable for assigning exact shell coordinates, printed benefits, water classes, or barriers. They therefore remain reconnaissance references only; no new rule-bearing data is promoted from them.
+
+- [BoardGameGeek board photograph](https://boardgamegeek.com/image/201674/monsters-menace-america)
+- [Independent setup photograph](https://boardgameguys.com/monsters-menace-america/)
+
 ## Current evidence
 
 | Question | Current evidence | Status |
