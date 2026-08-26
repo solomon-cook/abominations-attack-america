@@ -19,6 +19,7 @@ export function BoardContextTray({ game, board, hex }: Props) {
     ...game.monsters.filter((monster) => monster.location === hex.key).map((monster) => monster.name),
     ...game.units.filter((unit) => unit.location === hex.key).map((unit) => `${unit.branch} unit`),
   ];
+  const monsters = game.monsters.filter((monster) => monster.location === hex.key);
   const unresolved = hex.verification !== "verified";
   const title = hex.label ?? `Hex ${hex.key}`;
 
@@ -35,6 +36,15 @@ export function BoardContextTray({ game, board, hex }: Props) {
         <span><b>{occupants.length ? occupants.join(", ") : "Empty"}</b></span>
         <span><b>{neighbours.length}</b> recorded neighbours</span>
       </div>
+      {monsters.length > 0 && (
+        <div className="board-context-occupants" aria-label="Monsters on active hex">
+          {monsters.map((monster) => (
+            <span key={monster.id}>
+              <b>{monster.name}</b> · {monster.health}/{monster.maxHealth} health · {monster.infamy} infamy · {monster.move} move
+            </span>
+          ))}
+        </div>
+      )}
       <p className="board-context-note">
         {unresolved
           ? "Physical terrain, labels, barriers, and feature ownership remain source-gated for this hex."
