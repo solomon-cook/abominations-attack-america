@@ -126,6 +126,32 @@ test("API responses expose the documented security and CORS headers", async () =
   }
 });
 
+test("public room discovery is available without a room token and omits private room data", async () => {
+  const port = 19600 + (process.pid % 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true" },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  try {
+    await waitForHealth(baseUrl);
+    const publicRoomResponse = await fetch(`${baseUrl}/rooms`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ maxPlayers: 3, privacy: "public" }) });
+    const privateRoomResponse = await fetch(`${baseUrl}/rooms`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ maxPlayers: 2, privacy: "private" }) });
+    assert.equal(publicRoomResponse.ok, true);
+    assert.equal(privateRoomResponse.ok, true);
+    const discoveryResponse = await fetch(`${baseUrl}/rooms/public`);
+    assert.equal(discoveryResponse.status, 200);
+    const rooms = await discoveryResponse.json() as Array<Record<string, unknown>>;
+    assert.equal(rooms.length, 1);
+    assert.equal(rooms[0]?.maxPlayers, 3);
+    assert.equal(Object.hasOwn(rooms[0]!, "state"), false);
+    assert.equal(Object.hasOwn(rooms[0]!, "token"), false);
+  } finally {
+    await stop(child);
+  }
+});
+
 test("API rejects oversized JSON bodies before mutating a room", async () => {
   const port = 19700 + (process.pid % 1000);
   const baseUrl = `http://127.0.0.1:${port}`;
