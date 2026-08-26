@@ -100,7 +100,16 @@ try {
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second Move phase");
   await second.evaluate("location.reload()");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, synchronizedPhase: "Move", reloadRecovery: "verified" }));
+  await first.waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "online legal movement destination");
+  if (!await first.evaluate(`(() => { const tile = document.querySelector(".hex-tile.legal:not(:disabled)"); tile?.click(); return Boolean(tile); })()`)) throw new Error("First browser could not select an online legal destination.");
+  await first.waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "online path confirmation");
+  if (!await first.click("Confirm path")) throw new Error("First browser could not confirm the online path.");
+  await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase !== "Move" && phase !== "Waiting for server…"; })()`, "first settled post-move phase");
+  const nextPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`, "second post-move phase");
+  const secondPhase = await second.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+  if (secondPhase !== nextPhase) throw new Error(`Online phase divergence after movement: first=${nextPhase ?? "unknown"}, second=${secondPhase ?? "unknown"}.`);
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", nextPhase }));
 } finally {
   await Promise.all([first.close(), second.close()]);
 }
