@@ -11,7 +11,7 @@ const viewportWidth = Number(process.env.BROWSER_TEST_WIDTH ?? 1280);
 const viewportHeight = Number(process.env.BROWSER_TEST_HEIGHT ?? 720);
 const viewport = `${viewportWidth}x${viewportHeight}`;
 const screenshotPath = process.env.BROWSER_TEST_SCREENSHOT_PATH;
-const debugPort = 9229;
+const debugPort = Number(process.env.BROWSER_DEBUG_PORT ?? 9229);
 const profile = await mkdtemp(join(tmpdir(), "abominations-browser-"));
 const chrome = spawn(chromePath, [
   "--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", `--window-size=${viewport}`,
