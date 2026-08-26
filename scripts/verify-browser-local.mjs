@@ -92,6 +92,17 @@ try {
   })()`);
   if (!accessibleControls) throw new Error("Local browser smoke found an unnamed gameplay control or missing main landmark.");
 
+  const invalidAction = await evaluate(`(() => {
+    const tile = document.querySelector(".hex-tile.unreachable:disabled");
+    if (!tile) return false;
+    tile.click();
+    return true;
+  })()`);
+  if (!invalidAction) throw new Error("Local browser smoke found no disabled unreachable destination for invalid-action coverage.");
+  await wait(80);
+  if (await evaluate(`Boolean(document.querySelector(".path-controls"))`)) throw new Error("An unreachable destination opened movement controls.");
+  if (!/^Move$/i.test(await phase())) throw new Error("An unreachable destination changed the Move phase.");
+
   await waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "legal movement destination");
   const selected = await evaluate(`(() => {
     const tiles = [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")];
@@ -160,7 +171,7 @@ try {
     finalPhase = await phase();
   }
 
-  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, nextPhase: finalPhase }));
+  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", invalidAction: "disabled-unreachable-destination", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, nextPhase: finalPhase }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");
