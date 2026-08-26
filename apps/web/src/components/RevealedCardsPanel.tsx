@@ -76,7 +76,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
       <span className="label">YOUR HAND</span>
       <p className="card-privacy-note">Your held cards are shown here. Hidden deck order and other players' hands are never rendered.</p>
       <div className="revealed-card-group">
-        <strong>Monster Mutation</strong>
+        <strong><span className="metric-icon" aria-hidden="true">▤</span> Monster Mutation · {revealedMutationCards.length}</strong>
         {revealedMutationCards.length ? (
           <>
             <img className="revealed-card-art" src="/assets/cards/monster-mutation-01.webp" alt="Monster Mutation source card artwork" loading="lazy" />
@@ -87,7 +87,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
         )}
       </div>
       <div className="revealed-card-group">
-        <strong>Military Research</strong>
+        <strong><span className="metric-icon" aria-hidden="true">▤</span> Military Research · {revealedResearchCards.length}</strong>
         {revealedResearchCards.length ? (
           <>
             <img className="revealed-card-art" src="/assets/cards/military-research-01.webp" alt="Military Research source card artwork" loading="lazy" />
