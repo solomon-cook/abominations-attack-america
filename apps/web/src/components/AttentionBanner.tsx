@@ -12,6 +12,25 @@ const readableDecision = (value: string) => value
   .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
   .join(" ");
 
+const eventLabels: Record<string, string> = {
+  "monster.moved": "Monster movement accepted",
+  "monster.stayed": "Monster stayed in place",
+  "unit.moved": "Military movement accepted",
+  "unit.deployed": "Military deployment accepted",
+  "unit.redeployed": "Military redeployment accepted",
+  "fight.resolved": "Combat resolved",
+  "retreat.resolved": "Retreat resolved",
+  "encounter.resolved": "Encounter resolved",
+  "research.drawn": "Research reward recorded",
+  "research.used": "Research card resolved",
+  "mutation.used": "Mutation card resolved",
+  "challenge.resolved": "Monster Challenge resolved",
+  "challenge.giant.resolved": "Giant Challenge resolved",
+  "monster.disappeared": "Monster disappearance recorded",
+  "turn.passed": "Turn advanced",
+  "match.conceded": "Match concession recorded",
+};
+
 /** Board-adjacent attention state derived only from the authoritative snapshot. */
 export function AttentionBanner({ game, action, canAct, online }: Props) {
   if (game.phase === "game-over") {
@@ -26,6 +45,11 @@ export function AttentionBanner({ game, action, canAct, online }: Props) {
         <span>{readableDecision(pending.type)} · use the highlighted controls beside the board.</span>
       </div>
     );
+  }
+  const latestEvent = game.eventLog.at(-1);
+  const eventLabel = latestEvent ? eventLabels[latestEvent.action] : undefined;
+  if (eventLabel) {
+    return <div className="attention-banner event" role="status" aria-live="polite"><strong>Update</strong><span>{eventLabel}. The board and controls reflect the authoritative result.</span></div>;
   }
   if (!online && action) {
     return <div className="attention-banner" role="status" aria-live="polite"><strong>Player {game.currentPlayer + 1} · {action}</strong><span>Choose a highlighted board action or use the decision controls.</span></div>;
