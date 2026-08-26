@@ -277,7 +277,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             {provisionalFeatureText && <i className="location-kind provisional-feature-kind">{provisionalFeatureText}</i>}
               {place?.kind === "city" && <i className="city-hp" aria-label={`printed city benefit ${place.marker ?? "not recorded"}`}>{place.marker ?? "benefit n/a"}</i>}
               {place?.kind === "mutation" && <i className="location-kind">MUTATION</i>}
-              {occupantCount > 0 && <span className={`tile-occupants stack-count-${Math.min(occupantCount, 6)}`} aria-label={`${occupantCount} occupant${occupantCount === 1 ? "" : "s"}`}>
+              {occupantCount > 0 && <span className={`tile-occupants stack-count-${Math.min(occupantCount, 8)}`} aria-label={`${occupantCount} occupant${occupantCount === 1 ? "" : "s"}`}>
                 {monstersHere.map((monster) => {
                   const monsterArt = monsterArtForName(monster.name);
                   return monsterArt

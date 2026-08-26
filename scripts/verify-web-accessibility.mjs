@@ -103,6 +103,7 @@ const requiredStyleMarkers = [
   ["explicit board layer order", /\.hex-tile \.tile-base\{[^}]*z-index:0[^}]*\}\.hex-tile \.tile-art\{[^}]*z-index:1[^}]*\}\.hex-tile \.tile-stomp\{[^}]*z-index:2[^}]*\}[^\n]*\.hex-tile \.tile-occupants\{[^}]*z-index:4/],
   ["bounded dense occupant stacks", /\.hex-tile \.tile-occupants\{[^}]*max-width:30px/],
   ["contained stack occupants", /\.hex-tile \.tile-occupant\{[^}]*max-width:24px/],
+  ["eight-piece live stack classes", /stack-count-7[^}]*stack-count-8/],
   ["legal path above board layers", /\.path-preview\{[^}]*z-index:6/],
   ["audio range controls", /\.settings-audio input\[type="range"\]/],
 ];
