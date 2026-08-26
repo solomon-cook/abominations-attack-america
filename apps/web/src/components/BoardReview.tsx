@@ -42,6 +42,14 @@ export function BoardReview({ onClose }: Props) {
             />
           ))}
           </div>
+          <figure className="board-review-source">
+            <img
+              src="/assets/board/reference-full-board.jpg"
+              alt="Reference photograph of the physical Monsters Menace America board set up with its printed honeycomb spaces and pieces"
+              loading="lazy"
+            />
+            <figcaption>Reference-only photograph for cell, silhouette, feature, and edge comparison. It is not used as playable board data.</figcaption>
+          </figure>
         </section>
         {selectedHex && <aside className="board-review-inspector" aria-label="Selected board cell review">
           <span className="label">SELECTED CELL</span>
