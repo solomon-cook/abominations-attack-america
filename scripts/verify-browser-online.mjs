@@ -67,6 +67,7 @@ async function openBrowser(port, name) {
 
 const first = await openBrowser(9230, "first");
 const second = await openBrowser(9231, "second");
+const spectator = await openBrowser(9232, "spectator");
 try {
   await first.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "first lobby");
   await first.evaluate(`(() => { const input = document.querySelector('[aria-label="Display name"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(input, "First player"); input.dispatchEvent(new Event("input", { bubbles: true })); })()`);
@@ -79,6 +80,14 @@ try {
   await second.evaluate(`(() => { const inputs = document.querySelectorAll('input'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(inputs[0], "Second player"); inputs[0].dispatchEvent(new Event("input", { bubbles: true })); setter.call(inputs[1], ${JSON.stringify(roomCode)}); inputs[1].dispatchEvent(new Event("input", { bubbles: true })); })()`);
   if (!await second.click("Join")) throw new Error("Second browser could not join the created room.");
   await second.waitFor(`!!document.querySelector(".lobby strong")`, "joined room code");
+
+  await spectator.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "spectator lobby");
+  await spectator.evaluate(`(() => { const inputs = document.querySelectorAll('input'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(inputs[0], "Spectator"); inputs[0].dispatchEvent(new Event("input", { bubbles: true })); setter.call(inputs[1], ${JSON.stringify(roomCode)}); inputs[1].dispatchEvent(new Event("input", { bubbles: true })); })()`);
+  if (!await spectator.click("Spectate")) throw new Error("Spectator browser could not join the created room.");
+  await spectator.waitFor(`!!document.querySelector(".lobby strong")`, "joined spectator room code");
+  await spectator.waitFor(`!!document.querySelector(".setup-panel")`, "spectator setup projection");
+  const spectatorSetupControls = await spectator.evaluate(`(() => [...document.querySelectorAll(".setup-options button")].length > 0 && [...document.querySelectorAll(".setup-options button")].every((button) => button.disabled))()`);
+  if (!spectatorSetupControls) throw new Error("Spectator exposed an enabled setup control.");
 
   let setupClicks = 0;
   for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -98,6 +107,19 @@ try {
   if (!await first.click("Ready") || !await second.click("Ready")) throw new Error("Both players did not expose Ready controls.");
   await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first Move phase");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second Move phase");
+  await spectator.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "spectator Move projection");
+  const spectatorMoveControls = await spectator.evaluate(`(() => {
+    const actionButtons = [...document.querySelectorAll(".action-card button, .action-dock button:not(.action-dock-secondary)")];
+    const legalTiles = [...document.querySelectorAll(".hex-tile.legal")];
+    return [
+      Boolean(document.querySelector(".lobby")?.textContent?.includes("spectating")),
+      actionButtons.filter((button) => !button.disabled).length,
+      legalTiles.filter((tile) => !tile.disabled).length,
+      actionButtons.filter((button) => !button.disabled).map((button) => button.textContent.trim()).join("|")
+    ].join(",");
+  })()`);
+  const [spectating, enabledActionCount, enabledLegalTileCount, enabledActionLabels] = String(spectatorMoveControls ?? "false,99,99,unknown").split(",");
+  if (spectating !== "true" || Number(enabledActionCount) > 0 || Number(enabledLegalTileCount) > 0) throw new Error(`enabled spectator action: ${enabledActionLabels}`);
   await second.evaluate("location.reload()");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
   await first.waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "online legal movement destination");
@@ -109,6 +131,7 @@ try {
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`, "second post-move phase");
   const secondPhase = await second.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
   if (secondPhase !== nextPhase) throw new Error(`Online phase divergence after movement: first=${nextPhase ?? "unknown"}, second=${secondPhase ?? "unknown"}.`);
+  await spectator.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(nextPhase)}`, "spectator synchronized post-move phase");
   const encounterAction = await first.click("Resolve encounter") || await first.evaluate(`(() => { const button = [...document.querySelectorAll(".action-card button")].find((candidate) => !candidate.disabled); if (!button) return false; button.click(); return true; })()`);
   if (!encounterAction) throw new Error("First browser exposed no legal Encounter action.");
   for (let encounterStep = 0; encounterStep < 4; encounterStep += 1) {
@@ -125,7 +148,7 @@ try {
   if (!await first.click("Pass deployment")) throw new Error("First browser could not pass Deploy.");
   await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase === "Move"; })()`, "first next Move phase");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineEncounter: "verified", onlineDeploy: "verified", nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, spectatorSetup: "no-act", spectatorMove: "no-act", spectatorSync: "verified", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineEncounter: "verified", onlineDeploy: "verified", nextPhase }));
 } finally {
-  await Promise.all([first.close(), second.close()]);
+  await Promise.all([first.close(), second.close(), spectator.close()]);
 }
