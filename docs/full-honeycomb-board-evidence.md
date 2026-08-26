@@ -9,6 +9,7 @@ This pack is the review boundary for promoting the photographed board into the M
 - The optimized reference photographs are intentionally not shipped in the web client; the source JPGs above remain internal evidence only.
 - [Generated 254-hex review table](board-review-table.md)
 - [Generated coordinate/photo comparison overlay](board-comparison-overlay.svg)
+- [Generated independent top-down cross-check overlay](board-top-down-overlay.svg)
 
 ## Supplementary public-source reconnaissance
 
@@ -95,6 +96,8 @@ The currently checked-in source photographs are useful for confirming the overal
 | BoardGameGeek image 5699472 (`MMA _Board`) | 2840 × 1752 original | Highest-resolution public cross-check found: full board, cream hex seams, water cut-outs, printed feature families, and broad cell lattice | Several central/western cells are covered by pieces or stomp markers; perspective and image resolution still require human cell-by-cell review |
 | Independent setup photograph, 1600px delivery | 1600 × 1600 | Inspecting some printed labels and the coast/land hex treatment | Complete cell-by-cell transcription; large areas remain covered by components and the board is cropped/perspective-distorted |
 | User-supplied comparison screenshot | 1280 × 706 | Demonstrating the current candidate-shell rendering failure: unresolved labels, placeholder dots, and rectangular extent | Authoritative physical-board topology; it is a browser reconstruction, not a source photograph |
+
+The checked-in `board-top-down-overlay.svg` is an approximate alignment aid over the independent top-down photograph. Its corners are deliberately documented as approximate because the source is low-resolution and slightly skewed; it is useful for comparing the broad shell silhouette and row staggering, not for assigning a rule datum to a cell.
 
 Promotion therefore requires a higher-resolution, unobscured top-down board reference or a human-reviewed transcription against the original physical board. Image optimisation improves delivery performance only; it does not increase the evidentiary resolution or turn decorative geometry into rules data.
 
