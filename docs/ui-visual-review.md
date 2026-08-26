@@ -41,6 +41,8 @@ touch, zoom, focus, assistive-technology, or physical-board acceptance.
 On 2026-08-26, the post-setup Chrome visual checkpoint was updated after correcting
 the match surface: it now contains 261 tile buttons (254 candidate faces plus
 nine canonical development overlays), with 252 unresolved shell faces disabled.
+The runtime smoke also asserts zero unresolved placeholder nodes and zero visible
+unresolved labels on those disabled faces.
 The updated hashes are recorded in `docs/browser-visual-baselines.json`. This
 proves the visible honeycomb candidate presentation, not physical-board fidelity
 or MVP promotion.

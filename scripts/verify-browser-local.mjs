@@ -97,8 +97,10 @@ try {
     totalHexes: document.querySelectorAll(".hex-tile").length,
     developmentHexes: document.querySelectorAll(".hex-tile.development-fixture").length,
     unresolvedShellHexes: document.querySelectorAll(".hex-tile.unresolved").length,
+    unresolvedNodes: document.querySelectorAll(".hex-tile.unresolved .node").length,
+    visibleUnresolvedLabels: [...document.querySelectorAll(".hex-tile.unresolved .tile-name")].filter((node) => node.textContent?.trim()).length,
   }))()`);
-  if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252) {
+  if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252 || boardSurface?.unresolvedNodes !== 0 || boardSurface?.visibleUnresolvedLabels !== 0) {
     throw new Error(`Local browser smoke found an unexpected candidate board surface: ${JSON.stringify(boardSurface)}`);
   }
   if (screenshotPath) {
