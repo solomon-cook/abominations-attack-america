@@ -1,0 +1,19 @@
+{
+  "name": "Monsters Menace America",
+  "short_name": "Monsters Menace",
+  "description": "A source-aware digital playtest for Monsters Menace America.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#171514",
+  "theme_color": "#171514",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

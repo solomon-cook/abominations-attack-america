@@ -62,7 +62,10 @@ import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
 import { playSound, type SoundCategory } from "./audio";
+import { registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
+
+registerPwaServiceWorker();
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"

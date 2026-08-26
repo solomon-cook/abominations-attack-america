@@ -656,7 +656,7 @@ Useful source documents:
   - [Later] Add additional original boards, monsters, branches, cards, and rulesets through versioned content packs.
 - [ ] [Later] Add localization infrastructure and translated UI/rules content.
   - [Later] Add richer original animation, VFX, music, voice, and board themes.
-- [ ] [Later] Add installable PWA support, offline reference material, and update prompts.
+- [x] [Later] Add installable PWA support, offline reference material, and update prompts. (`apps/web/public/manifest.webmanifest`, `sw.js`, and the offline fallback provide an installable shell and explicit live-connection boundary; `npm run pwa:verify` validates the manifest, icon, cache worker, and offline copy. Authoritative rooms/actions remain online-only.)
   - [Later] Add moderation, reporting, blocking, and public-room discovery only if public matchmaking is introduced.
 - [ ] [Later] Add tournament/lobby formats only after deterministic rules and operational tooling are mature.
   - [Later] Reuse stable shared contracts for iOS, tvOS, and desktop clients without moving presentation concerns into the engine.
