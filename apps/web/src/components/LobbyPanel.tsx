@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { RoomView } from "@abominations/shared";
 
 export type LobbyPanelProps = {
@@ -39,6 +40,18 @@ export function LobbyPanel({
   onToggleReady,
   onLeaveRoom,
 }: LobbyPanelProps) {
+  const [inviteStatus, setInviteStatus] = useState("");
+  const copyInviteLink = async () => {
+    if (!room?.code) return;
+    const inviteUrl = new URL(window.location.href);
+    inviteUrl.search = `?room=${encodeURIComponent(room.code)}`;
+    try {
+      await navigator.clipboard.writeText(inviteUrl.toString());
+      setInviteStatus("Invite link copied");
+    } catch {
+      setInviteStatus(inviteUrl.toString());
+    }
+  };
   return (
     <section className="lobby" aria-label="Online room lobby">
       <div>
@@ -76,10 +89,18 @@ export function LobbyPanel({
           <button type="button" className="ready-button" disabled={!setupComplete} onClick={onToggleReady}>
             {participant.ready ? "Unready" : "Ready"}
           </button>
+          <button type="button" className="subtle" onClick={() => void copyInviteLink}>Copy invite link</button>
           <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>
+          {inviteStatus && <span className="invite-status" role="status">{inviteStatus}</span>}
         </div>
       )}
-      {online && participant?.role === "spectator" && <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>}
+      {online && participant?.role === "spectator" && (
+        <div className="lobby-actions">
+          <button type="button" className="subtle" onClick={() => void copyInviteLink}>Copy invite link</button>
+          <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>
+          {inviteStatus && <span className="invite-status" role="status">{inviteStatus}</span>}
+        </div>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
     </section>
   );

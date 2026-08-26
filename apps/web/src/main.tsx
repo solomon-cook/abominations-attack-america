@@ -138,7 +138,10 @@ function App() {
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [room, setRoom] = useState<RoomView | null>(null);
   const [displayName, setDisplayName] = useState("");
-  const [roomCode, setRoomCode] = useState("");
+  const [roomCode, setRoomCode] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("room")?.trim().toUpperCase().slice(0, 6) ?? "";
+  });
   const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(2);
   const [roomPrivacy, setRoomPrivacy] = useState<"private" | "public">("private");
   const [localSetup, setLocalSetup] = useState<SetupState>(() =>
