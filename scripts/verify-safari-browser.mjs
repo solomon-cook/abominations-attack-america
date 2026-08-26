@@ -92,7 +92,16 @@ try {
       body: JSON.stringify({ url }),
     });
     if (!navigate.ok) throw new Error(`Safari navigation failed: ${await navigate.text()}`);
-    await wait(500);
+    const execute = async (script) => {
+      const response = await request(driverPort, `/session/${sessionId}/execute/sync`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ script, args: [] }),
+      });
+      const body = await response.json();
+      return { response, body, value: body.value?.value ?? body.value };
+    };
+    await waitFor(async () => (await execute("return Boolean([...document.querySelectorAll('button')].find((button) => button.textContent.includes('Review full board shell')));")).value === true, "home board-review control");
     const clickReview = await request(driverPort, `/session/${sessionId}/execute/sync`, {
       method: "POST",
       headers: { "content-type": "application/json" },
