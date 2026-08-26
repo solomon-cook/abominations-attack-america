@@ -1617,6 +1617,11 @@ export interface EncounterResolution {
   mutationDraws: readonly Readonly<{ siteId: string; cardDrawn: boolean; effectStatus: "implemented" | "source-gated" | "none" }>[];
 }
 
+/** Only these printed features consume a Stomp marker and apply an Encounter reward. */
+export function hasStompableEncounterFeature(features: readonly BoardFeature[]): boolean {
+  return features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site");
+}
+
 export function resolveEncounterResult(state: GameState, choice?: "health" | "infamy"): EncounterResolution {
   if (state.phase !== "encounter") return { state, effects: [], rolls: [], mutationDraws: [] };
   const board = boardForState(state);
@@ -1632,7 +1637,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
   const locationId = place?.id ?? locationKey;
   const alreadyStomped = next.stompedLocations.includes(locationKey);
   const features = isHexKey(canonicalLocationKey) ? board.hexes[canonicalLocationKey]?.features ?? [] : [];
-  const stompable = features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site");
+  const stompable = hasStompableEncounterFeature(features);
   const challengeSite = features.some((feature) => feature.kind === "challenge-site");
   const baseFeature = features.find((feature): feature is Extract<BoardFeature, { kind: "military-base" }> => feature.kind === "military-base");
   const mutationFeatures = features.filter((feature): feature is Extract<BoardFeature, { kind: "mutation-site" }> => feature.kind === "mutation-site");

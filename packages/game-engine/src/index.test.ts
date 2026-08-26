@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -2117,6 +2117,13 @@ test("Encounter is gated by movement and pending battles, and development featur
   assert.equal(moved.phase, "fight");
   assert.equal(moved.pendingBattles.length, 1);
   assert.throws(() => applyCommand(moved, { type: "resolve-encounter" }), /advance action available|pending decision/);
+});
+
+test("blank cells and lairs have no stompable Encounter effect", () => {
+  assert.equal(hasStompableEncounterFeature([]), false);
+  assert.equal(hasStompableEncounterFeature([{ kind: "lair", monsterId: "monster-1" }]), false);
+  assert.equal(hasStompableEncounterFeature([{ kind: "challenge-site" }]), false);
+  assert.equal(hasStompableEncounterFeature([{ kind: "city", benefit: { kind: "health", amount: 1 } }]), true);
 });
 
 test("stomped spaces do not consume another Stomp marker", () => {

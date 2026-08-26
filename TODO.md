@@ -283,7 +283,7 @@ Useful source documents:
   - [x] [P1] Treat Challenge sites as blank before declaration. (Challenge-site Encounter is inert and does not consume a Stomp marker.)
   - [x] [P1] Apply challenger replacement after declaration. (The challenge-enabled development engine replaces the pending challenger at a Challenge site, records the transition in the encounter event, and exposes it in the Encounter result surface.)
 - [x] [P1] Make stomped spaces produce no encounter effect. (A second Encounter on an already stomped development space consumes no marker and applies no benefit.)
-  - [ ] [P1] Make blank spaces and lairs produce no encounter effect once those physical board features are transcribed. (The current board fixture has no verified blank/lair hexes.)
+  - [ ] [P1] Make blank spaces and lairs produce no encounter effect once those physical board features are transcribed. (The engine now explicitly classifies only city, military-base, and Infamy features as stompable and tests blank/lair/challenge no-op classification; physical blank/lair hexes remain source-gated.)
   - [x] [P1] Handle exhausted decks without reshuffling discards. (`drawCard` exhausts without moving discard cards back into the deck; lifecycle tests cover this.)
 
 ### Milestone 7 acceptance
