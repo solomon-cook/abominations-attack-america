@@ -102,4 +102,13 @@ assert.match(developmentFixtureStyle, /clip-path:polygon\(25% 0,75% 0,100% 50%,7
 assert.doesNotMatch(developmentFixtureStyle, /clip-path:circle/,
   "development fixture tiles must not regress to circular markers");
 
+const unresolvedFaceStyle = [...styles.matchAll(/\.hex-tile\.unresolved\{[^}]+\}/g)].at(-1)?.[0] ?? "";
+assert.match(unresolvedFaceStyle, /background:linear-gradient\(145deg,#eee7cb,#cfc5a2\)/,
+  "unresolved full-board review faces must use the separated cream treatment");
+assert.match(unresolvedFaceStyle, /border:1px solid #fff7d8/,
+  "unresolved full-board review faces must retain a visible cream seam");
+const unresolvedSeamStyle = [...styles.matchAll(/\.hex-tile\.unresolved::before\{[^}]+\}/g)].at(-1)?.[0] ?? "";
+assert.match(unresolvedSeamStyle, /border-color:#fff9df/,
+  "unresolved full-board review faces must retain an inset face seam");
+
 console.log(`Verified 254-cell flat-top landscape honeycomb display layout with staggered rows, ${tileHeight.toFixed(2)}% canvas-width tile height, and shared hex edges.`);
