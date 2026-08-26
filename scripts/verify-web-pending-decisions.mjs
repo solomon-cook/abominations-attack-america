@@ -23,6 +23,7 @@ const uniqueTypes = [...new Set(pendingTypes)].filter((type) => [
 ].includes(type));
 
 const sources = `${web}\n${phaseActions}\n${challengeActions}`;
+const progress = await readFile(new URL("../apps/web/src/components/TurnProgress.tsx", import.meta.url), "utf8");
 const coverageMarkers = {
   "monster-movement": /legalDestinations|choosePath|disappear-monster/,
   deployment: /activeGame\.phase === "deploy"[\s\S]*?runCommand\(\{ type: "deploy"/,
@@ -31,5 +32,9 @@ const missing = uniqueTypes.filter((type) => !(coverageMarkers[type]?.test(sourc
 if (missing.length > 0) {
   throw new Error(`Web pending-decision coverage missing: ${missing.join(", ")}`);
 }
+const missingProgressLabels = [
+  "monster-movement", "battle-resolution", "attack-target", "retreat", "encounter-resolution", "encounter-choice", "trophy-choice", "deployment", "challenge-opponent", "challenge-resolution", "game-over",
+].filter((type) => !progress.includes(`type === "${type}"`));
+if (missingProgressLabels.length > 0) throw new Error(`Turn progress labels missing: ${missingProgressLabels.join(", ")}`);
 
 console.log(`Verified UI source coverage for ${uniqueTypes.length} authoritative pending-decision types; interactive, assistive-technology, and source-rules review remain separate.`);
