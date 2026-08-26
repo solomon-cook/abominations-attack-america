@@ -94,7 +94,7 @@ On 2026-08-25, two fresh browser tabs connected to the local API, created and jo
 
 The live development smoke pass then exercised the first complete decision chain after setup: **Move** → **Encounter** → visible **Resolve encounter** control → source-backed city choice (**Take the city Health benefit**) → **Deploy** → **Pass deployment**. Before the fix, the `encounter-resolution` pending decision rendered only a disabled “Choose the Encounter decision” dock label; `PhaseActions` now exposes the authoritative resolution button and the accessibility source contract guards that branch. This remains development-fixture evidence and does not cover every fight/retreat/card/victory path.
 
-A fresh two-tab online smoke pass on 2026-08-25 created and joined one local room, completed the ordered setup from separate player tabs, and confirmed both tabs reached the setup-complete Move surface. Reloading the second tab restored the same room and Move phase with the setup surface gone. A subsequent online Move remained on the first tab's path-preview state instead of producing a clean observed transition in the second tab, so the full two-browser play/reconnect/winner criterion remains open.
+A two-tab online smoke pass on 2026-08-25 initially left the movement transition unverified. The later three-session harness run on 2026-08-26 supersedes that limitation for the local development path: synchronized legal movement, Encounter, Deploy, concession, terminal projection, and reload recovery all passed. Fight progression, a full-rules victory route, process-restart persistence, production-board promotion, and deployed-browser acceptance remain open.
 
 ## Full-board rendering check
 
