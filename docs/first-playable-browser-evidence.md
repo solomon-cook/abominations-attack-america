@@ -60,6 +60,8 @@ its linked source artifact.
 
 ## Latest local renderer regression check
 
+On 2026-08-26, `BROWSER_TEST_URL=http://127.0.0.1:5182/ npm run browser:local:matrix` ran the reproducible local smoke at both 1280×720 and 390×844. Each fresh session completed setup, selected a legal destination, verified path cancellation, reconfirmed the path, and observed the next authoritative `Encounter` phase. Both runs passed; this is responsive development-fixture evidence and does not replace manual visual/accessibility review or full-board MVP evidence.
+
 On 2026-08-26, `npm run browser:local:verify` drove a fresh headless Chrome session against the current Vite server. The scripted run completed local setup, selected a legal destination, verified that **Cancel** cleared the selected path, selected the destination again, confirmed the path, and observed the next authoritative phase (`Encounter`). This is reproducible local first-playable interaction evidence; it remains development-fixture evidence and does not prove the physical MVP board, two-browser online play, or manual accessibility acceptance.
 
 On 2026-08-25, the board-first gameplay shell was checked at 1280×720 after completing the local development setup. With the controls panel closed, the layout measured 1,240px wide and the map surface measured 1,190×405px; the secondary information panel and turn-progress strip were hidden. Opening **Open controls** restored the 340px information panel, turn-progress strip, card/decision controls, and bounded scrolling. This verifies the intended map-first hierarchy for the development fixture only.
