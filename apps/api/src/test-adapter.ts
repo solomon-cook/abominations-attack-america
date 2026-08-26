@@ -5,7 +5,7 @@ import { createGame } from "@abominations/game-engine";
 export function persistentAdapter() {
   const state = createGame(2);
   const room = { id: "room-1", code: "ABC123", status: "ACTIVE", maxPlayers: 2, version: 0, state, participants: [], events: [] };
-  const actor = { id: "player-1", displayName: "Player 1", role: "PLAYER", playerIndex: 0, tokenHash: createHash("sha256").update("token").digest("hex"), connectedAt: new Date() };
+  const actor = { id: "player-1", displayName: "Player 1", role: "PLAYER", playerIndex: 0, tokenHash: createHash("sha256").update("token").digest("hex"), sessionExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), connectedAt: new Date() };
   const receipts = new Map<string, unknown>();
   const results = new Map<string, unknown>();
   const events: any[] = [];
@@ -30,7 +30,7 @@ export function persistentAdapter() {
         return actor;
       },
       findMany: async () => [actor],
-      update: async ({ data }: { data: { tokenHash?: string } }) => { Object.assign(actor, data); return actor; },
+      update: async ({ data }: { data: { tokenHash?: string; sessionExpiresAt?: Date } }) => { Object.assign(actor, data); return actor; },
     },
     commandReceipt: { findUnique: async ({ where }: { where: { roomId_actionId: { actionId: string } } }) => receipts.get(where.roomId_actionId.actionId) ?? null },
     $transaction: async (callback: (tx: any) => Promise<void>) => callback({

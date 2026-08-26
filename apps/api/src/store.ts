@@ -1,8 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
 import { applyCommandEnvelope, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { RoomEvent, RoomParticipantView, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
+import { isSessionExpired, sessionExpiresAt } from "./session.js";
 
-type StoredParticipant = RoomParticipantView & { tokenHash: string; connectionId?: string };
+type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string };
 type StoredRoom = { id: string; code: string; status: RoomStatus; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; lastActivityAt: number };
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
@@ -114,6 +115,7 @@ export class MemoryRoomStore implements RoomStore {
     const room = this.authorize(roomCode, accessToken);
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
     if (!participant) throw new Error("Invalid room token.");
+    participant.sessionExpiresAt = sessionExpiresAt().getTime();
     const replacement = token();
     participant.tokenHash = hash(replacement);
     return { room: this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex), participantId: participant.id, token: replacement };
@@ -179,14 +181,16 @@ export class MemoryRoomStore implements RoomStore {
 
   private addParticipant(room: StoredRoom, displayName: string, role: "player" | "spectator", playerIndex?: number): SessionResponse {
     const accessToken = token();
-    const participant: StoredParticipant = { id: randomBytes(10).toString("hex"), displayName: displayName.trim().slice(0, 32) || "Player", role, playerIndex, connected: true, ready: false, tokenHash: hash(accessToken) };
+    const participant: StoredParticipant = { id: randomBytes(10).toString("hex"), displayName: displayName.trim().slice(0, 32) || "Player", role, playerIndex, connected: true, ready: false, tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt().getTime() };
     room.participants.push(participant);
     return { room: this.view(room), participantId: participant.id, token: accessToken };
   }
 
   private authorize(roomCode: string, accessToken: string) {
     const room = this.requireRoom(roomCode);
-    if (!room.participants.some((participant) => participant.tokenHash === hash(accessToken))) throw new Error("Invalid room token.");
+    const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!participant) throw new Error("Invalid room token.");
+    if (isSessionExpired(participant.sessionExpiresAt)) throw new Error("Session token has expired.");
     return room;
   }
 

@@ -110,6 +110,19 @@ test("session rotation preserves the participant while revoking the old token", 
   await assert.rejects(() => store.getRoom(host.room.code, host.token), /Invalid room token/);
 });
 
+test("expired memory sessions cannot be used and rotation refreshes the expiry", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2);
+  const rooms = (store as unknown as { rooms: Map<string, { participants: Array<{ id: string; sessionExpiresAt: number }> }> }).rooms;
+  const participant = [...rooms.values()][0]!.participants.find((candidate) => candidate.id === host.participantId)!;
+  participant.sessionExpiresAt = Date.now() - 1;
+  await assert.rejects(() => store.getRoom(host.room.code, host.token), /Session token has expired/);
+  participant.sessionExpiresAt = Date.now() + 1;
+  const rotated = await store.rotateSession(host.room.code, host.token);
+  assert.ok(participant.sessionExpiresAt > Date.now());
+  assert.ok(rotated.token);
+});
+
 test("idle development rooms expire without changing a completed result", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2);

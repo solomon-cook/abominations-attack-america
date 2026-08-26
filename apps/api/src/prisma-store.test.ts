@@ -37,6 +37,13 @@ test("Prisma session rotation preserves the participant and revokes the old toke
   assert.equal((await store.getRoom(room.code, rotated.token)).participants[0]?.id, "player-1");
 });
 
+test("Prisma rejects expired sessions", async () => {
+  const { adapter, room } = persistentAdapter();
+  const store = new PrismaRoomStore(adapter);
+  (adapter as any).participant.findFirst = async () => ({ id: "player-1", role: "PLAYER", playerIndex: 0, sessionExpiresAt: new Date(Date.now() - 1) });
+  await assert.rejects(() => store.getRoom(room.code, "token"), /Session token has expired/);
+});
+
 test("terminal command persists completed room status and winner result atomically", async () => {
   const { adapter, room, results } = persistentAdapter();
   room.state.stompMarkers = 1;

@@ -25,7 +25,7 @@ Guest access is bearer-token access: the room code identifies the room and the s
 
 The current MVP policy is:
 
-- A session remains valid only while its room is not expired; a completed room remains readable, while an expired room rejects reads, reconnects, and gameplay.
+- A session is valid for 24 hours from creation or its most recent explicit rotation. A completed room remains readable only with a non-expired session, while an expired room or expired session rejects reads, reconnects, and gameplay.
 - Disconnect has no short grace timer: the participant may reconnect during the room's 24-hour idle window. A room becomes abandoned only when every player is disconnected, and can recover when all ready players reconnect.
 - There is no host privilege and no token transfer between participants. A creator's departure therefore follows ordinary disconnect rules.
 - Voluntary concession is the explicit inactive-player resolution; the client never converts a network failure into a concession.

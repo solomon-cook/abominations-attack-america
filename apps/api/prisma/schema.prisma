@@ -45,6 +45,7 @@ model Participant {
   role         ParticipantRole
   playerIndex  Int?
   tokenHash    String            @unique
+  sessionExpiresAt DateTime
   connectedAt  DateTime?
   connectionId String?
   ready        Boolean           @default(false)

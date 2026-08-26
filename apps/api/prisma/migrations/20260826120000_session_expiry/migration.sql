@@ -1,0 +1,6 @@
+ALTER TABLE "Participant" ADD COLUMN "sessionExpiresAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+UPDATE "Participant"
+SET "sessionExpiresAt" = CURRENT_TIMESTAMP + INTERVAL '24 hours';
+
+ALTER TABLE "Participant" ALTER COLUMN "sessionExpiresAt" DROP DEFAULT;

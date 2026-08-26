@@ -2,6 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { applyCommandEnvelope, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { RoomEvent, RoomView, SessionResponse } from "@abominations/shared";
 import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, terminalResultSummary, type RoomStore } from "./store.js";
+import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -28,7 +29,7 @@ export class PrismaRoomStore implements RoomStore {
       ? createRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`)
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`);
     const room = await this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, state: state as any } });
-    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken) } });
+    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
     return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };
   }
 
@@ -39,7 +40,7 @@ export class PrismaRoomStore implements RoomStore {
     const count = await this.prismaClient.participant.count({ where: { roomId: room.id, role: "PLAYER" } });
     if (count >= room.maxPlayers) throw new Error("This room is full.");
     const accessToken = token();
-    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player", role: "PLAYER", playerIndex: count, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken) } });
+    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player", role: "PLAYER", playerIndex: count, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
     await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { lastActivityAt: new Date() } });
     await this.refreshStatus(room.id, room.maxPlayers, room.state as unknown as GameState);
     return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };
@@ -49,7 +50,7 @@ export class PrismaRoomStore implements RoomStore {
     const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
     if (!room) throw new Error("Room not found.");
     const accessToken = token();
-    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Spectator", role: "SPECTATOR", connectedAt: new Date(), tokenHash: hash(accessToken) } });
+    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Spectator", role: "SPECTATOR", connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
     return { room: await this.view(room.id), participantId: participant.id, token: accessToken };
   }
 
@@ -79,7 +80,7 @@ export class PrismaRoomStore implements RoomStore {
     const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
     if (!participant) throw new Error("Invalid room token.");
     const replacement = token();
-    await this.prismaClient.participant.update({ where: { id: participant.id }, data: { tokenHash: hash(replacement) } });
+    await this.prismaClient.participant.update({ where: { id: participant.id }, data: { tokenHash: hash(replacement), sessionExpiresAt: sessionExpiresAt() } });
     return { room: await this.view(room.id, 0, participant.role === "PLAYER" ? "player" : "spectator", participant.playerIndex ?? undefined), participantId: participant.id, token: replacement };
   }
 
@@ -164,6 +165,7 @@ export class PrismaRoomStore implements RoomStore {
     }
     const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
     if (!participant) throw new Error("Invalid room token.");
+    if (isSessionExpired(participant.sessionExpiresAt)) throw new Error("Session token has expired.");
     return room;
   }
 

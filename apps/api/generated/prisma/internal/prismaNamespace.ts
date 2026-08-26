@@ -853,6 +853,7 @@ export const ParticipantScalarFieldEnum = {
   role: 'role',
   playerIndex: 'playerIndex',
   tokenHash: 'tokenHash',
+  sessionExpiresAt: 'sessionExpiresAt',
   connectedAt: 'connectedAt',
   connectionId: 'connectionId',
   ready: 'ready',

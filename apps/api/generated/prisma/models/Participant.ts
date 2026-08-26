@@ -41,6 +41,7 @@ export type ParticipantMinAggregateOutputType = {
   role: $Enums.ParticipantRole | null
   playerIndex: number | null
   tokenHash: string | null
+  sessionExpiresAt: Date | null
   connectedAt: Date | null
   connectionId: string | null
   ready: boolean | null
@@ -54,6 +55,7 @@ export type ParticipantMaxAggregateOutputType = {
   role: $Enums.ParticipantRole | null
   playerIndex: number | null
   tokenHash: string | null
+  sessionExpiresAt: Date | null
   connectedAt: Date | null
   connectionId: string | null
   ready: boolean | null
@@ -67,6 +69,7 @@ export type ParticipantCountAggregateOutputType = {
   role: number
   playerIndex: number
   tokenHash: number
+  sessionExpiresAt: number
   connectedAt: number
   connectionId: number
   ready: number
@@ -90,6 +93,7 @@ export type ParticipantMinAggregateInputType = {
   role?: true
   playerIndex?: true
   tokenHash?: true
+  sessionExpiresAt?: true
   connectedAt?: true
   connectionId?: true
   ready?: true
@@ -103,6 +107,7 @@ export type ParticipantMaxAggregateInputType = {
   role?: true
   playerIndex?: true
   tokenHash?: true
+  sessionExpiresAt?: true
   connectedAt?: true
   connectionId?: true
   ready?: true
@@ -116,6 +121,7 @@ export type ParticipantCountAggregateInputType = {
   role?: true
   playerIndex?: true
   tokenHash?: true
+  sessionExpiresAt?: true
   connectedAt?: true
   connectionId?: true
   ready?: true
@@ -216,6 +222,7 @@ export type ParticipantGroupByOutputType = {
   role: $Enums.ParticipantRole
   playerIndex: number | null
   tokenHash: string
+  sessionExpiresAt: Date
   connectedAt: Date | null
   connectionId: string | null
   ready: boolean
@@ -252,6 +259,7 @@ export type ParticipantWhereInput = {
   role?: Prisma.EnumParticipantRoleFilter<"Participant"> | $Enums.ParticipantRole
   playerIndex?: Prisma.IntNullableFilter<"Participant"> | number | null
   tokenHash?: Prisma.StringFilter<"Participant"> | string
+  sessionExpiresAt?: Prisma.DateTimeFilter<"Participant"> | Date | string
   connectedAt?: Prisma.DateTimeNullableFilter<"Participant"> | Date | string | null
   connectionId?: Prisma.StringNullableFilter<"Participant"> | string | null
   ready?: Prisma.BoolFilter<"Participant"> | boolean
@@ -266,6 +274,7 @@ export type ParticipantOrderByWithRelationInput = {
   role?: Prisma.SortOrder
   playerIndex?: Prisma.SortOrderInput | Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
+  sessionExpiresAt?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   connectionId?: Prisma.SortOrderInput | Prisma.SortOrder
   ready?: Prisma.SortOrder
@@ -283,6 +292,7 @@ export type ParticipantWhereUniqueInput = Prisma.AtLeast<{
   displayName?: Prisma.StringFilter<"Participant"> | string
   role?: Prisma.EnumParticipantRoleFilter<"Participant"> | $Enums.ParticipantRole
   playerIndex?: Prisma.IntNullableFilter<"Participant"> | number | null
+  sessionExpiresAt?: Prisma.DateTimeFilter<"Participant"> | Date | string
   connectedAt?: Prisma.DateTimeNullableFilter<"Participant"> | Date | string | null
   connectionId?: Prisma.StringNullableFilter<"Participant"> | string | null
   ready?: Prisma.BoolFilter<"Participant"> | boolean
@@ -297,6 +307,7 @@ export type ParticipantOrderByWithAggregationInput = {
   role?: Prisma.SortOrder
   playerIndex?: Prisma.SortOrderInput | Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
+  sessionExpiresAt?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   connectionId?: Prisma.SortOrderInput | Prisma.SortOrder
   ready?: Prisma.SortOrder
@@ -318,6 +329,7 @@ export type ParticipantScalarWhereWithAggregatesInput = {
   role?: Prisma.EnumParticipantRoleWithAggregatesFilter<"Participant"> | $Enums.ParticipantRole
   playerIndex?: Prisma.IntNullableWithAggregatesFilter<"Participant"> | number | null
   tokenHash?: Prisma.StringWithAggregatesFilter<"Participant"> | string
+  sessionExpiresAt?: Prisma.DateTimeWithAggregatesFilter<"Participant"> | Date | string
   connectedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Participant"> | Date | string | null
   connectionId?: Prisma.StringNullableWithAggregatesFilter<"Participant"> | string | null
   ready?: Prisma.BoolWithAggregatesFilter<"Participant"> | boolean
@@ -330,6 +342,7 @@ export type ParticipantCreateInput = {
   role: $Enums.ParticipantRole
   playerIndex?: number | null
   tokenHash: string
+  sessionExpiresAt: Date | string
   connectedAt?: Date | string | null
   connectionId?: string | null
   ready?: boolean
@@ -344,6 +357,7 @@ export type ParticipantUncheckedCreateInput = {
   role: $Enums.ParticipantRole
   playerIndex?: number | null
   tokenHash: string
+  sessionExpiresAt: Date | string
   connectedAt?: Date | string | null
   connectionId?: string | null
   ready?: boolean
@@ -356,6 +370,7 @@ export type ParticipantUpdateInput = {
   role?: Prisma.EnumParticipantRoleFieldUpdateOperationsInput | $Enums.ParticipantRole
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -370,6 +385,7 @@ export type ParticipantUncheckedUpdateInput = {
   role?: Prisma.EnumParticipantRoleFieldUpdateOperationsInput | $Enums.ParticipantRole
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -383,6 +399,7 @@ export type ParticipantCreateManyInput = {
   role: $Enums.ParticipantRole
   playerIndex?: number | null
   tokenHash: string
+  sessionExpiresAt: Date | string
   connectedAt?: Date | string | null
   connectionId?: string | null
   ready?: boolean
@@ -395,6 +412,7 @@ export type ParticipantUpdateManyMutationInput = {
   role?: Prisma.EnumParticipantRoleFieldUpdateOperationsInput | $Enums.ParticipantRole
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -408,6 +426,7 @@ export type ParticipantUncheckedUpdateManyInput = {
   role?: Prisma.EnumParticipantRoleFieldUpdateOperationsInput | $Enums.ParticipantRole
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -431,6 +450,7 @@ export type ParticipantCountOrderByAggregateInput = {
   role?: Prisma.SortOrder
   playerIndex?: Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
+  sessionExpiresAt?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrder
   connectionId?: Prisma.SortOrder
   ready?: Prisma.SortOrder
@@ -448,6 +468,7 @@ export type ParticipantMaxOrderByAggregateInput = {
   role?: Prisma.SortOrder
   playerIndex?: Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
+  sessionExpiresAt?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrder
   connectionId?: Prisma.SortOrder
   ready?: Prisma.SortOrder
@@ -461,6 +482,7 @@ export type ParticipantMinOrderByAggregateInput = {
   role?: Prisma.SortOrder
   playerIndex?: Prisma.SortOrder
   tokenHash?: Prisma.SortOrder
+  sessionExpiresAt?: Prisma.SortOrder
   connectedAt?: Prisma.SortOrder
   connectionId?: Prisma.SortOrder
   ready?: Prisma.SortOrder
@@ -539,6 +561,7 @@ export type ParticipantCreateWithoutRoomInput = {
   role: $Enums.ParticipantRole
   playerIndex?: number | null
   tokenHash: string
+  sessionExpiresAt: Date | string
   connectedAt?: Date | string | null
   connectionId?: string | null
   ready?: boolean
@@ -551,6 +574,7 @@ export type ParticipantUncheckedCreateWithoutRoomInput = {
   role: $Enums.ParticipantRole
   playerIndex?: number | null
   tokenHash: string
+  sessionExpiresAt: Date | string
   connectedAt?: Date | string | null
   connectionId?: string | null
   ready?: boolean
@@ -593,6 +617,7 @@ export type ParticipantScalarWhereInput = {
   role?: Prisma.EnumParticipantRoleFilter<"Participant"> | $Enums.ParticipantRole
   playerIndex?: Prisma.IntNullableFilter<"Participant"> | number | null
   tokenHash?: Prisma.StringFilter<"Participant"> | string
+  sessionExpiresAt?: Prisma.DateTimeFilter<"Participant"> | Date | string
   connectedAt?: Prisma.DateTimeNullableFilter<"Participant"> | Date | string | null
   connectionId?: Prisma.StringNullableFilter<"Participant"> | string | null
   ready?: Prisma.BoolFilter<"Participant"> | boolean
@@ -605,6 +630,7 @@ export type ParticipantCreateManyRoomInput = {
   role: $Enums.ParticipantRole
   playerIndex?: number | null
   tokenHash: string
+  sessionExpiresAt: Date | string
   connectedAt?: Date | string | null
   connectionId?: string | null
   ready?: boolean
@@ -617,6 +643,7 @@ export type ParticipantUpdateWithoutRoomInput = {
   role?: Prisma.EnumParticipantRoleFieldUpdateOperationsInput | $Enums.ParticipantRole
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -629,6 +656,7 @@ export type ParticipantUncheckedUpdateWithoutRoomInput = {
   role?: Prisma.EnumParticipantRoleFieldUpdateOperationsInput | $Enums.ParticipantRole
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -641,6 +669,7 @@ export type ParticipantUncheckedUpdateManyWithoutRoomInput = {
   role?: Prisma.EnumParticipantRoleFieldUpdateOperationsInput | $Enums.ParticipantRole
   playerIndex?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   tokenHash?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   connectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   connectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ready?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -656,6 +685,7 @@ export type ParticipantSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   role?: boolean
   playerIndex?: boolean
   tokenHash?: boolean
+  sessionExpiresAt?: boolean
   connectedAt?: boolean
   connectionId?: boolean
   ready?: boolean
@@ -670,6 +700,7 @@ export type ParticipantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   role?: boolean
   playerIndex?: boolean
   tokenHash?: boolean
+  sessionExpiresAt?: boolean
   connectedAt?: boolean
   connectionId?: boolean
   ready?: boolean
@@ -684,6 +715,7 @@ export type ParticipantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   role?: boolean
   playerIndex?: boolean
   tokenHash?: boolean
+  sessionExpiresAt?: boolean
   connectedAt?: boolean
   connectionId?: boolean
   ready?: boolean
@@ -698,13 +730,14 @@ export type ParticipantSelectScalar = {
   role?: boolean
   playerIndex?: boolean
   tokenHash?: boolean
+  sessionExpiresAt?: boolean
   connectedAt?: boolean
   connectionId?: boolean
   ready?: boolean
   createdAt?: boolean
 }
 
-export type ParticipantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "displayName" | "role" | "playerIndex" | "tokenHash" | "connectedAt" | "connectionId" | "ready" | "createdAt", ExtArgs["result"]["participant"]>
+export type ParticipantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "displayName" | "role" | "playerIndex" | "tokenHash" | "sessionExpiresAt" | "connectedAt" | "connectionId" | "ready" | "createdAt", ExtArgs["result"]["participant"]>
 export type ParticipantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   room?: boolean | Prisma.GameRoomDefaultArgs<ExtArgs>
 }
@@ -727,6 +760,7 @@ export type $ParticipantPayload<ExtArgs extends runtime.Types.Extensions.Interna
     role: $Enums.ParticipantRole
     playerIndex: number | null
     tokenHash: string
+    sessionExpiresAt: Date
     connectedAt: Date | null
     connectionId: string | null
     ready: boolean
@@ -1161,6 +1195,7 @@ export interface ParticipantFieldRefs {
   readonly role: Prisma.FieldRef<"Participant", 'ParticipantRole'>
   readonly playerIndex: Prisma.FieldRef<"Participant", 'Int'>
   readonly tokenHash: Prisma.FieldRef<"Participant", 'String'>
+  readonly sessionExpiresAt: Prisma.FieldRef<"Participant", 'DateTime'>
   readonly connectedAt: Prisma.FieldRef<"Participant", 'DateTime'>
   readonly connectionId: Prisma.FieldRef<"Participant", 'String'>
   readonly ready: Prisma.FieldRef<"Participant", 'Boolean'>
