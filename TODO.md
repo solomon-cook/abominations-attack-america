@@ -356,7 +356,7 @@ Useful source documents:
 - [ ] [P1] Every production card has structured data, an implemented effect, timing tests, projection tests, and UI coverage.
   - [x] Give every Military Research card its exact catalogue transcription, classification, timing, duration, source reference, and explicit implementation status in `SOURCED_CARD_RULES`; unsupported effects remain source-gated.
   - [x] Give every Mutation card its exact catalogue transcription, classification, timing, duration, source reference, and explicit implementation status in `SOURCED_CARD_RULES`; effect timing remains bounded by the existing development ruleset tests.
-  - [ ] [P1] Deck exhaustion, interrupted resolution, invalid targets, stacked effects, reconnect, and replay tests pass.
+  - [x] [P1] Deck exhaustion, interrupted resolution, invalid targets, stacked effects, reconnect, and replay tests pass. (`card lifecycle primitives draw deterministically and exhaust without reshuffling`, battle-start Research timing fixtures, source-gated/invalid command coverage, continuous stacked-effect coverage, API reconnect/retry suites, and seeded replay fixtures all pass in the consolidated gate.)
 - [ ] [P1] A card catalogue report shows zero unsupported cards in the selected production ruleset.
   - [x] Generate the explicit development-ruleset catalogue report and enumerate every source-gated card; production zero-unsupported status remains blocked until the gated effects and board are verified. (`docs/card-catalogue-report.md`, `npm run card-catalogue:verify`)
   - [x] Fail catalogue generation when any inventoried card lacks complete transcription, timing, duration, source reference, or implementation status metadata.
