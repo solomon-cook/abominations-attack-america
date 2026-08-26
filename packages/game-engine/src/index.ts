@@ -7,7 +7,7 @@ import { monsterDefinition, type MonsterMovement } from "./monsters.js";
 import { BRANCH_DEPLOYMENT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS, type UnitDefinition, type UnitMovement } from "./units.js";
 export { MONSTER_DEFINITIONS, monsterDefinition, type MonsterDefinition, type MonsterMovement } from "./monsters.js";
 export { UNIT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, BRANCH_DEPLOYMENT_DEFINITIONS, type UnitDefinition, type GiantUnitDefinition, type NationalGuardDefinition, type BranchDeploymentDefinition, type UnitBranch, type UnitMovement } from "./units.js";
-import { createSetup, developmentSetupDefinition, validateSetup, type SetupSeat, type SetupState } from "./setup.js";
+import { createSetup, developmentSetupDefinition, validateSetup, type SetupDefinition, type SetupSeat, type SetupState } from "./setup.js";
 import { composeContinuousEffects, type ContinuousEffectAccumulator } from "./effects.js";
 export { EFFECT_BOUNDARIES, assertEffectPlanAvailable, composeContinuousEffects, composeEffectPlan, type ComposedEffectPlan, type ContinuousEffectAccumulator, type ContinuousEffectContribution, type EffectAvailability, type EffectBoundary, type EffectCategory, type EffectInstance, type EffectInstanceBase } from "./effects.js";
 export { CARD_STACKING_RULES, cardStackingRule, type CardStackingPolicy, type CardStackingRule } from "./cards.js";
@@ -697,6 +697,23 @@ export function createProvisionalPlaytestGame(playerCount = 2, seed = 0, matchId
   return state;
 }
 
+/** Best-guess setup data for the playable MVP bridge; replace with reviewed lairs later. */
+export function provisionalMvpSetupDefinition(playerCount: 2 | 3 | 4): SetupDefinition {
+  const cityKeys = Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes)
+    .filter((hex) => hex.features.some((feature) => feature.kind === "city"))
+    .map((hex) => hex.key);
+  const lairsByMonster = Object.fromEntries(Array.from({ length: playerCount }, (_, index) => [
+    `monster-${index + 1}`,
+    cityKeys.slice(index * 3, index * 3 + 3),
+  ]));
+  return {
+    playerCount,
+    monsterIds: Array.from({ length: playerCount }, (_, index) => `monster-${index + 1}`),
+    eligibleBranches: ["Army", "Navy", "Air Force", "Marines"].slice(0, playerCount) as Branch[],
+    lairsByMonster,
+  };
+}
+
 export const DEVELOPMENT_STOMPABLE_KEYS: readonly HexKey[] = Object.values(DEVELOPMENT_BOARD.hexes)
   .filter((hex) => hex.features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site"))
   .map((hex) => hex.key);
@@ -720,18 +737,21 @@ export function createRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `deve
 }
 
 /**
- * Production/MVP room creation boundary. The development graph is never a
- * valid fallback here: until the photographed honeycomb board is fully
- * transcribed and verified, creation fails with an explicit release blocker.
+ * MVP room creation uses the explicitly versioned best-guess honeycomb bridge.
+ * The physical-board validator remains stricter and continues to reject this
+ * board for verified release promotion.
  */
 export function assertMvpBoardReady(): void {
-  const errors = validateBoardDefinition(FULL_HONEYCOMB_BOARD, { production: true });
-  if (errors.length > 0) throw new GameDomainError("ILLEGAL_COMMAND", `MVP board is not ready for playable matches: ${errors.length} unresolved board validation errors. Complete the source-gated board review before creating a room.`);
+  const errors = validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD, { production: true, allowProvisional: true });
+  if (errors.length > 0) throw new GameDomainError("ILLEGAL_COMMAND", `MVP best-guess board is not playable: ${errors.length} structural validation errors.`);
 }
 
 export function createMvpRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `mvp-room-${playerCount}-${seed >>> 0}`): GameState {
   assertMvpBoardReady();
-  throw new GameDomainError("ILLEGAL_COMMAND", `MVP board data is verified, but the production setup initializer is not yet available for ${matchId}; refusing to fall back to the development fixture.`);
+  const state = createProvisionalPlaytestGame(playerCount, seed, matchId);
+  state.setupState = createSetup(provisionalMvpSetupDefinition(playerCount));
+  state.log.unshift("MVP best-guess honeycomb board. Labels, terrain, barriers, feature positions, and lairs remain provisional and replaceable.");
+  return state;
 }
 
 /**

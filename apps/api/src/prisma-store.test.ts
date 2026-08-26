@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createRoomGame } from "@abominations/game-engine";
+import { createMvpRoomGame, createRoomGame } from "@abominations/game-engine";
 import { PrismaRoomStore } from "./prisma-store.js";
 import { persistentAdapter } from "./test-adapter.js";
 
@@ -17,9 +17,12 @@ test("durable receipt makes the same action idempotent across store instances", 
   assert.equal(second.events.length, 1);
 });
 
-test("production Prisma room creation rejects the unresolved MVP board", async () => {
+test("MVP Prisma room creation pins the best-guess honeycomb board", async () => {
   const { adapter } = persistentAdapter();
-  await assert.rejects(() => new PrismaRoomStore(adapter).createRoom(2), /MVP board is not ready/);
+  const state = createMvpRoomGame(2);
+  assert.equal(state.boardId, "provisional-authoritative-honeycomb-board");
+  assert.equal(state.setupState?.phase, "monster-selection");
+  assert.doesNotThrow(() => new PrismaRoomStore(adapter));
 });
 
 test("Prisma store health proves the database adapter is reachable", async () => {

@@ -2,7 +2,7 @@
 
 This checklist records browser evidence separately from engine, build, and source-data verification. It is currently an evidence-in-progress artifact for the development fixture, not a release sign-off. The development fixture is not the MVP board: first-playable acceptance requires the fully filled authoritative honeycomb board.
 
-Production room creation is now fail-closed at the same boundary: `createMvpRoomGame` rejects the unresolved full-board candidate, and both Memory and Prisma room stores use that constructor unless a test explicitly opts into `allowDevelopmentFixture`. The local browser remains clearly labelled as a development playtest while source transcription is incomplete.
+MVP room creation now uses `createMvpRoomGame` with the pinned 254-cell `PROVISIONAL_AUTHORITATIVE_BOARD`; both Memory and Prisma room stores use that constructor unless a test explicitly opts into `allowDevelopmentFixture`. The browser labels the board as a best-guess provisional MVP while physical source transcription remains incomplete. Strict verified-release validation still rejects provisional content.
 
 ## Exit criteria
 
@@ -102,7 +102,9 @@ A two-tab online smoke pass on 2026-08-25 initially left the movement transition
 
 ## Full-board rendering check
 
-The browser selects its authoritative rules renderer from the active match's immutable board ID and content hash. A development playtest uses only `DEVELOPMENT_BOARD` for legal actions, features, and adjacency, while its player surface may show the disabled `FULL_HONEYCOMB_BOARD` candidate shell for visual fidelity; nine development overlays identify the only playable fixture spaces. A future promoted match will render only the reviewed `FULL_HONEYCOMB_BOARD`. The candidate shell remains non-playable and source-gated until production validation succeeds.
+The browser selects its authoritative rules renderer from the active match's immutable board ID and content hash. An MVP room uses the complete provisional honeycomb board for legal actions, features, and adjacency, with its provisional status visible in the notice and board metadata. A development playtest still uses only `DEVELOPMENT_BOARD`, while the future verified release will use a separately versioned physically reviewed board. The provisional board is playable for MVP testing but remains excluded from verified-release sign-off.
+
+On 2026-08-26, `npm run browser:online:verify` completed a fresh three-session Chrome run against the normal online MVP room path. It verified public room creation, second-player join, spectator no-act projection, ordered setup, Ready, the pinned full-board room state, WebSocket-process restart and reconnect, forged and malformed command rejection without state change, synchronized movement, Fight, Encounter, Deploy, concession, player/spectator terminal projection, and terminal reload recovery. This is desktop Chrome evidence for the best-guess MVP board; mobile support, manual acceptance, physically verified board data, and final release sign-off remain open.
 
 The board notice and accessible tile descriptions identify the nine-space development fixture and its unresolved physical-board cells. Those disclosures do not substitute for verified board data or full-rules browser coverage, and this fixture cannot be used to sign off the MVP playable-game board requirement.
 

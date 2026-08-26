@@ -172,6 +172,7 @@ try {
   spectator = await openBrowser(9232, "spectator");
   await first.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "first lobby");
   await first.evaluate(`(() => { const input = document.querySelector('[aria-label="Display name"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(input, "First player"); input.dispatchEvent(new Event("input", { bubbles: true })); })()`);
+  await first.evaluate(`(() => { const select = document.querySelector('[aria-label="Room privacy"]'); if (!select) return false; const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set; setter.call(select, "public"); select.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
   if (!await first.click("Create")) throw new Error("First browser could not create a room.");
   await first.waitFor(`!!document.querySelector(".lobby strong")`, "created room code");
   const roomCode = await first.evaluate(`document.querySelector(".lobby strong")?.textContent?.trim()`);

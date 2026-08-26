@@ -54,8 +54,10 @@ test("memory store health reports its persistence boundary", async () => {
   assert.deepEqual(await new MemoryRoomStore(true).health(), { persistence: "memory" });
 });
 
-test("production room creation rejects the sparse development fixture", async () => {
-  await assert.rejects(() => new MemoryRoomStore().createRoom(2), /MVP board is not ready/);
+test("MVP room creation uses the full best-guess honeycomb board", async () => {
+  const created = await new MemoryRoomStore().createRoom(2);
+  assert.equal(created.room?.state.boardId, "provisional-authoritative-honeycomb-board");
+  assert.equal(created.room?.state.setupState?.phase, "monster-selection");
 });
 
 test("room state uses the requested supported player count and rejects invalid counts", async () => {

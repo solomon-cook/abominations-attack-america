@@ -26,9 +26,14 @@ function resolveDevelopmentFight(state: GameState): GameState {
   return next;
 }
 
-test("MVP room creation rejects the unresolved full honeycomb board", () => {
-  assert.throws(() => assertMvpBoardReady(), /MVP board is not ready/);
-  assert.throws(() => createMvpRoomGame(2), /MVP board is not ready/);
+test("MVP room creation uses the pinned best-guess honeycomb board", () => {
+  assert.doesNotThrow(() => assertMvpBoardReady());
+  const state = createMvpRoomGame(2, 7, "best-guess-mvp");
+  assert.equal(state.boardId, "provisional-authoritative-honeycomb-board");
+  assert.equal(state.boardVersion, 1);
+  assert.equal(state.boardContentHash, "fnv1a:acc73e31");
+  assert.equal(state.setupState?.phase, "monster-selection");
+  assert.equal(state.setupState?.definition.lairsByMonster["monster-1"]?.length, 3);
 });
 
 test("supported player counts get the correct stomp stack", () => {

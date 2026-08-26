@@ -160,7 +160,7 @@ export function diagnoseBoard(board: BoardDefinition): BoardDiagnostics {
   };
 }
 
-export function validateBoardDefinition(board: BoardDefinition, options: { production?: boolean } = {}): string[] {
+export function validateBoardDefinition(board: BoardDefinition, options: { production?: boolean; allowProvisional?: boolean } = {}): string[] {
   const errors: string[] = [];
   const keys = Object.keys(board.hexes);
   if (new Set(keys).size !== keys.length) errors.push("duplicate hex keys");
@@ -168,7 +168,7 @@ export function validateBoardDefinition(board: BoardDefinition, options: { produ
     if (hex.key !== key) errors.push(`hex key mismatch for ${key}`);
     if (hexKey(hex.coord) !== key) errors.push(`hex coordinate mismatch for ${key}`);
     if (hex.sourceRefs.length === 0) errors.push(`hex ${key} has no source reference`);
-    if (options.production && hex.verification !== "verified") errors.push(`hex ${key} is ${hex.verification}`);
+    if (options.production && hex.verification !== "verified" && !(options.allowProvisional && hex.verification === "provisional")) errors.push(`hex ${key} is ${hex.verification}`);
     if (options.production && hex.waterClass === "unresolved") errors.push(`hex ${key} water class is unresolved`);
     for (const feature of hex.features) {
       if (feature.kind === "mutation-site" && !feature.siteId) errors.push(`hex ${key} mutation site has no site ID`);
