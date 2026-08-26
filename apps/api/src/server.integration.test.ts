@@ -39,6 +39,28 @@ async function stop(process: ChildProcess): Promise<void> {
   await new Promise<void>((resolve) => process.once("exit", () => resolve()));
 }
 
+test("production API startup fails closed without durable database configuration", async () => {
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    NODE_ENV: "production",
+    ALLOWED_ORIGIN: "https://play.example.test",
+    PORT: String(24000 + (process.pid % 1000)),
+    DATABASE_URL: "",
+    PRISMA_DATABASE_URL: "",
+    POSTGRES_URL: "",
+  };
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env,
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  let stderr = "";
+  child.stderr?.on("data", (chunk) => { stderr += chunk.toString(); });
+  const result = await new Promise<{ code: number | null }>((resolve) => child.once("exit", (code) => resolve({ code })));
+  assert.notEqual(result.code, 0);
+  assert.match(stderr, /production API requires DATABASE_URL/i);
+});
+
 test("API WebSocket and polling share revisioned room updates", async () => {
   const port = 19000 + (process.pid % 1000);
   const baseUrl = `http://127.0.0.1:${port}`;

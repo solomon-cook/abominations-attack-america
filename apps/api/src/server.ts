@@ -8,11 +8,12 @@ import { PrismaRoomStore } from "./prisma-store.js";
 import { withinRate, type RateBucket } from "./rate-limit.js";
 import { ApiMetrics } from "./metrics.js";
 import { ErrorReporter } from "./error-reporting.js";
-import { resolveAllowedOrigin } from "./runtime-config.js";
+import { validateRuntimeConfig } from "./runtime-config.js";
 
 const port = Number(process.env.PORT ?? 8787);
 const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL;
-const allowedOrigin = resolveAllowedOrigin();
+const runtimeConfig = validateRuntimeConfig();
+const allowedOrigin = runtimeConfig.allowedOrigin;
 const allowDevelopmentFixture = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEVELOPMENT_FIXTURE === "true";
 const store: RoomStore = allowDevelopmentFixture ? new MemoryRoomStore(true) : databaseUrl ? new PrismaRoomStore() : new MemoryRoomStore(false);
 const sockets = new Map<string, Map<WebSocket, string>>();

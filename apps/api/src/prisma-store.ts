@@ -8,10 +8,14 @@ import { prisma } from "../lib/prisma.js";
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const token = () => randomBytes(24).toString("base64url");
 const code = () => randomBytes(3).toString("hex").toUpperCase();
+const getPrisma = () => {
+  if (!prisma) throw new Error("DATABASE_URL is required to initialize Prisma.");
+  return prisma;
+};
 
 /** Prisma-backed store. The HTTP server selects this when DATABASE_URL is configured. */
 export class PrismaRoomStore implements RoomStore {
-  constructor(private readonly prismaClient = prisma, private readonly allowDevelopmentFixture = false) {}
+  constructor(private readonly prismaClient = getPrisma(), private readonly allowDevelopmentFixture = false) {}
 
   async close(): Promise<void> {
     await this.prismaClient.$disconnect();
