@@ -18,7 +18,7 @@ const required = [
   ["full shell does not inherit development locations", /place: undefined,[\s\S]*developmentFixture: false/],
   ["phase actions use shared resolver", /import \{ boardForGame \} from "\.\.\/board-pin"/],
   ["Laser Fence uses resolved board edges", /const activeBoard = boardForGame\(activeGame\);[\s\S]*activeBoard\.edges/],
-  ["unresolved shell has no visible placeholder label", /const visibleName = place\?\.name \?\? \(developmentFixture \? hex\.label : ""\);/],
+  ["unresolved shell has no visible placeholder label", /const visibleName = place\?\.name \?\? \(developmentFixture \? hex\.label : provisionalFeatureName \?\? ""\);/],
   ["unresolved shell has no placeholder marker", /\{place && <span className="node"/],
   ["unresolved shell has no implied terrain artwork", /const baseArt = hex\.waterClass === "unresolved"\s*\? undefined/],
   ["unresolved shell has neutral hatch treatment", /\.hex-tile\.unresolved\{background:repeating-linear-gradient/],
