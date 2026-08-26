@@ -103,6 +103,18 @@ try {
     return Boolean(document.querySelector("main")) && named;
   })()`);
   if (!accessibleControls) throw new Error("Local browser smoke found an unnamed gameplay control or missing main landmark.");
+  const touchTargets = await evaluate(`(() => {
+    const selector = ".map-controls button, .game-panel-toggle, .game-screen header .ghost, .action-dock button, .path-controls button, .battle-choice button, .retreat-choice button";
+    const controls = [...document.querySelectorAll(selector)].filter((control) => {
+      const rect = control.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    });
+    return controls.length > 0 && controls.every((control) => {
+      const rect = control.getBoundingClientRect();
+      return rect.width >= 44 && rect.height >= 44;
+    });
+  })()`);
+  if (!touchTargets) throw new Error("Local browser smoke found a visible gameplay control below the 44px touch-target contract.");
 
   const invalidAction = await evaluate(`(() => {
     const tile = document.querySelector(".hex-tile.unreachable:disabled");
@@ -190,7 +202,7 @@ try {
   const concessionTerminal = await evaluate(`Boolean(document.querySelector(".victory-summary")) && Boolean([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Start another local playtest"))`);
   if (!concessionTerminal) throw new Error("Concession did not expose the terminal victory summary and restart control.");
 
-  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", invalidAction: "disabled-unreachable-destination", loadingState: "verified", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, concessionTerminal: "verified", nextPhase: finalPhase }));
+  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", touchTargets: "verified", invalidAction: "disabled-unreachable-destination", loadingState: "verified", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, concessionTerminal: "verified", nextPhase: finalPhase }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");

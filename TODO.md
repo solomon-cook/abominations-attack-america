@@ -574,7 +574,7 @@ Useful source documents:
 - [ ] [P1] Browser QA passes at agreed desktop, tablet, and mobile viewports with no hidden required controls.
   - [x] Run a 390×844 compact runtime smoke: setup completed, legal path preview exposed Confirm/Cancel, and the document had no horizontal or page overflow. (Development-fixture evidence recorded in `docs/first-playable-browser-evidence.md`; browser matrix and manual accessibility review remain open.)
   - [x] Add a reproducible desktop/tablet/mobile runtime smoke matrix (`npm run browser:local:matrix`) covering 1280×720, 834×1112, and 390×844 local development playtests; screenshot-level and manual accessibility review remain open.
-  - [x] Assert a main landmark and accessible name for every rendered gameplay form control in the local browser smoke; manual keyboard/screen-reader review remains open.
+  - [x] Assert a main landmark, accessible name, and 44px runtime target size for every visible gameplay control in the local browser smoke; manual keyboard/screen-reader/WCAG review remains open.
 - [x] [P1] Onboarding can be skipped, revisited, and completed without changing authoritative match state. (The guide persists only a browser-local seen flag, is reopened through `How to play`, and browser verification confirmed hide/reopen without changing match data.)
 
 ## Milestone 14 — Tests, playtesting, operations, security, deployment, and release
