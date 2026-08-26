@@ -40,4 +40,6 @@ On 2026-08-26, a live desktop review found that the gameplay map was still carry
 
 On 2026-08-26, fresh Chrome sessions opened that control at 1280×720, 834×1112, and 390×844 and verified 254 rendered `.board-review-hex` faces, 13 rows, the cream-face treatment, cell containment, individual-cell inspection, no playable tiles, no unresolved labels, and no horizontal overflow. The screenshot and runtime results are evidence of candidate geometry only; they are not physical-board acceptance or MVP playability.
 
+On 2026-08-26, a fresh 1280×720 capture was visually compared with the supplied setup photograph at the same landscape fit. It confirms the geometry fix: every visible face is the same flat-top orientation with a uniform seam and no neighbour overlap. It also confirms the remaining failure: the candidate is a regular rectangular shell of neutral faces, while the source board has an irregular land/coast/sea silhouette and authored printed features. The current capture therefore passes seam/orientation containment checks but fails the source-faithful board comparison and remains read-only.
+
 Promotion requires the failed/source-gated rows above to be replaced with reviewed board data, followed by human sign-off and a regenerated immutable board content hash.
