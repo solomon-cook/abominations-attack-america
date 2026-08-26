@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CARD_STACKING_RULES, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -2367,6 +2367,19 @@ test("blank cells and lairs have no stompable Encounter effect", () => {
   assert.equal(hasStompableEncounterFeature([{ kind: "lair", monsterId: "monster-1" }]), false);
   assert.equal(hasStompableEncounterFeature([{ kind: "challenge-site" }]), false);
   assert.equal(hasStompableEncounterFeature([{ kind: "city", benefit: { kind: "health", amount: 1 } }]), true);
+});
+
+test("multi-icon Encounter features follow the documented lifecycle order", () => {
+  const features = orderEncounterFeatures([
+    { kind: "infamy-site" },
+    { kind: "city", benefit: { kind: "health", amount: 1 } },
+    { kind: "challenge-site" },
+    { kind: "mutation-site", siteId: "mutation-1" },
+    { kind: "military-base", branch: "Army" },
+  ]);
+  assert.deepEqual(features.map((feature) => feature.kind), [
+    "mutation-site", "challenge-site", "city", "military-base", "infamy-site",
+  ]);
 });
 
 test("stomped spaces do not consume another Stomp marker", () => {

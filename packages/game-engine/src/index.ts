@@ -1839,6 +1839,27 @@ export function hasStompableEncounterFeature(features: readonly BoardFeature[]):
   return features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site");
 }
 
+/**
+ * Apply the documented Encounter sequence deterministically when a hex carries
+ * more than one icon. Within one feature class, source order is preserved.
+ */
+export function orderEncounterFeatures(features: readonly BoardFeature[]): BoardFeature[] {
+  const order: Record<BoardFeature["kind"], number> = {
+    "mutation-site": 0,
+    "challenge-site": 1,
+    city: 2,
+    "military-base": 3,
+    "infamy-site": 4,
+    lair: 5,
+    hollywood: 6,
+    "los-angeles": 7,
+  };
+  return features
+    .map((feature, index) => ({ feature, index }))
+    .sort((a, b) => order[a.feature.kind] - order[b.feature.kind] || a.index - b.index)
+    .map(({ feature }) => feature);
+}
+
 export function resolveEncounterResult(state: GameState, choice?: "health" | "infamy"): EncounterResolution {
   if (state.phase !== "encounter") return { state, effects: [], rolls: [], mutationDraws: [] };
   const board = boardForState(state);
@@ -1853,7 +1874,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
   const canonicalLocationKey = (locationIdToHexKey(locationKey) ?? locationKey) as HexKey;
   const locationId = place?.id ?? locationKey;
   const alreadyStomped = next.stompedLocations.includes(locationKey);
-  const features = isHexKey(canonicalLocationKey) ? board.hexes[canonicalLocationKey]?.features ?? [] : [];
+  const features = orderEncounterFeatures(isHexKey(canonicalLocationKey) ? board.hexes[canonicalLocationKey]?.features ?? [] : []);
   const stompable = hasStompableEncounterFeature(features);
   const challengeSite = features.some((feature) => feature.kind === "challenge-site");
   const baseFeature = features.find((feature): feature is Extract<BoardFeature, { kind: "military-base" }> => feature.kind === "military-base");
