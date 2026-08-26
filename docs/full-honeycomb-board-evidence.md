@@ -20,6 +20,7 @@ cross-checks, not as replacement rule authority:
 - [Blugee setup photograph](https://blugee.com/cdn/shop/files/Monsters-Menace-America-Board-Game-2_898x600.jpg?v=1711114433)
 - [Independent setup photograph](https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rtYAAOSw9fVmDcjE/%24_3.JPG)
 - [Independent setup photograph, 1600px delivery](https://i.ebayimg.com/images/g/rtYAAOSw9fVmDcjE/s-l1600.jpg)
+- [Scanned Italian rulebook, board photograph on PDF page 3](https://www.goblins.net/files/downloads/MonsterMenaceAmerica_Regolamento.pdf)
 
 These references independently support the broad filled-board silhouette, blue
 sea/coast boundary, green land field, and presence of printed city/site/base
@@ -59,6 +60,14 @@ also shows the game-board family. They are perspective photographs with
 component occlusion or insufficient text resolution, not aligned top-down
 transcriptions. No labels, features, water classes, barriers, or coordinate
 edges were promoted from this search.
+
+The [Italian rulebook scan](https://www.goblins.net/files/downloads/MonsterMenaceAmerica_Regolamento.pdf)
+adds a partial board photograph on PDF page 3. It independently shows the
+continuous flat-top honeycomb, cream face seams, blue water/coast field, and
+printed feature families, but the board is cropped and viewed obliquely with
+pieces and cards covering cells. It is therefore corroborating visual
+reconnaissance only; no cell label, feature, water class, barrier, or edge was
+promoted from it.
 
 ## Current evidence
 
