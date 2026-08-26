@@ -41,3 +41,9 @@ The probe performs no state-changing request. It requires HTTPS, checks that
 documented non-negative `/metrics` counter is numeric. For an intentional local
 HTTP probe only, set `ALLOW_HTTP_DEPLOYMENT_PROBE=1`. A successful local build
 or an unconfigured probe is not deployed-service evidence.
+
+The CI workflow includes the same read-only probe as an opt-in
+`deployment-probe` job. It runs only when the repository variable
+`DEPLOYMENT_BASE_URL` is configured, so ordinary pull requests do not claim
+deployment coverage and a configured endpoint cannot silently skip its health
+and metrics check.

@@ -27,3 +27,17 @@ jobs:
       - uses: browser-actions/setup-chrome@v1
       - run: npm ci
       - run: npm run browser:ci:verify
+
+  deployment-probe:
+    if: ${{ vars.DEPLOYMENT_BASE_URL != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run deployment:probe
+        env:
+          DEPLOYMENT_BASE_URL: ${{ vars.DEPLOYMENT_BASE_URL }}
