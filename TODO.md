@@ -51,7 +51,7 @@ Useful source documents:
 - [x] [P0] Create a traceability matrix from every section of the rules reference to engine, UI, and test work. (`docs/rules-traceability-matrix.md`; verified by `npm run traceability:verify`)
   - [x] [P0] Record the source-authority order for rulebook text, board printing, record tiles, cards, and project-specific digital interpretations.
 - [x] [P0] Inventory every monster, military branch, National Guard unit, giant unit, marker, token, die, and deck required for 2–4 players. (`docs/component-inventory.md`; verified by `npm run source-audit:verify`)
-  - [P0] Transcribe each monster's starting Health, Move, Defense, Damage, Attacks, lairs, and special ability with source references.
+  - [ ] [P0] Transcribe each monster's starting Health, Move, Defense, Damage, Attacks, lairs, and special ability with source references.
 - [x] [P0] Transcribe every military unit's quantity, Move, Defense, Damage, Attacks, movement abilities, and special rules. (The complete regular, giant, and National Guard records are typed and source-referenced in `packages/game-engine/src/units.ts`; execution, placement, and exception validation remain separate TODOs.)
   - [x] [P0] Transcribe each branch's unit inventory and deployment allowance/formula from its record tile. (The five branch records and exact Place/Draw Research alternatives are typed in `BRANCH_DEPLOYMENT_DEFINITIONS`, source-referenced in the component catalogue, and covered by the deployment matrix; physical-board base coordinates remain separate.)
 - [x] [P0] Transcribe National Guard statistics and all general placement/control restrictions. (Tank/Fighter quantities, Move values, placement scope, and Guard Commander restriction are typed and source-referenced; enforcement remains source-gated.)
@@ -59,7 +59,7 @@ Useful source documents:
 - [x] [P0] Inventory every Monster Mutation card and record its exact mechanical effect, timing, duration, target, and stacking rule. (`references/monsters-menace-america/component-rules-catalogue.json`)
   - [x] [P0] Inventory every Military Research card and record its exact mechanical effect, timing, duration, target, and stacking rule. (`references/monsters-menace-america/component-rules-catalogue.json`)
 - [x] [P0] Resolve the exact National Guard control-card behaviour from authoritative component evidence. (The exact Guard Commander transcription, continuous timing, duration, and source reference are typed in `SOURCED_CARD_RULES`; its movement/deployment permission is enforced when the card is in the controlling player's hand, while removal/redeployment lifecycle remains gated.)
-  - [P0] Identify every rule conflict, omission, or component-dependent special case and assign a visible resolution status.
+  - [ ] [P0] Identify every rule conflict, omission, or component-dependent special case and assign a visible resolution status.
 - [x] [P1] Document deliberate digital adaptations such as hidden information, simultaneous choices, dice presentation, and disconnect handling. (`docs/digital-adaptations.md`)
   - [x] [P1] Complete an IP/content audit separating reference-only physical materials from original, licensed, or safe-to-ship assets and wording. (`docs/content-ip-audit.md`)
 - [x] [P1] Define a review and sign-off owner for board data, component data, rules interpretations, and shipped media. (`docs/review-signoff.md`)
@@ -111,9 +111,9 @@ Useful source documents:
       - [x] Record the before/after acceptance matrix, separating machine-validated candidate geometry from failed/source-gated physical-content checks (`docs/board-visual-acceptance.md`).
       - [x] Provide a clearly labelled read-only browser surface for inspecting the complete 254-cell candidate geometry without exposing it as playable topology. (`Review full board shell` on the home screen; unresolved faces remain blank and source-gated, and each face now opens a canonical-key/source-reference inspector. `browser:board-review:verify` self-starts Vite unless an explicit `BROWSER_TEST_URL` is supplied.)
 - [ ] [P0] Record lake, sea, seacoast, boundary, disabled, and exceptional edge information.
-  - [P0] Record all cities and their exact Health/dice benefits.
+  - [ ] [P0] Record all cities and their exact Health/dice benefits.
 - [ ] [P0] Record all military bases and owning branches.
-  - [P0] Record all Infamy, Mutation, Challenge, Hollywood, Los Angeles, blank, and lair spaces.
+  - [ ] [P0] Record all Infamy, Mutation, Challenge, Hollywood, Los Angeles, blank, and lair spaces.
 - [x] [P0] Support multiple composable features on one hex. (`BoardHex.features` is a list; validator/index test covers a multi-feature hex)
   - [x] [P0] Create a generated lookup index and content hash for each immutable board version. (`buildBoardIndex`, `boardContentHash`)
 - [x] [P0] Pin board ID, version, ruleset version, and content hash when a match is created. (`createGame` stores all four immutable board pins; engine test covers them)
@@ -178,14 +178,14 @@ Useful source documents:
 - [x] [P0] Implement reverse-order selection of one eligible non-National-Guard military branch per player. (`chooseBranch` enforces reverse seat order and eligible-branch input)
   - [x] [P0] Prevent duplicate monster and branch assignments. (Setup tests reject duplicate claims)
 - [x] [P0] Create every monster and branch unit from verified component definitions. (All six monster records and all 32 regular branch units are instantiated from the source-backed catalogues; production setup/placement remains source-gated.)
-  - [P0] Place unselected branch units on their bases for games with fewer than four players.
+  - [ ] [P0] Place unselected branch units on their bases for games with fewer than four players.
 - [x] [P0] Let each player choose one of their monster's three valid lairs. (`chooseLair` validates against the supplied verified lair definition and prevents reuse)
   - [x] [P0] Let each player choose initial deployment or one Military Research draw. (`chooseStartingChoice` records exactly one explicit option; deployment legality remains source-definition dependent)
 - [x] [P0] Validate complete regular-unit inventory accounting before the first turn begins. (Source-counted regular quantities, structural IDs, positions, battle references, National Guard collisions, and movement ledgers are validated at creation, before commands, and after every successful event transition.)
   - [x] [P0] Validate the source-backed National Guard record-tile quantity. (`createNationalGuardInventory` instantiates six tanks and two fighters with stable IDs; exact quantity/identity conservation and migration restore the canonical eight-piece inventory.)
   - [x] [P0] Validate giant physical quantities against the photographed component record. (The source shows one Mecha-Monster and one Captain Colossal; `GIANT_UNIT_DEFINITIONS.quantity` is typed as `1` for each and covered by the catalogue regression test.)
   - [ ] [P0] Validate giant physical base ownership and board placement against the reviewed physical-board transcription. (The cards establish placement on one of the owning player's bases, but the reconstructed board still lacks authoritative base coordinates and cannot promote this to production topology.)
-  - [P1] Add lobby controls for player count, ready state, seat order, display names, and room privacy.
+  - [ ] [P1] Add lobby controls for player count, ready state, seat order, display names, and room privacy.
 - [x] [P1] Define host departure, unready player, duplicate tab, and setup-time disconnect behaviour. (The room lifecycle contract defines creator departure as non-privileged, unready remains waiting-only, connection leases isolate duplicate tabs, and setup disconnect/reconnect preserves the persisted state.)
   - [x] [P1] Show a setup summary for confirmation before locking the match configuration. (Online web rooms render the persisted completed assignments and readiness state before activation)
 
@@ -268,7 +268,7 @@ Useful source documents:
 **Depends on:** Milestones 1–3 and 6
 
 - [x] [P0] Enter Encounter only when movement and all required battles permit it. (Phase-specific pending decisions prevent Encounter commands during Move/Fight; the gate and the development feature inventory are regression-tested.)
-  - [P0] Resolve every eligible feature on a multi-feature final space in documented order.
+  - [ ] [P0] Resolve every eligible feature on a multi-feature final space in documented order.
   - [x] [P0] Store stomp state on the hex and prevent the same space being stomped twice. (`GameState.stompedLocations` is persisted and encounter tests prove duplicate encounters do not consume a marker twice)
 - [x] [P0] Take Stomp markers from the active player-count stack before Challenge declaration. (The player-count stack is created by `stompMarkerCount`, decremented only for an unstomped encounter, and the final active marker declares the Challenge in the deterministic declaration fixture.)
   - [x] [P0] Use extra markers for later stomps without creating a second declaration. (Post-declaration stomps remain recorded at zero active markers and preserve the original challenger without redeclaring the Challenge.)
@@ -311,11 +311,11 @@ Useful source documents:
 - [x] [P1] Count each redeployed unit against the branch allowance. (Redeployment increments `deploymentsThisTurn` and rejects further redeployments after the verified branch allowance.)
   - [x] [P1] Prevent redeployment of National Guard and giant units. (National Guard and the typed `Giant` branch are rejected by the ordinary redeployment selector/command boundary.)
   - [x] [P1] Let the active player draw one Military Research card instead of performing any deployment. (Deploy-phase `draw-research` draws deterministically into the active player's face-up Research hand, ends Deploy, and is exposed in the browser; deck exhaustion is rejected without state mutation.)
-  - [P1] Apply immediate Research instructions and expose later-use Research choices.
+  - [ ] [P1] Apply immediate Research instructions and expose later-use Research choices.
 - [x] [P1] Introduce Captain Colossal and Mecha-Monster only through their verified card effects. (`draw-research` immediately resolves either sourced card onto the active player's verified branch base and discards the card; the effect remains unavailable in Challenge and terminal states.)
   - [x] Implement giant-unit Health, attacks, damage, sharing, and permanent destruction. (Giant units are typed military occupants, take Health damage rather than ordinary unit destruction, can share spaces, and enter `permanently-removed` with an inventory event at zero Health.)
 - [x] [P1] Ensure giant-unit placement does not consume the normal one-unit-per-space deployment slot when the rules exempt it. (Giant placement does not add to `deploymentDestinations` or `deploymentsThisTurn`; a giant can share its base with other units.)
-  - [P1] Implement sourced temporary National Guard control overrides with explicit permissions and expiry. (The continuous Guard Commander permission is implemented; temporary overrides remain source-gated.)
+  - [ ] [P1] Implement sourced temporary National Guard control overrides with explicit permissions and expiry. (The continuous Guard Commander permission is implemented; temporary overrides remain source-gated.)
 
 ### Milestone 8 acceptance
 
@@ -457,7 +457,7 @@ Useful source documents:
       - [x] Add compact monster and branch status controls with health/Infamy and deployed/reserve summaries, plus keyboard-accessible lightbox detail views. (`apps/web/src/components/PlayerStatusControls.tsx`; web typecheck/build pass.)
     - [x] [P0] Expand the bottom-left monster and military controls into lightbox-style detail views containing the key information without permanently covering the map. (`PlayerStatusControls` provides dismissible status lightboxes anchored above the controls.)
       - [x] Provide dismissible detail views anchored above the status controls without covering the board by default. (`apps/web/src/components/PlayerStatusControls.tsx`; web typecheck/build pass.)
-  - [P0] Render all board hexes, features, barriers, labels, and pieces from the authoritative board and match state. (The renderer consumes canonical state for the nine-space development fixture and renders the separate 254-cell unresolved shell; promotion to the fully authored physical board remains source-gated.)
+  - [ ] [P0] Render all board hexes, features, barriers, labels, and pieces from the authoritative board and match state. (The renderer consumes canonical state for the nine-space development fixture and renders the separate 254-cell unresolved shell; promotion to the fully authored physical board remains source-gated.)
     - [x] Keep the candidate shell's landscape row geometry, flat-top orientation, odd-row offset, and non-overlapping tile bounds deterministic and separate from rules coordinates. (`buildDisplayHexLayout`; verified by `npm run web-board-layout:verify`)
   - [x] [P0] Add pan, zoom, fit-to-board, reset-view, and focus-active-area controls. (Accessible board-view controls provide directional pan, bounded zoom, and Fit/reset in the browser; focus-active-area remains the current highlighted selection.)
 - [x] [P0] Make dense piece stacks selectable and show ownership, branch, Health, and status without obscuring the board. (The accessible Piece Stacks inspector lists occupied hexes and exposes every monster/unit detail without overlaying the board; source-gated fields remain labelled as unavailable.)
@@ -619,7 +619,7 @@ Useful source documents:
 - [ ] [P1] Add error reporting and alerts for API health, persistence failures, event/snapshot divergence, and deployment regressions. (A local redacting error reporter now categorizes request/command/WebSocket failures, `/health` probes Prisma with `SELECT 1`, bounded threshold alert log events are emitted, and optional `ERROR_ALERT_URL` delivery is covered by injected tests; deployed alert routing and event/snapshot/divergence/deployment monitors remain.)
   - [x] Emit local redacted reports for WebSocket projection divergence and API listen/deployment failures, with category coverage tests. (External routing, durable aggregation, and deployed regression monitors remain open.)
   - [x] [P1] Document the threat model for room codes, session tokens, command authorization, enumeration, replay, injection, rate abuse, and secret handling. (`docs/security-threat-model.md`; external production review remains open.)
-  - [P1] Validate CORS, security headers, dependency risks, database permissions, backups, restore, and credential rotation.
+  - [ ] [P1] Validate CORS, security headers, dependency risks, database permissions, backups, restore, and credential rotation.
   - [x] Add an integration check for the implemented CORS allow-origin, preflight methods/headers, no-store, no-referrer, frame-deny, and MIME-sniffing response headers (`apps/api/src/server.integration.test.ts`); dependency, database, backup, restore, and credential-rotation review remains deployment work.
     - [x] Bound API JSON bodies to 64 KiB and configure HTTP request, header, and keep-alive timeouts; integration coverage rejects an oversized body with HTTP 413 before room creation. Deployed proxy/edge timeout and distributed-rate-limit verification remain open.
     - [x] Fail closed when production has no explicit HTTPS `ALLOWED_ORIGIN`; development fixtures retain the local wildcard default, while runtime-config tests cover invalid and valid origins. Deployment still needs the actual staging/production origin values.
@@ -628,13 +628,13 @@ Useful source documents:
     - [x] Detect production dependency-audit drift in the validation gate (`npm run security:dependencies:verify`); the three known Prisma/deepmerge advisories remain an explicit baseline blocker, while any new or changed advisory fails validation.
 - [ ] [P1] Choose hosting only after documenting requirements for static web delivery, WebSockets, durable API compute, Postgres, secrets, and observability.
   - [x] [P1] Document hosting requirements and environment separation before provider selection. (`docs/deployment-requirements.md`; no provider or live environment is claimed.)
-  - [P1] Create staging and production environments with separate data, secrets, URLs, and deployment safeguards.
+  - [ ] [P1] Create staging and production environments with separate data, secrets, URLs, and deployment safeguards.
   - [x] [P1] Document database migration, rollback, backup/restore, and incompatible-match handling. (`docs/release-operations.md`; actual managed-Postgres drill remains open.)
 - [ ] [P1] Verify production through real browser create/join/play/reconnect/spectate flows after deployment.
   - [x] Add a read-only deployment health/metrics probe that requires HTTPS and durable Prisma persistence (`npm run deployment:probe`); it remains unrun until a staging or production endpoint exists.
-  - [P1] Complete final board-data, rules-fidelity, accessibility, content/IP, privacy, and security sign-offs.
+  - [ ] [P1] Complete final board-data, rules-fidelity, accessibility, content/IP, privacy, and security sign-offs.
   - [x] [P1] Prepare concise player rules, privacy information, known limitations, and release notes. (`docs/player-rules.md`, `docs/privacy.md`, `docs/known-limitations.md`, and `docs/release-notes.md`; public publication and support contact remain open.)
-  - [P1] Publish a verified support route and public release documentation.
+  - [ ] [P1] Publish a verified support route and public release documentation.
 
 ### Milestone 14 acceptance
 
@@ -650,19 +650,19 @@ Useful source documents:
 **Depends on:** stable web v1 and playtest evidence
 
 - [ ] [Later] Add optional authenticated profiles without removing guest room play.
-  - [Later] Add friend invitations, private links, saved opponents, and presence controls.
+  - [ ] [Later] Add friend invitations, private links, saved opponents, and presence controls.
 - [ ] [Later] Add asynchronous or correspondence matches with explicit turn deadlines.
-  - [Later] Add AI opponents at clearly labelled difficulty levels.
+  - [ ] [Later] Add AI opponents at clearly labelled difficulty levels.
 - [ ] [Later] Add solo scenarios and rules-learning challenges.
-  - [Later] Add match replay navigation, bookmarks, export, and shareable spectator replays.
+  - [ ] [Later] Add match replay navigation, bookmarks, export, and shareable spectator replays.
 - [ ] [Later] Add match history and player-facing statistics with privacy controls.
-  - [Later] Add additional original boards, monsters, branches, cards, and rulesets through versioned content packs.
+  - [ ] [Later] Add additional original boards, monsters, branches, cards, and rulesets through versioned content packs.
 - [ ] [Later] Add localization infrastructure and translated UI/rules content.
-  - [Later] Add richer original animation, VFX, music, voice, and board themes.
+  - [ ] [Later] Add richer original animation, VFX, music, voice, and board themes.
 - [x] [Later] Add installable PWA support, offline reference material, and update prompts. (`apps/web/public/manifest.webmanifest`, `sw.js`, `reference.html`, and the offline fallback provide an installable shell, cached playtest reference, update prompt, and explicit live-connection boundary; `npm run pwa:verify` validates these artifacts. Authoritative rooms/actions remain online-only.)
-  - [Later] Add moderation, reporting, blocking, and public-room discovery only if public matchmaking is introduced.
+  - [ ] [Later] Add moderation, reporting, blocking, and public-room discovery only if public matchmaking is introduced.
 - [ ] [Later] Add tournament/lobby formats only after deterministic rules and operational tooling are mature.
-  - [Later] Reuse stable shared contracts for iOS, tvOS, and desktop clients without moving presentation concerns into the engine.
+  - [ ] [Later] Reuse stable shared contracts for iOS, tvOS, and desktop clients without moving presentation concerns into the engine.
 - [ ] [Later] Evaluate native notifications, controller support, large-screen spectator mode, and cross-device hand/board experiences.
 
 ### Milestone 15 acceptance
