@@ -134,6 +134,8 @@ try {
   if (!/PROVISIONAL HONEYCOMB PLAYTEST/i.test(provisionalNotice)) throw new Error(`Provisional playtest did not expose its source-status notice: ${provisionalNotice}`);
   const provisionalSurface = await evaluate(`(() => ({ cityLabels: [...document.querySelectorAll(".hex-tile .tile-name")].filter((node) => /Provisional/i.test(node.textContent ?? "")).length, featureLabels: document.querySelectorAll(".hex-tile .provisional-feature-kind").length, unresolvedLabels: [...document.querySelectorAll(".hex-tile .tile-name")].filter((node) => /Unresolved/i.test(node.textContent ?? "")).length }))()`);
   if (provisionalSurface?.cityLabels !== 12 || provisionalSurface.featureLabels !== 23 || provisionalSurface.unresolvedLabels !== 0) throw new Error(`Provisional feature labels were not rendered safely: ${JSON.stringify(provisionalSurface)}`);
+  const provisionalContext = await evaluate(`(() => { const tray = document.querySelector(".board-context-tray"); return { visible: Boolean(tray && tray.getBoundingClientRect().width > 0), text: tray?.textContent ?? "" }; })()`);
+  if (!provisionalContext?.visible || !/provisional|source-gated/i.test(provisionalContext.text)) throw new Error(`Provisional active-hex context did not disclose its review status: ${JSON.stringify(provisionalContext)}`);
   if (!await clickButton("Development playtest")) throw new Error("Could not return from provisional playtest to the development fixture.");
   await waitFor(`!!document.querySelector(".setup-panel")`, "development setup");
 
@@ -171,6 +173,8 @@ try {
   if (developmentBoardIdentity?.id !== "development-nine-location" || !developmentBoardIdentity.version || !developmentBoardIdentity.hash) {
     throw new Error(`Development playtest did not expose its pinned board identity: ${JSON.stringify(developmentBoardIdentity)}`);
   }
+  const developmentContext = await evaluate(`(() => { const tray = document.querySelector(".board-context-tray"); return { visible: Boolean(tray && tray.getBoundingClientRect().width > 0), text: tray?.textContent ?? "" }; })()`);
+  if (!developmentContext?.visible || !/ACTIVE HEX|recorded neighbours/i.test(developmentContext.text)) throw new Error(`Development active-hex context tray was not visible or named: ${JSON.stringify(developmentContext)}`);
   if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252 || boardSurface?.unresolvedNodes !== 0 || boardSurface?.visibleUnresolvedLabels !== 0 || boardSurface?.decorativeMapOverlays !== 0) {
     throw new Error(`Local browser smoke found an unexpected candidate board surface: ${JSON.stringify(boardSurface)}`);
   }

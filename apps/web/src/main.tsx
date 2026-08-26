@@ -52,6 +52,7 @@ import { PieceStackInspector } from "./components/PieceStackInspector";
 import { PlayerStatusControls } from "./components/PlayerStatusControls";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { SelectedPieceTray } from "./components/SelectedPieceTray";
+import { BoardContextTray } from "./components/BoardContextTray";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SetupPanel } from "./components/SetupPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
@@ -1105,6 +1106,7 @@ function App() {
           <div className="board-action-bar">
             <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
           </div>
+          <BoardContextTray game={activeGame} board={activeBoard} hex={activeBoardHex} />
           <p className="sr-only" id="board-description">
             {boardDescription}
           </p>
