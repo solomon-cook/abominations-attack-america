@@ -22,7 +22,13 @@ if (!ledger.includes("not authoritative game data") || !ledger.includes("must no
   throw new Error("Provisional board ledger must retain its non-authoritative disclaimer.");
 }
 
-const keys = [...ledger.matchAll(/^\| `([^`]+)` \|/gm)].map((match) => match[1]);
+const ledgerStart = ledger.indexOf("## Cell ledger");
+const ledgerEnd = ledger.indexOf("## Cross-reference workflow", ledgerStart + 1);
+if (ledgerStart < 0 || ledgerEnd < 0 || ledgerEnd <= ledgerStart) {
+  throw new Error("Provisional board ledger must contain a bounded Cell ledger section.");
+}
+const cellLedger = ledger.slice(ledgerStart, ledgerEnd);
+const keys = [...cellLedger.matchAll(/^\| `([^`]+)` \|/gm)].map((match) => match[1]);
 if (keys.length !== 254 || new Set(keys).size !== 254) {
   throw new Error(`Expected 254 unique coordinate-shell rows, found ${keys.length}.`);
 }
