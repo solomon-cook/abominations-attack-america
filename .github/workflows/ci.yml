@@ -64,7 +64,7 @@ jobs:
           node-version: 22
           cache: npm
       - uses: browser-actions/setup-firefox@v1
-      - uses: browser-actions/setup-geckodriver@v1
+      - uses: browser-actions/setup-geckodriver@v0.0.0
       - run: npm ci
       - run: npm run browser:firefox:verify
         env:
