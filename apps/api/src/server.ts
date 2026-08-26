@@ -18,7 +18,13 @@ const allowDevelopmentFixture = process.env.NODE_ENV !== "production" && process
 const store: RoomStore = allowDevelopmentFixture ? new MemoryRoomStore(true) : databaseUrl ? new PrismaRoomStore() : new MemoryRoomStore(false);
 const sockets = new Map<string, Map<WebSocket, string>>();
 const RATE_WINDOW_MS = 60_000;
-const RATE_LIMIT = 120;
+const configuredDevelopmentLimit = (name: string, fallback: number) => {
+  if (!allowDevelopmentFixture) return fallback;
+  const value = Number(process.env[name] ?? fallback);
+  return Number.isInteger(value) && value >= fallback ? value : fallback;
+};
+const RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_API_RATE_LIMIT", 120);
+const WEBSOCKET_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_WS_RATE_LIMIT", 30);
 const MAX_JSON_BODY_BYTES = 64 * 1024;
 const REQUEST_TIMEOUT_MS = 15_000;
 const HEADERS_TIMEOUT_MS = 20_000;
@@ -133,7 +139,7 @@ server.on("error", (error) => {
 });
 const wsServer = new WebSocketServer({ server, path: "/ws" });
 wsServer.on("connection", async (socket, request) => {
-  if (!withinRate(socketRate, requestAddress(request), Date.now(), RATE_WINDOW_MS, 30)) {
+  if (!withinRate(socketRate, requestAddress(request), Date.now(), RATE_WINDOW_MS, WEBSOCKET_RATE_LIMIT)) {
     metrics.websocketFailure();
     socket.close(1013, "Too many connection attempts");
     return;

@@ -6,6 +6,13 @@ const reconnectsPerRoom = Number(process.env.LOAD_RECONNECTS ?? 2);
 const port = 22000 + (process.pid % 1000);
 const baseUrl = `http://127.0.0.1:${port}`;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const closeSocket = (socket) => {
+  try {
+    if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) socket.terminate();
+  } catch {
+    // A failed load setup may leave a socket between connection states; cleanup must not mask the primary error.
+  }
+};
 const withTimeout = (promise, label) => Promise.race([
   promise,
   new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out.`)), 5_000)),
@@ -77,7 +84,13 @@ async function main() {
   if (!Number.isInteger(reconnectsPerRoom) || reconnectsPerRoom < 1 || reconnectsPerRoom > 16) throw new Error("LOAD_RECONNECTS must be an integer from 1 to 16.");
   const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
     cwd: new URL("../apps/api", import.meta.url),
-    env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true" },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      ALLOW_DEVELOPMENT_FIXTURE: "true",
+      DEVELOPMENT_API_RATE_LIMIT: "10000",
+      DEVELOPMENT_WS_RATE_LIMIT: "1000",
+    },
     stdio: ["ignore", "ignore", "pipe"],
   });
   const sockets = [];
@@ -108,7 +121,7 @@ async function main() {
     if (!metrics || typeof metrics !== "object") throw new Error("Metrics endpoint did not return an object.");
     console.log(`Verified bounded development API load: ${roomCount} concurrent rooms, spectators, WebSocket/polling parity, one command per room, and ${reconnectsPerRoom} reconnects per room.`);
   } finally {
-    for (const socket of sockets) socket.terminate();
+    for (const socket of sockets) closeSocket(socket);
     if (child.exitCode === null) {
       child.kill("SIGTERM");
       await withTimeout(new Promise((resolve) => child.once("exit", resolve)), "Development API shutdown");
