@@ -83,6 +83,7 @@ const broadcast = async (roomCode: string) => {
       const room = await store.getRoom(roomCode, accessToken);
       socket.send(JSON.stringify({ type: "room.updated", room }));
     } catch (error) {
+      metrics.errorReport("divergence");
       errorReporter.report({ category: "divergence", path: "/ws", roomCode: roomCode.toUpperCase(), message: error instanceof Error ? `WebSocket projection divergence: ${error.message}` : "WebSocket projection divergence" });
       group.delete(socket);
       socket.close(1008, "Room access is no longer valid");
@@ -109,6 +110,7 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
       } catch (error) {
         metrics.requestFailure();
         metrics.serverError();
+        metrics.errorReport("persistence");
         const reported = errorReporter.report({ category: "persistence", method: request.method, path: url.pathname, message: error instanceof Error ? error.message : "Persistence health check failed" });
         return json(response, 503, { ok: false, error: "Persistence health check failed", detail: reported.message });
       }
@@ -132,7 +134,7 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
       const input = await body(request); const envelope = (input.envelope ?? { actionId: String(input.actionId ?? randomUUID()), actorId: String(input.actorId ?? ""), expectedRevision: Number(input.expectedRevision), protocolVersion: Number(input.protocolVersion ?? 1), command: input.command }) as GameCommandEnvelope; const result = await store.submitAction(code, tokenFrom(request, url, input), envelope); metrics.commandAccepted(); metrics.latency(Date.now() - requestStartedAt); if (result.status === "completed") metrics.roomCompleted(); if (result.status === "abandoned") metrics.roomAbandoned(); operationalLog({ event: "command.accepted", roomCode: code.toUpperCase(), actionId: envelope.actionId, actorId: envelope.actorId, commandType: envelope.command.type, revision: result.version }); await broadcast(code.toUpperCase()); return json(response, 200, result);
     }
     return json(response, 404, { error: "Not found" });
-  } catch (error) { metrics.requestFailure(); metrics.serverError(); metrics.latency(Date.now() - requestStartedAt); if (parts[2] === "actions") metrics.commandFailed(); const reported = errorReporter.report({ category: parts[2] === "actions" ? "command" : "http", method: request.method, path: url.pathname, roomCode: parts[1]?.toUpperCase(), message: error instanceof Error ? error.message : "Request failed" }); operationalLog({ event: "request.failed", method: request.method, path: url.pathname, error: reported.message }); return json(response, error instanceof HttpError ? error.status : 400, { error: reported.message }); }
+  } catch (error) { metrics.requestFailure(); metrics.serverError(); metrics.latency(Date.now() - requestStartedAt); const errorCategory = parts[2] === "actions" ? "command" : "http"; metrics.errorReport(errorCategory); if (parts[2] === "actions") metrics.commandFailed(); const reported = errorReporter.report({ category: errorCategory, method: request.method, path: url.pathname, roomCode: parts[1]?.toUpperCase(), message: error instanceof Error ? error.message : "Request failed" }); operationalLog({ event: "request.failed", method: request.method, path: url.pathname, error: reported.message }); return json(response, error instanceof HttpError ? error.status : 400, { error: reported.message }); }
 }
 
 const server = createServer(handler);
@@ -140,6 +142,7 @@ server.requestTimeout = REQUEST_TIMEOUT_MS;
 server.headersTimeout = HEADERS_TIMEOUT_MS;
 server.keepAliveTimeout = REQUEST_TIMEOUT_MS;
 server.on("error", (error) => {
+  metrics.errorReport("deployment");
   errorReporter.report({ category: "deployment", path: "/listen", message: error instanceof Error ? `API listen failure: ${error.message}` : "API listen failure" });
   operationalLog({ event: "deployment.failure", message: error instanceof Error ? error.message : "API listen failure" });
   process.exitCode = 1;
@@ -164,7 +167,7 @@ wsServer.on("connection", async (socket, request) => {
       if (group.size === 0) sockets.delete(code);
     });
   }
-  catch (error) { metrics.websocketFailure(); errorReporter.report({ category: "websocket", path: "/ws", roomCode: code, message: error instanceof Error ? error.message : "WebSocket room access failed" }); socket.close(1008, "Invalid room token"); }
+  catch (error) { metrics.websocketFailure(); metrics.errorReport("websocket"); errorReporter.report({ category: "websocket", path: "/ws", roomCode: code, message: error instanceof Error ? error.message : "WebSocket room access failed" }); socket.close(1008, "Invalid room token"); }
 });
 let shuttingDown = false;
 const shutdown = async (signal: string) => {

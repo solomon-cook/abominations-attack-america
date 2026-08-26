@@ -29,7 +29,7 @@ if (!baseUrl) {
   if (health?.persistence !== "prisma") throw new Error(`/health reported persistence=${String(health?.persistence)}; deployment probe requires Prisma`);
 
   const metrics = await getJson("/metrics");
-  const metricKeys = ["requests", "requestFailures", "commandAccepted", "commandFailed", "reconnects", "websocketConnections", "websocketFailures", "roomsCompleted", "roomsAbandoned", "latencySamples", "latencyTotalMs", "serverErrors"];
+  const metricKeys = ["requests", "requestFailures", "commandAccepted", "commandFailed", "reconnects", "websocketConnections", "websocketFailures", "roomsCompleted", "roomsAbandoned", "latencySamples", "latencyTotalMs", "serverErrors", "errorReports", "divergenceReports", "deploymentFailures"];
   for (const key of metricKeys) if (!Number.isFinite(metrics?.[key]) || metrics[key] < 0) throw new Error(`/metrics has invalid ${key}`);
 
   console.log(JSON.stringify({ ok: true, baseUrl: parsed.origin, health: { ok: health.ok, persistence: health.persistence }, metrics: { keys: metricKeys.length, requests: metrics.requests, serverErrors: metrics.serverErrors } }));

@@ -126,6 +126,40 @@ test("API responses expose the documented security and CORS headers", async () =
   }
 });
 
+test("metrics expose redacted error counters without private room data", async () => {
+  const port = 19800 + (process.pid % 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true" },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  try {
+    await waitForHealth(baseUrl);
+    const initial = await fetch(`${baseUrl}/metrics`).then((response) => response.json()) as Record<string, unknown>;
+    for (const key of ["errorReports", "divergenceReports", "deploymentFailures"]) {
+      assert.equal(typeof initial[key], "number", `missing numeric ${key}`);
+      assert.equal(initial[key], 0);
+    }
+
+    const malformed = await fetch(`${baseUrl}/rooms`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{",
+    });
+    assert.equal(malformed.status, 400);
+
+    const observed = await fetch(`${baseUrl}/metrics`).then((response) => response.json()) as Record<string, unknown>;
+    assert.equal(observed.errorReports, 1);
+    assert.equal(observed.divergenceReports, 0);
+    assert.equal(observed.deploymentFailures, 0);
+    assert.equal(Object.hasOwn(observed, "token"), false);
+    assert.equal(Object.hasOwn(observed, "state"), false);
+  } finally {
+    await stop(child);
+  }
+});
+
 test("public room discovery is available without a room token and omits private room data", async () => {
   const port = 19600 + (process.pid % 1000);
   const baseUrl = `http://127.0.0.1:${port}`;

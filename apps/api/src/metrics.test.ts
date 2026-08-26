@@ -11,6 +11,9 @@ test("metrics record operational counters and return an isolated snapshot", () =
   metrics.roomCompleted();
   metrics.latency(12);
   metrics.latency(8);
+  metrics.errorReport("command");
+  metrics.errorReport("divergence");
+  metrics.errorReport("deployment");
   const snapshot = metrics.snapshot();
   assert.deepEqual(snapshot, {
     requests: 1,
@@ -25,6 +28,9 @@ test("metrics record operational counters and return an isolated snapshot", () =
     latencySamples: 2,
     latencyTotalMs: 20,
     serverErrors: 0,
+    errorReports: 3,
+    divergenceReports: 1,
+    deploymentFailures: 1,
   });
   snapshot.requests = 99;
   assert.equal(metrics.snapshot().requests, 1);

@@ -11,6 +11,9 @@ export interface MetricsSnapshot {
   latencySamples: number;
   latencyTotalMs: number;
   serverErrors: number;
+  errorReports: number;
+  divergenceReports: number;
+  deploymentFailures: number;
 }
 
 export class ApiMetrics {
@@ -27,6 +30,9 @@ export class ApiMetrics {
     latencySamples: 0,
     latencyTotalMs: 0,
     serverErrors: 0,
+    errorReports: 0,
+    divergenceReports: 0,
+    deploymentFailures: 0,
   };
 
   request(): void { this.values.requests += 1; }
@@ -39,6 +45,11 @@ export class ApiMetrics {
   roomCompleted(): void { this.values.roomsCompleted += 1; }
   roomAbandoned(): void { this.values.roomsAbandoned += 1; }
   serverError(): void { this.values.serverErrors += 1; }
+  errorReport(category: "http" | "command" | "persistence" | "websocket" | "divergence" | "deployment"): void {
+    this.values.errorReports += 1;
+    if (category === "divergence") this.values.divergenceReports += 1;
+    if (category === "deployment") this.values.deploymentFailures += 1;
+  }
   latency(milliseconds: number): void {
     this.values.latencySamples += 1;
     this.values.latencyTotalMs += Math.max(0, milliseconds);
