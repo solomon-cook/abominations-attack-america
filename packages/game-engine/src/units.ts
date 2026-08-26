@@ -19,6 +19,7 @@ export interface UnitDefinition {
 export interface GiantUnitDefinition {
   readonly id: "mecha-monster" | "captain-colossal";
   readonly name: "Mecha-Monster" | "Captain Colossal";
+  readonly quantity: 1;
   readonly health: number;
   readonly move: number;
   readonly movement: "land-only" | "land-lake-sea";
@@ -66,8 +67,8 @@ export const UNIT_DEFINITIONS: readonly UnitDefinition[] = [
 ];
 
 export const GIANT_UNIT_DEFINITIONS: readonly GiantUnitDefinition[] = [
-  { id: "mecha-monster", name: "Mecha-Monster", health: 6, move: 4, movement: "land-only", defense: 5, attacks: 1, damage: 4, sourceRefs: [giantNationalGuard], placementImplementation: "implemented" },
-  { id: "captain-colossal", name: "Captain Colossal", health: 8, move: 4, movement: "land-lake-sea", defense: 4, attacks: 2, damage: 2, sourceRefs: [giantNationalGuard], placementImplementation: "implemented" },
+  { id: "mecha-monster", name: "Mecha-Monster", quantity: 1, health: 6, move: 4, movement: "land-only", defense: 5, attacks: 1, damage: 4, sourceRefs: [giantNationalGuard], placementImplementation: "implemented" },
+  { id: "captain-colossal", name: "Captain Colossal", quantity: 1, health: 8, move: 4, movement: "land-lake-sea", defense: 4, attacks: 2, damage: 2, sourceRefs: [giantNationalGuard], placementImplementation: "implemented" },
 ];
 
 export const NATIONAL_GUARD_DEFINITIONS: readonly NationalGuardDefinition[] = [

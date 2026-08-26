@@ -72,6 +72,7 @@ test("source-backed unit catalogue preserves branch quantities and control bound
   assert.deepEqual(UNIT_DEFINITIONS.map((unit) => unit.quantity), [5, 3, 5, 3, 4, 4, 6, 2]);
   assert.deepEqual(UNIT_DEFINITIONS.map((unit) => unit.branch), ["Army", "Army", "Navy", "Navy", "Marines", "Marines", "Air Force", "Air Force"]);
   assert.equal(UNIT_DEFINITIONS.every((unit) => unit.sourceRefs.length === 1 && unit.effectsImplementation === "source-gated"), true);
+  assert.deepEqual(GIANT_UNIT_DEFINITIONS.map((unit) => [unit.id, unit.quantity]), [["mecha-monster", 1], ["captain-colossal", 1]]);
   assert.deepEqual(GIANT_UNIT_DEFINITIONS.map((unit) => [unit.health, unit.move, unit.defense, unit.attacks, unit.damage]), [[6, 4, 5, 1, 4], [8, 4, 4, 2, 2]]);
   assert.deepEqual(NATIONAL_GUARD_DEFINITIONS.map((unit) => [unit.quantity, unit.move, unit.defense, unit.damage]), [[6, 3, 4, 1], [2, 5, 3, 1]]);
   assert.equal(NATIONAL_GUARD_DEFINITIONS.every((unit) => unit.specialAbilityText.includes("Guard Commander") && unit.controlImplementation === "source-gated"), true);
