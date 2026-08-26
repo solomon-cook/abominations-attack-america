@@ -18,7 +18,7 @@ export function PlayerStatusControls({ game, monster, branch }: Props) {
       <span className="label">MONSTER DETAILS</span>
       <h3>{monster.name}</h3>
       <p>{getLocation(monster.location)?.name ?? monster.location}</p>
-      <div className="lightbox-stats"><span><b>{monster.health}/{monster.maxHealth}</b> health</span><span><b>{monster.infamy}</b> infamy</span><span><b>{monster.move}</b> move</span><span><b>{monster.attacks}</b> attacks</span></div>
+      <div className="lightbox-stats"><span><span className="metric-icon" aria-hidden="true">♥</span> <b>{monster.health}/{monster.maxHealth}</b> health</span><span><span className="metric-icon" aria-hidden="true">◎</span> <b>{monster.infamy}</b> infamy</span><span><span className="metric-icon" aria-hidden="true">↝</span> <b>{monster.move}</b> move</span><span><span className="metric-icon" aria-hidden="true">⚔</span> <b>{monster.attacks}</b> attacks</span></div>
     </div>
   ) : open === "branch" ? (
     <div className="status-lightbox" role="dialog" aria-modal="true" aria-label="Military branch details">
@@ -26,7 +26,7 @@ export function PlayerStatusControls({ game, monster, branch }: Props) {
       <span className="label">MILITARY DETAILS</span>
       <h3>{branch}</h3>
       <p>{deployed} deployed · {reserve} reserve · {branchUnits.length} recorded pieces</p>
-      <div className="lightbox-stats"><span><b>{deployed}</b> deployed</span><span><b>{reserve}</b> reserve</span><span><b>{branchUnits.filter((unit) => game.movedPieceIds.includes(unit.id)).length}</b> moved</span></div>
+      <div className="lightbox-stats"><span><span className="metric-icon" aria-hidden="true">▣</span> <b>{deployed}</b> deployed</span><span><span className="metric-icon" aria-hidden="true">◇</span> <b>{reserve}</b> reserve</span><span><span className="metric-icon" aria-hidden="true">↝</span> <b>{branchUnits.filter((unit) => game.movedPieceIds.includes(unit.id)).length}</b> moved</span></div>
     </div>
   ) : null;
 
