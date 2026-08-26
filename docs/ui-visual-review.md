@@ -33,6 +33,10 @@ The motion contract is now automated separately: `npm run web-motion:verify` con
 
 Safari remains an explicit QA gap: SafariDriver was available locally and reported ready on 2026-08-26, but `npm run browser:safari:probe` still timed out during WebDriver session creation. The probe defaults to a non-blocking JSON evidence result and supports `SAFARI_REQUIRE_SESSION=1` for a strict gate once the host can create a session. The Chrome matrix and baselines must not be presented as cross-engine evidence.
 
+A repeat probe on 2026-08-26 reported the same boundary (`driverReady: true`,
+session creation timeout after 15 seconds). This confirms the gap is WebDriver
+session creation on the host, not a failed Chrome or source-contract check.
+
 On 2026-08-26, the clean CI browser matrix also measured every visible map, header,
 action-dock, and phase control used by the local smoke at 1280×720, 834×1112,
 and 390×844. All measured controls met the 44px minimum target contract. This
