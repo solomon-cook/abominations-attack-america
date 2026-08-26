@@ -1,6 +1,7 @@
 import {
   buildBoardIndex,
   FULL_HONEYCOMB_BOARD,
+  PROVISIONAL_AUTHORITATIVE_BOARD,
   locationIdToHexKey,
   locations,
   type GameState,
@@ -13,7 +14,7 @@ import { boardForGame } from "../board-pin";
 function displayHexesForGame(game: GameState) {
   const board = boardForGame(game);
   if (!board) return [];
-  if (board.id === FULL_HONEYCOMB_BOARD.id) {
+  if (board.id === FULL_HONEYCOMB_BOARD.id || board.id === PROVISIONAL_AUTHORITATIVE_BOARD.id) {
     return buildDisplayHexLayout(board).map(({ hex, left, top }) => ({
       hex,
       // The candidate shell must not inherit the development fixture's named
@@ -51,7 +52,7 @@ function displayHexesForGame(game: GameState) {
 }
 
 function boardArtForHex(hex: BoardHex, place?: (typeof locations)[number]) {
-  if (place?.kind === "city") return "/assets/board/coastal-city/small/coastal_city_0deg.webp";
+  if (place?.kind === "city" || hex.features.some((feature) => feature.kind === "city")) return "/assets/board/coastal-city/small/coastal_city_0deg.webp";
   const feature = hex.features[0]?.kind;
   const featureAssets: Record<string, string> = {
     "military-base": "/assets/board/features/military_base.webp",
@@ -166,7 +167,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             aria-label={`${displayName}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-hex-key={hex.key}
             data-location-name={place?.name}
-            disabled={!place || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit)}
+            disabled={(!place && board?.id !== PROVISIONAL_AUTHORITATIVE_BOARD.id) || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit)}
             className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%` }}
             onMouseEnter={() => (monsterLegal || unitLegal) && onPreviewPath(placeKey)}

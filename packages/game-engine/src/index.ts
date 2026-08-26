@@ -1,7 +1,7 @@
 export * from "./board.js";
 export * from "./cards.js";
 export * from "./setup.js";
-import { buildBoardIndex, DEVELOPMENT_BOARD, DEVELOPMENT_LOCATIONS, FULL_HONEYCOMB_BOARD, hexKeyToLocationId, isHexKey, locationIdToHexKey, toDevelopmentSpaceKey, validateBoardDefinition, type BoardDefinition, type BoardFeature, type HexKey, type SpaceKey, type WaterClass } from "./board.js";
+import { buildBoardIndex, DEVELOPMENT_BOARD, DEVELOPMENT_LOCATIONS, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, hexKeyToLocationId, isHexKey, locationIdToHexKey, toDevelopmentSpaceKey, validateBoardDefinition, type BoardDefinition, type BoardFeature, type HexKey, type SpaceKey, type WaterClass } from "./board.js";
 import { createCardDeckState, discardCard as discardCardFromDeck, drawCard as drawCardFromDeck, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, type CardDeckState } from "./cards.js";
 import { monsterDefinition, type MonsterMovement } from "./monsters.js";
 import { BRANCH_DEPLOYMENT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS, type UnitDefinition, type UnitMovement } from "./units.js";
@@ -583,7 +583,7 @@ export const locations = DEVELOPMENT_LOCATIONS;
 
 /** Resolve the immutable board selected by a match; never silently fall back to the fixture. */
 export function boardForState(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash">): BoardDefinition {
-  const candidates = [DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD];
+  const candidates = [DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD];
   const board = candidates.find((candidate) => candidate.id === state.boardId
     && candidate.version === state.boardVersion
     && candidate.contentHash === state.boardContentHash);
@@ -673,6 +673,26 @@ export function createGame(playerCount = 2, seed = 0, matchId = `development-mat
   };
   const sourceInventoryErrors = sourceUnitInventoryErrors(state.units);
   if (sourceInventoryErrors.length > 0) throw new Error(`Source unit inventory is incomplete: ${sourceInventoryErrors.join("; ")}`);
+  assertInventoryAccounting(state);
+  return state;
+}
+
+/**
+ * Local/test-only match initializer for the separately pinned provisional
+ * honeycomb board. The board content is deliberately provisional; production
+ * room creation must continue through createMvpRoomGame and its verified gate.
+ */
+export function createProvisionalPlaytestGame(playerCount = 2, seed = 0, matchId = `provisional-playtest-${playerCount}-${seed >>> 0}`): GameState {
+  const state = createGame(playerCount, seed, matchId);
+  const provisionalCities = Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes)
+    .filter((hex) => hex.features.some((feature) => feature.kind === "city"));
+  state.boardId = PROVISIONAL_AUTHORITATIVE_BOARD.id;
+  state.boardVersion = PROVISIONAL_AUTHORITATIVE_BOARD.version;
+  state.boardContentHash = PROVISIONAL_AUTHORITATIVE_BOARD.contentHash;
+  state.rulesetVersion = PROVISIONAL_AUTHORITATIVE_BOARD.rulesetVersion;
+  state.monsters = state.monsters.map((monster, index) => ({ ...monster, location: provisionalCities[index % provisionalCities.length].key }));
+  state.units = state.units.map((unit) => ({ ...unit, location: "record-tile" }));
+  state.log.unshift("Provisional honeycomb playtest. Board labels, terrain, barriers, and feature positions remain unverified.");
   assertInventoryAccounting(state);
   return state;
 }

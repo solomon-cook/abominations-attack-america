@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, boardContentHash, buildBoardIndex, diagnoseBoard, hexDistance, hexKey, hexKeyToLocationId, locationIdToHexKey, toDevelopmentSpaceKey, validateBoardDefinition } from "./board.js";
+import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, boardContentHash, buildBoardIndex, diagnoseBoard, hexDistance, hexKey, hexKeyToLocationId, locationIdToHexKey, toDevelopmentSpaceKey, validateBoardDefinition } from "./board.js";
 
 test("development board is structurally valid but not production-ready", () => {
   assert.deepEqual(validateBoardDefinition(DEVELOPMENT_BOARD), []);
@@ -33,6 +33,19 @@ test("production validation cannot be bypassed by marking unresolved hexes verif
   assert.equal(productionErrors.length, Object.keys(FULL_HONEYCOMB_BOARD.hexes).length + FULL_HONEYCOMB_BOARD.edges.length);
   assert.equal(productionErrors.some((error) => error.includes("water class is unresolved")), true);
   assert.equal(productionErrors.some((error) => error.includes("barrier is unresolved")), true);
+});
+
+test("provisional authority is complete for playtest inspection but rejected for production", () => {
+  assert.equal(Object.keys(PROVISIONAL_AUTHORITATIVE_BOARD.hexes).length, 254);
+  assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.rulesetVersion, "playtest-0.2-promoted-guess");
+  assert.equal(Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes).every((hex) => hex.verification === "provisional"), true);
+  assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.edges.every((edge) => edge.enabled && edge.barrier === "none"), true);
+  assert.deepEqual(validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD), []);
+  assert.equal(validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD, { production: true }).length, 254);
+  assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes.city.length, 12);
+  assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["military-base"].length, 12);
+  assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["infamy-site"].length, 5);
+  assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["mutation-site"].length, 3);
 });
 
 test("axial identity and distance are independent of display geometry", () => {

@@ -4,7 +4,7 @@ export type OffBoardPosition = "record-tile" | "hollywood" | "disappeared" | "tr
 export type SpaceKey = HexKey | OffBoardPosition;
 export type WaterClass = "land" | "lake" | "sea" | "seacoast" | "unresolved";
 export type WaterBarrier = "none" | "lake" | "sea" | "unresolved";
-export type BoardVerification = "verified" | "unresolved";
+export type BoardVerification = "verified" | "provisional" | "unresolved";
 
 export type CityBenefit =
   | Readonly<{ kind: "health"; amount: 1 | 2 }>
@@ -168,7 +168,7 @@ export function validateBoardDefinition(board: BoardDefinition, options: { produ
     if (hex.key !== key) errors.push(`hex key mismatch for ${key}`);
     if (hexKey(hex.coord) !== key) errors.push(`hex coordinate mismatch for ${key}`);
     if (hex.sourceRefs.length === 0) errors.push(`hex ${key} has no source reference`);
-    if (options.production && hex.verification === "unresolved") errors.push(`hex ${key} is unresolved`);
+    if (options.production && hex.verification !== "verified") errors.push(`hex ${key} is ${hex.verification}`);
     if (options.production && hex.waterClass === "unresolved") errors.push(`hex ${key} water class is unresolved`);
     for (const feature of hex.features) {
       if (feature.kind === "mutation-site" && !feature.siteId) errors.push(`hex ${key} mutation site has no site ID`);
@@ -332,3 +332,80 @@ fullHoneycombCore.edges = fullHoneycombEdges(fullHoneycombCore.hexes);
 
 /** Full-board geometry candidate; production validation must reject it until source review completes. */
 export const FULL_HONEYCOMB_BOARD: BoardDefinition = { ...fullHoneycombCore, contentHash: boardContentHash(fullHoneycombCore) };
+
+/**
+ * A separately pinned playtest board built from the current photographic
+ * guesses. It is useful for local/test experiments, but is never production
+ * ready: every cell remains explicitly provisional and its ruleset is named.
+ */
+const PROVISIONAL_BOARD_SOURCE = "docs/provisional-board-transcription.md#promoted-playtest-transcription-for-implementation-handoff";
+const PROVISIONAL_BOARD_FEATURES: Readonly<Record<string, readonly BoardFeature[]>> = {
+  "1/2": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "9/2": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "11/4": [{ kind: "city", benefit: { kind: "health-roll", dice: 3 } }, { kind: "los-angeles" }],
+  "2/7": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "3/8": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "5/8": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "6/8": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "3/13": [{ kind: "city", benefit: { kind: "health", amount: 2 } }],
+  "4/17": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "5/16": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "7/13": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "7/11": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "2/5": [{ kind: "infamy-site" }],
+  "4/8": [{ kind: "infamy-site" }],
+  "7/5": [{ kind: "infamy-site" }],
+  "9/5": [{ kind: "infamy-site" }],
+  "10/14": [{ kind: "infamy-site" }],
+  "4/10": [{ kind: "mutation-site", siteId: "provisional-mutation-1" }],
+  "6/9": [{ kind: "mutation-site", siteId: "provisional-mutation-2" }],
+  "8/7": [{ kind: "mutation-site", siteId: "provisional-mutation-3" }],
+  "10/16": [{ kind: "challenge-site" }],
+  "11/1": [{ kind: "hollywood" }],
+  "0/2": [{ kind: "military-base", branch: "Navy" }],
+  "1/9": [{ kind: "military-base", branch: "Air Force" }],
+  "6/12": [{ kind: "military-base", branch: "Air Force" }],
+  "9/11": [{ kind: "military-base", branch: "Air Force" }],
+  "10/15": [{ kind: "military-base", branch: "Air Force" }],
+  "6/18": [{ kind: "military-base", branch: "Marines" }],
+  "7/17": [{ kind: "military-base", branch: "Marines" }],
+  "8/17": [{ kind: "military-base", branch: "Marines" }],
+  "7/14": [{ kind: "military-base", branch: "Army" }],
+  "9/15": [{ kind: "military-base", branch: "Army" }],
+  "10/10": [{ kind: "military-base", branch: "Navy" }],
+  "11/13": [{ kind: "military-base", branch: "Navy" }],
+};
+
+function provisionalBoardHexes(): Record<HexKey, BoardHex> {
+  return Object.fromEntries(Object.entries(FULL_HONEYCOMB_BOARD.hexes).map(([key, hex]) => {
+    const row = hex.coord.r;
+    const column = hex.coord.q + Math.floor(row / 2);
+    const features = PROVISIONAL_BOARD_FEATURES[`${row}/${column}`] ?? [];
+    return [key, {
+      ...hex,
+      label: features.some((feature) => feature.kind === "city") ? `Provisional city ${row}/${column}` : undefined,
+      waterClass: (row === 0 || row === FULL_HONEYCOMB_ROWS - 1 || column === 0 || column === (row % 2 === 0 ? 19 : 18)) ? "seacoast" : "land",
+      features,
+      sourceRefs: [PROVISIONAL_BOARD_SOURCE, FULL_HONEYCOMB_SOURCE],
+      verification: "provisional" as const,
+      notes: "Promoted photographic guess for playtesting; replace with physical-board transcription when available.",
+    } satisfies BoardHex];
+  })) as Record<HexKey, BoardHex>;
+}
+
+const provisionalBoardCore = {
+  id: "provisional-authoritative-honeycomb-board",
+  version: 1,
+  name: "Promoted photographed honeycomb board playtest definition",
+  rulesetVersion: "playtest-0.2-promoted-guess",
+  hexes: provisionalBoardHexes(),
+  edges: FULL_HONEYCOMB_BOARD.edges.map((edge) => ({
+    ...edge,
+    barrier: "none" as const,
+    enabled: true,
+    sourceRef: PROVISIONAL_BOARD_SOURCE,
+    notes: "Promoted adjacency guess; verify against the physical board.",
+  })),
+};
+
+export const PROVISIONAL_AUTHORITATIVE_BOARD: BoardDefinition = { ...provisionalBoardCore, contentHash: boardContentHash(provisionalBoardCore) };

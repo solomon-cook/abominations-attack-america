@@ -10,6 +10,7 @@ import {
   createDevelopmentVictoryGame,
   createGameFromSetup,
   FULL_HONEYCOMB_BOARD,
+  PROVISIONAL_AUTHORITATIVE_BOARD,
   getLocation,
     legalNationalGuardDeploymentDestinations,
     legalOwnedDeploymentDestinations,
@@ -916,7 +917,9 @@ function App() {
     ? "The reviewed full honeycomb board is rendered from the pinned board definition; its cells are interactive only where the authoritative rules expose a legal action."
     : renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
       ? "The full honeycomb coordinate shell is unresolved review tooling and is not a playable board; physical cell data remains unavailable until source transcription and sign-off are complete."
-    : renderedBoard
+      : renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
+        ? "The provisional full honeycomb board is rendered from a separately pinned playtest guess; its physical labels, terrain, barriers, and feature positions remain unverified and are not production board data."
+      : renderedBoard
       ? "The nine-space development board is rendered from the pinned development fixture. The unresolved physical-board shell is not part of this match; unknown physical-board data remains unavailable until source transcription is complete."
       : "This match references an unavailable board version, so board interaction is disabled until the matching definition is loaded.";
 
