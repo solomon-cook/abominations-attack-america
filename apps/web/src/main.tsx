@@ -786,7 +786,11 @@ function App() {
         : activeGame.phase === "challenge"
           ? activeGame.pendingDecision?.type === "challenge-opponent"
             ? "Choose the next eligible monster; it will appear in the challenger’s space for weigh-in."
-            : "Resolve the recorded Monster Challenge duel; the challenger attacks first."
+            : activeGame.pendingDecision?.type === "challenge-giant"
+              ? "Choose the next surviving giant military unit; giants are challenged last."
+              : activeGame.pendingDecision?.type === "challenge-giant-resolution"
+                ? "Resolve the giant duel; a giant victory immediately saves America."
+                : "Resolve the recorded Monster Challenge duel; the challenger attacks first."
         : activeGame.phase === "game-over"
           ? "The development match is complete. Further commands are disabled."
           : `Place a legal military unit, then pass Deploy.${activeGame.deploymentsThisTurn ? ` ${activeGame.deploymentsThisTurn} placed this step.` : ""}`;
@@ -803,7 +807,11 @@ function App() {
         : activeGame.phase === "challenge"
           ? activeGame.pendingDecision?.type === "challenge-opponent"
             ? { title: "Choose the next challenger", body: "Select an eligible monster shown by the engine. Hollywood, defeated, and self targets are not offered." }
-            : { title: "Resolve Monster Challenge", body: "The challenger attacks first. Review the recorded dice and Health transitions; this presentation cannot change the authoritative duel." }
+            : activeGame.pendingDecision?.type === "challenge-giant"
+              ? { title: "Choose the next giant", body: "After all monster duels, select the next surviving giant military unit. Giants never fight each other." }
+              : activeGame.pendingDecision?.type === "challenge-giant-resolution"
+                ? { title: "Resolve giant Challenge", body: "The monster attacks first. If the giant defeats the challenger, the authoritative result is America-saved." }
+                : { title: "Resolve Monster Challenge", body: "The challenger attacks first. Review the recorded dice and Health transitions; this presentation cannot change the authoritative duel." }
           : activeGame.phase === "game-over"
             ? { title: "Match complete", body: "The terminal result is authoritative. No further commands can change the winner or victory type." }
             : { title: "Deploy", body: "Choose a legal deployment or redeployment, draw Research when the action is available, or pass Deploy to begin the next turn." };

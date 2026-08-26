@@ -32,5 +32,27 @@ export function ChallengeActions({ activeGame, canAct, runCommand }: Props) {
       </div>
     );
   }
+  if (decision?.type === "challenge-giant") {
+    return (
+      <div className="battle-choice" aria-label="Choose giant Monster Challenge opponent">
+        <p>All surviving monsters have fought. Choose the next surviving giant military unit; giants are challenged last and never fight each other.</p>
+        {decision.giantUnitIds.map((unitId) => {
+          const unit = activeGame.units.find((candidate) => candidate.id === unitId);
+          return <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "challenge-giant", giantUnitId: unitId })}>{unit?.unitTypeId ?? unitId}</button>;
+        })}
+      </div>
+    );
+  }
+  if (decision?.type === "challenge-giant-resolution") {
+    const challenger = activeGame.monsters.find((monster) => monster.id === decision.challengerMonsterId);
+    const giant = activeGame.units.find((unit) => unit.id === decision.giantUnitId);
+    return (
+      <div className="battle-choice" aria-label="Resolve giant Monster Challenge duel">
+        <p>{challenger?.name ?? decision.challengerMonsterId} vs {giant?.unitTypeId ?? decision.giantUnitId}</p>
+        <small>The giant is challenged last. Resolve the authoritative unlimited duel; America is saved if the giant defeats the challenger.</small>
+        <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-challenge" })}>Resolve giant duel</button>
+      </div>
+    );
+  }
   return null;
 }

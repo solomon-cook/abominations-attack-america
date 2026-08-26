@@ -1591,6 +1591,60 @@ test("the Monster Challenge chooses eligible opponents, records weigh-in Health,
   assert.equal((resolved.eventPayload.rolls as number[]).length > 0, true);
 });
 
+test("Monster Challenge fights surviving giants last and awards America-saved victory", () => {
+  const state = createGame(2, 0);
+  const giant = GIANT_UNIT_DEFINITIONS.find((definition) => definition.id === "mecha-monster")!;
+  state.rulesetVersion = "challenge-0.1";
+  state.phase = "challenge";
+  state.currentPlayer = 0;
+  state.monsters[0].location = K("denver");
+  state.monsters[0].health = 1;
+  state.monsters[0].defense = 1;
+  state.monsters[0].attacks = 1;
+  state.monsters[1].location = "defeated";
+  state.monsters[1].health = 0;
+  state.units.push({ id: "challenge-mecha", branch: "Giant", unitTypeId: giant.id, move: giant.move, movement: giant.movement, attacks: giant.attacks, damage: giant.damage, ownerPlayer: 1, health: giant.health, defense: 1, location: K("denver") });
+  state.challenge = { declared: true, active: true, challengerMonsterId: "monster-1", declarationPlayerIndex: 0, pendingStartPlayerIndex: 0, weighInHealth: {}, defeatedMonsterIds: ["monster-2"], giantUnitIds: ["challenge-mecha"] };
+  state.pendingDecision = { type: "challenge-giant", playerIndex: 0, challengerMonsterId: "monster-1", giantUnitIds: ["challenge-mecha"] };
+
+  const selected = applyCommand(state, { type: "challenge-giant", giantUnitId: "challenge-mecha" });
+  assert.equal(selected.state.pendingDecision?.type, "challenge-giant-resolution");
+  const resolved = applyCommand(selected.state, { type: "resolve-challenge" });
+  assert.equal(resolved.state.victoryType, "america-saved");
+  assert.equal(resolved.state.winnerPlayer, 1);
+  assert.equal(resolved.state.monsters[0].location, "defeated");
+});
+
+test("a monster can defeat giants in the selected order and retain Monster Challenge victory", () => {
+  const state = createGame(2, 0);
+  const mecha = GIANT_UNIT_DEFINITIONS.find((definition) => definition.id === "mecha-monster")!;
+  const captain = GIANT_UNIT_DEFINITIONS.find((definition) => definition.id === "captain-colossal")!;
+  state.rulesetVersion = "challenge-0.1";
+  state.phase = "challenge";
+  state.currentPlayer = 0;
+  state.monsters[0].location = K("denver");
+  state.monsters[0].health = 40;
+  state.monsters[0].defense = 99;
+  state.monsters[0].damage = 99;
+  state.monsters[1].location = "defeated";
+  state.monsters[1].health = 0;
+  state.units.push(
+    { id: "challenge-mecha-order", branch: "Giant", unitTypeId: mecha.id, move: mecha.move, movement: mecha.movement, attacks: mecha.attacks, damage: mecha.damage, ownerPlayer: 1, health: 1, defense: 1, location: K("denver") },
+    { id: "challenge-captain-order", branch: "Giant", unitTypeId: captain.id, move: captain.move, movement: captain.movement, attacks: captain.attacks, damage: captain.damage, ownerPlayer: 0, health: 1, defense: 1, location: K("denver") },
+  );
+  state.challenge = { declared: true, active: true, challengerMonsterId: "monster-1", declarationPlayerIndex: 0, pendingStartPlayerIndex: 0, weighInHealth: {}, defeatedMonsterIds: ["monster-2"], giantUnitIds: ["challenge-mecha-order", "challenge-captain-order"] };
+  state.pendingDecision = { type: "challenge-giant", playerIndex: 0, challengerMonsterId: "monster-1", giantUnitIds: ["challenge-mecha-order", "challenge-captain-order"] };
+
+  const first = applyCommand(state, { type: "challenge-giant", giantUnitId: "challenge-captain-order" });
+  const firstResolved = applyCommand(first.state, { type: "resolve-challenge" });
+  assert.equal(firstResolved.state.units.find((unit) => unit.id === "challenge-captain-order")?.location, "permanently-removed");
+  assert.deepEqual(firstResolved.state.pendingDecision, { type: "challenge-giant", playerIndex: 0, challengerMonsterId: "monster-1", giantUnitIds: ["challenge-mecha-order"] });
+  const second = applyCommand(firstResolved.state, { type: "challenge-giant", giantUnitId: "challenge-mecha-order" });
+  const final = applyCommand(second.state, { type: "resolve-challenge" });
+  assert.equal(final.state.victoryType, "monster-challenge");
+  assert.equal(final.state.winnerPlayer, 0);
+});
+
 test("Monster Challenge target validation admits only distinct living eligible monsters", () => {
   const state = createGame(2, 0);
   state.rulesetVersion = "challenge-0.1";

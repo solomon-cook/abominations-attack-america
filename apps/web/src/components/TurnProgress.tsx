@@ -28,9 +28,13 @@ export function TurnProgress({ game }: Props) {
                     ? "Choose Challenge opponent"
                     : game.pendingDecision?.type === "challenge-resolution"
                       ? "Resolve Challenge duel"
-                      : game.pendingDecision?.type === "game-over"
-                        ? "Match complete"
-                        : undefined;
+                      : game.pendingDecision?.type === "challenge-giant"
+                        ? "Choose giant opponent"
+                        : game.pendingDecision?.type === "challenge-giant-resolution"
+                          ? "Resolve giant duel"
+                          : game.pendingDecision?.type === "game-over"
+                            ? "Match complete"
+                            : undefined;
 
   return (
     <nav className="turn-progress" aria-label="Turn progress">

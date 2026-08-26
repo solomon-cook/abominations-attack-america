@@ -19,6 +19,8 @@ const uniqueTypes = [...new Set(pendingTypes)].filter((type) => [
   "deployment",
   "challenge-opponent",
   "challenge-resolution",
+  "challenge-giant",
+  "challenge-giant-resolution",
   "game-over",
 ].includes(type));
 
@@ -33,7 +35,7 @@ if (missing.length > 0) {
   throw new Error(`Web pending-decision coverage missing: ${missing.join(", ")}`);
 }
 const missingProgressLabels = [
-  "monster-movement", "battle-resolution", "attack-target", "retreat", "encounter-resolution", "encounter-choice", "trophy-choice", "deployment", "challenge-opponent", "challenge-resolution", "game-over",
+  "monster-movement", "battle-resolution", "attack-target", "retreat", "encounter-resolution", "encounter-choice", "trophy-choice", "deployment", "challenge-opponent", "challenge-resolution", "challenge-giant", "challenge-giant-resolution", "game-over",
 ].filter((type) => !progress.includes(`type === "${type}"`));
 if (missingProgressLabels.length > 0) throw new Error(`Turn progress labels missing: ${missingProgressLabels.join(", ")}`);
 

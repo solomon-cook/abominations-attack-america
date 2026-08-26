@@ -142,7 +142,7 @@ export interface GameState {
   pendingCombat?: PendingCombat;
   pendingEncounterChoice?: PendingEncounterChoice;
   pendingTrophyChoice?: PendingTrophyChoice;
-  /** Source-backed Monster Challenge declaration and duel state. Giant-unit rules remain source-gated. */
+  /** Source-backed Monster Challenge declaration, duel, and giant-last state. */
   challenge?: MonsterChallengeState;
   /** Monster/site keys that have already consumed their one Mutation-site use. */
   mutationSiteUses: Record<string, string[]>;
@@ -191,6 +191,9 @@ export interface MonsterChallengeState {
   readonly opponentMonsterId?: string;
   readonly weighInHealth: Readonly<Record<string, number>>;
   readonly defeatedMonsterIds: readonly string[];
+  /** Living giant units still to be challenged after the monster duels. */
+  readonly giantUnitIds?: readonly string[];
+  readonly giantUnitId?: string;
 }
 
 export type PendingDecision =
@@ -204,6 +207,8 @@ export type PendingDecision =
   | Readonly<{ type: "deployment"; playerIndex: number }>
   | Readonly<{ type: "challenge-opponent"; playerIndex: number; challengerMonsterId: string; opponentIds: readonly string[] }>
   | Readonly<{ type: "challenge-resolution"; playerIndex: number; challengerMonsterId: string; opponentMonsterId: string }>
+  | Readonly<{ type: "challenge-giant"; playerIndex: number; challengerMonsterId: string; giantUnitIds: readonly string[] }>
+  | Readonly<{ type: "challenge-giant-resolution"; playerIndex: number; challengerMonsterId: string; giantUnitId: string }>
   | Readonly<{ type: "game-over"; playerIndex: number; victoryType: NonNullable<GameState["victoryType"]> }>;
 
 export interface PendingBattle {
@@ -421,6 +426,7 @@ export type GameCommand =
   | { type: "draw-research" }
   | { type: "pass-deploy" }
   | { type: "challenge-opponent"; opponentMonsterId: string }
+  | { type: "challenge-giant"; giantUnitId: string }
   | { type: "resolve-challenge" }
   | { type: "concede" }
   | { type: "advance" };
@@ -506,7 +512,7 @@ export function migrateGameState(input: GameState): GameState {
   return state;
 }
 
-function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer" | "monsters" | "pendingBattles" | "winnerPlayer" | "victoryType" | "pendingRetreat" | "pendingEncounterChoice" | "pendingTrophyChoice" | "pendingAttackTarget" | "challenge">): PendingDecision | undefined {
+function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer" | "monsters" | "units" | "pendingBattles" | "winnerPlayer" | "victoryType" | "pendingRetreat" | "pendingEncounterChoice" | "pendingTrophyChoice" | "pendingAttackTarget" | "challenge">): PendingDecision | undefined {
   if (state.pendingRetreat) return { type: "retreat", playerIndex: state.currentPlayer, battleId: state.pendingRetreat.battleId, unitIds: state.pendingRetreat.unitIds };
   if (state.pendingTrophyChoice) return { type: "trophy-choice", playerIndex: state.pendingTrophyChoice.playerIndex, location: state.pendingTrophyChoice.location, branch: state.pendingTrophyChoice.branch, unitIds: state.pendingTrophyChoice.unitIds };
   if (state.pendingAttackTarget) return {
@@ -536,6 +542,8 @@ function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer
   if (state.phase === "challenge" && state.challenge?.active) {
     const challenger = state.monsters.find((monster) => monster.id === state.challenge?.challengerMonsterId);
     if (!challenger) return undefined;
+    if (state.challenge.giantUnitId) return { type: "challenge-giant-resolution", playerIndex: state.currentPlayer, challengerMonsterId: challenger.id, giantUnitId: state.challenge.giantUnitId };
+    if (state.challenge.giantUnitIds?.length) return { type: "challenge-giant", playerIndex: state.currentPlayer, challengerMonsterId: challenger.id, giantUnitIds: state.challenge.giantUnitIds };
     const opponentIds = state.monsters
       .filter((monster) => monster.id !== challenger.id && !state.challenge?.defeatedMonsterIds.includes(monster.id) && monster.location !== "hollywood")
       .map((monster) => monster.id);
@@ -2036,6 +2044,31 @@ function beginMonsterChallenge(state: GameState): void {
   state.log.push(`${state.monsters[challengerPlayer].name} begins the Monster Challenge.`);
 }
 
+function livingChallengeGiantIds(state: Pick<GameState, "units">): string[] {
+  return state.units
+    .filter((unit) => isGiantUnit(unit) && unit.health > 0 && isHexKey(unit.location))
+    .map((unit) => unit.id);
+}
+
+function beginGiantChallenge(state: GameState, challengerMonsterId: string): void {
+  const giantUnitIds = livingChallengeGiantIds(state);
+  const challengerPlayer = challengePlayerIndex(state, challengerMonsterId);
+  if (giantUnitIds.length === 0) {
+    const challenger = state.monsters.find((monster) => monster.id === challengerMonsterId)!;
+    state.phase = "game-over";
+    state.winnerPlayer = challengerPlayer;
+    state.victoryType = "monster-challenge";
+    state.pendingDecision = { type: "game-over", playerIndex: challengerPlayer, victoryType: state.victoryType };
+    state.log.push(`${challenger.name} won the Monster Challenge and became King of the Giant Monsters.`);
+    return;
+  }
+  state.challenge = { ...state.challenge!, giantUnitIds, giantUnitId: undefined, opponentMonsterId: undefined, weighInHealth: {} };
+  state.currentPlayer = challengerPlayer;
+  state.phase = "challenge";
+  state.pendingDecision = pendingDecisionForState(state);
+  state.log.push(`${state.monsters[challengerPlayer].name} must challenge the surviving giant military units last.`);
+}
+
 function challengeDeclaration(state: GameState, monster: Monster): MonsterChallengeState {
   return {
     declared: true,
@@ -2108,11 +2141,7 @@ function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
   next.challenge = { ...challenge, challengerMonsterId: winner.id, opponentMonsterId: undefined, weighInHealth: {}, defeatedMonsterIds };
   const nextOpponents = challengeOpponentIds(next, winner.id);
   if (nextOpponents.length === 0) {
-    next.phase = "game-over";
-    next.winnerPlayer = challengePlayerIndex(next, winner.id);
-    next.victoryType = "monster-challenge";
-    next.pendingDecision = { type: "game-over", playerIndex: next.winnerPlayer, victoryType: next.victoryType };
-    next.log.push(`${winner.name} won the Monster Challenge and became King of the Giant Monsters.`);
+    beginGiantChallenge(next, winner.id);
   } else {
     next.currentPlayer = challengePlayerIndex(next, winner.id);
     next.phase = "challenge";
@@ -2120,6 +2149,84 @@ function resolveMonsterChallengeDuel(state: GameState): ChallengeResolution {
     next.log.push(`${winner.name} defeated ${loser.name} in the Monster Challenge and gained ${loserWeighIn} weigh-in Health.`);
   }
   return { state: next, rolls, attacks, winnerMonsterId: winner.id, defeatedMonsterId: loser.id, winnerPlayer: challengePlayerIndex(next, winner.id), winnerHealth: winner.health, loserWeighIn, winnerName: winner.name, defeatedName: loser.name };
+}
+
+interface GiantChallengeResolution {
+  readonly state: GameState;
+  readonly rolls: readonly number[];
+  readonly attacks: readonly BattleAttack[];
+  readonly challengerMonsterId: string;
+  readonly giantUnitId: string;
+  readonly winnerPlayer: number;
+  readonly victoryType: "america-saved" | "monster-challenge";
+}
+
+function resolveGiantChallengeDuel(state: GameState): GiantChallengeResolution {
+  if (state.phase !== "challenge" || !state.challenge?.active || !state.challenge.giantUnitId) throw new GameDomainError("ILLEGAL_COMMAND", "There is no selected giant Challenge duel to resolve.");
+  const next = structuredClone(state);
+  const challenge = next.challenge!;
+  const challenger = next.monsters.find((monster) => monster.id === challenge.challengerMonsterId);
+  const giant = next.units.find((unit) => unit.id === challenge.giantUnitId);
+  if (!challenger || !giant || !isGiantUnit(giant)) throw new GameDomainError("ILLEGAL_COMMAND", "The giant Challenge duel references an unknown combatant.");
+  if (challenger.health <= 0 || challenger.location === "hollywood" || challenger.location === "defeated") throw new GameDomainError("ILLEGAL_COMMAND", "The Monster Challenge challenger is not eligible to fight.");
+  if (giant.health <= 0 || giant.location === "permanently-removed") throw new GameDomainError("ILLEGAL_COMMAND", "The selected giant is no longer in play.");
+  const rolls: number[] = [];
+  const attacks: BattleAttack[] = [];
+  let round = 1;
+  while (challenger.health > 0 && giant.health > 0) {
+    const monsterAttacks = effectiveMonsterAttacks(next, challenger, round);
+    for (let attackIndex = 0; attackIndex < monsterAttacks && giant.health > 0; attackIndex += 1) {
+      const roll = nextD6(next);
+      const hit = roll >= giant.defense;
+      const smash = hit && roll === 6;
+      const damage = hit ? effectiveMonsterDamage(next, challenger) + (smash ? 1 : 0) : 0;
+      const targetHealthBefore = giant.health;
+      giant.health = Math.max(0, giant.health - damage);
+      rolls.push(roll);
+      attacks.push({ attackerId: challenger.id, targetId: giant.id, controllerPlayer: challengePlayerIndex(next, challenger.id), roll, modifiers: [
+        ...(monsterAttacks > challenger.attacks ? ["Atomic Breath: extra first-round attack"] : []),
+        ...(monsterHasMutation(next, challenger, "War Spikes") ? ["War Spikes: 4 damage"] : []),
+      ], hit, smash, damage, destroyed: giant.health === 0, targetHealthBefore, targetHealthAfter: giant.health });
+    }
+    if (giant.health === 0) break;
+    for (let attackIndex = 0; attackIndex < (giant.attacks ?? 1) && challenger.health > 0; attackIndex += 1) {
+      const roll = nextD6(next);
+      const hit = roll >= challenger.defense;
+      const smash = hit && roll === 6;
+      const damage = hit ? giant.damage + (smash ? 1 : 0) : 0;
+      const targetHealthBefore = challenger.health;
+      challenger.health = Math.max(0, challenger.health - damage);
+      rolls.push(roll);
+      attacks.push({ attackerId: giant.id, targetId: challenger.id, controllerPlayer: giant.ownerPlayer ?? next.currentPlayer, roll, modifiers: [], hit, smash, damage, destroyed: challenger.health === 0, targetHealthBefore, targetHealthAfter: challenger.health });
+    }
+    round += 1;
+  }
+  if (challenger.health === 0) {
+    challenger.location = "defeated";
+    next.phase = "game-over";
+    next.winnerPlayer = giant.ownerPlayer ?? next.currentPlayer;
+    next.victoryType = "america-saved";
+    next.pendingDecision = { type: "game-over", playerIndex: next.winnerPlayer, victoryType: next.victoryType };
+    next.log.push(`${giant.unitTypeId ?? giant.id} defeated the Monster Challenge challenger; America was saved.`);
+    return { state: next, rolls, attacks, challengerMonsterId: challenger.id, giantUnitId: giant.id, winnerPlayer: next.winnerPlayer, victoryType: "america-saved" };
+  }
+  giant.location = "permanently-removed";
+  giant.health = 0;
+  if (!next.removedUnitIds.includes(giant.id)) next.removedUnitIds.push(giant.id);
+  const remainingGiantIds = (challenge.giantUnitIds ?? []).filter((unitId) => unitId !== giant.id && next.units.some((unit) => unit.id === unitId && unit.health > 0 && unit.location !== "permanently-removed"));
+  next.challenge = { ...challenge, giantUnitIds: remainingGiantIds, giantUnitId: undefined };
+  if (remainingGiantIds.length > 0) {
+    next.currentPlayer = challengePlayerIndex(next, challenger.id);
+    next.pendingDecision = pendingDecisionForState(next);
+    next.log.push(`${challenger.name} defeated ${giant.unitTypeId ?? giant.id} and must face the next surviving giant.`);
+  } else {
+    next.phase = "game-over";
+    next.winnerPlayer = challengePlayerIndex(next, challenger.id);
+    next.victoryType = "monster-challenge";
+    next.pendingDecision = { type: "game-over", playerIndex: next.winnerPlayer, victoryType: next.victoryType };
+    next.log.push(`${challenger.name} defeated the surviving giant units and became King of the Giant Monsters.`);
+  }
+  return { state: next, rolls, attacks, challengerMonsterId: challenger.id, giantUnitId: giant.id, winnerPlayer: next.winnerPlayer ?? challengePlayerIndex(next, challenger.id), victoryType: next.victoryType as "america-saved" | "monster-challenge" };
 }
 
 function advanceAfterDeployment(next: GameState): TurnAdvanceResolution {
@@ -2256,7 +2363,26 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const eventPayload = { challengerMonsterId: challenger.id, opponentMonsterId: opponent.id, challengerWeighIn: challenger.health, opponentWeighIn: opponent.health };
     return { state: appendEvent(next, "challenge.opponent.selected", eventPayload), eventType: "challenge.opponent.selected", eventPayload };
   }
+  if (state.phase === "challenge" && command.type === "challenge-giant") {
+    requireDecision("challenge-giant");
+    const challenge = state.challenge;
+    if (!challenge?.active || !challenge.challengerMonsterId || !challenge.giantUnitIds?.includes(command.giantUnitId)) throw new GameDomainError("ILLEGAL_COMMAND", "Choose one surviving giant military unit in the authoritative Challenge order.");
+    const giant = state.units.find((unit) => unit.id === command.giantUnitId);
+    if (!giant || !isGiantUnit(giant) || giant.health <= 0 || giant.location === "permanently-removed") throw new GameDomainError("ILLEGAL_COMMAND", "The selected giant is no longer in play.");
+    const next = structuredClone(state);
+    next.challenge = { ...challenge, giantUnitId: command.giantUnitId };
+    next.pendingDecision = pendingDecisionForState(next);
+    next.log.push(`${next.monsters.find((monster) => monster.id === challenge.challengerMonsterId)?.name ?? challenge.challengerMonsterId} chose ${giant.unitTypeId ?? giant.id} as the next giant Challenge opponent.`);
+    const eventPayload = { challengerMonsterId: challenge.challengerMonsterId, giantUnitId: command.giantUnitId, giantUnitIds: challenge.giantUnitIds };
+    return { state: appendEvent(next, "challenge.giant.selected", eventPayload), eventType: "challenge.giant.selected", eventPayload };
+  }
   if (state.phase === "challenge" && command.type === "resolve-challenge") {
+    if (state.pendingDecision?.type === "challenge-giant-resolution") {
+      requireDecision("challenge-giant-resolution");
+      const result = resolveGiantChallengeDuel(state);
+      const eventPayload = { challengerMonsterId: result.challengerMonsterId, giantUnitId: result.giantUnitId, winnerPlayer: result.winnerPlayer, rolls: result.rolls, attacks: result.attacks, victoryType: result.victoryType, nextPhase: result.state.phase };
+      return { state: appendEvent(result.state, "challenge.giant.resolved", eventPayload), eventType: "challenge.giant.resolved", eventPayload };
+    }
     requireDecision("challenge-resolution");
     const result = resolveMonsterChallengeDuel(state);
     const eventPayload = { challengerMonsterId: result.winnerMonsterId, defeatedMonsterId: result.defeatedMonsterId, winnerPlayer: result.winnerPlayer, winnerName: result.winnerName, defeatedName: result.defeatedName, winnerHealth: result.winnerHealth, loserWeighIn: result.loserWeighIn, rolls: result.rolls, attacks: result.attacks, victoryType: result.state.victoryType, nextPhase: result.state.phase };
