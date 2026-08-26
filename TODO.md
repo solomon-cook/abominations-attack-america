@@ -536,6 +536,7 @@ Useful source documents:
   - [x] Record the first live comparison: at 1280×720 the open controls/action rail reduced the board map to roughly 270px high, while setup content could remain visible beside an already-started Move phase.
   - [x] Return to the board-first presentation after authoritative setup completes, while retaining the controls toggle for deliberate access to secondary controls.
   - [x] Keep the action dock in the board-adjacent action bar so it no longer covers or consumes rule-bearing map cells.
+  - [x] Re-run the reproducible runtime matrix at supported desktop, tablet, and mobile sizes and record the findings (`docs/ui-visual-review.md`, `npm run browser:local:matrix`). Final human visual acceptance remains open.
   - [ ] Re-run visual review at supported desktop, tablet, and mobile sizes and obtain visual acceptance; this remains separate from source-board fidelity and assistive-technology review.
 
 - [x] [P1] Define supported desktop, tablet, and mobile browser/version targets. (`docs/browser-support.md`)
@@ -597,6 +598,7 @@ Useful source documents:
     - [x] Add a bounded real-server reconnect-storm regression covering twelve simultaneous WebSocket reconnects, revision restoration, polling parity, and duplicate-action absence. (The integration test remains bounded and development-fixture scoped; sustained load and Prisma durability are still open.)
     - [x] Add bounded same-room command contention coverage: four simultaneous setup commands at one revision produce exactly one committed revision, three stale responses, and one retained event (`apps/api/src/server.integration.test.ts`). This proves the development server's optimistic revision boundary, not managed-Postgres concurrency.
 - [ ] [P1] Add browser compatibility and responsive visual-regression coverage.
+  - [x] Record the current runtime viewport matrix and its evidence boundary (`docs/ui-visual-review.md`); exact screenshot baselines and manual cross-browser acceptance remain open.
   - [x] Add a checked-in responsive layout contract for dynamic viewport sizing, safe areas, mobile board containment, touch targets, overflow, drag handling, reduced motion, and compact action-dock behavior. (`npm run web-responsive:verify`; screenshot-level and manual browser review remain separate.)
   - [x] [P1] Add a checked-in web accessibility source contract for landmarks, names, live regions, focus, reduced motion, touch targets, and overflow boundaries. (`npm run web-a11y:verify`; manual WCAG/assistive-technology review remains open.)
   - [x] Add logging with match/action correlation while redacting tokens and private game information. (HTTP command/setup/ready acceptance and request failures emit structured room/action/revision metadata without tokens or private state/card payloads.)
