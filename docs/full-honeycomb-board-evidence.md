@@ -10,6 +10,7 @@ This pack is the review boundary for promoting the photographed board into the M
 - [Generated 254-hex review table](board-review-table.md)
 - [Generated coordinate/photo comparison overlay](board-comparison-overlay.svg)
 - [Generated independent top-down cross-check overlay](board-top-down-overlay.svg)
+- [Full-board promotion sign-off template](board-promotion-signoff.md)
 
 ## Supplementary public-source reconnaissance
 
