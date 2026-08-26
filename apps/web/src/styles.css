@@ -120,3 +120,5 @@ html,body,#root{width:100%;max-width:100%;overflow-x:clip}main{width:100%}
 @media(max-width:700px){.game-screen>header{display:block}.game-screen>header .header-actions{justify-content:flex-start;margin-top:8px}.game-screen>header .header-actions .ghost{margin-top:0}}
 /* Keep the authoritative duel replay visually distinct from the two combatants. */
 .challenge-duel-timeline-heading{margin:12px 0 0;color:#f5d28e;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase}
+/* Keep the read-only cream review faces on the same separated-face contract. */
+.board-review-hex{width:4.2%}

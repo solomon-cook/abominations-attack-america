@@ -108,6 +108,8 @@ try {
     const canvasRect = document.querySelector(".board-review-canvas").getBoundingClientRect();
     const visible = cells.every((cell) => { const rect = cell.getBoundingClientRect(); return rect.width > 0 && rect.height > 0; });
     const contained = cells.every((cell) => { const rect = cell.getBoundingClientRect(); return rect.left >= canvasRect.left - 1 && rect.right <= canvasRect.right + 1 && rect.top >= canvasRect.top - 1 && rect.bottom <= canvasRect.bottom + 1; });
+    const rowGaps = [...new Map(cells.map((cell) => [cell.style.top, cells.filter((candidate) => candidate.style.top === cell.style.top).sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left)])).values()]
+      .flatMap((row) => row.slice(1).map((cell, index) => cell.getBoundingClientRect().left - row[index].getBoundingClientRect().right));
     return {
       count: cells.length,
       rows: tops.size,
@@ -115,6 +117,7 @@ try {
       creamFace: style.backgroundImage.includes("linear-gradient"),
       visible,
       contained,
+      minimumSameRowGap: Math.min(...rowGaps),
       selectedCells: cells.filter((cell) => cell.dataset.selected === "true").length,
       inspector: Boolean(document.querySelector(".board-review-inspector")),
       referenceImages: references.length,
@@ -125,7 +128,7 @@ try {
       unresolvedLabels: [...document.querySelectorAll("[aria-label]")].filter((node) => /Unresolved/i.test(node.getAttribute("aria-label") ?? "")).length,
     };
   })()`);
-  if (!result || result.count !== 254 || result.rows !== 13 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0) {
+  if (!result || result.count !== 254 || result.rows !== 13 || result.minimumSameRowGap <= 0 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0) {
     throw new Error(`Board review browser contract failed: ${JSON.stringify(result)}`);
   }
   if (screenshotPath) {
