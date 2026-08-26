@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { createServer as createNetServer } from "node:net";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,6 +7,19 @@ import WebSocket from "ws";
 import { chromePath } from "./chrome-path.mjs";
 
 const port = Number(process.env.BROWSER_KEYBOARD_PORT ?? 5184);
+const freePort = () => new Promise((resolve, reject) => {
+  const probe = createNetServer();
+  probe.once("error", reject);
+  probe.listen(0, "127.0.0.1", () => {
+    const address = probe.address();
+    if (!address || typeof address === "string") {
+      probe.close();
+      reject(new Error("Could not determine an ephemeral Chrome debug port."));
+      return;
+    }
+    probe.close((error) => error ? reject(error) : resolve(address.port));
+  });
+});
 const ownsServer = !process.env.BROWSER_TEST_URL;
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${port}/`;
 const server = ownsServer
@@ -15,6 +29,7 @@ let serverOutput = "";
 server?.stdout.on("data", (chunk) => { serverOutput += chunk.toString(); });
 server?.stderr.on("data", (chunk) => { serverOutput += chunk.toString(); });
 const profile = await mkdtemp(join(tmpdir(), "abominations-keyboard-browser-"));
+const debugPort = Number(process.env.BROWSER_DEBUG_PORT ?? await freePort());
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 if (server) {
   let ready = false;
@@ -32,11 +47,11 @@ if (server) {
     throw new Error(`Vite did not become ready at ${url}.\n${serverOutput}`);
   }
 }
-const chrome = spawn(chromePath, ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--window-size=1280,720", "--remote-debugging-port=9232", `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
+const chrome = spawn(chromePath, ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--window-size=1280,720", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
 let page;
 for (let attempt = 0; attempt < 80; attempt += 1) {
   try {
-    const pages = await (await fetch("http://127.0.0.1:9232/json/list")).json();
+    const pages = await (await fetch(`http://127.0.0.1:${debugPort}/json/list`)).json();
     page = pages.find((candidate) => candidate.type === "page");
     if (page) break;
   } catch { /* Chrome is still starting. */ }
