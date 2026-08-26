@@ -142,7 +142,7 @@ try {
         await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${destination} encounter result`);
       }
     } else {
-      await waitFor(`!![...document.querySelectorAll(".action-dock button")].find((button) => button.textContent.trim() !== "Open controls" && !button.disabled && button.getBoundingClientRect().width > 0)`, `${destination} action readiness`);
+      await waitFor(`!![...document.querySelectorAll(".action-dock button")].find((button) => button.textContent.trim() !== "Show details" && !button.disabled && button.getBoundingClientRect().width > 0)`, `${destination} action readiness`);
     }
     if (await phase() === "Deploy") {
       await activate("(element) => element.tagName === \"BUTTON\" && element.textContent.trim() === \"Pass deployment\" && !element.disabled && element.getBoundingClientRect().width > 0", `${destination} deployment pass`);

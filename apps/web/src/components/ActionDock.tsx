@@ -16,7 +16,7 @@ export function ActionDock({ label, canAct, command, onAction, onOpenPanel }: Pr
         {label}
       </button>
       <button type="button" className="action-dock-secondary" onClick={onOpenPanel}>
-        Open controls
+        Show details
       </button>
     </div>
   );

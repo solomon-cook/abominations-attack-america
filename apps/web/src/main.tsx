@@ -912,7 +912,7 @@ function App() {
         </div>
         <div className="header-actions">
           <button className="ghost game-panel-toggle" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="game-side-panel">
-            {gamePanelOpen ? "Hide controls" : "Open controls"}
+            {gamePanelOpen ? "Hide details" : "Show details"}
           </button>
           <button className="ghost" onClick={() => setOnboardingOpen(true)}>
             How to play

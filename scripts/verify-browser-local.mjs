@@ -140,6 +140,15 @@ try {
   await waitFor(`!document.querySelector(".setup-panel")`, "completed local setup");
   const setupPhase = await phase();
   if (!/move/i.test(setupPhase)) throw new Error(`Expected Move after setup, got ${setupPhase || "no phase"}.`);
+  const closedPanelDecision = await evaluate(`(() => {
+    const shell = document.querySelector(".game-screen.game-panel-closed");
+    const decision = document.querySelector(".game-screen.game-panel-closed .action-card");
+    const rect = decision?.getBoundingClientRect();
+    return { closed: Boolean(shell), decisionVisible: Boolean(rect && rect.width > 0 && rect.height > 0) };
+  })()`);
+  if (!closedPanelDecision?.closed || !closedPanelDecision.decisionVisible) {
+    throw new Error(`Closed board view hid the authoritative decision tray: ${JSON.stringify(closedPanelDecision)}`);
+  }
   const boardSurface = await evaluate(`(() => ({
     totalHexes: document.querySelectorAll(".hex-tile").length,
     developmentHexes: document.querySelectorAll(".hex-tile.development-fixture").length,

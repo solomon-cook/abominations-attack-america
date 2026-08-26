@@ -49,7 +49,7 @@ const requiredSourceMarkers = [
   ["contextual decision rules help", /aria-label="Rules help for current decision"/],
   ["development fixture overlay", /development-fixture/],
   ["viewport-fitted gameplay shell", /className=\{`game-screen/],
-  ["on-demand game panel toggle", /aria-controls="game-side-panel"/],
+  ["on-demand game details toggle", /aria-controls="game-side-panel"/],
   ["named game controls panel", /id="game-side-panel" className="game-side-panel" aria-label="Game controls and information"/],
   ["private hand details", /aria-label=\{`Private hand for Player/],
   ["card rule metadata", /aria-label=\{`\$\{cardId\} rule metadata`/],
@@ -82,7 +82,7 @@ const requiredStyleMarkers = [
   ["uncropped revealed cards", /\.revealed-card-art\{object-fit:contain;object-position:center;background:/],
   ["viewport-fitted gameplay layout", /\.game-screen\{height:100dvh;max-height:100dvh/],
   ["board-first closed layout", /\.game-screen \.layout\.panel-closed\{grid-template-columns:minmax\(0,1fr\)/],
-  ["closed layout hides secondary board details", /\.game-screen \.layout\.panel-closed \.board-secondary\{display:none\}/],
+  ["closed layout keeps decision tray visible", /\.game-screen \.layout\.panel-closed>\.game-side-panel>\.action-card\{display:block;position:absolute/],
   ["audio range controls", /\.settings-audio input\[type="range"\]/],
 ];
 for (const [label, marker] of requiredStyleMarkers) if (!marker.test(styles)) failures.push(`missing ${label}`);
