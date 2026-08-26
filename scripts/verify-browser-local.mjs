@@ -38,7 +38,10 @@ const profile = await mkdtemp(join(tmpdir(), "abominations-browser-"));
 const chrome = spawn(chromePath, [
   "--headless=new", "--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--remote-allow-origins=*", `--window-size=${viewport}`,
   `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, "about:blank",
-], { stdio: "ignore" });
+], { stdio: ["ignore", "pipe", "pipe"] });
+let chromeOutput = "";
+chrome.stdout?.on("data", (chunk) => { chromeOutput += chunk.toString(); });
+chrome.stderr?.on("data", (chunk) => { chromeOutput += chunk.toString(); });
 
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 if (server) {
@@ -60,7 +63,7 @@ if (server) {
 }
 const debugUrl = `http://127.0.0.1:${debugPort}/json/list`;
 let page;
-for (let attempt = 0; attempt < 80; attempt += 1) {
+for (let attempt = 0; attempt < 300; attempt += 1) {
   try {
     const response = await fetch(debugUrl);
     const pages = await response.json();
@@ -71,7 +74,12 @@ for (let attempt = 0; attempt < 80; attempt += 1) {
   }
   await wait(100);
 }
-if (!page?.webSocketDebuggerUrl) throw new Error("Chrome debugging page did not become available.");
+if (!page?.webSocketDebuggerUrl) {
+  chrome.kill("SIGKILL");
+  if (server?.exitCode === null) server.kill("SIGTERM");
+  await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  throw new Error(`Chrome debugging page did not become available (exit ${chrome.exitCode ?? "running"}).\n${chromeOutput.trim()}`);
+}
 
 const socket = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise((resolve, reject) => { socket.once("open", resolve); socket.once("error", reject); });
