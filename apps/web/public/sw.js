@@ -1,5 +1,5 @@
 const CACHE_NAME = "abominations-shell-v1";
-const SHELL = ["/", "/offline.html", "/manifest.webmanifest", "/pwa-icon.svg"];
+const SHELL = ["/", "/offline.html", "/reference.html", "/manifest.webmanifest", "/pwa-icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
