@@ -89,12 +89,14 @@ try {
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board shell")`, "home board-review control");
   await evaluate(`([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board shell"))?.click()`);
   await waitFor(`document.querySelectorAll(".board-review-hex").length === 254`, "254 board-review faces");
+  await waitFor(`document.querySelectorAll(".board-review-source img").length === 2 && [...document.querySelectorAll(".board-review-source img")].every((image) => image.complete && image.naturalWidth > 0)`, "reference board photographs");
   await evaluate(`document.querySelectorAll(".board-review-hex")[42]?.click()`);
   await waitFor(`document.querySelectorAll('.board-review-hex[data-selected="true"]').length === 1 && Boolean(document.querySelector(".board-review-inspector"))`, "selected-cell review inspector");
   const result = await evaluate(`(() => {
     const cells = [...document.querySelectorAll(".board-review-hex")];
     const tops = new Set(cells.map((cell) => cell.style.top));
     const style = getComputedStyle(cells[0]);
+    const references = [...document.querySelectorAll(".board-review-source img")];
     const canvasRect = document.querySelector(".board-review-canvas").getBoundingClientRect();
     const visible = cells.every((cell) => { const rect = cell.getBoundingClientRect(); return rect.width > 0 && rect.height > 0; });
     const contained = cells.every((cell) => { const rect = cell.getBoundingClientRect(); return rect.left >= canvasRect.left - 1 && rect.right <= canvasRect.right + 1 && rect.top >= canvasRect.top - 1 && rect.bottom <= canvasRect.bottom + 1; });
@@ -107,12 +109,15 @@ try {
       contained,
       selectedCells: cells.filter((cell) => cell.dataset.selected === "true").length,
       inspector: Boolean(document.querySelector(".board-review-inspector")),
+      referenceImages: references.length,
+      referenceImagesLoaded: references.filter((image) => image.complete && image.naturalWidth > 0).length,
+      referenceOnlyCaptions: [...document.querySelectorAll(".board-review-source figcaption")].every((caption) => /reference/i.test(caption.textContent ?? "")),
       horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
       playableTiles: document.querySelectorAll(".hex-tile, .location").length,
       unresolvedLabels: [...document.querySelectorAll("[aria-label]")].filter((node) => /Unresolved/i.test(node.getAttribute("aria-label") ?? "")).length,
     };
   })()`);
-  if (!result || result.count !== 254 || result.rows !== 13 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0) {
+  if (!result || result.count !== 254 || result.rows !== 13 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0) {
     throw new Error(`Board review browser contract failed: ${JSON.stringify(result)}`);
   }
   if (screenshotPath) {

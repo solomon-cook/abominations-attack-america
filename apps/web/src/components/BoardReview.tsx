@@ -47,7 +47,7 @@ export function BoardReview({ onClose }: Props) {
               <img
                 src="/assets/board/reference-full-board.jpg"
                 alt="Reference photograph of the physical Monsters Menace America board set up with its printed honeycomb spaces and pieces"
-                loading="lazy"
+                loading="eager"
               />
               <figcaption>Full setup reference, optimized from the 2,840 × 1,752 source photograph.</figcaption>
             </figure>
@@ -55,7 +55,7 @@ export function BoardReview({ onClose }: Props) {
               <img
                 src="/assets/board/reference-top-down-board.jpg"
                 alt="Top-down reference photograph of the physical Monsters Menace America board"
-                loading="lazy"
+                loading="eager"
               />
               <figcaption>Top-down reference for the board silhouette and printed space alignment.</figcaption>
             </figure>
