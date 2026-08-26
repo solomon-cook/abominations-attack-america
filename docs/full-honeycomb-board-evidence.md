@@ -34,7 +34,15 @@ The optimized WebP files are delivery copies for the browser. The original JPGs 
 
 ## Additional source search
 
-On 2026-08-26, a further public-source search checked the BoardGameGeek image listing and an independent board-game setup photograph. Both provide useful context for the board family and filled honeycomb appearance, but neither is an aligned, unobscured top-down scan suitable for assigning exact shell coordinates, printed benefits, water classes, or barriers. They therefore remain reconnaissance references only; no new rule-bearing data is promoted from them.
+On 2026-08-26, a further public-source search checked the BoardGameGeek image
+listing and an independent board-game setup photograph. The BoardGameGeek image
+API identifies image 201674 as a 2048 × 1536 close-up; visual inspection confirms
+the separated cream hex faces, printed site/city panels, coast treatment, and
+piece containment, but the perspective crop and component occlusion prevent it
+from being an aligned whole-board scan. Neither reference is suitable for
+assigning exact shell coordinates, printed benefits, water classes, or barriers;
+they remain reconnaissance references only, and no new rule-bearing data is
+promoted from them.
 
 - [BoardGameGeek board photograph](https://boardgamegeek.com/image/201674/monsters-menace-america)
 - [Independent setup photograph](https://boardgameguys.com/monsters-menace-america/)
@@ -73,6 +81,7 @@ The currently checked-in source photographs are useful for confirming the overal
 | --- | ---: | --- | --- |
 | `full-board-top-down.jpg` | 753 × 623 | Overall lattice, outer water boundary, broad feature placement | Reading every printed label/icon, classifying every edge, or assigning a rule datum to a coordinate |
 | `full-game-setup.jpg` | 2840 × 1752 | Cross-checking the board in a setup context and identifying broad component regions | Cell-by-cell transcription where pieces, cards, glare, or perspective obscure the printed board |
+| BoardGameGeek image 5699472 (`MMA _Board`) | 2840 × 1752 original | Highest-resolution public cross-check found: full board, cream hex seams, water cut-outs, printed feature families, and broad cell lattice | Several central/western cells are covered by pieces or stomp markers; perspective and image resolution still require human cell-by-cell review |
 | Independent setup photograph, 1600px delivery | 1600 × 1600 | Inspecting some printed labels and the coast/land hex treatment | Complete cell-by-cell transcription; large areas remain covered by components and the board is cropped/perspective-distorted |
 | User-supplied comparison screenshot | 1280 × 706 | Demonstrating the current candidate-shell rendering failure: unresolved labels, placeholder dots, and rectangular extent | Authoritative physical-board topology; it is a browser reconstruction, not a source photograph |
 
