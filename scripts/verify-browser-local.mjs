@@ -103,6 +103,23 @@ try {
   if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252 || boardSurface?.unresolvedNodes !== 0 || boardSurface?.visibleUnresolvedLabels !== 0) {
     throw new Error(`Local browser smoke found an unexpected candidate board surface: ${JSON.stringify(boardSurface)}`);
   }
+  const boardGeometry = await evaluate(`(() => {
+    const tiles = [...document.querySelectorAll(".hex-tile.unresolved")].map((tile) => {
+      const rect = tile.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, top: rect.top, height: rect.height };
+    });
+    const rows = [];
+    for (const tile of tiles.sort((a, b) => a.top - b.top || a.left - b.left)) {
+      const row = rows.find((candidate) => Math.abs(candidate.top - tile.top) < 2);
+      if (row) row.tiles.push(tile);
+      else rows.push({ top: tile.top, tiles: [tile] });
+    }
+    const horizontalGaps = rows.flatMap((row) => row.tiles.sort((a, b) => a.left - b.left).slice(1).map((tile, index) => tile.left - row.tiles[index].right));
+    return { rows: rows.length, minimumHorizontalGap: Math.min(...horizontalGaps) };
+  })()`, { returnByValue: true });
+  if (boardGeometry?.rows !== 13 || Number(boardGeometry.minimumHorizontalGap) < -0.5) {
+    throw new Error(`Local browser smoke found overlapping candidate faces: ${JSON.stringify(boardGeometry)}`);
+  }
   if (screenshotPath) {
     const screenshot = await command("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     await writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));

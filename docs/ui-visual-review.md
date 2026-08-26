@@ -23,6 +23,7 @@ The matrix is runtime evidence, not a pixel-snapshot baseline. It proves that th
 - The local development match clearly labels itself as a nine-space source-gated fixture.
 - The development match visibly renders the 254-cell candidate shell with nine canonical development overlays; the shell faces are disabled and neutral, and the separately labelled board review surface remains the only place where unresolved cells can be inspected.
 - The responsive contract covers dynamic viewport sizing, safe areas, touch-target rules, reduced motion, map containment, and compact action controls.
+- The rendered candidate faces use the same 4.45% width as the canonical display lattice. The source layout contract and Chrome smoke now also verify 13 staggered rows and non-negative same-row gaps at desktop, tablet, and mobile sizes; this guards against the earlier class of per-face width drift that could make neighbouring hexes overlap.
 
 ## Acceptance boundary
 

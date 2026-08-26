@@ -93,6 +93,12 @@ for (let firstIndex = 0; firstIndex < polygons.length; firstIndex += 1) {
 }
 
 const styles = readFileSync(new URL("../apps/web/src/styles.css", import.meta.url), "utf8");
+const renderedHexStyles = [...styles.matchAll(/\.hex-tile\{[^}]+\}/g)];
+const renderedHexStyle = renderedHexStyles.at(-1)?.[0] ?? "";
+assert.match(renderedHexStyle, /width:4\.45%/,
+  "rendered candidate faces must use the canonical layout width so neighbouring faces remain separated");
+assert.match(renderedHexStyle, /aspect-ratio:1\.1547005/,
+  "rendered candidate faces must retain the flat-top landscape aspect ratio");
 const developmentFixtureStyles = [...styles.matchAll(/\.hex-tile\.development-fixture\{[^}]+\}/g)];
 const developmentFixtureStyle = developmentFixtureStyles.at(-1)?.[0] ?? "";
 assert.match(developmentFixtureStyle, /aspect-ratio:1\.1547005/,
