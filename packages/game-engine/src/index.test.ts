@@ -1908,6 +1908,28 @@ test("persistent Mutation movement and combat modifiers alter authoritative outc
   assert.equal(attackDamage, 4);
 });
 
+test("Atomic Breath adds one first-round monster attack", () => {
+  const state = createGame(2, 0);
+  state.players[0].mutationCardIds = ["Atomic Breath"];
+  state.monsters[0].attacks = 0;
+  state.units[0].location = state.monsters[0].location;
+  state.units[0].defense = 99;
+  state.phase = "fight";
+  state.pendingBattles = [{ id: "atomic-breath", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [state.units[0].id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "atomic-breath" };
+  const result = applyCommand(state, { type: "resolve-fight" });
+  assert.equal((result.eventPayload.attacks as Array<{ attackerId: string }>).filter((attack) => attack.attackerId === "monster-1").length, 1);
+});
+
+test("Winged Horror grants fly movement and one extra Move", () => {
+  const state = createGame(2);
+  state.players[0].mutationCardIds = ["Winged Horror"];
+  state.monsters[1].location = K("denver");
+  const paths = legalMonsterPaths(state, "monster-1");
+  assert.ok(paths.some((path) => path.join(">") === `${K("los-angeles")}>${K("denver")}>${K("chicago")}`));
+  assert.equal(Math.max(...paths.map((path) => path.length - 1)), 5);
+});
+
 test("Berserk and Son of a Monster resolve their sourced optional battle windows", () => {
   const berserk = createGame(2, 0);
   berserk.players[0].mutationCardIds = ["Berserk"];
