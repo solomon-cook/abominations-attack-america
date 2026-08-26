@@ -10,7 +10,7 @@ This document records infrastructure requirements before a hosting provider is s
 | API | Durable compute for HTTP room commands, WebSocket broadcasts, polling fallback, bounded request bodies, structured logs | Node API server implements HTTP/WebSocket/polling paths locally |
 | Database | Managed Postgres with Prisma migrations, transactions, backups, restore, least-privilege runtime credentials | Prisma schema/migrations and fake-adapter contract exist; no live production database is configured |
 | Realtime | WSS support, idle connection limits, proxy upgrade support, reconnect-safe routing | Local WebSocket path and browser polling fallback exist; no hosted proxy has been verified |
-| Secrets | Separate web/API environment values, database URL, allowed origin, and operational credentials | Local environment configuration is documented in code; secret manager and rotation remain outstanding |
+| Secrets | Separate web/API environment values, database URL, allowed origin, and operational credentials | Local environment configuration is documented in code; `ERROR_ALERT_URL` is an optional redacted threshold-alert destination; secret manager and rotation remain outstanding |
 | Observability | Health checks, token-free metrics, structured logs, external dashboards and alerts | `/health`, `/metrics`, and redacted operational logs exist locally |
 
 ## Environment separation

@@ -10,6 +10,8 @@ export interface ErrorReport {
   at?: string;
 }
 
+export type ErrorReportEvent = ErrorReport & { alert?: boolean };
+
 export interface ErrorReporterSnapshot {
   reports: number;
   alerts: number;
@@ -33,7 +35,7 @@ export class ErrorReporter {
   private alertedInWindow = false;
 
   constructor(
-    private readonly sink: (report: ErrorReport & { alert?: boolean }) => void = (report) => console.error(JSON.stringify(report)),
+    private readonly sink: (report: ErrorReportEvent) => void = (report) => console.error(JSON.stringify(report)),
     private readonly alertThreshold = 5,
     private readonly alertWindowMs = 60_000,
     private readonly now: () => number = () => Date.now(),
@@ -67,4 +69,30 @@ export class ErrorReporter {
   snapshot(): ErrorReporterSnapshot {
     return { reports: this.totalReports, alerts: this.totalAlerts, recentByCategory: { ...this.reportsByCategory } };
   }
+}
+
+type AlertFetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
+
+/** Deliver threshold alerts without putting network delivery on the request path. */
+export function createErrorReporterSink(options: {
+  endpoint?: string;
+  fetcher?: AlertFetch;
+  log?: (line: string) => void;
+} = {}): (report: ErrorReportEvent) => void {
+  const endpoint = options.endpoint;
+  const fetcher = options.fetcher ?? ((input, init) => fetch(input, init));
+  const log = options.log ?? ((line) => console.error(line));
+  return (report) => {
+    log(JSON.stringify({ event: report.alert ? "alert.error-threshold" : "error.reported", ...report }));
+    if (!endpoint || report.alert !== true) return;
+    void fetcher(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(report),
+    }).then((response) => {
+      if (!response.ok) log(`error alert delivery failed with HTTP ${response.status}`);
+    }).catch((error: unknown) => {
+      log(`error alert delivery failed: ${error instanceof Error ? error.message : "unknown error"}`);
+    });
+  };
 }

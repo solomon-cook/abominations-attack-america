@@ -7,7 +7,7 @@ import { MemoryRoomStore, type RoomStore } from "./store.js";
 import { PrismaRoomStore } from "./prisma-store.js";
 import { withinRate, type RateBucket } from "./rate-limit.js";
 import { ApiMetrics } from "./metrics.js";
-import { ErrorReporter } from "./error-reporting.js";
+import { createErrorReporterSink, ErrorReporter } from "./error-reporting.js";
 import { validateRuntimeConfig } from "./runtime-config.js";
 
 const port = Number(process.env.PORT ?? 8787);
@@ -31,7 +31,10 @@ const HEADERS_TIMEOUT_MS = 20_000;
 const mutationRate = new Map<string, RateBucket>();
 const socketRate = new Map<string, RateBucket>();
 const metrics = new ApiMetrics();
-const errorReporter = new ErrorReporter((report) => operationalLog({ event: report.alert ? "alert.error-threshold" : "error.reported", ...report }));
+const errorReporter = new ErrorReporter(createErrorReporterSink({
+  endpoint: process.env.ERROR_ALERT_URL,
+  log: (line) => operationalLog({ event: "error.reporter", detail: line }),
+}));
 
 const json = (response: ServerResponse, status: number, body: unknown) => {
   response.writeHead(status, {
