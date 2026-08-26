@@ -57,13 +57,16 @@ export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHe
           <span>{typeof loserWeighIn === "number" ? `${loserWeighIn} weigh-in Health` : "Weigh-in Health recorded"}</span>
         </div>
       </div>
-      {attacks.length > 0 && <ol className="challenge-duel-attacks" aria-label="Authoritative duel Health changes">
+      {attacks.length > 0 && <>
+        <h3 className="challenge-duel-timeline-heading">Health timeline</h3>
+        <ol className="challenge-duel-attacks" aria-label="Authoritative duel Health changes">
         {attacks.map((attack, index) => <li key={`${eventId}-attack-${index}`} style={{ animationDelay: `${index * 180}ms` }}>
           <span>Round {index + 1}: {attack.attackerId} → {attack.targetId}</span>
           <strong>{attack.hit ? `-${attack.damage} Health${attack.smash ? " · smash" : ""}` : "Miss"}</strong>
-          {typeof attack.targetHealthBefore === "number" && typeof attack.targetHealthAfter === "number" && <small>{attack.targetHealthBefore} → {attack.targetHealthAfter} Health</small>}
+          {typeof attack.targetHealthBefore === "number" && typeof attack.targetHealthAfter === "number" && <small aria-label={`Health changed from ${attack.targetHealthBefore} to ${attack.targetHealthAfter}`}>{attack.targetHealthBefore} → {attack.targetHealthAfter} Health</small>}
         </li>)}
-      </ol>}
+        </ol>
+      </>}
       <small className="challenge-duel-note">Dice, damage, and Health transitions are replayed from the authoritative Challenge result; presentation cannot alter the duel.</small>
     </section>
   );
