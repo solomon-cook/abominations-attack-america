@@ -5,7 +5,11 @@ import { join } from "node:path";
 const webPort = Number(process.env.SAFARI_WEB_PORT ?? 5194);
 const driverPort = Number(process.env.WEBDRIVER_PORT ?? process.env.SAFARI_DRIVER_PORT ?? 4444);
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${webPort}/`;
-const timeoutMs = Number(process.env.SAFARI_BROWSER_TIMEOUT_MS ?? 20_000);
+// SafariDriver can report ready before the first WebDriver session has
+// finished launching the browser, especially on a fresh macOS CI runner.
+// Keep the session and review assertions strict, but give startup enough
+// time to complete before treating it as a compatibility failure.
+const timeoutMs = Number(process.env.SAFARI_BROWSER_TIMEOUT_MS ?? 60_000);
 const strict = process.env.SAFARI_REQUIRE_SESSION === "1";
 const driverCommand = process.env.WEBDRIVER_COMMAND ?? "safaridriver";
 const browserName = process.env.WEBDRIVER_BROWSER ?? "safari";
