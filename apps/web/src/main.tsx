@@ -191,6 +191,12 @@ function App() {
     () => new Set(legalUnitPathsForSelection.map((path) => path.at(-1)!)),
     [legalUnitPathsForSelection],
   );
+  const activeResearchLure = activeGame.activeResearchLure?.monsterId === activePlayer.id
+    ? activeGame.activeResearchLure
+    : undefined;
+  const researchLurePrompt = activeResearchLure
+    ? `Blonde Lure is active: end this Move on ${getLocation(activeResearchLure.destination)?.name ?? activeResearchLure.destination} if that destination is reachable.`
+    : undefined;
   const action = pendingAction
     ? "Waiting for server…"
     : activeGame.phase === "move"
@@ -766,7 +772,7 @@ function App() {
     playSound(category, { masterVolume, musicVolume, effectsVolume, muted });
     lastSoundEventRef.current = latestEvent.id;
   }, [activeGame.eventLog, activeGame.phase, effectsVolume, latestEvent, masterVolume, musicVolume, muted]);
-  const turnDescription = activeGame.phase === "move"
+  const baseTurnDescription = activeGame.phase === "move"
     ? selectedUnitId
       ? selectedUnitPath.length > 1
         ? `${selectedUnitPath.map((id) => getLocation(id)?.name ?? id).join(" → ")} · ${selectedUnitPath.length - 1} movement ${selectedUnitPath.length - 1 === 1 ? "space" : "spaces"}`
@@ -795,8 +801,9 @@ function App() {
         : activeGame.phase === "game-over"
           ? "The development match is complete. Further commands are disabled."
           : `Place a legal military unit, then pass Deploy.${activeGame.deploymentsThisTurn ? ` ${activeGame.deploymentsThisTurn} placed this step.` : ""}`;
+  const turnDescription = researchLurePrompt ? `${baseTurnDescription} ${researchLurePrompt}` : baseTurnDescription;
   const rulesHelp = activeGame.phase === "move"
-    ? { title: "Move", body: "Select a highlighted monster or an owned or authorised unit, choose a connected legal destination, then confirm the previewed path. Pass Move when no further movement is required." }
+    ? { title: "Move", body: `Select a highlighted monster or an owned or authorised unit, choose a connected legal destination, then confirm the previewed path. ${researchLurePrompt ?? "Pass Move when no further movement is required."}` }
     : activeGame.phase === "fight"
       ? activeGame.pendingDecision?.type === "attack-target"
         ? { title: "Choose an attack target", body: "Select one of the highlighted military units in the current battle. The recorded attack result is resolved by the shared engine after the target is confirmed." }
