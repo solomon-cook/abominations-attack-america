@@ -177,6 +177,7 @@ function App() {
   const activeGame = room?.state ?? game;
   const activePlayer = activeGame.monsters[activeGame.currentPlayer];
   const activeLocation = getLocation(activePlayer.location);
+  const cameraMode = mapZoom >= 1.25 ? "Tactical detail" : "Strategic overview";
   const activeBoard = boardForGame(activeGame);
   const activeBoardHex = activeBoard && isHexKey(activePlayer.location) ? activeBoard.hexes[activePlayer.location] : undefined;
   const guardCommanderActive = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Guard Commander") ?? false;
@@ -1059,6 +1060,7 @@ function App() {
             <button type="button" aria-label="Zoom board out" onClick={() => setClampedMapZoom(mapZoom - .25)}>−</button>
             <span className="map-zoom" aria-live="polite">{Math.round(mapZoom * 100)}%</span>
             <button type="button" aria-label="Zoom board in" onClick={() => setClampedMapZoom(mapZoom + .25)}>+</button>
+            <span className="map-camera-mode" aria-live="polite">{cameraMode}</span>
             <button type="button" className="map-reset" onClick={resetMapView}>Fit / reset</button>
           </div>
           <div

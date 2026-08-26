@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 const stylesheet = await readFile(new URL("../apps/web/src/styles.css", import.meta.url), "utf8");
+const mainSource = await readFile(new URL("../apps/web/src/main.tsx", import.meta.url), "utf8");
 
 const requirements = [
   ["dynamic viewport height", /\.game-screen\{height:100dvh;max-height:100dvh/],
@@ -19,6 +20,9 @@ const requirements = [
 ];
 
 const missing = requirements.filter(([, pattern]) => !pattern.test(stylesheet)).map(([name]) => name);
+if (!/const cameraMode = mapZoom >= 1\.25 \? "Tactical detail" : "Strategic overview"/.test(mainSource) || !/className="map-camera-mode"/.test(mainSource)) {
+  missing.push("strategic/tactical camera mode indicator");
+}
 if (missing.length > 0) {
   throw new Error(`Responsive web contract missing: ${missing.join(", ")}`);
 }
