@@ -34,6 +34,7 @@
     "browser:board-review:verify": "node scripts/verify-browser-board-review.mjs",
     "browser:ci:verify": "node scripts/verify-browser-ci.mjs",
     "browser:visual:verify": "node scripts/verify-browser-visual-regression.mjs",
+    "browser:safari:probe": "node scripts/verify-safari-driver.mjs",
     "pwa:verify": "node scripts/verify-pwa.mjs",
     "browser:online:verify": "node scripts/verify-browser-online.mjs",
     "board-review:verify": "npm run board-review:generate && git diff --exit-code -- docs/board-review-table.md",
