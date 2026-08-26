@@ -2070,6 +2070,13 @@ test("persistent Mutation movement and combat modifiers alter authoritative outc
   const stackedMaxMove = Math.max(...legalMonsterPaths(stackedMove).map((path) => path.length - 1));
   assert.equal(stackedMaxMove, baseMaxMove + 2);
 
+  const opposingModifiers = createGame(2);
+  opposingModifiers.monsters[1].location = "record-tile";
+  opposingModifiers.units.forEach((unit) => { unit.location = "record-tile"; });
+  opposingModifiers.players[0].mutationCardIds = ["High-Octane Blood", "Armored Scales"];
+  const opposingMaxMove = Math.max(...legalMonsterPaths(opposingModifiers).map((path) => path.length - 1));
+  assert.equal(opposingMaxMove, baseMaxMove);
+
   const warSpikes = createGame(2, 3);
   warSpikes.players[0].mutationCardIds = ["War Spikes"];
   warSpikes.phase = "fight";

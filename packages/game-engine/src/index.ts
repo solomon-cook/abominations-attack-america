@@ -1052,6 +1052,56 @@ function discardExhaustedXFighterCard(state: GameState, ownerPlayer: number | un
   state.log.push(`Both X-Fighters were destroyed; the X-Fighters Research card was discarded.`);
 }
 
+interface ContinuousEffectAccumulator {
+  readonly moveBonus: number;
+  readonly defenseBonus: number;
+  readonly waterBarrierDefenseBonus: number;
+  readonly damagePerHit?: number;
+  readonly firstRoundAttackBonus: number;
+  readonly extraDeployments: number;
+  readonly movement?: MonsterMovement;
+  readonly crossesWaterBarriers: boolean;
+  readonly canControlNationalGuard: boolean;
+  readonly canDeployNationalGuard: boolean;
+}
+
+type ContinuousEffectContribution = Partial<ContinuousEffectAccumulator>;
+
+/**
+ * Compose independently sourced continuous effects without allowing a card
+ * projection to silently overwrite additive modifiers. Numeric modifiers are
+ * additive; replacement abilities use the last explicitly supplied value;
+ * booleans compose as an OR. Source-gated and one-shot effects do not enter
+ * this accumulator.
+ */
+function composeContinuousEffects(contributions: readonly ContinuousEffectContribution[]): ContinuousEffectAccumulator {
+  const result = {
+    moveBonus: 0,
+    defenseBonus: 0,
+    waterBarrierDefenseBonus: 0,
+    firstRoundAttackBonus: 0,
+    extraDeployments: 0,
+    crossesWaterBarriers: false,
+    canControlNationalGuard: false,
+    canDeployNationalGuard: false,
+  };
+  let damagePerHit: number | undefined;
+  let movement: MonsterMovement | undefined;
+  for (const contribution of contributions) {
+    result.moveBonus += contribution.moveBonus ?? 0;
+    result.defenseBonus += contribution.defenseBonus ?? 0;
+    result.waterBarrierDefenseBonus += contribution.waterBarrierDefenseBonus ?? 0;
+    result.firstRoundAttackBonus += contribution.firstRoundAttackBonus ?? 0;
+    result.extraDeployments += contribution.extraDeployments ?? 0;
+    result.crossesWaterBarriers ||= contribution.crossesWaterBarriers ?? false;
+    result.canControlNationalGuard ||= contribution.canControlNationalGuard ?? false;
+    result.canDeployNationalGuard ||= contribution.canDeployNationalGuard ?? false;
+    if (contribution.damagePerHit !== undefined) damagePerHit = contribution.damagePerHit;
+    if (contribution.movement !== undefined) movement = contribution.movement;
+  }
+  return { ...result, damagePerHit, movement };
+}
+
 interface MonsterContinuousEffects {
   readonly moveBonus: number;
   readonly movement: MonsterMovement;
@@ -1069,14 +1119,22 @@ interface MonsterContinuousEffects {
  */
 function monsterContinuousEffects(state: Pick<GameState, "monsters" | "players">, monster: Monster): MonsterContinuousEffects {
   const has = (cardId: string) => monsterHasMutation(state, monster, cardId);
+  const composed = composeContinuousEffects([
+    { moveBonus: has("High-Octane Blood") ? 1 : 0 },
+    { moveBonus: has("Winged Horror") ? 1 : 0, movement: has("Winged Horror") ? "fly" : undefined },
+    { moveBonus: has("Armored Scales") ? -1 : 0, defenseBonus: has("Armored Scales") ? 1 : 0 },
+    { waterBarrierDefenseBonus: has("Fins and Gills") ? 1 : 0, crossesWaterBarriers: has("Fins and Gills") },
+    { damagePerHit: has("War Spikes") ? 4 : undefined },
+    { firstRoundAttackBonus: has("Atomic Breath") ? 1 : 0 },
+  ]);
   return {
-    moveBonus: (has("High-Octane Blood") ? 1 : 0) + (has("Winged Horror") ? 1 : 0) - (has("Armored Scales") ? 1 : 0),
-    movement: has("Winged Horror") ? "fly" : monster.movement,
-    defenseBonus: has("Armored Scales") ? 1 : 0,
-    waterBarrierDefenseBonus: has("Fins and Gills") ? 1 : 0,
-    damagePerHit: has("War Spikes") ? 4 : undefined,
-    firstRoundAttackBonus: has("Atomic Breath") ? 1 : 0,
-    crossesWaterBarriers: has("Fins and Gills"),
+    moveBonus: composed.moveBonus,
+    movement: composed.movement ?? monster.movement,
+    defenseBonus: composed.defenseBonus,
+    waterBarrierDefenseBonus: composed.waterBarrierDefenseBonus,
+    damagePerHit: composed.damagePerHit,
+    firstRoundAttackBonus: composed.firstRoundAttackBonus,
+    crossesWaterBarriers: composed.crossesWaterBarriers,
   };
 }
 
@@ -1116,11 +1174,16 @@ interface ResearchContinuousEffects {
 function researchContinuousEffects(state: Pick<GameState, "players">, playerIndex: number): ResearchContinuousEffects {
   const cards = state.players[playerIndex]?.researchCardIds ?? [];
   const canControlNationalGuard = cards.includes("Guard Commander");
+  const composed = composeContinuousEffects([
+    { moveBonus: cards.includes("Fusion Cells") ? 1 : 0 },
+    { extraDeployments: cards.includes("2nd Generation") ? 1 : 0 },
+    { canControlNationalGuard, canDeployNationalGuard: canControlNationalGuard },
+  ]);
   return {
-    moveBonus: cards.includes("Fusion Cells") ? 1 : 0,
-    extraDeployments: cards.includes("2nd Generation") ? 1 : 0,
-    canControlNationalGuard,
-    canDeployNationalGuard: canControlNationalGuard,
+    moveBonus: composed.moveBonus,
+    extraDeployments: composed.extraDeployments,
+    canControlNationalGuard: composed.canControlNationalGuard,
+    canDeployNationalGuard: composed.canDeployNationalGuard,
   };
 }
 
