@@ -180,12 +180,19 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           : selectableUnit
             ? `Select ${selectableUnit.branch} unit`
             : "Not currently reachable";
+        const selectedPathCost = path.includes(placeKey) ? path.indexOf(placeKey) : undefined;
+        const combatStrength = [
+          ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} ${unit.attacks} attack${unit.attacks === 1 ? "" : "s"}/${unit.damage} damage/${unit.defense} Defense`),
+          ...game.monsters.filter((monster) => monster.location === placeKey).map((monster) => `${monster.name} ${monster.health}/${monster.maxHealth} Health/${monster.infamy} Infamy`),
+        ].join(", ");
         const tooltipText = [
           `${displayName || `Hex ${hex.key}`} · ${hex.key}`,
           `${hex.waterClass} water class`,
           featureText || "No recorded feature",
           neighbourText ? `Neighbours: ${neighbourText}` : "No recorded neighbours",
           occupantText ? `Occupants: ${occupantText}` : "Unoccupied",
+          selectedPathCost !== undefined && selectedPathCost > 0 ? `Movement cost: ${selectedPathCost}` : "Movement cost: not recorded for this hex",
+          combatStrength ? `Combat strength: ${combatStrength}` : "Combat strength: no occupant recorded",
           hex.verification !== "verified" ? "Physical details remain source-gated" : interactionHint,
         ].join(" · ");
         const baseArt = hex.waterClass === "unresolved"
