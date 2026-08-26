@@ -16,8 +16,10 @@ export function RevealedCardsPanel({ game, playerIndex }: Props) {
     const actionWindow = cardId === "Berserk" || cardId === "Son of a Monster"
       ? "Fight · optional Mutation window"
       : cardId === "Defense Satellites"
-        ? "Move/Fight · pre-battle window"
-        : cardId === "Antimatter" || cardId === "Stabilizer Ray" || cardId === "Laser Fence"
+      ? "Move/Fight · pre-battle window"
+      : cardId === "Blonde Lure"
+        ? "Any turn · choose monster and adjacent destination"
+      : cardId === "Antimatter" || cardId === "Stabilizer Ray" || cardId === "Laser Fence"
           ? "Fight · battle setup window"
           : undefined;
     return (

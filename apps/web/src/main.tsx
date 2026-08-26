@@ -44,6 +44,7 @@ import { LogPanel } from "./components/LogPanel";
 import { MatchStatus } from "./components/MatchStatus";
 import { PhaseActions } from "./components/PhaseActions";
 import { ChallengeActions } from "./components/ChallengeActions";
+import { BlondeLureActions } from "./components/BlondeLureActions";
 import { PieceStackInspector } from "./components/PieceStackInspector";
 import { PlayerStatusControls } from "./components/PlayerStatusControls";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
@@ -1160,6 +1161,12 @@ function App() {
               challenge={lastEncounterEvent?.detail.challenge && typeof lastEncounterEvent.detail.challenge === "object" ? lastEncounterEvent.detail.challenge as { declared: boolean; active: boolean; challengerMonsterId?: string; pendingStartPlayerIndex: number; startAtEndOfTurn?: boolean } : undefined}
               mutationDraws={encounterMutationDraws}
               nextPhase={typeof lastEncounterEvent?.detail.nextPhase === "string" ? lastEncounterEvent.detail.nextPhase : undefined}
+            />
+            <BlondeLureActions
+              game={activeGame}
+              canAct={canAct}
+              runCommand={runCommand}
+              getLocationName={(key) => getLocation(key)?.name ?? key}
             />
             {activeGame.phase === "move" &&
             selectedUnitId &&

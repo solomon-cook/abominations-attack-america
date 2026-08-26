@@ -146,6 +146,8 @@ export interface GameState {
   challenge?: MonsterChallengeState;
   /** Monster/site keys that have already consumed their one Mutation-site use. */
   mutationSiteUses: Record<string, string[]>;
+  /** One face-up Blonde Lure constraint, cleared after the targeted monster's next Move. */
+  activeResearchLure?: ResearchLure;
   pendingRetreat?: PendingRetreat;
   /** A retreat consumes the Encounter step for the active monster. */
   encounterSuppressed?: boolean;
@@ -179,6 +181,11 @@ export interface PendingTrophyChoice {
   readonly location: HexKey;
   readonly branch: Branch;
   readonly unitIds: readonly string[];
+}
+
+export interface ResearchLure {
+  readonly monsterId: string;
+  readonly destination: HexKey;
 }
 
 export interface MonsterChallengeState {
@@ -418,7 +425,7 @@ export type GameCommand =
   | { type: "pass-move" }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
-  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey }
+  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey; targetMonsterId?: string }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy"; unitId?: string; destination?: HexKey }
@@ -758,7 +765,7 @@ export function movementPathAllowed(board: BoardDefinition, path: readonly HexKe
   });
 }
 
-export function legalMonsterPaths(state: GameState, monsterId = state.monsters[state.currentPlayer]?.id): HexKey[][] {
+function legalMonsterPathsWithoutLure(state: GameState, monsterId = state.monsters[state.currentPlayer]?.id): HexKey[][] {
   if (state.phase !== "move") return [];
   const board = boardForState(state);
   const boardIndex = buildBoardIndex(board);
@@ -788,6 +795,14 @@ export function legalMonsterPaths(state: GameState, monsterId = state.monsters[s
   };
   visit([monster.location]);
   return paths;
+}
+
+export function legalMonsterPaths(state: GameState, monsterId = state.monsters[state.currentPlayer]?.id): HexKey[][] {
+  const paths = legalMonsterPathsWithoutLure(state, monsterId);
+  const lure = state.activeResearchLure?.monsterId === monsterId ? state.activeResearchLure : undefined;
+  if (!lure) return paths;
+  const constrained = paths.filter((path) => path.at(-1) === lure.destination);
+  return constrained.length > 0 ? constrained : paths;
 }
 
 export function legalMonsterDestinations(state: GameState, monsterId = state.monsters[state.currentPlayer]?.id): HexKey[] {
@@ -919,11 +934,15 @@ export function moveMonster(state: GameState, monsterId: string, path: string[])
   const entersOtherMonster = movement === "fly" && !state.challenge?.active
     ? otherMonsterSpaces.includes(destination!)
     : otherMonsterSpaces.length > 0;
-  const legal = monster.id === monsterId && destination && !movedPieceIds.includes(monsterId) && legalPath && !blockedByMilitary && !entersOtherMonster;
+  const lure = state.activeResearchLure?.monsterId === monster.id ? state.activeResearchLure : undefined;
+  const lureReachable = Boolean(lure && legalMonsterPathsWithoutLure(state, monster.id).some((candidate) => candidate.at(-1) === lure.destination));
+  const lureSatisfied = !lureReachable || destination === lure?.destination;
+  const legal = monster.id === monsterId && destination && !movedPieceIds.includes(monsterId) && legalPath && !blockedByMilitary && !entersOtherMonster && lureSatisfied;
   if (!legal || state.phase !== "move") return state;
   const next = structuredClone(state);
   next.monsters[state.currentPlayer].location = destination;
   next.movedPieceIds = [...movedPieceIds, monsterId];
+  if (next.activeResearchLure?.monsterId === monsterId) next.activeResearchLure = undefined;
   const destinationUnits = occupantsAt(next, destination).units;
   const returnedGuardIds = friendlyGuardPassage
     ? destinationUnits.filter((unit) => unit.branch === "National Guard").map((unit) => unit.id)
@@ -1563,7 +1582,7 @@ interface MutationUseResolution {
 
 interface ResearchUseResolution {
   readonly state: GameState;
-  readonly cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal";
+  readonly cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure";
   readonly battleId?: string;
   readonly rolls: readonly number[];
   readonly damagedMonsterIds: readonly string[];
@@ -1580,11 +1599,24 @@ function discardResearchFromHand(state: GameState, playerIndex: number, cardId: 
 }
 
 /** Resolve the currently implemented immediate Research windows. */
-function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey): ResearchUseResolution {
-  if (!new Set(["Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Mecha-Monster", "Captain Colossal"]).has(cardId as string)) {
+function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey, targetMonsterId?: string): ResearchUseResolution {
+  if (!new Set(["Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Mecha-Monster", "Captain Colossal", "Blonde Lure"]).has(cardId as string)) {
     throw new GameDomainError("ILLEGAL_COMMAND", `${String(cardId)} is source-gated and unavailable in this ruleset.`);
   }
   if (state.phase === "game-over" || state.phase === "challenge") throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} is unavailable during a terminal state or Monster Challenge.`);
+  if (cardId === "Blonde Lure") {
+    if (!(state.phase === "move" || state.phase === "fight" || state.phase === "encounter" || state.phase === "deploy")) throw new GameDomainError("ILLEGAL_COMMAND", "Blonde Lure can only be used during a player's active turn.");
+    const player = state.players[state.currentPlayer];
+    if (!player?.researchCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `Player ${state.currentPlayer + 1} does not have ${cardId}.`);
+    const target = state.monsters.find((monster) => monster.id === targetMonsterId);
+    if (!target || !isHexKey(target.location)) throw new GameDomainError("ILLEGAL_COMMAND", "Blonde Lure requires a living monster on the board.");
+    if (!destination || !boardForState(state).edges.some((edge) => edge.enabled && edge.from === target.location && edge.to === destination)) throw new GameDomainError("ILLEGAL_COMMAND", "Blonde Lure must target an enabled adjacent destination.");
+    const next = structuredClone(state);
+    discardResearchFromHand(next, next.currentPlayer, cardId);
+    next.activeResearchLure = { monsterId: target.id, destination };
+    next.log.push(`${target.name} was lured toward ${destination} for its next Move, if able.`);
+    return { state: next, cardId, rolls: [], damagedMonsterIds: [], defeatedMonsterIds: [], destination };
+  }
   if (cardId === "Mecha-Monster" || cardId === "Captain Colossal") {
     if (state.phase !== "deploy" || state.pendingDecision?.type !== "deployment") throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} must be placed during the active Deploy step.`);
     const definition = GIANT_UNIT_DEFINITIONS.find((candidate) => candidate.id === (cardId === "Mecha-Monster" ? "mecha-monster" : "captain-colossal"));
@@ -2396,6 +2428,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const next = structuredClone(state);
     const alreadyMoved = (next.movedPieceIds ?? []).includes(monsterId);
     if (!alreadyMoved) next.movedPieceIds = [...(next.movedPieceIds ?? []), monsterId];
+    if (next.activeResearchLure?.monsterId === monsterId) next.activeResearchLure = undefined;
     next.phase = next.encounterSuppressed ? "deploy" : next.pendingBattles.length > 0 ? "fight" : "encounter";
     if (next.phase === "deploy") {
       next.deploymentsThisTurn = 0;
@@ -2481,8 +2514,8 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     return { state: appendEvent(result.state, "mutation.used", eventPayload), eventType: "mutation.used", eventPayload };
   }
   if (command.type === "use-research") {
-    const result = useResearchCard(state, command.cardId, command.battleId, command.mutationCardId, command.choice, command.destination);
-    const eventPayload = { researchCardId: result.cardId, battleId: result.battleId, mutationCardId: command.mutationCardId, choice: command.choice, destination: command.destination, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
+    const result = useResearchCard(state, command.cardId, command.battleId, command.mutationCardId, command.choice, command.destination, command.targetMonsterId);
+    const eventPayload = { researchCardId: result.cardId, battleId: result.battleId, mutationCardId: command.mutationCardId, targetMonsterId: command.targetMonsterId, choice: command.choice, destination: command.destination, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "research.used", eventPayload), eventType: "research.used", eventPayload };
   }
   if (state.phase === "fight" && (command.type === "resolve-fight" || command.type === "advance")) {

@@ -536,13 +536,36 @@ test("runtime commands fail closed for every source-gated card", () => {
   const unsupportedMutations = CARD_DEFINITIONS.filter((card) => card.deck === "mutation" && card.availability === "source-gated").map((card) => card.id);
   const unsupportedResearch = CARD_DEFINITIONS.filter((card) => card.deck === "research" && card.availability === "source-gated").map((card) => card.id);
   assert.deepEqual(unsupportedMutations, []);
-  assert.deepEqual(unsupportedResearch.sort(), ["Blonde Lure", "Chopper Lift", "Cutbacks", "Molecular Cannon"].sort());
+  assert.deepEqual(unsupportedResearch.sort(), ["Chopper Lift", "Cutbacks", "Molecular Cannon"].sort());
   for (const cardId of unsupportedResearch) {
     assert.throws(() => applyCommand(createGame(2), { type: "use-research", cardId } as any), /source-gated and unavailable/);
   }
   for (const cardId of unsupportedMutations) {
     assert.throws(() => applyCommand(createGame(2), { type: "use-mutation", cardId } as any), /source-gated and unavailable/);
   }
+});
+
+test("Blonde Lure constrains the targeted monster's next move when the destination is reachable", () => {
+  const state = createGame(2, 0);
+  state.phase = "move";
+  state.currentPlayer = 0;
+  state.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: "monster-1" };
+  state.players[0].researchCardIds = ["Blonde Lure"];
+  state.monsters[1].location = K("seattle");
+
+  const armed = applyCommand(state, { type: "use-research", cardId: "Blonde Lure", targetMonsterId: "monster-2", destination: K("denver") });
+  assert.deepEqual(armed.state.activeResearchLure, { monsterId: "monster-2", destination: K("denver") });
+  assert.deepEqual(armed.state.players[0].researchCardIds, []);
+  assert.deepEqual(armed.state.decks.research.discard, ["Blonde Lure"]);
+
+  const targetTurn = structuredClone(armed.state);
+  targetTurn.currentPlayer = 1;
+  targetTurn.pendingDecision = { type: "monster-movement", playerIndex: 1, pieceId: "monster-2" };
+  assert.deepEqual(legalMonsterDestinations(targetTurn, "monster-2"), [K("denver")]);
+  const moved = applyCommand(targetTurn, { type: "move", path: [K("seattle"), K("denver")] });
+  assert.equal(moved.state.monsters[1].location, K("denver"));
+  assert.equal(moved.state.activeResearchLure, undefined);
+  assert.throws(() => applyCommand(targetTurn, { type: "move", path: [K("seattle"), K("san-francisco")] }), /not legal/);
 });
 
 test("Laser Fence either spends 2 Infamy or retreats and suppresses the new Encounter", () => {

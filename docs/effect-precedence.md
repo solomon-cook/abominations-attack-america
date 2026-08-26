@@ -2,7 +2,7 @@
 
 This is the precedence contract for the `prototype-0.1` development ruleset. It
 only describes effects whose source text and implementation status are already
-marked `implemented`; it is not a generic ruling for the four source-gated
+marked `implemented`; it is not a generic ruling for the three source-gated
 Research cards or unresolved physical-board interactions.
 
 ## Resolution order

@@ -78,7 +78,7 @@ const implementedCardIds = new Set<string>([
   "Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "War Spikes", "Atomic Breath",
   "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Son of a Monster", "Berserk", "Winged Horror", "Kinda Friendly",
   "Laser Beam Eyes", "Armored Scales", "It's a Robot!", "Guard Commander", "Fusion Cells",
-  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Mecha-Monster", "Captain Colossal", "X-Fighters",
+  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Blonde Lure", "Mecha-Monster", "Captain Colossal", "X-Fighters",
 ]);
 
 export const MONSTER_MUTATION_CARD_IDS = mutationIds;
@@ -340,7 +340,7 @@ export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
     timing: "Any of your turns; constrains the chosen monster's next turn if movement is possible.",
     duration: "Until the chosen monster completes its next Move step or cannot comply.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-02.jpg"],
-    effectsImplementation: "source-gated",
+    effectsImplementation: "implemented",
   },
   {
     id: "Anti-Mutagen",
