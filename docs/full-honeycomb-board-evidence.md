@@ -70,6 +70,13 @@ pieces and cards covering cells. It is therefore corroborating visual
 reconnaissance only; no cell label, feature, water class, barrier, or edge was
 promoted from it.
 
+The same rulebook is useful for vocabulary, not geometry promotion: it describes
+hexagonal board spaces, blue land/water spaces, water barriers, and the lake,
+sea, sea-coast, and flight movement classes. Its rendered pages do not provide
+an unobscured, aligned cell map, so those rules terms cannot be assigned to the
+254 candidate coordinates without a reviewed transcription against the physical
+board.
+
 ## Current evidence
 
 | Question | Current evidence | Status |
