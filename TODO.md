@@ -457,7 +457,7 @@ Useful source documents:
     - [x] Keep the candidate shell's landscape row geometry, flat-top orientation, odd-row offset, and non-overlapping tile bounds deterministic and separate from rules coordinates. (`buildDisplayHexLayout`; verified by `npm run web-board-layout:verify`)
   - [x] [P0] Add pan, zoom, fit-to-board, reset-view, and focus-active-area controls. (Accessible board-view controls provide directional pan, bounded zoom, and Fit/reset in the browser; focus-active-area remains the current highlighted selection.)
 - [x] [P0] Make dense piece stacks selectable and show ownership, branch, Health, and status without obscuring the board. (The accessible Piece Stacks inspector lists occupied hexes and exposes every monster/unit detail without overlaying the board; source-gated fields remain labelled as unavailable.)
-  - [P0] Show the active player, phase, current substep, pending decision, round, Stomp stack, and Challenge status persistently.
+  - [x] [P0] Show the active player, phase, current substep, pending decision, round, Stomp stack, and Challenge status persistently. (`MatchStatus` now keeps active player, phase, pending decision, round, Stomp markers, and Challenge state visible; `TurnProgress` retains the current substep.)
 - [x] [P0] Highlight reachable destinations and illegal destinations from engine-provided legality. (Engine selectors now drive reachable map controls)
 - [x] [P0] Highlight selectable pieces, chosen paths, and movement costs from engine-provided legality. (Web uses authoritative paths for destination affordances, selected path highlighting, and cost text)
   - [x] [P0] Support path preview, confirmation, and cancellation. (Web path selection submits only after explicit confirmation and supports cancel)

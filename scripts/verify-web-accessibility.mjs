@@ -23,6 +23,7 @@ const requiredSourceMarkers = [
   ["development board disclosure", /unresolved physical-board shell is not rendered as playable topology/],
   ["hex accessible names", /aria-label=\{`[\s\S]*\$\{displayName\}[\s\S]*hex \$\{hex\.key\}/],
   ["live match status", /aria-live=\"polite\" aria-label=\"Match status\"/],
+  ["persistent active player and decision status", /ACTIVE PLAYER[\s\S]*PENDING DECISION[\s\S]*CHALLENGE/],
   ["alert errors", /className=\"error\" role=\"alert\"/],
   ["unknown board pins fail closed", /className=\"board-unavailable\" role=\"alert\"/],
   ["keyboard-native controls", /<button[\s\S]*onClick=/],
