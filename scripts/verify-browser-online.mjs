@@ -197,8 +197,8 @@ try {
     const cells = [...document.querySelectorAll("main.game-screen .hex-tile")];
     return { count: cells.length, unresolvedLabels: cells.filter((cell) => cell.textContent.includes("Unresolved")).length };
   })()`)));
-  if (renderedBoardCells.some((board) => board?.count !== 254 || board.unresolvedLabels !== 0)) {
-    throw new Error(`Online sessions did not render the complete 254-cell MVP honeycomb: ${JSON.stringify(renderedBoardCells)}`);
+  if (renderedBoardCells.some((board) => board?.count !== 336 || board.unresolvedLabels !== 0)) {
+    throw new Error(`Online sessions did not render the complete 336-cell MVP honeycomb: ${JSON.stringify(renderedBoardCells)}`);
   }
   const spectatorSetupControls = await spectator.evaluate(`(() => [...document.querySelectorAll(".setup-options button")].length > 0 && [...document.querySelectorAll(".setup-options button")].every((button) => button.disabled))()`);
   if (!spectatorSetupControls) throw new Error("Spectator exposed an enabled setup control.");

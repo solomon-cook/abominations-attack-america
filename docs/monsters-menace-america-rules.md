@@ -385,7 +385,11 @@ determine the permitted number and mix of deployments.
 - The player may remove one of their branch's units from the board and place it
   on any unstomped base belonging to that branch.
 - Each redeployed unit counts as one deployment from that branch's allowance.
-- National Guard units cannot be redeployed.
+- Normally, National Guard units cannot be redeployed. Guard Commander overrides
+  that prohibition for the cardholder: either Guard unit may be redeployed to an
+  unstomped base belonging to the cardholder's military branch.
+- Guard Commander redeployment uses the branch's normal own-or-Guard allowance,
+  including its printed additional Guard allowance and any 2nd Generation bonus.
 - Captain Colossal and Mecha-Monster cannot be redeployed.
 
 ### Military Research instead of deployment

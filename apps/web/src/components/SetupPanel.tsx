@@ -20,7 +20,7 @@ export function SetupPanel({ activeSetup, setupSeat, online, playerIndex, partic
         <section className="setup-panel" aria-label="Development setup">
           <span className="label">DEVELOPMENT SETUP · SOURCE-GATED</span>
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
-          <p>This fixture exercises the authoritative setup state machine. Production monster, lair, branch, and board definitions remain blocked pending source review.</p>
+          <p>Prototype setup. Monster, lair, branch, and board data are still under review.</p>
           {setupSeat && <p className="setup-turn">Choosing for Player {setupSeat.playerIndex + 1}{waiting ? " · waiting" : ""}</p>}
           <div className="setup-options">
             {activeSetup.phase === "monster-selection" && activeSetup.definition.monsterIds.filter((id) => !activeSetup.seats.some((seat) => seat.monsterId === id)).map((id) => <button key={id} disabled={disabled} onClick={() => onChooseOption(id)}>{id}</button>)}
@@ -38,7 +38,7 @@ export function SetupPanel({ activeSetup, setupSeat, online, playerIndex, partic
         <section className="setup-summary" aria-label="Setup summary">
           <span className="label">SETUP LOCKED · DEVELOPMENT FIXTURE</span>
           <h2>Match configuration</h2>
-          <p>All assignments are recorded. Each player must still press Ready before gameplay can begin.</p>
+          <p>Assignments are set. Each player must press Ready to begin.</p>
           <div className="setup-summary-grid">
             {activeSetup.seats.map((seat) => (
               <div key={seat.playerIndex}>

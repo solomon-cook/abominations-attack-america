@@ -17,8 +17,15 @@ export type BoardFeature =
   | Readonly<{ kind: "mutation-site"; siteId: string }>
   | Readonly<{ kind: "challenge-site" }>
   | Readonly<{ kind: "lair"; monsterId: string }>
-  | Readonly<{ kind: "hollywood" }>
   | Readonly<{ kind: "los-angeles" }>;
+
+/** Printed board areas that are overlays rather than visitable hex features. */
+export interface BoardOverlay {
+  readonly id: "hollywood";
+  readonly anchor: HexKey;
+  readonly sourceRefs: readonly string[];
+  readonly notes: string;
+}
 
 export interface BoardHex {
   readonly key: HexKey;
@@ -101,7 +108,7 @@ export function boardContentHash(input: Omit<BoardDefinition, "contentHash">): s
 
 export function buildBoardIndex(board: BoardDefinition): BoardIndex {
   const neighbours = Object.fromEntries(Object.keys(board.hexes).map((key) => [key, [] as HexKey[]])) as Record<HexKey, HexKey[]>;
-  const featureKinds: BoardFeature["kind"][] = ["city", "military-base", "infamy-site", "mutation-site", "challenge-site", "lair", "hollywood", "los-angeles"];
+  const featureKinds: BoardFeature["kind"][] = ["city", "military-base", "infamy-site", "mutation-site", "challenge-site", "lair", "los-angeles"];
   const featureHexes = Object.fromEntries(featureKinds.map((kind) => [kind, [] as HexKey[]])) as Record<BoardFeature["kind"], HexKey[]>;
   for (const edge of board.edges) if (edge.enabled) neighbours[edge.from].push(edge.to);
   for (const hex of Object.values(board.hexes)) for (const feature of hex.features) featureHexes[feature.kind].push(hex.key);
@@ -139,7 +146,7 @@ export function diagnoseBoard(board: BoardDefinition): BoardDiagnostics {
   const labelCounts = new Map<string, number>();
   const coordinateCounts = new Map<string, number>();
   const featureCounts = Object.fromEntries([
-    "city", "military-base", "infamy-site", "mutation-site", "challenge-site", "lair", "hollywood", "los-angeles",
+    "city", "military-base", "infamy-site", "mutation-site", "challenge-site", "lair", "los-angeles",
   ].map((kind) => [kind, 0])) as Record<BoardFeature["kind"], number>;
   for (const hex of Object.values(board.hexes)) {
     if (hex.label) labelCounts.set(hex.label, (labelCounts.get(hex.label) ?? 0) + 1);
@@ -269,12 +276,14 @@ export const DEVELOPMENT_BOARD: BoardDefinition = { ...developmentCore, contentH
 
 /**
  * Complete coordinate shell inferred from the photographed board's visible
- * honeycomb lattice. Printed labels, water classes, features, and barriers are
+ * honeycomb lattice. The physical reference presents 14 staggered rows of
+ * 24 spaces in every row; the full rectangle retains edge cells even when
+ * they are empty or sea. Printed labels, water classes, features, and barriers are
  * intentionally unresolved until each hex is reviewed against the source.
  * This definition is evidence scaffolding, not a playable rules board.
  */
-const FULL_HONEYCOMB_ROWS = 13;
-const FULL_HONEYCOMB_SOURCE = "references/monsters-menace-america/components/board/full-game-setup.jpg#full-honeycomb-grid";
+const FULL_HONEYCOMB_ROWS = 14;
+const FULL_HONEYCOMB_SOURCE = "references/monsters-menace-america/components/source-photos-2026-08-26/full-board-setup.JPG#full-honeycomb-grid";
 
 function fullHoneycombCoordinate(row: number, column: number): HexCoord {
   return { q: column - Math.floor(row / 2), r: row };
@@ -283,7 +292,7 @@ function fullHoneycombCoordinate(row: number, column: number): HexCoord {
 function fullHoneycombHexes(): Record<HexKey, BoardHex> {
   const hexes: Record<HexKey, BoardHex> = {};
   for (let row = 0; row < FULL_HONEYCOMB_ROWS; row += 1) {
-    const columns = row % 2 === 0 ? 20 : 19;
+    const columns = 24;
     for (let column = 0; column < columns; column += 1) {
       const coord = fullHoneycombCoordinate(row, column);
       const key = hexKey(coord);
@@ -322,7 +331,7 @@ function fullHoneycombEdges(hexes: Readonly<Record<HexKey, BoardHex>>): BoardEdg
 
 const fullHoneycombCore = {
   id: "full-honeycomb-board-candidate",
-  version: 1,
+  version: 2,
   name: "Photographed full honeycomb board coordinate shell",
   rulesetVersion: "prototype-0.1",
   hexes: fullHoneycombHexes(),
@@ -338,68 +347,201 @@ export const FULL_HONEYCOMB_BOARD: BoardDefinition = { ...fullHoneycombCore, con
  * guesses. It is useful for local/test experiments, but is never production
  * ready: every cell remains explicitly provisional and its ruleset is named.
  */
-const PROVISIONAL_BOARD_SOURCE = "references/monsters-menace-america/components/board/full-game-setup.jpg#provisional-feature-pass";
+const PROVISIONAL_BOARD_SOURCE = "references/monsters-menace-america/components/source-photos-2026-08-26/full-board-setup.JPG#provisional-feature-pass";
 const PROVISIONAL_CITY_NAMES: Readonly<Record<string, string>> = {
-  "1/2": "Seattle",
-  "9/2": "San Francisco",
-  "11/4": "Los Angeles",
-  "2/7": "Winnipeg",
-  "3/8": "Minneapolis",
-  "5/8": "Omaha",
-  "6/8": "Kansas City",
-  "3/13": "Chicago",
-  "4/17": "New York",
-  "5/16": "Philadelphia",
-  "7/13": "Atlanta",
-  "7/11": "Nashville",
+  "0/3": "Vancouver",
+  "2/2": "Portland",
+  "1/3": "Seattle",
+  "2/12": "Winnipeg",
+  "3/13": "Minneapolis",
+  "3/15": "Milwaukee",
+  "4/15": "Chicago",
+  "4/17": "Detroit",
+  "4/21": "New York",
+  "4/22": "Boston",
+  "2/21": "Montreal",
+  "3/20": "Ottawa",
+  "4/18": "Toronto",
+  "5/1": "San Francisco",
+  "5/2": "Sacramento",
+  "6/2": "Fresno",
+  "5/6": "Salt Lake City",
+  "5/9": "Omaha",
+  "5/21": "Philadelphia",
+  "5/13": "Pittsburgh",
+  "6/20": "Baltimore",
+  "6/7": "Denver",
+  "8/5": "Phoenix",
+  "6/10": "Kansas City",
+  "6/11": "St. Louis",
+  "6/12": "Indianapolis",
+  "6/13": "Cincinnati",
+  "6/14": "Cleveland",
+  "8/2": "Los Angeles",
+  "9/2": "San Diego",
+  "8/8": "Albuquerque",
+  "8/9": "Tulsa",
+  "8/11": "Little Rock",
+  "8/12": "Nashville",
+  "8/14": "Charlotte",
+  "7/20": "Washington",
+  "8/16": "Richmond",
+  "8/17": "Atlanta",
+  "9/12": "Dallas",
+  "9/11": "Birmingham",
+  "10/12": "Austin",
+  "10/14": "Baton Rouge",
+  "11/12": "Houston",
+  "12/20": "Tampa",
+  "11/18": "Miami",
 };
 const PROVISIONAL_BOARD_FEATURES: Readonly<Record<string, readonly BoardFeature[]>> = {
-  "1/2": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
-  "9/2": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
-  "11/4": [{ kind: "city", benefit: { kind: "health-roll", dice: 3 } }, { kind: "los-angeles" }],
-  "2/7": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
-  "3/8": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
-  "5/8": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
-  "6/8": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
-  "3/13": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
-  "4/17": [{ kind: "city", benefit: { kind: "health-roll", dice: 3 } }],
-  "5/16": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
-  "7/13": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
-  "7/11": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
-  "2/5": [{ kind: "infamy-site" }],
-  "4/8": [{ kind: "infamy-site" }],
-  "7/5": [{ kind: "infamy-site" }],
-  "9/5": [{ kind: "infamy-site" }],
-  "10/14": [{ kind: "infamy-site" }],
-  "4/10": [{ kind: "mutation-site", siteId: "provisional-mutation-1" }],
-  "6/9": [{ kind: "mutation-site", siteId: "provisional-mutation-2" }],
-  "8/7": [{ kind: "mutation-site", siteId: "provisional-mutation-3" }],
-  "10/16": [{ kind: "challenge-site" }],
-  "11/1": [{ kind: "hollywood" }],
-  "0/2": [{ kind: "military-base", branch: "Navy" }],
-  "1/9": [{ kind: "military-base", branch: "Air Force" }],
-  "6/12": [{ kind: "military-base", branch: "Air Force" }],
-  "9/11": [{ kind: "military-base", branch: "Air Force" }],
-  "10/15": [{ kind: "military-base", branch: "Air Force" }],
-  "6/18": [{ kind: "military-base", branch: "Marines" }],
-  "7/17": [{ kind: "military-base", branch: "Marines" }],
-  "8/17": [{ kind: "military-base", branch: "Marines" }],
+  "0/3": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "1/2": [{ kind: "military-base", branch: "Navy" }],
+  "1/3": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "2/2": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "2/3": [{ kind: "military-base", branch: "Army" }],
+  "2/12": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "3/13": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "3/15": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "4/15": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "4/17": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "4/21": [{ kind: "city", benefit: { kind: "health-roll", dice: 3 } }],
+  "4/22": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "2/21": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "3/20": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "4/18": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "5/1": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "5/2": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "5/6": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "5/9": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "5/21": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "5/13": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "6/20": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
+  "6/7": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "8/5": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "6/2": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "6/10": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "6/11": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "6/12": [{ kind: "city", benefit: { kind: "health", amount: 1 } }, { kind: "military-base", branch: "Air Force" }],
+  "6/13": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "6/14": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "8/2": [{ kind: "city", benefit: { kind: "health-roll", dice: 3 } }, { kind: "los-angeles" }],
+  "9/2": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "8/8": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "8/9": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "8/11": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "8/12": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "8/14": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "7/20": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
   "7/14": [{ kind: "military-base", branch: "Army" }],
+  "8/16": [{ kind: "city", benefit: { kind: "health", amount: 1 } }, { kind: "military-base", branch: "Marines" }],
+  "8/17": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "9/11": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }, { kind: "military-base", branch: "Air Force" }],
+  "9/12": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "10/12": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "10/14": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
+  "11/12": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "12/20": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  "11/18": [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }],
+  // Face-centre inventory from the fitted authority photograph. The small
+  // printed titles are not promoted here when folds/copy obscure them.
+  "1/4": [{ kind: "infamy-site" }],
+  "2/13": [{ kind: "infamy-site" }],
+  "3/7": [{ kind: "infamy-site" }],
+  "3/8": [{ kind: "infamy-site" }],
+  "4/9": [{ kind: "infamy-site" }],
+  "4/11": [{ kind: "infamy-site" }],
+  "5/8": [{ kind: "infamy-site" }],
+  "6/11": [{ kind: "infamy-site" }],
+  "7/4": [{ kind: "infamy-site" }],
+  "7/8": [{ kind: "infamy-site" }],
+  "8/7": [{ kind: "infamy-site" }],
+  "8/15": [{ kind: "infamy-site" }],
+  "9/6": [{ kind: "infamy-site" }],
+  "10/11": [{ kind: "infamy-site" }],
+  "10/19": [{ kind: "infamy-site" }],
+  "4/6": [{ kind: "mutation-site", siteId: "experimental-breeder-reactor" }],
+  "6/4": [{ kind: "mutation-site", siteId: "nevada-test-site" }],
+  "5/20": [{ kind: "mutation-site", siteId: "three-mile-island" }],
+  "9/8": [{ kind: "mutation-site", siteId: "roswell" }],
+  "3/2": [{ kind: "lair", monsterId: "unresolved" }],
+  "4/2": [{ kind: "lair", monsterId: "unresolved" }],
+  "3/14": [{ kind: "lair", monsterId: "unresolved" }],
+  "7/5": [{ kind: "lair", monsterId: "unresolved" }],
+  "7/13": [{ kind: "lair", monsterId: "unresolved" }],
+  "11/8": [{ kind: "lair", monsterId: "unresolved" }],
+  "10/16": [{ kind: "challenge-site" }],
+  "10/15": [{ kind: "military-base", branch: "Air Force" }],
+  "6/17": [{ kind: "military-base", branch: "Marines" }],
+  "7/16": [{ kind: "military-base", branch: "Marines" }],
   "9/15": [{ kind: "military-base", branch: "Army" }],
   "10/10": [{ kind: "military-base", branch: "Navy" }],
   "11/13": [{ kind: "military-base", branch: "Navy" }],
 };
 
+/** Hollywood is printed across the board as an area overlay; its anchor is not a visitable space. */
+export const PHOTOGRAPHED_BOARD_OVERLAYS: readonly BoardOverlay[] = [{
+  id: "hollywood",
+  anchor: "-5,10",
+  sourceRefs: [PROVISIONAL_BOARD_SOURCE, FULL_HONEYCOMB_SOURCE],
+  notes: "Printed Hollywood area/title overlay; do not expose the anchor as a visitable hex feature.",
+}];
+
+/** Sea cells traced from the thick blue boundary in the supplied board photo. */
+const PHOTO_SEA_CELLS = new Set([
+  ...[0, 1, 23].map((column) => `0/${column}`),
+  ...[0, 1, 23].map((column) => `1/${column}`),
+  ...[0, 1, 23].map((column) => `2/${column}`),
+  ...[0, 23].map((column) => `3/${column}`),
+  ...[0, 23].map((column) => `4/${column}`),
+  ...[0, 22, 23].map((column) => `5/${column}`),
+  ...[0, 1, 21, 22, 23].map((column) => `6/${column}`),
+  ...[0, 1, 21, 22, 23].map((column) => `7/${column}`),
+  ...[0, 1, 21, 22, 23].map((column) => `8/${column}`),
+  ...[0, 1, 2, 19, 20, 21, 22, 23].map((column) => `9/${column}`),
+  ...[0, 1, 2, 3, 4, 20, 21, 22, 23].map((column) => `10/${column}`),
+  ...[0, 1, 2, 3, 4, 5, 15, 16, 17, 20, 21, 22, 23].map((column) => `11/${column}`),
+  ...[0, 1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map((column) => `12/${column}`),
+  ...Array.from({ length: 24 }, (_, column) => `13/${column}`),
+]);
+
+/** Clear inland blue lake spaces visible in the Great Lakes region of the supplied photo. */
+const PHOTO_LAKE_CELLS = new Set([
+  "2/15", "3/16", "3/17", "3/18", "3/19",
+  "4/17", "4/18", "4/19",
+]);
+
+function photoRowColumn(hex: BoardHex): string {
+  return `${hex.coord.r}/${hex.coord.q + Math.floor(hex.coord.r / 2)}`;
+}
+
+function photoWaterClass(hex: BoardHex, hexes: Readonly<Record<HexKey, BoardHex>>): WaterClass {
+  if (PHOTO_SEA_CELLS.has(photoRowColumn(hex))) return "sea";
+  if (PHOTO_LAKE_CELLS.has(photoRowColumn(hex))) return "lake";
+  const touchesSea = HEX_DIRECTIONS.some((direction) => {
+    const neighbour = hexes[hexKey({ q: hex.coord.q + direction.q, r: hex.coord.r + direction.r })];
+    return neighbour !== undefined && PHOTO_SEA_CELLS.has(photoRowColumn(neighbour));
+  });
+  return touchesSea ? "seacoast" : "land";
+}
+
 function provisionalBoardHexes(): Record<HexKey, BoardHex> {
-  return Object.fromEntries(Object.entries(FULL_HONEYCOMB_BOARD.hexes).map(([key, hex]) => {
+  const shell = Object.fromEntries(Object.entries(FULL_HONEYCOMB_BOARD.hexes).map(([key, hex]) => [key, { ...hex, waterClass: "land" as const }])) as Record<HexKey, BoardHex>;
+  return Object.fromEntries(Object.entries(shell).map(([key, hex]) => {
     const row = hex.coord.r;
     const column = hex.coord.q + Math.floor(row / 2);
     const rowColumn = `${row}/${column}`;
     const features = PROVISIONAL_BOARD_FEATURES[rowColumn] ?? [];
+    const tracedWaterClass = photoWaterClass(hex, shell);
+    // The broad edge trace is intentionally conservative while the seam
+    // review is underway. A printed feature occupies land (possibly coastal
+    // land), so it must not be materialized as an ocean hex.
+    const waterClass = features.length > 0 && tracedWaterClass === "sea" ? "seacoast" : tracedWaterClass;
     return [key, {
       ...hex,
       label: PROVISIONAL_CITY_NAMES[rowColumn] ? `Provisional ${PROVISIONAL_CITY_NAMES[rowColumn]}` : undefined,
-      waterClass: (row === 0 || row === FULL_HONEYCOMB_ROWS - 1 || column === 0 || column === (row % 2 === 0 ? 19 : 18)) ? "seacoast" : "land",
+      waterClass,
       features,
       sourceRefs: [PROVISIONAL_BOARD_SOURCE, FULL_HONEYCOMB_SOURCE],
       verification: "provisional" as const,
@@ -408,18 +550,25 @@ function provisionalBoardHexes(): Record<HexKey, BoardHex> {
   })) as Record<HexKey, BoardHex>;
 }
 
+const provisionalHexes = provisionalBoardHexes();
 const provisionalBoardCore = {
   id: "provisional-authoritative-honeycomb-board",
-  version: 2,
+  version: 3,
   name: "Promoted photographed honeycomb board playtest definition",
-  rulesetVersion: "playtest-0.3-physical-board-values",
-  hexes: provisionalBoardHexes(),
+  rulesetVersion: "playtest-0.4-physical-board-shell",
+  hexes: provisionalHexes,
   edges: FULL_HONEYCOMB_BOARD.edges.map((edge) => ({
     ...edge,
-    barrier: "none" as const,
+    barrier: provisionalHexes[edge.from].waterClass === "sea" && provisionalHexes[edge.to].waterClass !== "sea"
+      || provisionalHexes[edge.from].waterClass !== "sea" && provisionalHexes[edge.to].waterClass === "sea"
+      ? "sea" as const
+      : provisionalHexes[edge.from].waterClass === "lake" && provisionalHexes[edge.to].waterClass !== "lake"
+        || provisionalHexes[edge.from].waterClass !== "lake" && provisionalHexes[edge.to].waterClass === "lake"
+          ? "lake" as const
+          : "none" as const,
     enabled: true,
     sourceRef: PROVISIONAL_BOARD_SOURCE,
-    notes: "Promoted adjacency guess; verify against the physical board.",
+    notes: "Promoted adjacency guess; barriers mark only photographed sea/non-sea or lake/non-lake boundary transitions and require physical-board review.",
   })),
 };
 

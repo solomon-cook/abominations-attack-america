@@ -30,7 +30,7 @@ test("MVP room creation uses the pinned best-guess honeycomb board", () => {
   assert.doesNotThrow(() => assertMvpBoardReady());
   const state = createMvpRoomGame(2, 7, "best-guess-mvp");
   assert.equal(state.boardId, "provisional-authoritative-honeycomb-board");
-  assert.equal(state.boardVersion, 2);
+  assert.equal(state.boardVersion, 3);
   assert.equal(state.setupState?.phase, "monster-selection");
   assert.equal(state.setupState?.definition.lairsByMonster["monster-1"]?.length, 3);
 });
@@ -78,7 +78,7 @@ test("source-backed unit catalogue preserves branch quantities and control bound
   assert.equal(UNIT_DEFINITIONS.every((unit) => unit.sourceRefs.length === 1 && unit.effectsImplementation === "source-gated"), true);
   assert.deepEqual(GIANT_UNIT_DEFINITIONS.map((unit) => [unit.id, unit.quantity]), [["mecha-monster", 1], ["captain-colossal", 1]]);
   assert.deepEqual(GIANT_UNIT_DEFINITIONS.map((unit) => [unit.health, unit.move, unit.defense, unit.attacks, unit.damage]), [[6, 4, 5, 1, 4], [8, 4, 4, 2, 2]]);
-  assert.deepEqual(NATIONAL_GUARD_DEFINITIONS.map((unit) => [unit.quantity, unit.move, unit.defense, unit.damage]), [[6, 3, 4, 1], [2, 5, 3, 1]]);
+  assert.deepEqual(NATIONAL_GUARD_DEFINITIONS.map((unit) => [unit.quantity, unit.printedMove, unit.move, unit.defense, unit.damage]), [[6, 0, 3, 4, 1], [2, 0, 5, 3, 1]]);
   assert.equal(NATIONAL_GUARD_DEFINITIONS.every((unit) => unit.specialAbilityText.includes("Guard Commander") && unit.controlImplementation === "source-gated"), true);
   assert.deepEqual(BRANCH_DEPLOYMENT_DEFINITIONS.map((entry) => [entry.ownOrGuardUnits, entry.additionalNationalGuardUnits]), [[2, 1], [2, 1], [2, 1], [3, 0]]);
   assert.equal(BRANCH_DEPLOYMENT_DEFINITIONS.every((entry) => entry.canDrawResearchInstead && entry.implementation === "source-gated"), true);
@@ -259,7 +259,7 @@ test("owned deployment destinations are verified, unstomped, and unique per Depl
   assert.deepEqual(legalOwnedDeploymentDestinations(state), []);
 });
 
-test("redeployment destinations require an active player's ordinary branch unit and unstomped branch base", () => {
+test("redeployment destinations allow the Guard Commander to redeploy neutral Guard to an active branch base", () => {
   const state = createGame(2);
   state.phase = "deploy";
   state.pendingDecision = { type: "deployment", playerIndex: 0 };
@@ -271,10 +271,37 @@ test("redeployment destinations require an active player's ordinary branch unit 
   assert.deepEqual(legalOwnedRedeploymentDestinations(state, unit.id), []);
   state.stompedLocations = [];
   unit.branch = "National Guard";
+  unit.ownerPlayer = undefined;
+  unit.unitTypeId = "national-guard-tank";
+  state.players[0].researchCardIds = ["Guard Commander"];
+  assert.deepEqual(legalOwnedRedeploymentDestinations(state, unit.id), [K("denver")]);
+  state.players[0].researchCardIds = [];
   assert.deepEqual(legalOwnedRedeploymentDestinations(state, unit.id), []);
   unit.branch = "Army";
   unit.unitTypeId = "mecha-monster";
   assert.deepEqual(legalOwnedRedeploymentDestinations(state, unit.id), []);
+});
+
+test("Guard Commander redeployment uses the Guard allowance and 2nd Generation bonus", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  state.players[0].researchCardIds = ["Guard Commander", "2nd Generation"];
+  const guard = {
+    ...state.units[0],
+    id: "national-guard-tank-1",
+    branch: "National Guard" as const,
+    unitTypeId: "national-guard-tank",
+    ownerPlayer: undefined,
+    move: 3,
+    movement: "land-only" as const,
+  };
+  state.units = [...state.units, guard];
+  guard.location = K("chicago");
+  const result = applyCommand(state, { type: "redeploy", unitId: guard.id, destination: K("denver") });
+  assert.equal(result.state.units.find((candidate) => candidate.id === guard.id)?.location, K("denver"));
+  assert.equal(result.state.units.find((candidate) => candidate.id === guard.id)?.ownerPlayer, undefined);
+  assert.equal(result.state.deploymentsThisTurn, 1);
 });
 
 test("redeployment moves one owned branch unit and consumes one branch allowance", () => {
@@ -851,7 +878,7 @@ test("new matches pin board and ruleset metadata and reject unsupported state sc
 test("provisional playtest factory pins the complete guessed board without promoting it", () => {
   const state = createProvisionalPlaytestGame(2, 7);
   assert.equal(state.boardId, "provisional-authoritative-honeycomb-board");
-  assert.equal(boardForState(state).rulesetVersion, "playtest-0.3-physical-board-values");
+  assert.equal(boardForState(state).rulesetVersion, "playtest-0.4-physical-board-shell");
   assert.equal(state.monsters.every((monster) => typeof monster.location === "string" && monster.location.includes(",")), true);
   assert.equal(state.units.every((unit) => unit.location === "record-tile"), true);
   assert.deepEqual(validateInventoryAccounting(state), []);

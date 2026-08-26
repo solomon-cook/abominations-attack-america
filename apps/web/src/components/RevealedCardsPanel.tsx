@@ -67,16 +67,16 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
                 <span>Timing: {rule.timing}</span>
                 <span>Duration: {rule.duration}</span>
                 <span>Target and confirmation: {definition?.targets && definition.targets !== "unknown" ? definition.targets : "source-gated"}</span>
-                <span>Result: {rule.effectsImplementation === "implemented" ? "authoritative result shown in the phase log" : "source-gated"}</span>
+                <span>Result: {rule.effectsImplementation === "implemented" ? "shown in the phase log" : "unavailable"}</span>
                 <span><span className="metric-icon" aria-hidden="true">◆</span> Status effect: {rule.classification === "persistent" ? "active while held" : "none · resolved through a legal timing window"}</span>
                 <span>Source: {rule.sourceRefs.join(", ")}</span>
               </div>
               <strong>{rule.timing}</strong>
               <p className="hand-card-rules-box">{rule.transcription}</p>
-              <small>{rule.classification === "persistent" ? "Keep this card face up while its sourced continuous effect applies." : directAction ? "This direct action is legal in the current authoritative window." : actionWindow ? "Use the matching authoritative action in the current decision controls; the hand never issues an independent command." : "When this card is usable, the authoritative phase controls provide its legal target and confirmation."}</small>
+              <small>{rule.classification === "persistent" ? "Keep this card face up while its effect applies." : directAction ? "Use this action now." : actionWindow ? "Use the controls for this step." : "Use the phase controls when available."}</small>
             </>
           ) : (
-            <p>Detailed timing, target, confirmation, result, and source text are not yet transcribed into the digital rules reference.</p>
+            <p>Rules text is not available yet.</p>
           )}
         </div>
       </details>

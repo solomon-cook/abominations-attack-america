@@ -11,7 +11,7 @@ export function ChallengeActions({ activeGame, canAct, runCommand }: Props) {
   if (decision?.type === "challenge-opponent") {
     return (
       <div className="battle-choice" aria-label="Choose Monster Challenge opponent">
-        <p>Choose an eligible monster to weigh in and fight. Monsters in Hollywood are excluded.</p>
+        <p>Choose an eligible monster to fight.</p>
         {decision.opponentIds.map((monsterId) => {
           const monster = activeGame.monsters.find((candidate) => candidate.id === monsterId);
           return <button key={monsterId} disabled={!canAct} onClick={() => void runCommand({ type: "challenge-opponent", opponentMonsterId: monsterId })}>{monster?.name ?? monsterId}</button>;
@@ -35,7 +35,7 @@ export function ChallengeActions({ activeGame, canAct, runCommand }: Props) {
   if (decision?.type === "challenge-giant") {
     return (
       <div className="battle-choice" aria-label="Choose giant Monster Challenge opponent">
-        <p>All surviving monsters have fought. Choose the next surviving giant military unit; giants are challenged last and never fight each other.</p>
+        <p>All surviving monsters have fought. Choose the next giant unit.</p>
         {decision.giantUnitIds.map((unitId) => {
           const unit = activeGame.units.find((candidate) => candidate.id === unitId);
           return <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "challenge-giant", giantUnitId: unitId })}>{unit?.unitTypeId ?? unitId}</button>;
@@ -49,7 +49,7 @@ export function ChallengeActions({ activeGame, canAct, runCommand }: Props) {
     return (
       <div className="battle-choice" aria-label="Resolve giant Monster Challenge duel">
         <p>{challenger?.name ?? decision.challengerMonsterId} vs {giant?.unitTypeId ?? decision.giantUnitId}</p>
-        <small>The giant is challenged last. Resolve the authoritative unlimited duel; America is saved if the giant defeats the challenger.</small>
+        <small>The giant is challenged last. A giant victory saves America.</small>
         <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-challenge" })}>Resolve giant duel</button>
       </div>
     );

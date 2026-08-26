@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title description">
+  <title id="title">Provisional 336-cell physical-board feature and barrier audit overlay</title>
+  <desc id="description">Candidate feature, water, and thick-blue-barrier annotations over the authority photograph. All annotations remain provisional until physical-board sign-off.</desc>
+  <image href="../references/monsters-menace-america/components/source-photos-2026-08-26/full-board-setup.JPG" x="0" y="0" width="900" height="1600" transform="translate(0 900) rotate(-90)" preserveAspectRatio="none" opacity="0.88"/>
+  <g class="barriers"><line class="barrier-sea" x1="285.0" y1="65.0" x2="301.3" y2="93.1"/>
+<line class="barrier-sea" x1="1325.0" y1="65.0" x2="1308.8" y2="93.1"/>
+<line class="barrier-sea" x1="285.0" y1="121.3" x2="301.3" y2="149.4"/>
+
+<line class="barrier-sea" x1="301.3" y1="149.4" x2="285.0" y2="177.6"/>
+
+<line class="barrier-sea" x1="1325.0" y1="121.3" x2="1308.8" y2="149.4"/>
+<line class="barrier-sea" x1="1308.8" y1="93.1" x2="1325.0" y2="121.3"/>
+
+<line class="barrier-sea" x1="285.0" y1="177.6" x2="301.3" y2="205.7"/>
+<line class="barrier-sea" x1="285.0" y1="233.9" x2="252.5" y2="233.9"/>
+<line class="barrier-lake" x1="935.0" y1="177.6" x2="918.8" y2="205.7"/>
+<line class="barrier-lake" x1="967.5" y1="177.6" x2="983.8" y2="205.7"/>
+<line class="barrier-lake" x1="935.0" y1="177.6" x2="967.5" y2="177.6"/>
+<line class="barrier-lake" x1="967.5" y1="233.9" x2="935.0" y2="233.9"/>
+<line class="barrier-lake" x1="1016.3" y1="205.7" x2="983.8" y2="205.7"/>
+<line class="barrier-lake" x1="1065.0" y1="233.9" x2="1032.5" y2="233.9"/>
+<line class="barrier-lake" x1="1113.8" y1="205.7" x2="1081.3" y2="205.7"/>
+<line class="barrier-lake" x1="1162.5" y1="233.9" x2="1130.0" y2="233.9"/>
+<line class="barrier-sea" x1="1325.0" y1="177.6" x2="1308.8" y2="205.7"/>
+<line class="barrier-sea" x1="252.5" y1="233.9" x2="236.3" y2="262.0"/>
+
+<line class="barrier-lake" x1="918.8" y1="205.7" x2="935.0" y2="233.9"/>
+<line class="barrier-lake" x1="967.5" y1="233.9" x2="983.8" y2="262.0"/>
+<line class="barrier-lake" x1="1016.3" y1="205.7" x2="1032.5" y2="233.9"/>
+
+<line class="barrier-lake" x1="1113.8" y1="205.7" x2="1130.0" y2="233.9"/>
+<line class="barrier-lake" x1="1162.5" y1="233.9" x2="1178.8" y2="262.0"/>
+
+<line class="barrier-lake" x1="1178.8" y1="262.0" x2="1162.5" y2="290.2"/>
+<line class="barrier-sea" x1="1325.0" y1="233.9" x2="1308.8" y2="262.0"/>
+<line class="barrier-sea" x1="1308.8" y1="205.7" x2="1325.0" y2="233.9"/>
+
+<line class="barrier-sea" x1="252.5" y1="290.2" x2="236.3" y2="318.3"/>
+<line class="barrier-sea" x1="252.5" y1="346.5" x2="236.3" y2="318.3"/>
+<line class="barrier-lake" x1="1032.5" y1="290.2" x2="1016.3" y2="318.3"/>
+<line class="barrier-lake" x1="983.8" y1="262.0" x2="1016.3" y2="262.0"/>
+<line class="barrier-lake" x1="1065.0" y1="346.5" x2="1032.5" y2="346.5"/>
+<line class="barrier-lake" x1="1113.8" y1="318.3" x2="1081.3" y2="318.3"/>
+<line class="barrier-lake" x1="1162.5" y1="290.2" x2="1178.8" y2="318.3"/>
+<line class="barrier-lake" x1="1162.5" y1="346.5" x2="1130.0" y2="346.5"/>
+<line class="barrier-sea" x1="1325.0" y1="290.2" x2="1308.8" y2="318.3"/>
+<line class="barrier-sea" x1="1308.8" y1="318.3" x2="1276.3" y2="318.3"/>
+<line class="barrier-sea" x1="252.5" y1="346.5" x2="236.3" y2="374.6"/>
+<line class="barrier-sea" x1="285.0" y1="402.7" x2="252.5" y2="402.7"/>
+<line class="barrier-lake" x1="1016.3" y1="318.3" x2="1032.5" y2="346.5"/>
+
+<line class="barrier-lake" x1="1113.8" y1="318.3" x2="1130.0" y2="346.5"/>
+
+<line class="barrier-sea" x1="1260.0" y1="346.5" x2="1276.3" y2="374.6"/>
+<line class="barrier-sea" x1="1276.3" y1="374.6" x2="1260.0" y2="402.7"/>
+<line class="barrier-sea" x1="301.3" y1="430.9" x2="285.0" y2="402.7"/>
+
+<line class="barrier-sea" x1="1227.5" y1="402.7" x2="1211.3" y2="430.9"/>
+<line class="barrier-sea" x1="1227.5" y1="402.7" x2="1260.0" y2="402.7"/>
+<line class="barrier-sea" x1="301.3" y1="487.2" x2="285.0" y2="515.3"/>
+<line class="barrier-sea" x1="301.3" y1="487.2" x2="285.0" y2="459.0"/>
+<line class="barrier-sea" x1="1227.5" y1="459.0" x2="1211.3" y2="487.2"/>
+<line class="barrier-sea" x1="1211.3" y1="430.9" x2="1227.5" y2="459.0"/>
+
+<line class="barrier-sea" x1="301.3" y1="543.5" x2="285.0" y2="515.3"/>
+
+<line class="barrier-sea" x1="1162.5" y1="571.6" x2="1130.0" y2="571.6"/>
+<line class="barrier-sea" x1="1227.5" y1="515.3" x2="1211.3" y2="543.5"/>
+<line class="barrier-sea" x1="1211.3" y1="543.5" x2="1178.8" y2="543.5"/>
+<line class="barrier-sea" x1="301.3" y1="599.8" x2="285.0" y2="571.6"/>
+<line class="barrier-sea" x1="333.8" y1="599.8" x2="301.3" y2="599.8"/>
+<line class="barrier-sea" x1="382.5" y1="627.9" x2="350.0" y2="627.9"/>
+<line class="barrier-sea" x1="1130.0" y1="571.6" x2="1113.8" y2="599.8"/>
+
+
+<line class="barrier-sea" x1="447.5" y1="627.9" x2="431.3" y2="656.1"/>
+<line class="barrier-sea" x1="398.8" y1="599.8" x2="431.3" y2="599.8"/>
+<line class="barrier-sea" x1="398.8" y1="599.8" x2="382.5" y2="627.9"/>
+<line class="barrier-sea" x1="480.0" y1="684.2" x2="447.5" y2="684.2"/>
+<line class="barrier-sea" x1="967.5" y1="684.2" x2="935.0" y2="684.2"/>
+<line class="barrier-sea" x1="1016.3" y1="656.1" x2="983.8" y2="656.1"/>
+<line class="barrier-sea" x1="1065.0" y1="684.2" x2="1032.5" y2="684.2"/>
+<line class="barrier-sea" x1="1162.5" y1="627.9" x2="1178.8" y2="656.1"/>
+<line class="barrier-sea" x1="1130.0" y1="627.9" x2="1162.5" y2="627.9"/>
+<line class="barrier-sea" x1="431.3" y1="656.1" x2="447.5" y2="684.2"/>
+<line class="barrier-sea" x1="480.0" y1="684.2" x2="496.3" y2="712.4"/>
+
+<line class="barrier-sea" x1="496.3" y1="712.4" x2="480.0" y2="740.5"/>
+
+<line class="barrier-sea" x1="788.8" y1="712.4" x2="772.5" y2="740.5"/>
+
+<line class="barrier-sea" x1="886.3" y1="712.4" x2="870.0" y2="740.5"/>
+
+
+<line class="barrier-sea" x1="935.0" y1="684.2" x2="918.8" y2="712.4"/>
+<line class="barrier-sea" x1="1016.3" y1="656.1" x2="1032.5" y2="684.2"/>
+<line class="barrier-sea" x1="1065.0" y1="684.2" x2="1081.3" y2="712.4"/>
+
+
+<line class="barrier-sea" x1="1162.5" y1="684.2" x2="1178.8" y2="712.4"/>
+
+<line class="barrier-sea" x1="480.0" y1="740.5" x2="496.3" y2="768.6"/>
+<line class="barrier-sea" x1="528.8" y1="768.6" x2="496.3" y2="768.6"/>
+<line class="barrier-sea" x1="577.5" y1="796.8" x2="545.0" y2="796.8"/>
+<line class="barrier-sea" x1="626.3" y1="768.6" x2="593.8" y2="768.6"/>
+<line class="barrier-sea" x1="675.0" y1="796.8" x2="642.5" y2="796.8"/>
+<line class="barrier-sea" x1="740.0" y1="740.5" x2="723.8" y2="768.6"/>
+<line class="barrier-sea" x1="723.8" y1="768.6" x2="691.3" y2="768.6"/>
+<line class="barrier-sea" x1="740.0" y1="740.5" x2="772.5" y2="740.5"/>
+<line class="barrier-sea" x1="788.8" y1="712.4" x2="821.3" y2="712.4"/>
+<line class="barrier-sea" x1="837.5" y1="740.5" x2="870.0" y2="740.5"/>
+<line class="barrier-sea" x1="886.3" y1="712.4" x2="918.8" y2="712.4"/>
+<line class="barrier-sea" x1="1081.3" y1="712.4" x2="1113.8" y2="712.4"/>
+<line class="barrier-sea" x1="1162.5" y1="740.5" x2="1178.8" y2="768.6"/>
+<line class="barrier-sea" x1="1130.0" y1="740.5" x2="1162.5" y2="740.5"/>
+<line class="barrier-sea" x1="1227.5" y1="740.5" x2="1211.3" y2="768.6"/>
+<line class="barrier-sea" x1="1178.8" y1="712.4" x2="1211.3" y2="712.4"/>
+<line class="barrier-sea" x1="1211.3" y1="768.6" x2="1178.8" y2="768.6"/>
+
+<line class="barrier-sea" x1="528.8" y1="768.6" x2="545.0" y2="796.8"/>
+
+<line class="barrier-sea" x1="626.3" y1="768.6" x2="642.5" y2="796.8"/>
+
+</g>
+  <g class="cells"><g class="audit-cell"><polygon class="water-sea" points="203.8,36.9 236.3,36.9 252.5,65.0 236.3,93.1 203.8,93.1 187.5,65.0"/><text class="face-id" x="220.0" y="61.0">0/0</text><title>0/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,65.0 285.0,65.0 301.3,93.1 285.0,121.3 252.5,121.3 236.3,93.1"/><text class="face-id" x="268.8" y="89.1">0/1</text><title>0/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="301.3,36.9 333.8,36.9 350.0,65.0 333.8,93.1 301.3,93.1 285.0,65.0"/><text class="face-id" x="317.5" y="61.0">0/2</text><title>0/2 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-land" points="350.0,65.0 382.5,65.0 398.8,93.1 382.5,121.3 350.0,121.3 333.8,93.1"/><text class="face-id" x="366.3" y="89.1">0/3</text><text class="feature-code" x="366.3" y="103.1">CITY</text><title>0/3 · LAND · Provisional Vancouver · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="398.8,36.9 431.3,36.9 447.5,65.0 431.3,93.1 398.8,93.1 382.5,65.0"/><text class="face-id" x="415.0" y="61.0">0/4</text><title>0/4 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,65.0 480.0,65.0 496.3,93.1 480.0,121.3 447.5,121.3 431.3,93.1"/><text class="face-id" x="463.8" y="89.1">0/5</text><title>0/5 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,36.9 528.8,36.9 545.0,65.0 528.8,93.1 496.3,93.1 480.0,65.0"/><text class="face-id" x="512.5" y="61.0">0/6</text><title>0/6 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,65.0 577.5,65.0 593.8,93.1 577.5,121.3 545.0,121.3 528.8,93.1"/><text class="face-id" x="561.3" y="89.1">0/7</text><title>0/7 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,36.9 626.3,36.9 642.5,65.0 626.3,93.1 593.8,93.1 577.5,65.0"/><text class="face-id" x="610.0" y="61.0">0/8</text><title>0/8 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,65.0 675.0,65.0 691.3,93.1 675.0,121.3 642.5,121.3 626.3,93.1"/><text class="face-id" x="658.8" y="89.1">0/9</text><title>0/9 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,36.9 723.8,36.9 740.0,65.0 723.8,93.1 691.3,93.1 675.0,65.0"/><text class="face-id" x="707.5" y="61.0">0/10</text><title>0/10 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,65.0 772.5,65.0 788.8,93.1 772.5,121.3 740.0,121.3 723.8,93.1"/><text class="face-id" x="756.3" y="89.1">0/11</text><title>0/11 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,36.9 821.3,36.9 837.5,65.0 821.3,93.1 788.8,93.1 772.5,65.0"/><text class="face-id" x="805.0" y="61.0">0/12</text><title>0/12 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,65.0 870.0,65.0 886.3,93.1 870.0,121.3 837.5,121.3 821.3,93.1"/><text class="face-id" x="853.8" y="89.1">0/13</text><title>0/13 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,36.9 918.8,36.9 935.0,65.0 918.8,93.1 886.3,93.1 870.0,65.0"/><text class="face-id" x="902.5" y="61.0">0/14</text><title>0/14 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="935.0,65.0 967.5,65.0 983.8,93.1 967.5,121.3 935.0,121.3 918.8,93.1"/><text class="face-id" x="951.3" y="89.1">0/15</text><title>0/15 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="983.8,36.9 1016.3,36.9 1032.5,65.0 1016.3,93.1 983.8,93.1 967.5,65.0"/><text class="face-id" x="1000.0" y="61.0">0/16</text><title>0/16 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1032.5,65.0 1065.0,65.0 1081.3,93.1 1065.0,121.3 1032.5,121.3 1016.3,93.1"/><text class="face-id" x="1048.8" y="89.1">0/17</text><title>0/17 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1081.3,36.9 1113.8,36.9 1130.0,65.0 1113.8,93.1 1081.3,93.1 1065.0,65.0"/><text class="face-id" x="1097.5" y="61.0">0/18</text><title>0/18 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1130.0,65.0 1162.5,65.0 1178.8,93.1 1162.5,121.3 1130.0,121.3 1113.8,93.1"/><text class="face-id" x="1146.3" y="89.1">0/19</text><title>0/19 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1178.8,36.9 1211.3,36.9 1227.5,65.0 1211.3,93.1 1178.8,93.1 1162.5,65.0"/><text class="face-id" x="1195.0" y="61.0">0/20</text><title>0/20 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1227.5,65.0 1260.0,65.0 1276.3,93.1 1260.0,121.3 1227.5,121.3 1211.3,93.1"/><text class="face-id" x="1243.8" y="89.1">0/21</text><title>0/21 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1276.3,36.9 1308.8,36.9 1325.0,65.0 1308.8,93.1 1276.3,93.1 1260.0,65.0"/><text class="face-id" x="1292.5" y="61.0">0/22</text><title>0/22 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,65.0 1357.5,65.0 1373.8,93.1 1357.5,121.3 1325.0,121.3 1308.8,93.1"/><text class="face-id" x="1341.3" y="89.1">0/23</text><title>0/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,93.1 236.3,93.1 252.5,121.3 236.3,149.4 203.8,149.4 187.5,121.3"/><text class="face-id" x="220.0" y="117.3">1/0</text><title>1/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,121.3 285.0,121.3 301.3,149.4 285.0,177.6 252.5,177.6 236.3,149.4"/><text class="face-id" x="268.8" y="145.4">1/1</text><title>1/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="301.3,93.1 333.8,93.1 350.0,121.3 333.8,149.4 301.3,149.4 285.0,121.3"/><text class="face-id" x="317.5" y="117.3">1/2</text><text class="feature-code" x="317.5" y="131.3">NAV</text><title>1/2 · SEACOAST · NAV</title></g>
+<g class="audit-cell"><polygon class="water-land" points="350.0,121.3 382.5,121.3 398.8,149.4 382.5,177.6 350.0,177.6 333.8,149.4"/><text class="face-id" x="366.3" y="145.4">1/3</text><text class="feature-code" x="366.3" y="159.4">CITY</text><title>1/3 · LAND · Provisional Seattle · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="398.8,93.1 431.3,93.1 447.5,121.3 431.3,149.4 398.8,149.4 382.5,121.3"/><text class="face-id" x="415.0" y="117.3">1/4</text><text class="feature-code" x="415.0" y="131.3">INF</text><title>1/4 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,121.3 480.0,121.3 496.3,149.4 480.0,177.6 447.5,177.6 431.3,149.4"/><text class="face-id" x="463.8" y="145.4">1/5</text><title>1/5 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,93.1 528.8,93.1 545.0,121.3 528.8,149.4 496.3,149.4 480.0,121.3"/><text class="face-id" x="512.5" y="117.3">1/6</text><title>1/6 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,121.3 577.5,121.3 593.8,149.4 577.5,177.6 545.0,177.6 528.8,149.4"/><text class="face-id" x="561.3" y="145.4">1/7</text><title>1/7 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,93.1 626.3,93.1 642.5,121.3 626.3,149.4 593.8,149.4 577.5,121.3"/><text class="face-id" x="610.0" y="117.3">1/8</text><title>1/8 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,121.3 675.0,121.3 691.3,149.4 675.0,177.6 642.5,177.6 626.3,149.4"/><text class="face-id" x="658.8" y="145.4">1/9</text><title>1/9 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,93.1 723.8,93.1 740.0,121.3 723.8,149.4 691.3,149.4 675.0,121.3"/><text class="face-id" x="707.5" y="117.3">1/10</text><title>1/10 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,121.3 772.5,121.3 788.8,149.4 772.5,177.6 740.0,177.6 723.8,149.4"/><text class="face-id" x="756.3" y="145.4">1/11</text><title>1/11 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,93.1 821.3,93.1 837.5,121.3 821.3,149.4 788.8,149.4 772.5,121.3"/><text class="face-id" x="805.0" y="117.3">1/12</text><title>1/12 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,121.3 870.0,121.3 886.3,149.4 870.0,177.6 837.5,177.6 821.3,149.4"/><text class="face-id" x="853.8" y="145.4">1/13</text><title>1/13 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,93.1 918.8,93.1 935.0,121.3 918.8,149.4 886.3,149.4 870.0,121.3"/><text class="face-id" x="902.5" y="117.3">1/14</text><title>1/14 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="935.0,121.3 967.5,121.3 983.8,149.4 967.5,177.6 935.0,177.6 918.8,149.4"/><text class="face-id" x="951.3" y="145.4">1/15</text><title>1/15 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="983.8,93.1 1016.3,93.1 1032.5,121.3 1016.3,149.4 983.8,149.4 967.5,121.3"/><text class="face-id" x="1000.0" y="117.3">1/16</text><title>1/16 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1032.5,121.3 1065.0,121.3 1081.3,149.4 1065.0,177.6 1032.5,177.6 1016.3,149.4"/><text class="face-id" x="1048.8" y="145.4">1/17</text><title>1/17 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1081.3,93.1 1113.8,93.1 1130.0,121.3 1113.8,149.4 1081.3,149.4 1065.0,121.3"/><text class="face-id" x="1097.5" y="117.3">1/18</text><title>1/18 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1130.0,121.3 1162.5,121.3 1178.8,149.4 1162.5,177.6 1130.0,177.6 1113.8,149.4"/><text class="face-id" x="1146.3" y="145.4">1/19</text><title>1/19 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1178.8,93.1 1211.3,93.1 1227.5,121.3 1211.3,149.4 1178.8,149.4 1162.5,121.3"/><text class="face-id" x="1195.0" y="117.3">1/20</text><title>1/20 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1227.5,121.3 1260.0,121.3 1276.3,149.4 1260.0,177.6 1227.5,177.6 1211.3,149.4"/><text class="face-id" x="1243.8" y="145.4">1/21</text><title>1/21 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1276.3,93.1 1308.8,93.1 1325.0,121.3 1308.8,149.4 1276.3,149.4 1260.0,121.3"/><text class="face-id" x="1292.5" y="117.3">1/22</text><title>1/22 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,121.3 1357.5,121.3 1373.8,149.4 1357.5,177.6 1325.0,177.6 1308.8,149.4"/><text class="face-id" x="1341.3" y="145.4">1/23</text><title>1/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,149.4 236.3,149.4 252.5,177.6 236.3,205.7 203.8,205.7 187.5,177.6"/><text class="face-id" x="220.0" y="173.6">2/0</text><title>2/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,177.6 285.0,177.6 301.3,205.7 285.0,233.9 252.5,233.9 236.3,205.7"/><text class="face-id" x="268.8" y="201.7">2/1</text><title>2/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="301.3,149.4 333.8,149.4 350.0,177.6 333.8,205.7 301.3,205.7 285.0,177.6"/><text class="face-id" x="317.5" y="173.6">2/2</text><text class="feature-code" x="317.5" y="187.6">CITY</text><title>2/2 · SEACOAST · Provisional Portland · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="350.0,177.6 382.5,177.6 398.8,205.7 382.5,233.9 350.0,233.9 333.8,205.7"/><text class="face-id" x="366.3" y="201.7">2/3</text><text class="feature-code" x="366.3" y="215.7">ARM</text><title>2/3 · LAND · ARM</title></g>
+<g class="audit-cell"><polygon class="water-land" points="398.8,149.4 431.3,149.4 447.5,177.6 431.3,205.7 398.8,205.7 382.5,177.6"/><text class="face-id" x="415.0" y="173.6">2/4</text><title>2/4 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,177.6 480.0,177.6 496.3,205.7 480.0,233.9 447.5,233.9 431.3,205.7"/><text class="face-id" x="463.8" y="201.7">2/5</text><title>2/5 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,149.4 528.8,149.4 545.0,177.6 528.8,205.7 496.3,205.7 480.0,177.6"/><text class="face-id" x="512.5" y="173.6">2/6</text><title>2/6 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,177.6 577.5,177.6 593.8,205.7 577.5,233.9 545.0,233.9 528.8,205.7"/><text class="face-id" x="561.3" y="201.7">2/7</text><title>2/7 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,149.4 626.3,149.4 642.5,177.6 626.3,205.7 593.8,205.7 577.5,177.6"/><text class="face-id" x="610.0" y="173.6">2/8</text><title>2/8 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,177.6 675.0,177.6 691.3,205.7 675.0,233.9 642.5,233.9 626.3,205.7"/><text class="face-id" x="658.8" y="201.7">2/9</text><title>2/9 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,149.4 723.8,149.4 740.0,177.6 723.8,205.7 691.3,205.7 675.0,177.6"/><text class="face-id" x="707.5" y="173.6">2/10</text><title>2/10 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,177.6 772.5,177.6 788.8,205.7 772.5,233.9 740.0,233.9 723.8,205.7"/><text class="face-id" x="756.3" y="201.7">2/11</text><title>2/11 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,149.4 821.3,149.4 837.5,177.6 821.3,205.7 788.8,205.7 772.5,177.6"/><text class="face-id" x="805.0" y="173.6">2/12</text><text class="feature-code" x="805.0" y="187.6">CITY</text><title>2/12 · LAND · Provisional Winnipeg · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,177.6 870.0,177.6 886.3,205.7 870.0,233.9 837.5,233.9 821.3,205.7"/><text class="face-id" x="853.8" y="201.7">2/13</text><text class="feature-code" x="853.8" y="215.7">INF</text><title>2/13 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,149.4 918.8,149.4 935.0,177.6 918.8,205.7 886.3,205.7 870.0,177.6"/><text class="face-id" x="902.5" y="173.6">2/14</text><title>2/14 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-lake" points="935.0,177.6 967.5,177.6 983.8,205.7 967.5,233.9 935.0,233.9 918.8,205.7"/><text class="face-id" x="951.3" y="201.7">2/15</text><title>2/15 · LAKE</title></g>
+<g class="audit-cell"><polygon class="water-land" points="983.8,149.4 1016.3,149.4 1032.5,177.6 1016.3,205.7 983.8,205.7 967.5,177.6"/><text class="face-id" x="1000.0" y="173.6">2/16</text><title>2/16 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1032.5,177.6 1065.0,177.6 1081.3,205.7 1065.0,233.9 1032.5,233.9 1016.3,205.7"/><text class="face-id" x="1048.8" y="201.7">2/17</text><title>2/17 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1081.3,149.4 1113.8,149.4 1130.0,177.6 1113.8,205.7 1081.3,205.7 1065.0,177.6"/><text class="face-id" x="1097.5" y="173.6">2/18</text><title>2/18 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1130.0,177.6 1162.5,177.6 1178.8,205.7 1162.5,233.9 1130.0,233.9 1113.8,205.7"/><text class="face-id" x="1146.3" y="201.7">2/19</text><title>2/19 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1178.8,149.4 1211.3,149.4 1227.5,177.6 1211.3,205.7 1178.8,205.7 1162.5,177.6"/><text class="face-id" x="1195.0" y="173.6">2/20</text><title>2/20 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1227.5,177.6 1260.0,177.6 1276.3,205.7 1260.0,233.9 1227.5,233.9 1211.3,205.7"/><text class="face-id" x="1243.8" y="201.7">2/21</text><text class="feature-code" x="1243.8" y="215.7">CITY</text><title>2/21 · LAND · Provisional Montreal · CITY</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1276.3,149.4 1308.8,149.4 1325.0,177.6 1308.8,205.7 1276.3,205.7 1260.0,177.6"/><text class="face-id" x="1292.5" y="173.6">2/22</text><title>2/22 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,177.6 1357.5,177.6 1373.8,205.7 1357.5,233.9 1325.0,233.9 1308.8,205.7"/><text class="face-id" x="1341.3" y="201.7">2/23</text><title>2/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,205.7 236.3,205.7 252.5,233.9 236.3,262.0 203.8,262.0 187.5,233.9"/><text class="face-id" x="220.0" y="229.9">3/0</text><title>3/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="252.5,233.9 285.0,233.9 301.3,262.0 285.0,290.2 252.5,290.2 236.3,262.0"/><text class="face-id" x="268.8" y="258.0">3/1</text><title>3/1 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-land" points="301.3,205.7 333.8,205.7 350.0,233.9 333.8,262.0 301.3,262.0 285.0,233.9"/><text class="face-id" x="317.5" y="229.9">3/2</text><text class="feature-code" x="317.5" y="243.9">LAIR</text><title>3/2 · LAND · LAIR</title></g>
+<g class="audit-cell"><polygon class="water-land" points="350.0,233.9 382.5,233.9 398.8,262.0 382.5,290.2 350.0,290.2 333.8,262.0"/><text class="face-id" x="366.3" y="258.0">3/3</text><title>3/3 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="398.8,205.7 431.3,205.7 447.5,233.9 431.3,262.0 398.8,262.0 382.5,233.9"/><text class="face-id" x="415.0" y="229.9">3/4</text><title>3/4 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,233.9 480.0,233.9 496.3,262.0 480.0,290.2 447.5,290.2 431.3,262.0"/><text class="face-id" x="463.8" y="258.0">3/5</text><title>3/5 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,205.7 528.8,205.7 545.0,233.9 528.8,262.0 496.3,262.0 480.0,233.9"/><text class="face-id" x="512.5" y="229.9">3/6</text><title>3/6 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,233.9 577.5,233.9 593.8,262.0 577.5,290.2 545.0,290.2 528.8,262.0"/><text class="face-id" x="561.3" y="258.0">3/7</text><text class="feature-code" x="561.3" y="272.0">INF</text><title>3/7 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,205.7 626.3,205.7 642.5,233.9 626.3,262.0 593.8,262.0 577.5,233.9"/><text class="face-id" x="610.0" y="229.9">3/8</text><text class="feature-code" x="610.0" y="243.9">INF</text><title>3/8 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,233.9 675.0,233.9 691.3,262.0 675.0,290.2 642.5,290.2 626.3,262.0"/><text class="face-id" x="658.8" y="258.0">3/9</text><title>3/9 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,205.7 723.8,205.7 740.0,233.9 723.8,262.0 691.3,262.0 675.0,233.9"/><text class="face-id" x="707.5" y="229.9">3/10</text><title>3/10 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,233.9 772.5,233.9 788.8,262.0 772.5,290.2 740.0,290.2 723.8,262.0"/><text class="face-id" x="756.3" y="258.0">3/11</text><title>3/11 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,205.7 821.3,205.7 837.5,233.9 821.3,262.0 788.8,262.0 772.5,233.9"/><text class="face-id" x="805.0" y="229.9">3/12</text><title>3/12 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,233.9 870.0,233.9 886.3,262.0 870.0,290.2 837.5,290.2 821.3,262.0"/><text class="face-id" x="853.8" y="258.0">3/13</text><text class="feature-code" x="853.8" y="272.0">CITY</text><title>3/13 · LAND · Provisional Minneapolis · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,205.7 918.8,205.7 935.0,233.9 918.8,262.0 886.3,262.0 870.0,233.9"/><text class="face-id" x="902.5" y="229.9">3/14</text><text class="feature-code" x="902.5" y="243.9">LAIR</text><title>3/14 · LAND · LAIR</title></g>
+<g class="audit-cell"><polygon class="water-land" points="935.0,233.9 967.5,233.9 983.8,262.0 967.5,290.2 935.0,290.2 918.8,262.0"/><text class="face-id" x="951.3" y="258.0">3/15</text><text class="feature-code" x="951.3" y="272.0">CITY</text><title>3/15 · LAND · Provisional Milwaukee · CITY</title></g>
+<g class="audit-cell"><polygon class="water-lake" points="983.8,205.7 1016.3,205.7 1032.5,233.9 1016.3,262.0 983.8,262.0 967.5,233.9"/><text class="face-id" x="1000.0" y="229.9">3/16</text><title>3/16 · LAKE</title></g>
+<g class="audit-cell"><polygon class="water-lake" points="1032.5,233.9 1065.0,233.9 1081.3,262.0 1065.0,290.2 1032.5,290.2 1016.3,262.0"/><text class="face-id" x="1048.8" y="258.0">3/17</text><title>3/17 · LAKE</title></g>
+<g class="audit-cell"><polygon class="water-lake" points="1081.3,205.7 1113.8,205.7 1130.0,233.9 1113.8,262.0 1081.3,262.0 1065.0,233.9"/><text class="face-id" x="1097.5" y="229.9">3/18</text><title>3/18 · LAKE</title></g>
+<g class="audit-cell"><polygon class="water-lake" points="1130.0,233.9 1162.5,233.9 1178.8,262.0 1162.5,290.2 1130.0,290.2 1113.8,262.0"/><text class="face-id" x="1146.3" y="258.0">3/19</text><title>3/19 · LAKE</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1178.8,205.7 1211.3,205.7 1227.5,233.9 1211.3,262.0 1178.8,262.0 1162.5,233.9"/><text class="face-id" x="1195.0" y="229.9">3/20</text><text class="feature-code" x="1195.0" y="243.9">CITY</text><title>3/20 · LAND · Provisional Ottawa · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1227.5,233.9 1260.0,233.9 1276.3,262.0 1260.0,290.2 1227.5,290.2 1211.3,262.0"/><text class="face-id" x="1243.8" y="258.0">3/21</text><title>3/21 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1276.3,205.7 1308.8,205.7 1325.0,233.9 1308.8,262.0 1276.3,262.0 1260.0,233.9"/><text class="face-id" x="1292.5" y="229.9">3/22</text><title>3/22 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,233.9 1357.5,233.9 1373.8,262.0 1357.5,290.2 1325.0,290.2 1308.8,262.0"/><text class="face-id" x="1341.3" y="258.0">3/23</text><title>3/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,262.0 236.3,262.0 252.5,290.2 236.3,318.3 203.8,318.3 187.5,290.2"/><text class="face-id" x="220.0" y="286.2">4/0</text><title>4/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="252.5,290.2 285.0,290.2 301.3,318.3 285.0,346.5 252.5,346.5 236.3,318.3"/><text class="face-id" x="268.8" y="314.3">4/1</text><title>4/1 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-land" points="301.3,262.0 333.8,262.0 350.0,290.2 333.8,318.3 301.3,318.3 285.0,290.2"/><text class="face-id" x="317.5" y="286.2">4/2</text><text class="feature-code" x="317.5" y="300.2">LAIR</text><title>4/2 · LAND · LAIR</title></g>
+<g class="audit-cell"><polygon class="water-land" points="350.0,290.2 382.5,290.2 398.8,318.3 382.5,346.5 350.0,346.5 333.8,318.3"/><text class="face-id" x="366.3" y="314.3">4/3</text><title>4/3 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="398.8,262.0 431.3,262.0 447.5,290.2 431.3,318.3 398.8,318.3 382.5,290.2"/><text class="face-id" x="415.0" y="286.2">4/4</text><title>4/4 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,290.2 480.0,290.2 496.3,318.3 480.0,346.5 447.5,346.5 431.3,318.3"/><text class="face-id" x="463.8" y="314.3">4/5</text><title>4/5 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,262.0 528.8,262.0 545.0,290.2 528.8,318.3 496.3,318.3 480.0,290.2"/><text class="face-id" x="512.5" y="286.2">4/6</text><text class="feature-code" x="512.5" y="300.2">MUT</text><title>4/6 · LAND · MUT</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,290.2 577.5,290.2 593.8,318.3 577.5,346.5 545.0,346.5 528.8,318.3"/><text class="face-id" x="561.3" y="314.3">4/7</text><title>4/7 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,262.0 626.3,262.0 642.5,290.2 626.3,318.3 593.8,318.3 577.5,290.2"/><text class="face-id" x="610.0" y="286.2">4/8</text><title>4/8 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,290.2 675.0,290.2 691.3,318.3 675.0,346.5 642.5,346.5 626.3,318.3"/><text class="face-id" x="658.8" y="314.3">4/9</text><text class="feature-code" x="658.8" y="328.3">INF</text><title>4/9 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,262.0 723.8,262.0 740.0,290.2 723.8,318.3 691.3,318.3 675.0,290.2"/><text class="face-id" x="707.5" y="286.2">4/10</text><title>4/10 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,290.2 772.5,290.2 788.8,318.3 772.5,346.5 740.0,346.5 723.8,318.3"/><text class="face-id" x="756.3" y="314.3">4/11</text><text class="feature-code" x="756.3" y="328.3">INF</text><title>4/11 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,262.0 821.3,262.0 837.5,290.2 821.3,318.3 788.8,318.3 772.5,290.2"/><text class="face-id" x="805.0" y="286.2">4/12</text><title>4/12 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,290.2 870.0,290.2 886.3,318.3 870.0,346.5 837.5,346.5 821.3,318.3"/><text class="face-id" x="853.8" y="314.3">4/13</text><title>4/13 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,262.0 918.8,262.0 935.0,290.2 918.8,318.3 886.3,318.3 870.0,290.2"/><text class="face-id" x="902.5" y="286.2">4/14</text><title>4/14 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="935.0,290.2 967.5,290.2 983.8,318.3 967.5,346.5 935.0,346.5 918.8,318.3"/><text class="face-id" x="951.3" y="314.3">4/15</text><text class="feature-code" x="951.3" y="328.3">CITY</text><title>4/15 · LAND · Provisional Chicago · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="983.8,262.0 1016.3,262.0 1032.5,290.2 1016.3,318.3 983.8,318.3 967.5,290.2"/><text class="face-id" x="1000.0" y="286.2">4/16</text><title>4/16 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-lake" points="1032.5,290.2 1065.0,290.2 1081.3,318.3 1065.0,346.5 1032.5,346.5 1016.3,318.3"/><text class="face-id" x="1048.8" y="314.3">4/17</text><text class="feature-code" x="1048.8" y="328.3">CITY</text><title>4/17 · LAKE · Provisional Detroit · CITY</title></g>
+<g class="audit-cell"><polygon class="water-lake" points="1081.3,262.0 1113.8,262.0 1130.0,290.2 1113.8,318.3 1081.3,318.3 1065.0,290.2"/><text class="face-id" x="1097.5" y="286.2">4/18</text><text class="feature-code" x="1097.5" y="300.2">CITY</text><title>4/18 · LAKE · Provisional Toronto · CITY</title></g>
+<g class="audit-cell"><polygon class="water-lake" points="1130.0,290.2 1162.5,290.2 1178.8,318.3 1162.5,346.5 1130.0,346.5 1113.8,318.3"/><text class="face-id" x="1146.3" y="314.3">4/19</text><title>4/19 · LAKE</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1178.8,262.0 1211.3,262.0 1227.5,290.2 1211.3,318.3 1178.8,318.3 1162.5,290.2"/><text class="face-id" x="1195.0" y="286.2">4/20</text><title>4/20 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1227.5,290.2 1260.0,290.2 1276.3,318.3 1260.0,346.5 1227.5,346.5 1211.3,318.3"/><text class="face-id" x="1243.8" y="314.3">4/21</text><text class="feature-code" x="1243.8" y="328.3">CITY</text><title>4/21 · LAND · Provisional New York · CITY</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1276.3,262.0 1308.8,262.0 1325.0,290.2 1308.8,318.3 1276.3,318.3 1260.0,290.2"/><text class="face-id" x="1292.5" y="286.2">4/22</text><text class="feature-code" x="1292.5" y="300.2">CITY</text><title>4/22 · SEACOAST · Provisional Boston · CITY</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,290.2 1357.5,290.2 1373.8,318.3 1357.5,346.5 1325.0,346.5 1308.8,318.3"/><text class="face-id" x="1341.3" y="314.3">4/23</text><title>4/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,318.3 236.3,318.3 252.5,346.5 236.3,374.6 203.8,374.6 187.5,346.5"/><text class="face-id" x="220.0" y="342.5">5/0</text><title>5/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="252.5,346.5 285.0,346.5 301.3,374.6 285.0,402.7 252.5,402.7 236.3,374.6"/><text class="face-id" x="268.8" y="370.6">5/1</text><text class="feature-code" x="268.8" y="384.6">CITY</text><title>5/1 · SEACOAST · Provisional San Francisco · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="301.3,318.3 333.8,318.3 350.0,346.5 333.8,374.6 301.3,374.6 285.0,346.5"/><text class="face-id" x="317.5" y="342.5">5/2</text><text class="feature-code" x="317.5" y="356.5">CITY</text><title>5/2 · LAND · Provisional Sacramento · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="350.0,346.5 382.5,346.5 398.8,374.6 382.5,402.7 350.0,402.7 333.8,374.6"/><text class="face-id" x="366.3" y="370.6">5/3</text><title>5/3 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="398.8,318.3 431.3,318.3 447.5,346.5 431.3,374.6 398.8,374.6 382.5,346.5"/><text class="face-id" x="415.0" y="342.5">5/4</text><title>5/4 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,346.5 480.0,346.5 496.3,374.6 480.0,402.7 447.5,402.7 431.3,374.6"/><text class="face-id" x="463.8" y="370.6">5/5</text><title>5/5 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,318.3 528.8,318.3 545.0,346.5 528.8,374.6 496.3,374.6 480.0,346.5"/><text class="face-id" x="512.5" y="342.5">5/6</text><text class="feature-code" x="512.5" y="356.5">CITY</text><title>5/6 · LAND · Provisional Salt Lake City · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,346.5 577.5,346.5 593.8,374.6 577.5,402.7 545.0,402.7 528.8,374.6"/><text class="face-id" x="561.3" y="370.6">5/7</text><title>5/7 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,318.3 626.3,318.3 642.5,346.5 626.3,374.6 593.8,374.6 577.5,346.5"/><text class="face-id" x="610.0" y="342.5">5/8</text><text class="feature-code" x="610.0" y="356.5">INF</text><title>5/8 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,346.5 675.0,346.5 691.3,374.6 675.0,402.7 642.5,402.7 626.3,374.6"/><text class="face-id" x="658.8" y="370.6">5/9</text><text class="feature-code" x="658.8" y="384.6">CITY</text><title>5/9 · LAND · Provisional Omaha · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,318.3 723.8,318.3 740.0,346.5 723.8,374.6 691.3,374.6 675.0,346.5"/><text class="face-id" x="707.5" y="342.5">5/10</text><title>5/10 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,346.5 772.5,346.5 788.8,374.6 772.5,402.7 740.0,402.7 723.8,374.6"/><text class="face-id" x="756.3" y="370.6">5/11</text><title>5/11 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,318.3 821.3,318.3 837.5,346.5 821.3,374.6 788.8,374.6 772.5,346.5"/><text class="face-id" x="805.0" y="342.5">5/12</text><title>5/12 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,346.5 870.0,346.5 886.3,374.6 870.0,402.7 837.5,402.7 821.3,374.6"/><text class="face-id" x="853.8" y="370.6">5/13</text><text class="feature-code" x="853.8" y="384.6">CITY</text><title>5/13 · LAND · Provisional Pittsburgh · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,318.3 918.8,318.3 935.0,346.5 918.8,374.6 886.3,374.6 870.0,346.5"/><text class="face-id" x="902.5" y="342.5">5/14</text><title>5/14 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="935.0,346.5 967.5,346.5 983.8,374.6 967.5,402.7 935.0,402.7 918.8,374.6"/><text class="face-id" x="951.3" y="370.6">5/15</text><title>5/15 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="983.8,318.3 1016.3,318.3 1032.5,346.5 1016.3,374.6 983.8,374.6 967.5,346.5"/><text class="face-id" x="1000.0" y="342.5">5/16</text><title>5/16 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1032.5,346.5 1065.0,346.5 1081.3,374.6 1065.0,402.7 1032.5,402.7 1016.3,374.6"/><text class="face-id" x="1048.8" y="370.6">5/17</text><title>5/17 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1081.3,318.3 1113.8,318.3 1130.0,346.5 1113.8,374.6 1081.3,374.6 1065.0,346.5"/><text class="face-id" x="1097.5" y="342.5">5/18</text><title>5/18 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1130.0,346.5 1162.5,346.5 1178.8,374.6 1162.5,402.7 1130.0,402.7 1113.8,374.6"/><text class="face-id" x="1146.3" y="370.6">5/19</text><title>5/19 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1178.8,318.3 1211.3,318.3 1227.5,346.5 1211.3,374.6 1178.8,374.6 1162.5,346.5"/><text class="face-id" x="1195.0" y="342.5">5/20</text><text class="feature-code" x="1195.0" y="356.5">MUT</text><title>5/20 · SEACOAST · MUT</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1227.5,346.5 1260.0,346.5 1276.3,374.6 1260.0,402.7 1227.5,402.7 1211.3,374.6"/><text class="face-id" x="1243.8" y="370.6">5/21</text><text class="feature-code" x="1243.8" y="384.6">CITY</text><title>5/21 · SEACOAST · Provisional Philadelphia · CITY</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1276.3,318.3 1308.8,318.3 1325.0,346.5 1308.8,374.6 1276.3,374.6 1260.0,346.5"/><text class="face-id" x="1292.5" y="342.5">5/22</text><title>5/22 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,346.5 1357.5,346.5 1373.8,374.6 1357.5,402.7 1325.0,402.7 1308.8,374.6"/><text class="face-id" x="1341.3" y="370.6">5/23</text><title>5/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,374.6 236.3,374.6 252.5,402.7 236.3,430.9 203.8,430.9 187.5,402.7"/><text class="face-id" x="220.0" y="398.7">6/0</text><title>6/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,402.7 285.0,402.7 301.3,430.9 285.0,459.0 252.5,459.0 236.3,430.9"/><text class="face-id" x="268.8" y="426.9">6/1</text><title>6/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="301.3,374.6 333.8,374.6 350.0,402.7 333.8,430.9 301.3,430.9 285.0,402.7"/><text class="face-id" x="317.5" y="398.7">6/2</text><text class="feature-code" x="317.5" y="412.7">CITY</text><title>6/2 · SEACOAST · Provisional Fresno · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="350.0,402.7 382.5,402.7 398.8,430.9 382.5,459.0 350.0,459.0 333.8,430.9"/><text class="face-id" x="366.3" y="426.9">6/3</text><title>6/3 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="398.8,374.6 431.3,374.6 447.5,402.7 431.3,430.9 398.8,430.9 382.5,402.7"/><text class="face-id" x="415.0" y="398.7">6/4</text><text class="feature-code" x="415.0" y="412.7">MUT</text><title>6/4 · LAND · MUT</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,402.7 480.0,402.7 496.3,430.9 480.0,459.0 447.5,459.0 431.3,430.9"/><text class="face-id" x="463.8" y="426.9">6/5</text><title>6/5 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,374.6 528.8,374.6 545.0,402.7 528.8,430.9 496.3,430.9 480.0,402.7"/><text class="face-id" x="512.5" y="398.7">6/6</text><title>6/6 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,402.7 577.5,402.7 593.8,430.9 577.5,459.0 545.0,459.0 528.8,430.9"/><text class="face-id" x="561.3" y="426.9">6/7</text><text class="feature-code" x="561.3" y="440.9">CITY</text><title>6/7 · LAND · Provisional Denver · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,374.6 626.3,374.6 642.5,402.7 626.3,430.9 593.8,430.9 577.5,402.7"/><text class="face-id" x="610.0" y="398.7">6/8</text><title>6/8 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,402.7 675.0,402.7 691.3,430.9 675.0,459.0 642.5,459.0 626.3,430.9"/><text class="face-id" x="658.8" y="426.9">6/9</text><title>6/9 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,374.6 723.8,374.6 740.0,402.7 723.8,430.9 691.3,430.9 675.0,402.7"/><text class="face-id" x="707.5" y="398.7">6/10</text><text class="feature-code" x="707.5" y="412.7">CITY</text><title>6/10 · LAND · Provisional Kansas City · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,402.7 772.5,402.7 788.8,430.9 772.5,459.0 740.0,459.0 723.8,430.9"/><text class="face-id" x="756.3" y="426.9">6/11</text><text class="feature-code" x="756.3" y="440.9">INF</text><title>6/11 · LAND · Provisional St. Louis · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,374.6 821.3,374.6 837.5,402.7 821.3,430.9 788.8,430.9 772.5,402.7"/><text class="face-id" x="805.0" y="398.7">6/12</text><text class="feature-code" x="805.0" y="412.7">CITY+AF</text><title>6/12 · LAND · Provisional Indianapolis · CITY+AF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,402.7 870.0,402.7 886.3,430.9 870.0,459.0 837.5,459.0 821.3,430.9"/><text class="face-id" x="853.8" y="426.9">6/13</text><text class="feature-code" x="853.8" y="440.9">CITY</text><title>6/13 · LAND · Provisional Cincinnati · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,374.6 918.8,374.6 935.0,402.7 918.8,430.9 886.3,430.9 870.0,402.7"/><text class="face-id" x="902.5" y="398.7">6/14</text><text class="feature-code" x="902.5" y="412.7">CITY</text><title>6/14 · LAND · Provisional Cleveland · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="935.0,402.7 967.5,402.7 983.8,430.9 967.5,459.0 935.0,459.0 918.8,430.9"/><text class="face-id" x="951.3" y="426.9">6/15</text><title>6/15 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="983.8,374.6 1016.3,374.6 1032.5,402.7 1016.3,430.9 983.8,430.9 967.5,402.7"/><text class="face-id" x="1000.0" y="398.7">6/16</text><title>6/16 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1032.5,402.7 1065.0,402.7 1081.3,430.9 1065.0,459.0 1032.5,459.0 1016.3,430.9"/><text class="face-id" x="1048.8" y="426.9">6/17</text><text class="feature-code" x="1048.8" y="440.9">MAR</text><title>6/17 · LAND · MAR</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1081.3,374.6 1113.8,374.6 1130.0,402.7 1113.8,430.9 1081.3,430.9 1065.0,402.7"/><text class="face-id" x="1097.5" y="398.7">6/18</text><title>6/18 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1130.0,402.7 1162.5,402.7 1178.8,430.9 1162.5,459.0 1130.0,459.0 1113.8,430.9"/><text class="face-id" x="1146.3" y="426.9">6/19</text><title>6/19 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1178.8,374.6 1211.3,374.6 1227.5,402.7 1211.3,430.9 1178.8,430.9 1162.5,402.7"/><text class="face-id" x="1195.0" y="398.7">6/20</text><text class="feature-code" x="1195.0" y="412.7">CITY</text><title>6/20 · SEACOAST · Provisional Baltimore · CITY</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1227.5,402.7 1260.0,402.7 1276.3,430.9 1260.0,459.0 1227.5,459.0 1211.3,430.9"/><text class="face-id" x="1243.8" y="426.9">6/21</text><title>6/21 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1276.3,374.6 1308.8,374.6 1325.0,402.7 1308.8,430.9 1276.3,430.9 1260.0,402.7"/><text class="face-id" x="1292.5" y="398.7">6/22</text><title>6/22 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,402.7 1357.5,402.7 1373.8,430.9 1357.5,459.0 1325.0,459.0 1308.8,430.9"/><text class="face-id" x="1341.3" y="426.9">6/23</text><title>6/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,430.9 236.3,430.9 252.5,459.0 236.3,487.2 203.8,487.2 187.5,459.0"/><text class="face-id" x="220.0" y="455.0">7/0</text><title>7/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,459.0 285.0,459.0 301.3,487.2 285.0,515.3 252.5,515.3 236.3,487.2"/><text class="face-id" x="268.8" y="483.2">7/1</text><title>7/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="301.3,430.9 333.8,430.9 350.0,459.0 333.8,487.2 301.3,487.2 285.0,459.0"/><text class="face-id" x="317.5" y="455.0">7/2</text><title>7/2 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-land" points="350.0,459.0 382.5,459.0 398.8,487.2 382.5,515.3 350.0,515.3 333.8,487.2"/><text class="face-id" x="366.3" y="483.2">7/3</text><title>7/3 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="398.8,430.9 431.3,430.9 447.5,459.0 431.3,487.2 398.8,487.2 382.5,459.0"/><text class="face-id" x="415.0" y="455.0">7/4</text><text class="feature-code" x="415.0" y="469.0">INF</text><title>7/4 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,459.0 480.0,459.0 496.3,487.2 480.0,515.3 447.5,515.3 431.3,487.2"/><text class="face-id" x="463.8" y="483.2">7/5</text><text class="feature-code" x="463.8" y="497.2">LAIR</text><title>7/5 · LAND · LAIR</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,430.9 528.8,430.9 545.0,459.0 528.8,487.2 496.3,487.2 480.0,459.0"/><text class="face-id" x="512.5" y="455.0">7/6</text><title>7/6 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,459.0 577.5,459.0 593.8,487.2 577.5,515.3 545.0,515.3 528.8,487.2"/><text class="face-id" x="561.3" y="483.2">7/7</text><title>7/7 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,430.9 626.3,430.9 642.5,459.0 626.3,487.2 593.8,487.2 577.5,459.0"/><text class="face-id" x="610.0" y="455.0">7/8</text><text class="feature-code" x="610.0" y="469.0">INF</text><title>7/8 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,459.0 675.0,459.0 691.3,487.2 675.0,515.3 642.5,515.3 626.3,487.2"/><text class="face-id" x="658.8" y="483.2">7/9</text><title>7/9 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,430.9 723.8,430.9 740.0,459.0 723.8,487.2 691.3,487.2 675.0,459.0"/><text class="face-id" x="707.5" y="455.0">7/10</text><title>7/10 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,459.0 772.5,459.0 788.8,487.2 772.5,515.3 740.0,515.3 723.8,487.2"/><text class="face-id" x="756.3" y="483.2">7/11</text><title>7/11 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,430.9 821.3,430.9 837.5,459.0 821.3,487.2 788.8,487.2 772.5,459.0"/><text class="face-id" x="805.0" y="455.0">7/12</text><title>7/12 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,459.0 870.0,459.0 886.3,487.2 870.0,515.3 837.5,515.3 821.3,487.2"/><text class="face-id" x="853.8" y="483.2">7/13</text><text class="feature-code" x="853.8" y="497.2">LAIR</text><title>7/13 · LAND · LAIR</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,430.9 918.8,430.9 935.0,459.0 918.8,487.2 886.3,487.2 870.0,459.0"/><text class="face-id" x="902.5" y="455.0">7/14</text><text class="feature-code" x="902.5" y="469.0">ARM</text><title>7/14 · LAND · ARM</title></g>
+<g class="audit-cell"><polygon class="water-land" points="935.0,459.0 967.5,459.0 983.8,487.2 967.5,515.3 935.0,515.3 918.8,487.2"/><text class="face-id" x="951.3" y="483.2">7/15</text><title>7/15 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="983.8,430.9 1016.3,430.9 1032.5,459.0 1016.3,487.2 983.8,487.2 967.5,459.0"/><text class="face-id" x="1000.0" y="455.0">7/16</text><text class="feature-code" x="1000.0" y="469.0">MAR</text><title>7/16 · LAND · MAR</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1032.5,459.0 1065.0,459.0 1081.3,487.2 1065.0,515.3 1032.5,515.3 1016.3,487.2"/><text class="face-id" x="1048.8" y="483.2">7/17</text><title>7/17 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1081.3,430.9 1113.8,430.9 1130.0,459.0 1113.8,487.2 1081.3,487.2 1065.0,459.0"/><text class="face-id" x="1097.5" y="455.0">7/18</text><title>7/18 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1130.0,459.0 1162.5,459.0 1178.8,487.2 1162.5,515.3 1130.0,515.3 1113.8,487.2"/><text class="face-id" x="1146.3" y="483.2">7/19</text><title>7/19 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1178.8,430.9 1211.3,430.9 1227.5,459.0 1211.3,487.2 1178.8,487.2 1162.5,459.0"/><text class="face-id" x="1195.0" y="455.0">7/20</text><text class="feature-code" x="1195.0" y="469.0">CITY</text><title>7/20 · SEACOAST · Provisional Washington · CITY</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1227.5,459.0 1260.0,459.0 1276.3,487.2 1260.0,515.3 1227.5,515.3 1211.3,487.2"/><text class="face-id" x="1243.8" y="483.2">7/21</text><title>7/21 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1276.3,430.9 1308.8,430.9 1325.0,459.0 1308.8,487.2 1276.3,487.2 1260.0,459.0"/><text class="face-id" x="1292.5" y="455.0">7/22</text><title>7/22 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,459.0 1357.5,459.0 1373.8,487.2 1357.5,515.3 1325.0,515.3 1308.8,487.2"/><text class="face-id" x="1341.3" y="483.2">7/23</text><title>7/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,487.2 236.3,487.2 252.5,515.3 236.3,543.5 203.8,543.5 187.5,515.3"/><text class="face-id" x="220.0" y="511.3">8/0</text><title>8/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,515.3 285.0,515.3 301.3,543.5 285.0,571.6 252.5,571.6 236.3,543.5"/><text class="face-id" x="268.8" y="539.5">8/1</text><title>8/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="301.3,487.2 333.8,487.2 350.0,515.3 333.8,543.5 301.3,543.5 285.0,515.3"/><text class="face-id" x="317.5" y="511.3">8/2</text><text class="feature-code" x="317.5" y="525.3">CITY+LA</text><title>8/2 · SEACOAST · Provisional Los Angeles · CITY+LA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="350.0,515.3 382.5,515.3 398.8,543.5 382.5,571.6 350.0,571.6 333.8,543.5"/><text class="face-id" x="366.3" y="539.5">8/3</text><title>8/3 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-land" points="398.8,487.2 431.3,487.2 447.5,515.3 431.3,543.5 398.8,543.5 382.5,515.3"/><text class="face-id" x="415.0" y="511.3">8/4</text><title>8/4 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,515.3 480.0,515.3 496.3,543.5 480.0,571.6 447.5,571.6 431.3,543.5"/><text class="face-id" x="463.8" y="539.5">8/5</text><text class="feature-code" x="463.8" y="553.5">CITY</text><title>8/5 · LAND · Provisional Phoenix · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,487.2 528.8,487.2 545.0,515.3 528.8,543.5 496.3,543.5 480.0,515.3"/><text class="face-id" x="512.5" y="511.3">8/6</text><title>8/6 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,515.3 577.5,515.3 593.8,543.5 577.5,571.6 545.0,571.6 528.8,543.5"/><text class="face-id" x="561.3" y="539.5">8/7</text><text class="feature-code" x="561.3" y="553.5">INF</text><title>8/7 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,487.2 626.3,487.2 642.5,515.3 626.3,543.5 593.8,543.5 577.5,515.3"/><text class="face-id" x="610.0" y="511.3">8/8</text><text class="feature-code" x="610.0" y="525.3">CITY</text><title>8/8 · LAND · Provisional Albuquerque · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,515.3 675.0,515.3 691.3,543.5 675.0,571.6 642.5,571.6 626.3,543.5"/><text class="face-id" x="658.8" y="539.5">8/9</text><text class="feature-code" x="658.8" y="553.5">CITY</text><title>8/9 · LAND · Provisional Tulsa · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,487.2 723.8,487.2 740.0,515.3 723.8,543.5 691.3,543.5 675.0,515.3"/><text class="face-id" x="707.5" y="511.3">8/10</text><title>8/10 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,515.3 772.5,515.3 788.8,543.5 772.5,571.6 740.0,571.6 723.8,543.5"/><text class="face-id" x="756.3" y="539.5">8/11</text><text class="feature-code" x="756.3" y="553.5">CITY</text><title>8/11 · LAND · Provisional Little Rock · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,487.2 821.3,487.2 837.5,515.3 821.3,543.5 788.8,543.5 772.5,515.3"/><text class="face-id" x="805.0" y="511.3">8/12</text><text class="feature-code" x="805.0" y="525.3">CITY</text><title>8/12 · LAND · Provisional Nashville · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,515.3 870.0,515.3 886.3,543.5 870.0,571.6 837.5,571.6 821.3,543.5"/><text class="face-id" x="853.8" y="539.5">8/13</text><title>8/13 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,487.2 918.8,487.2 935.0,515.3 918.8,543.5 886.3,543.5 870.0,515.3"/><text class="face-id" x="902.5" y="511.3">8/14</text><text class="feature-code" x="902.5" y="525.3">CITY</text><title>8/14 · LAND · Provisional Charlotte · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="935.0,515.3 967.5,515.3 983.8,543.5 967.5,571.6 935.0,571.6 918.8,543.5"/><text class="face-id" x="951.3" y="539.5">8/15</text><text class="feature-code" x="951.3" y="553.5">INF</text><title>8/15 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="983.8,487.2 1016.3,487.2 1032.5,515.3 1016.3,543.5 983.8,543.5 967.5,515.3"/><text class="face-id" x="1000.0" y="511.3">8/16</text><text class="feature-code" x="1000.0" y="525.3">CITY+MAR</text><title>8/16 · LAND · Provisional Richmond · CITY+MAR</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1032.5,515.3 1065.0,515.3 1081.3,543.5 1065.0,571.6 1032.5,571.6 1016.3,543.5"/><text class="face-id" x="1048.8" y="539.5">8/17</text><text class="feature-code" x="1048.8" y="553.5">CITY</text><title>8/17 · LAND · Provisional Atlanta · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1081.3,487.2 1113.8,487.2 1130.0,515.3 1113.8,543.5 1081.3,543.5 1065.0,515.3"/><text class="face-id" x="1097.5" y="511.3">8/18</text><title>8/18 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1130.0,515.3 1162.5,515.3 1178.8,543.5 1162.5,571.6 1130.0,571.6 1113.8,543.5"/><text class="face-id" x="1146.3" y="539.5">8/19</text><title>8/19 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1178.8,487.2 1211.3,487.2 1227.5,515.3 1211.3,543.5 1178.8,543.5 1162.5,515.3"/><text class="face-id" x="1195.0" y="511.3">8/20</text><title>8/20 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1227.5,515.3 1260.0,515.3 1276.3,543.5 1260.0,571.6 1227.5,571.6 1211.3,543.5"/><text class="face-id" x="1243.8" y="539.5">8/21</text><title>8/21 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1276.3,487.2 1308.8,487.2 1325.0,515.3 1308.8,543.5 1276.3,543.5 1260.0,515.3"/><text class="face-id" x="1292.5" y="511.3">8/22</text><title>8/22 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,515.3 1357.5,515.3 1373.8,543.5 1357.5,571.6 1325.0,571.6 1308.8,543.5"/><text class="face-id" x="1341.3" y="539.5">8/23</text><title>8/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,543.5 236.3,543.5 252.5,571.6 236.3,599.8 203.8,599.8 187.5,571.6"/><text class="face-id" x="220.0" y="567.6">9/0</text><title>9/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,571.6 285.0,571.6 301.3,599.8 285.0,627.9 252.5,627.9 236.3,599.8"/><text class="face-id" x="268.8" y="595.8">9/1</text><title>9/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="301.3,543.5 333.8,543.5 350.0,571.6 333.8,599.8 301.3,599.8 285.0,571.6"/><text class="face-id" x="317.5" y="567.6">9/2</text><text class="feature-code" x="317.5" y="581.6">CITY</text><title>9/2 · SEACOAST · Provisional San Diego · CITY</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="350.0,571.6 382.5,571.6 398.8,599.8 382.5,627.9 350.0,627.9 333.8,599.8"/><text class="face-id" x="366.3" y="595.8">9/3</text><title>9/3 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="398.8,543.5 431.3,543.5 447.5,571.6 431.3,599.8 398.8,599.8 382.5,571.6"/><text class="face-id" x="415.0" y="567.6">9/4</text><title>9/4 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-land" points="447.5,571.6 480.0,571.6 496.3,599.8 480.0,627.9 447.5,627.9 431.3,599.8"/><text class="face-id" x="463.8" y="595.8">9/5</text><title>9/5 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="496.3,543.5 528.8,543.5 545.0,571.6 528.8,599.8 496.3,599.8 480.0,571.6"/><text class="face-id" x="512.5" y="567.6">9/6</text><text class="feature-code" x="512.5" y="581.6">INF</text><title>9/6 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,571.6 577.5,571.6 593.8,599.8 577.5,627.9 545.0,627.9 528.8,599.8"/><text class="face-id" x="561.3" y="595.8">9/7</text><title>9/7 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,543.5 626.3,543.5 642.5,571.6 626.3,599.8 593.8,599.8 577.5,571.6"/><text class="face-id" x="610.0" y="567.6">9/8</text><text class="feature-code" x="610.0" y="581.6">MUT</text><title>9/8 · LAND · MUT</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,571.6 675.0,571.6 691.3,599.8 675.0,627.9 642.5,627.9 626.3,599.8"/><text class="face-id" x="658.8" y="595.8">9/9</text><title>9/9 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,543.5 723.8,543.5 740.0,571.6 723.8,599.8 691.3,599.8 675.0,571.6"/><text class="face-id" x="707.5" y="567.6">9/10</text><title>9/10 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,571.6 772.5,571.6 788.8,599.8 772.5,627.9 740.0,627.9 723.8,599.8"/><text class="face-id" x="756.3" y="595.8">9/11</text><text class="feature-code" x="756.3" y="609.8">CITY+AF</text><title>9/11 · LAND · Provisional Birmingham · CITY+AF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,543.5 821.3,543.5 837.5,571.6 821.3,599.8 788.8,599.8 772.5,571.6"/><text class="face-id" x="805.0" y="567.6">9/12</text><text class="feature-code" x="805.0" y="581.6">CITY</text><title>9/12 · LAND · Provisional Dallas · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,571.6 870.0,571.6 886.3,599.8 870.0,627.9 837.5,627.9 821.3,599.8"/><text class="face-id" x="853.8" y="595.8">9/13</text><title>9/13 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,543.5 918.8,543.5 935.0,571.6 918.8,599.8 886.3,599.8 870.0,571.6"/><text class="face-id" x="902.5" y="567.6">9/14</text><title>9/14 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="935.0,571.6 967.5,571.6 983.8,599.8 967.5,627.9 935.0,627.9 918.8,599.8"/><text class="face-id" x="951.3" y="595.8">9/15</text><text class="feature-code" x="951.3" y="609.8">ARM</text><title>9/15 · LAND · ARM</title></g>
+<g class="audit-cell"><polygon class="water-land" points="983.8,543.5 1016.3,543.5 1032.5,571.6 1016.3,599.8 983.8,599.8 967.5,571.6"/><text class="face-id" x="1000.0" y="567.6">9/16</text><title>9/16 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="1032.5,571.6 1065.0,571.6 1081.3,599.8 1065.0,627.9 1032.5,627.9 1016.3,599.8"/><text class="face-id" x="1048.8" y="595.8">9/17</text><title>9/17 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1081.3,543.5 1113.8,543.5 1130.0,571.6 1113.8,599.8 1081.3,599.8 1065.0,571.6"/><text class="face-id" x="1097.5" y="567.6">9/18</text><title>9/18 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1130.0,571.6 1162.5,571.6 1178.8,599.8 1162.5,627.9 1130.0,627.9 1113.8,599.8"/><text class="face-id" x="1146.3" y="595.8">9/19</text><title>9/19 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1178.8,543.5 1211.3,543.5 1227.5,571.6 1211.3,599.8 1178.8,599.8 1162.5,571.6"/><text class="face-id" x="1195.0" y="567.6">9/20</text><title>9/20 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1227.5,571.6 1260.0,571.6 1276.3,599.8 1260.0,627.9 1227.5,627.9 1211.3,599.8"/><text class="face-id" x="1243.8" y="595.8">9/21</text><title>9/21 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1276.3,543.5 1308.8,543.5 1325.0,571.6 1308.8,599.8 1276.3,599.8 1260.0,571.6"/><text class="face-id" x="1292.5" y="567.6">9/22</text><title>9/22 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,571.6 1357.5,571.6 1373.8,599.8 1357.5,627.9 1325.0,627.9 1308.8,599.8"/><text class="face-id" x="1341.3" y="595.8">9/23</text><title>9/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,599.8 236.3,599.8 252.5,627.9 236.3,656.1 203.8,656.1 187.5,627.9"/><text class="face-id" x="220.0" y="623.9">10/0</text><title>10/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,627.9 285.0,627.9 301.3,656.1 285.0,684.2 252.5,684.2 236.3,656.1"/><text class="face-id" x="268.8" y="652.1">10/1</text><title>10/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="301.3,599.8 333.8,599.8 350.0,627.9 333.8,656.1 301.3,656.1 285.0,627.9"/><text class="face-id" x="317.5" y="623.9">10/2</text><title>10/2 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="350.0,627.9 382.5,627.9 398.8,656.1 382.5,684.2 350.0,684.2 333.8,656.1"/><text class="face-id" x="366.3" y="652.1">10/3</text><title>10/3 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="398.8,599.8 431.3,599.8 447.5,627.9 431.3,656.1 398.8,656.1 382.5,627.9"/><text class="face-id" x="415.0" y="623.9">10/4</text><title>10/4 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="447.5,627.9 480.0,627.9 496.3,656.1 480.0,684.2 447.5,684.2 431.3,656.1"/><text class="face-id" x="463.8" y="652.1">10/5</text><title>10/5 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="496.3,599.8 528.8,599.8 545.0,627.9 528.8,656.1 496.3,656.1 480.0,627.9"/><text class="face-id" x="512.5" y="623.9">10/6</text><title>10/6 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,627.9 577.5,627.9 593.8,656.1 577.5,684.2 545.0,684.2 528.8,656.1"/><text class="face-id" x="561.3" y="652.1">10/7</text><title>10/7 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,599.8 626.3,599.8 642.5,627.9 626.3,656.1 593.8,656.1 577.5,627.9"/><text class="face-id" x="610.0" y="623.9">10/8</text><title>10/8 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,627.9 675.0,627.9 691.3,656.1 675.0,684.2 642.5,684.2 626.3,656.1"/><text class="face-id" x="658.8" y="652.1">10/9</text><title>10/9 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="691.3,599.8 723.8,599.8 740.0,627.9 723.8,656.1 691.3,656.1 675.0,627.9"/><text class="face-id" x="707.5" y="623.9">10/10</text><text class="feature-code" x="707.5" y="637.9">NAV</text><title>10/10 · LAND · NAV</title></g>
+<g class="audit-cell"><polygon class="water-land" points="740.0,627.9 772.5,627.9 788.8,656.1 772.5,684.2 740.0,684.2 723.8,656.1"/><text class="face-id" x="756.3" y="652.1">10/11</text><text class="feature-code" x="756.3" y="666.1">INF</text><title>10/11 · LAND · INF</title></g>
+<g class="audit-cell"><polygon class="water-land" points="788.8,599.8 821.3,599.8 837.5,627.9 821.3,656.1 788.8,656.1 772.5,627.9"/><text class="face-id" x="805.0" y="623.9">10/12</text><text class="feature-code" x="805.0" y="637.9">CITY</text><title>10/12 · LAND · Provisional Austin · CITY</title></g>
+<g class="audit-cell"><polygon class="water-land" points="837.5,627.9 870.0,627.9 886.3,656.1 870.0,684.2 837.5,684.2 821.3,656.1"/><text class="face-id" x="853.8" y="652.1">10/13</text><title>10/13 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="886.3,599.8 918.8,599.8 935.0,627.9 918.8,656.1 886.3,656.1 870.0,627.9"/><text class="face-id" x="902.5" y="623.9">10/14</text><text class="feature-code" x="902.5" y="637.9">CITY</text><title>10/14 · LAND · Provisional Baton Rouge · CITY</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="935.0,627.9 967.5,627.9 983.8,656.1 967.5,684.2 935.0,684.2 918.8,656.1"/><text class="face-id" x="951.3" y="652.1">10/15</text><text class="feature-code" x="951.3" y="666.1">AF</text><title>10/15 · SEACOAST · AF</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="983.8,599.8 1016.3,599.8 1032.5,627.9 1016.3,656.1 983.8,656.1 967.5,627.9"/><text class="face-id" x="1000.0" y="623.9">10/16</text><text class="feature-code" x="1000.0" y="637.9">CHL</text><title>10/16 · SEACOAST · CHL</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1032.5,627.9 1065.0,627.9 1081.3,656.1 1065.0,684.2 1032.5,684.2 1016.3,656.1"/><text class="face-id" x="1048.8" y="652.1">10/17</text><title>10/17 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1081.3,599.8 1113.8,599.8 1130.0,627.9 1113.8,656.1 1081.3,656.1 1065.0,627.9"/><text class="face-id" x="1097.5" y="623.9">10/18</text><title>10/18 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1130.0,627.9 1162.5,627.9 1178.8,656.1 1162.5,684.2 1130.0,684.2 1113.8,656.1"/><text class="face-id" x="1146.3" y="652.1">10/19</text><text class="feature-code" x="1146.3" y="666.1">INF</text><title>10/19 · SEACOAST · INF</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1178.8,599.8 1211.3,599.8 1227.5,627.9 1211.3,656.1 1178.8,656.1 1162.5,627.9"/><text class="face-id" x="1195.0" y="623.9">10/20</text><title>10/20 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1227.5,627.9 1260.0,627.9 1276.3,656.1 1260.0,684.2 1227.5,684.2 1211.3,656.1"/><text class="face-id" x="1243.8" y="652.1">10/21</text><title>10/21 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1276.3,599.8 1308.8,599.8 1325.0,627.9 1308.8,656.1 1276.3,656.1 1260.0,627.9"/><text class="face-id" x="1292.5" y="623.9">10/22</text><title>10/22 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,627.9 1357.5,627.9 1373.8,656.1 1357.5,684.2 1325.0,684.2 1308.8,656.1"/><text class="face-id" x="1341.3" y="652.1">10/23</text><title>10/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,656.1 236.3,656.1 252.5,684.2 236.3,712.4 203.8,712.4 187.5,684.2"/><text class="face-id" x="220.0" y="680.2">11/0</text><title>11/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,684.2 285.0,684.2 301.3,712.4 285.0,740.5 252.5,740.5 236.3,712.4"/><text class="face-id" x="268.8" y="708.4">11/1</text><title>11/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="301.3,656.1 333.8,656.1 350.0,684.2 333.8,712.4 301.3,712.4 285.0,684.2"/><text class="face-id" x="317.5" y="680.2">11/2</text><title>11/2 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="350.0,684.2 382.5,684.2 398.8,712.4 382.5,740.5 350.0,740.5 333.8,712.4"/><text class="face-id" x="366.3" y="708.4">11/3</text><title>11/3 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="398.8,656.1 431.3,656.1 447.5,684.2 431.3,712.4 398.8,712.4 382.5,684.2"/><text class="face-id" x="415.0" y="680.2">11/4</text><title>11/4 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="447.5,684.2 480.0,684.2 496.3,712.4 480.0,740.5 447.5,740.5 431.3,712.4"/><text class="face-id" x="463.8" y="708.4">11/5</text><title>11/5 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="496.3,656.1 528.8,656.1 545.0,684.2 528.8,712.4 496.3,712.4 480.0,684.2"/><text class="face-id" x="512.5" y="680.2">11/6</text><title>11/6 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-land" points="545.0,684.2 577.5,684.2 593.8,712.4 577.5,740.5 545.0,740.5 528.8,712.4"/><text class="face-id" x="561.3" y="708.4">11/7</text><title>11/7 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-land" points="593.8,656.1 626.3,656.1 642.5,684.2 626.3,712.4 593.8,712.4 577.5,684.2"/><text class="face-id" x="610.0" y="680.2">11/8</text><text class="feature-code" x="610.0" y="694.2">LAIR</text><title>11/8 · LAND · LAIR</title></g>
+<g class="audit-cell"><polygon class="water-land" points="642.5,684.2 675.0,684.2 691.3,712.4 675.0,740.5 642.5,740.5 626.3,712.4"/><text class="face-id" x="658.8" y="708.4">11/9</text><title>11/9 · LAND</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="691.3,656.1 723.8,656.1 740.0,684.2 723.8,712.4 691.3,712.4 675.0,684.2"/><text class="face-id" x="707.5" y="680.2">11/10</text><title>11/10 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="740.0,684.2 772.5,684.2 788.8,712.4 772.5,740.5 740.0,740.5 723.8,712.4"/><text class="face-id" x="756.3" y="708.4">11/11</text><title>11/11 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="788.8,656.1 821.3,656.1 837.5,684.2 821.3,712.4 788.8,712.4 772.5,684.2"/><text class="face-id" x="805.0" y="680.2">11/12</text><text class="feature-code" x="805.0" y="694.2">CITY</text><title>11/12 · SEACOAST · Provisional Houston · CITY</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="837.5,684.2 870.0,684.2 886.3,712.4 870.0,740.5 837.5,740.5 821.3,712.4"/><text class="face-id" x="853.8" y="708.4">11/13</text><text class="feature-code" x="853.8" y="722.4">NAV</text><title>11/13 · SEACOAST · NAV</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="886.3,656.1 918.8,656.1 935.0,684.2 918.8,712.4 886.3,712.4 870.0,684.2"/><text class="face-id" x="902.5" y="680.2">11/14</text><title>11/14 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="935.0,684.2 967.5,684.2 983.8,712.4 967.5,740.5 935.0,740.5 918.8,712.4"/><text class="face-id" x="951.3" y="708.4">11/15</text><title>11/15 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="983.8,656.1 1016.3,656.1 1032.5,684.2 1016.3,712.4 983.8,712.4 967.5,684.2"/><text class="face-id" x="1000.0" y="680.2">11/16</text><title>11/16 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1032.5,684.2 1065.0,684.2 1081.3,712.4 1065.0,740.5 1032.5,740.5 1016.3,712.4"/><text class="face-id" x="1048.8" y="708.4">11/17</text><title>11/17 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1081.3,656.1 1113.8,656.1 1130.0,684.2 1113.8,712.4 1081.3,712.4 1065.0,684.2"/><text class="face-id" x="1097.5" y="680.2">11/18</text><text class="feature-code" x="1097.5" y="694.2">CITY</text><title>11/18 · SEACOAST · Provisional Miami · CITY</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1130.0,684.2 1162.5,684.2 1178.8,712.4 1162.5,740.5 1130.0,740.5 1113.8,712.4"/><text class="face-id" x="1146.3" y="708.4">11/19</text><title>11/19 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1178.8,656.1 1211.3,656.1 1227.5,684.2 1211.3,712.4 1178.8,712.4 1162.5,684.2"/><text class="face-id" x="1195.0" y="680.2">11/20</text><title>11/20 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1227.5,684.2 1260.0,684.2 1276.3,712.4 1260.0,740.5 1227.5,740.5 1211.3,712.4"/><text class="face-id" x="1243.8" y="708.4">11/21</text><title>11/21 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1276.3,656.1 1308.8,656.1 1325.0,684.2 1308.8,712.4 1276.3,712.4 1260.0,684.2"/><text class="face-id" x="1292.5" y="680.2">11/22</text><title>11/22 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,684.2 1357.5,684.2 1373.8,712.4 1357.5,740.5 1325.0,740.5 1308.8,712.4"/><text class="face-id" x="1341.3" y="708.4">11/23</text><title>11/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,712.4 236.3,712.4 252.5,740.5 236.3,768.6 203.8,768.6 187.5,740.5"/><text class="face-id" x="220.0" y="736.5">12/0</text><title>12/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,740.5 285.0,740.5 301.3,768.6 285.0,796.8 252.5,796.8 236.3,768.6"/><text class="face-id" x="268.8" y="764.6">12/1</text><title>12/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="301.3,712.4 333.8,712.4 350.0,740.5 333.8,768.6 301.3,768.6 285.0,740.5"/><text class="face-id" x="317.5" y="736.5">12/2</text><title>12/2 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="350.0,740.5 382.5,740.5 398.8,768.6 382.5,796.8 350.0,796.8 333.8,768.6"/><text class="face-id" x="366.3" y="764.6">12/3</text><title>12/3 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="398.8,712.4 431.3,712.4 447.5,740.5 431.3,768.6 398.8,768.6 382.5,740.5"/><text class="face-id" x="415.0" y="736.5">12/4</text><title>12/4 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="447.5,740.5 480.0,740.5 496.3,768.6 480.0,796.8 447.5,796.8 431.3,768.6"/><text class="face-id" x="463.8" y="764.6">12/5</text><title>12/5 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="496.3,712.4 528.8,712.4 545.0,740.5 528.8,768.6 496.3,768.6 480.0,740.5"/><text class="face-id" x="512.5" y="736.5">12/6</text><title>12/6 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="545.0,740.5 577.5,740.5 593.8,768.6 577.5,796.8 545.0,796.8 528.8,768.6"/><text class="face-id" x="561.3" y="764.6">12/7</text><title>12/7 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="593.8,712.4 626.3,712.4 642.5,740.5 626.3,768.6 593.8,768.6 577.5,740.5"/><text class="face-id" x="610.0" y="736.5">12/8</text><title>12/8 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="642.5,740.5 675.0,740.5 691.3,768.6 675.0,796.8 642.5,796.8 626.3,768.6"/><text class="face-id" x="658.8" y="764.6">12/9</text><title>12/9 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="691.3,712.4 723.8,712.4 740.0,740.5 723.8,768.6 691.3,768.6 675.0,740.5"/><text class="face-id" x="707.5" y="736.5">12/10</text><title>12/10 · SEACOAST</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="740.0,740.5 772.5,740.5 788.8,768.6 772.5,796.8 740.0,796.8 723.8,768.6"/><text class="face-id" x="756.3" y="764.6">12/11</text><title>12/11 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="788.8,712.4 821.3,712.4 837.5,740.5 821.3,768.6 788.8,768.6 772.5,740.5"/><text class="face-id" x="805.0" y="736.5">12/12</text><title>12/12 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="837.5,740.5 870.0,740.5 886.3,768.6 870.0,796.8 837.5,796.8 821.3,768.6"/><text class="face-id" x="853.8" y="764.6">12/13</text><title>12/13 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="886.3,712.4 918.8,712.4 935.0,740.5 918.8,768.6 886.3,768.6 870.0,740.5"/><text class="face-id" x="902.5" y="736.5">12/14</text><title>12/14 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="935.0,740.5 967.5,740.5 983.8,768.6 967.5,796.8 935.0,796.8 918.8,768.6"/><text class="face-id" x="951.3" y="764.6">12/15</text><title>12/15 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="983.8,712.4 1016.3,712.4 1032.5,740.5 1016.3,768.6 983.8,768.6 967.5,740.5"/><text class="face-id" x="1000.0" y="736.5">12/16</text><title>12/16 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1032.5,740.5 1065.0,740.5 1081.3,768.6 1065.0,796.8 1032.5,796.8 1016.3,768.6"/><text class="face-id" x="1048.8" y="764.6">12/17</text><title>12/17 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1081.3,712.4 1113.8,712.4 1130.0,740.5 1113.8,768.6 1081.3,768.6 1065.0,740.5"/><text class="face-id" x="1097.5" y="736.5">12/18</text><title>12/18 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1130.0,740.5 1162.5,740.5 1178.8,768.6 1162.5,796.8 1130.0,796.8 1113.8,768.6"/><text class="face-id" x="1146.3" y="764.6">12/19</text><title>12/19 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-seacoast" points="1178.8,712.4 1211.3,712.4 1227.5,740.5 1211.3,768.6 1178.8,768.6 1162.5,740.5"/><text class="face-id" x="1195.0" y="736.5">12/20</text><text class="feature-code" x="1195.0" y="750.5">CITY</text><title>12/20 · SEACOAST · Provisional Tampa · CITY</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1227.5,740.5 1260.0,740.5 1276.3,768.6 1260.0,796.8 1227.5,796.8 1211.3,768.6"/><text class="face-id" x="1243.8" y="764.6">12/21</text><title>12/21 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1276.3,712.4 1308.8,712.4 1325.0,740.5 1308.8,768.6 1276.3,768.6 1260.0,740.5"/><text class="face-id" x="1292.5" y="736.5">12/22</text><title>12/22 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,740.5 1357.5,740.5 1373.8,768.6 1357.5,796.8 1325.0,796.8 1308.8,768.6"/><text class="face-id" x="1341.3" y="764.6">12/23</text><title>12/23 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="203.8,768.6 236.3,768.6 252.5,796.8 236.3,824.9 203.8,824.9 187.5,796.8"/><text class="face-id" x="220.0" y="792.8">13/0</text><title>13/0 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="252.5,796.8 285.0,796.8 301.3,824.9 285.0,853.1 252.5,853.1 236.3,824.9"/><text class="face-id" x="268.8" y="820.9">13/1</text><title>13/1 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="301.3,768.6 333.8,768.6 350.0,796.8 333.8,824.9 301.3,824.9 285.0,796.8"/><text class="face-id" x="317.5" y="792.8">13/2</text><title>13/2 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="350.0,796.8 382.5,796.8 398.8,824.9 382.5,853.1 350.0,853.1 333.8,824.9"/><text class="face-id" x="366.3" y="820.9">13/3</text><title>13/3 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="398.8,768.6 431.3,768.6 447.5,796.8 431.3,824.9 398.8,824.9 382.5,796.8"/><text class="face-id" x="415.0" y="792.8">13/4</text><title>13/4 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="447.5,796.8 480.0,796.8 496.3,824.9 480.0,853.1 447.5,853.1 431.3,824.9"/><text class="face-id" x="463.8" y="820.9">13/5</text><title>13/5 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="496.3,768.6 528.8,768.6 545.0,796.8 528.8,824.9 496.3,824.9 480.0,796.8"/><text class="face-id" x="512.5" y="792.8">13/6</text><title>13/6 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="545.0,796.8 577.5,796.8 593.8,824.9 577.5,853.1 545.0,853.1 528.8,824.9"/><text class="face-id" x="561.3" y="820.9">13/7</text><title>13/7 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="593.8,768.6 626.3,768.6 642.5,796.8 626.3,824.9 593.8,824.9 577.5,796.8"/><text class="face-id" x="610.0" y="792.8">13/8</text><title>13/8 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="642.5,796.8 675.0,796.8 691.3,824.9 675.0,853.1 642.5,853.1 626.3,824.9"/><text class="face-id" x="658.8" y="820.9">13/9</text><title>13/9 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="691.3,768.6 723.8,768.6 740.0,796.8 723.8,824.9 691.3,824.9 675.0,796.8"/><text class="face-id" x="707.5" y="792.8">13/10</text><title>13/10 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="740.0,796.8 772.5,796.8 788.8,824.9 772.5,853.1 740.0,853.1 723.8,824.9"/><text class="face-id" x="756.3" y="820.9">13/11</text><title>13/11 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="788.8,768.6 821.3,768.6 837.5,796.8 821.3,824.9 788.8,824.9 772.5,796.8"/><text class="face-id" x="805.0" y="792.8">13/12</text><title>13/12 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="837.5,796.8 870.0,796.8 886.3,824.9 870.0,853.1 837.5,853.1 821.3,824.9"/><text class="face-id" x="853.8" y="820.9">13/13</text><title>13/13 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="886.3,768.6 918.8,768.6 935.0,796.8 918.8,824.9 886.3,824.9 870.0,796.8"/><text class="face-id" x="902.5" y="792.8">13/14</text><title>13/14 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="935.0,796.8 967.5,796.8 983.8,824.9 967.5,853.1 935.0,853.1 918.8,824.9"/><text class="face-id" x="951.3" y="820.9">13/15</text><title>13/15 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="983.8,768.6 1016.3,768.6 1032.5,796.8 1016.3,824.9 983.8,824.9 967.5,796.8"/><text class="face-id" x="1000.0" y="792.8">13/16</text><title>13/16 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1032.5,796.8 1065.0,796.8 1081.3,824.9 1065.0,853.1 1032.5,853.1 1016.3,824.9"/><text class="face-id" x="1048.8" y="820.9">13/17</text><title>13/17 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1081.3,768.6 1113.8,768.6 1130.0,796.8 1113.8,824.9 1081.3,824.9 1065.0,796.8"/><text class="face-id" x="1097.5" y="792.8">13/18</text><title>13/18 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1130.0,796.8 1162.5,796.8 1178.8,824.9 1162.5,853.1 1130.0,853.1 1113.8,824.9"/><text class="face-id" x="1146.3" y="820.9">13/19</text><title>13/19 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1178.8,768.6 1211.3,768.6 1227.5,796.8 1211.3,824.9 1178.8,824.9 1162.5,796.8"/><text class="face-id" x="1195.0" y="792.8">13/20</text><title>13/20 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1227.5,796.8 1260.0,796.8 1276.3,824.9 1260.0,853.1 1227.5,853.1 1211.3,824.9"/><text class="face-id" x="1243.8" y="820.9">13/21</text><title>13/21 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1276.3,768.6 1308.8,768.6 1325.0,796.8 1308.8,824.9 1276.3,824.9 1260.0,796.8"/><text class="face-id" x="1292.5" y="792.8">13/22</text><title>13/22 · SEA</title></g>
+<g class="audit-cell"><polygon class="water-sea" points="1325.0,796.8 1357.5,796.8 1373.8,824.9 1357.5,853.1 1325.0,853.1 1308.8,824.9"/><text class="face-id" x="1341.3" y="820.9">13/23</text><title>13/23 · SEA</title></g></g>
+  <g class="legend"><rect x="20" y="805" width="1500" height="77" rx="6"/><text x="40" y="827">PROVISIONAL FEATURE / WATER / BARRIER AUDIT · 336 flat-top faces · 24 columns × 14 rows</text><text x="40" y="844">CITY · base branch code · INF Infamy · MUT Mutation · LAIR · LA Los Angeles</text><text x="40" y="861">Blue lines: candidate sea/lake transitions matching the thick printed water-barrier boundary</text><text x="40" y="878">Candidate data only: unreadable or fold-obscured content must remain unresolved until sign-off.</text></g>
+  <style>
+    .audit-cell polygon { stroke: #fff0b8; stroke-width: .8; }
+    .water-sea { fill: #176f9b55; }
+    .water-lake { fill: #58bde055; stroke: #8feaff; }
+    .water-seacoast { fill: #1f8caf22; }
+    .water-land { fill: #173d4d22; }
+    .face-id,.feature-code { fill: #fff7d0; font: 10px ui-monospace, monospace; text-anchor: middle; paint-order: stroke; stroke: #14242a; stroke-width: 3px; }
+    .feature-code { fill: #ffd36a; font-weight: 700; }
+    .barrier-sea { stroke: #08b8f5; stroke-width: 4; opacity: .9; }
+    .barrier-lake { stroke: #a6f2ff; stroke-width: 3; stroke-dasharray: 5 2; opacity: .95; }
+    .legend rect { fill: #17201ee6; stroke: #f0c878; }
+    .legend text { fill: #fff3c8; font: 7px ui-sans-serif, sans-serif; }
+  </style>
+</svg>

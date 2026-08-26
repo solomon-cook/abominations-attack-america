@@ -53,7 +53,7 @@ export function BoardContextTray({ game, board, hex }: Props) {
         <span><b>{hex.waterClass}</b> water class</span>
         <span><b>{featureLabel(hex)}</b></span>
         <span><b>{occupants.length ? occupants.join(", ") : "Empty"}</b></span>
-        <span><b>{neighbours.length}</b> recorded neighbours</span>
+        <span><b>{neighbours.length}</b> neighbours</span>
       </div>
       {edgeDetails.length > 0 && (
         <p className="board-context-edges" aria-label="Recorded edge barriers">
@@ -71,8 +71,8 @@ export function BoardContextTray({ game, board, hex }: Props) {
       )}
       <p className="board-context-note">
         {unresolved
-          ? "Physical terrain, labels, barriers, and feature ownership remain source-gated for this hex."
-          : "Details and legal actions are derived from the canonical board and match state."}
+          ? "Physical details are still being transcribed."
+          : "Details and actions come from the game board."}
       </p>
     </section>
   );

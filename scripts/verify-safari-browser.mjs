@@ -126,7 +126,7 @@ try {
     });
     const inspectedBody = await inspected.json();
     const value = inspectedBody.value?.value ?? inspectedBody.value;
-    if (!inspected.ok || !value?.reviewScreen || value.cellCount !== 254 || value.sourceCount !== 2 || value.horizontalOverflow) {
+    if (!inspected.ok || !value?.reviewScreen || value.cellCount !== 336 || value.sourceCount !== 2 || value.horizontalOverflow) {
       result.review = "failed";
       result.detail = JSON.stringify(value ?? inspectedBody);
     } else {

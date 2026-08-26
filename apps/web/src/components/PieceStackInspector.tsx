@@ -19,7 +19,7 @@ export function PieceStackInspector({ game, activeMonsterId, selectedStackKey, o
   return (
     <section className="stack-inspector" aria-label="Piece stack inspector">
       <div className="stack-inspector-heading">
-        <div><span className="label">PIECE STACKS</span><p>Select an occupied hex to inspect every piece without changing the board.</p></div>
+        <div><span className="label">PIECE STACKS</span><p>Select an occupied hex to inspect its pieces.</p></div>
         {selectedStackKey && <button type="button" className="stack-clear" onClick={onClear}>Clear</button>}
       </div>
       <div className="stack-location-list">

@@ -27,8 +27,7 @@ export function BoardReview({ onClose }: Props) {
           <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · BOARD REVIEW</p>
           <h1>Full honeycomb geometry</h1>
           <p className="board-review-lede">
-            Read-only review of the 254-cell candidate lattice. This is not a playable board:
-            physical features, water classes, barriers, and printed labels remain source-gated.
+            Read-only review of the complete 24-by-14 candidate lattice. Physical details are still being transcribed.
           </p>
         </div>
         <button type="button" className="ghost" onClick={onClose}>Back to home</button>
@@ -39,7 +38,7 @@ export function BoardReview({ onClose }: Props) {
       </section>
       <div className="board-review-layout">
         <div className="board-review-visuals">
-          <section className="board-review-frame" aria-label="254-cell full honeycomb candidate">
+          <section className="board-review-frame" aria-label="336-cell full honeycomb candidate">
             <div className="board-review-canvas">
             {cells.map(({ hex, left, top }) => (
               <button
@@ -91,7 +90,7 @@ export function BoardReview({ onClose }: Props) {
         <div>
           <span className="label">DENSE STACK FIXTURE</span>
           <h2>One to eight occupants</h2>
-          <p>Presentation-only fixture for checking bounded scaling and containment. It does not add pieces to a match.</p>
+          <p>Display test only. These pieces are not added to a match.</p>
         </div>
         <div className="dense-stack-fixtures">
           {Array.from({ length: 8 }, (_, index) => {
@@ -104,7 +103,7 @@ export function BoardReview({ onClose }: Props) {
           })}
         </div>
       </section>
-      <p className="board-review-count">254 candidate cells · 13 alternating rows · flat-top landscape orientation</p>
+      <p className="board-review-count">336 candidate cells · 14 rows × 24 columns · flat-top hex orientation</p>
     </main>
   );
 }

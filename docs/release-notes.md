@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Shared deterministic engine, HTTP rooms, WebSocket updates, polling fallback, persistence boundaries, spectator projections, and reconnect-safe command receipts are implemented for the development fixture.
-- The browser renders only the board definition pinned by the active match for rules and legality. Development playtests use the nine-space fixture, whose canonical locations appear as compact separated flat-top overlays on a disabled 254-cell candidate shell; unresolved shell cells remain non-playable and source-gated.
+- The browser renders only the board definition pinned by the active match for rules and legality. Development playtests use the nine-space fixture, whose canonical locations appear as compact flat-top overlays on a disabled 336-cell candidate shell; unresolved shell cells remain non-playable and source-gated.
 - Settings include larger text, board-label visibility, reduced motion, and disappearance/concession confirmation behavior.
 - Voluntary concession, safe terminal return, local rematch, deterministic malformed-command coverage, bounded concurrency coverage, asset checks, and accessibility source checks are included.
 

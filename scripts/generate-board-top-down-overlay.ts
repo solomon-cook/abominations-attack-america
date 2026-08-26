@@ -16,7 +16,7 @@ const corners = {
 } as const;
 
 function rows(): BoardHex[][] {
-  return Array.from({ length: 13 }, (_, row) => Object.values(FULL_HONEYCOMB_BOARD.hexes)
+  return Array.from({ length: 14 }, (_, row) => Object.values(FULL_HONEYCOMB_BOARD.hexes)
     .filter((hex) => hex.coord.r === row)
     .sort((a, b) => a.coord.q - b.coord.q));
 }
@@ -38,20 +38,21 @@ function polygon(cx: number, cy: number, radiusX: number, radiusY: number): stri
 }
 
 const cellOverlays = rows().flatMap((row, rowIndex) => row.map((hex, columnIndex) => {
-  const cx = (columnIndex + 0.5 + (rowIndex % 2 ? 0.5 : 0)) / 20;
-  const cy = (rowIndex + 0.5) / 13;
-  const points = polygon(cx, cy, 0.48 / 20, 0.45 / 13);
+  const cx = (columnIndex + 0.5 + (rowIndex % 2 ? 0.5 : 0)) / 18;
+  const cy = (rowIndex + 0.5) / 14;
+  const points = polygon(cx, cy, 0.48 / 18, 0.45 / 14);
   const [textX, textY] = mapPoint(cx, cy);
-  return `<g class="review-cell" data-hex-key="${hex.key}"><polygon points="${points}"/><text x="${textX.toFixed(1)}" y="${(textY + 1).toFixed(1)}">${hex.key}</text></g>`;
+  const rowColumn = `${rowIndex}/${columnIndex}`;
+  return `<g class="review-cell" data-hex-key="${hex.key}" data-row-column="${rowColumn}"><polygon points="${points}"/><text x="${textX.toFixed(1)}" y="${(textY + 1).toFixed(1)}">${rowColumn}</text></g>`;
 })).join("\n");
 
 const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title description">
-  <title id="title">254-cell honeycomb cross-check overlay over independent top-down photograph</title>
-  <desc id="description">An approximate coordinate review grid over an independent top-down board photograph. This is a transcription aid and does not assert printed board rule data.</desc>
+  <title id="title">336-cell honeycomb cross-check overlay over independent top-down photograph</title>
+  <desc id="description">An approximate cell-centred flat-top hex review overlay over an independent top-down board photograph. This is a transcription aid and does not assert printed board rule data.</desc>
   <image href="${source}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="none" opacity="0.88"/>
   <g class="review-grid">${cellOverlays}</g>
-  <g class="legend"><rect x="12" y="568" width="530" height="44" rx="4"/><text x="22" y="586">254-cell review aid · approximate alignment to 753 × 623 top-down source</text><text x="22" y="601">Not authoritative: labels, features, water, barriers, and edges require sign-off.</text></g>
+  <g class="legend"><rect x="12" y="568" width="530" height="44" rx="4"/><text x="22" y="586">336-cell review aid · full 24-by-14 rectangle over 753 × 623 top-down source</text><text x="22" y="601">Not authoritative: labels, features, water, barriers, and edges require sign-off.</text></g>
   <style>
     .review-cell polygon { fill: #173d4d33; stroke: #ffe8a8; stroke-width: 0.35; }
     .review-cell text { fill: #fff7d0; font: 3.2px ui-monospace, monospace; text-anchor: middle; dominant-baseline: middle; paint-order: stroke; stroke: #14242a; stroke-width: 0.8px; }

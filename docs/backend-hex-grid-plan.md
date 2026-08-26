@@ -26,7 +26,7 @@ This is a backend and domain-data plan. It does not prescribe client artwork, ca
 
 The current prototype has two separate map concepts:
 
-- `apps/web/src/main.tsx` renders a neutral staggered 13-row visual lattice (alternating 20 and 19 cells) for board orientation and overlays the nine `DEVELOPMENT_BOARD.hexes` as interactive development spaces; the lattice cells are explicitly non-authoritative and carry no inferred water, feature, or movement data.
+- `apps/web/src/main.tsx` renders a neutral staggered 14-row visual lattice (alternating 18 and 17 cells, 245 total) for board orientation and overlays the nine `DEVELOPMENT_BOARD.hexes` as interactive development spaces; the lattice cells are explicitly non-authoritative and carry no inferred water, feature, or movement data.
 - `packages/game-engine/src/index.ts` defines a small abstract set of locations using percentage `x`/`y` positions and manually authored `links`.
 
 The API already has useful foundations:

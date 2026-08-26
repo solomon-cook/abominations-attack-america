@@ -19,7 +19,7 @@ The active player follows the visible four-step prompt:
 - **Encounter:** resolve the current development site reward or displayed choice.
 - **Deploy:** place an available development unit, draw Research where allowed, or pass deployment.
 
-The board photograph and 254-cell overlay are review references only. The development playtest renders and uses the explicitly labelled nine-space fixture; the unresolved physical board is not rendered as playable topology until it is fully transcribed and signed off.
+The board photograph and 245-cell overlay are review references only. The development playtest renders and uses the explicitly labelled nine-space fixture; the unresolved physical board is not rendered as playable topology until it is fully transcribed and signed off.
 
 ## End a match
 

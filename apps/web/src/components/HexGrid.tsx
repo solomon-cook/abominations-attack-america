@@ -62,7 +62,6 @@ function boardArtForHex(hex: BoardHex, place?: (typeof locations)[number]) {
     "mutation-site": "/assets/board/features/mutation_site.webp",
     "challenge-site": "/assets/board/features/challenge_site.webp",
     lair: "/assets/board/features/lair.webp",
-    hollywood: "/assets/board/features/hollywood.webp",
     "los-angeles": "/assets/board/features/los_angeles.webp",
   };
   return featureAssets[feature ?? ""];
@@ -75,7 +74,6 @@ function provisionalFeatureLabel(hex: BoardHex): string | undefined {
     case "infamy-site": return "INFAMY";
     case "mutation-site": return "MUTATION";
     case "challenge-site": return "CHALLENGE";
-    case "hollywood": return "HOLLYWOOD";
     case "los-angeles": return "LOS ANGELES";
     default: return undefined;
   }
@@ -198,7 +196,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           occupantText ? `Occupants: ${occupantText}` : "Unoccupied",
           selectedPathCost !== undefined && selectedPathCost > 0 ? `Movement cost: ${selectedPathCost}` : "Movement cost: not recorded for this hex",
           combatStrength ? `Combat strength: ${combatStrength}` : "Combat strength: no occupant recorded",
-          hex.verification !== "verified" ? "Physical details remain source-gated" : interactionHint,
+          hex.verification !== "verified" ? "Physical details unavailable" : interactionHint,
         ].join(" · ");
         const baseArt = hex.waterClass === "unresolved"
           ? undefined

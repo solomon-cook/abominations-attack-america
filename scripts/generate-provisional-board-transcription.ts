@@ -1,31 +1,56 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { FULL_HONEYCOMB_BOARD } from "../packages/game-engine/src/board.ts";
+import { FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD } from "../packages/game-engine/src/board.ts";
 
 const outputPath = resolve("docs/provisional-board-transcription.md");
-const source = "references/monsters-menace-america/components/board/full-game-setup.jpg";
+const source = "references/monsters-menace-america/components/source-photos-2026-08-26/full-board-setup.JPG";
 const independentSource = "https://blugee.com/cdn/shop/files/Monsters-Menace-America-Board-Game-2_898x600.jpg?v=1711114433";
 const thirdSource = "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rtYAAOSw9fVmDcjE/%24_3.JPG";
 const closeupSource = "https://boardgamegeek.com/image/201674/monsters-menace-america";
+const cityBenefitText = (benefit: { kind: string; amount?: number; dice?: number }) => benefit.kind === "health"
+  ? `+${benefit.amount} Health`
+  : `Roll ${benefit.dice} die${benefit.dice === 1 ? "" : "s"}`;
+const featureText = (features: readonly { kind: string; benefit?: { kind: string; amount?: number; dice?: number }; branch?: string; siteId?: string; monsterId?: string }[]) => features.length === 0
+  ? "—"
+  : features.map((feature) => feature.kind === "city" && feature.benefit
+    ? `city (${cityBenefitText(feature.benefit)})`
+    : feature.kind === "military-base"
+      ? `military-base (${feature.branch})`
+      : feature.kind === "mutation-site"
+        ? `mutation-site (${feature.siteId})`
+        : feature.kind === "lair"
+          ? `lair (${feature.monsterId})`
+          : feature.kind).join(", ");
+const alignedCityRows = Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes)
+  .filter((hex) => hex.features.some((feature) => feature.kind === "city"))
+  .sort((a, b) => a.coord.r - b.coord.r || a.coord.q - b.coord.q)
+  .map((hex) => {
+    const city = hex.features.find((feature) => feature.kind === "city");
+    if (!city || city.kind !== "city") return "";
+    const row = hex.coord.r;
+    const column = hex.coord.q + Math.floor(row / 2);
+    return `| ${hex.label?.replace(/^Provisional /, "") ?? "Unnamed city"} | ${row} / ${column} | ${cityBenefitText(city.benefit)} | ${hex.key} |`;
+  });
 
 const lines = [
   "# Provisional full-board transcription",
   "",
   "This is a working transcription ledger for cross-referencing board photographs. It is not authoritative game data and must not be imported by the engine or used to promote the MVP board.",
   "",
-  "The ledger intentionally gives every one of the 254 coordinate-shell cells a review record. `hypothesis-land-or-feature` and `hypothesis-sea-or-coast` are deliberately coarse guesses based on the visible colour field, not authoritative terrain. `covered-or-unreadable` is for cells obscured by a playing piece, stomp marker, card, glare, perspective, or insufficient resolution. A later reference may replace any provisional state.",
+  "The ledger intentionally gives every one of the 336 coordinate-shell cells a review record. The shell is a full 24-column by 14-row rectangle; edge cells remain present even when they are empty, sea, cropped, or covered in the photograph. `hypothesis-land-or-feature` and `hypothesis-sea-or-coast` are deliberately coarse guesses based on the visible colour field, not authoritative terrain. `covered-or-unreadable` is for cells obscured by a playing piece, stomp marker, card, glare, perspective, or insufficient resolution. A later reference may replace any provisional state.",
   "",
-  `- Primary reference: [full game setup photograph](../${source})` ,
-  "- Cross-check reference: [full board top-down photograph](../references/monsters-menace-america/components/board/full-board-top-down.jpg)",
+  `- Primary reference: [user-supplied full board photograph](../${source})` ,
+  "- Cross-check reference: [earlier full board top-down photograph](../references/monsters-menace-america/components/board/full-board-top-down.jpg)",
   `- Independent cross-check: [separate photographed game-board setup](${independentSource})`,
   `- Third cross-check: [another photographed board setup](${thirdSource})`,
   `- Close-up cross-check: [BoardGameGeek close-up board photograph](${closeupSource})`,
-  "- Coordinate shell: `FULL_HONEYCOMB_BOARD`, 13 staggered rows, 254 cells",
+  "- Coordinate shell: `FULL_HONEYCOMB_BOARD`, 14 rows of 24 cells, 336 cells, full photographed rectangle",
+  "- Coordinate aid convention: generated overlay labels are centred inside candidate hex faces; they are not printed board labels and must not be read from a shared vertex or edge",
   "- Promotion rule: no provisional guess in this file changes `packages/game-engine/src/board.ts` or clears production validation.",
   "",
   "## Candidate hypotheses to test against another reference",
   "",
-  "These are board-level hypotheses only, not cell assignments: the visible outer blue regions are sea/coast; the green interior is land; grey city panels carry printed city names and bonus values; bright yellow/orange panels are Infamy sites; star symbols are military bases; purple/pink panels are Mutation sites; Hollywood and Los Angeles are visible in the southwest. Each hypothesis requires a cell-level cross-check before promotion.",
+  "These are board-level hypotheses only, not cell assignments: the visible outer blue regions are sea/coast; the green interior is land; grey city panels carry printed city names and bonus values; bright yellow/orange panels are Infamy sites; star symbols are military bases; purple/pink panels are Mutation sites; the Hollywood area overlay and Los Angeles city are visible in the southwest. Each hypothesis requires a cell-level cross-check before promotion.",
   "",
   "## Category correction from the four supplied photos",
   "",
@@ -34,6 +59,10 @@ const lines = [
   "## New straight-on full-board reference",
   "",
   "The newly supplied straight-on photograph is substantially better for tile matching than the earlier angled/cropped images. It shows the complete board frame, the full staggered hex field, the Great Lakes, both coasts, the grey city panels, Infamy panels, Mutation panels, and most coloured base stars in one view. Use it as the primary alignment reference for the next coordinate pass. The lower legend, pieces, and a small number of bottom-edge cells still obscure some artwork, so exact assignments remain provisional until the shell overlay is checked against this image.",
+  "",
+  "## Confirmed face-centre corrections in the current candidate pass",
+  "",
+  "The aligned overlay resolves the northwest city cluster as Vancouver `0/3`, Seattle `1/3`, and Portland `2/2`; the nearby `0/2`, `1/1`, and `1/2` references are not the printed city faces. The western cluster additionally resolves Fresno `6/2`, Salt Lake City `5/6`, Los Angeles `8/2`, San Diego `8/3`, Phoenix `8/5`, and Albuquerque `8/8`. Winnipeg is at `2/12`. These are still candidate-board assignments rather than production sign-off, but they are based on the printed panel being inside the corresponding face, not on a nearby shared label.",
   "",
   "## Provisional city-candidate pass",
   "",
@@ -47,7 +76,7 @@ const lines = [
   "| Kansas City | +1 Health (inferred) | Central-plains city panel appears readable or strongly suggested; smaller printed city treatment is assumed provisionally. | low-medium for bonus; low for shell coordinate | Treat as a candidate only; correct when the physical board is available. |",
   "| Seattle | +1 Health (inferred from development marker and city scale) | Existing development fixture uses `1HP`; physical-board mapping remains unverified. | low | Use only as a provisional search hypothesis. |",
   "| San Francisco | Roll 2 dice (inferred from development marker and major-city scale) | Existing development fixture uses `2D`; physical-board mapping remains unverified. | low | Use only as a provisional search hypothesis. |",
-  "| Los Angeles | Roll 3 dice (inferred from development marker and major-city scale) | Existing development fixture uses `3D`; Hollywood/L.A. area is visibly present, but exact city cell remains unverified. | low-medium for region; low for bonus/cell | Keep Hollywood and Los Angeles as separate candidate spaces. |",
+  "| Los Angeles | Roll 3 dice (inferred from development marker and major-city scale) | Existing development fixture uses `3D`; the Hollywood area overlay and L.A. city are visibly present, but exact city cell remains unverified. | low-medium for region; low for bonus/cell | Keep Hollywood as a non-visitable overlay and Los Angeles as the visitable city candidate. |",
   "| Chicago | +2 Health (inferred from development marker and major-city scale) | Existing development fixture uses `2HP`; physical-board mapping remains unverified. | low | Use only as a provisional search hypothesis. |",
   "| New York | Roll at least 2 dice (corrected provisional inference) | Major-city scale makes the earlier 1-die guess too low; the physical-board value remains unread. | medium-low for bonus; low for shell coordinate | Keep as a corrected hypothesis until the printed New York panel is confirmed. |",
   "| Philadelphia | Roll 2 dice (provisional inference) | Visible/evident east-coast city candidate adjacent to New York; major-city scale suggests it should not be a 1-die city. | low-medium for bonus; low for shell coordinate | Add as a separate city candidate beside New York; confirm against the physical panel. |",
@@ -55,6 +84,14 @@ const lines = [
   "| Denver | No city bonus assigned; military-base candidate | Existing development fixture classifies Denver as a base rather than city. | low for physical board | Keep separate from the city-bonus list until the printed space is verified. |",
   "| Dallas | No city bonus assigned; Mutation-site candidate | Existing development fixture classifies Dallas as a Mutation site rather than city. | low for physical board | Keep separate from the city-bonus list until the printed space is verified. |",
   "| Boston, Washington, Houston, Atlanta, New Orleans, Toronto, Salt Lake City, Phoenix | Unassigned | Plausible major-city search targets based on map geography, not yet read from the references. | low | Inspect only; do not invent a bonus until a city panel is visible. |",
+  "",
+  "## Current aligned city inventory (playtest, not sign-off)",
+  "",
+  "The following table is generated from the current photo-aligned playtest board. It is included to make omissions visible; every row remains provisional until a human checks the physical board against the coordinate overlay.",
+  "",
+  "| City | Row / column | Printed-value transcription | Axial key |",
+  "| --- | --- | --- | --- |",
+  ...alignedCityRows,
   "",
   "All bonuses above are provisional hypotheses. The game rules support fixed Health gains and one-, two-, or three-die city rolls, but these candidate values are not source-approved. The close-up proves that non-empty city panels exist in the central/northern board area, but perspective and cropping prevent a reliable conversion to `row / column` or axial keys. The next useful artifact is an aligned crop or a straight-on board photograph with the shell overlay visible.",
   "",
@@ -64,7 +101,7 @@ const lines = [
   "",
   "| Approximate region / orientation | Example city labels used only for orientation | Provisional bonus pattern | Confidence |",
   "| --- | --- | --- | --- |",
-  "| Southeast interior | Atlanta / Nashville | Atlanta: roll 2 dice; Nashville: roll 1 die. | low-medium; bonus-first, names/cells provisional |",
+  "| Southeast interior | Atlanta / Nashville | Atlanta: `1d`; Nashville: `1hp`. | medium for printed values; names/cells provisional |",
   "| Northeast corridor | New York / Philadelphia / Boston | New York: at least 2 dice; Philadelphia: 2 dice; Boston: 1–2 dice pending panel read. | low-medium |",
   "| Great Lakes | Chicago / Detroit / Cleveland / Toronto | Larger skyline panels: 2–3 dice; smaller neighbouring panels: 1 die or +2 Health. | low |",
   "| Central plains | Minneapolis / Omaha / Kansas City | Minneapolis: 1 die; Omaha: 1 die; Kansas City: +1 Health. | medium-low |",
@@ -111,7 +148,7 @@ const lines = [
   "",
   "## Independent image comparison",
   "",
-  "The independent setup image confirms the board family, filled honeycomb extent, blue sea/coast boundary, green land field, Hollywood area, city panels, site markers, bases, and the general distribution of printed spaces. It does not resolve exact shell-cell assignments because its perspective, component placement, and lower-resolution presentation obscure or shift many cells. It therefore raises confidence in broad visual classifications but leaves feature coordinates and benefits provisional.",
+  "The independent setup image confirms the board family, filled honeycomb extent, blue sea/coast boundary, green land field, Hollywood area overlay, city panels, site markers, bases, and the general distribution of printed spaces. It does not resolve exact shell-cell assignments because its perspective, component placement, and lower-resolution presentation obscure or shift many cells. It therefore raises confidence in broad visual classifications but leaves feature coordinates and benefits provisional.",
   "",
   "The third setup image is especially useful for the central, eastern, and southern board areas because it shows more printed map surface under a different arrangement of pieces and cards. It independently supports the broad land/sea silhouette and the presence of the same feature families. It still does not provide a geometrically aligned, unobscured cell-by-cell source, so terrain confidence can increase while feature confidence remains low.",
   "",
@@ -138,9 +175,14 @@ const lines = [
     .map((hex) => {
       const row = hex.coord.r;
       const column = hex.coord.q + Math.floor(row / 2);
-      const edgeCandidate = row === 0 || row === 12 || column === 0 || column === (row % 2 === 0 ? 19 : 18);
-      const visualState = edgeCandidate ? "hypothesis-sea-or-coast" : "hypothesis-land-or-feature";
-      return `| \`${hex.key}\` | ${row} / ${column} | ${visualState} | — | medium (broad visual field) | low for exact coordinate; medium for visible feature vocabulary | Compare all five references; exact feature placement remains unverified. |`;
+      const visualState = hex.waterClass === "sea"
+        ? "candidate-sea"
+        : hex.waterClass === "lake"
+          ? "candidate-lake"
+          : hex.waterClass === "seacoast"
+            ? "candidate-seacoast"
+            : "candidate-land";
+      return `| \`${hex.key}\` | ${row} / ${column} | ${visualState} | ${featureText(hex.features)} | medium (aligned photo candidate) | ${hex.features.length > 0 ? "medium-low" : "low"} pending source sign-off | Compare the face against the full-board photo; candidate data is not production verified. |`;
     }),
   "",
   "## Cross-reference workflow",
@@ -153,5 +195,5 @@ const lines = [
 ];
 
 mkdirSync(dirname(outputPath), { recursive: true });
-writeFileSync(outputPath, `${lines.join("\n")}\n`);
+writeFileSync(outputPath, `${lines.join("\n").trimEnd()}\n`);
 console.log(`Generated ${outputPath}`);

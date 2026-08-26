@@ -981,12 +981,14 @@ export function legalGiantPlacementDestinations(state: Pick<GameState, "boardId"
 }
 
 /** Return legal unstomped bases for one active player's ordinary branch unit. */
-export function legalOwnedRedeploymentDestinations(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer" | "units" | "removedUnitIds">, unitId: string): HexKey[] {
+export function legalOwnedRedeploymentDestinations(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer" | "units" | "removedUnitIds"> & Partial<Pick<GameState, "players">>, unitId: string): HexKey[] {
   const board = boardForState(state);
   const branch = state.setupAssignments?.[state.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[state.currentPlayer % 4];
   const unit = state.units.find((candidate) => candidate.id === unitId);
-  if (!unit || unit.branch !== branch || unit.unitTypeId === "mecha-monster" || unit.unitTypeId === "captain-colossal" || unit.ownerPlayer !== state.currentPlayer || !isHexKey(unit.location) || state.removedUnitIds.includes(unit.id)) return [];
+  const guardControlled = unit?.branch === "National Guard" && state.players?.[state.currentPlayer]?.researchCardIds.includes("Guard Commander");
+  const controlsUnit = unit?.ownerPlayer === state.currentPlayer || guardControlled;
+  if (!unit || (unit.branch !== branch && unit.branch !== "National Guard") || unit.unitTypeId === "mecha-monster" || unit.unitTypeId === "captain-colossal" || !controlsUnit || !isHexKey(unit.location) || state.removedUnitIds.includes(unit.id)) return [];
   const stomped = new Set(state.stompedLocations ?? []);
   const deployedThisTurn = new Set(state.deploymentDestinations ?? []);
   return Object.values(board.hexes)
@@ -1915,8 +1917,7 @@ export function orderEncounterFeatures(features: readonly BoardFeature[]): Board
     "military-base": 3,
     "infamy-site": 4,
     lair: 5,
-    hollywood: 6,
-    "los-angeles": 7,
+    "los-angeles": 6,
   };
   return features
     .map((feature, index) => ({ feature, index }))
@@ -2149,17 +2150,21 @@ export function redeployUnitResult(state: GameState, requested: { unitId: string
   const next = structuredClone(state);
   const branch = next.setupAssignments?.[next.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[next.currentPlayer % 4];
-  const allowance = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === branch)?.ownOrGuardUnits ?? 0;
+  const unit = next.units.find((candidate) => candidate.id === requested.unitId);
+  const guardRedeployment = unit?.branch === "National Guard";
+  const allowanceDefinition = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === branch);
+  const researchEffects = researchContinuousEffects(next, next.currentPlayer);
+  if (guardRedeployment && !researchEffects.canControlNationalGuard) throw new GameDomainError("ILLEGAL_COMMAND", "Only the player with the Guard Commander card can redeploy National Guard units.");
+  const allowance = (allowanceDefinition?.ownOrGuardUnits ?? 0) + (guardRedeployment ? allowanceDefinition?.additionalNationalGuardUnits ?? 0 : 0) + researchEffects.extraDeployments;
   if (next.deploymentsThisTurn >= allowance) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} deployment allowance is exhausted; redeployment counts against the same allowance.`);
   const destinations = legalOwnedRedeploymentDestinations(next, requested.unitId);
   const destination = requested.destination ?? destinations[0];
   if (!destination || !destinations.includes(destination)) throw new GameDomainError("ILLEGAL_COMMAND", "Redeployment is limited to an unstomped base belonging to the active player's branch.");
-  const unit = next.units.find((candidate) => candidate.id === requested.unitId);
   if (!unit) throw new GameDomainError("ILLEGAL_COMMAND", `Unknown redeployment unit: ${requested.unitId}.`);
   unit.location = destination;
   next.deploymentsThisTurn += 1;
   next.deploymentDestinations.push(destination);
-  next.log.push(`${branch} redeployed ${unit.unitTypeId ?? unit.id} from the board to ${board.hexes[destination]?.label ?? destination}.`);
+  next.log.push(`${guardRedeployment ? "National Guard" : branch} redeployed ${unit.unitTypeId ?? unit.id} from the board to ${board.hexes[destination]?.label ?? destination}.`);
   const occupyingMonster = next.monsters.find((candidate) => candidate.location === destination);
   if (occupyingMonster) {
     const existingBattle = next.pendingBattles.find((battle) => battle.monsterId === occupyingMonster.id && battle.location === destination);

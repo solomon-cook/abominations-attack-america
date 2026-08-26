@@ -333,7 +333,7 @@ function App() {
       (participant?.role === "player" &&
         participant.playerIndex === decisionPlayer));
   const unavailableReason = pendingAction
-    ? "Waiting for the authoritative server acknowledgement."
+    ? "Waiting for the server."
     : !setupComplete
       ? "Complete setup before taking a gameplay action."
       : online && participant?.role !== "player"
@@ -876,23 +876,23 @@ function App() {
     ? { title: "Move", body: `Select a highlighted monster or an owned or authorised unit, choose a connected legal destination, then confirm the previewed path. ${researchLurePrompt ?? "Pass Move when no further movement is required."}` }
     : activeGame.phase === "fight"
       ? activeGame.pendingDecision?.type === "attack-target"
-        ? { title: "Choose an attack target", body: "Select one of the highlighted military units in the current battle. The recorded attack result is resolved by the shared engine after the target is confirmed." }
+        ? { title: "Choose an attack target", body: "Select a highlighted military unit." }
         : activeGame.pendingDecision?.type === "retreat"
-          ? { title: "Resolve retreat", body: "Assign every surviving military unit a highlighted legal destination. Disappearance is offered only when the authoritative option set is empty." }
-          : { title: "Resolve the compulsory Fight", body: "Choose a pending battle when more than one is available, then resolve the recorded monster-first combat sequence." }
+          ? { title: "Resolve retreat", body: "Choose a legal destination for each surviving unit." }
+          : { title: "Resolve the Fight", body: "Choose a battle if more than one is pending." }
       : activeGame.phase === "encounter"
-        ? { title: "Resolve Encounter", body: "Resolve the space where the monster ended movement. Choose only from the reward, trophy, or city options shown by the engine." }
+        ? { title: "Resolve Encounter", body: "Choose from the options shown." }
         : activeGame.phase === "challenge"
           ? activeGame.pendingDecision?.type === "challenge-opponent"
-            ? { title: "Choose the next challenger", body: "Select an eligible monster shown by the engine. Hollywood, defeated, and self targets are not offered." }
+            ? { title: "Choose the next challenger", body: "Select an eligible monster." }
             : activeGame.pendingDecision?.type === "challenge-giant"
-              ? { title: "Choose the next giant", body: "After all monster duels, select the next surviving giant military unit. Giants never fight each other." }
+              ? { title: "Choose the next giant", body: "Select the next surviving giant unit." }
               : activeGame.pendingDecision?.type === "challenge-giant-resolution"
-                ? { title: "Resolve giant Challenge", body: "The monster attacks first. If the giant defeats the challenger, the authoritative result is America-saved." }
-                : { title: "Resolve Monster Challenge", body: "The challenger attacks first. Review the recorded dice and Health transitions; this presentation cannot change the authoritative duel." }
+                ? { title: "Resolve giant Challenge", body: "The monster attacks first. A giant victory saves America." }
+                : { title: "Resolve Monster Challenge", body: "The challenger attacks first." }
           : activeGame.phase === "game-over"
-            ? { title: "Match complete", body: "The terminal result is authoritative. No further commands can change the winner or victory type." }
-            : { title: "Deploy", body: "Choose a legal deployment or redeployment, draw Research when the action is available, or pass Deploy to begin the next turn." };
+            ? { title: "Match complete", body: "No more actions are available." }
+            : { title: "Deploy", body: "Deploy, draw Research, or pass." };
   const choosePath = (destination: HexKey) => {
     const options = legalPaths
       .filter((path) => path.at(-1) === destination)
@@ -918,8 +918,7 @@ function App() {
       <main className="unsupported-browser" role="main">
         <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · BROWSER SUPPORT</p>
         <h1>This browser cannot run the playtest</h1>
-        <p className="lede">Use a current Chrome, Edge, Firefox, Safari, or Chromium-based mobile browser with JavaScript, WebSocket, Fetch, CSS Grid, and dynamic viewport support enabled.</p>
-        <p className="settings-note">No match state has been started. Update the browser and reload this page.</p>
+        <p className="lede">Use a current Chrome, Edge, Firefox, or Safari browser, then reload.</p>
       </main>
     );
   }
@@ -963,13 +962,13 @@ function App() {
   const fullBoardVerified = renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
     && Object.values(renderedBoard.hexes).every((hex) => hex.verification === "verified");
   const boardDescription = fullBoardVerified
-    ? "The reviewed full honeycomb board is rendered from the pinned board definition; its cells are interactive only where the authoritative rules expose a legal action."
+    ? "The reviewed honeycomb board is playable where rules allow."
     : renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
-      ? "The full honeycomb coordinate shell is unresolved review tooling and is not a playable board; physical cell data remains unavailable until source transcription and sign-off are complete."
+      ? "The full honeycomb shell is review-only. Physical cell data is still being transcribed."
       : renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
-        ? "The provisional full honeycomb board is rendered from a separately pinned playtest guess; its physical labels, terrain, barriers, and feature positions remain unverified and are not production board data."
+        ? "The provisional honeycomb board is a playtest guess. Its labels, terrain, barriers, and features are not verified."
       : renderedBoard
-      ? "The nine-space development board is rendered from the pinned development fixture. The unresolved physical-board shell is not part of this match; unknown physical-board data remains unavailable until source transcription is complete."
+      ? "This match uses the nine-space development board. Physical-board data is still being transcribed."
       : "This match references an unavailable board version, so board interaction is disabled until the matching definition is loaded.";
 
   return (
@@ -985,10 +984,7 @@ function App() {
         <div>
           <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · WEB PLAYTEST</p>
           <h1>Take the city. Become the legend.</h1>
-          <p className="lede">
-            A digital monster-versus-military strategy game. Local play and
-            online rooms share the same rules engine.
-          </p>
+          <p className="lede">A monster strategy game of cities, battles, and bad decisions.</p>
         </div>
         <div className="header-actions">
           <button className="ghost game-panel-toggle" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="game-side-panel">
@@ -1034,12 +1030,12 @@ function App() {
           <div>
             <span className="label">FIRST MATCH GUIDE</span>
             <h2>One turn, four decisions</h2>
-            <p>Choose a monster and setup options, then use the shared board controls to move, resolve compulsory battles, take an Encounter, and Deploy. The current prompt always identifies the next authoritative decision.</p>
+            <p>Choose a monster, then move, fight, take an Encounter, and Deploy.</p>
             <div className="onboarding-grid">
-              <div><strong>Move</strong><span>Choose a highlighted path, confirm it, or leave the monster in place.</span></div>
-              <div><strong>Fight</strong><span>Resolve every compulsory battle, choose targets or retreat destinations when prompted.</span></div>
-              <div><strong>Encounter</strong><span>Take the available site reward or make the displayed choice.</span></div>
-              <div><strong>Deploy</strong><span>Place a legal unit or Research card, then pass to the next player.</span></div>
+              <div><strong>Move</strong><span>Choose a path or stay put.</span></div>
+              <div><strong>Fight</strong><span>Resolve battles and choose targets.</span></div>
+              <div><strong>Encounter</strong><span>Take the site reward.</span></div>
+              <div><strong>Deploy</strong><span>Place a unit or draw Research.</span></div>
             </div>
           </div>
           <div className="onboarding-actions">
@@ -1065,8 +1061,8 @@ function App() {
         <span className="label">{renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id ? "PROVISIONAL HONEYCOMB PLAYTEST · NOT VERIFIED" : "DEVELOPMENT RULESET · PROTOTYPE 0.1"}</span>
         <p>
           {renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
-            ? "This local playtest uses the complete 254-cell provisional honeycomb board. Its guessed labels, terrain, barriers, and feature positions are not physically verified and cannot be used by production rooms."
-            : "This playtest uses only the nine-space development fixture; the unresolved physical-board shell is not rendered as playable topology. The physical board transcription, full combat, card effects, National Guard rules, and Monster Challenge are not yet production-verified. The temporary victory condition ends the fixture when its active Stomp spaces are exhausted."}
+            ? "This playtest uses a provisional 336-cell honeycomb board. Its labels, terrain, barriers, and features are not verified."
+            : "This playtest uses a nine-space development board. The physical board, full combat, card effects, National Guard rules, and Monster Challenge are still under review."}
         </p>
       </section>
       <section className={`layout ${gamePanelOpen ? "panel-open" : "panel-closed"}`}>
@@ -1160,7 +1156,7 @@ function App() {
             {boardDescription}
           </p>
           <div className="board-secondary">
-            <p className="map-note">The sea-and-land treatment is decorative only; legal movement and features come from the canonical engine board.</p>
+            <p className="map-note">Map art is decorative. Movement and features come from the game board.</p>
             <p className="map-note">
               {canAct
                 ? selectedUnitId

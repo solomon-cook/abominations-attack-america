@@ -29,12 +29,12 @@ if (ledgerStart < 0 || ledgerEnd < 0 || ledgerEnd <= ledgerStart) {
 }
 const cellLedger = ledger.slice(ledgerStart, ledgerEnd);
 const keys = [...cellLedger.matchAll(/^\| `([^`]+)` \|/gm)].map((match) => match[1]);
-if (keys.length !== 254 || new Set(keys).size !== 254) {
-  throw new Error(`Expected 254 unique coordinate-shell rows, found ${keys.length}.`);
+if (keys.length !== 336 || new Set(keys).size !== 336) {
+  throw new Error(`Expected 336 unique coordinate-shell rows, found ${keys.length}.`);
 }
 
 if (boardSource.includes("provisional-board-transcription")) {
   throw new Error("Production board source must not import the provisional transcription ledger.");
 }
 
-console.log("Verified provisional board ledger coverage: 254 unique cells, explicit disclaimer, and no production import.");
+console.log("Verified provisional board ledger coverage: 336 unique cells, explicit disclaimer, and no production import.");

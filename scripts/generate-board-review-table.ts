@@ -12,7 +12,7 @@ const featureText = (features: readonly { kind: string; branch?: string; siteId?
 const lines = [
   "# Board review table",
   "",
-  "Generated from `FULL_HONEYCOMB_BOARD` for human comparison against the physical board reference. This is a review artifact for the unresolved 254-hex coordinate shell, not production board data.",
+  "Generated from `FULL_HONEYCOMB_BOARD` for human comparison against the physical board reference. This is a review artifact for the unresolved 336-hex full 24-by-14 coordinate shell, not production board data.",
   "",
   `- Board ID: \`${FULL_HONEYCOMB_BOARD.id}\``,
   `- Version: \`${FULL_HONEYCOMB_BOARD.version}\``,

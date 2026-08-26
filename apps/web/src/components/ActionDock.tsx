@@ -24,7 +24,7 @@ export function ActionDock({ label, canAct, command, unavailableReason, onAction
   const status = !canAct
     ? unavailableReason || "This action is not currently available."
     : command
-      ? "Ready to submit the highlighted action."
+      ? "Ready."
       : label;
   return (
     <div className="action-dock" aria-label="Current action control">

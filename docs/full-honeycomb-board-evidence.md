@@ -6,8 +6,10 @@ This pack is the review boundary for promoting the photographed board into the M
 
 - [Full board top-down reference](../references/monsters-menace-america/components/board/full-board-top-down.jpg)
 - [Full game setup reference](../references/monsters-menace-america/components/board/full-game-setup.jpg)
+- [User-supplied full board setup photo, 2026-08-26](../references/monsters-menace-america/components/source-photos-2026-08-26/full-board-setup.JPG)
+- [Photo evidence notes, 2026-08-26](source-photo-evidence-2026-08-26.md)
 - Optimized JPEG copies are shipped only for the read-only review screen; the source JPGs above remain internal evidence and are never used as gameplay art or topology.
-- [Generated 254-hex review table](board-review-table.md)
+- [Generated 336-hex review table](board-review-table.md)
 - [Generated coordinate/photo comparison overlay](board-comparison-overlay.svg)
 - [Generated independent top-down cross-check overlay](board-top-down-overlay.svg)
 - [Full-board promotion sign-off template](board-promotion-signoff.md)
@@ -75,7 +77,7 @@ The same rulebook is useful for vocabulary, not geometry promotion: it describes
 hexagonal board spaces, blue land/water spaces, water barriers, and the lake,
 sea, sea-coast, and flight movement classes. Its rendered pages do not provide
 an unobscured, aligned cell map, so those rules terms cannot be assigned to the
-254 candidate coordinates without a reviewed transcription against the physical
+336 candidate coordinates without a reviewed transcription against the physical
 board.
 
 A further focused search on 2026-08-26 found no qualifying aligned scan or
@@ -93,15 +95,51 @@ source-gated rather than selecting an interpretation.
 | Question | Current evidence | Status |
 | --- | --- | --- |
 | Is the board a filled honeycomb field? | Both photographs visibly show a dense, continuous honeycomb lattice across the board interior and water boundary. | Confirmed visually |
-| How many coordinate cells are in the candidate shell? | `FULL_HONEYCOMB_BOARD` contains 13 staggered rows: seven rows of 20 cells and six rows of 19 cells, for 254 cells. | Structural candidate validated |
+| How many coordinate cells are in the candidate shell? | `FULL_HONEYCOMB_BOARD` contains 14 rows of 24 cells, for 336 cells. Edge cells remain present even when empty, sea, or cropped in the photograph. | Structural candidate validated |
+
+### Overlay row and column counts
+
+The flat-top overlay uses the photographed orientation: 24 full columns and 14 full staggered rows. The physical image crops the visible top and bottom portions, but those edge cells remain in the coordinate model.
+
+| Rendered row | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hexes | 24 | 24 | 24 | 24 | 24 | 24 | 24 |
+| Rendered row | 7 | 8 | 9 | 10 | 11 | 12 | 13 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hexes | 24 | 24 | 24 | 24 | 24 | 24 | 24 |
+
+These rendered row counts sum to 336.
+
+The full columns, numbered left-to-right from 0 through 23 in the shell, contain:
+
+| Column | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hexes | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 |
+| Column | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hexes | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 | 14 |
+
+These column totals sum to 336 and document the full rectangle used by the coordinate shell.
 | Are coordinate keys and adjacency explicit? | The shell uses axial keys and reciprocal candidate adjacency; the generated review table lists every cell and edge. | Structural candidate validated |
 | Are all printed labels and icons transcribed? | No. The photographs show cities, bases, sites, lairs, water, markers, and legend content, but no independent cell-by-cell transcription has been approved. | Unresolved |
 | Are water classes and barriers authoritative? | The physical-board reference confirms that the thick blue line is the water barrier that blocks monsters without the appropriate ability. The exact cell-by-cell barrier edges and sea/lake classifications remain unresolved in the digital transcription. | Partially confirmed; mapping unresolved |
 | Can this board be used for MVP play? | No. The nine-space development graph remains the only playable fixture until the rule-bearing fields are reviewed and promoted. | Release blocker |
 
-The current production validator reports 1,902 errors for the candidate shell: 254 unresolved hex verification states, 254 unresolved water classes, and 1,394 unresolved edge barriers. These counts are intentionally redundant safeguards: promotion must not be possible by changing only a cell's verification flag while leaving terrain or movement data unresolved.
+The current production validator reports 2,538 errors for the candidate shell: 336 unresolved hex verification states, 336 unresolved water classes, and 1,866 unresolved edge barriers. These counts are intentionally redundant safeguards: promotion must not be possible by changing only a cell's verification flag while leaving terrain or movement data unresolved.
 
-The overlay is deliberately a review aid: it places all 254 candidate coordinate keys over the source photograph, but it does not claim that any printed label, icon, water class, barrier, or edge has been transcribed.
+The overlay is deliberately a clean mesh-only review aid: it places all 336 candidate row/column cells over the user-supplied authority photograph, but it does not claim that any printed label, icon, water class, barrier, or edge has been transcribed. The earlier provisional feature/barrier annotation pass was cleared after correcting the hex orientation and is being rebuilt from the fitted mesh.
+
+The generated overlay labels are now centred within each candidate hex face
+using the photographed lattice pitch: even rows contain 18 faces, odd rows
+contain 17 faces offset by half a hex. They use the visible `row/column`
+convention. They are shell annotations, not printed board labels: a mark near
+a shared vertex or fold must never be used as evidence that a feature belongs
+to either neighbouring cell.
+
+In particular, a feature such as Portland may sit among nearby lattice
+references such as `0/2`, `1/1`, and `2/2`; those references describe the
+surrounding geometry, not additional visitable cells. Feature assignment must
+follow the face centre and printed-panel footprint.
 
 ## Evidence-quality assessment
 
@@ -121,15 +159,15 @@ Promotion therefore requires a higher-resolution, unobscured top-down board refe
 
 ## Comparison-image forensic findings
 
-The supplied browser comparison image is useful as a failure report, but not as board evidence. It shows a dense rectangular 13-row shell with repeated `Unresolved` labels and placeholder centre dots. The visible city and feature overlays are sparse development fixtures placed on top of that shell, so the image does not demonstrate the physical board's land/sea silhouette, disabled cells, printed feature inventory, or authoritative adjacency.
+The supplied browser comparison image is useful as a failure report, but not as board evidence. It shows a dense rectangular 14-row shell with repeated `Unresolved` labels and placeholder centre dots. The visible city and feature overlays are sparse development fixtures placed on top of that shell, so the image does not demonstrate the physical board's land/sea silhouette, disabled cells, printed feature inventory, or authoritative adjacency.
 
-Its geometry problem must be fixed as a layout-system issue: all cells need one flat-top landscape orientation; horizontal pitch must be derived from the tile width and shared-edge relationship; vertical pitch must be derived from tile height; and odd-row staggering must be applied once at row level. Per-cell rotation followed by a compensating whole-board rotation, negative margins, or independent hand-tuned offsets can make the bounding boxes overlap and the rows stack incorrectly. The acceptance comparison must therefore check the same fit state and aspect ratio for shared edges, row pitch, tile containment, label/piece containment, and absence of unintended intersections.
+Its geometry problem must be fixed as a layout-system issue: all cells need one flat-top orientation; horizontal centre pitch must be three quarters of the face width; vertical pitch must equal the flat-top face height; and alternate columns must be staggered once at column level. Per-cell rotation followed by a compensating whole-board rotation, negative margins, or independent hand-tuned offsets can make the bounding boxes overlap and the columns stack incorrectly. The acceptance comparison must therefore check the same fit state and aspect ratio for shared edges, column pitch, tile containment, label/piece containment, and absence of unintended intersections.
 
 ## Promotion checklist
 
 - [ ] Assign every photographed cell a reviewed label or an explicit blank-space classification.
 - [ ] Assign every cell its reviewed land, lake, sea, or seacoast class, keeping the thick blue printed line as the authoritative water-barrier boundary.
-- [ ] Record every printed feature, including cities, bases, sites, lairs, Hollywood, Los Angeles, and special spaces.
+- [ ] Record every printed feature, including cities, bases, sites, lairs, Los Angeles, and special spaces; record Hollywood separately as a non-visitable board overlay/area.
 - [ ] Review every reciprocal connection, water barrier, disabled edge, boundary, and exception.
 - [ ] Attach an image-region reference to each non-obvious rule-bearing datum.
 - [ ] Have a human reviewer sign off the generated coordinate table against both photographs.

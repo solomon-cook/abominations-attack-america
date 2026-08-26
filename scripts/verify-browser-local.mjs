@@ -140,7 +140,7 @@ const phase = () => evaluate(`document.querySelector(".action-card h2")?.textCon
 try {
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Start development playtest")`, "home screen");
   if (!await clickButton("Play provisional honeycomb")) throw new Error("Home screen did not expose the provisional honeycomb playtest.");
-  await waitFor(`document.querySelectorAll(".hex-tile").length === 254`, "provisional honeycomb playtest board");
+  await waitFor(`document.querySelectorAll(".hex-tile").length === 336`, "provisional honeycomb playtest board");
   const provisionalBoardIdentity = await evaluate(`(() => { const board = document.querySelector("main.game-screen"); return { id: board?.dataset.boardId ?? "", version: board?.dataset.boardVersion ?? "", hash: board?.dataset.boardContentHash ?? "" }; })()`);
   if (provisionalBoardIdentity?.id !== "provisional-authoritative-honeycomb-board" || !provisionalBoardIdentity.version || !provisionalBoardIdentity.hash) {
     throw new Error(`Provisional playtest did not expose its pinned board identity: ${JSON.stringify(provisionalBoardIdentity)}`);

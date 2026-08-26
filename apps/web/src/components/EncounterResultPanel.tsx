@@ -35,14 +35,14 @@ export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped
   return (
     <section className="encounter-result" key={eventId} aria-live="polite" aria-label="Recorded encounter result">
       <span className="label">LAST ENCOUNTER</span>
-      {choices.length > 0 && <p className="encounter-choice-note">A source-backed choice is required before the encounter can continue: {choices.join(" or ")}.</p>}
+      {choices.length > 0 && <p className="encounter-choice-note">Choose: {choices.join(" or ")}.</p>}
       {rolls.length > 0 && <div className="combat-roll-list encounter-roll-list" aria-label="Recorded encounter dice rolls">
         {rolls.map((roll, index) => <DieCube key={`${eventId}-roll-${index}`} value={roll} label={`Encounter roll ${index + 1}: ${roll}`} />)}
       </div>}
       {effects.length > 0 ? (
         <ul className="encounter-effects">{effects.map((effect, index) => <li key={`${eventId}-effect-${index}`}><span className="metric-icon" aria-hidden="true">{effectIcon(effect.type)}</span> {effectLabel(effect)}</li>)}</ul>
       ) : choices.length === 0 ? (
-        <p className="encounter-no-effect">No active encounter reward was applied; any gated or skipped effect remains recorded in the turn log.</p>
+        <p className="encounter-no-effect">No encounter reward was applied.</p>
       ) : null}
       {mutationDraws.length > 0 && <ul className="encounter-mutation-draws" aria-label="Mutation site draw status">
         {mutationDraws.map((draw) => <li key={draw.siteId}>
@@ -56,7 +56,7 @@ export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped
       {typeof stomped === "boolean" && <p className="encounter-state">{stomped ? "The space consumed a Stomp marker." : "The space was already stomped; no new Stomp marker was consumed."}</p>}
       {typeof remainingStompMarkers === "number" && <p className="encounter-state"><span className="metric-icon" aria-hidden="true">●</span> {remainingStompMarkers} Stomp marker{remainingStompMarkers === 1 ? "" : "s"} remain; the engine enforces the Infamy cap and marker limits.</p>}
       {challenge?.declared && <p className="encounter-state">Monster Challenge: {challenge.active ? "active" : challenge.startAtEndOfTurn ? "new challenger starts at the end of this turn" : challenge.challengerMonsterId ? "challenger scheduled for their next turn" : "waiting for an eligible Challenge-site arrival"}.</p>}
-      {nextPhase && <small>Next authoritative phase: {nextPhase}.</small>}
+      {nextPhase && <small>Next: {nextPhase}.</small>}
     </section>
   );
 }

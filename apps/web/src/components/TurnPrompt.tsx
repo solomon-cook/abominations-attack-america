@@ -37,7 +37,7 @@ export function TurnPrompt({ actionHeadingRef, action, description, rulesHelp, u
           </div>
           {lastFightOutcomes.length > 0 && <ul className="combat-outcomes">{lastFightOutcomes.map((outcome, index) => <li key={`${lastFightEventId}-outcome-${index}`}>{outcome}</li>)}</ul>}
           {hollywoodResearchAwarded && <small>A rival player drew one Military Research card for sending the monster to Hollywood.</small>}
-          <small>Recorded by the authoritative fight result; the animation is presentation only.</small>
+          <small>Fight result recorded.</small>
         </div>
       )}
       {lastRecoveryEventId && typeof lastRecoveryRoll === "number" && (

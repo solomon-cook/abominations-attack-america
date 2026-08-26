@@ -69,7 +69,7 @@ export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHe
         </li>)}
         </ol>
       </>}
-      <small className="challenge-duel-note">Dice, damage, and Health transitions are replayed from the authoritative Challenge result; presentation cannot alter the duel.</small>
+      <small className="challenge-duel-note">Dice, damage, and Health are shown from the Challenge result.</small>
     </section>
   );
 }

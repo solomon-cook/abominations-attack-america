@@ -18,7 +18,7 @@ export function FightResolutionPanel({ game, canAct, pendingBattle, pendingAttac
   const activeDecision = pendingAttackTarget
     ? `Choose attack ${pendingAttackTarget.attackNumber ?? 1}${pendingAttackTarget.attackTotal ? ` of ${pendingAttackTarget.attackTotal}` : ""} target`
     : battle
-      ? "Resolve the next authoritative attack"
+      ? "Resolve the next attack"
       : "Review the recorded combat result";
   if (!battle && rolls.length === 0 && outcomes.length === 0) return null;
   return (
@@ -35,7 +35,7 @@ export function FightResolutionPanel({ game, canAct, pendingBattle, pendingAttac
               <strong>{unit.branch} · {unit.unitTypeId ?? "unit"}</strong>
               <small><span className="metric-icon" aria-hidden="true">⚔</span> {unit.attacks} attack{unit.attacks === 1 ? "" : "s"} · <span className="metric-icon" aria-hidden="true">✦</span> {unit.damage} damage · <span className="metric-icon" aria-hidden="true">◆</span> {unit.defense} Defense</small>
             </span>
-          )) : <small>Participating units are recorded in the authoritative battle state.</small>}
+          )) : <small>No units recorded.</small>}
         </div>
         <div className="fight-resolution-dice" aria-label="Authoritative normal fight dice">
           <span className="label">DICE</span>
@@ -47,11 +47,11 @@ export function FightResolutionPanel({ game, canAct, pendingBattle, pendingAttac
           <span className="label">OPPOSING MONSTER</span>
           <strong>{monster?.name ?? "Monster in pending battle"}</strong>
           {monster && <small><span className="metric-icon" aria-hidden="true">♥</span> {monster.health}/{monster.maxHealth} Health · <span className="metric-icon" aria-hidden="true">◎</span> {monster.infamy} Infamy · <span className="metric-icon" aria-hidden="true">↗</span> {monster.move} Move</small>}
-          {!monster && <small>Monster identity remains in the authoritative battle record.</small>}
+          {!monster && <small>Monster not recorded.</small>}
         </div>
       </div>
       {outcomes.length > 0 && <ul className="fight-resolution-outcomes" aria-label="Recorded normal fight outcomes">{outcomes.map((outcome, index) => <li key={`${outcome}-${index}`}>{outcome}</li>)}</ul>}
-      <p className="fight-resolution-note">Attack order, legal targets, dice, modifiers, damage, smash, destruction, mutation, and the next decision come from the authoritative engine and remain in the phase controls.</p>
+      <p className="fight-resolution-note">Use the phase controls to resolve the fight.</p>
     </section>
   );
 }

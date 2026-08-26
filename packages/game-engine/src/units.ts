@@ -34,6 +34,8 @@ export interface NationalGuardDefinition {
   readonly id: "national-guard-tank" | "national-guard-fighter";
   readonly name: "Tank" | "Fighter";
   readonly quantity: number;
+  /** Printed record-tile baseline; Guard Commander supplies the effective movement values below. */
+  readonly printedMove: 0;
   readonly move: 3 | 5;
   readonly defense: number;
   readonly damage: 1;
@@ -72,8 +74,8 @@ export const GIANT_UNIT_DEFINITIONS: readonly GiantUnitDefinition[] = [
 ];
 
 export const NATIONAL_GUARD_DEFINITIONS: readonly NationalGuardDefinition[] = [
-  { id: "national-guard-tank", name: "Tank", quantity: 6, move: 3, defense: 4, damage: 1, specialAbilityText: "Only the player with the Guard Commander card can move Guard units.", sourceRefs: [giantNationalGuard], controlImplementation: "source-gated" },
-  { id: "national-guard-fighter", name: "Fighter", quantity: 2, move: 5, defense: 3, damage: 1, specialAbilityText: "Only the player with the Guard Commander card can move Guard units.", sourceRefs: [giantNationalGuard], controlImplementation: "source-gated" },
+  { id: "national-guard-tank", name: "Tank", quantity: 6, printedMove: 0, move: 3, defense: 4, damage: 1, specialAbilityText: "Only the player with the Guard Commander card can move Guard units.", sourceRefs: [giantNationalGuard], controlImplementation: "source-gated" },
+  { id: "national-guard-fighter", name: "Fighter", quantity: 2, printedMove: 0, move: 5, defense: 3, damage: 1, specialAbilityText: "Only the player with the Guard Commander card can move Guard units.", sourceRefs: [giantNationalGuard], controlImplementation: "source-gated" },
 ];
 
 export const BRANCH_DEPLOYMENT_DEFINITIONS: readonly BranchDeploymentDefinition[] = [

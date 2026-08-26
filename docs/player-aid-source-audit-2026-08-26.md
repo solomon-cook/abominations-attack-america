@@ -1,10 +1,17 @@
 # Monsters Menace America v1.1 player-aid audit
 
-## Source inspected
+## Sources inspected
 
 `/Users/Solomon/Downloads/MonstersMenaceAmerica_v1.1.pdf`
 
 The file is a three-page Universal Head rules summary dated September 2008. Page 1 is a cover/disclaimer; pages 2–3 contain a condensed rules summary. It is not a scan of the physical board, record tiles, or Research/Mutation card faces.
+
+Three additional physical photographs were added to the project in
+`references/monsters-menace-america/components/source-photos-2026-08-26/` and
+analysed in [`docs/source-photo-evidence-2026-08-26.md`](source-photo-evidence-2026-08-26.md).
+They corroborate the giant and National Guard record values and provide board
+comparison evidence, but are not treated as a complete cell-level board
+transcription.
 
 ## Rules confirmed by this copy
 
@@ -26,12 +33,14 @@ These statements corroborate existing canonical transcription and tests. They do
 
 The player aid does not resolve:
 
-- the 254 board cells, coastline, lake/sea classes, barriers, printed labels, benefits, bases, lairs, or exact feature coordinates;
+- the 245 board cells, coastline, lake/sea classes, barriers, printed labels, benefits, bases, lairs, or exact feature coordinates;
 - monster numeric records, named lair locations, or special ability timing/effects;
 - military record-tile statistics, quantities beyond the setup summary, or branch-specific exceptions;
 - the text, timing, targets, visibility, duration, and stacking behavior of individual Research or Mutation cards;
 - the exact physical National Guard pieces' board placement and lifecycle exceptions;
 - the physical base coordinates for Captain Colossal and Mecha-Monster;
+- the cell-level transcription and alignment needed to promote the photographed
+  board from comparison evidence to verified board data;
 - the three unresolved Research cards: Cutbacks, Molecular Cannon, and Chopper Lift.
 
 ## Disposition

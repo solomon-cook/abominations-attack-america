@@ -24,7 +24,7 @@ export function SettingsPanel({ largeText, showBoardLabels, manualReducedMotion,
   return (
     <section className="settings-panel" aria-label="Play preferences">
       <span className="label">PLAY PREFERENCES</span>
-      <h2>Readable, controllable play</h2>
+      <h2>Play preferences</h2>
       <div className="settings-grid">
         <label><input type="checkbox" checked={largeText} onChange={() => togglePreference("abominations-large-text", setLargeText)} /> Larger text</label>
         <label><input type="checkbox" checked={showBoardLabels} onChange={() => togglePreference("abominations-board-labels", setShowBoardLabels)} /> Show board labels</label>
@@ -37,7 +37,7 @@ export function SettingsPanel({ largeText, showBoardLabels, manualReducedMotion,
         <label>Effects <input type="range" min="0" max="1" step="0.05" value={effectsVolume} onChange={(event) => setEffectsVolume(Number(event.target.value))} /></label>
         <label>Music <input type="range" min="0" max="1" step="0.05" value={musicVolume} onChange={(event) => setMusicVolume(Number(event.target.value))} /></label>
       </div>
-      <p className="settings-note">Short synthesized tones cover turns, dice, combat, cards, warnings, and victory. Every result and required action remains available as text.</p>
+      <p className="settings-note">All results and actions are also shown as text.</p>
     </section>
   );
 }
