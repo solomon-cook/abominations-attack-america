@@ -338,7 +338,7 @@ export const FULL_HONEYCOMB_BOARD: BoardDefinition = { ...fullHoneycombCore, con
  * guesses. It is useful for local/test experiments, but is never production
  * ready: every cell remains explicitly provisional and its ruleset is named.
  */
-const PROVISIONAL_BOARD_SOURCE = "docs/provisional-board-transcription.md#promoted-playtest-transcription-for-implementation-handoff";
+const PROVISIONAL_BOARD_SOURCE = "references/monsters-menace-america/components/board/full-game-setup.jpg#provisional-feature-pass";
 const PROVISIONAL_BOARD_FEATURES: Readonly<Record<string, readonly BoardFeature[]>> = {
   "1/2": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
   "9/2": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
