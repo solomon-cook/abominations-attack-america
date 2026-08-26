@@ -53,6 +53,7 @@ const requiredSourceMarkers = [
   ["contextual decision rules help", /aria-label="Rules help for current decision"/],
   ["development fixture overlay", /development-fixture/],
   ["canonical adjacency styling", /activeNeighbours\.has\(placeKey\)/],
+  ["selected piece contextual tray", /className="piece-detail-tray"[\s\S]*Selected Piece details|className="piece-detail-tray"[\s\S]*SELECTED PIECE/],
   ["viewport-fitted gameplay shell", /className=\{`game-screen/],
   ["on-demand game details toggle", /aria-controls="game-side-panel"/],
   ["named game controls panel", /id="game-side-panel" className="game-side-panel" aria-label="Game controls and information"/],

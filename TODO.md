@@ -499,6 +499,7 @@ Useful source documents:
     - [x] Expose the active monster's canonical neighbouring hexes with a subtle adjacent-face treatment; the highlight is derived from the board index and is presentation-only (`HexGrid`, `adjacent` styling).
   - [x] Make selection transform the board: selected pieces receive a clear focus state and legal destinations/targets are highlighted from engine-provided legality. (Implemented for current movement and unit-selection flows.)
   - [ ] Add contextual selection trays for monsters, military pieces, cities, markers, and dense stacks, showing only the stats and actions relevant to the selected object.
+    - [x] Keep selected military-piece details board-adjacent in the board-first view, including location, movement, combat stats, path preview, and a keyboard-accessible deselect action (`SelectedPieceTray`; it no longer depends on opening the secondary controls panel).
   - [ ] Add a consistent icon-and-number language for Health, Infamy, Stomps, cards, military branches, movement, combat, rewards, and status effects; use text for names, ambiguity, and explanation.
   - [ ] Add hover/focus tooltips and expandable explanations for exact bonuses, adjacency, movement cost, combat strength, card timing, requirements, and reasons an action is unavailable.
   - [x] Keep persistent global context compact: active player, phase, current substep, pending decision, round, Stomp state, Challenge state, and connection state. (MatchStatus and TurnProgress provide the current development implementation.)

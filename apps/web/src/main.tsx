@@ -1109,6 +1109,15 @@ function App() {
           </div>
           <AttentionBanner game={activeGame} action={action} canAct={canAct} online={online} />
           <BoardContextTray game={activeGame} board={activeBoard} hex={activeBoardHex} />
+          <SelectedPieceTray
+            game={activeGame}
+            selectedUnitId={selectedUnitId}
+            selectedUnitPath={selectedUnitPath}
+            onClear={() => {
+              setSelectedUnitId(null);
+              setSelectedUnitPath([]);
+            }}
+          />
           <p className="sr-only" id="board-description">
             {boardDescription}
           </p>
@@ -1125,15 +1134,6 @@ function App() {
                     : `Select a highlighted reachable space to preview a path for ${activePlayer.name}.`
                 : "Waiting for the active player."}
             </p>
-            <SelectedPieceTray
-              game={activeGame}
-              selectedUnitId={selectedUnitId}
-              selectedUnitPath={selectedUnitPath}
-              onClear={() => {
-                setSelectedUnitId(null);
-                setSelectedUnitPath([]);
-              }}
-            />
             <PlayerStatusControls game={activeGame} monster={activePlayer} branch={activeBranch} />
             <PieceStackInspector
               game={activeGame}
