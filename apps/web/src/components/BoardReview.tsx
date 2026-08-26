@@ -4,6 +4,17 @@ import { buildDisplayHexLayout } from "../board-layout";
 
 type Props = { onClose: () => void };
 
+const stackFixtureAssets = [
+  "/assets/monsters/zorb.webp",
+  "/assets/military/army-tank.webp",
+  "/assets/monsters/konk.webp",
+  "/assets/military/army-tank.webp",
+  "/assets/monsters/megaclaw.webp",
+  "/assets/military/air-force-fighter.webp",
+  "/assets/monsters/gargantis.webp",
+  "/assets/military/army-tank.webp",
+];
+
 /** Read-only geometry review; unresolved board data must never become a match. */
 export function BoardReview({ onClose }: Props) {
   const cells = buildDisplayHexLayout(FULL_HONEYCOMB_BOARD);
@@ -76,6 +87,23 @@ export function BoardReview({ onClose }: Props) {
           <small>Read-only review metadata. Selecting a face does not promote it into the playable board.</small>
         </aside>}
       </div>
+      <section className="dense-stack-review" aria-label="Dense piece stack rendering review">
+        <div>
+          <span className="label">DENSE STACK FIXTURE</span>
+          <h2>One to eight occupants</h2>
+          <p>Presentation-only fixture for checking bounded scaling and containment. It does not add pieces to a match.</p>
+        </div>
+        <div className="dense-stack-fixtures">
+          {Array.from({ length: 8 }, (_, index) => {
+            const count = index + 1;
+            return (
+              <div className={`dense-stack-fixture stack-count-${count}`} data-stack-count={count} key={count} aria-label={`${count} occupant fixture`}>
+                {stackFixtureAssets.slice(0, count).map((asset, pieceIndex) => <img key={`${count}-${pieceIndex}`} src={asset} alt="" aria-hidden="true" />)}
+              </div>
+            );
+          })}
+        </div>
+      </section>
       <p className="board-review-count">254 candidate cells · 13 alternating rows · flat-top landscape orientation</p>
     </main>
   );
