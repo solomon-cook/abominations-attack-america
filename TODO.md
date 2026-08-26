@@ -563,6 +563,7 @@ Useful source documents:
 ### Milestone 13 acceptance
 
 - [ ] [P1] Complete keyboard-only and screen-reader playthroughs cover setup through victory.
+  - [x] Add a reproducible Chrome Tab/Space playthrough through the development temporary-victory route (`npm run browser:keyboard:verify`); screen-reader semantics and source-gated full-board play remain separate acceptance work.
 - [ ] [P1] Automated accessibility checks and manual contrast, focus, zoom, reduced-motion, and touch-target reviews pass.
   - [x] Add an automated WCAG AA contrast audit for seven critical gameplay palette pairs, including the tile-label backing surface. (`npm run web-contrast:verify`; full rendered/manual review remains open.)
   - [x] Enforce 44px minimum targets on setup, phase, retreat, action-dock, header, and settings controls while leaving compact hex-tile buttons excluded from the generic rule.

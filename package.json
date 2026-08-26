@@ -25,6 +25,7 @@
     "web-board-layout:verify": "tsx scripts/verify-web-board-layout.ts",
     "browser:local:verify": "node scripts/verify-browser-local.mjs",
     "browser:victory:verify": "node scripts/verify-browser-victory.mjs",
+    "browser:keyboard:verify": "node scripts/verify-browser-keyboard.mjs",
     "browser:local:matrix": "node scripts/verify-browser-local-matrix.mjs",
     "browser:online:verify": "node scripts/verify-browser-online.mjs",
     "board-review:verify": "npm run board-review:generate && git diff --exit-code -- docs/board-review-table.md",
