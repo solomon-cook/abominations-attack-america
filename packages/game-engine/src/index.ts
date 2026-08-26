@@ -4,14 +4,14 @@ export * from "./setup.js";
 import { buildBoardIndex, DEVELOPMENT_BOARD, DEVELOPMENT_LOCATIONS, FULL_HONEYCOMB_BOARD, hexKeyToLocationId, isHexKey, locationIdToHexKey, toDevelopmentSpaceKey, validateBoardDefinition, type BoardDefinition, type BoardFeature, type HexKey, type SpaceKey, type WaterClass } from "./board.js";
 import { createCardDeckState, discardCard as discardCardFromDeck, drawCard as drawCardFromDeck, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, type CardDeckState } from "./cards.js";
 import { monsterDefinition, type MonsterMovement } from "./monsters.js";
-import { BRANCH_DEPLOYMENT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS, type UnitDefinition, type UnitMovement } from "./units.js";
+import { BRANCH_DEPLOYMENT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS, type UnitDefinition, type UnitMovement } from "./units.js";
 export { MONSTER_DEFINITIONS, monsterDefinition, type MonsterDefinition, type MonsterMovement } from "./monsters.js";
 export { UNIT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, BRANCH_DEPLOYMENT_DEFINITIONS, type UnitDefinition, type GiantUnitDefinition, type NationalGuardDefinition, type BranchDeploymentDefinition, type UnitBranch, type UnitMovement } from "./units.js";
 import { createSetup, developmentSetupDefinition, validateSetup, type SetupSeat, type SetupState } from "./setup.js";
 
 export type Phase = "move" | "fight" | "encounter" | "deploy" | "challenge" | "game-over";
 export type Branch = "Army" | "Navy" | "Air Force" | "Marines";
-export type MilitaryUnitBranch = Branch | "National Guard";
+export type MilitaryUnitBranch = Branch | "National Guard" | "Giant";
 export const MATCH_STATE_SCHEMA_VERSION = 2 as const;
 export const SUPPORTED_PLAYER_COUNTS = [2, 3, 4] as const;
 
@@ -413,7 +413,7 @@ export type GameCommand =
   | { type: "pass-move" }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
-  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey }
+  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy"; unitId?: string; destination?: HexKey }
@@ -839,6 +839,17 @@ export function legalOwnedDeploymentDestinations(state: Pick<GameState, "boardId
     .sort();
 }
 
+/** Bases belonging to the active player's branch where a sourced giant may enter play. */
+export function legalGiantPlacementDestinations(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "setupAssignments" | "currentPlayer">): HexKey[] {
+  const board = boardForState(state);
+  const branch = state.setupAssignments?.[state.currentPlayer]?.branch
+    ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[state.currentPlayer % 4];
+  return Object.values(board.hexes)
+    .filter((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch))
+    .map((hex) => hex.key)
+    .sort();
+}
+
 /** Return legal unstomped bases for one active player's ordinary branch unit. */
 export function legalOwnedRedeploymentDestinations(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer" | "units" | "removedUnitIds">, unitId: string): HexKey[] {
   const board = boardForState(state);
@@ -1196,7 +1207,9 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     const hit = roll + fighterBonus + laserBonus >= target.defense;
     const smash = hit && roll === 6;
     const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
-    const destroyed = hit;
+    const giantTarget = target.branch === "Giant";
+    if (hit && giantTarget) target.health = Math.max(0, target.health - damage);
+    const destroyed = hit && (!giantTarget || target.health === 0);
     const modifiers = [
       ...(fighterBonus ? ["+1 to hit fighters"] : []),
       ...(laserBonus ? ["Laser Beam Eyes: +2 to hit cruise missiles"] : []),
@@ -1204,10 +1217,11 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     ];
     attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
     if (destroyed) {
-      target.location = "record-tile";
+      target.location = giantTarget ? "permanently-removed" : "record-tile";
+      if (giantTarget && !next.removedUnitIds.includes(target.id)) next.removedUnitIds.push(target.id);
       destroyedUnitIds.push(target.id);
-      next.log.push(`${monster.name} destroyed a ${target.branch} unit; it returned to its record tile in combat round ${round} (${roll}${smash ? ", smash" : ""}).`);
-    } else next.log.push(`${monster.name} missed a ${target.branch} unit in combat round ${round} (${roll}).`);
+      next.log.push(`${monster.name} destroyed a ${target.branch} unit; it ${giantTarget ? "was permanently removed" : "returned to its record tile"} in combat round ${round} (${roll}${smash ? ", smash" : ""}).`);
+    } else next.log.push(`${monster.name} ${hit ? `damaged a ${target.branch} unit for ${damage}` : `missed a ${target.branch} unit`} in combat round ${round} (${roll}).`);
     return roll;
   };
   const performCounterAttacks = () => {
@@ -1417,15 +1431,17 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         const hit = roll + fighterBonus + laserBonus >= target.defense;
         const smash = hit && roll === 6;
         const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
-        const destroyed = hit;
+        const giantTarget = target.branch === "Giant";
+        if (hit && giantTarget) target.health = Math.max(0, target.health - damage);
+        const destroyed = hit && (!giantTarget || target.health === 0);
         const modifiers = [
           ...(fighterBonus ? ["+1 to hit fighters"] : []),
           ...(laserBonus ? ["Laser Beam Eyes: +2 to hit cruise missiles"] : []),
           ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
         ];
         attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
-        if (destroyed) { target.location = "record-tile"; destroyedUnitIds.push(target.id); next.log.push(`${monster.name} destroyed a ${target.branch} unit; it returned to its record tile in combat round ${combatRound} (${roll}${smash ? ", smash" : ""}).`); }
-        else next.log.push(`${monster.name} missed a ${target.branch} unit in combat round ${combatRound} (${roll}).`);
+        if (destroyed) { target.location = giantTarget ? "permanently-removed" : "record-tile"; if (giantTarget && !next.removedUnitIds.includes(target.id)) next.removedUnitIds.push(target.id); destroyedUnitIds.push(target.id); next.log.push(`${monster.name} destroyed a ${target.branch} unit; it ${giantTarget ? "was permanently removed" : "returned to its record tile"} in combat round ${combatRound} (${roll}${smash ? ", smash" : ""}).`); }
+        else next.log.push(`${monster.name} ${hit ? `damaged a ${target.branch} unit for ${damage}` : `missed a ${target.branch} unit`} in combat round ${combatRound} (${roll}).`);
         if (roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles")) whipBonusAttacks += 1;
       }
       const survivingUnits = next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location);
@@ -1494,11 +1510,13 @@ interface MutationUseResolution {
 
 interface ResearchUseResolution {
   readonly state: GameState;
-  readonly cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence";
+  readonly cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal";
   readonly battleId?: string;
   readonly rolls: readonly number[];
   readonly damagedMonsterIds: readonly string[];
   readonly defeatedMonsterIds: readonly string[];
+  readonly unitId?: string;
+  readonly destination?: HexKey;
 }
 
 function discardResearchFromHand(state: GameState, playerIndex: number, cardId: string): void {
@@ -1509,11 +1527,42 @@ function discardResearchFromHand(state: GameState, playerIndex: number, cardId: 
 }
 
 /** Resolve the currently implemented immediate Research windows. */
-function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey): ResearchUseResolution {
-  if (!new Set(["Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence"]).has(cardId as string)) {
+function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey): ResearchUseResolution {
+  if (!new Set(["Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Mecha-Monster", "Captain Colossal"]).has(cardId as string)) {
     throw new GameDomainError("ILLEGAL_COMMAND", `${String(cardId)} is source-gated and unavailable in this ruleset.`);
   }
   if (state.phase === "game-over" || state.phase === "challenge") throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} is unavailable during a terminal state or Monster Challenge.`);
+  if (cardId === "Mecha-Monster" || cardId === "Captain Colossal") {
+    if (state.phase !== "deploy" || state.pendingDecision?.type !== "deployment") throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} must be placed during the active Deploy step.`);
+    const definition = GIANT_UNIT_DEFINITIONS.find((candidate) => candidate.id === (cardId === "Mecha-Monster" ? "mecha-monster" : "captain-colossal"));
+    if (!definition) throw new GameDomainError("ILLEGAL_COMMAND", `No verified definition exists for ${cardId}.`);
+    const activePlayer = state.players[state.currentPlayer];
+    if (!activePlayer?.researchCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `Player ${state.currentPlayer + 1} does not have ${cardId}.`);
+    if (state.units.some((unit) => unit.unitTypeId === definition.id && unit.location !== "permanently-removed")) throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} is already in play.`);
+    const legalBases = legalGiantPlacementDestinations(state);
+    const placement = destination ?? legalBases[0];
+    if (!placement || !legalBases.includes(placement)) throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} must be placed on one of the active player's verified bases.`);
+    const next = structuredClone(state);
+    discardResearchFromHand(next, next.currentPlayer, cardId);
+    const unitId = `${definition.id}-${next.currentPlayer + 1}`;
+    next.units.push({
+      id: unitId, branch: "Giant", unitTypeId: definition.id, move: definition.move, movement: definition.movement,
+      attacks: definition.attacks, damage: definition.damage, ownerPlayer: next.currentPlayer, health: definition.health,
+      defense: definition.defense, location: placement,
+    });
+    next.log.push(`${definition.name} entered play at ${placement}; placing a giant does not consume the normal Deploy allowance.`);
+    const monster = next.monsters.find((candidate) => candidate.location === placement);
+    if (monster) {
+      const battleId = `${monster.id}:${next.round}:${placement}:giant`;
+      next.pendingBattles.push({ id: battleId, monsterId: monster.id, location: placement, militaryUnitIds: [unitId] });
+      next.phase = "fight";
+      next.pendingDecision = { type: "battle-resolution", playerIndex: next.currentPlayer, battleId };
+    } else {
+      next.phase = "deploy";
+      next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
+    }
+    return { state: next, cardId, rolls: [], damagedMonsterIds: [], defeatedMonsterIds: [], unitId, destination: placement };
+  }
   if (cardId === "Antimatter") {
     if (state.phase !== "fight" || state.pendingDecision?.type !== "battle-resolution") throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter can only be used at the start of an unresolved battle.");
     const battleId = requestedBattleId ?? state.pendingDecision.battleId;
@@ -1898,6 +1947,8 @@ export function redeployUnitResult(state: GameState, requested: { unitId: string
 export interface ResearchDrawResolution {
   readonly state: GameState;
   readonly cardId: string;
+  readonly unitId?: string;
+  readonly destination?: HexKey;
   readonly recoveryRoll?: number;
   readonly recoveryReleased?: boolean;
 }
@@ -2053,6 +2104,10 @@ export function drawResearchForDeployment(state: GameState): ResearchDrawResolut
   const player = next.players[next.currentPlayer];
   if (!player) throw new GameDomainError("ILLEGAL_COMMAND", "The active player has no Research-card hand.");
   player.researchCardIds.push(result.cardId);
+  if (result.cardId === "Mecha-Monster" || result.cardId === "Captain Colossal") {
+    const placed = useResearchCard(next, result.cardId);
+    return { state: placed.state, cardId: result.cardId, unitId: placed.unitId, destination: placed.destination };
+  }
   next.log.push(`Player ${next.currentPlayer + 1} drew a Military Research card instead of deploying.`);
   const recovery = advanceAfterDeployment(next);
   return { state: next, cardId: result.cardId, ...recovery };
@@ -2318,7 +2373,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
   if (state.phase === "deploy" && command.type === "draw-research") {
     requireDecision("deployment");
     const result = drawResearchForDeployment(state);
-    const eventPayload = { cardId: result.cardId, playerIndex: state.currentPlayer, nextPlayer: result.state.currentPlayer, nextPhase: result.state.phase, recoveryRoll: result.recoveryRoll, recoveryReleased: result.recoveryReleased };
+    const eventPayload = { cardId: result.cardId, unitId: result.unitId, destination: result.destination, playerIndex: state.currentPlayer, nextPlayer: result.state.currentPlayer, nextPhase: result.state.phase, recoveryRoll: result.recoveryRoll, recoveryReleased: result.recoveryReleased };
     return { state: appendEvent(result.state, "research.drawn", eventPayload), eventType: "research.drawn", eventPayload };
   }
   if (state.phase === "deploy" && command.type === "redeploy") {

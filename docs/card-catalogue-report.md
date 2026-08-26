@@ -4,8 +4,8 @@ This report is generated from `packages/game-engine/src/cards.ts`. It describes 
 
 - Card data version: 1
 - Total source-inventoried cards: 32
-- Available in the selected development ruleset: 25
-- Source-gated and unavailable: 7
+- Available in the selected development ruleset: 27
+- Source-gated and unavailable: 5
 
 ## Available cards
 
@@ -27,6 +27,7 @@ This report is generated from `packages/game-engine/src/cards.ts`. It describes 
 | mutation | Laser Beam Eyes | persistent | implemented |
 | mutation | Armored Scales | persistent | implemented |
 | mutation | It's a Robot! | persistent | implemented |
+| research | Mecha-Monster | one-use/discard | implemented |
 | research | Laser Fence | one-use/discard | implemented |
 | research | Guard Commander | persistent | implemented |
 | research | Defense Satellites | one-use/discard | implemented |
@@ -36,6 +37,7 @@ This report is generated from `packages/game-engine/src/cards.ts`. It describes 
 | research | Anti-Mutagen | conditional | implemented |
 | research | Antimatter | one-use/discard | implemented |
 | research | Scientific Analysis | conditional | implemented |
+| research | Captain Colossal | one-use/discard | implemented |
 
 ## Source-gated cards
 
@@ -43,14 +45,12 @@ These cards are rejected by `assertCardsAvailable` and cannot silently no-op in 
 
 | Deck | Card | Source status |
 | --- | --- | --- |
-| research | Mecha-Monster | source-gated |
 | research | Cutbacks | source-gated |
 | research | X-Fighters | source-gated |
 | research | Molecular Cannon | source-gated |
 | research | Blonde Lure | source-gated |
 | research | Chopper Lift | source-gated |
-| research | Captain Colossal | source-gated |
 
 ## Promotion boundary
 
-The report intentionally does not claim zero unsupported cards for production. Production selection remains blocked until every source-gated effect, giant-unit lifecycle, and authoritative board datum has been independently verified and implemented.
+The report intentionally does not claim zero unsupported cards for production. Production selection remains blocked until every source-gated effect, Challenge giant-unit lifecycle, and authoritative board datum has been independently verified and implemented.

@@ -41,7 +41,7 @@ const lines = [
   "",
   "## Promotion boundary",
   "",
-  "The report intentionally does not claim zero unsupported cards for production. Production selection remains blocked until every source-gated effect, giant-unit lifecycle, and authoritative board datum has been independently verified and implemented.",
+  "The report intentionally does not claim zero unsupported cards for production. Production selection remains blocked until every source-gated effect, Challenge giant-unit lifecycle, and authoritative board datum has been independently verified and implemented.",
   "",
 ];
 

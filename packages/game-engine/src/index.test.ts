@@ -513,12 +513,12 @@ test("source-inventoried cards have versioned structured metadata without guesse
   assert.deepEqual(unsupportedCardIds(["Defense Satellites"]), []);
   assert.deepEqual(unsupportedCardIds(["Antimatter", "Stabilizer Ray", "Laser Fence"]), []);
   assert.deepEqual(unsupportedCardIds(["Guard Commander", "Berserk"]), []);
-  assert.deepEqual(unsupportedCardIds(["Guard Commander", "Mecha-Monster"]), ["Mecha-Monster"]);
-  assert.throws(() => assertCardsAvailable(["Mecha-Monster"]), /source-gated/);
+  assert.deepEqual(unsupportedCardIds(["Guard Commander", "Mecha-Monster", "Captain Colossal"]), []);
+  assert.doesNotThrow(() => assertCardsAvailable(["Mecha-Monster", "Captain Colossal"]));
   assert.deepEqual(SOURCED_CARD_RULES.map((card) => card.id).filter((id) => MILITARY_RESEARCH_CARD_IDS.includes(id as typeof MILITARY_RESEARCH_CARD_IDS[number])).sort(), [...MILITARY_RESEARCH_CARD_IDS].sort());
   assert.deepEqual(SOURCED_CARD_RULES.map((card) => card.id).sort(), CARD_DEFINITIONS.map((card) => card.id).sort());
   assert.equal(sourcedCardRule("Fins and Gills")?.effectsImplementation, "implemented");
-  assert.equal(sourcedCardRule("Captain Colossal")?.effectsImplementation, "source-gated");
+  assert.equal(sourcedCardRule("Captain Colossal")?.effectsImplementation, "implemented");
   assert.equal(sourcedCardRule("2nd Generation")?.effectsImplementation, "implemented");
   assert.deepEqual(sourcedCardRule("Guard Commander"), {
     id: "Guard Commander",
@@ -536,7 +536,7 @@ test("runtime commands fail closed for every source-gated card", () => {
   const unsupportedMutations = CARD_DEFINITIONS.filter((card) => card.deck === "mutation" && card.availability === "source-gated").map((card) => card.id);
   const unsupportedResearch = CARD_DEFINITIONS.filter((card) => card.deck === "research" && card.availability === "source-gated").map((card) => card.id);
   assert.deepEqual(unsupportedMutations, []);
-  assert.deepEqual(unsupportedResearch.sort(), ["Blonde Lure", "Captain Colossal", "Chopper Lift", "Cutbacks", "Mecha-Monster", "Molecular Cannon", "X-Fighters"].sort());
+  assert.deepEqual(unsupportedResearch.sort(), ["Blonde Lure", "Chopper Lift", "Cutbacks", "Molecular Cannon", "X-Fighters"].sort());
   for (const cardId of unsupportedResearch) {
     assert.throws(() => applyCommand(createGame(2), { type: "use-research", cardId } as any), /source-gated and unavailable/);
   }
@@ -1111,6 +1111,48 @@ test("Deploy can draw one deterministic Military Research card instead of deploy
   assert.equal(result.state.currentPlayer, (state.currentPlayer + 1) % 2);
   assert.equal(result.state.deploymentsThisTurn, 0);
   assert.deepEqual(result.state.units.map((unit) => unit.location), unitLocations);
+});
+
+test("giant Research cards place a sourced giant on the active branch base without consuming Deploy", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  state.decks.research = { order: ["Mecha-Monster"], drawIndex: 0, discard: [], exhausted: false };
+  const result = applyCommand(state, { type: "draw-research" });
+  const giant = result.state.units.find((unit) => unit.unitTypeId === "mecha-monster");
+  assert.equal(result.eventType, "research.drawn");
+  assert.equal(giant?.branch, "Giant");
+  assert.equal(giant?.ownerPlayer, 0);
+  assert.equal(giant?.location, K("denver"));
+  assert.equal(giant?.health, 6);
+  assert.equal(result.eventPayload.unitId, giant?.id);
+  assert.equal(result.eventPayload.destination, K("denver"));
+  assert.equal(result.state.deploymentsThisTurn, 0);
+  assert.deepEqual(result.state.players[0]?.researchCardIds, []);
+  assert.deepEqual(result.state.decks.research.discard, ["Mecha-Monster"]);
+});
+
+test("giant units take Health damage and are permanently removed at zero", () => {
+  const state = createGame(2, 0);
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  state.decks.research = { order: ["Mecha-Monster"], drawIndex: 0, discard: [], exhausted: false };
+  const placed = applyCommand(state, { type: "draw-research" }).state;
+  const giant = placed.units.find((unit) => unit.unitTypeId === "mecha-monster")!;
+  const monster = placed.monsters[0]!;
+  monster.location = K("denver");
+  monster.attacks = 1;
+  monster.damage = 1;
+  monster.defense = 99;
+  giant.health = 1;
+  placed.phase = "fight";
+  placed.pendingBattles = [{ id: "giant-battle", monsterId: monster.id, location: K("denver"), militaryUnitIds: [giant.id] }];
+  placed.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "giant-battle" };
+  const resolved = applyCommand(placed, { type: "resolve-fight", battleId: "giant-battle" });
+  const removed = resolved.state.units.find((unit) => unit.id === giant.id)!;
+  assert.equal(removed.location, "permanently-removed");
+  assert.equal(removed.health, 0);
+  assert.deepEqual(resolved.state.removedUnitIds, [giant.id]);
 });
 
 test("exhausted Military Research cannot consume Deploy or mutate the match", () => {

@@ -1,5 +1,5 @@
-export type UnitBranch = "Army" | "Navy" | "Air Force" | "Marines" | "National Guard";
-export type UnitMovement = "land-only" | "fly" | "sea-seacoast-only" | "sea-seacoast-or-fly" | "stationary";
+export type UnitBranch = "Army" | "Navy" | "Air Force" | "Marines" | "National Guard" | "Giant";
+export type UnitMovement = "land-only" | "fly" | "sea-seacoast-only" | "sea-seacoast-or-fly" | "land-lake-sea" | "stationary";
 
 export interface UnitDefinition {
   readonly id: string;
@@ -26,7 +26,7 @@ export interface GiantUnitDefinition {
   readonly attacks: number;
   readonly damage: number;
   readonly sourceRefs: readonly string[];
-  readonly placementImplementation: "source-gated";
+  readonly placementImplementation: "implemented";
 }
 
 export interface NationalGuardDefinition {
@@ -66,8 +66,8 @@ export const UNIT_DEFINITIONS: readonly UnitDefinition[] = [
 ];
 
 export const GIANT_UNIT_DEFINITIONS: readonly GiantUnitDefinition[] = [
-  { id: "mecha-monster", name: "Mecha-Monster", health: 6, move: 4, movement: "land-only", defense: 5, attacks: 1, damage: 4, sourceRefs: [giantNationalGuard], placementImplementation: "source-gated" },
-  { id: "captain-colossal", name: "Captain Colossal", health: 8, move: 4, movement: "land-lake-sea", defense: 4, attacks: 2, damage: 2, sourceRefs: [giantNationalGuard], placementImplementation: "source-gated" },
+  { id: "mecha-monster", name: "Mecha-Monster", health: 6, move: 4, movement: "land-only", defense: 5, attacks: 1, damage: 4, sourceRefs: [giantNationalGuard], placementImplementation: "implemented" },
+  { id: "captain-colossal", name: "Captain Colossal", health: 8, move: 4, movement: "land-lake-sea", defense: 4, attacks: 2, damage: 2, sourceRefs: [giantNationalGuard], placementImplementation: "implemented" },
 ];
 
 export const NATIONAL_GUARD_DEFINITIONS: readonly NationalGuardDefinition[] = [

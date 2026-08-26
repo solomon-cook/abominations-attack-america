@@ -78,7 +78,7 @@ const implementedCardIds = new Set<string>([
   "Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "War Spikes", "Atomic Breath",
   "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Son of a Monster", "Berserk", "Winged Horror", "Kinda Friendly",
   "Laser Beam Eyes", "Armored Scales", "It's a Robot!", "Guard Commander", "Fusion Cells",
-  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence",
+  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Mecha-Monster", "Captain Colossal",
 ]);
 
 export const MONSTER_MUTATION_CARD_IDS = mutationIds;
@@ -295,7 +295,7 @@ export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
     timing: "Resolve immediately when drawn; discard after placing the unit and taking its tile.",
     duration: "The placed unit remains until it reaches 0 Health.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-01.jpg"],
-    effectsImplementation: "source-gated",
+    effectsImplementation: "implemented",
   },
   {
     id: "Cutbacks",
@@ -376,7 +376,7 @@ export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
     timing: "Resolve immediately when drawn; discard after placing the unit and taking its tile.",
     duration: "The placed unit remains until it reaches 0 Health.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-03.jpg"],
-    effectsImplementation: "source-gated",
+    effectsImplementation: "implemented",
   },
 ];
 
