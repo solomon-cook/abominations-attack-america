@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import WebSocket from "ws";
+import { chromePath } from "./chrome-path.mjs";
 
 const url = process.env.BROWSER_TEST_URL ?? "http://127.0.0.1:5177/";
-const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function openBrowser(port, name, existingProfile) {

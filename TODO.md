@@ -605,6 +605,7 @@ Useful source documents:
 - [ ] [P1] Add browser compatibility and responsive visual-regression coverage.
   - [x] Record the current runtime viewport matrix and its evidence boundary (`docs/ui-visual-review.md`); exact screenshot baselines and manual cross-browser acceptance remain open.
   - [x] Add deterministic post-setup Chrome PNG baselines for desktop, tablet, and mobile (`npm run browser:visual:verify`, `docs/browser-visual-baselines.json`); cross-engine compatibility and human visual acceptance remain open.
+  - [x] Resolve Chrome/Chromium from `CHROME_PATH`, common platform locations, or PATH so the browser harness is portable across local and CI environments; this remains Chrome-only and does not close cross-engine acceptance.
   - [x] Add a checked-in responsive layout contract for dynamic viewport sizing, safe areas, mobile board containment, touch targets, overflow, drag handling, reduced motion, and compact action-dock behavior. (`npm run web-responsive:verify`; screenshot-level and manual browser review remain separate.)
   - [x] [P1] Add a checked-in web accessibility source contract for landmarks, names, live regions, focus, reduced motion, touch targets, and overflow boundaries. (`npm run web-a11y:verify`; manual WCAG/assistive-technology review remains open.)
   - [x] Add logging with match/action correlation while redacting tokens and private game information. (HTTP command/setup/ready acceptance and request failures emit structured room/action/revision metadata without tokens or private state/card payloads.)

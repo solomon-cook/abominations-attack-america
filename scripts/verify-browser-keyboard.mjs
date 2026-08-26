@@ -3,9 +3,9 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import WebSocket from "ws";
+import { chromePath } from "./chrome-path.mjs";
 
 const url = process.env.BROWSER_TEST_URL ?? "http://127.0.0.1:5184/";
-const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const profile = await mkdtemp(join(tmpdir(), "abominations-keyboard-browser-"));
 const chrome = spawn(chromePath, ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--window-size=1280,720", "--remote-debugging-port=9232", `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
