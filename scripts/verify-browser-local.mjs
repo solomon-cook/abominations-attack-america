@@ -102,6 +102,7 @@ try {
   console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", pathCancel: "verified", pathConfirmation: "verified", nextPhase: afterMove }));
 } finally {
   socket.close();
-  chrome.kill("SIGTERM");
-  await rm(profile, { recursive: true, force: true });
+  chrome.kill("SIGKILL");
+  if (chrome.exitCode === null) await new Promise((resolve) => chrome.once("exit", resolve));
+  await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
