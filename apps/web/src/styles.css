@@ -82,6 +82,16 @@ html,body,#root{width:100%;max-width:100%;overflow-x:clip}main{width:100%}
 .decision-rules-help{display:grid;gap:4px;margin-top:14px;padding:10px 12px;border-left:3px solid #6d9666;background:#202b20;color:#dce8d8}.decision-rules-help strong{font-size:.78rem;color:#efc477}.decision-rules-help p{color:#b8c7b1;font-size:.72rem;line-height:1.45}
 @media(max-width:680px){.challenge-duel-sides{grid-template-columns:1fr;}.challenge-duel-rolls{order:3}.challenge-duel-winner,.challenge-duel-defeated{transform:none}.challenge-duel-attacks li{grid-template-columns:1fr auto}.challenge-duel-attacks li small{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){.challenge-duel-panel,.challenge-duel-attacks li{animation:none}}
+
+/* Keep state-driven presentation finite and immediately interruptible for reduced-motion users. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 .game-screen{height:100dvh;max-height:100dvh;display:flex;flex-direction:column;gap:8px;overflow:hidden;padding:14px 20px}.game-screen>header{flex:0 0 auto;min-height:48px}.game-screen>header .lede{display:none}.game-screen>.lobby{flex:0 0 auto;margin-top:0;padding:8px 12px}.game-screen>.status{flex:0 0 auto;margin:0;padding:7px 0}.game-screen>.turn-progress{flex:0 0 auto;margin:0;padding:8px 12px}.game-screen>.development-notice{flex:0 0 auto;margin:0;padding:8px 12px}.game-screen>.layout{flex:1 1 auto;min-height:0;overflow:hidden}.game-screen .board-panel{min-height:0;display:flex;flex-direction:column;overflow:hidden}.game-screen .board-panel>.map{flex:1 1 auto;min-height:240px;height:auto;margin-top:8px}.game-screen .layout>aside{min-height:0;overflow-y:auto;overscroll-behavior:contain}.game-screen .onboarding,.game-screen .setup-panel,.game-screen .setup-summary,.game-screen .settings-panel{flex:0 0 auto;max-height:22dvh;overflow:auto;overscroll-behavior:contain}.game-screen .map-controls{margin-top:4px}
 .game-screen .layout.panel-closed{grid-template-columns:minmax(0,1fr)}.game-screen .layout.panel-closed>.game-side-panel{display:none}.game-screen .layout.panel-closed .board-secondary{display:none}.game-screen .layout.panel-open{grid-template-columns:minmax(0,1fr) 340px}.game-screen .game-panel-toggle{border-color:#d09b52;color:#ffe0a4}.game-screen .game-side-panel{min-width:0}
 .game-screen>.lobby,.game-screen>.development-notice{display:none}.game-screen>header{min-height:38px}.game-screen>header h1{font-size:clamp(1.7rem,3vw,2.6rem);max-width:620px}.game-screen.game-panel-closed>.turn-progress{display:none}.game-screen>.onboarding{max-height:52px;grid-template-columns:minmax(0,1fr) auto;align-items:center;margin:0;padding:7px 10px;overflow:hidden}.game-screen>.onboarding h2,.game-screen>.onboarding p,.game-screen>.onboarding-grid{display:none}.game-screen>.onboarding .onboarding-actions{margin:0}.game-screen>.onboarding .onboarding-actions span{font-size:.7rem}

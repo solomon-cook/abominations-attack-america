@@ -28,6 +28,8 @@ The matrix is runtime evidence, not a pixel-snapshot baseline. It proves that th
 
 Automated source contracts, build/typecheck, runtime smoke, and the candidate geometry check pass. Final visual acceptance remains open for a human reviewer at the supported desktop, tablet, and mobile targets, including typography/artwork judgement, browser-engine comparison, keyboard-only play, screen-reader play, zoom, focus, reduced-motion, and touch review. Physical board content remains separately source-gated.
 
+The motion contract is now automated separately: `npm run web-motion:verify` confirms all authored CSS animations are finite, transient path feedback settles to explicit end states, transition durations are bounded, and the reduced-motion media query globally clamps animation and transition duration so presentation can be interrupted without changing authoritative match state. This is implementation evidence, not a substitute for human reduced-motion or visual acceptance.
+
 On 2026-08-26, the clean CI browser matrix also measured every visible map, header,
 action-dock, and phase control used by the local smoke at 1280×720, 834×1112,
 and 390×844. All measured controls met the 44px minimum target contract. This
