@@ -170,6 +170,13 @@ try {
   if (!closedPanelDecision?.closed || !closedPanelDecision.decisionVisible) {
     throw new Error(`Closed board view hid the authoritative decision tray: ${JSON.stringify(closedPanelDecision)}`);
   }
+  const activeHexKey = await evaluate(`document.querySelector('.hex-tile[data-stack-count]:not(:disabled):not(.selectable)')?.dataset.hexKey ?? ""`);
+  if (activeHexKey) {
+    await evaluate(`document.querySelector('.hex-tile[data-hex-key="${activeHexKey}"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))`);
+    for (let attempt = 0; attempt < 30 && !(await evaluate("Boolean(document.querySelector('.stack-details'))")); attempt += 1) await wait(50);
+    const stackSelection = await evaluate(`(() => ({ details: Boolean(document.querySelector('.stack-details')), tile: Boolean(document.querySelector('.hex-tile[data-hex-key="${activeHexKey}"]')), disabled: document.querySelector('.hex-tile[data-hex-key="${activeHexKey}"]')?.disabled ?? null, stackButtons: document.querySelectorAll('.stack-location-list button').length }))()`);
+    if (!stackSelection?.details) throw new Error(`Board-to-stack inspector selection failed: ${JSON.stringify({ activeHexKey, ...stackSelection })}`);
+  }
   const boardSurface = await evaluate(`(() => ({
     totalHexes: document.querySelectorAll(".hex-tile").length,
     developmentHexes: document.querySelectorAll(".hex-tile.development-fixture").length,

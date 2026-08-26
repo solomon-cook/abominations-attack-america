@@ -1105,6 +1105,7 @@ function App() {
               acceptedPieceId={acceptedMoveAnimation?.pieceId}
               acceptedAnimationKey={acceptedMoveAnimation?.key}
               onFocusHex={setFocusedHexKey}
+              onSelectStack={setSelectedStackKey}
               onSelectUnit={(unitId) => {
                 setSelectedUnitId(unitId);
                 setSelectedPath([]);

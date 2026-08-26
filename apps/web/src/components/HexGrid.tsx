@@ -109,13 +109,14 @@ type Props = {
   focusedHexKey?: HexKey | null;
   onSelectUnit: (unitId: string) => void;
   onFocusHex: (hexKey: HexKey) => void;
+  onSelectStack: (hexKey: HexKey) => void;
   onChoosePath: (destination: HexKey) => void;
   onChooseUnitPath: (destination: HexKey) => void;
   onPreviewPath: (destination: HexKey) => void;
   onClearPreview: () => void;
 };
 
-export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
+export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const board = boardForGame(game);
   const boardHexes = displayHexesForGame(game);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -256,12 +257,14 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             }}
             onMouseEnter={() => (monsterLegal || unitLegal) && onPreviewPath(placeKey)}
             onMouseLeave={onClearPreview}
-            onClick={() => {
-              if (selectableUnit && !monsterLegal && !unitLegal) onSelectUnit(selectableUnit.id);
+            onClick={(event) => {
+              if (event.shiftKey && occupantCount > 0) onSelectStack(placeKey);
+              else if (selectableUnit && !monsterLegal && !unitLegal) onSelectUnit(selectableUnit.id);
               else if (monsterLegal || unitLegal) {
                 if (selectedUnitId) onChooseUnitPath(placeKey);
                 else onChoosePath(placeKey);
-              } else onFocusHex(placeKey);
+              } else if (occupantCount > 0) onSelectStack(placeKey);
+              else onFocusHex(placeKey);
             }}
           >
             {baseArt && <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />}
