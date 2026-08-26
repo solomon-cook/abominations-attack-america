@@ -81,3 +81,5 @@ jobs:
       - uses: browser-actions/setup-edge@v1
       - run: npm ci
       - run: npm run browser:edge:verify
+        env:
+          DBUS_SESSION_BUS_ADDRESS: /dev/null
