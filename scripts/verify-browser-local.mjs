@@ -221,7 +221,7 @@ try {
     // have settled; otherwise identical runs can hash different animation
     // frames instead of detecting a real visual regression.
     await wait(850);
-    await evaluate("window.scrollTo(0, 0)");
+    await evaluate("window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0");
     await evaluate("document.fonts?.ready");
     await evaluate("Promise.all([...document.images].filter((image) => { const rect = image.getBoundingClientRect(); return rect.bottom >= 0 && rect.right >= 0 && rect.top <= innerHeight && rect.left <= innerWidth; }).map((image) => image.complete ? true : new Promise((resolve) => { const settle = () => resolve(true); image.addEventListener('load', settle, { once: true }); image.addEventListener('error', settle, { once: true }); setTimeout(settle, 1000); })))");
     await wait(50);
