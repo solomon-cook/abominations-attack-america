@@ -117,7 +117,9 @@ test("expired memory sessions cannot be used and rotation refreshes the expiry",
   const participant = [...rooms.values()][0]!.participants.find((candidate) => candidate.id === host.participantId)!;
   participant.sessionExpiresAt = Date.now() - 1;
   await assert.rejects(() => store.getRoom(host.room.code, host.token), /Session token has expired/);
-  participant.sessionExpiresAt = Date.now() + 1;
+  // Leave enough headroom for the async authorization and token rotation
+  // path; a one-millisecond lease makes this regression test scheduler-flaky.
+  participant.sessionExpiresAt = Date.now() + 60_000;
   const rotated = await store.rotateSession(host.room.code, host.token);
   assert.ok(participant.sessionExpiresAt > Date.now());
   assert.ok(rotated.token);
