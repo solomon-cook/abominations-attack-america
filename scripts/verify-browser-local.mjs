@@ -101,11 +101,35 @@ try {
   await evaluate(`document.querySelector(".hex-tile.legal:not(:disabled)")?.click()`);
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "path confirmation after cancel");
   await clickButton("Confirm path");
-  await wait(250);
+  await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "movement result");
   const afterMove = await phase();
   if (!afterMove) throw new Error("No phase prompt remained after confirming movement.");
 
-  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", pathCancel: "verified", pathConfirmation: "verified", nextPhase: afterMove }));
+  let encounter = "not-reached";
+  let deployment = "not-reached";
+  if (afterMove === "Encounter") {
+    encounter = "verified";
+    for (let attempt = 0; attempt < 4 && await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Encounter"`); attempt += 1) {
+      const clicked = await evaluate(`(() => {
+        const buttons = [...document.querySelectorAll(".action-card button")].filter((button) => !button.disabled);
+        const preferred = buttons.find((button) => /^(Resolve encounter|Take the city Health benefit|Take 2 Infamy instead|Take )/.test(button.textContent.trim()));
+        const button = preferred ?? buttons[0];
+        if (!button) return false;
+        button.click();
+        return true;
+      })()`);
+      if (!clicked) throw new Error("Encounter exposed no enabled decision control.");
+      await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "Encounter result");
+    }
+    if (await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Encounter"`)) throw new Error("Encounter did not resolve within the supported decision steps.");
+  }
+  if (await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Deploy"`)) {
+    if (!await clickButton("Pass deployment")) throw new Error("Deploy exposed no pass control after Encounter.");
+    deployment = "verified";
+    await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "next Move phase after Deploy");
+  }
+
+  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", pathCancel: "verified", pathConfirmation: "verified", encounter, deployment, nextPhase: afterMove }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");
