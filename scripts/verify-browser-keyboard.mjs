@@ -47,9 +47,9 @@ if (server) {
     throw new Error(`Vite did not become ready at ${url}.\n${serverOutput}`);
   }
 }
-const chrome = spawn(chromePath, ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--window-size=1280,720", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
+const chrome = spawn(chromePath, ["--headless=new", "--disable-gpu", "--disable-dev-shm-usage", "--disable-features=UseDBus", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--remote-allow-origins=*", "--remote-debugging-address=127.0.0.1", "--window-size=1280,720", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
 let page;
-for (let attempt = 0; attempt < 80; attempt += 1) {
+for (let attempt = 0; attempt < 300; attempt += 1) {
   try {
     const pages = await (await fetch(`http://127.0.0.1:${debugPort}/json/list`)).json();
     page = pages.find((candidate) => candidate.type === "page");
