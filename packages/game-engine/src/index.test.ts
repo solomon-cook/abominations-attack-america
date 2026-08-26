@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -1679,6 +1679,19 @@ test("the development fixture can end when its smaller abstract board is exhaust
   const encounter = applyCommand(result, { type: "resolve-encounter", choice: "health" }).state;
   assert.equal(encounter.phase, "game-over");
   assert.equal(encounter.victoryType, "development-board-exhaustion");
+});
+
+test("the browser-only temporary victory fixture is reachable by legal encounters", () => {
+  let state = createDevelopmentVictoryGame();
+  assert.equal(state.stompMarkers, DEVELOPMENT_STOMPABLE_KEYS.length);
+  for (const location of DEVELOPMENT_STOMPABLE_KEYS) {
+    state = { ...state, phase: "encounter", monsters: state.monsters.map((monster, index) => index === state.currentPlayer ? { ...monster, location } : monster) };
+    state = resolveEncounterResult(state, "health").state;
+    if (state.phase === "game-over") break;
+  }
+  assert.equal(state.phase, "game-over");
+  assert.equal(state.victoryType, "development-board-exhaustion");
+  assert.equal(state.winnerPlayer, 0);
 });
 
 test("phase-specific commands resolve Fight, Encounter, and Deploy explicitly", () => {

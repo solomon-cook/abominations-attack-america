@@ -7,6 +7,7 @@ import {
   chooseMonster,
   chooseStartingChoice,
   createGame,
+  createDevelopmentVictoryGame,
   createGameFromSetup,
   FULL_HONEYCOMB_BOARD,
   getLocation,
@@ -34,7 +35,7 @@ import {
   spectateRoom,
   websocketUrl,
 } from "./api";
-import { createDevelopmentSetup } from "./development-setup";
+import { createCompletedDevelopmentSetup, createDevelopmentSetup } from "./development-setup";
 import { boardForGame } from "./board-pin";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
 import { ActionDock } from "./components/ActionDock";
@@ -685,6 +686,18 @@ function App() {
     setGame(createGame(2));
     localStorage.removeItem("abominations-session");
   };
+  const startTemporaryVictoryScenario = () => {
+    setLocalPlaytestStarted(true);
+    setOnboardingOpen(false);
+    setGamePanelOpen(true);
+    setSession(null);
+    setRoom(null);
+    setError("");
+    setPlayerCount(2);
+    setLocalSetup(createCompletedDevelopmentSetup());
+    setGame(createDevelopmentVictoryGame());
+    localStorage.removeItem("abominations-session");
+  };
   const leaveRoom = async () => {
     if (session && room) {
       try {
@@ -844,6 +857,7 @@ function App() {
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
         onStartLocal={resetLocal}
         onOpenBoardReview={() => setBoardReviewOpen(true)}
+        onStartVictoryScenario={startTemporaryVictoryScenario}
       />
     );
   }

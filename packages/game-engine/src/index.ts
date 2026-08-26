@@ -164,6 +164,8 @@ export interface GameState {
   setupAssignments?: readonly SetupSeat[];
   /** Present only for rooms that are still completing the development setup flow. */
   setupState?: SetupState;
+  /** Explicit local-only scenario switch; never valid for production rooms. */
+  developmentScenario?: "temporary-victory";
 }
 
 export interface PendingEncounterChoice {
@@ -653,6 +655,21 @@ export function createGame(playerCount = 2, seed = 0, matchId = `development-mat
   };
   const sourceInventoryErrors = sourceUnitInventoryErrors(state.units);
   if (sourceInventoryErrors.length > 0) throw new Error(`Source unit inventory is incomplete: ${sourceInventoryErrors.join("; ")}`);
+  assertInventoryAccounting(state);
+  return state;
+}
+
+export const DEVELOPMENT_STOMPABLE_KEYS: readonly HexKey[] = Object.values(DEVELOPMENT_BOARD.hexes)
+  .filter((hex) => hex.features.some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site"))
+  .map((hex) => hex.key);
+
+/** Local browser-only fixture for proving the temporary terminal screen through legal commands. */
+export function createDevelopmentVictoryGame(seed = 0, matchId = `development-victory-${seed >>> 0}`): GameState {
+  const state = createGame(2, seed, matchId);
+  state.developmentScenario = "temporary-victory";
+  state.stompMarkers = DEVELOPMENT_STOMPABLE_KEYS.length;
+  state.units = state.units.map((unit) => ({ ...unit, location: "record-tile" }));
+  state.log.unshift("Temporary victory validation scenario. This local fixture is not a production ruleset.");
   assertInventoryAccounting(state);
   return state;
 }
@@ -1699,8 +1716,10 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     }
   }
   next.log.push(`${monster.name} encountered ${place?.name}.`);
-  const developmentBoardExhausted = next.rulesetVersion === "prototype-0.1" && locations.every((location) => next.stompedLocations.includes(locationIdToHexKey(location.id)!));
-  const challengeRulesEnabled = next.rulesetVersion !== "prototype-0.1";
+  const developmentBoardExhausted = next.developmentScenario === "temporary-victory"
+    ? DEVELOPMENT_STOMPABLE_KEYS.every((key) => next.stompedLocations.includes(key))
+    : next.rulesetVersion === "prototype-0.1" && locations.every((location) => next.stompedLocations.includes(locationIdToHexKey(location.id)!));
+  const challengeRulesEnabled = next.rulesetVersion !== "prototype-0.1" && next.developmentScenario !== "temporary-victory";
   if (next.stompMarkers === 0 && !next.challenge?.declared) {
     next.challenge = challengeDeclaration(next, monster);
     next.log.push(`${monster.name} took the final active Stomp marker and became the Monster Challenge challenger.`);
