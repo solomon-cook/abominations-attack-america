@@ -4,6 +4,8 @@ import process from "node:process";
 
 const candidates = [
   process.env.CHROME_PATH,
+  process.env.BROWSER_BINARY,
+  process.env.EDGE_PATH,
   process.platform === "darwin" ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" : undefined,
   process.platform === "darwin" ? `${process.env.HOME ?? ""}/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` : undefined,
   process.platform === "linux" ? "/usr/bin/google-chrome" : undefined,
@@ -27,7 +29,10 @@ for (const candidate of candidates) {
 }
 
 if (!resolvedChromePath) {
-  for (const command of process.platform === "win32" ? ["chrome.exe", "chromium.exe"] : ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]) {
+  const commands = process.platform === "win32"
+    ? [process.env.BROWSER_BINARY, "chrome.exe", "chromium.exe", "msedge.exe"].filter(Boolean)
+    : [process.env.BROWSER_BINARY, "google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "microsoft-edge", "microsoft-edge-stable", "msedge"].filter(Boolean);
+  for (const command of commands) {
     try {
       const resolved = execFileSync(process.platform === "win32" ? "where" : "which", [command], { encoding: "utf8" }).trim().split("\n")[0];
       if (resolved) {

@@ -39,6 +39,7 @@
     "browser:safari:probe": "node scripts/verify-safari-driver.mjs",
     "browser:safari:verify": "node scripts/verify-safari-browser.mjs",
     "browser:firefox:verify": "WEBDRIVER_COMMAND=geckodriver WEBDRIVER_BROWSER=firefox WEBDRIVER_PORT=4445 node scripts/verify-safari-browser.mjs",
+    "browser:edge:verify": "BROWSER_BINARY=microsoft-edge node scripts/verify-browser-local.mjs",
     "pwa:verify": "node scripts/verify-pwa.mjs",
     "browser:online:verify": "node scripts/verify-browser-online.mjs",
     "board-review:verify": "npm run board-review:generate && git diff --exit-code -- docs/board-review-table.md",
