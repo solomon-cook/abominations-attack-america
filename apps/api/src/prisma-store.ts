@@ -61,7 +61,13 @@ export class PrismaRoomStore implements RoomStore {
     const count = await this.prismaClient.participant.count({ where: { roomId: room.id, role: "PLAYER" } });
     if (count >= room.maxPlayers) throw new Error("This room is full.");
     const accessToken = token();
-    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player", role: "PLAYER", playerIndex: count, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
+    let participant;
+    try {
+      participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player", role: "PLAYER", playerIndex: count, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
+    } catch (error) {
+      if ((error as { code?: string }).code === "P2002") throw new Error("This room is full.");
+      throw error;
+    }
     await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { lastActivityAt: new Date() } });
     await this.refreshStatus(room.id, room.maxPlayers, room.state as unknown as GameState);
     return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };

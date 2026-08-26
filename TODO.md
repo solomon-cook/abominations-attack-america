@@ -210,7 +210,8 @@ Useful source documents:
 - [x] [P0] Implement reverse-order selection of one eligible non-National-Guard military branch per player. (`chooseBranch` enforces reverse seat order and eligible-branch input)
   - [x] [P0] Prevent duplicate monster and branch assignments. (Setup tests reject duplicate claims)
 - [x] [P0] Create every monster and branch unit from verified component definitions. (All six monster records and all 32 regular branch units are instantiated from the source-backed catalogues; production setup/placement remains source-gated.)
-  - [ ] [P0] Place unselected branch units on their bases for games with fewer than four players. (The current source catalogue establishes branch inventories and deployment allowances, but the available record/board references do not establish whether or how unselected branches begin on bases; keep this setup rule source-gated until that placement instruction is supplied.)
+  - [x] [P0] Confirm the fewer-than-four-player setup exception for unselected branches. (The canonical rules transcription states that the last player places each unused non-National Guard branch's units on that branch's board bases, one unit per base; see `docs/monsters-menace-america-rules.md:96-97`.)
+    - [ ] [P0] Implement the placement once the physically verified base coordinates are promoted. (Exact base hexes remain part of the `BOARD-GEOMETRY` blocker; do not place units on provisional guessed coordinates.)
 - [x] [P0] Let each player choose one of their monster's three valid lairs. (`chooseLair` validates against the supplied verified lair definition and prevents reuse)
   - [x] [P0] Let each player choose initial deployment or one Military Research draw. (`chooseStartingChoice` records exactly one explicit option; deployment legality remains source-definition dependent)
 - [x] [P0] Validate complete regular-unit inventory accounting before the first turn begins. (Source-counted regular quantities, structural IDs, positions, battle references, National Guard collisions, and movement ledgers are validated at creation, before commands, and after every successful event transition.)
@@ -625,6 +626,7 @@ Useful source documents:
 - [x] [P0] WebSocket and polling paths pass the same command/revision/reconnect scenarios. (The API-server integration test creates a development fixture room, compares the initial WebSocket snapshot with HTTP state, applies setup over HTTP, and verifies the WebSocket update matches the revisioned polling response; production-board creation remains source-gated.)
 - [ ] [P1] Prisma/Postgres restart, concurrency, idempotency, retention, and projection suites pass.
   - [x] Add adapter-level reconnect-lease and projection regressions; live Postgres restart, concurrency, retention, and backup/restore evidence remain open.
+  - [x] Prevent concurrent Prisma joins from allocating the same player seat with a migration-backed unique `(room, role, playerIndex)` constraint and collision handling (`apps/api/prisma/migrations/20260826173000_unique_player_seat/migration.sql`, `apps/api/src/prisma-store.ts`, and adapter regression coverage); live managed-Postgres concurrency validation remains open.
 - [x] [P1] A spectator can follow a complete match but cannot act or view hidden information. (`apps/api/src/store.test.ts` runs a complete development match to terminal victory, compares player and spectator winner projections, asserts deck/hand redaction, and rejects spectator commands.)
 
 ## Milestone 13 — Responsive design, accessibility, onboarding, feedback, audio, and settings

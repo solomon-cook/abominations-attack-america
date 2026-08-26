@@ -13,7 +13,7 @@ The model currently enforces:
 
 The production board's complete lair catalogue, National Guard inventory/control rules, branch quantities, and legal starting deployment destinations remain explicit source-audit blockers. They must be supplied through verified definitions before the setup state can be promoted from a validated generic model to the production match initializer.
 
-The fewer-than-four-player starting placement rule is also source-gated. The current component records establish each branch's unit inventory and normal deployment allowance, but the available evidence does not establish whether unselected branches place units on their bases, remain on their record tiles, or follow another setup instruction. The engine therefore does not invent a placement and keeps those units on the record tile until a source-backed rule is available.
+The fewer-than-four-player starting placement rule is confirmed by the canonical rules transcription: the last player places each unused non-National Guard branch's units on that branch's board bases, one unit per base (`docs/monsters-menace-america-rules.md:96-97`). The exact base coordinates remain source-gated with the physical board, so the engine must not implement this placement against provisional guessed hexes; until the verified board is promoted, development setup keeps those units on the record tile.
 
 ## Development browser flow
 

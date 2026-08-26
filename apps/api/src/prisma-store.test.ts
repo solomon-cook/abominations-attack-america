@@ -110,3 +110,14 @@ test("Prisma setup actions persist the shared state and reject stale revisions",
   assert.equal((first.state.setupState as any).seats[0].monsterId, "monster-1");
   await assert.rejects(() => store.setupAction(room.code, "token", { type: "choose-monster", monsterId: "monster-2" }, 0), /Expected revision/);
 });
+
+test("Prisma maps a concurrent player-seat uniqueness collision to a full-room response", async () => {
+  const { adapter, room } = persistentAdapter();
+  (adapter as any).participant.count = async () => 1;
+  (adapter as any).participant.create = async () => {
+    const error = new Error("unique seat");
+    (error as Error & { code?: string }).code = "P2002";
+    throw error;
+  };
+  await assert.rejects(() => new PrismaRoomStore(adapter).joinRoom(room.code, "Racer"), /room is full/);
+});
