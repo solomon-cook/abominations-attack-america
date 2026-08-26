@@ -51,6 +51,7 @@ const requiredSourceMarkers = [
   ["Hollywood recovery die", /aria-label="Recorded Hollywood recovery die"/],
   ["Monster Challenge duel surface", /aria-label="Recorded Monster Challenge duel"/],
   ["full-screen Monster Challenge return", /challenge-duel-overlay[\s\S]*Return to board/],
+  ["full-screen Monster Challenge focus entry", /challenge-duel-return" autoFocus/],
   ["authoritative Challenge Health replay", /targetHealthBefore/],
   ["visible combat outcomes", /className=\"combat-outcomes\"[\s\S]*lastFightOutcomes/],
   ["contextual decision rules help", /aria-label="Rules help for current decision"/],

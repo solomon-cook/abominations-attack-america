@@ -36,7 +36,7 @@ export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHe
   const defeatedAsset = monsterAsset(defeatedName);
   return (
     <section className={`challenge-duel-panel ${onClose ? "challenge-duel-fullscreen" : ""}`} key={eventId} aria-live="polite" aria-label="Recorded Monster Challenge duel">
-      {onClose && <button type="button" className="challenge-duel-return" onClick={onClose}>Return to board</button>}
+      {onClose && <button type="button" className="challenge-duel-return" autoFocus onClick={onClose}>Return to board</button>}
       <div className="challenge-duel-heading">
         <span className="label">MONSTER CHALLENGE</span>
         <strong>{victoryType === "monster-challenge" ? "King of the Giant Monsters" : "Authoritative duel result"}</strong>
