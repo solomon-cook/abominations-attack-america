@@ -60,6 +60,8 @@ its linked source artifact.
 
 ## Latest local renderer regression check
 
+On 2026-08-26, `npm run browser:local:verify` drove a fresh headless Chrome session against the current Vite server. The scripted run completed local setup, selected a legal destination, verified that **Cancel** cleared the selected path, selected the destination again, confirmed the path, and observed the next authoritative phase (`Encounter`). This is reproducible local first-playable interaction evidence; it remains development-fixture evidence and does not prove the physical MVP board, two-browser online play, or manual accessibility acceptance.
+
 On 2026-08-25, the board-first gameplay shell was checked at 1280×720 after completing the local development setup. With the controls panel closed, the layout measured 1,240px wide and the map surface measured 1,190×405px; the secondary information panel and turn-progress strip were hidden. Opening **Open controls** restored the 340px information panel, turn-progress strip, card/decision controls, and bounded scrolling. This verifies the intended map-first hierarchy for the development fixture only.
 
 The same run opened the private hand surface from the controls panel. Held cards remained visible only to the current player, and expandable entries exposed implemented/source-gated status plus transcribed timing text where available. This is UI evidence; it does not prove that every source-inventoried card is implemented or that production card timing is complete.

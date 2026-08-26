@@ -1,0 +1,107 @@
+import { spawn } from "node:child_process";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import process from "node:process";
+import WebSocket from "ws";
+
+const url = process.env.BROWSER_TEST_URL ?? "http://127.0.0.1:5177/";
+const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const viewport = `${Number(process.env.BROWSER_TEST_WIDTH ?? 1280)}x${Number(process.env.BROWSER_TEST_HEIGHT ?? 720)}`;
+const debugPort = 9229;
+const profile = await mkdtemp(join(tmpdir(), "abominations-browser-"));
+const chrome = spawn(chromePath, [
+  "--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", `--window-size=${viewport}`,
+  `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, "about:blank",
+], { stdio: "ignore" });
+
+const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const debugUrl = `http://127.0.0.1:${debugPort}/json/list`;
+let page;
+for (let attempt = 0; attempt < 80; attempt += 1) {
+  try {
+    const response = await fetch(debugUrl);
+    const pages = await response.json();
+    page = pages.find((candidate) => candidate.type === "page");
+    if (page) break;
+  } catch {
+    // Chrome is still starting.
+  }
+  await wait(100);
+}
+if (!page?.webSocketDebuggerUrl) throw new Error("Chrome debugging page did not become available.");
+
+const socket = new WebSocket(page.webSocketDebuggerUrl);
+await new Promise((resolve, reject) => { socket.once("open", resolve); socket.once("error", reject); });
+let nextId = 0;
+const pending = new Map();
+socket.on("message", (raw) => {
+  const message = JSON.parse(raw.toString());
+  const callback = pending.get(message.id);
+  if (!callback) return;
+  pending.delete(message.id);
+  if (message.error) callback.reject(new Error(message.error.message));
+  else callback.resolve(message.result);
+});
+const command = (method, params = {}) => new Promise((resolve, reject) => {
+  const id = ++nextId;
+  pending.set(id, { resolve, reject });
+  socket.send(JSON.stringify({ id, method, params }));
+});
+await command("Page.enable");
+await command("Runtime.enable");
+await command("Page.navigate", { url });
+const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
+const waitFor = async (expression, label) => {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (await evaluate(expression)) return;
+    await wait(100);
+  }
+  throw new Error(`Timed out waiting for ${label}.`);
+};
+const clickButton = async (label) => evaluate(`(() => {
+  const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled);
+  if (!button) return false;
+  button.click();
+  return true;
+})()`);
+const phase = () => evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() ?? document.querySelector(".setup-panel h2")?.textContent?.trim() ?? ""`);
+
+try {
+  await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Start development playtest")`, "home screen");
+  await clickButton("Start development playtest");
+  await waitFor(`!!document.querySelector(".setup-panel")`, "development setup");
+
+  for (let attempt = 0; attempt < 30 && await evaluate("!!document.querySelector('.setup-panel')"); attempt += 1) {
+    const clicked = await evaluate(`(() => {
+      const button = [...document.querySelectorAll(".setup-options button")].find((candidate) => !candidate.disabled);
+      if (!button) return false;
+      button.click();
+      return true;
+    })()`);
+    if (!clicked) throw new Error("Setup presented no enabled choice.");
+    await wait(80);
+  }
+  await waitFor(`!document.querySelector(".setup-panel")`, "completed local setup");
+  const setupPhase = await phase();
+  if (!/move/i.test(setupPhase)) throw new Error(`Expected Move after setup, got ${setupPhase || "no phase"}.`);
+
+  await waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "legal movement destination");
+  const selected = await evaluate(`(() => { const tile = document.querySelector(".hex-tile.legal:not(:disabled)"); tile?.click(); return Boolean(tile); })()`);
+  if (!selected) throw new Error("No legal movement tile could be selected.");
+  await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "path confirmation controls");
+  await clickButton("Cancel");
+  if (await evaluate(`!!document.querySelector(".path-controls")`)) throw new Error("Cancel did not clear the movement path.");
+  await evaluate(`document.querySelector(".hex-tile.legal:not(:disabled)")?.click()`);
+  await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "path confirmation after cancel");
+  await clickButton("Confirm path");
+  await wait(250);
+  const afterMove = await phase();
+  if (!afterMove) throw new Error("No phase prompt remained after confirming movement.");
+
+  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", pathCancel: "verified", pathConfirmation: "verified", nextPhase: afterMove }));
+} finally {
+  socket.close();
+  chrome.kill("SIGTERM");
+  await rm(profile, { recursive: true, force: true });
+}

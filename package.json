@@ -23,6 +23,7 @@
     "load:development:verify": "node scripts/load-test-development-api.mjs",
     "web-responsive:verify": "node scripts/verify-web-responsive-contract.mjs",
     "web-board-layout:verify": "tsx scripts/verify-web-board-layout.ts",
+    "browser:local:verify": "node scripts/verify-browser-local.mjs",
     "board-review:verify": "npm run board-review:generate && git diff --exit-code -- docs/board-review-table.md",
     "verify": "npm run catalogue:verify && npm run card-catalogue:verify && npm run traceability:verify && npm run source-audit:verify && npm run board-transcription:verify && npm run release-blockers:verify && npm run release-report:verify && npm run board-review:verify && npm run board-assets:verify && npm run web-a11y:verify && npm run web-contrast:verify && npm run web-pending:verify && npm run web-board-pin:verify && npm run load:development:verify && npm run web-responsive:verify && npm run web-board-layout:verify && npm run contracts:verify && npm run docs:verify && npm test && npm run typecheck && npm run build",
     "dev": "npm --workspace @abominations/web run dev",
