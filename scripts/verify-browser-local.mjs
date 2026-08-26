@@ -120,6 +120,8 @@ try {
   })()`);
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "path confirmation after cancel");
   await clickButton("Confirm path");
+  await wait(0);
+  if (!await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Waiting for server…"`)) throw new Error("Local browser smoke did not expose the pending-action loading state.");
   await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "movement result");
   const afterMove = await phase();
   if (!afterMove) throw new Error("No phase prompt remained after confirming movement.");
@@ -171,7 +173,7 @@ try {
     finalPhase = await phase();
   }
 
-  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", invalidAction: "disabled-unreachable-destination", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, nextPhase: finalPhase }));
+  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", invalidAction: "disabled-unreachable-destination", loadingState: "verified", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, nextPhase: finalPhase }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");

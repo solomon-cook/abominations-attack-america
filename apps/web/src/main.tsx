@@ -469,6 +469,9 @@ function App() {
     if (pendingAction) return;
     setError("");
     setPendingAction(true);
+    // Keep the pending-action surface observable for one render even when the
+    // development fixture resolves locally without a network round trip.
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
     const normalized: GameCommand =
       command.type === "advance"
         ? activeGame.phase === "fight"
@@ -501,6 +504,7 @@ function App() {
         if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
         const actionLabel = acceptedActionLabel(normalized);
         if (actionLabel) setAcceptedActionFeedback({ label: actionLabel, key: Date.now() });
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Action failed");
