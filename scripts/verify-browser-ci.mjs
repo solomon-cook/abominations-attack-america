@@ -55,10 +55,10 @@ const runMatrix = () => new Promise((resolve, reject) => {
   });
 });
 
-const runBoardReview = () => new Promise((resolve, reject) => {
+const runBoardReview = ({ name, width, height, debugPort }) => new Promise((resolve, reject) => {
   const child = spawn(process.execPath, ["scripts/verify-browser-board-review.mjs"], {
     cwd: process.cwd(),
-    env: { ...process.env, BROWSER_TEST_URL: url, BROWSER_DEBUG_PORT: String(Number(process.env.BROWSER_CI_DEBUG_PORT ?? 9239) + 1) },
+    env: { ...process.env, BROWSER_TEST_URL: url, BROWSER_TEST_WIDTH: String(width), BROWSER_TEST_HEIGHT: String(height), BROWSER_DEBUG_PORT: String(debugPort) },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let output = "";
@@ -67,15 +67,19 @@ const runBoardReview = () => new Promise((resolve, reject) => {
   child.once("error", reject);
   child.once("exit", (code, signal) => {
     if (code === 0) resolve(output.trim());
-    else reject(new Error(`CI board review failed (code ${code ?? "none"}, signal ${signal ?? "none"})\n${output}`));
+    else reject(new Error(`CI board review ${name} failed (code ${code ?? "none"}, signal ${signal ?? "none"})\n${output}`));
   });
 });
 
 try {
   await waitForServer();
-  const boardReview = await runBoardReview();
+  const baseDebugPort = Number(process.env.BROWSER_CI_DEBUG_PORT ?? 9239);
+  const boardReview = [];
+  for (const viewport of [["desktop", 1280, 720], ["tablet", 834, 1112], ["mobile", 390, 844]]) {
+    boardReview.push(parseJsonRecord(await runBoardReview({ name: viewport[0], width: viewport[1], height: viewport[2], debugPort: baseDebugPort + 1 })));
+  }
   const output = await runMatrix();
-  console.log(JSON.stringify({ boardReview: parseJsonRecord(boardReview), matrix: parseJsonRecord(output) }));
+  console.log(JSON.stringify({ boardReview, matrix: parseJsonRecord(output) }));
 } finally {
   await stopServer();
 }
