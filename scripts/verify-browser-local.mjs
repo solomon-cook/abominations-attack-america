@@ -124,7 +124,11 @@ const phase = () => evaluate(`document.querySelector(".action-card h2")?.textCon
 
 try {
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Start development playtest")`, "home screen");
-  await clickButton("Start development playtest");
+  if (!await clickButton("Play provisional honeycomb")) throw new Error("Home screen did not expose the provisional honeycomb playtest.");
+  await waitFor(`document.querySelectorAll(".hex-tile").length === 254`, "provisional honeycomb playtest board");
+  const provisionalNotice = await evaluate(`document.querySelector(".development-notice .label")?.textContent?.trim() ?? ""`);
+  if (!/PROVISIONAL HONEYCOMB PLAYTEST/i.test(provisionalNotice)) throw new Error(`Provisional playtest did not expose its source-status notice: ${provisionalNotice}`);
+  if (!await clickButton("Development playtest")) throw new Error("Could not return from provisional playtest to the development fixture.");
   await waitFor(`!!document.querySelector(".setup-panel")`, "development setup");
 
   for (let attempt = 0; attempt < 30 && await evaluate("!!document.querySelector('.setup-panel')"); attempt += 1) {

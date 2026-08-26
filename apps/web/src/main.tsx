@@ -8,9 +8,11 @@ import {
   chooseStartingChoice,
   createGame,
   createDevelopmentVictoryGame,
+  createProvisionalPlaytestGame,
   createGameFromSetup,
   FULL_HONEYCOMB_BOARD,
   PROVISIONAL_AUTHORITATIVE_BOARD,
+  isHexKey,
   getLocation,
     legalNationalGuardDeploymentDestinations,
     legalOwnedDeploymentDestinations,
@@ -173,6 +175,8 @@ function App() {
   const activeGame = room?.state ?? game;
   const activePlayer = activeGame.monsters[activeGame.currentPlayer];
   const activeLocation = getLocation(activePlayer.location);
+  const activeBoard = boardForGame(activeGame);
+  const activeBoardHex = activeBoard && isHexKey(activePlayer.location) ? activeBoard.hexes[activePlayer.location] : undefined;
   const guardCommanderActive = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Guard Commander") ?? false;
   const availableGuardUnitId = guardCommanderActive
     ? activeGame.nationalGuard.unitIds.find((unitId) => !activeGame.units.some((unit) => unit.id === unitId))
@@ -735,6 +739,18 @@ function App() {
     setGame(createDevelopmentVictoryGame());
     localStorage.removeItem("abominations-session");
   };
+  const startProvisionalPlaytest = () => {
+    setLocalPlaytestStarted(true);
+    setOnboardingOpen(false);
+    setGamePanelOpen(false);
+    setSession(null);
+    setRoom(null);
+    setError("");
+    setPlayerCount(2);
+    setLocalSetup(createCompletedDevelopmentSetup());
+    setGame(createProvisionalPlaytestGame(2));
+    localStorage.removeItem("abominations-session");
+  };
   const leaveRoom = async () => {
     if (session && room) {
       try {
@@ -904,6 +920,7 @@ function App() {
         rulesOpen={homeRulesOpen}
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
         onStartLocal={resetLocal}
+        onStartProvisionalPlaytest={startProvisionalPlaytest}
         onOpenBoardReview={() => setBoardReviewOpen(true)}
         onStartVictoryScenario={startTemporaryVictoryScenario}
       />
@@ -1004,11 +1021,11 @@ function App() {
       <MatchStatus game={activeGame} action={action} />
       <TurnProgress game={activeGame} />
       <section className="development-notice" aria-label="Development ruleset notice">
-        <span className="label">DEVELOPMENT RULESET · PROTOTYPE 0.1</span>
+        <span className="label">{renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id ? "PROVISIONAL HONEYCOMB PLAYTEST · NOT VERIFIED" : "DEVELOPMENT RULESET · PROTOTYPE 0.1"}</span>
         <p>
-          This playtest uses only the nine-space development fixture; the unresolved physical-board shell is not rendered as playable topology. The physical board transcription,
-          full combat, card effects, National Guard rules, and Monster Challenge are not yet production-verified.
-          The temporary victory condition ends the fixture when its active Stomp spaces are exhausted.
+          {renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
+            ? "This local playtest uses the complete 254-cell provisional honeycomb board. Its guessed labels, terrain, barriers, and feature positions are not physically verified and cannot be used by production rooms."
+            : "This playtest uses only the nine-space development fixture; the unresolved physical-board shell is not rendered as playable topology. The physical board transcription, full combat, card effects, National Guard rules, and Monster Challenge are not yet production-verified. The temporary victory condition ends the fixture when its active Stomp spaces are exhausted."}
         </p>
       </section>
       <section className={`layout ${gamePanelOpen ? "panel-open" : "panel-closed"}`}>
@@ -1018,7 +1035,7 @@ function App() {
               <span className="label">
                 TACTICAL MAP · RULE SPACE RECONSTRUCTION
               </span>
-              <h2>{activeLocation?.name}</h2>
+              <h2>{activeLocation?.name ?? activeBoardHex?.label ?? "Board position"}</h2>
             </div>
             <span className="chip">
               {online
