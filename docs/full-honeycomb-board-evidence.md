@@ -43,6 +43,8 @@ The optimized WebP files are delivery copies for the browser. The original JPGs 
 | Are water classes and barriers authoritative? | No. Candidate cells and edges remain `unresolved`, disabled for movement, and rejected by production validation. | Unresolved |
 | Can this board be used for MVP play? | No. The nine-space development graph remains the only playable fixture until the rule-bearing fields are reviewed and promoted. | Release blocker |
 
+The current production validator reports 1,902 errors for the candidate shell: 254 unresolved hex verification states, 254 unresolved water classes, and 1,394 unresolved edge barriers. These counts are intentionally redundant safeguards: promotion must not be possible by changing only a cell's verification flag while leaving terrain or movement data unresolved.
+
 The overlay is deliberately a review aid: it places all 254 candidate coordinate keys over the source photograph, but it does not claim that any printed label, icon, water class, barrier, or edge has been transcribed.
 
 ## Evidence-quality assessment
