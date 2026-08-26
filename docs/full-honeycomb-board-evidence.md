@@ -6,7 +6,7 @@ This pack is the review boundary for promoting the photographed board into the M
 
 - [Full board top-down reference](../references/monsters-menace-america/components/board/full-board-top-down.jpg)
 - [Full game setup reference](../references/monsters-menace-america/components/board/full-game-setup.jpg)
-- The optimized reference photographs are intentionally not shipped in the web client; the source JPGs above remain internal evidence only.
+- Optimized JPEG copies are shipped only for the read-only review screen; the source JPGs above remain internal evidence and are never used as gameplay art or topology.
 - [Generated 254-hex review table](board-review-table.md)
 - [Generated coordinate/photo comparison overlay](board-comparison-overlay.svg)
 - [Generated independent top-down cross-check overlay](board-top-down-overlay.svg)
@@ -34,7 +34,7 @@ No rule-bearing datum is promoted from these images; they only increase confiden
 in the broad visual classification and identify the need for an unobscured,
 high-resolution top-down source or human physical-board review.
 
-The optimized WebP files are delivery copies for the browser. The original JPGs remain the source evidence and are not overwritten.
+The optimized JPEG files are delivery copies for the read-only browser review. The original JPGs remain the source evidence and are not overwritten; optimization improves loading only and does not strengthen the transcription evidence.
 
 ## Additional source search
 
