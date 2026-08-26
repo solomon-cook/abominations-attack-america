@@ -8,6 +8,8 @@ import { BRANCH_DEPLOYMENT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_D
 export { MONSTER_DEFINITIONS, monsterDefinition, type MonsterDefinition, type MonsterMovement } from "./monsters.js";
 export { UNIT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, BRANCH_DEPLOYMENT_DEFINITIONS, type UnitDefinition, type GiantUnitDefinition, type NationalGuardDefinition, type BranchDeploymentDefinition, type UnitBranch, type UnitMovement } from "./units.js";
 import { createSetup, developmentSetupDefinition, validateSetup, type SetupSeat, type SetupState } from "./setup.js";
+import { composeContinuousEffects, type ContinuousEffectAccumulator } from "./effects.js";
+export { EFFECT_BOUNDARIES, composeContinuousEffects, type ContinuousEffectAccumulator, type ContinuousEffectContribution, type EffectAvailability, type EffectBoundary, type EffectCategory } from "./effects.js";
 
 export type Phase = "move" | "fight" | "encounter" | "deploy" | "challenge" | "game-over";
 export type Branch = "Army" | "Navy" | "Air Force" | "Marines";
@@ -1050,56 +1052,6 @@ function discardExhaustedXFighterCard(state: GameState, ownerPlayer: number | un
   player.researchCardIds = player.researchCardIds.filter((cardId) => cardId !== "X-Fighters");
   if (!state.decks.research.discard.includes("X-Fighters")) state.decks.research = { ...state.decks.research, discard: [...state.decks.research.discard, "X-Fighters"] };
   state.log.push(`Both X-Fighters were destroyed; the X-Fighters Research card was discarded.`);
-}
-
-interface ContinuousEffectAccumulator {
-  readonly moveBonus: number;
-  readonly defenseBonus: number;
-  readonly waterBarrierDefenseBonus: number;
-  readonly damagePerHit?: number;
-  readonly firstRoundAttackBonus: number;
-  readonly extraDeployments: number;
-  readonly movement?: MonsterMovement;
-  readonly crossesWaterBarriers: boolean;
-  readonly canControlNationalGuard: boolean;
-  readonly canDeployNationalGuard: boolean;
-}
-
-type ContinuousEffectContribution = Partial<ContinuousEffectAccumulator>;
-
-/**
- * Compose independently sourced continuous effects without allowing a card
- * projection to silently overwrite additive modifiers. Numeric modifiers are
- * additive; replacement abilities use the last explicitly supplied value;
- * booleans compose as an OR. Source-gated and one-shot effects do not enter
- * this accumulator.
- */
-function composeContinuousEffects(contributions: readonly ContinuousEffectContribution[]): ContinuousEffectAccumulator {
-  const result = {
-    moveBonus: 0,
-    defenseBonus: 0,
-    waterBarrierDefenseBonus: 0,
-    firstRoundAttackBonus: 0,
-    extraDeployments: 0,
-    crossesWaterBarriers: false,
-    canControlNationalGuard: false,
-    canDeployNationalGuard: false,
-  };
-  let damagePerHit: number | undefined;
-  let movement: MonsterMovement | undefined;
-  for (const contribution of contributions) {
-    result.moveBonus += contribution.moveBonus ?? 0;
-    result.defenseBonus += contribution.defenseBonus ?? 0;
-    result.waterBarrierDefenseBonus += contribution.waterBarrierDefenseBonus ?? 0;
-    result.firstRoundAttackBonus += contribution.firstRoundAttackBonus ?? 0;
-    result.extraDeployments += contribution.extraDeployments ?? 0;
-    result.crossesWaterBarriers ||= contribution.crossesWaterBarriers ?? false;
-    result.canControlNationalGuard ||= contribution.canControlNationalGuard ?? false;
-    result.canDeployNationalGuard ||= contribution.canDeployNationalGuard ?? false;
-    if (contribution.damagePerHit !== undefined) damagePerHit = contribution.damagePerHit;
-    if (contribution.movement !== undefined) movement = contribution.movement;
-  }
-  return { ...result, damagePerHit, movement };
 }
 
 interface MonsterContinuousEffects {
