@@ -28,6 +28,7 @@ export function terminalResultSummary(state: GameState, terminalEvent: { type: s
 }
 
 export interface RoomStore {
+  close(): Promise<void>;
   health(): Promise<{ persistence: "memory" | "prisma" }>;
   createRoom(maxPlayers: number): Promise<SessionResponse>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
@@ -51,6 +52,8 @@ export class MemoryRoomStore implements RoomStore {
   private actionIds = new Set<string>();
 
   constructor(private readonly allowDevelopmentFixture = false) {}
+
+  async close(): Promise<void> {}
 
   async health(): Promise<{ persistence: "memory" }> { return { persistence: "memory" }; }
 

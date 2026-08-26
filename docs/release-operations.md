@@ -2,6 +2,8 @@
 
 This runbook is the required process for a future staging or production deployment. It is documentation and a checklist; no live environment or backup drill is claimed by the repository.
 
+The API handles `SIGTERM` and `SIGINT` by closing active WebSockets, draining the HTTP server, and disconnecting the Prisma client before exit. This protects the process boundary; it does not prove that durable rooms survive a managed-Postgres or host restart.
+
 ## Environment preparation
 
 - Use separate web/API URLs, Postgres databases, `DATABASE_URL`, `ALLOWED_ORIGIN`, and alert destinations for development, staging, and production.

@@ -152,4 +152,20 @@ wsServer.on("connection", async (socket, request) => {
   }
   catch (error) { metrics.websocketFailure(); errorReporter.report({ category: "websocket", path: "/ws", roomCode: code, message: error instanceof Error ? error.message : "WebSocket room access failed" }); socket.close(1008, "Invalid room token"); }
 });
+let shuttingDown = false;
+const shutdown = async (signal: string) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  operationalLog({ event: "deployment.shutdown", signal });
+  for (const group of sockets.values()) for (const socket of group.keys()) socket.close(1001, "Server is restarting");
+  sockets.clear();
+  await new Promise<void>((resolve) => {
+    if (!server.listening) return resolve();
+    server.close(() => resolve());
+  });
+  await store.close();
+  process.exit(0);
+};
+process.once("SIGTERM", () => { void shutdown("SIGTERM"); });
+process.once("SIGINT", () => { void shutdown("SIGINT"); });
 server.listen(port, () => console.log(`API listening on http://localhost:${port}`));
