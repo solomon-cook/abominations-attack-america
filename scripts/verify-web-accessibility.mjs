@@ -40,6 +40,7 @@ const requiredSourceMarkers = [
   ["recorded encounter result", /aria-label="Recorded encounter result"/],
   ["accepted action feedback", /<ActionResolutionFeedback label=\{acceptedActionFeedback\?\.label\}/],
   ["encounter authoritative dice", /aria-label="Recorded encounter dice rolls"/],
+  ["Mutation draw status", /aria-label="Mutation site draw status"[\s\S]*Mutation card drawn; card effect remains source-gated/],
   ["Hollywood recovery die", /aria-label="Recorded Hollywood recovery die"/],
   ["Monster Challenge duel surface", /aria-label="Recorded Monster Challenge duel"/],
   ["authoritative Challenge Health replay", /targetHealthBefore/],

@@ -1,6 +1,7 @@
 import { DieCube } from "./DieCube";
 
 type EncounterEffect = Readonly<{ type: string; amount: number; source: string }>;
+type MutationDraw = Readonly<{ siteId: string; cardDrawn: boolean; effectStatus: "implemented" | "source-gated" | "none" }>;
 
 type Props = {
   eventId?: string;
@@ -10,6 +11,7 @@ type Props = {
   stomped?: boolean;
   remainingStompMarkers?: number;
   challenge?: Readonly<{ declared: boolean; active: boolean; challengerMonsterId?: string; pendingStartPlayerIndex: number; startAtEndOfTurn?: boolean }>;
+  mutationDraws: readonly MutationDraw[];
   nextPhase?: string;
 };
 
@@ -21,7 +23,7 @@ function effectLabel(effect: EncounterEffect) {
   return `${effect.type} effect recorded (${amount})`;
 }
 
-export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped, remainingStompMarkers, challenge, nextPhase }: Props) {
+export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped, remainingStompMarkers, challenge, mutationDraws, nextPhase }: Props) {
   if (!eventId) return null;
   return (
     <section className="encounter-result" key={eventId} aria-live="polite" aria-label="Recorded encounter result">
@@ -35,6 +37,15 @@ export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped
       ) : choices.length === 0 ? (
         <p className="encounter-no-effect">No active encounter reward was applied; any gated or skipped effect remains recorded in the turn log.</p>
       ) : null}
+      {mutationDraws.length > 0 && <ul className="encounter-mutation-draws" aria-label="Mutation site draw status">
+        {mutationDraws.map((draw) => <li key={draw.siteId}>
+          <strong>{draw.siteId}</strong>: {draw.cardDrawn
+            ? draw.effectStatus === "implemented"
+              ? "Mutation card drawn; implemented effect is active."
+              : "Mutation card drawn; card effect remains source-gated."
+            : "No Mutation card was available."}
+        </li>)}
+      </ul>}
       {typeof stomped === "boolean" && <p className="encounter-state">{stomped ? "The space consumed a Stomp marker." : "The space was already stomped; no new Stomp marker was consumed."}</p>}
       {typeof remainingStompMarkers === "number" && <p className="encounter-state">{remainingStompMarkers} Stomp marker{remainingStompMarkers === 1 ? "" : "s"} remain; the engine enforces the Infamy cap and marker limits.</p>}
       {challenge?.declared && <p className="encounter-state">Monster Challenge: {challenge.active ? "active" : challenge.startAtEndOfTurn ? "new challenger starts at the end of this turn" : challenge.challengerMonsterId ? "challenger scheduled for their next turn" : "waiting for an eligible Challenge-site arrival"}.</p>}

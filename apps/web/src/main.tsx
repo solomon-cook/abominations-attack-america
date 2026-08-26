@@ -254,6 +254,9 @@ function App() {
   const encounterChoices = Array.isArray(lastEncounterEvent?.detail.choices)
     ? lastEncounterEvent.detail.choices.filter((choice): choice is string => typeof choice === "string")
     : [];
+  const encounterMutationDraws = Array.isArray(lastEncounterEvent?.detail.mutationDraws)
+    ? lastEncounterEvent.detail.mutationDraws.filter((draw): draw is { siteId: string; cardDrawn: boolean; effectStatus: "implemented" | "source-gated" | "none" } => Boolean(draw && typeof draw === "object" && typeof draw.siteId === "string" && typeof draw.cardDrawn === "boolean" && (draw.effectStatus === "implemented" || draw.effectStatus === "source-gated" || draw.effectStatus === "none")))
+    : [];
   const lastRecoveryEvent = [...activeGame.eventLog].reverse().find((entry) =>
     ["turn.passed", "research.drawn"].includes(entry.action) && typeof entry.detail.recoveryRoll === "number",
   );
@@ -1144,6 +1147,7 @@ function App() {
               stomped={typeof lastEncounterEvent?.detail.stomped === "boolean" ? lastEncounterEvent.detail.stomped : undefined}
               remainingStompMarkers={typeof lastEncounterEvent?.detail.remainingStompMarkers === "number" ? lastEncounterEvent.detail.remainingStompMarkers : undefined}
               challenge={lastEncounterEvent?.detail.challenge && typeof lastEncounterEvent.detail.challenge === "object" ? lastEncounterEvent.detail.challenge as { declared: boolean; active: boolean; challengerMonsterId?: string; pendingStartPlayerIndex: number; startAtEndOfTurn?: boolean } : undefined}
+              mutationDraws={encounterMutationDraws}
               nextPhase={typeof lastEncounterEvent?.detail.nextPhase === "string" ? lastEncounterEvent.detail.nextPhase : undefined}
             />
             {activeGame.phase === "move" &&
