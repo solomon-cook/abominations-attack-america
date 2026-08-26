@@ -502,6 +502,7 @@ Useful source documents:
   - [ ] Add hover/focus tooltips and expandable explanations for exact bonuses, adjacency, movement cost, combat strength, card timing, requirements, and reasons an action is unavailable.
   - [x] Keep persistent global context compact: active player, phase, current substep, pending decision, round, Stomp state, Challenge state, and connection state. (MatchStatus and TurnProgress provide the current development implementation.)
   - [ ] Add a compact notification/attention system for unresolved decisions, completed actions, new rewards, damage, destruction, retreat, disappearance, Hollywood, and other state changes without leaving the board.
+    - [x] Add an authoritative board-adjacent attention banner for pending decisions, waiting ownership, active local phase, and terminal state; it remains presentation-only and preserves the detailed result surfaces (`AttentionBanner`).
   - [ ] Keep one predictable, persistent primary action affordance for the current legal decision, including a clear End/Pass/Resolve equivalent where applicable.
   - [x] Provide temporary movement paths, targeting previews, selection highlights, accepted-action feedback, and recorded dice/combat-result presentation. (Current development flows implement these presentation states.)
   - [ ] Ensure temporary visual feedback explains what changed, then settles cleanly without permanently increasing map clutter or delaying authoritative state.

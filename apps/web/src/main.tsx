@@ -65,6 +65,7 @@ import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
+import { AttentionBanner } from "./components/AttentionBanner";
 import { playSound, type SoundCategory } from "./audio";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
@@ -1106,6 +1107,7 @@ function App() {
           <div className="board-action-bar">
             <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
           </div>
+          <AttentionBanner game={activeGame} action={action} canAct={canAct} online={online} />
           <BoardContextTray game={activeGame} board={activeBoard} hex={activeBoardHex} />
           <p className="sr-only" id="board-description">
             {boardDescription}
