@@ -28,6 +28,10 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
       ? "Move/Fight · pre-battle window"
       : cardId === "Blonde Lure"
         ? "Any turn · choose monster and adjacent destination"
+      : cardId === "Mecha-Monster" || cardId === "Captain Colossal"
+        ? "Deploy · resolves immediately when drawn"
+      : cardId === "X-Fighters"
+        ? "Deploy · replace a branch unit with an X-Fighter"
       : cardId === "Antimatter" || cardId === "Stabilizer Ray" || cardId === "Laser Fence"
           ? "Fight · battle setup window"
           : undefined;
