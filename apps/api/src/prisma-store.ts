@@ -1,6 +1,6 @@
 import { randomBytes, createHash } from "node:crypto";
 import { applyCommandEnvelope, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import type { RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
+import type { PublicRoomSummary, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, terminalResultSummary, type RoomStore } from "./store.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
@@ -36,6 +36,22 @@ export class PrismaRoomStore implements RoomStore {
     const room = await this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", state: state as any } });
     const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
     return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };
+  }
+
+  async listPublicRooms(): Promise<PublicRoomSummary[]> {
+    const rooms = await this.prismaClient.gameRoom.findMany({
+      where: { privacy: "PUBLIC", status: { in: ["WAITING", "ACTIVE"] } },
+      orderBy: { lastActivityAt: "desc" },
+      take: 20,
+      include: { participants: { select: { role: true } } },
+    });
+    return rooms.map((room) => ({
+      code: room.code,
+      status: room.status.toLowerCase() as "waiting" | "active",
+      maxPlayers: room.maxPlayers,
+      playerCount: room.participants.filter((participant) => participant.role === "PLAYER").length,
+      spectatorCount: room.participants.filter((participant) => participant.role === "SPECTATOR").length,
+    }));
   }
 
   async joinRoom(roomCode: string, displayName: string) {

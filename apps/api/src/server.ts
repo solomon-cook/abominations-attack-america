@@ -114,6 +114,7 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
       }
     }
     if (request.method === "GET" && parts[0] === "metrics") return json(response, 200, metrics.snapshot());
+    if (request.method === "GET" && parts[0] === "rooms" && parts[1] === "public") return json(response, 200, await store.listPublicRooms());
     if (request.method === "POST" && parts[0] === "rooms" && parts.length === 1) {
       const input = await body(request); return json(response, 201, await store.createRoom(Number(input.maxPlayers ?? 4), String(input.displayName ?? "Player 1"), input.privacy === "public" ? "public" : "private"));
     }

@@ -29,6 +29,7 @@ import type { RoomView, SessionResponse } from "@abominations/shared";
 import {
   createRoom,
   joinRoom,
+  listPublicRooms,
   markDisconnected,
   markReconnected,
   readRoom,
@@ -142,6 +143,7 @@ function App() {
     if (typeof window === "undefined") return "";
     return new URLSearchParams(window.location.search).get("room")?.trim().toUpperCase().slice(0, 6) ?? "";
   });
+  const [publicRooms, setPublicRooms] = useState<import("@abominations/shared").PublicRoomSummary[]>([]);
   const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(2);
   const [roomPrivacy, setRoomPrivacy] = useState<"private" | "public">("private");
   const [localSetup, setLocalSetup] = useState<SetupState>(() =>
@@ -606,6 +608,14 @@ function App() {
       );
     }
   };
+  const refreshPublicRooms = async () => {
+    setError("");
+    try {
+      setPublicRooms(await listPublicRooms());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not load public rooms");
+    }
+  };
   const startRematch = async () => {
     if (!room) return;
     setError("");
@@ -921,12 +931,14 @@ function App() {
         playerCount={playerCount}
         roomPrivacy={roomPrivacy}
         roomCode={roomCode}
+        publicRooms={publicRooms}
         setupComplete={false}
         error={error}
         onDisplayNameChange={setDisplayName}
         onPlayerCountChange={changePlayerCount}
         onRoomPrivacyChange={setRoomPrivacy}
         onRoomCodeChange={setRoomCode}
+        onRefreshPublicRooms={() => void refreshPublicRooms()}
         onStartSession={(kind) => void startSession(kind)}
         onToggleReady={() => undefined}
         onLeaveRoom={() => undefined}
@@ -995,12 +1007,14 @@ function App() {
         playerCount={playerCount}
         roomPrivacy={roomPrivacy}
         roomCode={roomCode}
+        publicRooms={publicRooms}
         setupComplete={setupComplete}
         error={error}
         onDisplayNameChange={setDisplayName}
         onPlayerCountChange={changePlayerCount}
         onRoomPrivacyChange={setRoomPrivacy}
         onRoomCodeChange={setRoomCode}
+        onRefreshPublicRooms={() => void refreshPublicRooms()}
         onStartSession={(kind) => void startSession(kind)}
         onToggleReady={() => void toggleReady()}
         onLeaveRoom={leaveRoomSafely}

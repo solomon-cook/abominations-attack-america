@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { applyCommandEnvelope, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import type { RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
+import type { PublicRoomSummary, RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 
 type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string };
@@ -32,6 +32,7 @@ export interface RoomStore {
   close(): Promise<void>;
   health(): Promise<{ persistence: "memory" | "prisma" }>;
   createRoom(maxPlayers: number, displayName?: string, privacy?: RoomPrivacy): Promise<SessionResponse>;
+  listPublicRooms(): Promise<PublicRoomSummary[]>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
   spectateRoom(code: string, displayName: string): Promise<SessionResponse>;
   disconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
@@ -68,6 +69,20 @@ export class MemoryRoomStore implements RoomStore {
     const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, participants: [], events: [], lastActivityAt: Date.now() };
     this.rooms.set(room.code, room);
     return this.addParticipant(room, displayName, "player", 0);
+  }
+
+  async listPublicRooms(): Promise<PublicRoomSummary[]> {
+    return [...this.rooms.values()]
+      .filter((room) => room.privacy === "public" && (room.status === "waiting" || room.status === "active"))
+      .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
+      .slice(0, 20)
+      .map((room) => ({
+        code: room.code,
+        status: room.status as "waiting" | "active",
+        maxPlayers: room.maxPlayers,
+        playerCount: room.participants.filter((participant) => participant.role === "player").length,
+        spectatorCount: room.participants.filter((participant) => participant.role === "spectator").length,
+      }));
   }
 
   async joinRoom(roomCode: string, displayName: string) {

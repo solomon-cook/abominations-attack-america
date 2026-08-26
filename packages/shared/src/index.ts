@@ -44,6 +44,14 @@ export interface RoomView {
   events: RoomEvent[];
 }
 
+export interface PublicRoomSummary {
+  code: string;
+  status: Extract<RoomStatus, "waiting" | "active">;
+  maxPlayers: number;
+  playerCount: number;
+  spectatorCount: number;
+}
+
 export type GameCommand =
   | { type: "move"; path: string[] }
   | { type: "move-unit"; unitId: string; path: string[] }

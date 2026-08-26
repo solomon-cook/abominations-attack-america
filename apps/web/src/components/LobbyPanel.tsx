@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { RoomView } from "@abominations/shared";
+import type { PublicRoomSummary, RoomView } from "@abominations/shared";
 
 export type LobbyPanelProps = {
   online: boolean;
@@ -10,12 +10,14 @@ export type LobbyPanelProps = {
   playerCount: 2 | 3 | 4;
   roomPrivacy: "private" | "public";
   roomCode: string;
+  publicRooms: PublicRoomSummary[];
   setupComplete: boolean;
   error: string;
   onDisplayNameChange: (value: string) => void;
   onPlayerCountChange: (value: 2 | 3 | 4) => void;
   onRoomPrivacyChange: (value: "private" | "public") => void;
   onRoomCodeChange: (value: string) => void;
+  onRefreshPublicRooms: () => void;
   onStartSession: (kind: "create" | "join" | "spectate") => void;
   onToggleReady: () => void;
   onLeaveRoom: () => void;
@@ -30,12 +32,14 @@ export function LobbyPanel({
   playerCount,
   roomPrivacy,
   roomCode,
+  publicRooms,
   setupComplete,
   error,
   onDisplayNameChange,
   onPlayerCountChange,
   onRoomPrivacyChange,
   onRoomCodeChange,
+  onRefreshPublicRooms,
   onStartSession,
   onToggleReady,
   onLeaveRoom,
@@ -82,6 +86,18 @@ export function LobbyPanel({
           <button type="button" onClick={() => onStartSession("create")}>Create</button>
           <button type="button" onClick={() => onStartSession("join")}>Join</button>
           <button type="button" className="subtle" onClick={() => onStartSession("spectate")}>Spectate</button>
+          <button type="button" className="subtle" onClick={onRefreshPublicRooms}>Find public rooms</button>
+        </div>
+      )}
+      {!online && publicRooms.length > 0 && (
+        <div className="public-room-list" aria-label="Public rooms">
+          <span className="label">OPEN ROOMS</span>
+          {publicRooms.map((candidate) => (
+            <button key={candidate.code} type="button" className="public-room" onClick={() => onRoomCodeChange(candidate.code)}>
+              <strong>{candidate.code}</strong>
+              <span>{candidate.status} · {candidate.playerCount}/{candidate.maxPlayers} players · {candidate.spectatorCount} spectators</span>
+            </button>
+          ))}
         </div>
       )}
       {online && participant?.role === "player" && (

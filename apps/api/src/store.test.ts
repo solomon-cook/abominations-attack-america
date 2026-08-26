@@ -50,6 +50,24 @@ test("private rooms reject spectator entry and public rooms allow it", async () 
   assert.equal(spectator.room.privacy, "public");
 });
 
+test("public room discovery returns only redacted open-room summaries", async () => {
+  const store = new MemoryRoomStore(true);
+  const publicHost = await store.createRoom(3, "Host", "public");
+  await store.spectateRoom(publicHost.room.code, "Watcher");
+  await store.createRoom(2, "Private host", "private");
+
+  const rooms = await store.listPublicRooms();
+  assert.deepEqual(rooms, [{
+    code: publicHost.room.code,
+    status: "waiting",
+    maxPlayers: 3,
+    playerCount: 1,
+    spectatorCount: 1,
+  }]);
+  assert.equal(Object.hasOwn(rooms[0]!, "state"), false);
+  assert.equal(Object.hasOwn(rooms[0]!, "token"), false);
+});
+
 test("memory store health reports its persistence boundary", async () => {
   assert.deepEqual(await new MemoryRoomStore(true).health(), { persistence: "memory" });
 });
