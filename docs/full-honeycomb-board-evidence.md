@@ -16,6 +16,7 @@ On 2026-08-26, additional publicly accessible setup photographs were reviewed as
 cross-checks, not as replacement rule authority:
 
 - [BoardGameGeek board close-up](https://boardgamegeek.com/image/201674/monsters-menace-america)
+- [BoardGameGeek full-board setup photograph, image 5699472](https://boardgamegeek.com/image/5699472/monsters-menace-america)
 - [Blugee setup photograph](https://blugee.com/cdn/shop/files/Monsters-Menace-America-Board-Game-2_898x600.jpg?v=1711114433)
 - [Independent setup photograph](https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rtYAAOSw9fVmDcjE/%24_3.JPG)
 - [Independent setup photograph, 1600px delivery](https://i.ebayimg.com/images/g/rtYAAOSw9fVmDcjE/s-l1600.jpg)
@@ -36,12 +37,13 @@ The optimized WebP files are delivery copies for the browser. The original JPGs 
 
 On 2026-08-26, a further public-source search checked the BoardGameGeek image
 listing and an independent board-game setup photograph. The BoardGameGeek image
-API identifies image 201674 as a 2048 × 1536 close-up; visual inspection confirms
-the separated cream hex faces, printed site/city panels, coast treatment, and
-piece containment, but the perspective crop and component occlusion prevent it
-from being an aligned whole-board scan. Neither reference is suitable for
-assigning exact shell coordinates, printed benefits, water classes, or barriers;
-they remain reconnaissance references only, and no new rule-bearing data is
+API identifies image 201674 as a 2048 × 1536 close-up and image 5699472 as a
+2840 × 1752 full-board setup photograph. The latter is the strongest public
+cross-check found: it exposes the broad board, cream seams, coast cut-outs, and
+most printed feature families. It still has perspective and pieces/stomp markers
+over central and western cells, so neither reference is suitable for assigning
+exact shell coordinates, printed benefits, water classes, or barriers; they
+remain reconnaissance references only, and no new rule-bearing data is
 promoted from them.
 
 - [BoardGameGeek board photograph](https://boardgamegeek.com/image/201674/monsters-menace-america)
