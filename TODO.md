@@ -391,7 +391,7 @@ Useful source documents:
 
 ### Milestone 10 acceptance
 
-- [x] [P0] Two players can finish a first-playable match and receive one authoritative winner. (Engine temporary-victory test and Prisma terminal-result test cover one authoritative winner; browser setup/playtest acceptance remains separate)
+- [x] [P0] Two players can finish a first-playable match and receive one authoritative winner. (Engine temporary-victory test and Prisma terminal-result test cover one authoritative winner; browser setup/playtest acceptance remains separate. `browser:online:verify` now self-starts local Vite/API services when no external URLs are supplied, but remains source-gated because the unresolved full board correctly prevents room creation.)
 - [x] [P1] Challenge fixtures cover default timing, site takeover, lost challenger, Hollywood exclusion, disappeared eligibility, weigh-in healing, giant ordering, and both victory types. (Engine fixtures cover the listed transitions plus giant-selected order and `america-saved`/`monster-challenge` outcomes.)
 - [x] [P1] Reconnect and spectator flows render the same terminal result from persisted state. (Memory-store terminal flow refreshes a player snapshot and reads the same winner/victory through a spectator projection; hidden deck order remains redacted)
 - [x] [P1] No legal command can leave a completed match or create two winners. (The engine rejects every command at the terminal boundary and a table-driven regression test proves the terminal snapshot and winner remain unchanged.)

@@ -6,8 +6,48 @@ import process from "node:process";
 import WebSocket from "ws";
 import { chromePath } from "./chrome-path.mjs";
 
-const url = process.env.BROWSER_TEST_URL ?? "http://127.0.0.1:5177/";
+const webPort = Number(process.env.BROWSER_ONLINE_WEB_PORT ?? 5177);
+const apiPort = Number(process.env.BROWSER_ONLINE_API_PORT ?? 8787);
+const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${webPort}/`;
+const apiUrl = process.env.BROWSER_API_URL ?? `http://127.0.0.1:${apiPort}`;
+const ownsWebServer = !process.env.BROWSER_TEST_URL;
+const ownsApiServer = !process.env.BROWSER_API_URL;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+const startServer = ({ command, args, cwd, env, name, ready }) => {
+  const child = spawn(command, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"] });
+  let output = "";
+  child.stdout.on("data", (chunk) => { output += chunk.toString(); });
+  child.stderr.on("data", (chunk) => { output += chunk.toString(); });
+  const waitForReady = async () => {
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      try {
+        if (await ready()) return;
+      } catch {
+        // The local service is still starting.
+      }
+      await wait(100);
+    }
+    throw new Error(`${name} did not become ready.\n${output}`);
+  };
+  return { child, output: () => output, waitForReady };
+};
+
+const stopServer = (server) => new Promise((resolve) => {
+  if (!server || server.child.exitCode !== null) {
+    resolve();
+    return;
+  }
+  const forceStop = setTimeout(() => {
+    server.child.kill("SIGKILL");
+    resolve();
+  }, 2000);
+  server.child.once("exit", () => {
+    clearTimeout(forceStop);
+    resolve();
+  });
+  server.child.kill("SIGTERM");
+});
 
 async function openBrowser(port, name, existingProfile) {
   const profile = existingProfile ?? await mkdtemp(join(tmpdir(), `abominations-online-${name}-`));
@@ -54,7 +94,7 @@ async function openBrowser(port, name, existingProfile) {
       if (await evaluate(expression)) return;
       await wait(100);
     }
-    const diagnostic = await evaluate(`({ url: location.href, connection: document.querySelector(".connection")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim() })`);
+    const diagnostic = await evaluate(`({ url: location.href, connection: document.querySelector(".connection")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim() })`);
     throw new Error(`${name}: timed out waiting for ${label}: ${JSON.stringify(diagnostic)}`);
   };
   return {
@@ -76,10 +116,37 @@ async function openBrowser(port, name, existingProfile) {
   };
 }
 
-let first = await openBrowser(9230, "first");
-const second = await openBrowser(9231, "second");
-const spectator = await openBrowser(9232, "spectator");
+let webServer;
+let apiServer;
+let first;
+let second;
+let spectator;
 try {
+  if (ownsWebServer) {
+    webServer = startServer({
+      command: process.execPath,
+      args: [join(process.cwd(), "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(webPort)],
+      cwd: join(process.cwd(), "apps/web"),
+      env: { ...process.env, VITE_API_URL: apiUrl },
+      name: "Vite",
+      ready: () => fetch(url),
+    });
+    await webServer.waitForReady();
+  }
+  if (ownsApiServer) {
+    apiServer = startServer({
+      command: process.execPath,
+      args: ["--import", "tsx/esm", "src/server.ts"],
+      cwd: join(process.cwd(), "apps/api"),
+      env: { ...process.env, PORT: String(apiPort), ALLOW_DEVELOPMENT_FIXTURE: "true", DEVELOPMENT_API_RATE_LIMIT: "10000", DEVELOPMENT_WS_RATE_LIMIT: "1000" },
+      name: "development API",
+      ready: async () => (await fetch(`${apiUrl}/health`)).ok,
+    });
+    await apiServer.waitForReady();
+  }
+  first = await openBrowser(9230, "first");
+  second = await openBrowser(9231, "second");
+  spectator = await openBrowser(9232, "spectator");
   await first.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "first lobby");
   await first.evaluate(`(() => { const input = document.querySelector('[aria-label="Display name"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(input, "First player"); input.dispatchEvent(new Event("input", { bubbles: true })); })()`);
   if (!await first.click("Create")) throw new Error("First browser could not create a room.");
@@ -146,7 +213,7 @@ try {
   await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first browser recovered Move state");
   const forgedCommand = await first.evaluate(`(async () => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
-    const response = await fetch("http://localhost:8787/rooms/${roomCode}/actions", {
+    const response = await fetch("${apiUrl}/rooms/${roomCode}/actions", {
       method: "POST",
       headers: { "content-type": "application/json", "x-room-token": session.token ?? "" },
       body: JSON.stringify({ envelope: { actionId: crypto.randomUUID(), actorId: "forged-browser-actor", expectedRevision: 0, protocolVersion: 1, command: { type: "pass-move" } } }),
@@ -156,7 +223,7 @@ try {
   if (forgedCommand.status !== 400 || await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`)) throw new Error(`Forged browser command was not rejected without changing Move: ${JSON.stringify(forgedCommand)}`);
   const malformedCommand = await first.evaluate(`(async () => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
-    const response = await fetch("http://localhost:8787/rooms/${roomCode}/actions", {
+    const response = await fetch("${apiUrl}/rooms/${roomCode}/actions", {
       method: "POST",
       headers: { "content-type": "application/json", "x-room-token": session.token ?? "" },
       body: "{ malformed browser payload",
@@ -235,5 +302,6 @@ try {
   if (!reloadedTerminal) throw new Error("Reloaded second browser lost the terminal result.");
   console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: "verified", onlineConcession: "verified", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
 } finally {
-  await Promise.all([first.close(), second.close(), spectator.close()]);
+  await Promise.all([first?.close(), second?.close(), spectator?.close()]);
+  await Promise.all([stopServer(apiServer), stopServer(webServer)]);
 }
