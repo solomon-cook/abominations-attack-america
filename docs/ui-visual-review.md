@@ -78,3 +78,10 @@ confirmed the remaining source-fidelity defect: the shell is a neutral
 rectangle, not the physical board's authored coast/sea cut-outs, feature art,
 labels, barriers, or off-board boundary. The surface correctly presents this as
 read-only review tooling and does not expose it as MVP play.
+
+The follow-up board-review contract checked the optimized full-setup and
+top-down reference photographs at 1280 × 720, 834 × 1112, and 390 × 844. Both
+images loaded at every viewport, while the 254-face candidate remained
+contained, non-playable, and free of unresolved player-facing labels. This is
+runtime evidence for the comparison tool only; it does not constitute manual
+visual acceptance or physical-board transcription sign-off.
