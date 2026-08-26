@@ -995,6 +995,34 @@ function monsterHasMutation(state: Pick<GameState, "monsters" | "players">, mons
   return playerIndex >= 0 && state.players[playerIndex]?.mutationCardIds.includes(cardId) === true;
 }
 
+interface MonsterContinuousEffects {
+  readonly moveBonus: number;
+  readonly movement: MonsterMovement;
+  readonly defenseBonus: number;
+  readonly waterBarrierDefenseBonus: number;
+  readonly damagePerHit?: number;
+  readonly firstRoundAttackBonus: number;
+  readonly crossesWaterBarriers: boolean;
+}
+
+/**
+ * Compose only the independently sourced continuous Mutation effects.
+ * Triggered, optional, and source-gated card lifecycles remain at their
+ * authoritative timing sites rather than being inferred here.
+ */
+function monsterContinuousEffects(state: Pick<GameState, "monsters" | "players">, monster: Monster): MonsterContinuousEffects {
+  const has = (cardId: string) => monsterHasMutation(state, monster, cardId);
+  return {
+    moveBonus: (has("High-Octane Blood") ? 1 : 0) + (has("Winged Horror") ? 1 : 0) - (has("Armored Scales") ? 1 : 0),
+    movement: has("Winged Horror") ? "fly" : monster.movement,
+    defenseBonus: has("Armored Scales") ? 1 : 0,
+    waterBarrierDefenseBonus: has("Fins and Gills") ? 1 : 0,
+    damagePerHit: has("War Spikes") ? 4 : undefined,
+    firstRoundAttackBonus: has("Atomic Breath") ? 1 : 0,
+    crossesWaterBarriers: has("Fins and Gills"),
+  };
+}
+
 function applyBattleResearchEffects(state: GameState, pending: PendingBattle, monster: Monster): void {
   const involvedPlayers = new Set(
     state.units
@@ -1021,34 +1049,32 @@ function effectiveUnitMove(state: Pick<GameState, "players">, unit: MilitaryUnit
 }
 
 function effectiveMonsterMove(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
-  const bonus = (monsterHasMutation(state, monster, "High-Octane Blood") ? 1 : 0)
-    + (monsterHasMutation(state, monster, "Winged Horror") ? 1 : 0);
-  const penalty = monsterHasMutation(state, monster, "Armored Scales") ? 1 : 0;
-  return Math.max(1, monster.move + bonus - penalty);
+  return Math.max(1, monster.move + monsterContinuousEffects(state, monster).moveBonus);
 }
 
 function effectiveMonsterMovement(state: Pick<GameState, "monsters" | "players">, monster: Monster): MonsterMovement {
-  return monsterHasMutation(state, monster, "Winged Horror") ? "fly" : monster.movement;
+  return monsterContinuousEffects(state, monster).movement;
 }
 
 function effectiveMonsterDefense(state: Pick<GameState, "monsters" | "players" | "boardId" | "boardVersion" | "boardContentHash">, monster: Monster, board = boardForState(state)): number {
   const hasWaterBarrier = isHexKey(monster.location) && board.edges.some((edge) => edge.enabled && edge.to === monster.location && (edge.barrier === "lake" || edge.barrier === "sea"));
-  return monster.defense
-    + (monsterHasMutation(state, monster, "Armored Scales") ? 1 : 0)
-    + (monsterHasMutation(state, monster, "Fins and Gills") && hasWaterBarrier ? 1 : 0);
+  const effects = monsterContinuousEffects(state, monster);
+  return monster.defense + effects.defenseBonus + (hasWaterBarrier ? effects.waterBarrierDefenseBonus : 0);
 }
 
 function effectiveMonsterDamage(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
-  return monsterHasMutation(state, monster, "War Spikes") ? 4 : monster.damage;
+  return monsterContinuousEffects(state, monster).damagePerHit ?? monster.damage;
 }
 
 function effectiveMonsterAttacks(state: Pick<GameState, "monsters" | "players">, monster: Monster, round: number): number {
-  return monster.attacks + (round === 1 && monsterHasMutation(state, monster, "Atomic Breath") ? 1 : 0);
+  const effects = monsterContinuousEffects(state, monster);
+  return monster.attacks + (round === 1 ? effects.firstRoundAttackBonus : 0);
 }
 
 function monsterMovementPathAllowed(state: Pick<GameState, "monsters" | "players">, monster: Monster, board: BoardDefinition, path: readonly HexKey[]): boolean {
-  const movement = effectiveMonsterMovement(state, monster);
-  const crossesWaterBarriers = monsterHasMutation(state, monster, "Fins and Gills");
+  const effects = monsterContinuousEffects(state, monster);
+  const movement = effects.movement;
+  const crossesWaterBarriers = effects.crossesWaterBarriers;
   return path.every((space, index) => {
     if (index === 0) return Boolean(board.hexes[space]) && waterClassAllowed(movement, board.hexes[space].waterClass);
     const previous = path[index - 1];

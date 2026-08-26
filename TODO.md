@@ -338,6 +338,7 @@ Useful source documents:
   - [ ] Complete source-backed visibility, duration, stacking/conflict, and permanent-lifecycle rules for every production card.
   - [x] [P1] Keep deck order private in player and spectator projections. (`projectState` removes internal order and discard contents for both audiences; projection tests cover both.)
 - [ ] [P1] Build a composable effect system for stat modifiers, movement abilities, attack changes, control overrides, placement, and triggered effects.
+  - [x] Compose the independently sourced continuous Mutation stat and movement effects through one authoritative projection; optional, triggered, placement, and source-gated lifecycles remain separate until their rules are verified.
   - [P1] Define precedence for general rules, component rules, persistent effects, and one-shot effects.
 - [ ] [P1] Define stacking and conflict behaviour from sourced card text rather than generic assumptions.
   - [x] Apply independently sourced additive movement bonuses cumulatively (`High-Octane Blood` and `Winged Horror` each contribute `+1 Move`); broader card stacking/conflict precedence remains source-gated.
