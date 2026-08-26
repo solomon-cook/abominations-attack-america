@@ -11,6 +11,16 @@ The API handles `SIGTERM` and `SIGINT` by closing active WebSockets, draining th
 - Keep Prisma migration credentials separate from the API runtime role. The runtime role needs only the tables and operations used by the application.
 - Verify HTTPS/WSS, proxy WebSocket upgrades, bounded request bodies, distributed rate limiting, and log/metric collection before exposing the API.
 
+## Persistence load probe
+
+The bounded harness can exercise the Prisma adapter when a disposable Postgres
+database is available: `DATABASE_URL=... npm run load:prisma:verify`. This mode
+uses the development fixture only to exercise persistence, while retaining the
+production board-validation gate for real production room creation. It covers
+concurrent rooms, spectators, WebSocket/polling parity, commands, and bounded
+reconnects; it is not a substitute for a sustained managed-service load test or
+a process/host restart drill.
+
 ## Migration and rollback
 
 1. Run `npm ci`, `npm run verify`, and `npm run prisma:validate` from the exact release commit.

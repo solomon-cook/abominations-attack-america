@@ -15,7 +15,10 @@ const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL 
 const runtimeConfig = validateRuntimeConfig();
 const allowedOrigin = runtimeConfig.allowedOrigin;
 const allowDevelopmentFixture = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEVELOPMENT_FIXTURE === "true";
-const store: RoomStore = allowDevelopmentFixture ? new MemoryRoomStore(true) : databaseUrl ? new PrismaRoomStore() : new MemoryRoomStore(false);
+const usePrisma = Boolean(databaseUrl) && (!allowDevelopmentFixture || process.env.PERSISTENCE === "prisma");
+const store: RoomStore = usePrisma
+  ? new PrismaRoomStore(undefined, allowDevelopmentFixture)
+  : new MemoryRoomStore(allowDevelopmentFixture);
 const sockets = new Map<string, Map<WebSocket, string>>();
 const RATE_WINDOW_MS = 60_000;
 const configuredDevelopmentLimit = (name: string, fallback: number) => {
@@ -167,8 +170,10 @@ const shutdown = async (signal: string) => {
   if (shuttingDown) return;
   shuttingDown = true;
   operationalLog({ event: "deployment.shutdown", signal });
-  for (const group of sockets.values()) for (const socket of group.keys()) socket.close(1001, "Server is restarting");
+  for (const group of sockets.values()) for (const socket of group.keys()) socket.terminate();
   sockets.clear();
+  await new Promise<void>((resolve) => wsServer.close(() => resolve()));
+  server.closeAllConnections?.();
   await new Promise<void>((resolve) => {
     if (!server.listening) return resolve();
     server.close(() => resolve());

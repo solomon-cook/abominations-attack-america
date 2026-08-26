@@ -3,6 +3,11 @@ import { WebSocket } from "ws";
 
 const roomCount = Number(process.env.LOAD_ROOMS ?? 8);
 const reconnectsPerRoom = Number(process.env.LOAD_RECONNECTS ?? 2);
+const persistence = process.env.LOAD_PERSISTENCE ?? "memory";
+if (persistence !== "memory" && persistence !== "prisma") throw new Error("LOAD_PERSISTENCE must be memory or prisma.");
+if (persistence === "prisma" && !(process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL)?.trim()) {
+  throw new Error("LOAD_PERSISTENCE=prisma requires DATABASE_URL, PRISMA_DATABASE_URL, or POSTGRES_URL.");
+}
 const port = 22000 + (process.pid % 1000);
 const baseUrl = `http://127.0.0.1:${port}`;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -82,15 +87,22 @@ async function createRoom(index) {
 async function main() {
   if (!Number.isInteger(roomCount) || roomCount < 1 || roomCount > 32) throw new Error("LOAD_ROOMS must be an integer from 1 to 32.");
   if (!Number.isInteger(reconnectsPerRoom) || reconnectsPerRoom < 1 || reconnectsPerRoom > 16) throw new Error("LOAD_RECONNECTS must be an integer from 1 to 16.");
+  const childEnvironment = {
+    ...process.env,
+    PORT: String(port),
+    PERSISTENCE: persistence,
+    ALLOW_DEVELOPMENT_FIXTURE: "true",
+    DEVELOPMENT_API_RATE_LIMIT: "10000",
+    DEVELOPMENT_WS_RATE_LIMIT: "1000",
+  };
+  if (persistence === "memory") {
+    childEnvironment.DATABASE_URL = "";
+    childEnvironment.PRISMA_DATABASE_URL = "";
+    childEnvironment.POSTGRES_URL = "";
+  }
   const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
     cwd: new URL("../apps/api", import.meta.url),
-    env: {
-      ...process.env,
-      PORT: String(port),
-      ALLOW_DEVELOPMENT_FIXTURE: "true",
-      DEVELOPMENT_API_RATE_LIMIT: "10000",
-      DEVELOPMENT_WS_RATE_LIMIT: "1000",
-    },
+    env: childEnvironment,
     stdio: ["ignore", "ignore", "pipe"],
   });
   const sockets = [];
@@ -119,7 +131,7 @@ async function main() {
     }));
     const metrics = await fetch(`${baseUrl}/metrics`).then((result) => result.json());
     if (!metrics || typeof metrics !== "object") throw new Error("Metrics endpoint did not return an object.");
-    console.log(`Verified bounded development API load: ${roomCount} concurrent rooms, spectators, WebSocket/polling parity, one command per room, and ${reconnectsPerRoom} reconnects per room.`);
+    console.log(`Verified bounded ${persistence} API load: ${roomCount} concurrent rooms, spectators, WebSocket/polling parity, one command per room, and ${reconnectsPerRoom} reconnects per room.`);
   } finally {
     for (const socket of sockets) closeSocket(socket);
     if (child.exitCode === null) {

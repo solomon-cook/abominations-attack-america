@@ -23,6 +23,7 @@
     "web-pending:verify": "node scripts/verify-web-pending-decisions.mjs",
     "web-board-pin:verify": "node scripts/verify-web-board-pin.mjs",
     "load:development:verify": "node scripts/load-test-development-api.mjs",
+    "load:prisma:verify": "LOAD_PERSISTENCE=prisma node scripts/load-test-development-api.mjs",
     "web-responsive:verify": "node scripts/verify-web-responsive-contract.mjs",
     "web-board-layout:verify": "tsx scripts/verify-web-board-layout.ts",
     "production-config:verify": "tsx scripts/verify-production-config.ts",
