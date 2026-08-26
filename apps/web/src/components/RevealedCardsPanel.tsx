@@ -19,6 +19,16 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
   const activeMonsterOwnsPendingBattle = pendingBattle?.monsterId === game.monsters[playerIndex]?.id;
   const canUseMutation = canAct && isActivePlayer && game.phase === "fight" && Boolean(activeMonsterOwnsPendingBattle);
   const canUseDefenseSatellites = canAct && isActivePlayer && game.phase !== "challenge" && game.phase !== "game-over" && game.pendingBattles.length === 0 && !game.pendingRetreat;
+  const cardAssetSrc = (cardId: string) => {
+    const slug = cardId.toLowerCase().replaceAll(" ", "-").replaceAll("!", "").replaceAll("'", "");
+    const researchCards = ["Mecha-Monster", "Cutbacks", "Laser Fence", "Guard Commander", "Defense Satellites", "Stabilizer Ray", "Fusion Cells", "X-Fighters", "Molecular Cannon", "2nd Generation", "Blonde Lure", "Anti-Mutagen", "Antimatter", "Scientific Analysis", "Chopper Lift", "Captain Colossal"];
+    const mutationCards = ["Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "Berserk", "War Spikes", "Atomic Breath", "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Son of a Monster", "Winged Horror", "Kinda Friendly", "Laser Beam Eyes", "Armored Scales", "It's a Robot!"];
+    return researchCards.includes(cardId)
+      ? `/assets/cards/military-research-${slug}.webp`
+      : mutationCards.includes(cardId)
+        ? `/assets/cards/monster-mutation-${slug}.webp`
+        : undefined;
+  };
   const cardDetails = (cardId: string) => {
     const definition = cardDefinition(cardId);
     const rule = sourcedCardRule(cardId);
@@ -49,6 +59,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
           <span>{definition?.availability === "implemented" ? "Implemented in this ruleset" : "Source-gated · unavailable"}</span>
           {rule ? (
             <>
+              {cardAssetSrc(cardId) && <img className="hand-card-art" src={cardAssetSrc(cardId)} alt={`${cardId} card artwork with sourced rules text`} loading="lazy" />}
               {actionWindow && <span className="hand-card-action-status">{isActivePlayer ? `Playable through current controls: ${actionWindow}` : `Playable by the active player: ${actionWindow}`}</span>}
               {directAction}
               <div className="hand-card-meta" aria-label={`${cardId} rule metadata`}>
@@ -61,7 +72,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
                 <span>Source: {rule.sourceRefs.join(", ")}</span>
               </div>
               <strong>{rule.timing}</strong>
-              <p>{rule.transcription}</p>
+              <p className="hand-card-rules-box">{rule.transcription}</p>
               <small>{rule.classification === "persistent" ? "Keep this card face up while its sourced continuous effect applies." : directAction ? "This direct action is legal in the current authoritative window." : actionWindow ? "Use the matching authoritative action in the current decision controls; the hand never issues an independent command." : "When this card is usable, the authoritative phase controls provide its legal target and confirmation."}</small>
             </>
           ) : (

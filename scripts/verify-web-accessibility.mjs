@@ -65,6 +65,7 @@ const requiredSourceMarkers = [
   ["on-demand game details toggle", /aria-controls="game-side-panel"/],
   ["named game controls panel", /id="game-side-panel" className="game-side-panel" aria-label="Game controls and information"/],
   ["private hand details", /aria-label=\{`Private hand for Player/],
+  ["apostrophe-safe card artwork slugs", /replaceAll\("'", ""\)/],
   ["card rule metadata", /aria-label=\{`\$\{cardId\} rule metadata`/],
   ["card source and target boundaries", /Target and confirmation:[\s\S]*Source:/],
   ["implemented card action windows", /Optional Mutation battle abilities[\s\S]*Defense Satellites[\s\S]*Antimatter[\s\S]*Laser Fence[\s\S]*Stabilizer Ray/],
