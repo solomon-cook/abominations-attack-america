@@ -2,7 +2,7 @@
   "desktop": {
     "width": 1280,
     "height": 720,
-    "sha256": "ce8806cb01ca1ed9d0432f41cd06a1deda18ad1bcfea2867c380e943c6af9b28",
+    "sha256": "ded23fcee465077cf401ea1047d948560b26c4c3591950ae562cdd55106b88a7",
     "smoke": {
       "ok": true,
       "viewport": "1280x720",
@@ -23,7 +23,7 @@
   "tablet": {
     "width": 834,
     "height": 1112,
-    "sha256": "39459282b945c5d157cce0bd495100930d516e3c620aae9eb2d2dea3212d08ee",
+    "sha256": "042d6ba5d67912329bdc1762117560643b0fd7e211bacbc43f3ed0e68e72853e",
     "smoke": {
       "ok": true,
       "viewport": "834x1112",
@@ -44,7 +44,7 @@
   "mobile": {
     "width": 390,
     "height": 844,
-    "sha256": "54d30e6892e842cd423089223b93c4b1781311a71d7ae614eb1299002401365a",
+    "sha256": "68c45b04fd1f129cff400ca18fcd1f51d805d4a68e563cad30f9dd0147f78907",
     "smoke": {
       "ok": true,
       "viewport": "390x844",
