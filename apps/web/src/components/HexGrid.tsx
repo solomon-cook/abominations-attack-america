@@ -148,7 +148,10 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
         ].join(", ");
         const displayName = place?.name ?? hex.label ?? `Unresolved ${hex.key}`;
-        const visibleName = place?.name ?? (developmentFixture ? hex.label : "");
+        const provisionalFeatureName = board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id && hex.features.some((feature) => feature.kind === "city")
+          ? hex.label
+          : undefined;
+        const visibleName = place?.name ?? (developmentFixture ? hex.label : provisionalFeatureName ?? "");
         const locationMeta = place?.kind === "city"
           ? `city, ${place.marker ?? "benefit not recorded"}`
           : place?.kind === "mutation"
