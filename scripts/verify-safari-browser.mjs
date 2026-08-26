@@ -77,7 +77,7 @@ try {
   const created = await request(driverPort, "/session", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ capabilities: { alwaysMatch: { browserName, acceptInsecureCerts: true } } }),
+    body: JSON.stringify({ capabilities: { alwaysMatch: { browserName, acceptInsecureCerts: true, ...(browserName === "firefox" ? { "moz:firefoxOptions": { args: ["-headless"] } } : {}) } } }),
   });
   const createdBody = await created.json();
   sessionId = createdBody.value?.sessionId;
