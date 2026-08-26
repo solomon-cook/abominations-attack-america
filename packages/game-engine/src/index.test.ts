@@ -854,6 +854,40 @@ test("provisional playtest factory pins the complete guessed board without promo
   assert.equal(validateBoardDefinition(boardForState(state), { production: true }).length > 0, true);
 });
 
+test("provisional board gameplay coverage uses its own movement and encounter features", () => {
+  const state = createProvisionalPlaytestGame(2, 11);
+  const board = boardForState(state);
+  const start = state.monsters[state.currentPlayer].location as `${number},${number}`;
+  const adjacent = board.edges.find((edge) => edge.from === start)?.to;
+  assert.ok(adjacent);
+  assert.equal(legalMonsterDestinations(state).includes(adjacent), true);
+
+  const cityKey = Object.values(board.hexes).find((hex) => hex.features.some((feature) => feature.kind === "city"))!.key;
+  const cityState = structuredClone(state);
+  cityState.phase = "encounter";
+  cityState.monsters[cityState.currentPlayer].location = cityKey;
+  cityState.pendingDecision = { type: "encounter-resolution", playerIndex: cityState.currentPlayer, location: cityKey };
+  const cityResult = resolveEncounterResult(cityState, "health");
+  assert.equal(cityResult.effects.some((effect) => effect.type === "health"), true);
+  assert.equal(cityResult.state.stompedLocations.includes(cityKey), true);
+
+  const baseKey = Object.values(board.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base"))!.key;
+  const baseState = structuredClone(state);
+  baseState.phase = "encounter";
+  baseState.monsters[baseState.currentPlayer].location = baseKey;
+  baseState.pendingDecision = { type: "encounter-resolution", playerIndex: baseState.currentPlayer, location: baseKey };
+  const baseResult = resolveEncounterResult(baseState, "health");
+  assert.equal(baseResult.effects.some((effect) => effect.type === "infamy"), true);
+  assert.equal(baseResult.state.stompedLocations.includes(baseKey), true);
+
+  const skippedState = structuredClone(cityState);
+  skippedState.stompedLocations = [cityKey];
+  const markersBefore = skippedState.stompMarkers;
+  const skippedResult = resolveEncounterResult(skippedState, "health");
+  assert.deepEqual(skippedResult.effects, []);
+  assert.equal(skippedResult.state.stompMarkers, markersBefore);
+});
+
 test("board-dependent engine helpers resolve the pinned board or fail closed", () => {
   const state = createGame(2);
   assert.equal(boardForState(state), DEVELOPMENT_BOARD);
