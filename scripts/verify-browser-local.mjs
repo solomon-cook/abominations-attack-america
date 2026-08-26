@@ -85,6 +85,12 @@ try {
   await waitFor(`!document.querySelector(".setup-panel")`, "completed local setup");
   const setupPhase = await phase();
   if (!/move/i.test(setupPhase)) throw new Error(`Expected Move after setup, got ${setupPhase || "no phase"}.`);
+  const accessibleControls = await evaluate(`(() => {
+    const controls = [...document.querySelectorAll("button, input, select, textarea")];
+    const named = controls.every((control) => Boolean(control.textContent?.trim() || control.getAttribute("aria-label") || control.getAttribute("aria-labelledby") || control.getAttribute("placeholder")));
+    return Boolean(document.querySelector("main")) && named;
+  })()`);
+  if (!accessibleControls) throw new Error("Local browser smoke found an unnamed gameplay control or missing main landmark.");
 
   await waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "legal movement destination");
   const selected = await evaluate(`(() => { const tile = document.querySelector(".hex-tile.legal:not(:disabled)"); tile?.click(); return Boolean(tile); })()`);
@@ -99,7 +105,7 @@ try {
   const afterMove = await phase();
   if (!afterMove) throw new Error("No phase prompt remained after confirming movement.");
 
-  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", pathCancel: "verified", pathConfirmation: "verified", nextPhase: afterMove }));
+  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", pathCancel: "verified", pathConfirmation: "verified", nextPhase: afterMove }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");
