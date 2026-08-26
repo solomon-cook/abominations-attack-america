@@ -22,11 +22,11 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
         <h3>{unit.branch} · {unit.unitTypeId ?? "unit"}</h3>
         <p>{location} · {preview}</p>
       </div>
-      <div className="piece-detail-stats">
-        <span><b>{unit.move}</b> move</span>
-        <span><b>{unit.defense}</b> defense</span>
-        <span><b>{unit.damage}</b> damage</span>
-        <span><b>{unit.attacks}</b> attack</span>
+      <div className="piece-detail-stats" aria-label="Selected piece combat and movement metrics">
+        <span><span className="metric-icon" aria-hidden="true">↝</span> <b>{unit.move}</b> move</span>
+        <span><span className="metric-icon" aria-hidden="true">◇</span> <b>{unit.defense}</b> defense</span>
+        <span><span className="metric-icon" aria-hidden="true">✦</span> <b>{unit.damage}</b> damage</span>
+        <span><span className="metric-icon" aria-hidden="true">⚔</span> <b>{unit.attacks}</b> attack</span>
       </div>
       <button type="button" className="stack-clear" onClick={onClear}>Deselect</button>
     </section>
