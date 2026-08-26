@@ -62,10 +62,8 @@ import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
 import { playSound, type SoundCategory } from "./audio";
-import { registerPwaServiceWorker } from "./pwa";
+import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
-
-registerPwaServiceWorker();
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -1287,8 +1285,25 @@ function App() {
     </main>
   );
 }
+
+function AppShell() {
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  useEffect(() => registerPwaServiceWorker(() => setUpdateAvailable(true)), []);
+  return (
+    <>
+      <App />
+      {updateAvailable && (
+        <aside className="pwa-update-prompt" aria-live="polite" aria-label="Update available">
+          <strong>New version available</strong>
+          <span>Reload to use the latest playtest shell.</span>
+          <button onClick={() => void activatePwaUpdate()}>Reload and update</button>
+        </aside>
+      )}
+    </>
+  );
+}
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <AppShell />
   </StrictMode>,
 );
