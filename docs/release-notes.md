@@ -10,3 +10,11 @@
 ## Not a production release
 
 This checkpoint is not a public rules-complete release. Production room creation remains fail-closed until the full physical board is transcribed, validated, and signed off. Challenge rules, complete card effects, full browser/online QA, deployed infrastructure, privacy approval, content/IP approval, and release operations remain outstanding.
+
+## Support
+
+The documented [GitHub Issues support route](../SUPPORT.md) is publicly
+reachable, but issue creation is currently restricted. It is not an active
+support channel until that access restriction is removed or an alternative
+route is published. Please do not include secrets, room tokens, private game
+information, or personal data in any report.

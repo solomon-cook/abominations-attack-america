@@ -634,7 +634,7 @@ Useful source documents:
   - [x] Add a read-only deployment health/metrics probe that requires HTTPS and durable Prisma persistence (`npm run deployment:probe`); it remains unrun until a staging or production endpoint exists.
   - [ ] [P1] Complete final board-data, rules-fidelity, accessibility, content/IP, privacy, and security sign-offs.
   - [x] [P1] Prepare concise player rules, privacy information, known limitations, and release notes. (`docs/player-rules.md`, `docs/privacy.md`, `docs/known-limitations.md`, and `docs/release-notes.md`; public publication and support contact remain open.)
-  - [ ] [P1] Publish a verified support route and public release documentation.
+  - [ ] [P1] Publish a verified support route and public release documentation. (`SUPPORT.md` documents the public GitHub Issues candidate and `docs/release-notes.md` links it, but GitHub currently reports that issue creation is restricted; an active support route remains open.)
 
 ### Milestone 14 acceptance
 
