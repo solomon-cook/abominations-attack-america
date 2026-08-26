@@ -33,6 +33,12 @@ test("players can create, join, and read a room", async () => {
   assert.equal(state.participants.length, 2);
 });
 
+test("room creation preserves the host display name", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "  Alex  ");
+  assert.equal(host.room.participants[0]?.displayName, "Alex");
+});
+
 test("memory store health reports its persistence boundary", async () => {
   assert.deepEqual(await new MemoryRoomStore(true).health(), { persistence: "memory" });
 });

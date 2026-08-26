@@ -26,14 +26,14 @@ export class PrismaRoomStore implements RoomStore {
     return { persistence: "prisma" };
   }
 
-  async createRoom(maxPlayers: number): Promise<SessionResponse> {
+  async createRoom(maxPlayers: number, displayName = "Player 1"): Promise<SessionResponse> {
     const accessToken = token();
     const roomCode = code();
     const state = this.allowDevelopmentFixture
       ? createRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`)
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`);
     const room = await this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, state: state as any } });
-    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
+    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
     return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };
   }
 

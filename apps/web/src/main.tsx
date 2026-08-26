@@ -545,7 +545,7 @@ function App() {
     try {
       const result =
         kind === "create"
-          ? await createRoom(playerCount)
+          ? await createRoom(playerCount, displayName || "Player 1")
           : kind === "join"
             ? await joinRoom(roomCode, displayName || "Player")
             : await spectateRoom(roomCode, displayName || "Spectator");
@@ -573,7 +573,7 @@ function App() {
     try {
       const count = room.participants.filter((candidate) => candidate.role === "player").length;
       const rematchPlayerCount = (count === 3 || count === 4 ? count : 2) as 2 | 3 | 4;
-      const result = await createRoom(rematchPlayerCount);
+      const result = await createRoom(rematchPlayerCount, displayName || "Player 1");
       setPlayerCount(rematchPlayerCount);
       setSession(result);
       setRoom(result.room);

@@ -31,7 +31,7 @@ export function terminalResultSummary(state: GameState, terminalEvent: { type: s
 export interface RoomStore {
   close(): Promise<void>;
   health(): Promise<{ persistence: "memory" | "prisma" }>;
-  createRoom(maxPlayers: number): Promise<SessionResponse>;
+  createRoom(maxPlayers: number, displayName?: string): Promise<SessionResponse>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
   spectateRoom(code: string, displayName: string): Promise<SessionResponse>;
   disconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
@@ -58,7 +58,7 @@ export class MemoryRoomStore implements RoomStore {
 
   async health(): Promise<{ persistence: "memory" }> { return { persistence: "memory" }; }
 
-  async createRoom(maxPlayers: number): Promise<SessionResponse> {
+  async createRoom(maxPlayers: number, displayName = "Player 1"): Promise<SessionResponse> {
     const id = randomBytes(12).toString("hex");
     const roomCode = code();
     const state = this.allowDevelopmentFixture
@@ -66,7 +66,7 @@ export class MemoryRoomStore implements RoomStore {
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`);
     const room: StoredRoom = { id, code: roomCode, status: "waiting", maxPlayers, version: 0, state, participants: [], events: [], lastActivityAt: Date.now() };
     this.rooms.set(room.code, room);
-    return this.addParticipant(room, "Player 1", "player", 0);
+    return this.addParticipant(room, displayName, "player", 0);
   }
 
   async joinRoom(roomCode: string, displayName: string) {
