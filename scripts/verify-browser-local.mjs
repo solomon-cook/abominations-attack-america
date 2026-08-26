@@ -93,6 +93,14 @@ try {
   await waitFor(`!document.querySelector(".setup-panel")`, "completed local setup");
   const setupPhase = await phase();
   if (!/move/i.test(setupPhase)) throw new Error(`Expected Move after setup, got ${setupPhase || "no phase"}.`);
+  const boardSurface = await evaluate(`(() => ({
+    totalHexes: document.querySelectorAll(".hex-tile").length,
+    developmentHexes: document.querySelectorAll(".hex-tile.development-fixture").length,
+    unresolvedShellHexes: document.querySelectorAll(".hex-tile.unresolved").length,
+  }))()`);
+  if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252) {
+    throw new Error(`Local browser smoke found an unexpected candidate board surface: ${JSON.stringify(boardSurface)}`);
+  }
   if (screenshotPath) {
     const screenshot = await command("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     await writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));

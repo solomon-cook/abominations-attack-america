@@ -21,7 +21,7 @@ The matrix is runtime evidence, not a pixel-snapshot baseline. It proves that th
 - The active match is board-first after setup; the secondary controls remain behind an explicit toggle.
 - The action dock is outside the map surface and does not cover rule-bearing cells.
 - The local development match clearly labels itself as a nine-space source-gated fixture.
-- The full 254-cell candidate is available only through the explicitly labelled read-only board review surface; it is not silently mixed into a development match.
+- The development match visibly renders the 254-cell candidate shell with nine canonical development overlays; the shell faces are disabled and neutral, and the separately labelled board review surface remains the only place where unresolved cells can be inspected.
 - The responsive contract covers dynamic viewport sizing, safe areas, touch-target rules, reduced motion, map containment, and compact action controls.
 
 ## Acceptance boundary
@@ -37,3 +37,10 @@ action-dock, and phase control used by the local smoke at 1280×720, 834×1112,
 and 390×844. All measured controls met the 44px minimum target contract. This
 is runtime evidence for the development fixture; it does not replace manual
 touch, zoom, focus, assistive-technology, or physical-board acceptance.
+
+On 2026-08-26, the post-setup Chrome visual checkpoint was updated after correcting
+the match surface: it now contains 261 tile buttons (254 candidate faces plus
+nine canonical development overlays), with 252 unresolved shell faces disabled.
+The updated hashes are recorded in `docs/browser-visual-baselines.json`. This
+proves the visible honeycomb candidate presentation, not physical-board fidelity
+or MVP promotion.

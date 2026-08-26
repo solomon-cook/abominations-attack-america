@@ -25,10 +25,29 @@ function displayHexesForGame(game: GameState) {
       developmentFixture: false,
     }));
   }
-  return Object.values(board.hexes).map((hex) => {
-    const place = locations.find((candidate) => locationIdToHexKey(candidate.id) === hex.key);
-    return { hex, place, left: place?.x ?? 50, top: place?.y ?? 50, developmentFixture: true };
+  const developmentPlaces = new Map(locations.map((place) => [locationIdToHexKey(place.id), place]));
+  const developmentHexes = new Map(Object.values(board.hexes).map((hex) => [hex.key, hex]));
+  const candidateLayout = buildDisplayHexLayout(FULL_HONEYCOMB_BOARD);
+  const candidateKeys = new Set(candidateLayout.map(({ hex }) => hex.key));
+  const shell = candidateLayout.map(({ hex: candidateHex, left, top }) => {
+    const developmentHex = developmentHexes.get(candidateHex.key);
+    return {
+      // The candidate shell is presentation-only here. Only the nine named
+      // development hexes below remain enabled by the actual board selectors.
+      hex: developmentHex ?? candidateHex,
+      place: developmentPlaces.get(candidateHex.key),
+      left,
+      top,
+      developmentFixture: Boolean(developmentHex),
+    };
   });
+  const outlyingDevelopmentHexes = [...developmentHexes.values()]
+    .filter((hex) => !candidateKeys.has(hex.key))
+    .map((hex) => {
+      const place = developmentPlaces.get(hex.key);
+      return { hex, place, left: place?.x ?? 50, top: place?.y ?? 50, developmentFixture: true };
+    });
+  return [...shell, ...outlyingDevelopmentHexes];
 }
 
 function boardArtForHex(hex: BoardHex, place?: (typeof locations)[number]) {

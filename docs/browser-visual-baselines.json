@@ -2,7 +2,7 @@
   "desktop": {
     "width": 1280,
     "height": 720,
-    "sha256": "3dbbf863f5aa5f8384e43bdf24488c37792b30cbc609db65187e793c647e3651",
+    "sha256": "7fc428e7f1b285429cbf371c1e6ebd00ab4dcdeae1bd4dbdcf357d95376b54c5",
     "smoke": {
       "ok": true,
       "url": "http://127.0.0.1:5177/",
@@ -24,7 +24,7 @@
   "tablet": {
     "width": 834,
     "height": 1112,
-    "sha256": "55a552d1de09aed6ca11add6bf890be45e90a30594950bc380a2cedef28e3be9",
+    "sha256": "dddb5d36272047234d30737bdae0d5016e0de7b61b2c32af3fa95f67be51d3da",
     "smoke": {
       "ok": true,
       "url": "http://127.0.0.1:5177/",
@@ -46,7 +46,7 @@
   "mobile": {
     "width": 390,
     "height": 844,
-    "sha256": "9c1bd49408803ef1b51c21801208942bfcdcbbe4584ea4c32dfd9ff615aabd9f",
+    "sha256": "56d21ef26c9bff2c4d87c12a82c01ca4be22c5c03890015585cc9e375d93e7a5",
     "smoke": {
       "ok": true,
       "url": "http://127.0.0.1:5177/",
