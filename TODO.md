@@ -519,6 +519,7 @@ Useful source documents:
 - [ ] [P1] Verify process restart and deployment do not lose durable rooms or command idempotency.
   - [x] Add graceful API shutdown that closes active WebSockets, drains HTTP, and disconnects Prisma before exit; durable-room survival across a real process/database restart remains deployment work.
   - [x] Keep an adapter-level restart regression: two `PrismaRoomStore` instances share the persistent adapter and replay the same action ID without advancing the room twice (`apps/api/src/prisma-store.test.ts`). This is not a real process/deployment or managed-Postgres drill.
+  - [x] Cover Prisma adapter reconnect leases and player projection redaction across store instances (`apps/api/src/prisma-store.test.ts`); this remains adapter-level evidence, not a managed-Postgres restart, concurrency, retention, or backup/restore drill.
   - [x] Add rate limits and abuse controls for create, join, spectate, read, command, and WebSocket operations. (The API applies bounded source-address HTTP and WebSocket handshake limits, returns explicit retry/close signals, and has deterministic limiter tests; distributed production enforcement remains a deployment requirement.)
 
 ### Milestone 12 acceptance
@@ -526,6 +527,7 @@ Useful source documents:
 - [ ] [P0] Two remote browsers can set up, play, refresh, disconnect, reconnect, and finish a match without state divergence.
 - [x] [P0] WebSocket and polling paths pass the same command/revision/reconnect scenarios. (The API-server integration test creates a development fixture room, compares the initial WebSocket snapshot with HTTP state, applies setup over HTTP, and verifies the WebSocket update matches the revisioned polling response; production-board creation remains source-gated.)
 - [ ] [P1] Prisma/Postgres restart, concurrency, idempotency, retention, and projection suites pass.
+  - [x] Add adapter-level reconnect-lease and projection regressions; live Postgres restart, concurrency, retention, and backup/restore evidence remain open.
 - [x] [P1] A spectator can follow a complete match but cannot act or view hidden information. (`apps/api/src/store.test.ts` runs a complete development match to terminal victory, compares player and spectator winner projections, asserts deck/hand redaction, and rejects spectator commands.)
 
 ## Milestone 13 — Responsive design, accessibility, onboarding, feedback, audio, and settings

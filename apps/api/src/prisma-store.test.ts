@@ -44,6 +44,31 @@ test("Prisma rejects expired sessions", async () => {
   await assert.rejects(() => store.getRoom(room.code, "token"), /Session token has expired/);
 });
 
+test("Prisma reconnect leases ignore stale tab disconnects", async () => {
+  const { adapter, room } = persistentAdapter();
+  const firstStore = new PrismaRoomStore(adapter);
+  const secondStore = new PrismaRoomStore(adapter);
+  const first = await firstStore.reconnect(room.code, "token", "tab-a");
+  assert.equal(first.participants[0]?.connected, true);
+  await secondStore.reconnect(room.code, "token", "tab-b");
+  const staleClose = await firstStore.disconnect(room.code, "token", "tab-a");
+  assert.equal(staleClose.participants[0]?.connected, true);
+  const currentClose = await secondStore.disconnect(room.code, "token", "tab-b");
+  assert.equal(currentClose.participants[0]?.connected, false);
+});
+
+test("Prisma projections redact another player's hand and deck order", async () => {
+  const { adapter, room } = persistentAdapter();
+  room.state.players[0].researchCardIds = ["Guard Commander"];
+  room.state.players[1].mutationCardIds = ["Rampage"];
+  const store = new PrismaRoomStore(adapter);
+  const playerView = await store.getRoom(room.code, "token");
+  assert.deepEqual(playerView.state.players[0].researchCardIds, ["Guard Commander"]);
+  assert.deepEqual(playerView.state.players[1].mutationCardIds, []);
+  assert.deepEqual(playerView.state.decks.research.order, []);
+  assert.deepEqual(playerView.state.decks.mutation.discard, []);
+});
+
 test("terminal command persists completed room status and winner result atomically", async () => {
   const { adapter, room, results } = persistentAdapter();
   room.state.stompMarkers = 1;
