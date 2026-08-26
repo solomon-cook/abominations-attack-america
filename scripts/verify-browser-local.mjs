@@ -6,7 +6,15 @@ import process from "node:process";
 import WebSocket from "ws";
 import { chromePath } from "./chrome-path.mjs";
 
-const url = process.env.BROWSER_TEST_URL ?? "http://127.0.0.1:5177/";
+const port = Number(process.env.BROWSER_LOCAL_PORT ?? 5177);
+const ownsServer = !process.env.BROWSER_TEST_URL;
+const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${port}/`;
+const server = ownsServer
+  ? spawn(process.execPath, [join(process.cwd(), "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(port)], { cwd: join(process.cwd(), "apps/web"), stdio: ["ignore", "pipe", "pipe"] })
+  : undefined;
+let serverOutput = "";
+server?.stdout.on("data", (chunk) => { serverOutput += chunk.toString(); });
+server?.stderr.on("data", (chunk) => { serverOutput += chunk.toString(); });
 const viewportWidth = Number(process.env.BROWSER_TEST_WIDTH ?? 1280);
 const viewportHeight = Number(process.env.BROWSER_TEST_HEIGHT ?? 720);
 const viewport = `${viewportWidth}x${viewportHeight}`;
@@ -19,6 +27,22 @@ const chrome = spawn(chromePath, [
 ], { stdio: "ignore" });
 
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+if (server) {
+  let ready = false;
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    try {
+      await fetch(url);
+      ready = true;
+      break;
+    } catch {
+      await wait(100);
+    }
+  }
+  if (!ready) {
+    server.kill("SIGTERM");
+    throw new Error(`Vite did not become ready at ${url}.\n${serverOutput}`);
+  }
+}
 const debugUrl = `http://127.0.0.1:${debugPort}/json/list`;
 let page;
 for (let attempt = 0; attempt < 80; attempt += 1) {
@@ -234,5 +258,9 @@ try {
   socket.close();
   chrome.kill("SIGKILL");
   if (chrome.exitCode === null) await new Promise((resolve) => chrome.once("exit", resolve));
+  if (server?.exitCode === null) {
+    server.kill("SIGTERM");
+    await new Promise((resolve) => server.once("exit", resolve));
+  }
   await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
