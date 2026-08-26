@@ -33,7 +33,7 @@ export function FightResolutionPanel({ game, canAct, pendingBattle, pendingAttac
           {units.length > 0 ? units.map((unit) => (
             <span className="fight-resolution-unit" key={unit.id}>
               <strong>{unit.branch} · {unit.unitTypeId ?? "unit"}</strong>
-              <small>{unit.attacks} attack{unit.attacks === 1 ? "" : "s"} · {unit.damage} damage · {unit.defense} Defense</small>
+              <small><span className="metric-icon" aria-hidden="true">⚔</span> {unit.attacks} attack{unit.attacks === 1 ? "" : "s"} · <span className="metric-icon" aria-hidden="true">✦</span> {unit.damage} damage · <span className="metric-icon" aria-hidden="true">◆</span> {unit.defense} Defense</small>
             </span>
           )) : <small>Participating units are recorded in the authoritative battle state.</small>}
         </div>
@@ -46,7 +46,7 @@ export function FightResolutionPanel({ game, canAct, pendingBattle, pendingAttac
         <div className="fight-resolution-side fight-resolution-monster">
           <span className="label">OPPOSING MONSTER</span>
           <strong>{monster?.name ?? "Monster in pending battle"}</strong>
-          {monster && <small>{monster.health}/{monster.maxHealth} Health · {monster.infamy} Infamy · {monster.move} Move</small>}
+          {monster && <small><span className="metric-icon" aria-hidden="true">♥</span> {monster.health}/{monster.maxHealth} Health · <span className="metric-icon" aria-hidden="true">◎</span> {monster.infamy} Infamy · <span className="metric-icon" aria-hidden="true">↗</span> {monster.move} Move</small>}
           {!monster && <small>Monster identity remains in the authoritative battle record.</small>}
         </div>
       </div>
