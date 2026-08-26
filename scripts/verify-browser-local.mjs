@@ -93,21 +93,51 @@ try {
   if (!accessibleControls) throw new Error("Local browser smoke found an unnamed gameplay control or missing main landmark.");
 
   await waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "legal movement destination");
-  const selected = await evaluate(`(() => { const tile = document.querySelector(".hex-tile.legal:not(:disabled)"); tile?.click(); return Boolean(tile); })()`);
+  const selected = await evaluate(`(() => {
+    const tiles = [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")];
+    const tile = tiles.find((candidate) => candidate.getAttribute("data-location-name") === "Denver") ?? tiles[0];
+    tile?.click();
+    return Boolean(tile);
+  })()`);
   if (!selected) throw new Error("No legal movement tile could be selected.");
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "path confirmation controls");
   await clickButton("Cancel");
   if (await evaluate(`!!document.querySelector(".path-controls")`)) throw new Error("Cancel did not clear the movement path.");
-  await evaluate(`document.querySelector(".hex-tile.legal:not(:disabled)")?.click()`);
+  await evaluate(`(() => {
+    const tiles = [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")];
+    (tiles.find((candidate) => candidate.getAttribute("data-location-name") === "Denver") ?? tiles[0])?.click();
+  })()`);
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "path confirmation after cancel");
   await clickButton("Confirm path");
   await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "movement result");
   const afterMove = await phase();
   if (!afterMove) throw new Error("No phase prompt remained after confirming movement.");
 
+  let fight = "not-reached";
   let encounter = "not-reached";
   let deployment = "not-reached";
-  if (afterMove === "Encounter") {
+  let settledPhase = afterMove;
+  let finalPhase = settledPhase;
+  if (afterMove === "Fight") {
+    fight = "verified";
+    for (let attempt = 0; attempt < 8 && await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Fight"`); attempt += 1) {
+      const clicked = await evaluate(`(() => {
+        const buttons = [...document.querySelectorAll("button")].filter((button) => !button.disabled);
+        const preferred = buttons.find((button) => button.textContent.trim() === "Confirm retreat")
+          ?? buttons.find((button) => /^Attack /.test(button.textContent.trim()))
+          ?? buttons.find((button) => /^(Resolve fight|Resolve without spending Infamy|Spend 1 Infamy)/.test(button.textContent.trim()))
+          ?? buttons.find((button) => button.closest(".retreat-unit"));
+        if (!preferred) return false;
+        preferred.click();
+        return true;
+      })()`);
+      if (!clicked) throw new Error("Fight exposed no enabled decision control.");
+      await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "Fight result");
+    }
+    if (await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Fight"`)) throw new Error("Fight did not resolve within the supported decision steps.");
+    settledPhase = await phase();
+  }
+  if (settledPhase === "Encounter") {
     encounter = "verified";
     for (let attempt = 0; attempt < 4 && await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Encounter"`); attempt += 1) {
       const clicked = await evaluate(`(() => {
@@ -127,9 +157,10 @@ try {
     if (!await clickButton("Pass deployment")) throw new Error("Deploy exposed no pass control after Encounter.");
     deployment = "verified";
     await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "next Move phase after Deploy");
+    finalPhase = await phase();
   }
 
-  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", pathCancel: "verified", pathConfirmation: "verified", encounter, deployment, nextPhase: afterMove }));
+  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, nextPhase: finalPhase }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");
