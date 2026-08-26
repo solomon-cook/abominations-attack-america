@@ -45,6 +45,7 @@ const requiredSourceMarkers = [
   ["Hollywood recovery die", /aria-label="Recorded Hollywood recovery die"/],
   ["Monster Challenge duel surface", /aria-label="Recorded Monster Challenge duel"/],
   ["authoritative Challenge Health replay", /targetHealthBefore/],
+  ["visible combat outcomes", /className=\"combat-outcomes\"[\s\S]*lastFightOutcomes/],
   ["contextual decision rules help", /aria-label="Rules help for current decision"/],
   ["development fixture overlay", /development-fixture/],
   ["viewport-fitted gameplay shell", /className=\{`game-screen/],

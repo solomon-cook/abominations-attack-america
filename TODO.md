@@ -464,7 +464,7 @@ Useful source documents:
   - [x] [P0] Clear server rejection recovery. (Online command errors refresh the authoritative room before retry)
   - [x] [P0] Present battle order selection and one-attack-at-a-time target choices. (Battle order and every normal multi-unit attack target are explicit and persisted; pending-target invariants reject stale or forged references; the browser presents each subsequent target decision.)
 - [x] [P0] Animate or sequence dice results without delaying authoritative state indefinitely. (The browser now sequences the recorded fight rolls as a presentation-only result strip keyed to the authoritative event; `prefers-reduced-motion` disables the animation.)
-  - [P0] Show damage, smash, destruction, trophy, retreat, disappearance, and Hollywood outcomes visibly.
+  - [x] [P0] Show damage, smash, destruction, trophy, retreat, disappearance, and Hollywood outcomes visibly. (`TurnPrompt` renders authoritative attack damage/smash outcomes, destroyed-unit and Hollywood details; `PhaseActions` renders trophy, retreat, and disappearance choices.)
 - [x] [P0] Present Encounter rewards and Deploy choices as explicit actions rather than generic “advance” buttons. (Phase-specific command types are emitted after client normalization; `advance` remains compatibility-only in the engine)
   - [x] [P0] Provide a readable chronological game log. (Engine appends events and UI shows the latest entries in chronological order)
   - [x] [P0] Add actor, action, outcome, and expandable event detail to the game log. (Engine event entries are actor-addressable and the web log renders expandable JSON detail)
