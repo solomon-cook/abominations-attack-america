@@ -27,3 +27,17 @@ Staging and production must have separate URLs, databases, secrets, allowed orig
 6. Promote only after board, rules, accessibility, content/IP, privacy, and security sign-offs are recorded.
 
 The current repository is at the local foundation stage: no provider, staging URL, production URL, live Postgres instance, backup drill, or external alert sink is claimed here.
+
+## Read-only deployment probe
+
+Once a staging or production URL exists, run:
+
+```sh
+DEPLOYMENT_BASE_URL=https://api.example.test npm run deployment:probe
+```
+
+The probe performs no state-changing request. It requires HTTPS, checks that
+`/health` reports `ok: true` with Prisma persistence, and validates that every
+documented non-negative `/metrics` counter is numeric. For an intentional local
+HTTP probe only, set `ALLOW_HTTP_DEPLOYMENT_PROBE=1`. A successful local build
+or an unconfigured probe is not deployed-service evidence.

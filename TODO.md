@@ -631,6 +631,7 @@ Useful source documents:
   - [P1] Create staging and production environments with separate data, secrets, URLs, and deployment safeguards.
   - [x] [P1] Document database migration, rollback, backup/restore, and incompatible-match handling. (`docs/release-operations.md`; actual managed-Postgres drill remains open.)
 - [ ] [P1] Verify production through real browser create/join/play/reconnect/spectate flows after deployment.
+  - [x] Add a read-only deployment health/metrics probe that requires HTTPS and durable Prisma persistence (`npm run deployment:probe`); it remains unrun until a staging or production endpoint exists.
   - [P1] Complete final board-data, rules-fidelity, accessibility, content/IP, privacy, and security sign-offs.
   - [x] [P1] Prepare concise player rules, privacy information, known limitations, and release notes. (`docs/player-rules.md`, `docs/privacy.md`, `docs/known-limitations.md`, and `docs/release-notes.md`; public publication and support contact remain open.)
   - [P1] Publish a verified support route and public release documentation.

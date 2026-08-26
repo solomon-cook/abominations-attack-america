@@ -28,6 +28,7 @@
     "web-board-layout:verify": "tsx scripts/verify-web-board-layout.ts",
     "production-config:verify": "tsx scripts/verify-production-config.ts",
     "security:dependencies:verify": "node scripts/verify-production-dependency-audit.mjs",
+    "deployment:probe": "node scripts/probe-deployment.mjs",
     "browser:local:verify": "node scripts/verify-browser-local.mjs",
     "browser:victory:verify": "node scripts/verify-browser-victory.mjs",
     "browser:keyboard:verify": "node scripts/verify-browser-keyboard.mjs",
