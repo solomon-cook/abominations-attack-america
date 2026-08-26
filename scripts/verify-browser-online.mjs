@@ -150,6 +150,16 @@ try {
     return { status: response.status, body: await response.json() };
   })()`);
   if (forgedCommand.status !== 400 || await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`)) throw new Error(`Forged browser command was not rejected without changing Move: ${JSON.stringify(forgedCommand)}`);
+  const malformedCommand = await first.evaluate(`(async () => {
+    const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+    const response = await fetch("http://localhost:8787/rooms/${roomCode}/actions", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-room-token": session.token ?? "" },
+      body: "{ malformed browser payload",
+    });
+    return { status: response.status, body: await response.json() };
+  })()`);
+  if (malformedCommand.status !== 400 || await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`)) throw new Error(`Malformed browser command was not rejected without changing Move: ${JSON.stringify(malformedCommand)}`);
   await second.evaluate("location.reload()");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
   await first.waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "online legal movement destination");
@@ -178,7 +188,7 @@ try {
   if (!await first.click("Pass deployment")) throw new Error("First browser could not pass Deploy.");
   await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase === "Move"; })()`, "first next Move phase");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineEncounter: "verified", onlineDeploy: "verified", nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineEncounter: "verified", onlineDeploy: "verified", nextPhase }));
 } finally {
   await Promise.all([first.close(), second.close(), spectator.close()]);
 }
