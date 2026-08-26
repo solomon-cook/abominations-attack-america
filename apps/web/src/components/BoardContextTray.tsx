@@ -8,13 +8,32 @@ type Props = {
 
 function featureLabel(hex: BoardHex): string {
   if (hex.features.length === 0) return "No recorded feature";
-  return hex.features.map((feature) => feature.kind).join(", ");
+  return hex.features.map((feature) => {
+    switch (feature.kind) {
+      case "city":
+        return feature.benefit.kind === "health"
+          ? `city · +${feature.benefit.amount} Health`
+          : `city · ${feature.benefit.dice}d6 Health`;
+      case "military-base": return `${feature.branch} base`;
+      case "mutation-site": return `Mutation site · ${feature.siteId}`;
+      case "lair": return `lair · ${feature.monsterId}`;
+      default: return feature.kind;
+    }
+  }).join(", ");
 }
 
 /** Compact, board-adjacent context for the active hex; never invents unresolved data. */
 export function BoardContextTray({ game, board, hex }: Props) {
   if (!hex) return null;
   const neighbours = board ? buildBoardIndex(board).neighbours[hex.key] ?? [] : [];
+  const edgeDetails = board
+    ? board.edges
+      .filter((edge) => edge.enabled && (edge.from === hex.key || edge.to === hex.key))
+      .map((edge) => {
+        const destination = edge.from === hex.key ? edge.to : edge.from;
+        return `${destination}: ${edge.barrier} barrier`;
+      })
+    : [];
   const occupants = [
     ...game.monsters.filter((monster) => monster.location === hex.key).map((monster) => monster.name),
     ...game.units.filter((unit) => unit.location === hex.key).map((unit) => `${unit.branch} unit`),
@@ -36,6 +55,11 @@ export function BoardContextTray({ game, board, hex }: Props) {
         <span><b>{occupants.length ? occupants.join(", ") : "Empty"}</b></span>
         <span><b>{neighbours.length}</b> recorded neighbours</span>
       </div>
+      {edgeDetails.length > 0 && (
+        <p className="board-context-edges" aria-label="Recorded edge barriers">
+          <b>Edges:</b> {edgeDetails.join(" · ")}
+        </p>
+      )}
       {monsters.length > 0 && (
         <div className="board-context-occupants" aria-label="Monsters on active hex">
           {monsters.map((monster) => (

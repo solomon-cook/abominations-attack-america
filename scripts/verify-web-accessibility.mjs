@@ -57,6 +57,7 @@ const requiredSourceMarkers = [
   ["contextual decision rules help", /aria-label="Rules help for current decision"/],
   ["development fixture overlay", /development-fixture/],
   ["canonical adjacency styling", /activeNeighbours\.has\(placeKey\)/],
+  ["contextual board feature and edge details", /function featureLabel\(hex: BoardHex\)[\s\S]*Recorded edge barriers/],
   ["selected piece contextual tray", /className="piece-detail-tray"[\s\S]*Selected Piece details|className="piece-detail-tray"[\s\S]*SELECTED PIECE/],
   ["hex hover and focus explanations", /title=\{tooltipText\}/],
   ["consistent metric icon treatment", /className="metric-icon"[\s\S]*aria-hidden="true"/],
