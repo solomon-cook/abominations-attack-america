@@ -1,0 +1,22 @@
+{
+  "knownProductionAdvisories": [
+    {
+      "name": "@prisma/config",
+      "severity": "high",
+      "range": ">=6.13.0-dev.1",
+      "via": "deepmerge-ts"
+    },
+    {
+      "name": "deepmerge-ts",
+      "severity": "high",
+      "range": "<8.0.0",
+      "via": "DeepmergeTS has stack exhaustion when merging recursive object graphs"
+    },
+    {
+      "name": "prisma",
+      "severity": "high",
+      "range": ">=6.13.0-dev.1",
+      "via": "@prisma/config"
+    }
+  ]
+}
