@@ -71,6 +71,13 @@ await checkManifest(join(assetRoot, "tokens"));
 await assertFile(join(assetRoot, "original-game-hero.webp"), "Original hero artwork");
 await assertMissing(join(assetRoot, "full-board-top-down.webp"), "Internal board reference");
 await assertMissing(join(assetRoot, "full-game-setup.webp"), "Internal setup reference");
+for (const [referenceName, sourceName] of [["reference-full-board.jpg", "full-game-setup.jpg"], ["reference-top-down-board.jpg", "full-board-top-down.jpg"]]) {
+  const referencePath = join(assetRoot, referenceName);
+  const sourcePath = join(scriptDirectory, "../references/monsters-menace-america/components/board", sourceName);
+  await assertFile(referencePath, "Optimized board reference");
+  const [referenceStats, sourceStats] = await Promise.all([stat(referencePath), stat(sourcePath)]);
+  if (referenceStats.size >= sourceStats.size) throw new Error(`Optimized board reference is not smaller than its source: ${referenceName}`);
+}
 
 const cardManifest = JSON.parse(await readFile(join(cardAssetRoot, "manifest.json"), "utf8"));
 if (cardManifest.format !== "webp" || !Array.isArray(cardManifest.sheets) || cardManifest.sheets.length !== 7) throw new Error("Card asset manifest is incomplete");
