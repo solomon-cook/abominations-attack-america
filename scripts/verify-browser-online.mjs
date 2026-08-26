@@ -1,13 +1,27 @@
 import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
+import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import WebSocket from "ws";
 import { chromePath } from "./chrome-path.mjs";
 
-const webPort = Number(process.env.BROWSER_ONLINE_WEB_PORT ?? 5177);
-const apiPort = Number(process.env.BROWSER_ONLINE_API_PORT ?? 8787);
+const freePort = () => new Promise((resolve, reject) => {
+  const probe = createNetServer();
+  probe.once("error", reject);
+  probe.listen(0, "127.0.0.1", () => {
+    const address = probe.address();
+    if (!address || typeof address === "string") {
+      probe.close();
+      reject(new Error("Could not determine an ephemeral browser-test port."));
+      return;
+    }
+    probe.close((error) => error ? reject(error) : resolve(address.port));
+  });
+});
+const webPort = Number(process.env.BROWSER_ONLINE_WEB_PORT ?? await freePort());
+const apiPort = Number(process.env.BROWSER_ONLINE_API_PORT ?? await freePort());
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${webPort}/`;
 const apiUrl = process.env.BROWSER_API_URL ?? `http://127.0.0.1:${apiPort}`;
 const ownsWebServer = !process.env.BROWSER_TEST_URL;
@@ -17,10 +31,15 @@ const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, mill
 const startServer = ({ command, args, cwd, env, name, ready }) => {
   const child = spawn(command, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"] });
   let output = "";
+  let childFailure;
   child.stdout.on("data", (chunk) => { output += chunk.toString(); });
   child.stderr.on("data", (chunk) => { output += chunk.toString(); });
+  child.once("error", (error) => { childFailure = error; });
   const waitForReady = async () => {
     for (let attempt = 0; attempt < 120; attempt += 1) {
+      if (childFailure || child.exitCode !== null) {
+        throw new Error(`${name} exited before becoming ready. ${childFailure?.message ?? `code ${child.exitCode}`}\n${output}`);
+      }
       try {
         if (await ready()) return;
       } catch {
