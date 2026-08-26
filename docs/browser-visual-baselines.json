@@ -23,7 +23,7 @@
   "tablet": {
     "width": 834,
     "height": 1112,
-    "sha256": "4d09415883c938c067d93851fcd8e49bc06846918debe758c234079bf05e550a",
+    "sha256": "dd6bc2d81e9785a90945f8df86c8159e2863dae92770eee9beac6e69fd8316bd",
     "smoke": {
       "ok": true,
       "viewport": "834x1112",
@@ -44,7 +44,7 @@
   "mobile": {
     "width": 390,
     "height": 844,
-    "sha256": "20c24a8d71c4d14331511589f4348c837d99805eb6c8348a931647df14284693",
+    "sha256": "b1335018ba7526ae317db0781182106e9cdea17aaec3a1f4b1b584709e20ea47",
     "smoke": {
       "ok": true,
       "viewport": "390x844",
