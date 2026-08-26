@@ -7,7 +7,7 @@ import process from "node:process";
 import WebSocket from "ws";
 import { chromePath } from "./chrome-path.mjs";
 
-const freePort = () => new Promise((resolve, reject) => {
+const freePort = (avoid = new Set()) => new Promise((resolve, reject) => {
   const probe = createNetServer();
   probe.once("error", reject);
   probe.listen(0, "127.0.0.1", () => {
@@ -17,11 +17,15 @@ const freePort = () => new Promise((resolve, reject) => {
       reject(new Error("Could not determine an ephemeral browser-test port."));
       return;
     }
+    if (avoid.has(address.port)) {
+      probe.close(() => freePort(avoid).then(resolve, reject));
+      return;
+    }
     probe.close((error) => error ? reject(error) : resolve(address.port));
   });
 });
 const webPort = Number(process.env.BROWSER_ONLINE_WEB_PORT ?? await freePort());
-const apiPort = Number(process.env.BROWSER_ONLINE_API_PORT ?? await freePort());
+const apiPort = Number(process.env.BROWSER_ONLINE_API_PORT ?? await freePort(new Set([webPort])));
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${webPort}/`;
 const apiUrl = process.env.BROWSER_API_URL ?? `http://127.0.0.1:${apiPort}`;
 const ownsWebServer = !process.env.BROWSER_TEST_URL;
