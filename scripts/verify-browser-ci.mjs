@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import process from "node:process";
 import { join } from "node:path";
+import { createServer as createNetServer } from "node:net";
 
 const port = Number(process.env.BROWSER_CI_PORT ?? 5190);
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${port}/`;
@@ -11,6 +12,19 @@ server.stdout.on("data", (chunk) => { serverOutput += chunk.toString(); });
 server.stderr.on("data", (chunk) => { serverOutput += chunk.toString(); });
 
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const freePort = () => new Promise((resolve, reject) => {
+  const probe = createNetServer();
+  probe.once("error", reject);
+  probe.listen(0, "127.0.0.1", () => {
+    const address = probe.address();
+    if (!address || typeof address === "string") {
+      probe.close();
+      reject(new Error("Could not determine a free browser debug port."));
+      return;
+    }
+    probe.close((error) => error ? reject(error) : resolve(address.port));
+  });
+});
 const stopServer = () => new Promise((resolve) => {
   if (server.exitCode !== null) {
     resolve();
@@ -39,10 +53,12 @@ const waitForServer = async () => {
   throw new Error(`Vite did not become ready at ${url}.\n${serverOutput}`);
 };
 
-const runMatrix = () => new Promise((resolve, reject) => {
+const runMatrix = async () => {
+  const debugPort = await freePort();
+  return new Promise((resolve, reject) => {
   const child = spawn(process.execPath, ["scripts/verify-browser-local-matrix.mjs"], {
     cwd: process.cwd(),
-    env: { ...process.env, BROWSER_TEST_URL: url, BROWSER_DEBUG_PORT: String(Number(process.env.BROWSER_CI_DEBUG_PORT ?? 9239)) },
+    env: { ...process.env, BROWSER_TEST_URL: url, BROWSER_DEBUG_PORT: String(debugPort) },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let output = "";
@@ -53,7 +69,8 @@ const runMatrix = () => new Promise((resolve, reject) => {
     if (code === 0) resolve(output.trim());
     else reject(new Error(`CI browser matrix failed (code ${code ?? "none"}, signal ${signal ?? "none"})\n${output}`));
   });
-});
+  });
+};
 
 const runBoardReview = ({ name, width, height, debugPort }) => new Promise((resolve, reject) => {
   const child = spawn(process.execPath, ["scripts/verify-browser-board-review.mjs"], {
@@ -73,10 +90,9 @@ const runBoardReview = ({ name, width, height, debugPort }) => new Promise((reso
 
 try {
   await waitForServer();
-  const baseDebugPort = Number(process.env.BROWSER_CI_DEBUG_PORT ?? 9239);
   const boardReview = [];
   for (const viewport of [["desktop", 1280, 720], ["tablet", 834, 1112], ["mobile", 390, 844]]) {
-    boardReview.push(parseJsonRecord(await runBoardReview({ name: viewport[0], width: viewport[1], height: viewport[2], debugPort: baseDebugPort + 1 })));
+    boardReview.push(parseJsonRecord(await runBoardReview({ name: viewport[0], width: viewport[1], height: viewport[2], debugPort: await freePort() })));
   }
   const output = await runMatrix();
   console.log(JSON.stringify({ boardReview, matrix: parseJsonRecord(output) }));
