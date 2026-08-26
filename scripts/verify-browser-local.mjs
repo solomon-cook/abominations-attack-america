@@ -287,12 +287,19 @@ try {
   if (!afterMove) throw new Error("No phase prompt remained after confirming movement.");
 
   let fight = "not-reached";
+  let fightSurface = "not-reached";
   let encounter = "not-reached";
   let deployment = "not-reached";
   let settledPhase = afterMove;
   let finalPhase = settledPhase;
   if (afterMove === "Fight") {
     fight = "verified";
+    const combatSurface = await evaluate(`(() => {
+      const panel = document.querySelector('[aria-label="Normal fight resolution surface"]');
+      return { visible: Boolean(panel && panel.getBoundingClientRect().width > 0 && panel.getBoundingClientRect().height > 0), units: panel?.textContent?.includes("MILITARY UNITS") ?? false, monster: panel?.textContent?.includes("OPPOSING MONSTER") ?? false, dice: panel?.textContent?.includes("DICE") ?? false };
+    })()`);
+    if (!combatSurface?.visible || !combatSurface.units || !combatSurface.monster || !combatSurface.dice) throw new Error(`Fight did not expose the focused attacker/defender surface: ${JSON.stringify(combatSurface)}`);
+    fightSurface = "verified";
     for (let attempt = 0; attempt < 8 && await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Fight"`); attempt += 1) {
       const clicked = await evaluate(`(() => {
         const buttons = [...document.querySelectorAll("button")].filter((button) => !button.disabled);
@@ -338,7 +345,7 @@ try {
   const concessionTerminal = await evaluate(`Boolean(document.querySelector(".victory-summary")) && Boolean([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Start another local playtest"))`);
   if (!concessionTerminal) throw new Error("Concession did not expose the terminal victory summary and restart control.");
 
-  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", touchTargets: "verified", invalidAction: "disabled-unreachable-destination", loadingState: "verified", pathCancel: "verified", pathConfirmation: "verified", fight, encounter, deployment, concessionTerminal: "verified", nextPhase: finalPhase }));
+  console.log(JSON.stringify({ ok: true, url, viewport, setup: "complete", accessibleControls: "verified", touchTargets: "verified", invalidAction: "disabled-unreachable-destination", loadingState: "verified", pathCancel: "verified", pathConfirmation: "verified", fight, fightSurface, encounter, deployment, concessionTerminal: "verified", nextPhase: finalPhase }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");
