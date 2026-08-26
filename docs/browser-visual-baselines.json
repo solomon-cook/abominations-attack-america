@@ -1,0 +1,65 @@
+{
+  "desktop": {
+    "width": 1280,
+    "height": 720,
+    "sha256": "150d999436511eeb7e018266e259e5db3f7c411cd13efab384ab39475e431d73",
+    "smoke": {
+      "ok": true,
+      "url": "http://127.0.0.1:5177/",
+      "viewport": "1280x720",
+      "setup": "complete",
+      "accessibleControls": "verified",
+      "invalidAction": "disabled-unreachable-destination",
+      "loadingState": "verified",
+      "pathCancel": "verified",
+      "pathConfirmation": "verified",
+      "fight": "verified",
+      "encounter": "verified",
+      "deployment": "verified",
+      "concessionTerminal": "verified",
+      "nextPhase": "Move"
+    }
+  },
+  "tablet": {
+    "width": 834,
+    "height": 1112,
+    "sha256": "192ac0336d1fd92cdfb7a085564c46cb62dcc2b6ec7eac1c473cab3b512af027",
+    "smoke": {
+      "ok": true,
+      "url": "http://127.0.0.1:5177/",
+      "viewport": "834x1112",
+      "setup": "complete",
+      "accessibleControls": "verified",
+      "invalidAction": "disabled-unreachable-destination",
+      "loadingState": "verified",
+      "pathCancel": "verified",
+      "pathConfirmation": "verified",
+      "fight": "verified",
+      "encounter": "verified",
+      "deployment": "verified",
+      "concessionTerminal": "verified",
+      "nextPhase": "Move"
+    }
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844,
+    "sha256": "f1cc86b56cea5c45414b2e4d7b69952387fdf4915377912a59f7152fe0558252",
+    "smoke": {
+      "ok": true,
+      "url": "http://127.0.0.1:5177/",
+      "viewport": "390x844",
+      "setup": "complete",
+      "accessibleControls": "verified",
+      "invalidAction": "disabled-unreachable-destination",
+      "loadingState": "verified",
+      "pathCancel": "verified",
+      "pathConfirmation": "verified",
+      "fight": "verified",
+      "encounter": "verified",
+      "deployment": "verified",
+      "concessionTerminal": "verified",
+      "nextPhase": "Move"
+    }
+  }
+}

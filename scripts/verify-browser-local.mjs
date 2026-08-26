@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
@@ -7,7 +7,10 @@ import WebSocket from "ws";
 
 const url = process.env.BROWSER_TEST_URL ?? "http://127.0.0.1:5177/";
 const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const viewport = `${Number(process.env.BROWSER_TEST_WIDTH ?? 1280)}x${Number(process.env.BROWSER_TEST_HEIGHT ?? 720)}`;
+const viewportWidth = Number(process.env.BROWSER_TEST_WIDTH ?? 1280);
+const viewportHeight = Number(process.env.BROWSER_TEST_HEIGHT ?? 720);
+const viewport = `${viewportWidth}x${viewportHeight}`;
+const screenshotPath = process.env.BROWSER_TEST_SCREENSHOT_PATH;
 const debugPort = 9229;
 const profile = await mkdtemp(join(tmpdir(), "abominations-browser-"));
 const chrome = spawn(chromePath, [
@@ -54,6 +57,7 @@ socket.on("message", (raw) => {
 });
 await command("Page.enable");
 await command("Runtime.enable");
+await command("Emulation.setDeviceMetricsOverride", { width: viewportWidth, height: viewportHeight, deviceScaleFactor: 1, mobile: viewportWidth <= 600 });
 await command("Page.navigate", { url });
 const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
 const waitFor = async (expression, label) => {
@@ -89,6 +93,10 @@ try {
   await waitFor(`!document.querySelector(".setup-panel")`, "completed local setup");
   const setupPhase = await phase();
   if (!/move/i.test(setupPhase)) throw new Error(`Expected Move after setup, got ${setupPhase || "no phase"}.`);
+  if (screenshotPath) {
+    const screenshot = await command("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+    await writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));
+  }
   const accessibleControls = await evaluate(`(() => {
     const controls = [...document.querySelectorAll("button, input, select, textarea")];
     const named = controls.every((control) => Boolean(control.textContent?.trim() || control.getAttribute("aria-label") || control.getAttribute("aria-labelledby") || control.getAttribute("placeholder")));

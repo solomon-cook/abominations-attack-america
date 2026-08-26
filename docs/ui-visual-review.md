@@ -14,6 +14,8 @@ This is a review record for the current development playtest surface. It does no
 
 The matrix is runtime evidence, not a pixel-snapshot baseline. It proves that the required smoke controls remain reachable and that the document does not overflow in the compact case; it does not prove exact typography, artwork, spacing, browser-engine parity, or physical-board fidelity.
 
+`npm run browser:visual:verify` captures a deterministic post-setup PNG at the same three viewports and compares its SHA-256 hash with `docs/browser-visual-baselines.json`. The baselines are Chrome-specific development-playtest evidence: a Chrome upgrade or intentional UI change requires an explicit `UPDATE_BROWSER_VISUAL_BASELINES=1` review and commit. This is not cross-engine browser proof, human visual acceptance, or physical-board fidelity evidence.
+
 ## Review findings
 
 - The active match is board-first after setup; the secondary controls remain behind an explicit toggle.
