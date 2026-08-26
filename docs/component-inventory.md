@@ -31,7 +31,7 @@ The machine-readable catalogue currently contains:
 - 16/16 Military Research cards;
 - 16/16 Monster Mutation cards.
 
-The engine's source-backed monster catalogue independently records the six photographed monster records, including starting Health, Move, movement mode, Defense, Attacks, Damage, special-ability wording, and image references. This does not promote lair locations or special-ability execution to production.
+The engine's source-backed monster catalogue independently records the six photographed monster records, including starting Health, Move, movement mode, Defense, Attacks, Damage, special-ability wording, and image references. This satisfies the numeric/text transcription portion of the inventory item. It does not promote lair locations or special-ability execution to production; those remain explicit source-gated boundaries.
 
 The engine's source-backed unit catalogue independently records all branch unit quantities and photographed numeric data, plus the two giant-unit records and the two National Guard unit types. The development fixture instantiates all 32 regular branch units with conservation assertions; the engine also creates a giant only through its implemented Research card, applies giant Health damage, and permanently removes it at zero Health. Production deployment, water movement, temporary control, physical-board placement, and other special effects remain source-gated.
 
