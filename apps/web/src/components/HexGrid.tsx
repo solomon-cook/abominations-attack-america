@@ -66,6 +66,19 @@ function boardArtForHex(hex: BoardHex, place?: (typeof locations)[number]) {
   return featureAssets[feature ?? ""];
 }
 
+function provisionalFeatureLabel(hex: BoardHex): string | undefined {
+  const feature = hex.features.find((candidate) => candidate.kind !== "city");
+  switch (feature?.kind) {
+    case "military-base": return "BASE";
+    case "infamy-site": return "INFAMY";
+    case "mutation-site": return "MUTATION";
+    case "challenge-site": return "CHALLENGE";
+    case "hollywood": return "HOLLYWOOD";
+    case "los-angeles": return "LOS ANGELES";
+    default: return undefined;
+  }
+}
+
 function unitArtForType(unitTypeId?: string) {
   return unitTypeId ? `/assets/military/${unitTypeId}.webp` : undefined;
 }
@@ -151,6 +164,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         const provisionalFeatureName = board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id && hex.features.some((feature) => feature.kind === "city")
           ? hex.label
           : undefined;
+        const provisionalFeatureText = board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id ? provisionalFeatureLabel(hex) : undefined;
         const visibleName = place?.name ?? (developmentFixture ? hex.label : provisionalFeatureName ?? "");
         const locationMeta = place?.kind === "city"
           ? `city, ${place.marker ?? "benefit not recorded"}`
@@ -184,6 +198,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             <span className="tile-content">
               {place && <span className="node" aria-hidden="true">{place.kind === "city" ? "✦" : place.kind === "base" ? "⌂" : place.kind === "infamy" ? "★" : place.kind === "mutation" ? "✹" : "⚔"}</span>}
               {visibleName && <span className="tile-name">{visibleName}</span>}
+              {provisionalFeatureText && <i className="location-kind provisional-feature-kind">{provisionalFeatureText}</i>}
               {place?.kind === "city" && <i className="city-hp" aria-label={`printed city benefit ${place.marker ?? "not recorded"}`}>{place.marker ?? "benefit n/a"}</i>}
               {place?.kind === "mutation" && <i className="location-kind">MUTATION</i>}
               {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => {

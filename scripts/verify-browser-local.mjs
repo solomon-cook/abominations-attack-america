@@ -128,8 +128,8 @@ try {
   await waitFor(`document.querySelectorAll(".hex-tile").length === 254`, "provisional honeycomb playtest board");
   const provisionalNotice = await evaluate(`document.querySelector(".development-notice .label")?.textContent?.trim() ?? ""`);
   if (!/PROVISIONAL HONEYCOMB PLAYTEST/i.test(provisionalNotice)) throw new Error(`Provisional playtest did not expose its source-status notice: ${provisionalNotice}`);
-  const provisionalSurface = await evaluate(`(() => ({ cityLabels: [...document.querySelectorAll(".hex-tile .tile-name")].filter((node) => /Provisional/i.test(node.textContent ?? "")).length, unresolvedLabels: [...document.querySelectorAll(".hex-tile .tile-name")].filter((node) => /Unresolved/i.test(node.textContent ?? "")).length }))()`);
-  if (provisionalSurface?.cityLabels !== 12 || provisionalSurface.unresolvedLabels !== 0) throw new Error(`Provisional feature labels were not rendered safely: ${JSON.stringify(provisionalSurface)}`);
+  const provisionalSurface = await evaluate(`(() => ({ cityLabels: [...document.querySelectorAll(".hex-tile .tile-name")].filter((node) => /Provisional/i.test(node.textContent ?? "")).length, featureLabels: document.querySelectorAll(".hex-tile .provisional-feature-kind").length, unresolvedLabels: [...document.querySelectorAll(".hex-tile .tile-name")].filter((node) => /Unresolved/i.test(node.textContent ?? "")).length }))()`);
+  if (provisionalSurface?.cityLabels !== 12 || provisionalSurface.featureLabels !== 23 || provisionalSurface.unresolvedLabels !== 0) throw new Error(`Provisional feature labels were not rendered safely: ${JSON.stringify(provisionalSurface)}`);
   if (!await clickButton("Development playtest")) throw new Error("Could not return from provisional playtest to the development fixture.");
   await waitFor(`!!document.querySelector(".setup-panel")`, "development setup");
 
