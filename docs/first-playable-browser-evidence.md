@@ -60,7 +60,7 @@ its linked source artifact.
 
 ## Latest local renderer regression check
 
-On 2026-08-26, `BROWSER_TEST_URL=http://127.0.0.1:5182/ npm run browser:local:matrix` ran the reproducible local smoke at both 1280×720 and 390×844. Each fresh session completed setup, verified a main landmark and accessible names for rendered controls, selected a legal destination, verified path cancellation, reconfirmed the path, and observed the next authoritative `Encounter` phase. Both runs passed; this is responsive development-fixture evidence and does not replace manual visual/accessibility review or full-board MVP evidence.
+On 2026-08-26, `BROWSER_TEST_URL=http://127.0.0.1:5182/ npm run browser:local:matrix` ran the reproducible local smoke at 1280×720, 834×1112, and 390×844. Each fresh session completed setup, verified a main landmark and accessible names for rendered controls, selected a legal destination, verified path cancellation, reconfirmed the path, and observed the next authoritative `Encounter` phase. These are responsive development-fixture checks and do not replace screenshot-level/manual visual and accessibility review or full-board MVP evidence.
 
 On 2026-08-26, `npm run browser:local:verify` drove a fresh headless Chrome session against the current Vite server. The scripted run completed local setup, selected a legal destination, verified that **Cancel** cleared the selected path, selected the destination again, confirmed the path, and observed the next authoritative phase (`Encounter`). This is reproducible local first-playable interaction evidence; it remains development-fixture evidence and does not prove the physical MVP board, two-browser online play, or manual accessibility acceptance.
 

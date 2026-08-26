@@ -3,6 +3,7 @@ import process from "node:process";
 
 const cases = [
   { name: "desktop", width: 1280, height: 720 },
+  { name: "tablet", width: 834, height: 1112 },
   { name: "mobile", width: 390, height: 844 },
 ];
 
