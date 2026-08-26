@@ -54,3 +54,18 @@ jobs:
       - run: npm run browser:safari:verify
         env:
           SAFARI_REQUIRE_SESSION: "1"
+
+  browser-firefox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: browser-actions/setup-firefox@v1
+      - uses: browser-actions/setup-geckodriver@v1
+      - run: npm ci
+      - run: npm run browser:firefox:verify
+        env:
+          SAFARI_REQUIRE_SESSION: "1"

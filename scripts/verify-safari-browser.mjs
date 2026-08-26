@@ -3,10 +3,12 @@ import process from "node:process";
 import { join } from "node:path";
 
 const webPort = Number(process.env.SAFARI_WEB_PORT ?? 5194);
-const driverPort = Number(process.env.SAFARI_DRIVER_PORT ?? 4444);
+const driverPort = Number(process.env.WEBDRIVER_PORT ?? process.env.SAFARI_DRIVER_PORT ?? 4444);
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${webPort}/`;
 const timeoutMs = Number(process.env.SAFARI_BROWSER_TIMEOUT_MS ?? 20_000);
 const strict = process.env.SAFARI_REQUIRE_SESSION === "1";
+const driverCommand = process.env.WEBDRIVER_COMMAND ?? "safaridriver";
+const browserName = process.env.WEBDRIVER_BROWSER ?? "safari";
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 const web = spawn(process.execPath, [join(process.cwd(), "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(webPort)], {
@@ -17,7 +19,7 @@ let webOutput = "";
 web.stdout.on("data", (chunk) => { webOutput += chunk.toString(); });
 web.stderr.on("data", (chunk) => { webOutput += chunk.toString(); });
 
-const driver = spawn("safaridriver", ["--port", String(driverPort)], { stdio: ["ignore", "pipe", "pipe"] });
+const driver = spawn(driverCommand, ["--port", String(driverPort)], { stdio: ["ignore", "pipe", "pipe"] });
 let driverOutput = "";
 driver.stdout.on("data", (chunk) => { driverOutput += chunk.toString(); });
 driver.stderr.on("data", (chunk) => { driverOutput += chunk.toString(); });
@@ -61,7 +63,7 @@ const waitFor = async (check, description) => {
 };
 
 let sessionId;
-let result = { ok: false, webReady: false, driverReady: false, session: "unavailable", review: "unavailable", url, webPort, driverPort };
+let result = { ok: false, webReady: false, driverReady: false, session: "unavailable", review: "unavailable", browser: browserName, driverCommand, url, webPort, driverPort };
 try {
   await waitFor(async () => {
     const response = await fetch(url);
@@ -75,7 +77,7 @@ try {
   const created = await request(driverPort, "/session", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ capabilities: { alwaysMatch: { browserName: "safari", acceptInsecureCerts: true } } }),
+    body: JSON.stringify({ capabilities: { alwaysMatch: { browserName, acceptInsecureCerts: true } } }),
   });
   const createdBody = await created.json();
   sessionId = createdBody.value?.sessionId;
