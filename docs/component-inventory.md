@@ -12,8 +12,8 @@ This is the source-audit inventory for a 2–4 player match. Counts describe the
 | Black X-Fighters | 2 | Military Research-linked unit | X-Fighters card draw creates both persistent pieces; each can replace one branch deployment, is permanently removed when destroyed, and exhausts the card after both are gone in the development ruleset |
 | Giant military units | 2 (one each) | Mecha-Monster, Captain Colossal | The photographed record establishes one of each plus the numeric data; the two Research-card placement/lifecycle effects are implemented in the development ruleset; physical base coordinates remain source-gated |
 | Military branch record/reference tiles | 5 | Air Force, Army, Marines, Navy, National Guard | Source photographs captured; deployment formulas require implementation fixtures |
-| Monster Mutation cards | 16 unique cards | Complete named inventory and transcriptions in catalogue | Source-backed transcription captured; engine timing/stacking/deck behavior not implemented |
-| Military Research cards | 16 unique cards | Complete named inventory and transcriptions in catalogue | Source-backed transcription captured; engine timing/stacking/deck behavior not implemented |
+| Monster Mutation cards | 16 unique cards | Complete named inventory and transcriptions in catalogue | Source-backed transcription captured; all 16 are represented in the development ruleset, with timing/effect coverage and private-hand lifecycle tests; production-wide stacking and physical-board interactions remain source-gated |
+| Military Research cards | 16 unique cards | Complete named inventory and transcriptions in catalogue | Source-backed transcription captured; 13 are represented in the development ruleset with timing/effect coverage and private-hand lifecycle tests; Cutbacks, Molecular Cannon, and Chopper Lift remain source-gated |
 | Plastic Health/record sliders | 15 | Physical component count | Visible in setup reference; no isolated complete inventory photograph |
 | Infamy tokens | 42 | Physical component count | Token reference photograph captured |
 | Stomp markers | 23 | Physical component count | Marker reference photograph captured |
