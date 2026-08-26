@@ -280,6 +280,9 @@ try {
   await clickButton("Confirm path");
   await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Waiting for server…"`, "pending-action loading state");
   await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "movement result");
+  await wait(40);
+  const actionFeedback = await evaluate(`(() => { const node = document.querySelector(".action-resolution-feedback"); const animation = document.querySelector(".accepted-arrival, .accepted-path"); return { feedback: Boolean(node && /accepted|authoritative/i.test(node.textContent ?? "")), animation: Boolean(animation) }; })()`);
+  if (!actionFeedback?.feedback && !actionFeedback?.animation) throw new Error(`Accepted movement did not expose temporary explanatory feedback: ${JSON.stringify(actionFeedback)}`);
   const afterMove = await phase();
   if (!afterMove) throw new Error("No phase prompt remained after confirming movement.");
 

@@ -521,6 +521,7 @@ Useful source documents:
   - [x] Provide temporary movement paths, targeting previews, selection highlights, accepted-action feedback, and recorded dice/combat-result presentation. (Current development flows implement these presentation states.)
   - [ ] Ensure temporary visual feedback explains what changed, then settles cleanly without permanently increasing map clutter or delaying authoritative state.
     - [x] Mark accepted-action feedback as one atomic live status containing the authoritative change label and completion note; its existing finite animation still settles without blocking state (`ActionResolutionFeedback`).
+    - [x] Verify the accepted movement path exposes the temporary explanatory feedback in the browser smoke before it settles (`verify-browser-local.mjs`).
   - [x] Support map pan, zoom, fit, reset, and active-area focus. (Current controls support these operations.)
   - [x] Replace the current broad zoom range with a fixed board-readable minimum and maximum; clamp wheel, button, keyboard, and future pinch zoom to the same limits and prevent the map from feeling detached from the game surface. (`MAP_ZOOM_MIN`/`MAP_ZOOM_MAX` and `setClampedMapZoom` apply the same bounds to wheel and button input; future pinch input can reuse the helper.)
   - [x] Choose and document zoom bounds for desktop, tablet, and mobile, with a stable default framing that keeps the playable board and critical overlays legible. (`docs/board-camera-contract.md` records the shared 0.90x-1.75x bounds and 1.00x default across supported viewports.)
