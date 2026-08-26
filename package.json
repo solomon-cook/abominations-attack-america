@@ -29,6 +29,7 @@
     "browser:victory:verify": "node scripts/verify-browser-victory.mjs",
     "browser:keyboard:verify": "node scripts/verify-browser-keyboard.mjs",
     "browser:local:matrix": "node scripts/verify-browser-local-matrix.mjs",
+    "browser:board-review:verify": "node scripts/verify-browser-board-review.mjs",
     "browser:ci:verify": "node scripts/verify-browser-ci.mjs",
     "browser:visual:verify": "node scripts/verify-browser-visual-regression.mjs",
     "browser:online:verify": "node scripts/verify-browser-online.mjs",
