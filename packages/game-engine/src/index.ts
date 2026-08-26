@@ -1483,6 +1483,9 @@ function discardResearchFromHand(state: GameState, playerIndex: number, cardId: 
 
 /** Resolve the currently implemented immediate Research windows. */
 function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey): ResearchUseResolution {
+  if (!new Set(["Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence"]).has(cardId as string)) {
+    throw new GameDomainError("ILLEGAL_COMMAND", `${String(cardId)} is source-gated and unavailable in this ruleset.`);
+  }
   if (state.phase === "game-over" || state.phase === "challenge") throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} is unavailable during a terminal state or Monster Challenge.`);
   if (cardId === "Antimatter") {
     if (state.phase !== "fight" || state.pendingDecision?.type !== "battle-resolution") throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter can only be used at the start of an unresolved battle.");
@@ -1568,6 +1571,9 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
 
 /** Resolve the two sourced optional Mutation windows that add attacks during a normal battle. */
 function useMutationInBattle(state: GameState, cardId: "Berserk" | "Son of a Monster", requestedBattleId?: string): MutationUseResolution {
+  if (cardId !== "Berserk" && cardId !== "Son of a Monster") {
+    throw new GameDomainError("ILLEGAL_COMMAND", `${String(cardId)} is source-gated and unavailable in this ruleset.`);
+  }
   if (state.phase !== "fight") throw new GameDomainError("ILLEGAL_COMMAND", "Mutation battle abilities can only be used during Fight.");
   const decision = state.pendingDecision;
   if (!decision || (decision.type !== "battle-resolution" && decision.type !== "attack-target")) {

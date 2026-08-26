@@ -532,6 +532,19 @@ test("source-inventoried cards have versioned structured metadata without guesse
   assert.equal(cardDefinition("not-a-card"), undefined);
 });
 
+test("runtime commands fail closed for every source-gated card", () => {
+  const unsupportedMutations = CARD_DEFINITIONS.filter((card) => card.deck === "mutation" && card.availability === "source-gated").map((card) => card.id);
+  const unsupportedResearch = CARD_DEFINITIONS.filter((card) => card.deck === "research" && card.availability === "source-gated").map((card) => card.id);
+  assert.deepEqual(unsupportedMutations, []);
+  assert.deepEqual(unsupportedResearch.sort(), ["Blonde Lure", "Captain Colossal", "Chopper Lift", "Cutbacks", "Mecha-Monster", "Molecular Cannon", "X-Fighters"].sort());
+  for (const cardId of unsupportedResearch) {
+    assert.throws(() => applyCommand(createGame(2), { type: "use-research", cardId } as any), /source-gated and unavailable/);
+  }
+  for (const cardId of unsupportedMutations) {
+    assert.throws(() => applyCommand(createGame(2), { type: "use-mutation", cardId } as any), /source-gated and unavailable/);
+  }
+});
+
 test("Laser Fence either spends 2 Infamy or retreats and suppresses the new Encounter", () => {
   const paid = createGame(2, 0);
   paid.players[0].researchCardIds = ["Laser Fence"];
