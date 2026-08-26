@@ -27,21 +27,23 @@ export function BoardReview({ onClose }: Props) {
         <span>Every face is intentionally blank until the photographed board is transcribed and signed off.</span>
       </section>
       <div className="board-review-layout">
-        <section className="board-review-frame" aria-label="254-cell full honeycomb candidate">
-          <div className="board-review-canvas">
-          {cells.map(({ hex, left, top }) => (
-            <button
-              type="button"
-              className="board-review-hex"
-              key={hex.key}
-              style={{ left: `${left}%`, top: `${top}%` }}
-              aria-label={`Review-pending hex ${hex.key}`}
-              aria-pressed={hex.key === selectedHex?.key}
-              data-selected={hex.key === selectedHex?.key}
-              onClick={() => setSelectedKey(hex.key)}
-            />
-          ))}
-          </div>
+        <div className="board-review-visuals">
+          <section className="board-review-frame" aria-label="254-cell full honeycomb candidate">
+            <div className="board-review-canvas">
+            {cells.map(({ hex, left, top }) => (
+              <button
+                type="button"
+                className="board-review-hex"
+                key={hex.key}
+                style={{ left: `${left}%`, top: `${top}%` }}
+                aria-label={`Review-pending hex ${hex.key}`}
+                aria-pressed={hex.key === selectedHex?.key}
+                data-selected={hex.key === selectedHex?.key}
+                onClick={() => setSelectedKey(hex.key)}
+              />
+            ))}
+            </div>
+          </section>
           <div className="board-review-sources" aria-label="Reference board photographs">
             <figure className="board-review-source">
               <img
@@ -60,7 +62,7 @@ export function BoardReview({ onClose }: Props) {
               <figcaption>Top-down reference for the board silhouette and printed space alignment.</figcaption>
             </figure>
           </div>
-        </section>
+        </div>
         {selectedHex && <aside className="board-review-inspector" aria-label="Selected board cell review">
           <span className="label">SELECTED CELL</span>
           <h2>{selectedHex.key}</h2>
