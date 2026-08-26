@@ -9,47 +9,47 @@ This report is generated from `packages/game-engine/src/cards.ts`. It describes 
 
 ## Available cards
 
-| Deck | Card | Classification | Effect status |
-| --- | --- | --- | --- |
-| mutation | Fins and Gills | persistent | implemented |
-| mutation | Rampage | persistent | implemented |
-| mutation | Radiation Field | persistent | implemented |
-| mutation | Atomic Recovery | persistent | implemented |
-| mutation | Berserk | one-use/discard | implemented |
-| mutation | War Spikes | persistent | implemented |
-| mutation | Atomic Breath | persistent | implemented |
-| mutation | Iron Stomach | persistent | implemented |
-| mutation | Whip Tentacles | persistent | implemented |
-| mutation | High-Octane Blood | persistent | implemented |
-| mutation | Son of a Monster | one-use/discard | implemented |
-| mutation | Winged Horror | persistent | implemented |
-| mutation | Kinda Friendly | persistent | implemented |
-| mutation | Laser Beam Eyes | persistent | implemented |
-| mutation | Armored Scales | persistent | implemented |
-| mutation | It's a Robot! | persistent | implemented |
-| research | Mecha-Monster | one-use/discard | implemented |
-| research | Laser Fence | one-use/discard | implemented |
-| research | Guard Commander | persistent | implemented |
-| research | Defense Satellites | one-use/discard | implemented |
-| research | Stabilizer Ray | one-use/discard | implemented |
-| research | Fusion Cells | persistent | implemented |
-| research | X-Fighters | persistent | implemented |
-| research | 2nd Generation | persistent | implemented |
-| research | Blonde Lure | one-use/discard | implemented |
-| research | Anti-Mutagen | conditional | implemented |
-| research | Antimatter | one-use/discard | implemented |
-| research | Scientific Analysis | conditional | implemented |
-| research | Captain Colossal | one-use/discard | implemented |
+| Deck | Card | Classification | Stacking policy | Effect status |
+| --- | --- | --- | --- | --- |
+| mutation | Fins and Gills | persistent | additive | implemented |
+| mutation | Rampage | persistent | source-gated | implemented |
+| mutation | Radiation Field | persistent | source-gated | implemented |
+| mutation | Atomic Recovery | persistent | source-gated | implemented |
+| mutation | Berserk | one-use/discard | source-gated | implemented |
+| mutation | War Spikes | persistent | replacement | implemented |
+| mutation | Atomic Breath | persistent | additive | implemented |
+| mutation | Iron Stomach | persistent | source-gated | implemented |
+| mutation | Whip Tentacles | persistent | source-gated | implemented |
+| mutation | High-Octane Blood | persistent | additive | implemented |
+| mutation | Son of a Monster | one-use/discard | source-gated | implemented |
+| mutation | Winged Horror | persistent | additive | implemented |
+| mutation | Kinda Friendly | persistent | source-gated | implemented |
+| mutation | Laser Beam Eyes | persistent | source-gated | implemented |
+| mutation | Armored Scales | persistent | additive | implemented |
+| mutation | It's a Robot! | persistent | source-gated | implemented |
+| research | Mecha-Monster | one-use/discard | source-gated | implemented |
+| research | Laser Fence | one-use/discard | source-gated | implemented |
+| research | Guard Commander | persistent | permission-or | implemented |
+| research | Defense Satellites | one-use/discard | source-gated | implemented |
+| research | Stabilizer Ray | one-use/discard | source-gated | implemented |
+| research | Fusion Cells | persistent | additive | implemented |
+| research | X-Fighters | persistent | source-gated | implemented |
+| research | 2nd Generation | persistent | additive | implemented |
+| research | Blonde Lure | one-use/discard | source-gated | implemented |
+| research | Anti-Mutagen | conditional | source-gated | implemented |
+| research | Antimatter | one-use/discard | source-gated | implemented |
+| research | Scientific Analysis | conditional | source-gated | implemented |
+| research | Captain Colossal | one-use/discard | source-gated | implemented |
 
 ## Source-gated cards
 
 These cards are rejected by `assertCardsAvailable` and cannot silently no-op in a selected ruleset.
 
-| Deck | Card | Source status |
-| --- | --- | --- |
-| research | Cutbacks | source-gated |
-| research | Molecular Cannon | source-gated |
-| research | Chopper Lift | source-gated |
+| Deck | Card | Stacking policy | Source status |
+| --- | --- | --- | --- |
+| research | Cutbacks | source-gated | source-gated |
+| research | Molecular Cannon | source-gated | source-gated |
+| research | Chopper Lift | source-gated | source-gated |
 
 ## Promotion boundary
 

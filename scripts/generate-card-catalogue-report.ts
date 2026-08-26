@@ -1,5 +1,5 @@
 import { writeFile } from "node:fs/promises";
-import { CARD_DATA_VERSION, CARD_DEFINITIONS, sourcedCardRule, SOURCED_CARD_RULES } from "../packages/game-engine/src/cards.js";
+import { CARD_DATA_VERSION, CARD_DEFINITIONS, cardStackingRule, sourcedCardRule, SOURCED_CARD_RULES } from "../packages/game-engine/src/cards.js";
 
 const reportPath = new URL("../docs/card-catalogue-report.md", import.meta.url);
 const available = CARD_DEFINITIONS.filter((card) => card.availability === "implemented");
@@ -27,17 +27,17 @@ const lines = [
   "",
   "## Available cards",
   "",
-  "| Deck | Card | Classification | Effect status |",
-  "| --- | --- | --- | --- |",
-  ...available.map((card) => `| ${card.deck} | ${card.id} | ${sourcedCardRule(card.id)?.classification ?? "not catalogued"} | implemented |`),
+  "| Deck | Card | Classification | Stacking policy | Effect status |",
+  "| --- | --- | --- | --- | --- |",
+  ...available.map((card) => `| ${card.deck} | ${card.id} | ${sourcedCardRule(card.id)?.classification ?? "not catalogued"} | ${cardStackingRule(card.id)?.policy ?? "source-gated"} | implemented |`),
   "",
   "## Source-gated cards",
   "",
   "These cards are rejected by `assertCardsAvailable` and cannot silently no-op in a selected ruleset.",
   "",
-  "| Deck | Card | Source status |",
-  "| --- | --- | --- |",
-  ...gated.map((card) => `| ${card.deck} | ${card.id} | source-gated |`),
+  "| Deck | Card | Stacking policy | Source status |",
+  "| --- | --- | --- | --- |",
+  ...gated.map((card) => `| ${card.deck} | ${card.id} | ${cardStackingRule(card.id)?.policy ?? "source-gated"} | source-gated |`),
   "",
   "## Promotion boundary",
   "",
