@@ -19,7 +19,7 @@ Staging and production must have separate URLs, databases, secrets, allowed orig
 
 ## Release safeguards
 
-1. Run the complete `npm run verify` gate.
+1. Run the complete `npm run verify` gate, including `npm run production-config:verify`; production configuration must select Prisma persistence and an explicit HTTPS origin, and must not point at a loopback database.
 2. Apply and record Prisma migrations before application rollout.
 3. Verify `/health`, `/metrics`, HTTP commands, WSS upgrade, polling fallback, and room expiry in staging.
 4. Exercise backup restore and rollback using disposable data.
