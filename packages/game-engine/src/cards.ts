@@ -61,6 +61,16 @@ export interface SourcedCardRule {
   readonly effectsImplementation: CardAvailability;
 }
 
+export type CardStackingPolicy = "additive" | "replacement" | "permission-or" | "source-gated";
+
+export interface CardStackingRule {
+  readonly cardId: string;
+  readonly effectKey: string;
+  readonly policy: CardStackingPolicy;
+  readonly sourceRefs: readonly string[];
+  readonly rationale: string;
+}
+
 const catalogue = "references/monsters-menace-america/component-rules-catalogue.json";
 const mutationIds = [
   "Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "Berserk", "War Spikes",
@@ -395,4 +405,33 @@ export function unsupportedCardIds(cardIds: readonly string[] = CARD_DEFINITIONS
 export function assertCardsAvailable(cardIds: readonly string[]): void {
   const unsupported = unsupportedCardIds(cardIds);
   if (unsupported.length > 0) throw new Error(`Cards are source-gated and unavailable: ${unsupported.join(", ")}`);
+}
+
+const explicitStackingPolicies: Readonly<Record<string, Pick<CardStackingRule, "effectKey" | "policy" | "rationale">>> = {
+  "High-Octane Blood": { effectKey: "moveBonus", policy: "additive", rationale: "The sourced +1 Move modifier composes with other sourced Move modifiers." },
+  "Winged Horror": { effectKey: "moveBonus", policy: "additive", rationale: "The sourced +1 Move modifier composes with other sourced Move modifiers." },
+  "Armored Scales": { effectKey: "moveBonus/defenseBonus", policy: "additive", rationale: "The sourced -1 Move and +1 Defense values are independent numeric modifiers." },
+  "Fins and Gills": { effectKey: "waterBarrierDefenseBonus", policy: "additive", rationale: "The sourced conditional +1 Defense is an additive modifier at a water barrier." },
+  "War Spikes": { effectKey: "damagePerHit", policy: "replacement", rationale: "The sourced text replaces the ordinary hit damage value with 4." },
+  "Atomic Breath": { effectKey: "firstRoundAttackBonus", policy: "additive", rationale: "The sourced extra attack is added to the first-round allowance." },
+  "Fusion Cells": { effectKey: "moveBonus", policy: "additive", rationale: "The sourced +1 Move applies to the holder's unit values." },
+  "2nd Generation": { effectKey: "extraDeployments", policy: "additive", rationale: "The sourced extra deployment is added to the normal allowance." },
+  "Guard Commander": { effectKey: "nationalGuardControl", policy: "permission-or", rationale: "The sourced control permission is a boolean command capability, not a numeric modifier." },
+};
+
+/**
+ * Every inventoried card receives an explicit stacking record. Only policies
+ * supported by the cited text are resolved; all other conflicts remain
+ * source-gated instead of inheriting a generic card-game assumption.
+ */
+export const CARD_STACKING_RULES: readonly CardStackingRule[] = CARD_DEFINITIONS.map((card) => {
+  const explicit = explicitStackingPolicies[card.id];
+  const sourceRefs = sourcedCardRule(card.id)?.sourceRefs ?? [card.sourceCatalogue];
+  return explicit
+    ? { cardId: card.id, ...explicit, sourceRefs }
+    : { cardId: card.id, effectKey: "all", policy: "source-gated" as const, sourceRefs, rationale: "The cited card text does not establish a complete conflict/stacking ruling at the current production boundary." };
+});
+
+export function cardStackingRule(cardId: string): CardStackingRule | undefined {
+  return CARD_STACKING_RULES.find((rule) => rule.cardId === cardId);
 }

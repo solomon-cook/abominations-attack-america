@@ -44,3 +44,10 @@ control, placement, and triggered effects without resolving their rules. Any
 caller that is ready to resolve a plan must call `assertEffectPlanAvailable`
 first; source-gated instances therefore fail closed instead of receiving
 generic target, stacking, or lifecycle behaviour.
+
+Card conflict metadata is kept separately in `CARD_STACKING_RULES` in
+`packages/game-engine/src/cards.ts`. The registry covers every inventoried
+card, records the cited source, and only resolves additive, replacement, or
+permission composition where the captured text and existing implementation
+establish it. The remaining cards are explicitly `source-gated`; they do not
+inherit a default stacking rule.

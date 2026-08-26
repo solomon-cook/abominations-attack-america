@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
+import { CARD_STACKING_RULES, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
 import { applyCommand, applyCommandEnvelope, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, projectState, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey } from "./board.js";
@@ -531,6 +531,15 @@ test("source-inventoried cards have versioned structured metadata without guesse
     effectsImplementation: "implemented",
   });
   assert.equal(cardDefinition("not-a-card"), undefined);
+});
+
+test("card stacking policies are explicit and fail closed when the cited text is insufficient", () => {
+  assert.equal(CARD_STACKING_RULES.length, CARD_DEFINITIONS.length);
+  assert.equal(CARD_STACKING_RULES.every((rule) => rule.sourceRefs.length > 0 && rule.rationale.length > 0), true);
+  assert.deepEqual(cardStackingRule("High-Octane Blood")?.policy, "additive");
+  assert.deepEqual(cardStackingRule("War Spikes")?.policy, "replacement");
+  assert.deepEqual(cardStackingRule("Cutbacks")?.policy, "source-gated");
+  assert.equal(CARD_STACKING_RULES.filter((rule) => rule.policy === "source-gated").length, 23);
 });
 
 test("runtime commands fail closed for every source-gated card", () => {

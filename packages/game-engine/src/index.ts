@@ -10,6 +10,7 @@ export { UNIT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, B
 import { createSetup, developmentSetupDefinition, validateSetup, type SetupSeat, type SetupState } from "./setup.js";
 import { composeContinuousEffects, type ContinuousEffectAccumulator } from "./effects.js";
 export { EFFECT_BOUNDARIES, assertEffectPlanAvailable, composeContinuousEffects, composeEffectPlan, type ComposedEffectPlan, type ContinuousEffectAccumulator, type ContinuousEffectContribution, type EffectAvailability, type EffectBoundary, type EffectCategory, type EffectInstance, type EffectInstanceBase } from "./effects.js";
+export { CARD_STACKING_RULES, cardStackingRule, type CardStackingPolicy, type CardStackingRule } from "./cards.js";
 
 export type Phase = "move" | "fight" | "encounter" | "deploy" | "challenge" | "game-over";
 export type Branch = "Army" | "Navy" | "Air Force" | "Marines";
