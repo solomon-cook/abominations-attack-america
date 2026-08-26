@@ -3,6 +3,7 @@ import {
   FULL_HONEYCOMB_BOARD,
   PROVISIONAL_AUTHORITATIVE_BOARD,
   locationIdToHexKey,
+  isHexKey,
   locations,
   type GameState,
   type HexKey,
@@ -115,6 +116,9 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
   const board = boardForGame(game);
   const boardHexes = displayHexesForGame(game);
   const boardIndex = board ? buildBoardIndex(board) : undefined;
+  const activeNeighbours = new Set(board && isHexKey(game.monsters.find((monster) => monster.id === activePlayerId)?.location ?? "")
+    ? boardIndex?.neighbours[game.monsters.find((monster) => monster.id === activePlayerId)!.location as HexKey] ?? []
+    : []);
   const displayByKey = new Map(boardHexes.map(({ hex, left, top }) => [hex.key, { left, top }]));
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
   const selectedDisplayPath = selectedUnitId ? selectedUnitPath : selectedPath;
@@ -185,7 +189,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             data-hex-key={hex.key}
             data-location-name={place?.name}
             disabled={(!place && board?.id !== PROVISIONAL_AUTHORITATIVE_BOARD.id) || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit)}
-            className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
+            className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%` }}
             onMouseEnter={() => (monsterLegal || unitLegal) && onPreviewPath(placeKey)}
             onMouseLeave={onClearPreview}

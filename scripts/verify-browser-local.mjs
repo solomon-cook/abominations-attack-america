@@ -168,6 +168,7 @@ try {
     unresolvedNodes: document.querySelectorAll(".hex-tile.unresolved .node").length,
     visibleUnresolvedLabels: [...document.querySelectorAll(".hex-tile.unresolved .tile-name")].filter((node) => node.textContent?.trim()).length,
     decorativeMapOverlays: document.querySelectorAll(".map-copy, .region-label").length,
+    canonicalAdjacentHexes: document.querySelectorAll(".hex-tile.adjacent").length,
   }))()`);
   const developmentBoardIdentity = await evaluate(`(() => { const board = document.querySelector("main.game-screen"); return { id: board?.dataset.boardId ?? "", version: board?.dataset.boardVersion ?? "", hash: board?.dataset.boardContentHash ?? "" }; })()`);
   if (developmentBoardIdentity?.id !== "development-nine-location" || !developmentBoardIdentity.version || !developmentBoardIdentity.hash) {
@@ -175,7 +176,7 @@ try {
   }
   const developmentContext = await evaluate(`(() => { const tray = document.querySelector(".board-context-tray"); return { visible: Boolean(tray && tray.getBoundingClientRect().width > 0), text: tray?.textContent ?? "" }; })()`);
   if (!developmentContext?.visible || !/ACTIVE HEX|recorded neighbours/i.test(developmentContext.text)) throw new Error(`Development active-hex context tray was not visible or named: ${JSON.stringify(developmentContext)}`);
-  if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252 || boardSurface?.unresolvedNodes !== 0 || boardSurface?.visibleUnresolvedLabels !== 0 || boardSurface?.decorativeMapOverlays !== 0) {
+  if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252 || boardSurface?.unresolvedNodes !== 0 || boardSurface?.visibleUnresolvedLabels !== 0 || boardSurface?.decorativeMapOverlays !== 0 || boardSurface?.canonicalAdjacentHexes < 1) {
     throw new Error(`Local browser smoke found an unexpected candidate board surface: ${JSON.stringify(boardSurface)}`);
   }
   const boardGeometry = await evaluate(`(() => {
