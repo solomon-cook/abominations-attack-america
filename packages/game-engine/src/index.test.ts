@@ -557,8 +557,11 @@ test("Blonde Lure constrains the targeted monster's next move when the destinati
   assert.deepEqual(armed.state.activeResearchLure, { monsterId: "monster-2", destination: K("denver") });
   assert.deepEqual(armed.state.players[0].researchCardIds, []);
   assert.deepEqual(armed.state.decks.research.discard, ["Blonde Lure"]);
+  const reloaded = migrateGameState(JSON.parse(JSON.stringify(armed.state)) as GameState);
+  assert.deepEqual(reloaded.activeResearchLure, { monsterId: "monster-2", destination: K("denver") });
+  assert.deepEqual(projectState(reloaded, "spectator").activeResearchLure, reloaded.activeResearchLure);
 
-  const targetTurn = structuredClone(armed.state);
+  const targetTurn = structuredClone(reloaded);
   targetTurn.currentPlayer = 1;
   targetTurn.pendingDecision = { type: "monster-movement", playerIndex: 1, pieceId: "monster-2" };
   assert.deepEqual(legalMonsterDestinations(targetTurn, "monster-2"), [K("denver")]);
