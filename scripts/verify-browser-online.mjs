@@ -109,7 +109,23 @@ try {
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`, "second post-move phase");
   const secondPhase = await second.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
   if (secondPhase !== nextPhase) throw new Error(`Online phase divergence after movement: first=${nextPhase ?? "unknown"}, second=${secondPhase ?? "unknown"}.`);
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", nextPhase }));
+  const encounterAction = await first.click("Resolve encounter") || await first.evaluate(`(() => { const button = [...document.querySelectorAll(".action-card button")].find((candidate) => !candidate.disabled); if (!button) return false; button.click(); return true; })()`);
+  if (!encounterAction) throw new Error("First browser exposed no legal Encounter action.");
+  for (let encounterStep = 0; encounterStep < 4; encounterStep += 1) {
+    await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Waiting for server…"`, "Encounter response");
+    const currentPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+    if (currentPhase === "Deploy") break;
+    if (currentPhase !== "Encounter") throw new Error(`Expected Encounter or Deploy after Encounter action, got ${currentPhase ?? "unknown"}.`);
+    const followUp = await first.evaluate(`(() => { const button = [...document.querySelectorAll(".action-card button")].find((candidate) => !candidate.disabled); if (!button) return false; button.click(); return true; })()`);
+    if (!followUp) throw new Error("Encounter remained active without an enabled legal decision control.");
+  }
+  const deployPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(deployPhase)}`, "second synchronized post-encounter phase");
+  if (deployPhase !== "Deploy") throw new Error(`Expected Deploy after Encounter, got ${deployPhase ?? "unknown"}.`);
+  if (!await first.click("Pass deployment")) throw new Error("First browser could not pass Deploy.");
+  await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase === "Move"; })()`, "first next Move phase");
+  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineEncounter: "verified", onlineDeploy: "verified", nextPhase }));
 } finally {
   await Promise.all([first.close(), second.close()]);
 }
