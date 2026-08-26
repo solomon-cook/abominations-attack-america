@@ -16,6 +16,9 @@ const store: RoomStore = allowDevelopmentFixture ? new MemoryRoomStore(true) : d
 const sockets = new Map<string, Map<WebSocket, string>>();
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT = 120;
+const MAX_JSON_BODY_BYTES = 64 * 1024;
+const REQUEST_TIMEOUT_MS = 15_000;
+const HEADERS_TIMEOUT_MS = 20_000;
 const mutationRate = new Map<string, RateBucket>();
 const socketRate = new Map<string, RateBucket>();
 const metrics = new ApiMetrics();
@@ -34,7 +37,21 @@ const json = (response: ServerResponse, status: number, body: unknown) => {
   });
   response.end(JSON.stringify(body));
 };
-const body = async (request: IncomingMessage) => { let value = ""; for await (const chunk of request) value += chunk; return value ? JSON.parse(value) : {}; };
+class HttpError extends Error {
+  constructor(readonly status: number, message: string) {
+    super(message);
+  }
+}
+const body = async (request: IncomingMessage) => {
+  const declaredLength = Number(request.headers["content-length"] ?? 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_JSON_BODY_BYTES) throw new HttpError(413, "Request body is too large.");
+  let value = "";
+  for await (const chunk of request) {
+    value += chunk;
+    if (Buffer.byteLength(value, "utf8") > MAX_JSON_BODY_BYTES) throw new HttpError(413, "Request body is too large.");
+  }
+  return value ? JSON.parse(value) : {};
+};
 const tokenFrom = (request: IncomingMessage, url: URL, input?: Record<string, unknown>) => String(request.headers["x-room-token"] ?? url.searchParams.get("token") ?? input?.token ?? "");
 const operationalLog = (entry: Record<string, unknown>) => console.info(JSON.stringify({ service: "abominations-api", at: new Date().toISOString(), ...entry }));
 const requestAddress = (request: IncomingMessage) => request.socket.remoteAddress ?? "unknown";
@@ -99,10 +116,13 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
       const input = await body(request); const envelope = (input.envelope ?? { actionId: String(input.actionId ?? randomUUID()), actorId: String(input.actorId ?? ""), expectedRevision: Number(input.expectedRevision), protocolVersion: Number(input.protocolVersion ?? 1), command: input.command }) as GameCommandEnvelope; const result = await store.submitAction(code, tokenFrom(request, url, input), envelope); metrics.commandAccepted(); metrics.latency(Date.now() - requestStartedAt); if (result.status === "completed") metrics.roomCompleted(); if (result.status === "abandoned") metrics.roomAbandoned(); operationalLog({ event: "command.accepted", roomCode: code.toUpperCase(), actionId: envelope.actionId, actorId: envelope.actorId, commandType: envelope.command.type, revision: result.version }); await broadcast(code.toUpperCase()); return json(response, 200, result);
     }
     return json(response, 404, { error: "Not found" });
-  } catch (error) { metrics.requestFailure(); metrics.serverError(); metrics.latency(Date.now() - requestStartedAt); if (parts[2] === "actions") metrics.commandFailed(); const reported = errorReporter.report({ category: parts[2] === "actions" ? "command" : "http", method: request.method, path: url.pathname, roomCode: parts[1]?.toUpperCase(), message: error instanceof Error ? error.message : "Request failed" }); operationalLog({ event: "request.failed", method: request.method, path: url.pathname, error: reported.message }); return json(response, 400, { error: reported.message }); }
+  } catch (error) { metrics.requestFailure(); metrics.serverError(); metrics.latency(Date.now() - requestStartedAt); if (parts[2] === "actions") metrics.commandFailed(); const reported = errorReporter.report({ category: parts[2] === "actions" ? "command" : "http", method: request.method, path: url.pathname, roomCode: parts[1]?.toUpperCase(), message: error instanceof Error ? error.message : "Request failed" }); operationalLog({ event: "request.failed", method: request.method, path: url.pathname, error: reported.message }); return json(response, error instanceof HttpError ? error.status : 400, { error: reported.message }); }
 }
 
 const server = createServer(handler);
+server.requestTimeout = REQUEST_TIMEOUT_MS;
+server.headersTimeout = HEADERS_TIMEOUT_MS;
+server.keepAliveTimeout = REQUEST_TIMEOUT_MS;
 server.on("error", (error) => {
   errorReporter.report({ category: "deployment", path: "/listen", message: error instanceof Error ? `API listen failure: ${error.message}` : "API listen failure" });
   operationalLog({ event: "deployment.failure", message: error instanceof Error ? error.message : "API listen failure" });

@@ -104,6 +104,28 @@ test("API responses expose the documented security and CORS headers", async () =
   }
 });
 
+test("API rejects oversized JSON bodies before mutating a room", async () => {
+  const port = 19700 + (process.pid % 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true" },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  try {
+    await waitForHealth(baseUrl);
+    const response = await fetch(`${baseUrl}/rooms`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ maxPlayers: 2, padding: "x".repeat(70_000) }),
+    });
+    assert.equal(response.status, 413);
+    assert.match((await response.json()).error, /too large/i);
+  } finally {
+    await stop(child);
+  }
+});
+
 test("bounded concurrent rooms fan out WebSocket and polling updates without cross-room state", async () => {
   const port = 20000 + (process.pid % 1000);
   const baseUrl = `http://127.0.0.1:${port}`;
