@@ -2188,6 +2188,7 @@ test("Mutation sites apply implemented card effects immediately and disclose gat
   state.decks.mutation = { order: ["Fins and Gills"], drawIndex: 0, discard: [], exhausted: false };
   const result = applyCommand(state, { type: "resolve-encounter" });
   assert.deepEqual(result.state.players[0].mutationCardIds, ["Fins and Gills"]);
+  assert.deepEqual(result.eventPayload.mutationDraws, [{ siteId: "dallas", cardDrawn: true, effectStatus: "implemented" }]);
   assert.match(result.state.log.at(-2) ?? "", /implemented effect is active immediately/);
 });
 

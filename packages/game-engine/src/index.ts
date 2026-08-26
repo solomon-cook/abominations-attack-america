@@ -1614,10 +1614,11 @@ export interface EncounterResolution {
   state: GameState;
   effects: readonly Readonly<{ type: "health" | "infamy" | "stomp"; amount: number; source: string }>[];
   rolls: readonly number[];
+  mutationDraws: readonly Readonly<{ siteId: string; cardDrawn: boolean; effectStatus: "implemented" | "source-gated" | "none" }>[];
 }
 
 export function resolveEncounterResult(state: GameState, choice?: "health" | "infamy"): EncounterResolution {
-  if (state.phase !== "encounter") return { state, effects: [], rolls: [] };
+  if (state.phase !== "encounter") return { state, effects: [], rolls: [], mutationDraws: [] };
   const board = boardForState(state);
   const next = structuredClone(state);
   if (!Array.isArray(next.stompedLocations)) next.stompedLocations = [];
@@ -1625,6 +1626,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
   const place = getLocation(monster.location);
   const effects: Array<Readonly<{ type: "health" | "infamy" | "stomp"; amount: number; source: string }>> = [];
   const rolls: number[] = [];
+  const mutationDraws: Array<Readonly<{ siteId: string; cardDrawn: boolean; effectStatus: "implemented" | "source-gated" | "none" }>> = [];
   const locationKey = monster.location as HexKey;
   const canonicalLocationKey = (locationIdToHexKey(locationKey) ?? locationKey) as HexKey;
   const locationId = place?.id ?? locationKey;
@@ -1639,7 +1641,8 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     if (usedSites.includes(feature.siteId)) continue;
     next.mutationSiteUses[monster.id] = [...usedSites, feature.siteId];
     const mutationCardId = drawMutationForMonster(next, monster);
-        next.log.push(`${monster.name} used Mutation site ${feature.siteId};${mutationCardId ? ` A Mutation card was drawn face up.${mutationDrawStatus(mutationCardId)}` : " No Mutation card was available."}`);
+    mutationDraws.push({ siteId: feature.siteId, cardDrawn: Boolean(mutationCardId), effectStatus: mutationCardId ? sourcedCardRule(mutationCardId)?.effectsImplementation === "implemented" ? "implemented" : "source-gated" : "none" });
+    next.log.push(`${monster.name} used Mutation site ${feature.siteId};${mutationCardId ? ` A Mutation card was drawn face up.${mutationDrawStatus(mutationCardId)}` : " No Mutation card was available."}`);
   }
   if (next.challenge?.declared && !next.challenge.active && challengeSite && monster.location !== "hollywood" && !next.challenge.defeatedMonsterIds.includes(monster.id)) {
     next.challenge = { ...next.challenge, challengerMonsterId: monster.id, pendingStartPlayerIndex: next.currentPlayer, startAtEndOfTurn: true };
@@ -1648,7 +1651,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     next.deploymentsThisTurn = 0;
     next.deploymentDestinations = [];
     next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
-    return { state: next, effects, rolls };
+    return { state: next, effects, rolls, mutationDraws };
   }
   if (!stompable) {
     next.log.push(`${monster.name} encountered a space with no active encounter effect.`);
@@ -1656,7 +1659,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     next.deploymentsThisTurn = 0;
     next.deploymentDestinations = [];
     next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
-    return { state: next, effects, rolls };
+    return { state: next, effects, rolls, mutationDraws };
   }
   const zorbCityChoiceRequired = !alreadyStomped && monster.name === "Zorb" && features.some((feature) => feature.kind === "city") && !choice;
   const ironStomachChoiceRequired = !alreadyStomped && Boolean(baseFeature) && monsterHasMutation(next, monster, "Iron Stomach") && !choice;
@@ -1664,7 +1667,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     next.pendingEncounterChoice = { playerIndex: next.currentPlayer, location: canonicalLocationKey, choices: ["health", "infamy"] };
     next.pendingDecision = { type: "encounter-choice", playerIndex: next.currentPlayer, location: canonicalLocationKey, choices: ["health", "infamy"] };
     next.log.push(`${monster.name} must choose a city benefit.`);
-    return { state: next, effects: [], rolls };
+    return { state: next, effects: [], rolls, mutationDraws };
   }
   if (!alreadyStomped) {
     for (const feature of features) {
@@ -1718,7 +1721,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
       next.pendingTrophyChoice = { playerIndex: branchOwner.playerIndex, location: canonicalLocationKey, branch: baseFeature.branch, unitIds: trophyUnitIds };
       next.pendingDecision = { type: "trophy-choice", playerIndex: branchOwner.playerIndex, location: canonicalLocationKey, branch: baseFeature.branch, unitIds: trophyUnitIds };
       next.log.push(`${baseFeature.branch} must choose one legal trophy for the monster.`);
-      return { state: next, effects, rolls };
+      return { state: next, effects, rolls, mutationDraws };
     }
   }
   next.log.push(`${monster.name} encountered ${place?.name}.`);
@@ -1748,7 +1751,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     next.deploymentDestinations = [];
     next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
   }
-  return { state: next, effects, rolls };
+  return { state: next, effects, rolls, mutationDraws };
 }
 
 export function resolveEncounter(state: GameState): GameState {
@@ -2276,7 +2279,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     }
     const result = resolveEncounterResult(state, command.type === "resolve-encounter" ? command.choice : undefined);
     const location = state.monsters[state.currentPlayer]?.location;
-    const eventPayload = { location, stomped: isHexKey(location) && !(state.stompedLocations ?? []).includes(location), effects: result.effects, rolls: result.rolls, remainingStompMarkers: result.state.stompMarkers, choices: result.state.pendingEncounterChoice?.choices, challenge: result.state.challenge ? { declared: result.state.challenge.declared, active: result.state.challenge.active, challengerMonsterId: result.state.challenge.challengerMonsterId, pendingStartPlayerIndex: result.state.challenge.pendingStartPlayerIndex, startAtEndOfTurn: result.state.challenge.startAtEndOfTurn } : undefined, nextPhase: result.state.phase };
+    const eventPayload = { location, stomped: isHexKey(location) && !(state.stompedLocations ?? []).includes(location), effects: result.effects, rolls: result.rolls, mutationDraws: result.mutationDraws, remainingStompMarkers: result.state.stompMarkers, choices: result.state.pendingEncounterChoice?.choices, challenge: result.state.challenge ? { declared: result.state.challenge.declared, active: result.state.challenge.active, challengerMonsterId: result.state.challenge.challengerMonsterId, pendingStartPlayerIndex: result.state.challenge.pendingStartPlayerIndex, startAtEndOfTurn: result.state.challenge.startAtEndOfTurn } : undefined, nextPhase: result.state.phase };
     const eventType = result.state.pendingEncounterChoice ? "encounter.choice-required" : result.state.pendingTrophyChoice ? "trophy.choice-required" : "encounter.resolved";
     return { state: appendEvent(result.state, eventType, eventPayload), eventType, eventPayload };
   }
