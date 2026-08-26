@@ -65,6 +65,22 @@ import { playSound, type SoundCategory } from "./audio";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
 
+const MAP_ZOOM_MIN = 0.9;
+const MAP_ZOOM_MAX = 1.75;
+const MAP_PAN_STEP = 8;
+
+function clampMapPan(pan: { x: number; y: number }, zoom: number) {
+  const extent = Math.max(0, (zoom - 1) * 50);
+  return {
+    x: Math.max(-extent, Math.min(extent, pan.x)),
+    y: Math.max(-extent, Math.min(extent, pan.y)),
+  };
+}
+
+function clampMapZoom(zoom: number) {
+  return Math.max(MAP_ZOOM_MIN, Math.min(MAP_ZOOM_MAX, Number(zoom.toFixed(2))));
+}
+
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
     && typeof WebSocket !== "undefined"
@@ -327,7 +343,12 @@ function App() {
     setMapZoom(1);
     setMapPan({ x: 0, y: 0 });
   };
-  const panMap = (x: number, y: number) => setMapPan((current) => ({ x: current.x + x, y: current.y + y }));
+  const panMap = (x: number, y: number) => setMapPan((current) => clampMapPan({ x: current.x + x, y: current.y + y }, mapZoom));
+  const setClampedMapZoom = (nextZoom: number) => {
+    const zoom = clampMapZoom(nextZoom);
+    setMapZoom(zoom);
+    setMapPan((current) => clampMapPan(current, zoom));
+  };
   const startMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
     mapDragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, panX: mapPan.x, panY: mapPan.y };
@@ -338,10 +359,10 @@ function App() {
     const map = mapRef.current;
     if (!drag || drag.pointerId !== event.pointerId || !map) return;
     const bounds = map.getBoundingClientRect();
-    setMapPan({
+    setMapPan(clampMapPan({
       x: drag.panX + ((event.clientX - drag.x) / bounds.width) * 100,
       y: drag.panY + ((event.clientY - drag.y) / bounds.height) * 100,
-    });
+    }, mapZoom));
   };
   const endMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     if (mapDragRef.current?.pointerId !== event.pointerId) return;
@@ -350,7 +371,7 @@ function App() {
   };
   const zoomMapWithWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     event.preventDefault();
-    setMapZoom((zoom) => Math.min(2.5, Math.max(.75, Number((zoom + (event.deltaY < 0 ? .1 : -.1)).toFixed(2)))));
+    setClampedMapZoom(mapZoom + (event.deltaY < 0 ? .1 : -.1));
   };
 
   useEffect(() => {
@@ -1004,13 +1025,13 @@ function App() {
           </div>
           <div className="map-controls" aria-label="Board view controls">
             <span className="label">BOARD VIEW</span>
-            <button type="button" aria-label="Pan board left" onClick={() => panMap(-8, 0)}>←</button>
-            <button type="button" aria-label="Pan board up" onClick={() => panMap(0, -8)}>↑</button>
-            <button type="button" aria-label="Pan board down" onClick={() => panMap(0, 8)}>↓</button>
-            <button type="button" aria-label="Pan board right" onClick={() => panMap(8, 0)}>→</button>
-            <button type="button" aria-label="Zoom board out" onClick={() => setMapZoom((zoom) => Math.max(.75, Number((zoom - .25).toFixed(2))))}>−</button>
+            <button type="button" aria-label="Pan board left" onClick={() => panMap(-MAP_PAN_STEP, 0)}>←</button>
+            <button type="button" aria-label="Pan board up" onClick={() => panMap(0, -MAP_PAN_STEP)}>↑</button>
+            <button type="button" aria-label="Pan board down" onClick={() => panMap(0, MAP_PAN_STEP)}>↓</button>
+            <button type="button" aria-label="Pan board right" onClick={() => panMap(MAP_PAN_STEP, 0)}>→</button>
+            <button type="button" aria-label="Zoom board out" onClick={() => setClampedMapZoom(mapZoom - .25)}>−</button>
             <span className="map-zoom" aria-live="polite">{Math.round(mapZoom * 100)}%</span>
-            <button type="button" aria-label="Zoom board in" onClick={() => setMapZoom((zoom) => Math.min(2.5, Number((zoom + .25).toFixed(2))))}>+</button>
+            <button type="button" aria-label="Zoom board in" onClick={() => setClampedMapZoom(mapZoom + .25)}>+</button>
             <button type="button" className="map-reset" onClick={resetMapView}>Fit / reset</button>
           </div>
           <div

@@ -35,6 +35,8 @@ const requiredSourceMarkers = [
   ["Mutation labels", />MUTATION<\//],
   ["pointer-drag board controls", /onPointerMove=\{moveMapDrag\}/],
   ["wheel board zoom", /onWheel=\{zoomMapWithWheel\}/],
+  ["bounded map zoom", /const MAP_ZOOM_MIN = 0\.9;[\s\S]*const MAP_ZOOM_MAX = 1\.75;[\s\S]*function clampMapZoom/],
+  ["bounded map pan", /function clampMapPan[\s\S]*setMapPan\(clampMapPan/],
   ["hover path preview", /onMouseEnter=\{\(\) => \(monsterLegal \|\| unitLegal\)/],
   ["cream die face textures", /\/assets\/dice\/d6-face-\$\{face\}\.webp/],
   ["authoritative die result label", /aria-label=\{label\}/],

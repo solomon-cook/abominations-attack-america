@@ -177,6 +177,20 @@ try {
   if (boardGeometry?.rows !== 13 || Number(boardGeometry.minimumHorizontalGap) < -0.5) {
     throw new Error(`Local browser smoke found overlapping candidate faces: ${JSON.stringify(boardGeometry)}`);
   }
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await evaluate('document.querySelector("button[aria-label=\'Zoom board out\']")?.click()');
+    await wait(25);
+  }
+  const minimumZoom = await evaluate('document.querySelector(".map-zoom")?.textContent?.trim()');
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await evaluate('document.querySelector("button[aria-label=\'Zoom board in\']")?.click()');
+    await wait(25);
+  }
+  const maximumZoom = await evaluate('document.querySelector(".map-zoom")?.textContent?.trim()');
+  if (minimumZoom !== "90%" || maximumZoom !== "175%") {
+    throw new Error(`Local browser smoke found incorrect camera bounds: ${JSON.stringify({ minimumZoom, maximumZoom })}`);
+  }
+  await evaluate('document.querySelector(".map-reset")?.click()');
   if (screenshotPath) {
     const screenshot = await command("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     await writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));

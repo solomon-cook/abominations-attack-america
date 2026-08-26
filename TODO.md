@@ -113,6 +113,27 @@ Useful source documents:
 - [ ] [P0] Record lake, sea, seacoast, boundary, disabled, and exceptional edge information.
   - [ ] [P0] Record all cities and their exact Health/dice benefits.
 - [ ] [P0] Record all military bases and owning branches.
+
+### Provisional-authority playtest bridge — use the current guesses now, verify the physical board later
+
+- [ ] [P0] Create a separately versioned `PROVISIONAL_AUTHORITATIVE_BOARD` for local/test play, using the current 254-cell axial shell and explicitly labelling the ruleset as provisional rather than physically verified.
+  - [ ] [P0] Populate every currently visible, non-stomped feature that can be reasonably inferred from the supplied references: grey skyline panels as cities, bright yellow/orange `INFAMY` panels as Infamy sites, coloured stars as military bases, and purple/pink `MUTATE` panels as Mutation sites.
+  - [ ] [P0] Add the current bonus-first city guesses for testing: Seattle `+1 Health`, San Francisco `2D`, Los Angeles `3D`, Chicago `+2 Health`, Winnipeg `+1 Health`, Minneapolis `1D`, Omaha `1D`, Kansas City `+1 Health`, New York `2D` minimum, Philadelphia `2D`, with Atlanta/Nashville and other recognisable city regions recorded as provisional until their printed bonuses can be read.
+  - [ ] [P0] Add as many unobscured military-base candidates as the references support, matching star colours to the original branch key: yellow Air Force, red Marines, blue Navy, and green/olive Army; omit stomped or unreadable stars and leave National Guard assignments unset where no star is clear enough.
+  - [ ] [P0] Add a provisional coast/ocean interpretation from the visible blue boundary, keeping uncertain cells and cross-board barriers explicitly marked as guessed rather than silently treating the shell geometry as physical truth.
+  - [ ] [P0] Keep guessed city names editable and secondary to the numeric benefit; when the physical board arrives, correct the name without losing the bonus-review history.
+  - [ ] [P0] Add a named test factory/selector so local board playtests pin the provisional board ID, version, ruleset version, and content hash, while production room creation continues to reject it.
+  - [ ] [P0] Render the provisional board through the same engine/API/browser board resolver used by later authoritative versions; do not duplicate feature positions or movement topology in the UI.
+  - [ ] [P0] Add structural tests for 254 unique hexes, reciprocal edges, feature counts, provisional verification status, pinned identity, movement, city encounters, base encounters, and skipped stomped cells.
+
+- [ ] [P0] Replace the provisional playtest board with a physically verified board version when the actual board is available.
+  - [ ] [P0] Align the physical board photograph to the canonical axial shell and review every cell, including cells previously marked blank, uncertain, covered, or guessed.
+  - [ ] [P0] Cross-reference at least two unobstructed references for every city, base, Infamy site, Mutation site, Challenge site, Hollywood/Los Angeles space, coast/lake cell, and exceptional boundary.
+  - [ ] [P0] Verify every city label and exact `1HP`/`2HP`/`1D`/`2D`/`3D` benefit against the printed panel; correct the provisional New York/Philadelphia and Atlanta/Nashville guesses first.
+  - [ ] [P0] Verify every military-base star and branch ownership against the original branch colour key; do not infer a base from an Infamy panel or a covered/stomped marker.
+  - [ ] [P0] Verify sea, lake, seacoast, disabled, and exceptional edges against the physical board rather than relying on the provisional coast line.
+  - [ ] [P0] Recompute the board content hash, bump the immutable board version, update the evidence/transcription documents, and remove the provisional selector from any production path.
+  - [ ] [P0] Run engine, API, browser, visual-overlay, and same-scale human review checks; only then change the MVP gate from the provisional test boundary to the verified physical board.
   - [ ] [P0] Record all Infamy, Mutation, Challenge, Hollywood, Los Angeles, blank, and lair spaces.
 - [x] [P0] Support multiple composable features on one hex. (`BoardHex.features` is a list; validator/index test covers a multi-feature hex)
   - [x] [P0] Create a generated lookup index and content hash for each immutable board version. (`buildBoardIndex`, `boardContentHash`)
@@ -483,9 +504,9 @@ Useful source documents:
   - [x] Provide temporary movement paths, targeting previews, selection highlights, accepted-action feedback, and recorded dice/combat-result presentation. (Current development flows implement these presentation states.)
   - [ ] Ensure temporary visual feedback explains what changed, then settles cleanly without permanently increasing map clutter or delaying authoritative state.
   - [x] Support map pan, zoom, fit, reset, and active-area focus. (Current controls support these operations.)
-  - [ ] Replace the current broad zoom range with a fixed board-readable minimum and maximum; clamp wheel, button, keyboard, and future pinch zoom to the same limits and prevent the map from feeling detached from the game surface.
-  - [ ] Choose and document zoom bounds for desktop, tablet, and mobile, with a stable default framing that keeps the playable board and critical overlays legible.
-  - [ ] Keep camera movement bounded to the board and prevent excessive pan or zoom from exposing empty space, breaking labels, or hiding the active decision.
+  - [x] Replace the current broad zoom range with a fixed board-readable minimum and maximum; clamp wheel, button, keyboard, and future pinch zoom to the same limits and prevent the map from feeling detached from the game surface. (`MAP_ZOOM_MIN`/`MAP_ZOOM_MAX` and `setClampedMapZoom` apply the same bounds to wheel and button input; future pinch input can reuse the helper.)
+  - [x] Choose and document zoom bounds for desktop, tablet, and mobile, with a stable default framing that keeps the playable board and critical overlays legible. (`docs/board-camera-contract.md` records the shared 0.90x-1.75x bounds and 1.00x default across supported viewports.)
+  - [x] Keep camera movement bounded to the board and prevent excessive pan or zoom from exposing empty space, breaking labels, or hiding the active decision. (`clampMapPan` derives the maximum translation from zoom and is used by buttons, pointer dragging, and zoom changes.)
   - [ ] Support strategic overview and tactical detail at the same camera surface: zoomed-out board relationships and zoomed-in piece, marker, city, and interaction detail.
   - [ ] Make geography communicate rules wherever authored data exists: coast, water class, barriers, cities, lairs, special sites, terrain, and movement restrictions.
   - [ ] Make cities and major board features visibly unpack onto the map rather than hiding their entire state in a separate information screen.
