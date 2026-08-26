@@ -1,10 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
 import { applyCommandEnvelope, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import type { RoomEvent, RoomParticipantView, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
+import type { RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 
 type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string };
-type StoredRoom = { id: string; code: string; status: RoomStatus; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; lastActivityAt: number };
+type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; lastActivityAt: number };
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
 
@@ -31,7 +31,7 @@ export function terminalResultSummary(state: GameState, terminalEvent: { type: s
 export interface RoomStore {
   close(): Promise<void>;
   health(): Promise<{ persistence: "memory" | "prisma" }>;
-  createRoom(maxPlayers: number, displayName?: string): Promise<SessionResponse>;
+  createRoom(maxPlayers: number, displayName?: string, privacy?: RoomPrivacy): Promise<SessionResponse>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
   spectateRoom(code: string, displayName: string): Promise<SessionResponse>;
   disconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
@@ -58,13 +58,14 @@ export class MemoryRoomStore implements RoomStore {
 
   async health(): Promise<{ persistence: "memory" }> { return { persistence: "memory" }; }
 
-  async createRoom(maxPlayers: number, displayName = "Player 1"): Promise<SessionResponse> {
+  async createRoom(maxPlayers: number, displayName = "Player 1", privacy: RoomPrivacy = "private"): Promise<SessionResponse> {
     const id = randomBytes(12).toString("hex");
     const roomCode = code();
     const state = this.allowDevelopmentFixture
       ? createRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`)
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`);
-    const room: StoredRoom = { id, code: roomCode, status: "waiting", maxPlayers, version: 0, state, participants: [], events: [], lastActivityAt: Date.now() };
+    if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
+    const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, participants: [], events: [], lastActivityAt: Date.now() };
     this.rooms.set(room.code, room);
     return this.addParticipant(room, displayName, "player", 0);
   }
@@ -84,6 +85,7 @@ export class MemoryRoomStore implements RoomStore {
 
   async spectateRoom(roomCode: string, displayName: string) {
     const room = this.requireRoom(roomCode);
+    if (room.privacy === "private") throw new Error("This room is private and does not allow spectator entry.");
     const session = this.addParticipant(room, displayName || "Spectator", "spectator");
     this.touch(room);
     return session;
@@ -222,6 +224,6 @@ export class MemoryRoomStore implements RoomStore {
   }
 
   private view(room: StoredRoom, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number): RoomView {
-    return { id: room.id, code: room.code, status: room.status, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map(({ tokenHash: _tokenHash, ...participant }) => participant), events: room.events.filter((event) => event.version > afterVersion).map((event) => ({ ...event, payload: redactCardIdentifiers(event.payload) as Record<string, unknown> })) };
+    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map(({ tokenHash: _tokenHash, ...participant }) => participant), events: room.events.filter((event) => event.version > afterVersion).map((event) => ({ ...event, payload: redactCardIdentifiers(event.payload) as Record<string, unknown> })) };
   }
 }

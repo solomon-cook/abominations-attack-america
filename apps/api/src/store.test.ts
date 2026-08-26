@@ -17,7 +17,7 @@ async function completeDevelopmentSetup(store: MemoryRoomStore, sessions: Array<
 
 test("players can create, join, and read a room", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2);
+  const host = await store.createRoom(2, "Player 1", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
   assert.equal(guest.room.status, "waiting");
   await completeDevelopmentSetup(store, [host, guest]);
@@ -37,6 +37,17 @@ test("room creation preserves the host display name", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2, "  Alex  ");
   assert.equal(host.room.participants[0]?.displayName, "Alex");
+});
+
+test("private rooms reject spectator entry and public rooms allow it", async () => {
+  const store = new MemoryRoomStore(true);
+  const privateHost = await store.createRoom(2, "Host", "private");
+  assert.equal(privateHost.room.privacy, "private");
+  await assert.rejects(() => store.spectateRoom(privateHost.room.code, "Watcher"), /private/);
+  const publicHost = await store.createRoom(2, "Host", "public");
+  assert.equal(publicHost.room.privacy, "public");
+  const spectator = await store.spectateRoom(publicHost.room.code, "Watcher");
+  assert.equal(spectator.room.privacy, "public");
 });
 
 test("memory store health reports its persistence boundary", async () => {
@@ -73,7 +84,7 @@ test("rooms activate only after all configured seats join and reject waiting-roo
 
 test("a setup snapshot restores after a refresh with its revision", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2);
+  const host = await store.createRoom(2, "Player 1", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
   const afterMonster = await store.setupAction(host.room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, host.room.version);
   const restored = await store.getRoom(host.room.code, host.token);
@@ -85,7 +96,7 @@ test("a setup snapshot restores after a refresh with its revision", async () => 
 
 test("disconnect and reconnect preserve setup state and recover an abandoned room", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2);
+  const host = await store.createRoom(2, "Player 1", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
   const disconnectedSetup = await store.disconnect(host.room.code, host.token);
   assert.equal(disconnectedSetup.participants.find((participant) => participant.id === host.participantId)?.connected, false);
@@ -108,7 +119,7 @@ test("disconnect and reconnect preserve setup state and recover an abandoned roo
 
 test("session rotation preserves the participant while revoking the old token", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2);
+  const host = await store.createRoom(2, "Player 1", "public");
   const rotated = await store.rotateSession(host.room.code, host.token);
   assert.equal(rotated.participantId, host.participantId);
   assert.notEqual(rotated.token, host.token);
@@ -118,7 +129,7 @@ test("session rotation preserves the participant while revoking the old token", 
 
 test("expired memory sessions cannot be used and rotation refreshes the expiry", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2);
+  const host = await store.createRoom(2, "Player 1", "public");
   const rooms = (store as unknown as { rooms: Map<string, { participants: Array<{ id: string; sessionExpiresAt: number }> }> }).rooms;
   const participant = [...rooms.values()][0]!.participants.find((candidate) => candidate.id === host.participantId)!;
   participant.sessionExpiresAt = Date.now() - 1;
@@ -143,14 +154,14 @@ test("idle development rooms expire without changing a completed result", async 
 
 test("spectators can read but cannot act", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2);
+  const host = await store.createRoom(2, "Player 1", "public");
   const spectator = await store.spectateRoom(host.room.code, "Watch-only");
   await assert.rejects(() => store.submitAction(host.room.code, spectator.token, { actionId: "a1", actorId: spectator.participantId, expectedRevision: 0, protocolVersion: 1, command: { type: "move", path: ["los-angeles", "denver"] } }), /Spectators/);
 });
 
 test("completed terminal results survive player refresh and spectator projection", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2);
+  const host = await store.createRoom(2, "Player 1", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
   const players = [host, guest];
   await completeDevelopmentSetup(store, players);
@@ -232,7 +243,7 @@ test("commands reject forged actors and out-of-turn players", async () => {
 
 test("room projections redact authoritative deck order for players and spectators", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2);
+  const host = await store.createRoom(2, "Player 1", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
   const spectator = await store.spectateRoom(host.room.code, "Watch-only");
   const storedRooms = (store as unknown as { rooms: Map<string, { state: any; events: any[] }> }).rooms;
@@ -384,7 +395,7 @@ test("memory event history keeps the bounded recovery suffix", async () => {
 
 test("bounded concurrent room and spectator operations remain isolated", async () => {
   const store = new MemoryRoomStore(true);
-  const sessions = await Promise.all(Array.from({ length: 24 }, (_, index) => store.createRoom(2).then(async (host) => {
+  const sessions = await Promise.all(Array.from({ length: 24 }, (_, index) => store.createRoom(2, "Player 1", "public").then(async (host) => {
     const guest = await store.joinRoom(host.room.code, `Guest ${index}`);
     const spectators = await Promise.all([
       store.spectateRoom(host.room.code, `Spectator ${index}-a`),

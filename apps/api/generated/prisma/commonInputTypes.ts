@@ -36,6 +36,13 @@ export type EnumRoomStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel> | $Enums.RoomStatus
 }
 
+export type EnumRoomPrivacyFilter<$PrismaModel = never> = {
+  equals?: $Enums.RoomPrivacy | Prisma.EnumRoomPrivacyFieldRefInput<$PrismaModel>
+  in?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
+  notIn?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel> | $Enums.RoomPrivacy
+}
+
 export type IntFilter<$PrismaModel = never> = {
   equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
   in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
@@ -124,6 +131,16 @@ export type EnumRoomStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel>
+}
+
+export type EnumRoomPrivacyWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.RoomPrivacy | Prisma.EnumRoomPrivacyFieldRefInput<$PrismaModel>
+  in?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
+  notIn?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumRoomPrivacyWithAggregatesFilter<$PrismaModel> | $Enums.RoomPrivacy
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel>
 }
 
 export type IntWithAggregatesFilter<$PrismaModel = never> = {
@@ -308,6 +325,13 @@ export type NestedEnumRoomStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel> | $Enums.RoomStatus
 }
 
+export type NestedEnumRoomPrivacyFilter<$PrismaModel = never> = {
+  equals?: $Enums.RoomPrivacy | Prisma.EnumRoomPrivacyFieldRefInput<$PrismaModel>
+  in?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
+  notIn?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel> | $Enums.RoomPrivacy
+}
+
 export type NestedIntFilter<$PrismaModel = never> = {
   equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
   in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
@@ -366,6 +390,16 @@ export type NestedEnumRoomStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumRoomPrivacyWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.RoomPrivacy | Prisma.EnumRoomPrivacyFieldRefInput<$PrismaModel>
+  in?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
+  notIn?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumRoomPrivacyWithAggregatesFilter<$PrismaModel> | $Enums.RoomPrivacy
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel>
 }
 
 export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {

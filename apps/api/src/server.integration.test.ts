@@ -160,7 +160,7 @@ test("bounded concurrent rooms fan out WebSocket and polling updates without cro
   try {
     await waitForHealth(baseUrl);
     const sessions = await Promise.all(Array.from({ length: 8 }, async (_, index) => {
-      const response = await fetch(`${baseUrl}/rooms`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ maxPlayers: 2 }) });
+      const response = await fetch(`${baseUrl}/rooms`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ maxPlayers: 2, privacy: "public" }) });
       const created = await response.json() as { room: RoomPayload; token: string; participantId: string };
       assert.equal(response.ok, true);
       const spectatorResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/spectate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName: `Spectator ${index}` }) });

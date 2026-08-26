@@ -1,0 +1,3 @@
+CREATE TYPE "RoomPrivacy" AS ENUM ('PRIVATE', 'PUBLIC');
+
+ALTER TABLE "GameRoom" ADD COLUMN "privacy" "RoomPrivacy" NOT NULL DEFAULT 'PRIVATE';

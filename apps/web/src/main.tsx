@@ -118,6 +118,7 @@ function App() {
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(2);
+  const [roomPrivacy, setRoomPrivacy] = useState<"private" | "public">("private");
   const [localSetup, setLocalSetup] = useState<SetupState>(() =>
     createDevelopmentSetup(2),
   );
@@ -545,7 +546,7 @@ function App() {
     try {
       const result =
         kind === "create"
-          ? await createRoom(playerCount, displayName || "Player 1")
+          ? await createRoom(playerCount, displayName || "Player 1", roomPrivacy)
           : kind === "join"
             ? await joinRoom(roomCode, displayName || "Player")
             : await spectateRoom(roomCode, displayName || "Spectator");
@@ -867,11 +868,13 @@ function App() {
         connectionState={connectionState}
         displayName={displayName}
         playerCount={playerCount}
+        roomPrivacy={roomPrivacy}
         roomCode={roomCode}
         setupComplete={false}
         error={error}
         onDisplayNameChange={setDisplayName}
         onPlayerCountChange={changePlayerCount}
+        onRoomPrivacyChange={setRoomPrivacy}
         onRoomCodeChange={setRoomCode}
         onStartSession={(kind) => void startSession(kind)}
         onToggleReady={() => undefined}
@@ -929,11 +932,13 @@ function App() {
         connectionState={connectionState}
         displayName={displayName}
         playerCount={playerCount}
+        roomPrivacy={roomPrivacy}
         roomCode={roomCode}
         setupComplete={setupComplete}
         error={error}
         onDisplayNameChange={setDisplayName}
         onPlayerCountChange={changePlayerCount}
+        onRoomPrivacyChange={setRoomPrivacy}
         onRoomCodeChange={setRoomCode}
         onStartSession={(kind) => void startSession(kind)}
         onToggleReady={() => void toggleReady()}

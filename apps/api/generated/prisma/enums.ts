@@ -20,6 +20,14 @@ export const RoomStatus = {
 export type RoomStatus = (typeof RoomStatus)[keyof typeof RoomStatus]
 
 
+export const RoomPrivacy = {
+  PRIVATE: 'PRIVATE',
+  PUBLIC: 'PUBLIC'
+} as const
+
+export type RoomPrivacy = (typeof RoomPrivacy)[keyof typeof RoomPrivacy]
+
+
 export const ParticipantRole = {
   PLAYER: 'PLAYER',
   SPECTATOR: 'SPECTATOR'

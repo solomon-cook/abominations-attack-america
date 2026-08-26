@@ -7,11 +7,13 @@ export type LobbyPanelProps = {
   connectionState: "online" | "reconnecting" | "stale" | "offline";
   displayName: string;
   playerCount: 2 | 3 | 4;
+  roomPrivacy: "private" | "public";
   roomCode: string;
   setupComplete: boolean;
   error: string;
   onDisplayNameChange: (value: string) => void;
   onPlayerCountChange: (value: 2 | 3 | 4) => void;
+  onRoomPrivacyChange: (value: "private" | "public") => void;
   onRoomCodeChange: (value: string) => void;
   onStartSession: (kind: "create" | "join" | "spectate") => void;
   onToggleReady: () => void;
@@ -25,11 +27,13 @@ export function LobbyPanel({
   connectionState,
   displayName,
   playerCount,
+  roomPrivacy,
   roomCode,
   setupComplete,
   error,
   onDisplayNameChange,
   onPlayerCountChange,
+  onRoomPrivacyChange,
   onRoomCodeChange,
   onStartSession,
   onToggleReady,
@@ -42,7 +46,7 @@ export function LobbyPanel({
         <p>
           {online ? (
             <>
-              Room <strong>{room?.code}</strong> ·{" "}
+              Room <strong>{room?.code}</strong> · {room?.privacy ?? "private"} ·{" "}
               <span className={`connection ${connectionState}`}>{connectionState}</span> ·{" "}
               {participant?.role === "spectator" ? "spectating" : `Player ${(participant?.playerIndex ?? 0) + 1}`}
             </>
@@ -56,6 +60,10 @@ export function LobbyPanel({
             <option value="2">2 players</option>
             <option value="3">3 players</option>
             <option value="4">4 players</option>
+          </select>
+          <select aria-label="Room privacy" value={roomPrivacy} onChange={(event) => onRoomPrivacyChange(event.target.value as "private" | "public")}>
+            <option value="private">Private room</option>
+            <option value="public">Public room</option>
           </select>
           <input aria-label="Room code" value={roomCode} onChange={(event) => onRoomCodeChange(event.target.value.toUpperCase())} placeholder="Room code" maxLength={6} />
           <button type="button" onClick={() => onStartSession("create")}>Create</button>

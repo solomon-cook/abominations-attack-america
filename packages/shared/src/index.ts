@@ -11,6 +11,7 @@ export interface RoomParticipant {
 import type { GameState } from "@abominations/game-engine";
 
 export type RoomStatus = "waiting" | "active" | "completed" | "abandoned" | "expired";
+export type RoomPrivacy = "private" | "public";
 export type ParticipantRole = "player" | "spectator";
 
 export interface RoomEvent {
@@ -36,6 +37,7 @@ export interface RoomView {
   id: string;
   code: string;
   status: RoomStatus;
+  privacy: RoomPrivacy;
   version: number;
   state: GameState;
   participants: RoomParticipantView[];

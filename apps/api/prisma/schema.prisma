@@ -15,6 +15,11 @@ enum RoomStatus {
   EXPIRED
 }
 
+enum RoomPrivacy {
+  PRIVATE
+  PUBLIC
+}
+
 enum ParticipantRole {
   PLAYER
   SPECTATOR
@@ -24,6 +29,7 @@ model GameRoom {
   id           String       @id @default(cuid())
   code         String       @unique
   status       RoomStatus   @default(WAITING)
+  privacy      RoomPrivacy  @default(PRIVATE)
   maxPlayers   Int          @default(4)
   version      Int          @default(0)
   state        Json

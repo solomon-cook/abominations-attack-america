@@ -1,6 +1,6 @@
 import { randomBytes, createHash } from "node:crypto";
 import { applyCommandEnvelope, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import type { RoomEvent, RoomView, SessionResponse } from "@abominations/shared";
+import type { RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, terminalResultSummary, type RoomStore } from "./store.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
@@ -26,13 +26,14 @@ export class PrismaRoomStore implements RoomStore {
     return { persistence: "prisma" };
   }
 
-  async createRoom(maxPlayers: number, displayName = "Player 1"): Promise<SessionResponse> {
+  async createRoom(maxPlayers: number, displayName = "Player 1", privacy: RoomPrivacy = "private"): Promise<SessionResponse> {
     const accessToken = token();
     const roomCode = code();
     const state = this.allowDevelopmentFixture
       ? createRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`)
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`);
-    const room = await this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, state: state as any } });
+    if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
+    const room = await this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", state: state as any } });
     const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
     return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };
   }
@@ -53,6 +54,7 @@ export class PrismaRoomStore implements RoomStore {
   async spectateRoom(roomCode: string, displayName: string) {
     const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
     if (!room) throw new Error("Room not found.");
+    if (room.privacy === "PRIVATE") throw new Error("This room is private and does not allow spectator entry.");
     const accessToken = token();
     const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Spectator", role: "SPECTATOR", connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
     return { room: await this.view(room.id), participantId: participant.id, token: accessToken };
@@ -196,6 +198,6 @@ export class PrismaRoomStore implements RoomStore {
     const room = await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, include: { participants: true, events: { where: { version: { gt: afterVersion } }, orderBy: { version: "desc" }, take: MAX_RETAINED_ROOM_EVENTS } } });
     if (!room) throw new Error("Room not found.");
     const events: RoomEvent[] = room.events.map((event: any) => ({ id: event.id, roomId: event.roomId, version: event.version, actorId: event.actorId, type: event.type, payload: redactCardIdentifiers(event.payload) as Record<string, unknown>, createdAt: event.createdAt.toISOString() }));
-    return { id: room.id, code: room.code, status: room.status.toLowerCase() as RoomView["status"], version: room.version, state: projectState(room.state as unknown as GameState, audience, viewerPlayerIndex), participants: room.participants.map((participant: any) => ({ id: participant.id, displayName: participant.displayName, role: participant.role.toLowerCase(), playerIndex: participant.playerIndex ?? undefined, connected: Boolean(participant.connectedAt), ready: Boolean(participant.ready) })), events };
+    return { id: room.id, code: room.code, status: room.status.toLowerCase() as RoomView["status"], privacy: room.privacy.toLowerCase() as RoomView["privacy"], version: room.version, state: projectState(room.state as unknown as GameState, audience, viewerPlayerIndex), participants: room.participants.map((participant: any) => ({ id: participant.id, displayName: participant.displayName, role: participant.role.toLowerCase(), playerIndex: participant.playerIndex ?? undefined, connected: Boolean(participant.connectedAt), ready: Boolean(participant.ready) })), events };
   }
 }

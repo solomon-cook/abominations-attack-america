@@ -1,5 +1,5 @@
 import { COMMAND_PROTOCOL_VERSION, type GameCommand, type SetupAction } from "@abominations/game-engine";
-import type { RoomView, SessionResponse } from "@abominations/shared";
+import type { RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8787";
 const connectionId = () => {
@@ -18,7 +18,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export const createRoom = (maxPlayers = 4, displayName = "Player 1") => request<SessionResponse>("/rooms", { method: "POST", body: JSON.stringify({ maxPlayers, displayName }) });
+export const createRoom = (maxPlayers = 4, displayName = "Player 1", privacy: RoomPrivacy = "private") => request<SessionResponse>("/rooms", { method: "POST", body: JSON.stringify({ maxPlayers, displayName, privacy }) });
 export const joinRoom = (code: string, displayName: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/join`, { method: "POST", body: JSON.stringify({ displayName }) });
 export const spectateRoom = (code: string, displayName: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/spectate`, { method: "POST", body: JSON.stringify({ displayName }) });
 export const markDisconnected = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/disconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
