@@ -62,7 +62,7 @@ async function createRoom(index) {
   const response = await fetch(`${baseUrl}/rooms`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ maxPlayers: 2 }),
+    body: JSON.stringify({ maxPlayers: 2, privacy: "public" }),
   });
   const created = await response.json();
   if (!response.ok) throw new Error(`Room ${index} creation failed: ${created.error ?? response.status}`);
