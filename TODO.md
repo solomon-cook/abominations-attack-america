@@ -608,6 +608,7 @@ Useful source documents:
   - [x] [P1] Document the threat model for room codes, session tokens, command authorization, enumeration, replay, injection, rate abuse, and secret handling. (`docs/security-threat-model.md`; external production review remains open.)
   - [P1] Validate CORS, security headers, dependency risks, database permissions, backups, restore, and credential rotation.
     - [x] Add an integration check for the implemented CORS allow-origin, preflight methods/headers, no-store, no-referrer, frame-deny, and MIME-sniffing response headers (`apps/api/src/server.integration.test.ts`); dependency, database, backup, restore, and credential-rotation review remains deployment work.
+    - [x] Run and record the current production dependency audit (`npm audit --omit=dev`, 2026-08-26): three high-severity Prisma/deepmerge entries remain; npm's proposed Prisma 6.12.0 change is a semver-major downgrade from the installed Prisma 7.9.1 line, so no automatic remediation was applied. The unresolved advisory remains a release blocker until a supported fix is tested.
 - [ ] [P1] Choose hosting only after documenting requirements for static web delivery, WebSockets, durable API compute, Postgres, secrets, and observability.
   - [x] [P1] Document hosting requirements and environment separation before provider selection. (`docs/deployment-requirements.md`; no provider or live environment is claimed.)
   - [P1] Create staging and production environments with separate data, secrets, URLs, and deployment safeguards.
