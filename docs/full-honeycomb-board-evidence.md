@@ -39,6 +39,17 @@ On 2026-08-26, a further public-source search checked the BoardGameGeek image li
 - [BoardGameGeek board photograph](https://boardgamegeek.com/image/201674/monsters-menace-america)
 - [Independent setup photograph](https://boardgameguys.com/monsters-menace-america/)
 
+On 2026-08-26, a targeted search for a high-resolution scan, board PDF, or aligned
+cell-readable map found additional setup photography and review pages, but no
+new source that meets the promotion standard. The [Board Game Guys setup
+page](https://boardgameguys.com/monsters-menace-america/) and the [Blugee board
+listing](https://blugee.com/products/monsters-menace-america-board-game) provide
+useful broad-board imagery; the [Knights of the Cardboard Castle photograph](https://knights.calltoreason.org/?p=4935)
+also shows the game-board family. They are perspective photographs with
+component occlusion or insufficient text resolution, not aligned top-down
+transcriptions. No labels, features, water classes, barriers, or coordinate
+edges were promoted from this search.
+
 ## Current evidence
 
 | Question | Current evidence | Status |
