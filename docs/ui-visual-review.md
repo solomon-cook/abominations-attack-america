@@ -47,3 +47,11 @@ unresolved labels on those disabled faces.
 The updated hashes are recorded in `docs/browser-visual-baselines.json`. This
 proves the visible honeycomb candidate presentation, not physical-board fidelity
 or MVP promotion.
+
+On 2026-08-26, a live 1280×720 review found and removed two non-authoritative
+gameplay overlays: the decorative board title and the `HOLLYWOOD` region label.
+Both could visually cross candidate tile seams. The source contract and local
+runtime smoke now fail if either overlay is reintroduced. The home-screen hero
+still provides the separate art-led title treatment; the gameplay map is kept
+to the candidate faces, authored development pins, pieces, and explicit source
+status.
