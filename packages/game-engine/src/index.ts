@@ -1006,6 +1006,25 @@ function monsterHasMutation(state: Pick<GameState, "monsters" | "players">, mons
   return playerIndex >= 0 && state.players[playerIndex]?.mutationCardIds.includes(cardId) === true;
 }
 
+function isGiantUnit(unit: Pick<MilitaryUnit, "unitTypeId">): boolean {
+  return unit.unitTypeId === "mecha-monster" || unit.unitTypeId === "captain-colossal";
+}
+
+function isXFighter(unit: Pick<MilitaryUnit, "unitTypeId">): boolean {
+  return unit.unitTypeId === "x-fighter";
+}
+
+function discardExhaustedXFighterCard(state: GameState, ownerPlayer: number | undefined): void {
+  if (ownerPlayer === undefined) return;
+  const remaining = state.units.some((unit) => isXFighter(unit) && unit.ownerPlayer === ownerPlayer && unit.location !== "permanently-removed");
+  if (remaining) return;
+  const player = state.players[ownerPlayer];
+  if (!player?.researchCardIds.includes("X-Fighters")) return;
+  player.researchCardIds = player.researchCardIds.filter((cardId) => cardId !== "X-Fighters");
+  if (!state.decks.research.discard.includes("X-Fighters")) state.decks.research = { ...state.decks.research, discard: [...state.decks.research.discard, "X-Fighters"] };
+  state.log.push(`Both X-Fighters were destroyed; the X-Fighters Research card was discarded.`);
+}
+
 interface MonsterContinuousEffects {
   readonly moveBonus: number;
   readonly movement: MonsterMovement;
@@ -1207,7 +1226,8 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     const hit = roll + fighterBonus + laserBonus >= target.defense;
     const smash = hit && roll === 6;
     const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
-    const giantTarget = target.branch === "Giant";
+    const giantTarget = isGiantUnit(target);
+    const permanentTarget = giantTarget || isXFighter(target);
     if (hit && giantTarget) target.health = Math.max(0, target.health - damage);
     const destroyed = hit && (!giantTarget || target.health === 0);
     const modifiers = [
@@ -1217,10 +1237,11 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     ];
     attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
     if (destroyed) {
-      target.location = giantTarget ? "permanently-removed" : "record-tile";
-      if (giantTarget && !next.removedUnitIds.includes(target.id)) next.removedUnitIds.push(target.id);
+      target.location = permanentTarget ? "permanently-removed" : "record-tile";
+      if (permanentTarget && !next.removedUnitIds.includes(target.id)) next.removedUnitIds.push(target.id);
       destroyedUnitIds.push(target.id);
-      next.log.push(`${monster.name} destroyed a ${target.branch} unit; it ${giantTarget ? "was permanently removed" : "returned to its record tile"} in combat round ${round} (${roll}${smash ? ", smash" : ""}).`);
+      next.log.push(`${monster.name} destroyed a ${target.branch} unit; it ${permanentTarget ? "was permanently removed" : "returned to its record tile"} in combat round ${round} (${roll}${smash ? ", smash" : ""}).`);
+      if (isXFighter(target)) discardExhaustedXFighterCard(next, target.ownerPlayer);
     } else next.log.push(`${monster.name} ${hit ? `damaged a ${target.branch} unit for ${damage}` : `missed a ${target.branch} unit`} in combat round ${round} (${roll}).`);
     return roll;
   };
@@ -1431,7 +1452,8 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         const hit = roll + fighterBonus + laserBonus >= target.defense;
         const smash = hit && roll === 6;
         const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
-        const giantTarget = target.branch === "Giant";
+        const giantTarget = isGiantUnit(target);
+        const permanentTarget = giantTarget || isXFighter(target);
         if (hit && giantTarget) target.health = Math.max(0, target.health - damage);
         const destroyed = hit && (!giantTarget || target.health === 0);
         const modifiers = [
@@ -1440,7 +1462,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
         ];
         attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
-        if (destroyed) { target.location = giantTarget ? "permanently-removed" : "record-tile"; if (giantTarget && !next.removedUnitIds.includes(target.id)) next.removedUnitIds.push(target.id); destroyedUnitIds.push(target.id); next.log.push(`${monster.name} destroyed a ${target.branch} unit; it ${giantTarget ? "was permanently removed" : "returned to its record tile"} in combat round ${combatRound} (${roll}${smash ? ", smash" : ""}).`); }
+        if (destroyed) { target.location = permanentTarget ? "permanently-removed" : "record-tile"; if (permanentTarget && !next.removedUnitIds.includes(target.id)) next.removedUnitIds.push(target.id); destroyedUnitIds.push(target.id); next.log.push(`${monster.name} destroyed a ${target.branch} unit; it ${permanentTarget ? "was permanently removed" : "returned to its record tile"} in combat round ${combatRound} (${roll}${smash ? ", smash" : ""}).`); if (isXFighter(target)) discardExhaustedXFighterCard(next, target.ownerPlayer); }
         else next.log.push(`${monster.name} ${hit ? `damaged a ${target.branch} unit for ${damage}` : `missed a ${target.branch} unit`} in combat round ${combatRound} (${roll}).`);
         if (roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles")) whipBonusAttacks += 1;
       }
@@ -1853,6 +1875,7 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   const branch = next.setupAssignments?.[next.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as Branch[])[next.currentPlayer % 4];
   const guardDeployment = requested?.unitId?.startsWith("national-guard-") ?? false;
+  const xFighterDeployment = requested?.unitId?.startsWith("x-fighter-") ?? false;
   const allowanceDefinition = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === branch);
   const extraDeployment = next.players[next.currentPlayer]?.researchCardIds.includes("2nd Generation") ? 1 : 0;
   const allowance = (allowanceDefinition?.ownOrGuardUnits ?? 0) + (guardDeployment ? allowanceDefinition?.additionalNationalGuardUnits ?? 0 : 0) + extraDeployment;
@@ -1883,7 +1906,9 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
           location: destination,
         } satisfies MilitaryUnit;
       })()
-    : next.units.find((candidate) => candidate.branch === branch && candidate.location === "record-tile" && !next.removedUnitIds.includes(candidate.id));
+    : xFighterDeployment
+      ? next.units.find((candidate) => candidate.id === requested?.unitId && isXFighter(candidate) && candidate.ownerPlayer === next.currentPlayer && candidate.location === "record-tile" && !next.removedUnitIds.includes(candidate.id))
+      : next.units.find((candidate) => candidate.branch === branch && candidate.location === "record-tile" && !next.removedUnitIds.includes(candidate.id));
   if (!unit) throw new GameDomainError("ILLEGAL_COMMAND", `No ${branch} unit remains on its record tile for deployment.`);
   if (guardDeployment) next.units.push(unit);
   else {
@@ -1893,7 +1918,7 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   const unitId = unit.id;
   next.deploymentsThisTurn += 1;
   next.deploymentDestinations.push(destination);
-  next.log.push(`${guardDeployment ? "National Guard" : branch} deployed ${unit.unitTypeId ?? unit.id} to ${board.hexes[destination]?.label ?? destination}.`);
+  next.log.push(`${guardDeployment ? "National Guard" : xFighterDeployment ? "X-Fighter" : branch} deployed ${unit.unitTypeId ?? unit.id} to ${board.hexes[destination]?.label ?? destination}.`);
   const occupyingMonster = next.monsters.find((candidate) => candidate.location === destination);
   if (occupyingMonster) {
     const existingBattle = next.pendingBattles.find((battle) => battle.monsterId === occupyingMonster.id && battle.location === destination);
@@ -2104,6 +2129,18 @@ export function drawResearchForDeployment(state: GameState): ResearchDrawResolut
   const player = next.players[next.currentPlayer];
   if (!player) throw new GameDomainError("ILLEGAL_COMMAND", "The active player has no Research-card hand.");
   player.researchCardIds.push(result.cardId);
+  if (result.cardId === "X-Fighters") {
+    for (let index = 1; index <= 2; index += 1) {
+      next.units.push({
+        id: `x-fighter-${next.currentPlayer + 1}-${index}`, branch: "Giant", unitTypeId: "x-fighter",
+        move: 6, movement: "fly", attacks: 1, damage: 2, ownerPlayer: next.currentPlayer,
+        health: 1, defense: 5, location: "record-tile",
+      });
+    }
+    next.log.push(`Player ${next.currentPlayer + 1} drew X-Fighters; both black X-Fighters are now available in place of branch deployments.`);
+    const recovery = advanceAfterDeployment(next);
+    return { state: next, cardId: result.cardId, ...recovery };
+  }
   if (result.cardId === "Mecha-Monster" || result.cardId === "Captain Colossal") {
     const placed = useResearchCard(next, result.cardId);
     return { state: placed.state, cardId: result.cardId, unitId: placed.unitId, destination: placed.destination };

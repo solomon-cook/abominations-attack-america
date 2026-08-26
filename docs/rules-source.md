@@ -14,7 +14,7 @@ The first build intentionally narrows the rules to a testable foundation:
 
 ## Later rules work
 
-The full rulebook still needs to be modelled and tested: five source-gated Research cards, stomp-marker thresholds on the promoted physical board, Hollywood recovery exceptions, movement abilities on authored water/barrier data, branch-specific exceptions, and the complete Monster Challenge. Mecha-Monster and Captain Colossal entry through their Research cards, ordinary giant combat Health, sharing, and permanent removal are implemented in the development ruleset from the photographed component records and the [player-aid rules summary](https://www.orderofgamers.com/downloads/MonstersMenaceAmerica_v1.1.pdf); Challenge giant ordering and America-saved victory remain open.
+The full rulebook still needs to be modelled and tested: four source-gated Research cards, stomp-marker thresholds on the promoted physical board, Hollywood recovery exceptions, movement abilities on authored water/barrier data, branch-specific exceptions, and the complete Monster Challenge. Mecha-Monster, Captain Colossal, and X-Fighters entry through their Research cards, ordinary giant/X-Fighter combat lifecycle, sharing, and permanent removal are implemented in the development ruleset from the photographed component records and the [player-aid rules summary](https://www.orderofgamers.com/downloads/MonstersMenaceAmerica_v1.1.pdf); Challenge giant ordering and America-saved victory remain open.
 
 ## Product requirements from the request
 

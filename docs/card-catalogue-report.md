@@ -4,8 +4,8 @@ This report is generated from `packages/game-engine/src/cards.ts`. It describes 
 
 - Card data version: 1
 - Total source-inventoried cards: 32
-- Available in the selected development ruleset: 27
-- Source-gated and unavailable: 5
+- Available in the selected development ruleset: 28
+- Source-gated and unavailable: 4
 
 ## Available cards
 
@@ -33,6 +33,7 @@ This report is generated from `packages/game-engine/src/cards.ts`. It describes 
 | research | Defense Satellites | one-use/discard | implemented |
 | research | Stabilizer Ray | one-use/discard | implemented |
 | research | Fusion Cells | persistent | implemented |
+| research | X-Fighters | persistent | implemented |
 | research | 2nd Generation | persistent | implemented |
 | research | Anti-Mutagen | conditional | implemented |
 | research | Antimatter | one-use/discard | implemented |
@@ -46,7 +47,6 @@ These cards are rejected by `assertCardsAvailable` and cannot silently no-op in 
 | Deck | Card | Source status |
 | --- | --- | --- |
 | research | Cutbacks | source-gated |
-| research | X-Fighters | source-gated |
 | research | Molecular Cannon | source-gated |
 | research | Blonde Lure | source-gated |
 | research | Chopper Lift | source-gated |

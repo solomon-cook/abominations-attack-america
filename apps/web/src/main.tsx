@@ -162,9 +162,12 @@ function App() {
     ?? (["Army", "Navy", "Air Force", "Marines"] as const)[activeGame.currentPlayer % 4];
   const activeDeploymentDefinition = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === activeBranch);
   const ownedDeploymentDestinations = legalOwnedDeploymentDestinations(activeGame);
+  const availableXFighterUnitId = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("X-Fighters")
+    ? activeGame.units.find((unit) => unit.unitTypeId === "x-fighter" && unit.ownerPlayer === activeGame.currentPlayer && unit.location === "record-tile" && !activeGame.removedUnitIds.includes(unit.id))?.id
+    : undefined;
   const ownDeploymentAvailable = activeGame.deploymentsThisTurn < (activeDeploymentDefinition?.ownOrGuardUnits ?? 0)
     && ownedDeploymentDestinations.length > 0
-    && activeGame.units.some((unit) => unit.branch === activeBranch && unit.location === "record-tile" && !activeGame.removedUnitIds.includes(unit.id));
+    && (Boolean(availableXFighterUnitId) || activeGame.units.some((unit) => unit.branch === activeBranch && unit.location === "record-tile" && !activeGame.removedUnitIds.includes(unit.id)));
   const guardDeploymentAvailable = Boolean(availableGuardUnitId && guardDeploymentDestination)
     && activeGame.deploymentsThisTurn < ((activeDeploymentDefinition?.ownOrGuardUnits ?? 0) + (activeDeploymentDefinition?.additionalNationalGuardUnits ?? 0));
   const legalPaths = useMemo(
@@ -1226,6 +1229,7 @@ function App() {
                 retreatChoices={retreatChoices}
                 setRetreatChoices={setRetreatChoices}
                 ownDeploymentAvailable={ownDeploymentAvailable}
+                availableXFighterUnitId={availableXFighterUnitId}
                 availableGuardUnitId={availableGuardUnitId}
                 guardDeploymentDestination={guardDeploymentDestination}
                 guardDeploymentAvailable={guardDeploymentAvailable}

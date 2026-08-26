@@ -536,7 +536,7 @@ test("runtime commands fail closed for every source-gated card", () => {
   const unsupportedMutations = CARD_DEFINITIONS.filter((card) => card.deck === "mutation" && card.availability === "source-gated").map((card) => card.id);
   const unsupportedResearch = CARD_DEFINITIONS.filter((card) => card.deck === "research" && card.availability === "source-gated").map((card) => card.id);
   assert.deepEqual(unsupportedMutations, []);
-  assert.deepEqual(unsupportedResearch.sort(), ["Blonde Lure", "Chopper Lift", "Cutbacks", "Molecular Cannon", "X-Fighters"].sort());
+  assert.deepEqual(unsupportedResearch.sort(), ["Blonde Lure", "Chopper Lift", "Cutbacks", "Molecular Cannon"].sort());
   for (const cardId of unsupportedResearch) {
     assert.throws(() => applyCommand(createGame(2), { type: "use-research", cardId } as any), /source-gated and unavailable/);
   }
@@ -1153,6 +1153,27 @@ test("giant units take Health damage and are permanently removed at zero", () =>
   assert.equal(removed.location, "permanently-removed");
   assert.equal(removed.health, 0);
   assert.deepEqual(resolved.state.removedUnitIds, [giant.id]);
+});
+
+test("X-Fighters draw creates two persistent deployable pieces and branch deployment consumes one allowance", () => {
+  const state = createGame(2, 3);
+  state.currentPlayer = 0;
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  state.decks.research = { order: ["X-Fighters"], drawIndex: 0, discard: [], exhausted: false };
+  const drawn = applyCommand(state, { type: "draw-research" });
+  const fighters = drawn.state.units.filter((unit) => unit.unitTypeId === "x-fighter");
+  assert.equal(fighters.length, 2);
+  assert.equal(drawn.state.players[0]?.researchCardIds.includes("X-Fighters"), true);
+  assert.equal(drawn.state.phase, "move");
+  drawn.state.phase = "deploy";
+  drawn.state.currentPlayer = 0;
+  drawn.state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  const deployed = applyCommand(drawn.state, { type: "deploy", unitId: fighters[0]!.id, destination: K("denver") });
+  const deployedFighter = deployed.state.units.find((unit) => unit.id === fighters[0]!.id)!;
+  assert.equal(deployedFighter.location, K("denver"));
+  assert.equal(deployed.state.deploymentsThisTurn, 1);
+  assert.equal(deployed.state.players[0]?.researchCardIds.includes("X-Fighters"), true);
 });
 
 test("exhausted Military Research cannot consume Deploy or mutate the match", () => {

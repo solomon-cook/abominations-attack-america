@@ -18,6 +18,7 @@ type Props = {
   retreatChoices: Record<string, HexKey | "disappeared">;
   setRetreatChoices: Dispatch<SetStateAction<Record<string, HexKey | "disappeared">>>;
   ownDeploymentAvailable: boolean;
+  availableXFighterUnitId?: string;
   availableGuardUnitId?: string;
   guardDeploymentDestination?: HexKey;
   guardDeploymentAvailable: boolean;
@@ -36,6 +37,7 @@ export function PhaseActions({
   retreatChoices,
   setRetreatChoices,
   ownDeploymentAvailable,
+  availableXFighterUnitId,
   availableGuardUnitId,
   guardDeploymentDestination,
   guardDeploymentAvailable,
@@ -164,6 +166,7 @@ export function PhaseActions({
   if (activeGame.phase === "deploy") {
     const activeBranch = activeGame.setupAssignments?.[activeGame.currentPlayer]?.branch
       ?? (["Army", "Navy", "Air Force", "Marines"] as const)[activeGame.currentPlayer % 4];
+    const regularUnitAvailable = activeGame.units.some((unit) => unit.branch === activeBranch && unit.location === "record-tile" && !activeGame.removedUnitIds.includes(unit.id));
     const allowance = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === activeBranch)?.ownOrGuardUnits ?? 0;
     const canRedeploy = activeGame.deploymentsThisTurn < allowance;
     const redeploymentChoices = canRedeploy
@@ -171,7 +174,8 @@ export function PhaseActions({
       : [];
     return <div className="path-controls">
       {defenseSatellitesButton}
-      <button disabled={!canAct || !ownDeploymentAvailable} onClick={() => void runCommand({ type: "deploy" })}>{ownDeploymentAvailable ? "Deploy one unit" : "No owned deployment available"}</button>
+      <button disabled={!canAct || !ownDeploymentAvailable || !regularUnitAvailable} onClick={() => void runCommand({ type: "deploy" })}>{regularUnitAvailable ? "Deploy one unit" : "No branch unit available"}</button>
+      {availableXFighterUnitId && <button disabled={!canAct || !ownDeploymentAvailable} onClick={() => void runCommand({ type: "deploy", unitId: availableXFighterUnitId })}>Deploy X-Fighter instead of branch unit</button>}
       {availableGuardUnitId && guardDeploymentDestination && <button disabled={!canAct || !guardDeploymentAvailable} onClick={() => void runCommand({ type: "deploy", unitId: availableGuardUnitId, destination: guardDeploymentDestination })}>Deploy Guard to {getLocationName(guardDeploymentDestination)}</button>}
       {redeploymentChoices.length > 0 && <div className="battle-choice" aria-label="Choose unit redeployment">
         <span>Redeploy an owned branch unit to an unstomped base:</span>
