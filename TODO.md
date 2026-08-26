@@ -31,14 +31,14 @@ Useful source documents:
 | --- | --- | --- |
 | Shared rules package | Foundation exists | `packages/game-engine` owns a deterministic, simplified four-step development loop with structured battle/encounter/deploy events; full source fidelity remains incomplete. |
 | Browser client | Partial prototype | React/Vite renders a playable-looking development board, local turns, room controls, phase prompts, and a log; the MVP must render and play on the fully filled authoritative honeycomb board rather than the sparse nine-space graph. |
-| Online rooms | Foundation exists | The API supports create, join, act, read, WebSockets, and polling fallback; production-grade projections, replay, lifecycle, and reconnect handling remain incomplete. |
-| Persistence | Foundation exists | In-memory and Prisma stores persist versioned snapshots/events, durable command receipts, terminal results, readiness, and additive schema migration; restart/concurrency/reconnect coverage remains incomplete. |
-| Session restoration | Foundation exists | A browser session token is restored from local storage; expiry, revocation, stale revisions, and multi-tab behaviour remain unresolved. |
-| Spectators | Foundation exists | No-login spectators can join and read a room; hidden-information projections and complete spectator UX are not yet proven. |
+| Online rooms | Local foundation verified | The API and Chrome harness cover create, join, act, read, WebSockets, polling fallback, synchronized setup, spectator no-act projection, malformed/forged command rejection, reconnect, and terminal recovery locally; production deployment, full-rules victory, and managed-service proof remain incomplete. |
+| Persistence | Local contract verified | In-memory and Prisma stores persist versioned snapshots/events, durable command receipts, terminal results, readiness, and additive schema migration; bounded concurrency/idempotency/reconnect suites pass, while real process-restart, managed-Postgres durability, backup/restore, and retention proof remain incomplete. |
+| Session restoration | Local boundary verified | Browser sessions restore from local storage and the stores cover expiry, revocation, stale revisions, reconnect leases, and multi-tab command semantics locally; deployed identity/session operations remain unresolved. |
+| Spectators | Local projection verified | No-login spectators can join and read a room; hidden-information redaction and disabled setup/move controls are covered locally, while complete manual UX and deployed-browser acceptance remain open. |
 | Rules research | Strong reference base | A consolidated rules reference and component catalogue exist, but several board, record-tile, and card facts remain unresolved. |
 | Board | MVP blocker | A staggered 13-row visual lattice (alternating 20/19 cells) and several rule-space markers exist, but the fully filled honeycomb board is not yet authoritatively transcribed, validated, or used for MVP play. |
 | Military art | Foundation exists | Original/generated transparent military sprites and a manifest exist; optimized board tiles, military states, and reference photographs are manifest-checked, while completeness, consistency, attribution, and final licensing still require review. |
-| Automated checks | Thin foundation | Engine and store tests, typechecks, builds, and catalogue verification exist; full rules, browser, persistence, and end-to-end coverage do not. |
+| Automated checks | Broad local foundation | Engine/API tests, deterministic properties/fuzzing, typechecks, builds, catalogue/source contracts, responsive/accessibility contracts, Chrome local/online/browser-review harnesses, bounded API load, and projection checks pass locally; full source rules, physical-board promotion, cross-engine/manual acceptance, managed production, and release evidence remain open. |
 
 ---
 
