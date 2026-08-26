@@ -169,6 +169,7 @@ export function validateBoardDefinition(board: BoardDefinition, options: { produ
     if (hexKey(hex.coord) !== key) errors.push(`hex coordinate mismatch for ${key}`);
     if (hex.sourceRefs.length === 0) errors.push(`hex ${key} has no source reference`);
     if (options.production && hex.verification === "unresolved") errors.push(`hex ${key} is unresolved`);
+    if (options.production && hex.waterClass === "unresolved") errors.push(`hex ${key} water class is unresolved`);
     for (const feature of hex.features) {
       if (feature.kind === "mutation-site" && !feature.siteId) errors.push(`hex ${key} mutation site has no site ID`);
       if (feature.kind === "lair" && !feature.monsterId) errors.push(`hex ${key} lair has no monster ID`);
@@ -181,6 +182,7 @@ export function validateBoardDefinition(board: BoardDefinition, options: { produ
     if (edgeKeys.has(edgeKey)) errors.push(`duplicate edge ${edgeKey}`);
     edgeKeys.add(edgeKey);
     if (!edge.sourceRef) errors.push(`edge ${edgeKey} has no source reference`);
+    if (options.production && edge.barrier === "unresolved") errors.push(`edge ${edgeKey} barrier is unresolved`);
     if (!edge.exceptional && board.hexes[edge.from] && board.hexes[edge.to] && hexDistance(board.hexes[edge.from].coord, board.hexes[edge.to].coord) !== 1) {
       errors.push(`edge is not between neighbouring hexes: ${edgeKey}`);
     }

@@ -13,7 +13,26 @@ test("full-board candidate contains the complete honeycomb coordinate shell but 
   assert.equal(FULL_HONEYCOMB_BOARD.edges.length > 0, true);
   assert.equal(Object.values(FULL_HONEYCOMB_BOARD.hexes).every((hex) => hex.verification === "unresolved"), true);
   assert.equal(validateBoardDefinition(FULL_HONEYCOMB_BOARD).length, 0);
-  assert.equal(validateBoardDefinition(FULL_HONEYCOMB_BOARD, { production: true }).length, 254);
+  const productionErrors = validateBoardDefinition(FULL_HONEYCOMB_BOARD, { production: true });
+  assert.equal(productionErrors.length, Object.keys(FULL_HONEYCOMB_BOARD.hexes).length * 2 + FULL_HONEYCOMB_BOARD.edges.length);
+  assert.equal(productionErrors.some((error) => error.includes("water class is unresolved")), true);
+  assert.equal(productionErrors.some((error) => error.includes("barrier is unresolved")), true);
+});
+
+test("production validation cannot be bypassed by marking unresolved hexes verified", () => {
+  const disguisedCore = {
+    id: FULL_HONEYCOMB_BOARD.id,
+    version: FULL_HONEYCOMB_BOARD.version,
+    name: FULL_HONEYCOMB_BOARD.name,
+    rulesetVersion: FULL_HONEYCOMB_BOARD.rulesetVersion,
+    hexes: Object.fromEntries(Object.entries(FULL_HONEYCOMB_BOARD.hexes).map(([key, hex]) => [key, { ...hex, verification: "verified" as const }])),
+    edges: FULL_HONEYCOMB_BOARD.edges,
+  };
+  const disguised = { ...disguisedCore, contentHash: boardContentHash(disguisedCore) };
+  const productionErrors = validateBoardDefinition(disguised, { production: true });
+  assert.equal(productionErrors.length, Object.keys(FULL_HONEYCOMB_BOARD.hexes).length + FULL_HONEYCOMB_BOARD.edges.length);
+  assert.equal(productionErrors.some((error) => error.includes("water class is unresolved")), true);
+  assert.equal(productionErrors.some((error) => error.includes("barrier is unresolved")), true);
 });
 
 test("axial identity and distance are independent of display geometry", () => {
