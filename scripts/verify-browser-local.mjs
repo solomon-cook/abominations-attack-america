@@ -107,6 +107,9 @@ socket.on("message", (raw) => {
 });
 await command("Page.enable");
 await command("Runtime.enable");
+if (process.env.BROWSER_TEST_REDUCED_MOTION === "1") {
+  await command("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+}
 await command("Emulation.setDeviceMetricsOverride", { width: viewportWidth, height: viewportHeight, deviceScaleFactor: 1, mobile: viewportWidth <= 600 });
 await command("Page.navigate", { url });
 const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
@@ -214,6 +217,10 @@ try {
   }
   await evaluate('document.querySelector(".map-reset")?.click()');
   if (screenshotPath) {
+    // Capture only after accepted-action feedback and its finite transition
+    // have settled; otherwise identical runs can hash different animation
+    // frames instead of detecting a real visual regression.
+    await wait(850);
     const screenshot = await command("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     await writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));
   }

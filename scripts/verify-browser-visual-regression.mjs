@@ -17,7 +17,7 @@ function runCase(testCase, screenshotPath) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ["scripts/verify-browser-local.mjs"], {
       cwd: process.cwd(),
-      env: { ...process.env, BROWSER_TEST_WIDTH: String(testCase.width), BROWSER_TEST_HEIGHT: String(testCase.height), BROWSER_TEST_SCREENSHOT_PATH: screenshotPath },
+      env: { ...process.env, BROWSER_TEST_WIDTH: String(testCase.width), BROWSER_TEST_HEIGHT: String(testCase.height), BROWSER_TEST_REDUCED_MOTION: "1", BROWSER_TEST_SCREENSHOT_PATH: screenshotPath },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";
