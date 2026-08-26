@@ -39,7 +39,8 @@ const tileHeight = DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO;
 const rowStep = DISPLAY_BOARD_TOP_SPAN_PERCENT / 12;
 assert.ok(DISPLAY_TILE_ASPECT_RATIO > 1, "flat-top landscape tiles must be wider than they are tall");
 assert.ok(Math.abs(rowStep - tileHeight * DISPLAY_BOARD_ASPECT_RATIO) < 0.01, `row step ${rowStep.toFixed(2)} must match the canvas-scaled tile height ${(tileHeight * DISPLAY_BOARD_ASPECT_RATIO).toFixed(2)} for shared horizontal edges`);
-assert.ok(Math.abs(DISPLAY_TILE_STEP_PERCENT - DISPLAY_TILE_WIDTH_PERCENT) < 0.01, "flat-top row pitch must equal tile width to prevent polygon overlap");
+assert.ok(DISPLAY_TILE_STEP_PERCENT > DISPLAY_TILE_WIDTH_PERCENT, "face width must be smaller than the row pitch so cream seams remain visible");
+assert.ok(DISPLAY_TILE_STEP_PERCENT - DISPLAY_TILE_WIDTH_PERCENT >= 0.2, "seam must remain visible at the rendered map scale");
 assert.ok(DISPLAY_BOARD_LEFT_PERCENT - DISPLAY_TILE_WIDTH_PERCENT / 2 > 0, "left tile bounds must remain inside the map");
 assert.ok(layout.find((entry) => entry.row === 0 && entry.column === 19)!.left + DISPLAY_TILE_WIDTH_PERCENT / 2 < 100, "rightmost tile bounds must remain inside the map");
 
@@ -95,8 +96,8 @@ for (let firstIndex = 0; firstIndex < polygons.length; firstIndex += 1) {
 const styles = readFileSync(new URL("../apps/web/src/styles.css", import.meta.url), "utf8");
 const renderedHexStyles = [...styles.matchAll(/\.hex-tile\{[^}]+\}/g)];
 const renderedHexStyle = renderedHexStyles.at(-1)?.[0] ?? "";
-assert.match(renderedHexStyle, /width:4\.45%/,
-  "rendered candidate faces must use the canonical layout width so neighbouring faces remain separated");
+assert.match(renderedHexStyle, /width:4\.2%/,
+  "rendered candidate faces must use the narrower cream-face width so neighbouring faces remain separated");
 assert.match(renderedHexStyle, /aspect-ratio:1\.1547005/,
   "rendered candidate faces must retain the flat-top landscape aspect ratio");
 const developmentFixtureStyles = [...styles.matchAll(/\.hex-tile\.development-fixture\{[^}]+\}/g)];

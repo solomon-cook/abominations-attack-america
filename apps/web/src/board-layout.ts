@@ -11,8 +11,9 @@ export type DisplayHex = Readonly<{
 // The player-facing tiles use a flat-top landscape polygon. In this row-major
 // presentation, adjacent tiles use a full-width row pitch; the half-width
 // offset on alternate rows supplies the diagonal connections without overlap.
-export const DISPLAY_TILE_WIDTH_PERCENT = 4.45;
-export const DISPLAY_TILE_STEP_PERCENT = DISPLAY_TILE_WIDTH_PERCENT;
+// Keep the pitch wider than each face so the cream substrate remains visibly separated.
+export const DISPLAY_TILE_WIDTH_PERCENT = 4.2;
+export const DISPLAY_TILE_STEP_PERCENT = 4.45;
 export const DISPLAY_TILE_ASPECT_RATIO = 1.1547005;
 export const DISPLAY_BOARD_LEFT_PERCENT = 5;
 export const DISPLAY_BOARD_TOP_PERCENT = 4;
@@ -31,8 +32,8 @@ export const DISPLAY_BOARD_TOP_SPAN_PERCENT =
  *
  * The board definition remains axial and authoritative for rules. The
  * candidate is displayed as 13 landscape rows of alternating 20/19 cells in
- * a fixed-aspect landscape canvas; flat-top landscape tiles use a half-cell
- * horizontal offset on odd rows.
+ * a fixed-aspect landscape canvas; flat-top landscape tiles use a half-pitch
+ * horizontal offset on odd rows and retain a visible seam on every face.
  */
 export function buildDisplayHexLayout(board: BoardDefinition = FULL_HONEYCOMB_BOARD): DisplayHex[] {
   return Object.values(board.hexes).map((hex) => {
