@@ -27,3 +27,9 @@ The matrix is runtime evidence, not a pixel-snapshot baseline. It proves that th
 ## Acceptance boundary
 
 Automated source contracts, build/typecheck, runtime smoke, and the candidate geometry check pass. Final visual acceptance remains open for a human reviewer at the supported desktop, tablet, and mobile targets, including typography/artwork judgement, browser-engine comparison, keyboard-only play, screen-reader play, zoom, focus, reduced-motion, and touch review. Physical board content remains separately source-gated.
+
+On 2026-08-26, the clean CI browser matrix also measured every visible map, header,
+action-dock, and phase control used by the local smoke at 1280×720, 834×1112,
+and 390×844. All measured controls met the 44px minimum target contract. This
+is runtime evidence for the development fixture; it does not replace manual
+touch, zoom, focus, assistive-technology, or physical-board acceptance.
