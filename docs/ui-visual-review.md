@@ -30,6 +30,8 @@ Automated source contracts, build/typecheck, runtime smoke, and the candidate ge
 
 The motion contract is now automated separately: `npm run web-motion:verify` confirms all authored CSS animations are finite, transient path feedback settles to explicit end states, transition durations are bounded, and the reduced-motion media query globally clamps animation and transition duration so presentation can be interrupted without changing authoritative match state. This is implementation evidence, not a substitute for human reduced-motion or visual acceptance.
 
+Safari remains an explicit QA gap: SafariDriver was available locally and reported ready on 2026-08-26, but the bounded WebDriver session-creation probe timed out before a browser session was returned. The Chrome matrix and baselines must not be presented as cross-engine evidence.
+
 On 2026-08-26, the clean CI browser matrix also measured every visible map, header,
 action-dock, and phase control used by the local smoke at 1280×720, 834×1112,
 and 390×844. All measured controls met the 44px minimum target contract. This
