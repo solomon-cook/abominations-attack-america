@@ -34,7 +34,7 @@ The asset gate also checks every manifest-declared PNG/WebP pair and fails if th
 
 The home screen exposes `Review full board shell`, and the development match now also renders the same 254 separated cream candidate faces as a disabled visual shell. Nine canonical development spaces are overlaid at their fixture positions and remain the only enabled gameplay destinations. The read-only review surface supports keyboard/click selection of an individual face and exposes its canonical key, coordinate, verification state, feature state, and source references. Neither surface promotes unresolved physical content to playable board data.
 
-The read-only review surface also displays an optimized copy of the 2,840 × 1,752 setup photograph beneath the candidate lattice. This is comparison evidence only: it is labelled reference-only, is not used as board art or topology, and does not replace cell-level transcription or human sign-off.
+The read-only review surface also displays optimized copies of both the 2,840 × 1,752 setup photograph and the independent top-down photograph beneath the candidate lattice. These are comparison evidence only: they are labelled reference-only, are not used as board art or topology, and do not replace cell-level transcription or human sign-off.
 
 On 2026-08-26, a live desktop review found that the gameplay map was still carrying a decorative board title and Hollywood region label across the candidate faces. Those overlays were removed from the player surface and the local Chrome smoke now asserts that `.map-copy` and `.region-label` are absent. This is a cleanup of reconstruction artefacts, not evidence that the physical coastline, printed labels, or feature coordinates have been transcribed.
 

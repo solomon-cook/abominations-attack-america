@@ -42,14 +42,24 @@ export function BoardReview({ onClose }: Props) {
             />
           ))}
           </div>
-          <figure className="board-review-source">
-            <img
-              src="/assets/board/reference-full-board.jpg"
-              alt="Reference photograph of the physical Monsters Menace America board set up with its printed honeycomb spaces and pieces"
-              loading="lazy"
-            />
-            <figcaption>Reference-only photograph for cell, silhouette, feature, and edge comparison. It is not used as playable board data.</figcaption>
-          </figure>
+          <div className="board-review-sources" aria-label="Reference board photographs">
+            <figure className="board-review-source">
+              <img
+                src="/assets/board/reference-full-board.jpg"
+                alt="Reference photograph of the physical Monsters Menace America board set up with its printed honeycomb spaces and pieces"
+                loading="lazy"
+              />
+              <figcaption>Full setup reference, optimized from the 2,840 × 1,752 source photograph.</figcaption>
+            </figure>
+            <figure className="board-review-source">
+              <img
+                src="/assets/board/reference-top-down-board.jpg"
+                alt="Top-down reference photograph of the physical Monsters Menace America board"
+                loading="lazy"
+              />
+              <figcaption>Top-down reference for the board silhouette and printed space alignment.</figcaption>
+            </figure>
+          </div>
         </section>
         {selectedHex && <aside className="board-review-inspector" aria-label="Selected board cell review">
           <span className="label">SELECTED CELL</span>
