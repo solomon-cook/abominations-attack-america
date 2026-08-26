@@ -1049,11 +1049,6 @@ function App() {
               onPreviewPath={previewPath}
               onClearPreview={() => setHoveredPath([])}
             />
-            <div className="map-copy">
-              <strong>MONSTERS</strong>
-              <span>MENACE AMERICA</span>
-            </div>
-            <div className="region-label west">HOLLYWOOD</div>
             </div>
           </div>
           <div className="board-action-bar">

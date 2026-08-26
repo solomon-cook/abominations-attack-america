@@ -123,8 +123,9 @@ try {
     unresolvedShellHexes: document.querySelectorAll(".hex-tile.unresolved").length,
     unresolvedNodes: document.querySelectorAll(".hex-tile.unresolved .node").length,
     visibleUnresolvedLabels: [...document.querySelectorAll(".hex-tile.unresolved .tile-name")].filter((node) => node.textContent?.trim()).length,
+    decorativeMapOverlays: document.querySelectorAll(".map-copy, .region-label").length,
   }))()`);
-  if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252 || boardSurface?.unresolvedNodes !== 0 || boardSurface?.visibleUnresolvedLabels !== 0) {
+  if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252 || boardSurface?.unresolvedNodes !== 0 || boardSurface?.visibleUnresolvedLabels !== 0 || boardSurface?.decorativeMapOverlays !== 0) {
     throw new Error(`Local browser smoke found an unexpected candidate board surface: ${JSON.stringify(boardSurface)}`);
   }
   const boardGeometry = await evaluate(`(() => {

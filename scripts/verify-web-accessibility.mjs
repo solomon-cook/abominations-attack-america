@@ -62,6 +62,9 @@ const requiredSourceMarkers = [
   ["persisted audio settings", /type="range" min="0" max="1"/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
+if (/className="map-copy"|className="region-label/.test(source)) {
+  failures.push("gameplay map contains decorative title or region overlays that can cross authored tile seams");
+}
 
 const requiredStyleMarkers = [
   ["visible focus treatment", /:focus-visible/],
