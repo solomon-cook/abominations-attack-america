@@ -1021,7 +1021,8 @@ function effectiveUnitMove(state: Pick<GameState, "players">, unit: MilitaryUnit
 }
 
 function effectiveMonsterMove(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
-  const bonus = monsterHasMutation(state, monster, "High-Octane Blood") || monsterHasMutation(state, monster, "Winged Horror") ? 1 : 0;
+  const bonus = (monsterHasMutation(state, monster, "High-Octane Blood") ? 1 : 0)
+    + (monsterHasMutation(state, monster, "Winged Horror") ? 1 : 0);
   const penalty = monsterHasMutation(state, monster, "Armored Scales") ? 1 : 0;
   return Math.max(1, monster.move + bonus - penalty);
 }
