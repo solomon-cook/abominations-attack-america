@@ -1,3 +1,3 @@
 # Card image assets
 
-These WebP files are optimized delivery copies of the source card-sheet photographs. The source photographs remain authoritative for card identity and wording; the sheets are displayed as artwork references and do not imply that unresolved card effects are implemented.
+The seven sheet WebP files are optimized delivery copies of the source card-sheet photographs. The sixteen `military-research-*.webp` and sixteen `monster-mutation-*.webp` files are optimized copies of the finished film-poster concept artwork with the exact sourced card transcription added in a rules panel. The individual artwork has project-owner visual/content approval recorded in `manifest.json`; the per-card `textStatus` still records source/text provenance. The rules engine and `SOURCED_CARD_RULES` remain authoritative for card identity and wording; artwork approval does not imply that source-gated effects are implemented.

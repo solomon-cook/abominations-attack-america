@@ -36,7 +36,7 @@ export function PieceStackInspector({ game, activeMonsterId, selectedStackKey, o
         <strong>{getLocation(selectedStackKey)?.name ?? `Hex ${selectedStackKey}`}</strong>
         {[
           ...monsters.map((monster) => ({ id: monster.id, role: monster.id === activeMonsterId ? "Own monster" : "Enemy monster", title: monster.name, detail: `${monster.health}/${monster.maxHealth} Health · ${monster.infamy} Infamy · ${monster.location === "hollywood" ? "Hollywood" : "on board"}` })),
-          ...units.map((unit) => ({ id: unit.id, role: unit.ownerPlayer === undefined ? "Neutral unit" : unit.ownerPlayer === game.currentPlayer ? "Own unit" : "Allied unit", title: unit.unitTypeId ?? unit.branch, detail: `${unit.branch} · ${unit.ownerPlayer === undefined ? "Neutral" : `Player ${unit.ownerPlayer + 1}`} · ${unit.health === undefined ? "Health not tracked" : `${unit.health} Health`} · ${game.movedPieceIds.includes(unit.id) ? "moved" : "available"}` })),
+          ...units.map((unit) => ({ id: unit.id, role: unit.ownerPlayer === undefined ? "Neutral unit" : unit.ownerPlayer === game.currentPlayer ? "Own unit" : "Enemy unit", title: unit.unitTypeId ?? unit.branch, detail: `${unit.branch} · ${unit.ownerPlayer === undefined ? "Neutral" : `Player ${unit.ownerPlayer + 1}`} · ${unit.health === undefined ? "Health not tracked" : `${unit.health} Health`} · ${game.movedPieceIds.includes(unit.id) ? "moved" : "available"}` })),
         ].map((piece) => <div key={piece.id}><span>{piece.role} · {piece.title}</span><small>{piece.detail}</small></div>)}
       </div>}
     </section>

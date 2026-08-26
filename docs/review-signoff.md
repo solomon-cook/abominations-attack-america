@@ -10,3 +10,5 @@
 | Shipped media and wording | Project maintainer plus release reviewer | Provenance manifest, licence/ownership check, final asset review |
 
 No production board, component rule, or release asset is considered signed off merely because the code builds. Sign-off is recorded beside the affected data or release checklist when the required evidence exists.
+
+The current playtest-only rules approval is recorded in [`docs/rules-approval-record.md`](rules-approval-record.md). It does not close the source-gated production rows above or replace the required board, component, and release reviews.

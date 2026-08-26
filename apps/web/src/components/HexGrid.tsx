@@ -202,6 +202,9 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             : "/assets/board/coast/coast_0deg.webp";
         const boardArt = boardArtForHex(hex, place);
         const stomped = game.stompedLocations.includes(placeKey);
+        const monstersHere = game.monsters.filter((monster) => monster.location === placeKey);
+        const unitsHere = game.units.filter((unit) => unit.location === placeKey);
+        const occupantCount = monstersHere.length + unitsHere.length;
         return (
           <button
             key={hex.key}
@@ -223,21 +226,23 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             <span className="tile-content">
               {place && <span className="node" aria-hidden="true">{place.kind === "city" ? "✦" : place.kind === "base" ? "⌂" : place.kind === "infamy" ? "★" : place.kind === "mutation" ? "✹" : "⚔"}</span>}
               {visibleName && <span className="tile-name">{visibleName}</span>}
-              {provisionalFeatureText && <i className="location-kind provisional-feature-kind">{provisionalFeatureText}</i>}
+            {provisionalFeatureText && <i className="location-kind provisional-feature-kind">{provisionalFeatureText}</i>}
               {place?.kind === "city" && <i className="city-hp" aria-label={`printed city benefit ${place.marker ?? "not recorded"}`}>{place.marker ?? "benefit n/a"}</i>}
               {place?.kind === "mutation" && <i className="location-kind">MUTATION</i>}
-              {game.monsters.filter((monster) => monster.location === placeKey).map((monster) => {
-                const monsterArt = monsterArtForName(monster.name);
-                return monsterArt
-                  ? <img className={`tile-monster ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id} src={monsterArt} alt={monster.name} loading="lazy" />
-                  : <b className={acceptedPieceId === monster.id ? "accepted-arrival" : ""} key={monster.id}>{monster.name.slice(0, 1)}</b>;
-              })}
-              {game.units.filter((unit) => unit.location === placeKey).map((unit) => {
-                const unitArt = unitArtForType(unit.unitTypeId);
-                return unitArt
-                  ? <img className={`tile-piece ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
-                  : <i className="unit-mark" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
-              })}
+              {occupantCount > 0 && <span className={`tile-occupants stack-count-${Math.min(occupantCount, 6)}`} aria-label={`${occupantCount} occupant${occupantCount === 1 ? "" : "s"}`}>
+                {monstersHere.map((monster) => {
+                  const monsterArt = monsterArtForName(monster.name);
+                  return monsterArt
+                    ? <img className={`tile-monster tile-occupant ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id} src={monsterArt} alt={monster.name} loading="lazy" />
+                    : <b className={`tile-occupant ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id}>{monster.name.slice(0, 1)}</b>;
+                })}
+                {unitsHere.map((unit) => {
+                  const unitArt = unitArtForType(unit.unitTypeId);
+                  return unitArt
+                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                    : <i className="unit-mark tile-occupant" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
+                })}
+              </span>}
             </span>
           </button>
         );

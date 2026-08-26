@@ -100,7 +100,9 @@ const requiredStyleMarkers = [
   ["viewport-fitted gameplay layout", /\.game-screen\{height:100dvh;max-height:100dvh/],
   ["board-first closed layout", /\.game-screen \.layout\.panel-closed\{grid-template-columns:minmax\(0,1fr\)/],
   ["closed layout keeps decision tray below board", /\.game-screen \.layout\.panel-closed>\.game-side-panel>\.action-card\{display:block;position:static/],
-  ["explicit board layer order", /\.hex-tile \.tile-base\{[^}]*z-index:0[^}]*\}\.hex-tile \.tile-art\{[^}]*z-index:1[^}]*\}\.hex-tile \.tile-stomp\{[^}]*z-index:2[^}]*\}[^\n]*\.hex-tile \.tile-piece\{[^}]*z-index:4/],
+  ["explicit board layer order", /\.hex-tile \.tile-base\{[^}]*z-index:0[^}]*\}\.hex-tile \.tile-art\{[^}]*z-index:1[^}]*\}\.hex-tile \.tile-stomp\{[^}]*z-index:2[^}]*\}[^\n]*\.hex-tile \.tile-occupants\{[^}]*z-index:4/],
+  ["bounded dense occupant stacks", /\.hex-tile \.tile-occupants\{[^}]*max-width:30px/],
+  ["contained stack occupants", /\.hex-tile \.tile-occupant\{[^}]*max-width:24px/],
   ["legal path above board layers", /\.path-preview\{[^}]*z-index:6/],
   ["audio range controls", /\.settings-audio input\[type="range"\]/],
 ];

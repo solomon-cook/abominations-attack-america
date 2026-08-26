@@ -82,6 +82,21 @@ for (const [referenceName, sourceName] of [["reference-full-board.jpg", "full-ga
 const cardManifest = JSON.parse(await readFile(join(cardAssetRoot, "manifest.json"), "utf8"));
 if (cardManifest.format !== "webp" || !Array.isArray(cardManifest.sheets) || cardManifest.sheets.length !== 7) throw new Error("Card asset manifest is incomplete");
 for (const sheet of cardManifest.sheets) await assertFile(join(cardAssetRoot, sheet.id + ".webp"), "Optimized card sheet");
+if (!cardManifest.individualArtworkSources || typeof cardManifest.individualArtworkSources["Military Research"] !== "string" || typeof cardManifest.individualArtworkSources["Monster Mutation"] !== "string") throw new Error("Card asset manifest is missing separate individual-artwork source roots");
+if (cardManifest.artworkReview?.status !== "approved" || typeof cardManifest.artworkReview.reviewer !== "string" || typeof cardManifest.artworkReview.reviewedOn !== "string") throw new Error("Card asset manifest is missing explicit artwork approval metadata");
+if (!Array.isArray(cardManifest.cards) || cardManifest.cards.length !== 32) throw new Error("Card asset manifest must enumerate all 32 individual card artworks");
+const cardIds = new Set();
+const cardDeckCounts = new Map();
+for (const card of cardManifest.cards) {
+  if (typeof card.id !== "string" || cardIds.has(card.id)) throw new Error(`Card asset manifest has an invalid or duplicate ID: ${card.id ?? "missing"}`);
+  cardIds.add(card.id);
+  if (card.deck !== "Military Research" && card.deck !== "Monster Mutation") throw new Error(`Card asset manifest has an invalid deck for ${card.id}`);
+  cardDeckCounts.set(card.deck, (cardDeckCounts.get(card.deck) ?? 0) + 1);
+  if (card.textStatus !== "candidate-authoritative-text") throw new Error(`Card artwork must remain candidate-authoritative-text until visual approval: ${card.id}`);
+  if (typeof card.src !== "string" || !card.src.startsWith("/assets/cards/") || !card.src.endsWith(".webp")) throw new Error(`Card asset manifest has an invalid source for ${card.id}`);
+  await assertFile(join(scriptDirectory, "../apps/web/public", card.src.slice("/".length)), "Optimized individual card artwork");
+}
+if (cardDeckCounts.get("Military Research") !== 16 || cardDeckCounts.get("Monster Mutation") !== 16) throw new Error("Card asset manifest must contain 16 artworks per deck");
 await assertFile(join(cardAssetRoot, "README.md"), "Card asset provenance README");
 
 const monsterManifest = JSON.parse(await readFile(join(monsterAssetRoot, "manifest.json"), "utf8"));

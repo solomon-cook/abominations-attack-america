@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abominations-attack-america.invalid/schemas/release-evidence.json",
+  "title": "Provider-neutral release evidence",
+  "description": "A source-safe release record. An empty record is an intentional not-recorded template, not evidence that an environment exists or that a check passed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "environment",
+    "commit",
+    "migration",
+    "soak",
+    "smoke",
+    "backup_restore",
+    "security",
+    "rollback",
+    "approvals"
+  ],
+  "properties": {
+    "environment": { "$ref": "#/$defs/evidence_item" },
+    "commit": { "$ref": "#/$defs/evidence_item" },
+    "migration": { "$ref": "#/$defs/evidence_item" },
+    "soak": { "$ref": "#/$defs/evidence_item" },
+    "smoke": { "$ref": "#/$defs/evidence_item" },
+    "backup_restore": { "$ref": "#/$defs/evidence_item" },
+    "security": { "$ref": "#/$defs/evidence_item" },
+    "rollback": { "$ref": "#/$defs/evidence_item" },
+    "approvals": { "$ref": "#/$defs/evidence_item" }
+  },
+  "$defs": {
+    "evidence_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence", "notes"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["not_recorded", "planned", "verified", "blocked", "failed"]
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "x-empty-template": {
+    "environment": { "status": "not_recorded", "evidence": [], "notes": "No environment is claimed." },
+    "commit": { "status": "not_recorded", "evidence": [], "notes": "No release commit is recorded." },
+    "migration": { "status": "not_recorded", "evidence": [], "notes": "No deployment migration is recorded." },
+    "soak": { "status": "not_recorded", "evidence": [], "notes": "No soak run is claimed." },
+    "smoke": { "status": "not_recorded", "evidence": [], "notes": "No hosted smoke test is claimed." },
+    "backup_restore": { "status": "not_recorded", "evidence": [], "notes": "No backup or restore drill is claimed." },
+    "security": { "status": "not_recorded", "evidence": [], "notes": "No release security sign-off is recorded." },
+    "rollback": { "status": "not_recorded", "evidence": [], "notes": "No rollback exercise is claimed." },
+    "approvals": { "status": "not_recorded", "evidence": [], "notes": "No release approval is recorded." }
+  }
+}
