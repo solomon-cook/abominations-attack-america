@@ -34,5 +34,6 @@ for (const phrase of ["| Infamy tokens | 42 |", "| Stomp markers | 23 |", "| Six
 }
 for (const id of ["BOARD-GEOMETRY", "MONSTER-STATS", "UNIT-STATS", "BRANCH-DEPLOYMENT", "CARD-EFFECTS", "NATIONAL-GUARD-CONTROL", "GIANT-PLACEMENT", "SPECIAL-CASES"]) {
   if (!unresolved.includes(`| ${id} |`)) throw new Error(`Unresolved inventory is missing: ${id}`);
+  if (!unresolved.includes(`| ${id} | open-source-gated |`)) throw new Error(`Unresolved inventory is missing an explicit status for: ${id}`);
 }
 console.log("Verified component counts and eight explicit unresolved rule inputs.");
