@@ -9,8 +9,8 @@ const url = process.env.BROWSER_TEST_URL ?? "http://127.0.0.1:5177/";
 const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-async function openBrowser(port, name) {
-  const profile = await mkdtemp(join(tmpdir(), `abominations-online-${name}-`));
+async function openBrowser(port, name, existingProfile) {
+  const profile = existingProfile ?? await mkdtemp(join(tmpdir(), `abominations-online-${name}-`));
   const child = spawn(chromePath, ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--window-size=1280,720", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
   let page;
   for (let attempt = 0; attempt < 80; attempt += 1) {
@@ -50,11 +50,18 @@ async function openBrowser(port, name) {
       if (await evaluate(expression)) return;
       await wait(100);
     }
-    throw new Error(`${name}: timed out waiting for ${label}.`);
+    const diagnostic = await evaluate(`({ url: location.href, connection: document.querySelector(".connection")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim() })`);
+    throw new Error(`${name}: timed out waiting for ${label}: ${JSON.stringify(diagnostic)}`);
   };
   return {
     evaluate,
     waitFor,
+    restart: async () => {
+      socket.close();
+      child.kill("SIGKILL");
+      if (child.exitCode === null) await new Promise((resolve) => child.once("exit", resolve));
+      return openBrowser(port, name, profile);
+    },
     click: (label) => evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled); if (!button) return false; button.click(); return true; })()`),
     close: async () => {
       socket.close();
@@ -65,7 +72,7 @@ async function openBrowser(port, name) {
   };
 }
 
-const first = await openBrowser(9230, "first");
+let first = await openBrowser(9230, "first");
 const second = await openBrowser(9231, "second");
 const spectator = await openBrowser(9232, "spectator");
 try {
@@ -120,6 +127,19 @@ try {
   })()`);
   const [spectating, enabledActionCount, enabledLegalTileCount, enabledActionLabels] = String(spectatorMoveControls ?? "false,99,99,unknown").split(",");
   if (spectating !== "true" || Number(enabledActionCount) > 0 || Number(enabledLegalTileCount) > 0) throw new Error(`enabled spectator action: ${enabledActionLabels}`);
+  const savedSession = await first.evaluate(`localStorage.getItem("abominations-session")`);
+  if (!savedSession) throw new Error("First browser did not expose its persisted room session before restart.");
+  const reconnectedFirst = await first.restart();
+  first = reconnectedFirst;
+  const disconnectState = "websocket-process-restart";
+  await first.waitFor(`!!document.querySelector(".lobby strong") || !!document.querySelector('[aria-label="Display name"]')`, "first browser reopened");
+  const restoredRoom = await first.evaluate(`Boolean(document.querySelector(".lobby strong"))`);
+  if (!restoredRoom) {
+    await first.evaluate(`localStorage.setItem("abominations-session", ${JSON.stringify(savedSession)})`);
+    await first.evaluate("location.reload()");
+  }
+  await first.waitFor(`document.querySelector(".connection")?.textContent?.trim() === "online"`, "first browser reconnect state");
+  await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first browser recovered Move state");
   const forgedCommand = await first.evaluate(`(async () => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
     const response = await fetch("http://localhost:8787/rooms/${roomCode}/actions", {
@@ -158,7 +178,7 @@ try {
   if (!await first.click("Pass deployment")) throw new Error("First browser could not pass Deploy.");
   await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase === "Move"; })()`, "first next Move phase");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, spectatorSetup: "no-act", spectatorMove: "no-act", spectatorSync: "verified", forgedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineEncounter: "verified", onlineDeploy: "verified", nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineEncounter: "verified", onlineDeploy: "verified", nextPhase }));
 } finally {
   await Promise.all([first.close(), second.close(), spectator.close()]);
 }
