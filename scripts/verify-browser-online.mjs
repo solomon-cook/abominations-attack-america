@@ -167,7 +167,7 @@ try {
   await second.evaluate("location.reload()");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
   await first.waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "online legal movement destination");
-  if (!await first.evaluate(`(() => { const tile = document.querySelector(".hex-tile.legal:not(:disabled)"); tile?.click(); return Boolean(tile); })()`)) throw new Error("First browser could not select an online legal destination.");
+  if (!await first.evaluate(`(() => { const tiles = [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")]; const tile = tiles.find((candidate) => candidate.getAttribute("data-location-name") === "Denver") ?? tiles[0]; tile?.click(); return Boolean(tile); })()`)) throw new Error("First browser could not select an online legal destination.");
   await first.waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "online path confirmation");
   if (!await first.click("Confirm path")) throw new Error("First browser could not confirm the online path.");
   await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase !== "Move" && phase !== "Waiting for server…"; })()`, "first settled post-move phase");
@@ -176,15 +176,45 @@ try {
   const secondPhase = await second.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
   if (secondPhase !== nextPhase) throw new Error(`Online phase divergence after movement: first=${nextPhase ?? "unknown"}, second=${secondPhase ?? "unknown"}.`);
   await spectator.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(nextPhase)}`, "spectator synchronized post-move phase");
-  const encounterAction = await first.click("Resolve encounter") || await first.evaluate(`(() => { const button = [...document.querySelectorAll(".action-card button")].find((candidate) => !candidate.disabled); if (!button) return false; button.click(); return true; })()`);
+  let onlineFight = "not-reached";
+  if (nextPhase === "Fight") {
+    onlineFight = "verified";
+    for (let fightStep = 0; fightStep < 8; fightStep += 1) {
+      const currentFightPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+      if (currentFightPhase !== "Fight") break;
+      const fightAction = await first.evaluate(`(() => {
+        const buttons = [...document.querySelectorAll("button")].filter((button) => !button.disabled);
+        const preferred = buttons.find((button) => /^(Resolve fight|Resolve without spending Infamy|Spend 1 Infamy|Attack )/.test(button.textContent.trim()))
+          ?? buttons.find((button) => button.textContent.trim() === "Confirm retreat")
+          ?? buttons.find((button) => button.closest(".retreat-unit"));
+        preferred?.click();
+        return Boolean(preferred);
+      })()`);
+      if (!fightAction) throw new Error("Online Fight exposed no enabled legal decision control.");
+      await first.waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "online Fight response");
+    }
+    if (await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Fight"`)) throw new Error("Online Fight did not resolve within the supported decision steps.");
+  }
+  const postFightPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(postFightPhase)}`, "second synchronized post-Fight phase");
+  const clickEncounterDecision = async () => {
+    for (const [browser, label] of [[first, "first"], [second, "second"]]) {
+      const clicked = await browser.evaluate(`(() => { const button = [...document.querySelectorAll(".action-card button")].find((candidate) => !candidate.disabled); if (!button) return false; button.click(); return true; })()`);
+      if (clicked) {
+        await browser.waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${label} Encounter response`);
+        return true;
+      }
+    }
+    return false;
+  };
+  const encounterAction = await clickEncounterDecision();
   if (!encounterAction) throw new Error("First browser exposed no legal Encounter action.");
   for (let encounterStep = 0; encounterStep < 4; encounterStep += 1) {
-    await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Waiting for server…"`, "Encounter response");
     const currentPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
     if (currentPhase === "Deploy") break;
     if (currentPhase !== "Encounter") throw new Error(`Expected Encounter or Deploy after Encounter action, got ${currentPhase ?? "unknown"}.`);
-    const followUp = await first.evaluate(`(() => { const button = [...document.querySelectorAll(".action-card button")].find((candidate) => !candidate.disabled); if (!button) return false; button.click(); return true; })()`);
-    if (!followUp) throw new Error("Encounter remained active without an enabled legal decision control.");
+    const followUp = await clickEncounterDecision();
+    if (!followUp) throw new Error("Encounter remained active without an enabled legal decision control in either player session.");
   }
   const deployPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(deployPhase)}`, "second synchronized post-encounter phase");
@@ -203,7 +233,7 @@ try {
   await second.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "reloaded second terminal");
   const reloadedTerminal = await second.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
   if (!reloadedTerminal) throw new Error("Reloaded second browser lost the terminal result.");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineEncounter: "verified", onlineDeploy: "verified", onlineConcession: "verified", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: "verified", onlineConcession: "verified", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
 } finally {
   await Promise.all([first.close(), second.close(), spectator.close()]);
 }
