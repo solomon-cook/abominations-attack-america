@@ -161,8 +161,8 @@ try {
       command: process.execPath,
       args: ["--import", "tsx/esm", "src/server.ts"],
       cwd: join(process.cwd(), "apps/api"),
-      env: { ...process.env, PORT: String(apiPort), ALLOW_DEVELOPMENT_FIXTURE: "true", DEVELOPMENT_API_RATE_LIMIT: "10000", DEVELOPMENT_WS_RATE_LIMIT: "1000" },
-      name: "development API",
+      env: { ...process.env, PORT: String(apiPort), PERSISTENCE: "memory" },
+      name: "MVP API",
       ready: async () => (await fetch(`${apiUrl}/health`)).ok,
     });
     await apiServer.waitForReady();
@@ -188,6 +188,11 @@ try {
   if (!await spectator.click("Spectate")) throw new Error("Spectator browser could not join the created room.");
   await spectator.waitFor(`!!document.querySelector(".lobby strong")`, "joined spectator room code");
   await spectator.waitFor(`!!document.querySelector(".setup-panel")`, "spectator setup projection");
+  const boardIdentities = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`(() => { const root = document.querySelector("main.game-screen"); return { id: root?.dataset.boardId ?? "", version: root?.dataset.boardVersion ?? "", hash: root?.dataset.boardContentHash ?? "", renderedId: root?.dataset.renderedBoardId ?? "", renderedHash: root?.dataset.renderedBoardContentHash ?? "" }; })()`)));
+  const boardIdentityKeys = boardIdentities.map((identity) => `${identity?.id}:${identity?.version}:${identity?.hash}:${identity?.renderedId}:${identity?.renderedHash}`);
+  if (new Set(boardIdentityKeys).size !== 1 || boardIdentities[0]?.id !== "provisional-authoritative-honeycomb-board" || boardIdentities[0]?.renderedId !== boardIdentities[0]?.id || boardIdentities[0]?.renderedHash !== boardIdentities[0]?.hash) {
+    throw new Error(`Online sessions did not share the pinned MVP board identity: ${JSON.stringify(boardIdentities)}`);
+  }
   const spectatorSetupControls = await spectator.evaluate(`(() => [...document.querySelectorAll(".setup-options button")].length > 0 && [...document.querySelectorAll(".setup-options button")].every((button) => button.disabled))()`);
   if (!spectatorSetupControls) throw new Error("Spectator exposed an enabled setup control.");
 

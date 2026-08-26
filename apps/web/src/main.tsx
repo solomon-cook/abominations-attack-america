@@ -949,6 +949,8 @@ function App() {
       data-board-id={renderedBoard?.id ?? ""}
       data-board-version={renderedBoard?.version ?? ""}
       data-board-content-hash={renderedBoard?.contentHash ?? ""}
+      data-rendered-board-id={renderedBoard?.id ?? ""}
+      data-rendered-board-content-hash={renderedBoard?.contentHash ?? ""}
     >
       <header>
         <div>

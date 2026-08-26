@@ -15,7 +15,7 @@ const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL 
 const runtimeConfig = validateRuntimeConfig();
 const allowedOrigin = runtimeConfig.allowedOrigin;
 const allowDevelopmentFixture = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEVELOPMENT_FIXTURE === "true";
-const usePrisma = Boolean(databaseUrl) && (!allowDevelopmentFixture || process.env.PERSISTENCE === "prisma");
+const usePrisma = Boolean(databaseUrl) && process.env.PERSISTENCE !== "memory" && (!allowDevelopmentFixture || process.env.PERSISTENCE === "prisma");
 const store: RoomStore = usePrisma
   ? new PrismaRoomStore(undefined, allowDevelopmentFixture)
   : new MemoryRoomStore(allowDevelopmentFixture);
