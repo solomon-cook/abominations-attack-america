@@ -126,6 +126,10 @@ try {
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Start development playtest")`, "home screen");
   if (!await clickButton("Play provisional honeycomb")) throw new Error("Home screen did not expose the provisional honeycomb playtest.");
   await waitFor(`document.querySelectorAll(".hex-tile").length === 254`, "provisional honeycomb playtest board");
+  const provisionalBoardIdentity = await evaluate(`(() => { const board = document.querySelector("main.game-screen"); return { id: board?.dataset.boardId ?? "", version: board?.dataset.boardVersion ?? "", hash: board?.dataset.boardContentHash ?? "" }; })()`);
+  if (provisionalBoardIdentity?.id !== "provisional-authoritative-honeycomb-board" || !provisionalBoardIdentity.version || !provisionalBoardIdentity.hash) {
+    throw new Error(`Provisional playtest did not expose its pinned board identity: ${JSON.stringify(provisionalBoardIdentity)}`);
+  }
   const provisionalNotice = await evaluate(`document.querySelector(".development-notice .label")?.textContent?.trim() ?? ""`);
   if (!/PROVISIONAL HONEYCOMB PLAYTEST/i.test(provisionalNotice)) throw new Error(`Provisional playtest did not expose its source-status notice: ${provisionalNotice}`);
   const provisionalSurface = await evaluate(`(() => ({ cityLabels: [...document.querySelectorAll(".hex-tile .tile-name")].filter((node) => /Provisional/i.test(node.textContent ?? "")).length, featureLabels: document.querySelectorAll(".hex-tile .provisional-feature-kind").length, unresolvedLabels: [...document.querySelectorAll(".hex-tile .tile-name")].filter((node) => /Unresolved/i.test(node.textContent ?? "")).length }))()`);
@@ -163,6 +167,10 @@ try {
     visibleUnresolvedLabels: [...document.querySelectorAll(".hex-tile.unresolved .tile-name")].filter((node) => node.textContent?.trim()).length,
     decorativeMapOverlays: document.querySelectorAll(".map-copy, .region-label").length,
   }))()`);
+  const developmentBoardIdentity = await evaluate(`(() => { const board = document.querySelector("main.game-screen"); return { id: board?.dataset.boardId ?? "", version: board?.dataset.boardVersion ?? "", hash: board?.dataset.boardContentHash ?? "" }; })()`);
+  if (developmentBoardIdentity?.id !== "development-nine-location" || !developmentBoardIdentity.version || !developmentBoardIdentity.hash) {
+    throw new Error(`Development playtest did not expose its pinned board identity: ${JSON.stringify(developmentBoardIdentity)}`);
+  }
   if (boardSurface?.totalHexes !== 261 || boardSurface?.developmentHexes !== 9 || boardSurface?.unresolvedShellHexes !== 252 || boardSurface?.unresolvedNodes !== 0 || boardSurface?.visibleUnresolvedLabels !== 0 || boardSurface?.decorativeMapOverlays !== 0) {
     throw new Error(`Local browser smoke found an unexpected candidate board surface: ${JSON.stringify(boardSurface)}`);
   }

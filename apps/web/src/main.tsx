@@ -941,7 +941,12 @@ function App() {
       : "This match references an unavailable board version, so board interaction is disabled until the matching definition is loaded.";
 
   return (
-    <main className={`game-screen ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}>
+    <main
+      className={`game-screen ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}
+      data-board-id={renderedBoard?.id ?? ""}
+      data-board-version={renderedBoard?.version ?? ""}
+      data-board-content-hash={renderedBoard?.contentHash ?? ""}
+    >
       <header>
         <div>
           <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · WEB PLAYTEST</p>
