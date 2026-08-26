@@ -509,6 +509,7 @@ Useful source documents:
     - [x] Add an authoritative board-adjacent attention banner for pending decisions, waiting ownership, active local phase, and terminal state; it remains presentation-only and preserves the detailed result surfaces (`AttentionBanner`).
     - [x] Add compact authoritative update summaries for recorded movement, combat, encounter, deployment, rewards, card resolution, retreat, disappearance, challenge, turn, and concession events; detailed damage, Hollywood, and source-gated outcomes remain in their dedicated result surfaces (`AttentionBanner`).
   - [ ] Keep one predictable, persistent primary action affordance for the current legal decision, including a clear End/Pass/Resolve equivalent where applicable.
+    - [x] Keep the board-adjacent action dock present with an accessible readiness or unavailable-reason line derived from authoritative command availability (`ActionDock`); phase-specific command coverage remains source/ruleset-gated.
   - [x] Provide temporary movement paths, targeting previews, selection highlights, accepted-action feedback, and recorded dice/combat-result presentation. (Current development flows implement these presentation states.)
   - [ ] Ensure temporary visual feedback explains what changed, then settles cleanly without permanently increasing map clutter or delaying authoritative state.
   - [x] Support map pan, zoom, fit, reset, and active-area focus. (Current controls support these operations.)

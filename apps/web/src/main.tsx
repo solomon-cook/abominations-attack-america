@@ -1105,7 +1105,7 @@ function App() {
             </div>
           </div>
           <div className="board-action-bar">
-            <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
+            <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
           </div>
           <AttentionBanner game={activeGame} action={action} canAct={canAct} online={online} />
           <BoardContextTray game={activeGame} board={activeBoard} hex={activeBoardHex} />

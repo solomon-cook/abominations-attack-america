@@ -44,6 +44,7 @@ const requiredSourceMarkers = [
   ["accepted action feedback", /<ActionResolutionFeedback label=\{acceptedActionFeedback\?\.label\}/],
   ["authoritative attention banner", /<AttentionBanner game=\{activeGame\} action=\{action\} canAct=\{canAct\} online=\{online\}/],
   ["authoritative event attention summaries", /const eventLabels: Record<string, string>/],
+  ["action dock readiness explanation", /id="action-dock-status" className="action-dock-status" aria-live="polite"/],
   ["attention banner live status", /className=\{`attention-banner \$\{canAct \? "action-needed" : "waiting"\}`\} role="status" aria-live="polite"/],
   ["encounter authoritative dice", /aria-label="Recorded encounter dice rolls"/],
   ["Mutation draw status", /aria-label="Mutation site draw status"[\s\S]*Mutation card drawn; card effect remains source-gated/],
