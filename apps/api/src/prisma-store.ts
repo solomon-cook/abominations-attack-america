@@ -40,7 +40,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async listPublicRooms(): Promise<PublicRoomSummary[]> {
     const rooms = await this.prismaClient.gameRoom.findMany({
-      where: { privacy: "PUBLIC", status: { in: ["WAITING", "ACTIVE"] } },
+      where: { privacy: "PUBLIC", status: { in: ["WAITING", "ACTIVE"] }, lastActivityAt: { gt: new Date(Date.now() - ROOM_IDLE_TIMEOUT_MS) } },
       orderBy: { lastActivityAt: "desc" },
       take: 20,
       include: { participants: { select: { role: true } } },

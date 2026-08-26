@@ -68,6 +68,16 @@ test("public room discovery returns only redacted open-room summaries", async ()
   assert.equal(Object.hasOwn(rooms[0]!, "token"), false);
 });
 
+test("public room discovery omits idle rooms after refreshing lifecycle state", async () => {
+  const store = new MemoryRoomStore(true);
+  await store.createRoom(2, "Host", "public");
+  const rooms = (store as unknown as { rooms: Map<string, { lastActivityAt: number }> }).rooms;
+  [...rooms.values()][0]!.lastActivityAt = 0;
+
+  assert.deepEqual(await store.listPublicRooms(), []);
+  assert.equal([...rooms.values()][0]!.lastActivityAt, 0);
+});
+
 test("memory store health reports its persistence boundary", async () => {
   assert.deepEqual(await new MemoryRoomStore(true).health(), { persistence: "memory" });
 });

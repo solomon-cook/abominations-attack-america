@@ -72,6 +72,7 @@ export class MemoryRoomStore implements RoomStore {
   }
 
   async listPublicRooms(): Promise<PublicRoomSummary[]> {
+    for (const room of this.rooms.values()) this.refreshStatus(room);
     return [...this.rooms.values()]
       .filter((room) => room.privacy === "public" && (room.status === "waiting" || room.status === "active"))
       .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
