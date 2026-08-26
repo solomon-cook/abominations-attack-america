@@ -175,6 +175,19 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           : place?.kind === "mutation"
             ? "Mutation space"
             : undefined;
+        const interactionHint = monsterLegal || unitLegal
+          ? "Legal destination"
+          : selectableUnit
+            ? `Select ${selectableUnit.branch} unit`
+            : "Not currently reachable";
+        const tooltipText = [
+          `${displayName || `Hex ${hex.key}`} · ${hex.key}`,
+          `${hex.waterClass} water class`,
+          featureText || "No recorded feature",
+          neighbourText ? `Neighbours: ${neighbourText}` : "No recorded neighbours",
+          occupantText ? `Occupants: ${occupantText}` : "Unoccupied",
+          hex.verification !== "verified" ? "Physical details remain source-gated" : interactionHint,
+        ].join(" · ");
         const baseArt = hex.waterClass === "unresolved"
           ? undefined
           : hex.waterClass === "land"
@@ -188,6 +201,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             aria-label={`${displayName}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-hex-key={hex.key}
             data-location-name={place?.name}
+            title={tooltipText}
             disabled={(!place && board?.id !== PROVISIONAL_AUTHORITATIVE_BOARD.id) || !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit)}
             className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%` }}
