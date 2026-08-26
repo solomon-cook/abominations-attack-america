@@ -54,6 +54,7 @@ const requiredSourceMarkers = [
   ["full-screen Monster Challenge focus entry", /challenge-duel-return" autoFocus/],
   ["authoritative Challenge Health replay", /targetHealthBefore/],
   ["visible combat outcomes", /className=\"combat-outcomes\"[\s\S]*lastFightOutcomes/],
+  ["normal fight resolution surface", /aria-label=\"Normal fight resolution surface\"[\s\S]*MILITARY UNITS[\s\S]*OPPOSING MONSTER/],
   ["contextual decision rules help", /aria-label="Rules help for current decision"/],
   ["development fixture overlay", /development-fixture/],
   ["canonical adjacency styling", /activeNeighbours\.has\(placeKey\)/],

@@ -98,6 +98,8 @@ On 2026-08-25, two fresh browser tabs connected to the local API, created and jo
 
 The live development smoke pass then exercised the first complete decision chain after setup: **Move** → **Encounter** → visible **Resolve encounter** control → source-backed city choice (**Take the city Health benefit**) → **Deploy** → **Pass deployment**. Before the fix, the `encounter-resolution` pending decision rendered only a disabled “Choose the Encounter decision” dock label; `PhaseActions` now exposes the authoritative resolution button and the accessibility source contract guards that branch. This remains development-fixture evidence and does not cover every fight/retreat/card/victory path.
 
+The same local browser smoke now exposes a board-adjacent **Normal Fight** surface when the Denver combat fixture is reached. It groups the participating military units and opposing monster, places recorded dice in the centre, shows the current attack decision, and hands legal target/resolve controls to the existing authoritative phase actions. This is presentation evidence only; the engine remains responsible for attack order, targets, rolls, modifiers, damage, smash, destruction, mutation, and subsequent decisions.
+
 A two-tab online smoke pass on 2026-08-25 initially left the movement transition unverified. The later three-session harness run on 2026-08-26 supersedes that limitation for the local development path: synchronized legal movement, Encounter, Deploy, concession, terminal projection, and reload recovery all passed. Fight progression, a full-rules victory route, process-restart persistence, production-board promotion, and deployed-browser acceptance remain open.
 
 ## Full-board rendering check

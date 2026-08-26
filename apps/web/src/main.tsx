@@ -64,6 +64,7 @@ import { HomeScreen } from "./components/HomeScreen";
 import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
+import { FightResolutionPanel } from "./components/FightResolutionPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
 import { AttentionBanner } from "./components/AttentionBanner";
 import { playSound, type SoundCategory } from "./audio";
@@ -1193,6 +1194,14 @@ function App() {
             runCommand={runCommand}
           />
           <div className="card action-card">
+            <FightResolutionPanel
+              game={activeGame}
+              canAct={canAct}
+              pendingBattle={pendingBattle}
+              pendingAttackTarget={pendingAttackTarget}
+              rolls={lastFightRolls}
+              outcomes={lastFightOutcomes}
+            />
             <TurnPrompt
               actionHeadingRef={actionHeadingRef}
               action={action}
