@@ -57,7 +57,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
                 <span>Duration: {rule.duration}</span>
                 <span>Target and confirmation: {definition?.targets && definition.targets !== "unknown" ? definition.targets : "source-gated"}</span>
                 <span>Result: {rule.effectsImplementation === "implemented" ? "authoritative result shown in the phase log" : "source-gated"}</span>
-                <span>Persistent effect: {rule.classification === "persistent" ? "active while held" : "no · resolved through a legal timing window"}</span>
+                <span><span className="metric-icon" aria-hidden="true">◆</span> Status effect: {rule.classification === "persistent" ? "active while held" : "none · resolved through a legal timing window"}</span>
                 <span>Source: {rule.sourceRefs.join(", ")}</span>
               </div>
               <strong>{rule.timing}</strong>

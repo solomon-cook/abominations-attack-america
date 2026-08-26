@@ -507,6 +507,7 @@ Useful source documents:
     - [x] Show private Mutation and Research hand counts with the shared card metric treatment while retaining the full card names and privacy boundary (`RevealedCardsPanel`); rewards and status effects remain open.
     - [x] Use shared metric icons for authoritative encounter Health, Infamy, Stomp, and other recorded reward effects (`EncounterResultPanel`); card and status-effect metrics remain open.
     - [x] Extend metric icons to the expanded monster and military status lightboxes, covering Health, Infamy, Move, attacks, deployed, reserve, and moved values (`PlayerStatusControls`); card and status-effect metrics remain open.
+    - [x] Label sourced persistent-card status effects with the shared status metric treatment (`RevealedCardsPanel`); unsourced effect text remains unavailable.
   - [ ] Add hover/focus tooltips and expandable explanations for exact bonuses, adjacency, movement cost, combat strength, card timing, requirements, and reasons an action is unavailable.
     - [x] Add native hover/focus explanations to every rendered hex using only recorded board facts, occupants, neighbours, verification status, and current engine legality; unsourced bonuses and movement costs remain explicitly absent (`HexGrid` `title` contract).
   - [x] Keep persistent global context compact: active player, phase, current substep, pending decision, round, Stomp state, Challenge state, and connection state. (MatchStatus and TurnProgress provide the current development implementation.)
