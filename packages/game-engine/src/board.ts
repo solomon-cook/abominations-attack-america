@@ -339,6 +339,20 @@ export const FULL_HONEYCOMB_BOARD: BoardDefinition = { ...fullHoneycombCore, con
  * ready: every cell remains explicitly provisional and its ruleset is named.
  */
 const PROVISIONAL_BOARD_SOURCE = "references/monsters-menace-america/components/board/full-game-setup.jpg#provisional-feature-pass";
+const PROVISIONAL_CITY_NAMES: Readonly<Record<string, string>> = {
+  "1/2": "Seattle",
+  "9/2": "San Francisco",
+  "11/4": "Los Angeles",
+  "2/7": "Winnipeg",
+  "3/8": "Minneapolis",
+  "5/8": "Omaha",
+  "6/8": "Kansas City",
+  "3/13": "Chicago",
+  "4/17": "New York",
+  "5/16": "Philadelphia",
+  "7/13": "Atlanta",
+  "7/11": "Nashville",
+};
 const PROVISIONAL_BOARD_FEATURES: Readonly<Record<string, readonly BoardFeature[]>> = {
   "1/2": [{ kind: "city", benefit: { kind: "health", amount: 1 } }],
   "9/2": [{ kind: "city", benefit: { kind: "health-roll", dice: 2 } }],
@@ -380,10 +394,11 @@ function provisionalBoardHexes(): Record<HexKey, BoardHex> {
   return Object.fromEntries(Object.entries(FULL_HONEYCOMB_BOARD.hexes).map(([key, hex]) => {
     const row = hex.coord.r;
     const column = hex.coord.q + Math.floor(row / 2);
-    const features = PROVISIONAL_BOARD_FEATURES[`${row}/${column}`] ?? [];
+    const rowColumn = `${row}/${column}`;
+    const features = PROVISIONAL_BOARD_FEATURES[rowColumn] ?? [];
     return [key, {
       ...hex,
-      label: features.some((feature) => feature.kind === "city") ? `Provisional city ${row}/${column}` : undefined,
+      label: PROVISIONAL_CITY_NAMES[rowColumn] ? `Provisional ${PROVISIONAL_CITY_NAMES[rowColumn]}` : undefined,
       waterClass: (row === 0 || row === FULL_HONEYCOMB_ROWS - 1 || column === 0 || column === (row % 2 === 0 ? 19 : 18)) ? "seacoast" : "land",
       features,
       sourceRefs: [PROVISIONAL_BOARD_SOURCE, FULL_HONEYCOMB_SOURCE],

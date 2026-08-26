@@ -46,6 +46,8 @@ test("provisional authority is complete for playtest inspection but rejected for
   assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["military-base"].length, 12);
   assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["infamy-site"].length, 5);
   assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["mutation-site"].length, 3);
+  assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["2,1"].label, "Provisional Seattle");
+  assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["-2,9"].label, "Provisional San Francisco");
 });
 
 test("axial identity and distance are independent of display geometry", () => {
