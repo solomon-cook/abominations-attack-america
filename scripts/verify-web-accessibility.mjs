@@ -95,6 +95,7 @@ const requiredStyleMarkers = [
   ["accepted action motion", /\.action-resolution-feedback\{/],
   ["attention banner layout", /\.attention-banner\{/],
   ["adjacent hex treatment", /\.hex-tile\.adjacent\{/],
+  ["focused hex prominence", /\.hex-tile:focus-visible\{z-index:8\}/],
   ["uncropped authored artwork", /\.hex-tile \.tile-art\{object-fit:contain;object-position:center\}/],
   ["uncropped revealed cards", /\.revealed-card-art\{object-fit:contain;object-position:center;background:/],
   ["viewport-fitted gameplay layout", /\.game-screen\{height:100dvh;max-height:100dvh/],

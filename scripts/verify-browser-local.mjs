@@ -212,6 +212,17 @@ try {
   if (boardGeometry?.rows !== 13 || Number(boardGeometry.minimumHorizontalGap) < -0.5) {
     throw new Error(`Local browser smoke found overlapping candidate faces: ${JSON.stringify(boardGeometry)}`);
   }
+  const focusSurface = await evaluate(`(() => {
+    const tile = document.querySelector('.hex-tile:not(:disabled)');
+    if (!tile) return null;
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    tile.focus({ focusVisible: true });
+    const style = getComputedStyle(tile);
+    return { focused: document.activeElement === tile, zIndex: style.zIndex, outlineStyle: style.outlineStyle };
+  })()`);
+  if (!focusSurface?.focused) {
+    throw new Error(`Focused hex was not keyboard-focusable: ${JSON.stringify(focusSurface)}`);
+  }
   for (let attempt = 0; attempt < 5; attempt += 1) {
     await evaluate('document.querySelector("button[aria-label=\'Zoom board out\']")?.click()');
     await wait(25);
