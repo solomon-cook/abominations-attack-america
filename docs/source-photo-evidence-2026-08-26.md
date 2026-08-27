@@ -72,7 +72,7 @@ Seattle `1/2`; Winnipeg `1/9`; Montreal `2/16`; Minneapolis `3/9`; Milwaukee
 `5/4`; Omaha `5/9`; Pittsburgh `5/13`; Philadelphia `5/15`; Denver `6/7`;
 Kansas City `6/10`; St. Louis `6/11`; Indianapolis `6/12`; Cincinnati `6/13`;
 Cleveland `6/14`; Baltimore `6/15`; Richmond `7/14`; Los Angeles `8/2`;
-Albuquerque `8/6`; Tulsa `8/9`; Little Rock `8/11`; Nashville `8/12`;
+Albuquerque `8/6`; Little Rock `8/11`; Tulsa `8/12`; Nashville `8/16`;
 Charlotte `8/14`; San Diego `9/2`; Phoenix `9/3`; Dallas `9/9`; Birmingham
 `9/11`; Atlanta `9/12`; Austin `10/9`; Baton Rouge `10/11`; Houston `11/9`;
 Tampa `12/14`; Miami `13/15`. These coordinates and values remain a
@@ -81,8 +81,8 @@ kept as a complete named-city inventory rather than silently dropping the
 additional printed panels.
 
 The same alignment pass records four visible Mutation panels: Experimental
-Breeder Reactor (`3/4`), Nevada Test Site (`6/3`), Three Mile Island (`5/14`),
-and Roswell (`9/6`). The visible Infamy panels include Little Bighorn, Mount
+Breeder Reactor (`4/6`), Nevada Test Site (`6/4`), Three Mile Island (`5/20`),
+and Roswell (`9/8`). The visible Infamy panels include Little Bighorn, Mount
 Rushmore, Corn Palace, Carhenge, World's Largest Ball of Twine, Royal Gorge,
 VLA, The Alamo, and Cape Canaveral; the fitted face-centre inventory contains
 fifteen orange panels at `1/4`, `2/13`, `3/7`, `3/8`, `4/9`, `4/11`, `5/8`,
@@ -93,7 +93,7 @@ the cross-check used to ensure an Infamy icon is not silently lost when a city
 or base is co-located in the same hex.
 
 Six printed monster-lair silhouettes are also visible in the supplied photos
-and are now recorded at `1/10`, `3/10`, `7/4`, `8/10`, `8/13`, and `12/6`.
+and are now recorded at `3/2`, `4/2`, `3/14`, `7/5`, `7/13`, and `11/8`.
 The silhouettes are not reliably identifiable as one of the six monster
 identities at this capture resolution, so their locations are retained with
 an explicit unresolved monster identity rather than being assigned to the
@@ -122,8 +122,12 @@ The current terrain pass keeps eight clearly inland blue Great Lakes spaces as
 `lake` candidates (`2/15`, `3/16`, `3/17`, `3/18`, `3/19`, `4/17`, `4/18`, and
 `4/19`). They are deliberately not included in the ocean mask. The surrounding blue coastal field remains
 `sea`/`seacoast`, and the thick blue printed line is carried into provisional
-sea or lake barrier edges. These four lake classifications remain provisional
+sea or lake barrier edges. These eight lake classifications remain provisional
 until the physical board is checked without the fold crossing the region.
+
+Because `6/21` carries two printed base features, its broad blue-edge mask is
+materialized as `seacoast` rather than `sea`; this preserves the gameplay
+feature while retaining its adjacency to the photographed water boundary.
 
 ### Coordinate-reference correction
 
@@ -142,6 +146,12 @@ surface. Earlier provisional feature and barrier annotations were cleared
 after the flat-top correction; they must be re-added only after the relevant
 face is checked against this mesh.
 
+The companion [provisional feature/water/barrier audit overlay](board-feature-audit-overlay.svg)
+now carries the candidate face-centre annotations separately: `INF` marks the
+orange Infamy panels, branch codes mark military bases, `MUT` marks Mutation,
+and blue lines mark candidate transitions at the thick printed sea/lake
+boundary. It is an audit aid, not a promotion of provisional data.
+
 The first face-centre correction has now been applied to the playtest candidate
 ledger: the visible northwest panels resolve to Vancouver `0/3`, Seattle
 `1/3`, and Portland `2/2`. These replace the earlier nearby-label guesses
@@ -149,7 +159,7 @@ ledger: the visible northwest panels resolve to Vancouver `0/3`, Seattle
 remains provisional until checked against the same face-centre rule.
 
 The same face-centre check resolves the western city cluster as Fresno `6/2`,
-Salt Lake City `5/6`, Los Angeles `8/2`, San Diego `8/3`, Phoenix `8/5`, and
+Salt Lake City `5/6`, Los Angeles `8/2`, San Diego `9/2`, Phoenix `8/5`, and
 Albuquerque `8/8`, with Winnipeg at `2/12`. These corrections explain the
 previously missing Fresno panel and the nearby-label shifts for the other
 western cities; their source-backed candidate status remains provisional until
@@ -157,19 +167,49 @@ the full feature ledger is signed off.
 
 The readable north/east panels then resolve as Minneapolis `3/13`, Milwaukee
 `3/15`, Ottawa `3/20`, Toronto `4/18`, Chicago `4/15`, Detroit `4/17`,
-Montreal `2/21`, New York `4/21`, and Boston `4/22`. The readable southern
+Pittsburgh `5/19`, Cleveland `6/18`, Omaha `5/12`, Kansas City `6/13`, St. Louis
+`6/15`, Indianapolis `6/16`, Cincinnati `6/17`, Richmond `7/19`, Montreal `2/21`,
+New York `4/21`, and Boston `4/22`. The readable southern
 panels resolve as Austin `10/12`, Baton Rouge `10/14`, and Houston `11/12`.
 These are face-centre assignments from the supplied photograph; any panel
 whose text is hidden by the fold or board copy remains unassigned rather than
 being inferred from a nearby city.
 
 The lower-right crop makes the panel faces for Tulsa, Charlotte, Nashville,
-Birmingham, Dallas, Miami, and the surrounding southeast readable, but the
+Birmingham, Dallas, Miami, and the surrounding southeast readable; Nashville
+is at `8/16` and is co-located with the green Army base star. The
 fold and the adjacent star/shore artwork still make the row/column ownership
 of the Nashville-through-Miami sequence unsafe to promote as a finished
 coordinate list. Those names remain visible candidate data in the working
-ledger; the canonical board keeps the already aligned entries only where the
-printed panel is wholly inside a face.
+ledger; the engine's photographic board remains provisional and must not be
+treated as production authority until the printed panels and their face
+ownership are signed off.
+
+The aligned photo pass also identifies additional city/base co-locations:
+Boston `4/22` with a blue Navy star, Baltimore `6/20` with a red Marines star,
+Richmond `7/19` with a green Army star, Austin `10/12` with a green Army star,
+and Kansas City `6/13` with a yellow Air Force star. These are retained as
+provisional feature co-locations rather than being collapsed into city-only
+records.
+
+The photo also shows a shared Infamy/base face at `10/19`: the Cape Canaveral
+Infamy panel and a blue Navy star occupy the same hex. This is recorded as an
+Infamy site plus Navy base, not as an Infamy-only space.
+
+The northeast crop also shows two base stars in the same face at `6/21`: a
+yellow Air Force star and a blue Navy star. These are recorded as two
+composable military-base features, not as one ambiguous base marker.
+
+The authority photograph also shows Infamy/base co-locations at `7/4`, `9/6`,
+and `10/11`, each with a yellow Air Force star in the same face as the orange
+Infamy panel. These are retained as composable Infamy plus Air Force features.
+
+The wider face-centre pass also retains the clearly visible base-only stars at
+`2/10` (Air Force), `4/20` (Army), `6/12` (Army), `8/4` (Marines), `8/20`
+(Marines), `9/3` (Marines), `9/4` (Marines), `9/13` (Air Force), `10/16`
+(Navy, co-located with the Challenge site), `10/17` (Air Force), `11/11`
+(Navy), `7/3` (Marines), `7/21` (Marines), and `9/19` (Marines). These remain
+provisional face assignments, but are no longer omitted from the feature map.
 
 The feature pass likewise moves the four visible Mutation panels to `4/6`
 (Experimental Breeder Reactor), `6/4` (Nevada Test Site), `5/20` (Three Mile

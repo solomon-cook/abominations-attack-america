@@ -33,7 +33,7 @@ These statements corroborate existing canonical transcription and tests. They do
 
 The player aid does not resolve:
 
-- the 245 board cells, coastline, lake/sea classes, barriers, printed labels, benefits, bases, lairs, or exact feature coordinates;
+- the 336 board cells, coastline, lake/sea classes, barriers, printed labels, benefits, bases, lairs, or exact feature coordinates;
 - monster numeric records, named lair locations, or special ability timing/effects;
 - military record-tile statistics, quantities beyond the setup summary, or branch-specific exceptions;
 - the text, timing, targets, visibility, duration, and stacking behavior of individual Research or Mutation cards;

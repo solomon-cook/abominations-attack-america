@@ -918,7 +918,7 @@ function App() {
       <main className="unsupported-browser" role="main">
         <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · BROWSER SUPPORT</p>
         <h1>This browser cannot run the playtest</h1>
-        <p className="lede">Use a current Chrome, Edge, Firefox, or Safari browser, then reload.</p>
+        <p className="lede">Use a current Chrome, Edge, Firefox, or Safari browser, then reload. No match state has been started.</p>
       </main>
     );
   }
@@ -964,7 +964,7 @@ function App() {
   const boardDescription = fullBoardVerified
     ? "The reviewed honeycomb board is playable where rules allow."
     : renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
-      ? "The full honeycomb shell is review-only. Physical cell data is still being transcribed."
+      ? "The full honeycomb coordinate shell is unresolved review tooling and is not a playable board. Physical cell data is still being transcribed."
       : renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
         ? "The provisional honeycomb board is a playtest guess. Its labels, terrain, barriers, and features are not verified."
       : renderedBoard
@@ -1062,7 +1062,7 @@ function App() {
         <p>
           {renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
             ? "This playtest uses a provisional 336-cell honeycomb board. Its labels, terrain, barriers, and features are not verified."
-            : "This playtest uses a nine-space development board. The physical board, full combat, card effects, National Guard rules, and Monster Challenge are still under review."}
+            : "This playtest uses a nine-space development board. The unresolved physical-board shell is not rendered as playable topology. The physical board, full combat, card effects, National Guard rules, and Monster Challenge are still under review."}
         </p>
       </section>
       <section className={`layout ${gamePanelOpen ? "panel-open" : "panel-closed"}`}>

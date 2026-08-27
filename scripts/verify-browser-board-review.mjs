@@ -94,8 +94,8 @@ try {
   await command("Runtime.enable");
   await command("Emulation.setDeviceMetricsOverride", { width: viewportWidth, height: viewportHeight, deviceScaleFactor: 1, mobile: viewportWidth <= 600 });
   await command("Page.navigate", { url });
-  await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board shell")`, "home board-review control");
-  await evaluate(`([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board shell"))?.click()`);
+  await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board")`, "home board-review control");
+  await evaluate(`([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board"))?.click()`);
   await waitFor(`document.querySelectorAll(".board-review-hex").length === 336`, "336 board-review faces");
   await waitFor(`document.querySelectorAll(".board-review-source img").length === 2 && [...document.querySelectorAll(".board-review-source img")].every((image) => image.complete && image.naturalWidth > 0)`, "reference board photographs");
   await waitFor(`document.querySelectorAll('.dense-stack-fixture').length === 8`, "dense stack fixtures");
@@ -104,6 +104,7 @@ try {
   const result = await evaluate(`(() => {
     const cells = [...document.querySelectorAll(".board-review-hex")];
     const tops = new Set(cells.map((cell) => cell.style.top));
+    const columnCounts = [...new Set(cells.map((cell) => Math.round(cell.getBoundingClientRect().left * 100)))].map((left) => cells.filter((cell) => Math.round(cell.getBoundingClientRect().left * 100) === left).length);
     const style = getComputedStyle(cells[0]);
     const references = [...document.querySelectorAll(".board-review-source img")];
     const canvasRect = document.querySelector(".board-review-canvas").getBoundingClientRect();
@@ -114,6 +115,7 @@ try {
     return {
       count: cells.length,
       rows: tops.size,
+      columnCounts,
       aspectRatio: style.aspectRatio,
       creamFace: style.backgroundImage.includes("linear-gradient"),
       visible,
@@ -132,7 +134,7 @@ try {
       denseStackContained: [...document.querySelectorAll('.dense-stack-fixture')].every((fixture) => [...fixture.querySelectorAll('img')].every((piece) => { const outer = fixture.getBoundingClientRect(); const inner = piece.getBoundingClientRect(); return inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom; })),
     };
   })()`);
-  if (!result || result.count !== 336 || result.rows !== 14 || result.minimumSameRowGap <= 0 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0 || JSON.stringify(result.denseStackCounts) !== JSON.stringify([1,2,3,4,5,6,7,8]) || !result.denseStackImagesLoaded || !result.denseStackContained) {
+  if (!result || result.count !== 336 || result.rows !== 28 || JSON.stringify(result.columnCounts) !== JSON.stringify(Array.from({ length: 24 }, () => 14)) || result.minimumSameRowGap <= 0 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0 || JSON.stringify(result.denseStackCounts) !== JSON.stringify([1,2,3,4,5,6,7,8]) || !result.denseStackImagesLoaded || !result.denseStackContained) {
     throw new Error(`Board review browser contract failed: ${JSON.stringify(result)}`);
   }
   if (screenshotPath) {

@@ -10,9 +10,26 @@ This pack is the review boundary for promoting the photographed board into the M
 - [Photo evidence notes, 2026-08-26](source-photo-evidence-2026-08-26.md)
 - Optimized JPEG copies are shipped only for the read-only review screen; the source JPGs above remain internal evidence and are never used as gameplay art or topology.
 - [Generated 336-hex review table](board-review-table.md)
+- [Editable physical-board validation worksheet](physical-board-validation-table.md)
+- [Provisional feature, water, and thick-blue-barrier audit overlay](board-feature-audit-overlay.svg)
 - [Generated coordinate/photo comparison overlay](board-comparison-overlay.svg)
 - [Generated independent top-down cross-check overlay](board-top-down-overlay.svg)
 - [Full-board promotion sign-off template](board-promotion-signoff.md)
+
+## Current provisional transcription status
+
+The fitted flat-top shell is now a complete 24-column by 14-row rectangle of
+336 faces. The candidate pass records 45 legible city panels with printed
+benefits, 35 currently retained military-base candidates (including a two-base face at `6/21`), 15 orange Infamy panels, four Mutation panels,
+six lair silhouettes with unresolved monster identities, Los Angeles, and
+Hollywood as a non-visitable area overlay. It also records candidate sea,
+seacoast, and eight lake faces plus the thick-blue-boundary transitions.
+
+These assignments are source-grounded playtest candidates, not verified
+production data. The [feature/water/barrier audit overlay](board-feature-audit-overlay.svg)
+shows them separately from the clean mesh overlay; genuinely obscured city
+sequence, base branch, lair identity, and fold/shore boundary details remain
+explicitly unresolved.
 
 ## Supplementary public-source reconnaissance
 
@@ -121,13 +138,17 @@ The full columns, numbered left-to-right from 0 through 23 in the shell, contain
 
 These column totals sum to 336 and document the full rectangle used by the coordinate shell.
 | Are coordinate keys and adjacency explicit? | The shell uses axial keys and reciprocal candidate adjacency; the generated review table lists every cell and edge. | Structural candidate validated |
-| Are all printed labels and icons transcribed? | No. The photographs show cities, bases, sites, lairs, water, markers, and legend content, but no independent cell-by-cell transcription has been approved. | Unresolved |
-| Are water classes and barriers authoritative? | The physical-board reference confirms that the thick blue line is the water barrier that blocks monsters without the appropriate ability. The exact cell-by-cell barrier edges and sea/lake classifications remain unresolved in the digital transcription. | Partially confirmed; mapping unresolved |
+| Are all printed labels and icons transcribed? | A provisional cell-by-cell candidate pass now records the legible cities, bases, orange Infamy panels, Mutation panels, lairs, Los Angeles, and Hollywood overlay; obscured details remain unresolved and no production approval has been granted. | Candidate pass; sign-off unresolved |
+| Are water classes and barriers authoritative? | The physical-board reference confirms that the thick blue line is the water barrier that blocks monsters without the appropriate ability. A provisional cell/edge mapping now exists, including eight lake candidates, but it remains source-review gated. | Candidate mapping; sign-off unresolved |
 | Can this board be used for MVP play? | No. The nine-space development graph remains the only playable fixture until the rule-bearing fields are reviewed and promoted. | Release blocker |
 
 The current production validator reports 2,538 errors for the candidate shell: 336 unresolved hex verification states, 336 unresolved water classes, and 1,866 unresolved edge barriers. These counts are intentionally redundant safeguards: promotion must not be possible by changing only a cell's verification flag while leaving terrain or movement data unresolved.
 
-The overlay is deliberately a clean mesh-only review aid: it places all 336 candidate row/column cells over the user-supplied authority photograph, but it does not claim that any printed label, icon, water class, barrier, or edge has been transcribed. The earlier provisional feature/barrier annotation pass was cleared after correcting the hex orientation and is being rebuilt from the fitted mesh.
+The comparison overlay remains a clean mesh-only review aid: it places all 336
+candidate row/column cells over the user-supplied authority photograph. The
+separate feature audit overlay carries the current provisional feature,
+water, and thick-blue-barrier annotations without changing the clean alignment
+surface or promoting the candidate board.
 
 The generated overlay labels are now centred within each candidate hex face
 using the photographed lattice pitch: even rows contain 18 faces, odd rows

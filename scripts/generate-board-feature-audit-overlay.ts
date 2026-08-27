@@ -77,4 +77,4 @@ const svg = `<?xml version="1.0" encoding="UTF-8"?>
 const output = resolve("docs/board-feature-audit-overlay.svg");
 mkdirSync(resolve("docs"), { recursive: true });
 writeFileSync(output, svg);
-console.log(`Generated ${output} with ${Object.keys(board.hexes).length} faces and ${board.edges.filter((edge) => edge.from < edge.to && edge.barrier !== "none").length} candidate barriers.`);
+console.log(`Generated ${output} with ${Object.keys(board.hexes).length} faces and ${(svg.match(/class="barrier-(?:sea|lake)"/g) ?? []).length} rendered candidate barriers.`);

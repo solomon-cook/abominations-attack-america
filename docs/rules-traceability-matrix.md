@@ -63,7 +63,7 @@ The component catalogue is source-backed reference data, not a licence to ship t
 
 ## Gaps that block the next release gate
 
-The matrix intentionally exposes the current gaps instead of treating typecheck, build, or a playable-looking board as rules proof. A 245-hex coordinate shell now records the photographed honeycomb extent, and `docs/full-honeycomb-board-evidence.md` records the source and promotion checklist, but the fully filled authoritative honeycomb board remains a P0 blocker until every printed feature, water class, label, barrier, and edge is sourced and reviewed. The other P0 blockers are deterministic commands and randomness, complete setup, path-based movement, deterministic battles, encounters, and the Monster Challenge. The existing nine-location graph remains a named development fixture and cannot satisfy the first-playable MVP gate.
+The matrix intentionally exposes the current gaps instead of treating typecheck, build, or a playable-looking board as rules proof. A 336-hex coordinate shell now records the photographed honeycomb extent, and `docs/full-honeycomb-board-evidence.md` records the source and promotion checklist, but the fully verified authoritative honeycomb board remains a P0 blocker until every printed feature, water class, label, barrier, and edge is sourced and reviewed. The other P0 blockers are deterministic commands and randomness, complete setup, path-based movement, deterministic battles, encounters, and the Monster Challenge. The existing nine-location graph remains a named development fixture and cannot satisfy the first-playable MVP gate.
 
 ## Review checklist
 

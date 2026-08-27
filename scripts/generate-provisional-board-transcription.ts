@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD } from "../packages/game-engine/src/board.ts";
+import { PROVISIONAL_AUTHORITATIVE_BOARD } from "../packages/game-engine/src/board.ts";
 
 const outputPath = resolve("docs/provisional-board-transcription.md");
 const source = "references/monsters-menace-america/components/source-photos-2026-08-26/full-board-setup.JPG";
@@ -30,6 +30,16 @@ const alignedCityRows = Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes)
     const row = hex.coord.r;
     const column = hex.coord.q + Math.floor(row / 2);
     return `| ${hex.label?.replace(/^Provisional /, "") ?? "Unnamed city"} | ${row} / ${column} | ${cityBenefitText(city.benefit)} | ${hex.key} |`;
+  });
+const alignedBaseRows = Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes)
+  .filter((hex) => hex.features.some((feature) => feature.kind === "military-base"))
+  .sort((a, b) => a.coord.r - b.coord.r || a.coord.q - b.coord.q)
+  .map((hex) => {
+    const row = hex.coord.r;
+    const column = hex.coord.q + Math.floor(row / 2);
+    const branches = hex.features.filter((feature) => feature.kind === "military-base").map((feature) => feature.branch).join("; ");
+    const otherFeatures = hex.features.filter((feature) => feature.kind !== "military-base").map((feature) => feature.kind).join("; ") || "—";
+    return `| ${row} / ${column} | ${branches} | ${otherFeatures} | ${hex.key} |`;
   });
 
 const lines = [
@@ -62,7 +72,7 @@ const lines = [
   "",
   "## Confirmed face-centre corrections in the current candidate pass",
   "",
-  "The aligned overlay resolves the northwest city cluster as Vancouver `0/3`, Seattle `1/3`, and Portland `2/2`; the nearby `0/2`, `1/1`, and `1/2` references are not the printed city faces. The western cluster additionally resolves Fresno `6/2`, Salt Lake City `5/6`, Los Angeles `8/2`, San Diego `8/3`, Phoenix `8/5`, and Albuquerque `8/8`. Winnipeg is at `2/12`. These are still candidate-board assignments rather than production sign-off, but they are based on the printed panel being inside the corresponding face, not on a nearby shared label.",
+  "The aligned overlay resolves the northwest city cluster as Vancouver `0/3`, Seattle `1/3`, and Portland `2/2`; the nearby `0/2`, `1/1`, and `1/2` references are not the printed city faces. The western cluster additionally resolves Fresno `6/2`, Salt Lake City `5/6`, Los Angeles `8/2`, San Diego `9/2`, Phoenix `8/5`, and Albuquerque `8/8`. Winnipeg is at `2/12`. These are still candidate-board assignments rather than production sign-off, but they are based on the printed panel being inside the corresponding face, not on a nearby shared label.",
   "",
   "## Provisional city-candidate pass",
   "",
@@ -94,6 +104,38 @@ const lines = [
   ...alignedCityRows,
   "",
   "All bonuses above are provisional hypotheses. The game rules support fixed Health gains and one-, two-, or three-die city rolls, but these candidate values are not source-approved. The close-up proves that non-empty city panels exist in the central/northern board area, but perspective and cropping prevent a reliable conversion to `row / column` or axial keys. The next useful artifact is an aligned crop or a straight-on board photograph with the shell overlay visible.",
+  "",
+  "## Provisional city/base co-location inventory",
+  "",
+  "The authority photograph shows these city panels and coloured base stars inside the same fitted hex face. They are recorded as composable features, not as mutually exclusive alternatives.",
+  "",
+  "| City | Row / column | Base branch |",
+  "| --- | --- | --- |",
+  "| Boston | 4 / 22 | Navy |",
+  "| Baltimore | 6 / 20 | Marines |",
+  "| Richmond | 7 / 19 | Army |",
+  "| Nashville | 8 / 16 | Army |",
+  "| Birmingham | 9 / 11 | Air Force |",
+  "| Austin | 10 / 12 | Army |",
+  "| Kansas City | 6 / 13 | Air Force |",
+  "",
+  "The same photograph also shows shared site/base faces at `7/4`, `9/6`, and `10/11` (Infamy plus Air Force), and at `10/19` (Cape Canaveral Infamy plus Navy).",
+  "",
+  "## Provisional multi-base co-location inventory",
+  "",
+  "The northeast crop shows two coloured base stars inside the same fitted face at `6/21`: yellow Air Force and blue Navy. Both are retained as separate military-base features. The wider aligned pass also retains the clearly visible base-only stars and the `10/16` Challenge-plus-Navy co-location in the cell ledger; obscured or seam-ambiguous stars remain unresolved.",
+  "",
+  "| Row / column | Base branches |",
+  "| --- | --- |",
+  "| 6 / 21 | Air Force; Navy |",
+  "",
+  "## Current aligned military-base inventory (playtest, not sign-off)",
+  "",
+  "Each row below is one fitted face. Multiple branches in one row are separate printed base stars in the same hex; other gameplay features are shown to make co-locations visible.",
+  "",
+  "| Row / column | Base branches | Other features | Axial key |",
+  "| --- | --- | --- | --- |",
+  ...alignedBaseRows,
   "",
   "## Bonus-first city inference",
   "",
@@ -170,7 +212,7 @@ const lines = [
   "",
   "| Hex key | Row / column | Provisional visual state | Feature candidate | Terrain confidence | Feature confidence | Reference note |",
   "| --- | --- | --- | --- | --- | --- |",
-  ...Object.values(FULL_HONEYCOMB_BOARD.hexes)
+  ...Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes)
     .sort((a, b) => a.coord.r - b.coord.r || a.coord.q - b.coord.q)
     .map((hex) => {
       const row = hex.coord.r;

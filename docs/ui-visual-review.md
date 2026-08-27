@@ -21,7 +21,7 @@ The matrix is runtime evidence, not a pixel-snapshot baseline. It proves that th
 - The active match is board-first after setup; the secondary controls remain behind an explicit toggle.
 - The action dock is outside the map surface and does not cover rule-bearing cells.
 - The local development match clearly labels itself as a nine-space source-gated fixture.
-- The development match visibly renders the 245-cell candidate shell with nine canonical development overlays; the shell faces are disabled and neutral, and the separately labelled board review surface remains the only place where unresolved cells can be inspected.
+- The development match visibly renders the 336-cell candidate shell with nine canonical development overlays; the shell faces are disabled and neutral, and the separately labelled board review surface remains the only place where unresolved cells can be inspected.
 - The responsive contract covers dynamic viewport sizing, safe areas, touch-target rules, reduced motion, map containment, and compact action controls.
 - The rendered candidate faces use the canonical 4.6% face width inside a 4.8% centre-pitch row slot. The source layout contract and Chrome smoke verify 14 staggered rows and positive same-row gaps at desktop, tablet, and mobile sizes; the half-slot alternating-row offset follows the supplied responsive-grid reference while the narrower face preserves visible seams.
 
@@ -44,7 +44,7 @@ is runtime evidence for the development fixture; it does not replace manual
 touch, zoom, focus, assistive-technology, or physical-board acceptance.
 
 On 2026-08-26, the post-setup Chrome visual checkpoint was updated after correcting
-the match surface: it now contains 261 tile buttons (245 candidate faces plus
+the match surface: it now contains 261 tile buttons (336 candidate faces plus
 nine canonical development overlays), with 252 unresolved shell faces disabled.
 The runtime smoke also asserts zero unresolved placeholder nodes and zero visible
 unresolved labels on those disabled faces.
@@ -71,7 +71,7 @@ remains development-fixture evidence; human visual acceptance and physical
 board fidelity remain open.
 
 On 2026-08-26, a live in-app-browser review of `Review full board shell` at the
-desktop viewport confirmed 245 separated cream faces in 14 staggered rows, with
+desktop viewport confirmed 336 separated cream faces in 14 staggered rows, with
 flat-top orientation, consistent visible seams, no visible same-column
 overlap, and no `Unresolved` labels rendered on the faces. The same review also
 confirmed the remaining source-fidelity defect: the shell is a neutral
@@ -81,7 +81,7 @@ read-only review tooling and does not expose it as MVP play.
 
 The follow-up board-review contract checked the optimized full-setup and
 top-down reference photographs at 1280 × 720, 834 × 1112, and 390 × 844. Both
-images loaded at every viewport, while the 245-face candidate remained
+images loaded at every viewport, while the 336-face candidate remained
 contained, non-playable, and free of unresolved player-facing labels. This is
 runtime evidence for the comparison tool only; it does not constitute manual
 visual acceptance or physical-board transcription sign-off.

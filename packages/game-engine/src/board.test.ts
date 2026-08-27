@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PHOTOGRAPHED_BOARD_OVERLAYS, PROVISIONAL_AUTHORITATIVE_BOARD, boardContentHash, buildBoardIndex, diagnoseBoard, hexDistance, hexKey, hexKeyToLocationId, locationIdToHexKey, toDevelopmentSpaceKey, validateBoardDefinition } from "./board.js";
 
+const physicalFaceKey = (row: number, column: number) => hexKey({ q: column - Math.floor(row / 2), r: row });
+
 test("development board is structurally valid but not production-ready", () => {
   assert.deepEqual(validateBoardDefinition(DEVELOPMENT_BOARD), []);
   assert.equal(validateBoardDefinition(DEVELOPMENT_BOARD, { production: true }).length > 0, true);
@@ -60,13 +62,34 @@ test("provisional authority passes the explicit provisional release gate but fai
   assert.deepEqual(validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD), []);
   assert.deepEqual(validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD, { production: true, allowProvisional: true }), []);
   assert.equal(validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD, { production: true }).length, 336);
-  assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes.city.length, 44);
+  assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes.city.length, 45);
   assert.equal(Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes).filter((hex) => hex.features.some((feature) => feature.kind === "city")).every((hex) => hex.label?.startsWith("Provisional ")), true);
-  assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["military-base"].length, 12);
+  assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["military-base"].length, 35);
   assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["infamy-site"].length, 15);
   assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes["mutation-site"].length, 4);
   assert.equal(buildBoardIndex(PROVISIONAL_AUTHORITATIVE_BOARD).featureHexes.lair.length, 6);
   assert.equal(Object.values(PROVISIONAL_AUTHORITATIVE_BOARD.hexes).every((hex) => hex.features.length === 0 || hex.waterClass !== "sea"), true);
+  for (const [row, column] of [[1, 4], [2, 13], [3, 7], [3, 8], [4, 9], [4, 11], [5, 8], [6, 11], [7, 4], [7, 8], [8, 7], [8, 15], [9, 6], [10, 11], [10, 19]]) {
+    assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(row, column)].features.some((feature) => feature.kind === "infamy-site"), true);
+  }
+  for (const [row, column, name] of [[5, 19, "Pittsburgh"], [6, 13, "Kansas City"], [6, 15, "St. Louis"], [6, 16, "Indianapolis"], [6, 17, "Cincinnati"], [6, 18, "Cleveland"], [7, 19, "Richmond"], [8, 12, "Tulsa"], [8, 16, "Nashville"]] as const) {
+    assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(row, column)].label, `Provisional ${name}`);
+  }
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(6, 15)].features, [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }]);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(8, 12)].features, [{ kind: "city", benefit: { kind: "health-roll", dice: 1 } }]);
+  for (const [row, column, branch] of [[4, 22, "Navy"], [6, 20, "Marines"], [7, 19, "Army"], [8, 16, "Army"], [9, 11, "Air Force"], [10, 12, "Army"]] as const) {
+    assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(row, column)].features.some((feature) => feature.kind === "military-base" && feature.branch === branch), true);
+  }
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(8, 16)].features, [{ kind: "city", benefit: { kind: "health", amount: 1 } }, { kind: "military-base", branch: "Army" }]);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(8, 9)].features, []);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(10, 19)].features, [{ kind: "infamy-site" }, { kind: "military-base", branch: "Navy" }]);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(6, 21)].features, [{ kind: "military-base", branch: "Air Force" }, { kind: "military-base", branch: "Navy" }]);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(7, 4)].features, [{ kind: "infamy-site" }, { kind: "military-base", branch: "Air Force" }]);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(9, 6)].features, [{ kind: "infamy-site" }, { kind: "military-base", branch: "Air Force" }]);
+  assert.deepEqual(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(10, 11)].features, [{ kind: "infamy-site" }, { kind: "military-base", branch: "Air Force" }]);
+  for (const [row, column, branch] of [[2, 10, "Air Force"], [4, 20, "Army"], [6, 12, "Army"], [8, 4, "Marines"], [8, 20, "Marines"], [9, 3, "Marines"], [9, 4, "Marines"], [9, 13, "Air Force"], [10, 16, "Navy"], [10, 17, "Air Force"], [11, 11, "Navy"], [7, 3, "Marines"], [7, 21, "Marines"], [9, 19, "Marines"]] as const) {
+    assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[physicalFaceKey(row, column)].features.some((feature) => feature.kind === "military-base" && feature.branch === branch), true);
+  }
   for (const key of ["1,3", "0,4", "13,3", "2,7", "10,7", "3,11"] as const) {
     assert.equal(PROVISIONAL_AUTHORITATIVE_BOARD.hexes[key].features.some((feature) => feature.kind === "lair"), true);
   }

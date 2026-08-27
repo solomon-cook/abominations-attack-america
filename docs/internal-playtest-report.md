@@ -30,7 +30,7 @@ Measured automation elapsed time: 4.253 seconds. This is an automation timing, n
 | Encounter resolution | Fixed and pass | The first run exposed a missing `encounter-resolution` action branch. `PhaseActions` now renders “Resolve encounter”; the accessibility source contract guards it. |
 | Encounter choice | Pass | “Take the city Health benefit” resolved through the authoritative command path and showed the recorded reward. |
 | Deploy | Pass | “Pass deployment” produced an authoritative accepted result and returned the fixture to Move. |
-| Board fidelity | Blocked | The browser still renders the unresolved 245-cell candidate shell plus development overlays; no physical-board topology was promoted. |
+| Board fidelity | Blocked | The browser renders the unresolved 336-cell candidate shell plus development overlays; no physical-board topology was promoted. |
 | Full match victory | Not covered by this run | The complete browser victory path, every fight/retreat/card branch, reconnect, two-browser online flow, and mobile/assistive-technology playthrough remain separate acceptance work. |
 
 This report is local development evidence only. It does not prove the fully filled physical board, production rules fidelity, deployment, persistence, or release readiness.
