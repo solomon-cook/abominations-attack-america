@@ -1,5 +1,5 @@
 {
-  "started": "2026-09-16T19:44:42.024Z",
+  "started": "2026-09-16T21:00:59.747Z",
   "pendingArtAllowed": false,
   "viewports": [
     {
@@ -13,6 +13,27 @@
       ],
       "errors": [],
       "brokenImages": [],
+      "resources": {
+        "navigation": {
+          "domContentLoadedMs": 181,
+          "loadMs": 182
+        },
+        "terrain": {
+          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
+          "resourceCount": 336,
+          "uniqueResourceCount": 336,
+          "transferBytes": 954300,
+          "encodedBodyBytes": 853500,
+          "decodedBodyBytes": 853500,
+          "currentDecodedImageCount": 336,
+          "estimatedCurrentBitmapBytes": 76382208,
+          "sizes": {
+            "256": 336,
+            "512": 0,
+            "1024": 0
+          }
+        }
+      },
       "passed": true
     },
     {
@@ -26,6 +47,27 @@
       ],
       "errors": [],
       "brokenImages": [],
+      "resources": {
+        "navigation": {
+          "domContentLoadedMs": 78,
+          "loadMs": 78
+        },
+        "terrain": {
+          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
+          "resourceCount": 493,
+          "uniqueResourceCount": 492,
+          "transferBytes": 1221836,
+          "encodedBodyBytes": 1108136,
+          "decodedBodyBytes": 1108136,
+          "currentDecodedImageCount": 336,
+          "estimatedCurrentBitmapBytes": 76382208,
+          "sizes": {
+            "256": 336,
+            "512": 157,
+            "1024": 0
+          }
+        }
+      },
       "passed": true
     },
     {
@@ -39,6 +81,95 @@
       ],
       "errors": [],
       "brokenImages": [],
+      "resources": {
+        "navigation": {
+          "domContentLoadedMs": 74,
+          "loadMs": 74
+        },
+        "terrain": {
+          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
+          "resourceCount": 336,
+          "uniqueResourceCount": 336,
+          "transferBytes": 954300,
+          "encodedBodyBytes": 853500,
+          "decodedBodyBytes": 853500,
+          "currentDecodedImageCount": 336,
+          "estimatedCurrentBitmapBytes": 76382208,
+          "sizes": {
+            "256": 336,
+            "512": 0,
+            "1024": 0
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "checks": [
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize",
+        "movement confirmed; encounter resolved; deployment passed"
+      ],
+      "errors": [],
+      "brokenImages": [],
+      "resources": {
+        "navigation": {
+          "domContentLoadedMs": 449,
+          "loadMs": 449
+        },
+        "terrain": {
+          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
+          "resourceCount": 609,
+          "uniqueResourceCount": 602,
+          "transferBytes": 1551828,
+          "encodedBodyBytes": 1421928,
+          "decodedBodyBytes": 1421928,
+          "currentDecodedImageCount": 336,
+          "estimatedCurrentBitmapBytes": 76382208,
+          "sizes": {
+            "256": 336,
+            "512": 273,
+            "1024": 0
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "checks": [
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize",
+        "movement confirmed; encounter resolved; deployment passed"
+      ],
+      "errors": [],
+      "brokenImages": [],
+      "resources": {
+        "navigation": {
+          "domContentLoadedMs": 101,
+          "loadMs": 101
+        },
+        "terrain": {
+          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
+          "resourceCount": 336,
+          "uniqueResourceCount": 336,
+          "transferBytes": 954300,
+          "encodedBodyBytes": 853500,
+          "decodedBodyBytes": 853500,
+          "currentDecodedImageCount": 336,
+          "estimatedCurrentBitmapBytes": 76382208,
+          "sizes": {
+            "256": 336,
+            "512": 0,
+            "1024": 0
+          }
+        }
+      },
       "passed": true
     },
     {
@@ -52,6 +183,27 @@
       ],
       "errors": [],
       "brokenImages": [],
+      "resources": {
+        "navigation": {
+          "domContentLoadedMs": 83,
+          "loadMs": 83
+        },
+        "terrain": {
+          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
+          "resourceCount": 757,
+          "uniqueResourceCount": 672,
+          "transferBytes": 1347656,
+          "encodedBodyBytes": 1238568,
+          "decodedBodyBytes": 1238568,
+          "currentDecodedImageCount": 336,
+          "estimatedCurrentBitmapBytes": 76382208,
+          "sizes": {
+            "256": 336,
+            "512": 421,
+            "1024": 0
+          }
+        }
+      },
       "passed": true
     },
     {
@@ -65,8 +217,29 @@
       ],
       "errors": [],
       "brokenImages": [],
+      "resources": {
+        "navigation": {
+          "domContentLoadedMs": 246,
+          "loadMs": 246
+        },
+        "terrain": {
+          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
+          "resourceCount": 933,
+          "uniqueResourceCount": 842,
+          "transferBytes": 1895798,
+          "encodedBodyBytes": 1767698,
+          "decodedBodyBytes": 1767698,
+          "currentDecodedImageCount": 336,
+          "estimatedCurrentBitmapBytes": 76382208,
+          "sizes": {
+            "256": 336,
+            "512": 332,
+            "1024": 265
+          }
+        }
+      },
       "passed": true
     }
   ],
-  "finished": "2026-09-16T19:46:45.591Z"
+  "finished": "2026-09-16T21:02:00.607Z"
 }

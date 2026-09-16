@@ -24,6 +24,10 @@ for(const cell of Object.values(geometry.cells)) {
   assert.equal(art.cellId,cell.id);
   assert.equal(art.unique,cell.uniqueArt);
   assert.ok(delivery.assets[art.asset],`missing ${art.asset}`);
+  if(delivery.assembly) {
+    assert.deepEqual(delivery.assets[art.asset].crop,{x:cell.center[0]-geometry.width/2,y:cell.center[1]-geometry.height/2,width:geometry.width,height:geometry.height},`misaligned crop ${cell.id}`);
+    assert.equal(delivery.assets[art.asset].sha256,delivery.assembly.sha256,`different source transform ${cell.id}`);
+  }
   if(art.unique) {const source=art.sourceAsset??art.asset;assert.ok(!unique.has(source),'unique geography reused');unique.add(source);}
 }
 const masters = delivery.sourceMasters??delivery.assets;

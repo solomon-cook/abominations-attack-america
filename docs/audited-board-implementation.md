@@ -18,9 +18,13 @@ The board fills the viewport. Camera cover scale is computed from viewport and m
 
 `output/board-art/masters` preserves 75 separately generated geography masters, four inland variations and two water variations. `output/board-art/generation` records available prompts and references. Shared geometry, neighbor guides and audit associations live in `output/board-art/manifest.json`. The lean runtime manifest maps engine keys to artwork; the public asset manifest records delivery sizes and source hashes.
 
-The initial independent tile assembly passed mapping checks but failed visual seam review: it contains colour patches and shoreline discontinuities. `seamless-board-candidate.png` is an image-generator edit of that assembly for geographic review. Its actual native size is 1511 × 1041; requested larger dimensions were not returned. Enlarged delivery derivatives cannot add native detail. Original masters remain preserved.
+The independent tile assembly failed visual seam review because it contained colour patches and shoreline discontinuities. The image generator repaired the assembly, then corrected Baja's bottom-edge extension and the northwest inlet. The final `output/board-art/seamless-board-reviewed.png` was independently reviewed with all 75 unique-cell neighborhoods and the affected neighbors after correction.
 
-`scripts/slice-continuous-board.mjs` can extract this assembled edit at exact fractional cell coordinates after review. It preserves links to each original geography master and deterministic inland/water assignment. Do not treat generation or derivative existence as visual approval.
+All 336 displayed tiles are extracted from this continuous source at exact fractional cell coordinates, preserving links to each original geography master and deterministic inland/water assignment. The public manifest records per-cell source references, neighbors and review evidence. Shared-source crop checks cover every cell; the geography-presence check confirms that every unique coast, lake or island cell still contains both land and water.
+
+Run `npm run board-art:build` to reproduce the assembly, 256/512/1024 WebP derivatives, manifest and verification. Original masters and failed candidates remain preserved. Final derivative totals are 853,500 bytes at 256, 2,021,422 at 512 and 4,535,114 at 1024.
+
+**Detail limit:** the assembled image returned by the generator is 1511 × 1041, despite a larger requested output. The 1024-pixel derivatives are resampled delivery files and do not contain 1024 pixels of native detail per cell. Original higher-resolution tile masters remain available for future detail refinement.
 
 ## Verification evidence
 
@@ -28,11 +32,17 @@ The initial independent tile assembly passed mapping checks but failed visual se
 - `npm run board-camera:verify`: cover bounds and every engine neighbor's rendered geometry.
 - `npm run typecheck` and `npm run build`: application compile checks.
 - `npm run board-audited-assets:verify`: 336 coordinate mappings, 75 distinct geography sources, 81 distinct master hashes, dimensions and WebP delivery files.
-- `npm run browser:audited:verify`: real Chrome setup, camera gestures, overlays and movement/encounter/deployment across five screen sizes.
+- `npm run browser:audited:verify`: real Chrome setup, camera gestures, overlays and movement/encounter/deployment across seven screen sizes.
 - `npm run browser:online:verify`: player/spectator synchronization, reconnect, reload, turn actions and terminal state.
 
 Image processing scripts use Sharp; the browser matrix uses Playwright and Chrome. Sharp and Playwright are declared development dependencies and installed by `npm ci`. Reports and screenshots are under `output/board-art`.
 
-## Outstanding review
+## Review records and scope
 
-Final assembled geography and neighborhood approval, the final derivative publication, and full browser regression results must be recorded before artwork completion is claimed. The current report intentionally distinguishes implemented gameplay from unfinished visual review.
+- Initial independent review: `output/board-art/review/continuous/independent-review.md`.
+- Final corrected-map review: `output/board-art/review/reviewed/independent-review.md` (bound to the exact final image hash).
+- Asset mapping and dimensions: `output/board-art/asset-verification.json`.
+- Browser matrix and loading metrics: `output/board-art/browser-verification.json`.
+- Online player/spectator and reconnect evidence: `output/board-art/online-verification.json`.
+
+Visual review is agent review, not a new human sign-off. Browser measurements use a local production preview and fresh headless Chrome contexts; they are not public-network benchmarks. The online run exercised movement, encounters, deployment and terminal state, but did not reach a battle; combat remains covered by engine/API tests. Accessibility source checks do not substitute a manual assistive-technology audit.

@@ -9,7 +9,10 @@ const out = 'output/board-art';
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ executablePath: chromePath, headless: true });
 const report = { started: new Date().toISOString(), pendingArtAllowed: pending, viewports: [] };
-const sizes = [[320,740],[390,844],[844,390],[1440,900],[2560,1080]];
+const sizes = process.env.BROWSER_VIEWPORTS
+  ? process.env.BROWSER_VIEWPORTS.split(',').map(size=>size.split('x').map(Number))
+  : [[320,740],[390,844],[844,390],[768,1024],[1024,768],[1440,900],[2560,1080]];
+assert.ok(sizes.every(size=>size.length===2&&size.every(value=>Number.isInteger(value)&&value>0)), 'Invalid BROWSER_VIEWPORTS');
 async function frame(page) { await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))); }
 async function snapshot(page) {
   return page.evaluate(() => {
@@ -62,8 +65,11 @@ for (const [width,height] of sizes) {
   const resolve=page.getByRole('button',{name:'Resolve encounter',exact:true});
   await resolve.last().click();
   const benefit=page.getByRole('button',{name:'Take the city Health benefit',exact:true});
-  if(await benefit.count()) await benefit.click();
-  await page.getByRole('button',{name:'Pass deployment',exact:true}).first().click();
+  const passDeployment=page.getByRole('button',{name:'Pass deployment',exact:true}).first();
+  // React may render the follow-up decision after the resolve click returns.
+  await benefit.or(passDeployment).first().waitFor({state:'visible'});
+  if(await benefit.isVisible()) await benefit.click();
+  await passDeployment.click();
   item.checks.push('movement confirmed; encounter resolved; deployment passed');
   if(await page.locator('.layout.panel-open').count()) await page.locator('header .game-panel-toggle').click();
   await check(page,'completed turn'); await page.waitForTimeout(500);
@@ -89,6 +95,6 @@ for (const [width,height] of sizes) {
  } catch(error) { item.passed=false; item.failure=error.stack; await page.screenshot({path:`${out}/browser-${width}x${height}-failure.png`}); }
  await context.close();
 }
-} finally { await browser.close(); report.finished=new Date().toISOString(); await writeFile(`${out}/browser-verification.json`,JSON.stringify(report,null,2)+'\n'); }
+} finally { await browser.close(); report.finished=new Date().toISOString(); await writeFile(process.env.BROWSER_REPORT_PATH ?? `${out}/browser-verification.json`,JSON.stringify(report,null,2)+'\n'); }
 console.log(JSON.stringify(report,null,2));
 if(report.viewports.some(v=>!v.passed)) process.exitCode=1;

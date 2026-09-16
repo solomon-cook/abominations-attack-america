@@ -274,6 +274,12 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
               else onFocusHex(placeKey);
             }}
           >
+            {audited && (
+              <svg className="hex-highlight" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                {/* Inset the stroke so all six edges stay inside the tile's clip. */}
+                <polygon points="26.5,3 73.5,3 97,50 73.5,97 26.5,97 3,50" />
+              </svg>
+            )}
             {audited ? <TerrainArt hex={hex} /> : baseArt && <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />}
             {boardArt && <img className="tile-art" src={boardArt} alt="" aria-hidden="true" loading="lazy" />}
             {stomped && audited && <StompedMarker />}

@@ -1,0 +1,31 @@
+{
+  "started": "2026-09-16T20:53:37.498Z",
+  "pendingArtAllowed": false,
+  "viewports": [
+    {
+      "width": 768,
+      "height": 1024,
+      "checks": [
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize"
+      ],
+      "errors": [],
+      "passed": false,
+      "failure": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Pass deployment', exact: true }).first()\u001b[22m\n\n    at /Users/solomon/Documents/abominations-attack-america/abominations-attack-america/scripts/verify-browser-audited-board.mjs:69:78"
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "checks": [
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize"
+      ],
+      "errors": [],
+      "passed": false,
+      "failure": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Pass deployment', exact: true }).first()\u001b[22m\n\n    at /Users/solomon/Documents/abominations-attack-america/abominations-attack-america/scripts/verify-browser-audited-board.mjs:69:78"
+    }
+  ],
+  "finished": "2026-09-16T20:54:51.044Z"
+}

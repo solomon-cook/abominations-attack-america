@@ -3,11 +3,12 @@
 .audited-grid .hex-tile.water{background:#497c83}
 .audited-grid .hex-tile::before{display:none}
 .audited-grid .hex-tile:hover:not(:disabled),.audited-grid .hex-tile:focus-visible{transform:translate(-50%,-50%);filter:none}
-.audited-grid .hex-tile .audited-terrain{inset:-.2%;width:100.4%;height:100.4%;opacity:1;object-fit:fill;pointer-events:none}
-.audited-grid .hex-tile::after{content:"";position:absolute;inset:0;z-index:7;pointer-events:none;clip-path:inherit;background:transparent}
-.audited-grid .hex-tile.legal::after{background:#f1eab51a;box-shadow:inset 0 0 0 3px #d0c68a}
-.audited-grid .hex-tile.selected::after,.audited-grid .hex-tile.path-selected::after{background:#ffd07833;box-shadow:inset 0 0 0 3px #ffdd84}
-.audited-grid .hex-tile:hover::after,.audited-grid .hex-tile:focus-visible::after{background:#fff0b82b;box-shadow:inset 0 0 0 4px #fff1b5}
+.audited-grid .hex-tile .audited-terrain{inset:0;width:100%;height:100%;opacity:1;object-fit:fill;pointer-events:none}
+.audited-grid .hex-highlight{position:absolute;inset:0;width:100%;height:100%;z-index:7;pointer-events:none;fill:transparent;stroke:transparent;stroke-width:3;stroke-linejoin:round}
+.audited-grid .hex-tile.legal .hex-highlight{fill:#f1eab51a;stroke:#d0c68a}
+.audited-grid .hex-tile.selected .hex-highlight,.audited-grid .hex-tile.path-selected .hex-highlight{fill:#ffd07833;stroke:#ffdd84}
+.audited-grid .hex-tile:hover .hex-highlight,.audited-grid .hex-tile:focus-visible .hex-highlight{fill:#fff0b82b;stroke:#fff1b5;stroke-width:4}
+.audited-grid .hex-tile:focus-visible{outline:none}
 .audited-grid-lines{position:absolute;inset:0;width:100%;height:100%;z-index:6;pointer-events:none}
 .terrain-grid polygon{fill:none;stroke:#dedbb447;stroke-width:.065}
 .terrain-barriers line{stroke:#1d6796;stroke-width:.22;stroke-linecap:round}

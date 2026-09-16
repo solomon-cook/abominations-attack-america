@@ -66,7 +66,8 @@
     "board-audit:verify": "node scripts/generate-audited-board.mjs --check",
     "board-camera:verify": "tsx scripts/verify-board-camera.ts",
     "board-audited-assets:verify": "node scripts/verify-audited-board-assets.mjs",
-    "browser:audited:verify": "node scripts/verify-browser-audited-board.mjs"
+    "browser:audited:verify": "node scripts/verify-browser-audited-board.mjs",
+    "board-art:build": "node scripts/assemble-reviewed-board.mjs && node scripts/slice-continuous-board.mjs --source=output/board-art/seamless-board-reviewed.png && node scripts/finalize-audited-art-review.mjs && npm run board-audited-assets:verify"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

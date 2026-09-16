@@ -1,0 +1,25 @@
+{
+  "operation": "Geometric reinsertion of image_gen crop; no procedural terrain drawing",
+  "assembly": {
+    "path": "output/board-art/seamless-board-corrected.png",
+    "sha256": "a51b4587c327aa86085e0d095af2b888839c95a32d33be8aabe0a7c667092e57"
+  },
+  "edit": {
+    "path": "output/board-art/inlet-edited.png",
+    "sha256": "d4a3c089b389e2c0b827df0c0707c7c131d409ea209cd9074b7e971a03e4af25"
+  },
+  "crop": {
+    "left": 130,
+    "top": 85,
+    "width": 140,
+    "height": 105
+  },
+  "output": {
+    "path": "output/board-art/seamless-board-reviewed.png",
+    "sha256": "d2a535f1a89d98e1948053d6fcf4aebe4fe51c22bc7afb92126d37b091496eb6"
+  },
+  "sourcePrompts": [
+    "generation/seamless-board-corrected.json",
+    "generation/inlet-edited.json"
+  ]
+}

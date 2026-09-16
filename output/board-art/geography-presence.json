@@ -1,0 +1,302 @@
+{
+  "2/1": {
+    "waterFraction": 0.6470456580125336,
+    "samples": 4468
+  },
+  "3/1": {
+    "waterFraction": 0.5082811101163832,
+    "samples": 4468
+  },
+  "4/1": {
+    "waterFraction": 0.4997760859829825,
+    "samples": 4466
+  },
+  "5/1": {
+    "waterFraction": 0.5304523063143752,
+    "samples": 4466
+  },
+  "6/1": {
+    "waterFraction": 0.7292655367231639,
+    "samples": 4425
+  },
+  "0/2": {
+    "waterFraction": 0.3665472458575907,
+    "samples": 4466
+  },
+  "1/2": {
+    "waterFraction": 0.6201029773897471,
+    "samples": 4467
+  },
+  "2/2": {
+    "waterFraction": 0.2792589245368278,
+    "samples": 4426
+  },
+  "7/2": {
+    "waterFraction": 0.2696045197740113,
+    "samples": 4425
+  },
+  "8/2": {
+    "waterFraction": 0.7159167226326394,
+    "samples": 4467
+  },
+  "0/3": {
+    "waterFraction": 0.23998209088873965,
+    "samples": 4467
+  },
+  "1/3": {
+    "waterFraction": 0.06800723000451875,
+    "samples": 4426
+  },
+  "8/3": {
+    "waterFraction": 0.29460488023281844,
+    "samples": 4467
+  },
+  "9/3": {
+    "waterFraction": 0.6160734273561674,
+    "samples": 4467
+  },
+  "10/3": {
+    "waterFraction": 0.6475593372145096,
+    "samples": 4466
+  },
+  "9/4": {
+    "waterFraction": 0.04590237348858039,
+    "samples": 4466
+  },
+  "10/4": {
+    "waterFraction": 0.6961486789072996,
+    "samples": 4466
+  },
+  "11/4": {
+    "waterFraction": 0.6004923903312444,
+    "samples": 4468
+  },
+  "10/5": {
+    "waterFraction": 0.24334004925005598,
+    "samples": 4467
+  },
+  "11/5": {
+    "waterFraction": 0.7496045197740113,
+    "samples": 4425
+  },
+  "12/5": {
+    "waterFraction": 0.6509961943138571,
+    "samples": 4467
+  },
+  "13/5": {
+    "waterFraction": 0.5302283922973579,
+    "samples": 4466
+  },
+  "12/6": {
+    "waterFraction": 0.30063291139240506,
+    "samples": 4424
+  },
+  "13/6": {
+    "waterFraction": 0.8099395567494964,
+    "samples": 4467
+  },
+  "13/7": {
+    "waterFraction": 0.2484333034914951,
+    "samples": 4468
+  },
+  "11/11": {
+    "waterFraction": 0.09559322033898306,
+    "samples": 4425
+  },
+  "12/11": {
+    "waterFraction": 0.33049708911777875,
+    "samples": 4466
+  },
+  "13/11": {
+    "waterFraction": 0.4788448623237072,
+    "samples": 4467
+  },
+  "11/12": {
+    "waterFraction": 0.2355575459023735,
+    "samples": 4466
+  },
+  "10/13": {
+    "waterFraction": 0.19278996865203762,
+    "samples": 4466
+  },
+  "2/14": {
+    "waterFraction": 0.22074107546317218,
+    "samples": 4426
+  },
+  "3/14": {
+    "waterFraction": 0.08327736736064473,
+    "samples": 4467
+  },
+  "11/14": {
+    "waterFraction": 0.8125839677563815,
+    "samples": 4466
+  },
+  "1/15": {
+    "waterFraction": 0.3407909604519774,
+    "samples": 4425
+  },
+  "2/15": {
+    "waterFraction": 0.6976483762597985,
+    "samples": 4465
+  },
+  "3/15": {
+    "waterFraction": 0.18025078369905956,
+    "samples": 4466
+  },
+  "4/15": {
+    "waterFraction": 0.11708081486456234,
+    "samples": 4467
+  },
+  "10/15": {
+    "waterFraction": 0.5699574658607567,
+    "samples": 4467
+  },
+  "2/16": {
+    "waterFraction": 0.2513562386980108,
+    "samples": 4424
+  },
+  "3/16": {
+    "waterFraction": 0.7124944021495746,
+    "samples": 4466
+  },
+  "4/16": {
+    "waterFraction": 0.5865233937765838,
+    "samples": 4467
+  },
+  "5/16": {
+    "waterFraction": 0.024171888988361683,
+    "samples": 4468
+  },
+  "10/16": {
+    "waterFraction": 0.35974927244235505,
+    "samples": 4467
+  },
+  "2/17": {
+    "waterFraction": 0.3573667711598746,
+    "samples": 4466
+  },
+  "3/17": {
+    "waterFraction": 0.6086859189612716,
+    "samples": 4467
+  },
+  "4/17": {
+    "waterFraction": 0.3633310946944258,
+    "samples": 4467
+  },
+  "10/17": {
+    "waterFraction": 0.846429370942467,
+    "samples": 4467
+  },
+  "3/18": {
+    "waterFraction": 0.22184911573763152,
+    "samples": 4467
+  },
+  "4/18": {
+    "waterFraction": 0.5530676220331393,
+    "samples": 4466
+  },
+  "5/18": {
+    "waterFraction": 0.13725929243170623,
+    "samples": 4466
+  },
+  "10/18": {
+    "waterFraction": 0.25027982986344305,
+    "samples": 4467
+  },
+  "11/18": {
+    "waterFraction": 0.7272727272727273,
+    "samples": 4466
+  },
+  "3/19": {
+    "waterFraction": 0.4675324675324675,
+    "samples": 4466
+  },
+  "4/19": {
+    "waterFraction": 0.29959695476936854,
+    "samples": 4466
+  },
+  "8/19": {
+    "waterFraction": 0.3603401969561325,
+    "samples": 4468
+  },
+  "9/19": {
+    "waterFraction": 0.5017913121361397,
+    "samples": 4466
+  },
+  "10/19": {
+    "waterFraction": 0.4180474697716077,
+    "samples": 4466
+  },
+  "11/19": {
+    "waterFraction": 0.46937853107344635,
+    "samples": 4425
+  },
+  "12/19": {
+    "waterFraction": 0.6765166778598612,
+    "samples": 4467
+  },
+  "3/20": {
+    "waterFraction": 0.054187192118226604,
+    "samples": 4466
+  },
+  "4/20": {
+    "waterFraction": 0.05417506156256996,
+    "samples": 4467
+  },
+  "6/20": {
+    "waterFraction": 0.039856695029108824,
+    "samples": 4466
+  },
+  "8/20": {
+    "waterFraction": 0.5169017237519589,
+    "samples": 4467
+  },
+  "12/20": {
+    "waterFraction": 0.5928603705377316,
+    "samples": 4426
+  },
+  "4/21": {
+    "waterFraction": 0.24865711727842435,
+    "samples": 4468
+  },
+  "5/21": {
+    "waterFraction": 0.8327736736064473,
+    "samples": 4467
+  },
+  "6/21": {
+    "waterFraction": 0.775819209039548,
+    "samples": 4425
+  },
+  "7/21": {
+    "waterFraction": 0.8081056874160323,
+    "samples": 4466
+  },
+  "11/21": {
+    "waterFraction": 0.9767284229552643,
+    "samples": 4426
+  },
+  "12/21": {
+    "waterFraction": 0.9597044996642041,
+    "samples": 4467
+  },
+  "3/22": {
+    "waterFraction": 0.2174205105239588,
+    "samples": 4466
+  },
+  "4/22": {
+    "waterFraction": 0.8157600179091112,
+    "samples": 4467
+  },
+  "13/22": {
+    "waterFraction": 0.961486789072996,
+    "samples": 4466
+  },
+  "2/23": {
+    "waterFraction": 0.5062695924764891,
+    "samples": 4466
+  },
+  "13/23": {
+    "waterFraction": 0.9632781012091357,
+    "samples": 4466
+  }
+}

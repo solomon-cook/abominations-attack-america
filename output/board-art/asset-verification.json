@@ -2,13 +2,12 @@
   "cells": 336,
   "uniqueGeography": 75,
   "sourceMasters": 81,
-  "derivatives": 243,
+  "derivatives": 1008,
   "totals": {
-    "sourceBytes": 265730609,
-    "256Bytes": 792662,
-    "512Bytes": 3873020,
-    "1024Bytes": 18914718
+    "256Bytes": 853500,
+    "512Bytes": 2021422,
+    "1024Bytes": 4535114
   },
-  "visualStatus": "generated-awaiting-visual-review",
-  "verifiedAt": "2026-09-16T20:10:56.834Z"
+  "visualStatus": "agent-reviewed-integrated",
+  "verifiedAt": "2026-09-16T21:02:17.464Z"
 }
