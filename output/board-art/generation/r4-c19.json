@@ -1,0 +1,8 @@
+{
+  "cell": "4/19",
+  "source": "/Users/solomon/.codex/generated_images/01a0a6c4-17b1-7932-8aa6-6df7b6389f80/exec-a7770141-b79c-43ee-ab3f-becc967cb2a2.png",
+  "output": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/masters/r4-c19.png",
+  "prompt": "Create a square 1024x1024 production terrain texture for a digital North America strategy board, uniquely for cell row 4 column 19. Image 1 is its exact geometry guide: only the CENTER yellow-outlined hex is the target; the surrounding hex ring is reference context. Crop to the central hex's bounding square, fill the entire square with terrain continuing beyond the invisible hex, no visible hex shape. Preserve the guide's olive land / teal water area shape and shoreline crossing positions within the central hex. Central cell terrain: Coast; shoreline: Northwest edge to southwest edge; orientation: Land east; sea west. The second and third images are master olive grassland and teal water TEXTURE references: match their fine painterly top-down texture scale and balanced soft daylight. Render shoreline naturally winding with extremely narrow sand edge, keeping all shared-edge shoreline endpoints exactly aligned with the guide. This is one seamless flat terrain map fragment viewed perfectly vertically, not a separate board-game object. No rim, border, bevel, hex outline, labels, text, coordinates, shadows, decorations, buildings, icons, or neighbor cells. Do not reproduce the guide's yellow outline or diagonal mesh. Keep calm subtle texture and consistent muted olive and teal palette.",
+  "generator": "builtin-imagegen",
+  "review": "generated; requires assembled neighbor review"
+}

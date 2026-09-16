@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "boardCells": 336,
+  "boardIdentity": "shared-pinned-human-audit",
+  "setupClicks": 8,
+  "spectatorSetup": "no-act",
+  "spectatorMove": "no-act",
+  "reconnectRecovery": "verified",
+  "forgedCommand": "rejected-without-state-change",
+  "malformedCommand": "rejected-without-state-change",
+  "reloadRecovery": "verified",
+  "onlineMovement": "verified",
+  "onlineFight": "not-reached",
+  "onlineEncounter": "verified",
+  "onlineDeploy": "verified",
+  "onlineConcession": "verified",
+  "terminalProjection": "players-and-spectator",
+  "terminalReloadRecovery": "verified",
+  "nextPhase": "Encounter"
+}

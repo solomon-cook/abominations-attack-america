@@ -1,0 +1,8 @@
+{
+  "tool": "image_gen",
+  "sourcePath": "output/board-art/masters/water-2.png",
+  "promptSpecification": "Reusable muted teal-blue open-water terrain variation with fine ripples, seamless orthographic top-down, no labels, rims, bevels or cast shadows.",
+  "exactPromptUnavailable": true,
+  "variation": 2,
+  "status": "generated-source-preserved"
+}

@@ -1,8 +1,9 @@
-import type { SetupState } from "@abominations/game-engine";
+import { monsters, type BoardDefinition, type HexKey, type SetupState } from "@abominations/game-engine";
 import type { RoomView } from "@abominations/shared";
 
 type Props = {
   activeSetup: SetupState;
+  board?: BoardDefinition;
   setupSeat?: SetupState["seats"][number];
   online: boolean;
   playerIndex?: number;
@@ -11,24 +12,29 @@ type Props = {
   onChooseStartingChoice: (kind: "research" | "deploy") => void;
 };
 
-export function SetupPanel({ activeSetup, setupSeat, online, playerIndex, participants, onChooseOption, onChooseStartingChoice }: Props) {
+export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex, participants, onChooseOption, onChooseStartingChoice }: Props) {
   const waiting = online && playerIndex !== setupSeat?.playerIndex;
   const disabled = Boolean(waiting);
+  const lairLabel = (key?: string) => {
+    if (!key) return "Not selected";
+    const hex = board?.hexes[key as HexKey];
+    return hex?.audit ? `Cell ${hex.audit.row}/${hex.audit.column}` : hex?.label ?? key;
+  };
   return (
     <>
       {activeSetup.phase !== "complete" && (
-        <section className="setup-panel" aria-label="Development setup">
-          <span className="label">DEVELOPMENT SETUP · SOURCE-GATED</span>
+        <section className="setup-panel" aria-label="Game setup">
+          <span className="label">CHOOSE YOUR MONSTER</span>
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
-          <p>Prototype setup. Monster, lair, branch, and board data are still under review.</p>
+          <p>Choose a monster, military branch and starting lair.</p>
           {setupSeat && <p className="setup-turn">Choosing for Player {setupSeat.playerIndex + 1}{waiting ? " · waiting" : ""}</p>}
           <div className="setup-options">
-            {activeSetup.phase === "monster-selection" && activeSetup.definition.monsterIds.filter((id) => !activeSetup.seats.some((seat) => seat.monsterId === id)).map((id) => <button key={id} disabled={disabled} onClick={() => onChooseOption(id)}>{id}</button>)}
+            {activeSetup.phase === "monster-selection" && activeSetup.definition.monsterIds.filter((id) => !activeSetup.seats.some((seat) => seat.monsterId === id)).map((id) => <button key={id} disabled={disabled} onClick={() => onChooseOption(id)}>{monsters.find(monster => monster.id === id)?.name ?? id}</button>)}
             {activeSetup.phase === "branch-selection" && activeSetup.definition.eligibleBranches.filter((branch) => !activeSetup.seats.some((seat) => seat.branch === branch)).map((branch) => <button key={branch} disabled={disabled} onClick={() => onChooseOption(branch)}>{branch}</button>)}
-            {activeSetup.phase === "lair-selection" && setupSeat?.monsterId && activeSetup.definition.lairsByMonster[setupSeat.monsterId]?.filter((lair) => !activeSetup.seats.some((seat) => seat.lair === lair)).map((lair) => <button key={lair} disabled={disabled} onClick={() => onChooseOption(lair)}>{lair}</button>)}
+            {activeSetup.phase === "lair-selection" && setupSeat?.monsterId && activeSetup.definition.lairsByMonster[setupSeat.monsterId]?.filter((lair) => !activeSetup.seats.some((seat) => seat.lair === lair)).map((lair) => <button key={lair} disabled={disabled} onClick={() => onChooseOption(lair)}>{lairLabel(lair)}</button>)}
             {activeSetup.phase === "starting-choice" && <>
               <button disabled={disabled} onClick={() => onChooseStartingChoice("research")}>Draw Research</button>
-              <button disabled={disabled} onClick={() => onChooseStartingChoice("deploy")}>Development Deploy</button>
+              <button disabled={disabled} onClick={() => onChooseStartingChoice("deploy")}>Deploy units</button>
             </>}
           </div>
           <p className="setup-progress">{activeSetup.seats.filter((seat) => seat.ready).length}/{activeSetup.seats.length} starting choices confirmed</p>
@@ -36,15 +42,15 @@ export function SetupPanel({ activeSetup, setupSeat, online, playerIndex, partic
       )}
       {online && activeSetup.phase === "complete" && (
         <section className="setup-summary" aria-label="Setup summary">
-          <span className="label">SETUP LOCKED · DEVELOPMENT FIXTURE</span>
+          <span className="label">SETUP LOCKED</span>
           <h2>Match configuration</h2>
           <p>Assignments are set. Each player must press Ready to begin.</p>
           <div className="setup-summary-grid">
             {activeSetup.seats.map((seat) => (
               <div key={seat.playerIndex}>
                 <strong>Player {seat.playerIndex + 1}</strong>
-                <span>{seat.monsterId} · {seat.branch}</span>
-                <span>Lair: {seat.lair}</span>
+                <span>{monsters.find(monster => monster.id === seat.monsterId)?.name ?? seat.monsterId} · {seat.branch}</span>
+                <span>Lair: {lairLabel(seat.lair)}</span>
                 <span>{participants.find((candidate) => candidate.playerIndex === seat.playerIndex)?.ready ? "Ready" : "Not ready"}</span>
               </div>
             ))}

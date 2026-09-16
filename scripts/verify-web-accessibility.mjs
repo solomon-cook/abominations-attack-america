@@ -8,6 +8,7 @@ const componentFiles = (await readdir(resolve(root, "apps/web/src/components")))
   .map((file) => resolve(root, "apps/web/src/components", file));
 const source = [
   await readFile(resolve(root, "apps/web/src/main.tsx"), "utf8"),
+  await readFile(resolve(root, "apps/web/src/board-camera.ts"), "utf8"),
   ...(await Promise.all(componentFiles.map((file) => readFile(file, "utf8")))),
 ].join("\n");
 const styles = await readFile(resolve(root, "apps/web/src/styles.css"), "utf8");
@@ -18,7 +19,7 @@ const requiredSourceMarkers = [
   ["unsupported browser guard", /if \(!browserSupported\) \{/],
   ["unsupported browser fallback", /className="unsupported-browser" role="main"[\s\S]*This browser cannot run the playtest[\s\S]*No match state has been started/],
   ["named map group", /aria-label=\"Board coordinate shell\"/],
-  ["resolved board description requires verified cells", /const fullBoardVerified = renderedBoard\?\.id === FULL_HONEYCOMB_BOARD\.id[\s\S]*every\(\(hex\) => hex\.verification === "verified"\)/],
+  ["resolved board description requires verified cells", /const fullBoardVerified = \(renderedBoard\?\.id === AUDITED_BOARD\.id[\s\S]*every\(\(hex\) => hex\.verification === "verified"\)/],
   ["unresolved full shell disclosure", /full honeycomb coordinate shell is unresolved review tooling and is not a playable board/],
   ["development board disclosure", /unresolved physical-board shell is not rendered as playable topology/],
   ["hex accessible names", /aria-label=\{`[\s\S]*\$\{displayName\}[\s\S]*hex \$\{hex\.key\}/],
@@ -33,10 +34,10 @@ const requiredSourceMarkers = [
   ["revealed card artwork", /\/assets\/cards\/monster-mutation-01\.webp/],
   ["city benefit labels", /printed city benefit/],
   ["Mutation labels", />MUTATION<\//],
-  ["pointer-drag board controls", /onPointerMove=\{moveMapDrag\}/],
-  ["wheel board zoom", /onWheel=\{zoomMapWithWheel\}/],
-  ["bounded map zoom", /const MAP_ZOOM_MIN = 0\.9;[\s\S]*const MAP_ZOOM_MAX = 1\.75;[\s\S]*function clampMapZoom/],
-  ["bounded map pan", /function clampMapPan[\s\S]*setMapPan\(clampMapPan/],
+  ["pointer-drag board controls", /onPointerMove=\{moveDrag\}/],
+  ["wheel board zoom", /map\.addEventListener\("wheel", wheel, \{ passive: false \}\)/],
+  ["bounded map zoom", /export function clampCamera/],
+  ["bounded map pan", /export function panCamera/],
   ["hover path preview", /onMouseEnter=\{\(\) => \(monsterLegal \|\| unitLegal\)/],
   ["cream die face textures", /\/assets\/dice\/d6-face-\$\{face\}\.webp/],
   ["authoritative die result label", /aria-label=\{label\}/],

@@ -1,0 +1,8 @@
+{
+  "cell": "9/19",
+  "source": "/Users/solomon/.codex/generated_images/01a0a6c4-17b1-7932-8aa6-6df7b6389f80/exec-0b658c56-81d8-4fef-86db-7bda3bcd4bc7.png",
+  "output": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/masters/r9-c19.png",
+  "prompt": "Generate one full-bleed square 1024x1024 top-down terrain texture for North America strategy map cell 9/19. Image 1 is the EXACT composition and crop: retain olive LAND and teal WATER arrangement at the same normalized pixel positions inside its yellow outlined hex, then erase all yellow lines and extend terrain naturally to fill the square outside the invisible hex. Do not zoom, rotate, rearrange, or draw a hex token. Shoreline: North edge to south edge; Land west; sea east. Second image is grass texture reference, third is water texture reference: match their fine painterly texture, muted olive/teal colors and lighting. Make shoreline organic with fine tiny irregularities and a very narrow sand margin while preserving crossings and connectivity exactly. No strong surf, no shadows, no objects, no labels/text, no grid, no border/bevel/rim, no hex outlines. Keep land and sea consistent with adjacent tiles. Feature context: None; any gameplay markers are omitted from terrain.",
+  "generator": "builtin-imagegen",
+  "review": "generated; requires assembled neighbor review"
+}

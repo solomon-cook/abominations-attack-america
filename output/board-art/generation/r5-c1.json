@@ -1,0 +1,12 @@
+{
+  "id": "5/1",
+  "prompt": "Use case: stylized-concept. Create ONE final square seamless terrain cell image for a flat-top North America strategy game, cell 5/1. Input1 guide shows selected CENTER hex outlined yellow and six neighboring cells: use CENTER CELL ONLY, enlarge its bounding box to fill output. Input2 is shared olive-green finely textured terrain STYLE/palette. Input3 is water material/style only: avoid its rim, shadows and holes. Exact shoreline: Through centre from north edge to south edge, land east/right, ocean west/left. Shore contacts x50% at y6.7% and93.3%. San Francisco location, no city buildings, labels or icons; these added by game. Flat-top target hex fits output width, vertices (25%,6.7%),(75%,6.7%),(100%,50%),(75%,93.3%),(25%,93.3%),(0%,50%). Natural gently irregular shore connecting specified contacts. Land olive-green grass like input2; water muted teal #24677c with very fine soft ripples and narrow natural shallows. Strict orthographic overhead, uniform diffuse light, flat continuous terrain plane. Content extends through entire square and beyond invisible hex face, including corners. NO hex boundary, frame, bevel, white margin, drop shadow, grid, text, labels, tokens, buildings, roads or peg holes. Terrain fills image edge-to-edge, no perspective. Produce cell alone not neighborhood.",
+  "referenceImages": [
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/guides/r5-c1.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/masters/land-1.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/apps/web/public/assets/board/coast/coast_0deg.png"
+  ],
+  "sourceImage": "/Users/solomon/.codex/generated_images/01a0a6c4-7b6a-7031-9b71-3ce551b848d4/exec-c770cc74-57bc-408e-a9af-01afd8c56998.png",
+  "model": "built-in imagegen",
+  "status": "generated-awaiting-neighborhood-review"
+}

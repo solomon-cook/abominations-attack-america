@@ -1,0 +1,13 @@
+{
+  "id": "11/5",
+  "prompt": "Create ONE unique square final terrain tile for North America strategy game, cell 11/5. Image1 precise square framing/geometry reference; remove its yellow boundary and triangle lines. Image2 is neighbor-context reference ONLY: output only the one central cell as in image1. Image3 defines exact terrain STYLE/palette. Image4 defines coastline materials only, omit all holes, rim, perspective and shadows. Audited geography: North edge to southeast edge; Land east; sea west.  Match shoreline entry/exit positions of guide at invisible flat-top hex edges. Naturalize polygon corners into soft geographic coast curves, preserving land/water orientation and continuous neighboring coast. Land same olive-green finely textured grass as image3, sea muted teal #24677c with very small soft ripples and narrow pale shallow-water line. Uniform scale/lighting, orthographic overhead, no horizon. Invisible flat-top hex fills square width, top/bottom at6.7/93.3%. Continue terrain past invisible face edges to completely fill square corners; no surrounding background. NO text, labels, grid, frames, borders, bevels, roads, buildings, embossed circles, tokens or cast shadows. One square terrain image, no collage.",
+  "referenceImages": [
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/cell-guides/r11-c5.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/guides/r11-c5.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/masters/land-1.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/apps/web/public/assets/board/coast/coast_0deg.png"
+  ],
+  "sourceImage": "/Users/solomon/.codex/generated_images/01a0a6c4-7b6a-7031-9b71-3ce551b848d4/exec-cbae7f26-a72a-4a96-903f-0ee6cb6dca8a.png",
+  "model": "built-in imagegen",
+  "status": "generated-awaiting-neighborhood-review"
+}

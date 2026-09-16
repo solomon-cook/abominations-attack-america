@@ -1,0 +1,23 @@
+{
+  "pieces": [
+    {
+      "src": "/assets/monsters/tomanagi.webp",
+      "width": 47.914466857910156,
+      "tileWidth": 79.61522674560547,
+      "loaded": true
+    },
+    {
+      "src": "/assets/monsters/zorb.webp",
+      "width": 47.91448974609375,
+      "tileWidth": 79.615234375,
+      "loaded": true
+    }
+  ],
+  "stomp": {
+    "loaded": true,
+    "flag": "true",
+    "accessible": true,
+    "z": "3"
+  },
+  "errors": []
+}

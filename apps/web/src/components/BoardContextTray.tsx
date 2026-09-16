@@ -40,17 +40,17 @@ export function BoardContextTray({ game, board, hex }: Props) {
   ];
   const monsters = game.monsters.filter((monster) => monster.location === hex.key);
   const unresolved = hex.verification !== "verified";
-  const title = hex.label ?? `Hex ${hex.key}`;
+  const title = hex.label ?? (hex.audit ? `Cell ${hex.audit.row}/${hex.audit.column}` : `Hex ${hex.key}`);
 
   return (
     <section className="board-context-tray" aria-label="Active board hex details" aria-live="polite">
       <div className="board-context-heading">
         <span className="label">ACTIVE HEX</span>
         <h3>{title}</h3>
-        <p>q {hex.coord.q}, r {hex.coord.r} · {hex.verification}</p>
+        <p>{hex.audit ? `Cell ${hex.audit.row}/${hex.audit.column}` : `q ${hex.coord.q}, r ${hex.coord.r} · ${hex.verification}`}</p>
       </div>
       <div className="board-context-facts">
-        <span><b>{hex.waterClass}</b> water class</span>
+        <span><b>{hex.waterClass === "seacoast" ? "Coast" : hex.waterClass}</b></span>
         <span><b>{featureLabel(hex)}</b></span>
         <span><b>{occupants.length ? occupants.join(", ") : "Empty"}</b></span>
         <span><b>{neighbours.length}</b> neighbours</span>

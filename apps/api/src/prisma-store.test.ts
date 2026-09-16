@@ -17,10 +17,10 @@ test("durable receipt makes the same action idempotent across store instances", 
   assert.equal(second.events.length, 1);
 });
 
-test("MVP Prisma room creation pins the best-guess honeycomb board", async () => {
+test("MVP Prisma room creation pins the human-audited board", async () => {
   const { adapter } = persistentAdapter();
   const state = createMvpRoomGame(2);
-  assert.equal(state.boardId, "provisional-authoritative-honeycomb-board");
+  assert.equal(state.boardId, "human-audited-north-america");
   assert.equal(state.setupState?.phase, "monster-selection");
   assert.doesNotThrow(() => new PrismaRoomStore(adapter));
 });

@@ -26,11 +26,11 @@ function resolveDevelopmentFight(state: GameState): GameState {
   return next;
 }
 
-test("MVP room creation uses the pinned best-guess honeycomb board", () => {
+test("MVP room creation uses the pinned human-audited board", () => {
   assert.doesNotThrow(() => assertMvpBoardReady());
   const state = createMvpRoomGame(2, 7, "best-guess-mvp");
-  assert.equal(state.boardId, "provisional-authoritative-honeycomb-board");
-  assert.equal(state.boardVersion, 3);
+  assert.equal(state.boardId, "human-audited-north-america");
+  assert.equal(state.boardVersion, 1);
   assert.equal(state.setupState?.phase, "monster-selection");
   assert.equal(state.setupState?.definition.lairsByMonster["monster-1"]?.length, 3);
 });

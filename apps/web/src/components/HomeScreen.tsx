@@ -19,8 +19,8 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartProv
           <h1 id="home-title">Take the city.<br />Become the legend.</h1>
           <p className="lede">A monster strategy game of cities, battles, and bad decisions.</p>
           <div className="home-actions">
-            <button type="button" onClick={onStartLocal}>Start local playtest</button>
-            <button type="button" className="ghost" onClick={onStartProvisionalPlaytest}>Play honeycomb board</button>
+            <button type="button" onClick={onStartLocal}>Start local game</button>
+            <button type="button" className="ghost" onClick={onStartProvisionalPlaytest}>Play audited board</button>
             <button type="button" className="ghost" onClick={onStartVictoryScenario}>Victory test</button>
             <button type="button" className="ghost" onClick={onOpenBoardReview}>Review full board</button>
             <button type="button" className="ghost" onClick={onToggleRules}>Rules</button>

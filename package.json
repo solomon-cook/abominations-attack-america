@@ -1,7 +1,10 @@
 {
   "name": "abominations-attack-america",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "catalogue:verify": "node scripts/generate-component-rules-catalogue.mjs",
     "card-catalogue:verify": "tsx scripts/generate-card-catalogue-report.ts",
@@ -59,6 +62,14 @@
     "prisma:generate": "npm --workspace @abominations/api run prisma:generate",
     "prisma:validate": "prisma validate --config apps/api/prisma.config.ts",
     "prisma:migrate:deploy": "prisma migrate deploy --config apps/api/prisma.config.ts",
-    "prisma:push": "npm --workspace @abominations/api run prisma:push"
+    "prisma:push": "npm --workspace @abominations/api run prisma:push",
+    "board-audit:verify": "node scripts/generate-audited-board.mjs --check",
+    "board-camera:verify": "tsx scripts/verify-board-camera.ts",
+    "board-audited-assets:verify": "node scripts/verify-audited-board-assets.mjs",
+    "browser:audited:verify": "node scripts/verify-browser-audited-board.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0",
+    "sharp": "^0.35.4"
   }
 }

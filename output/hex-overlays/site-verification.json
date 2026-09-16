@@ -1,0 +1,17 @@
+{
+  "cells": 336,
+  "overlays": 122,
+  "lairs": 18,
+  "monsterTypes": [
+    "toxicor lair",
+    "konk lair",
+    "tomanagi lair",
+    "gargantis lair",
+    "zorb lair",
+    "megaclaw lair"
+  ],
+  "broken": [],
+  "fullHex": true,
+  "nonInteractive": true,
+  "errors": []
+}

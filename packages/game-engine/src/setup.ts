@@ -78,7 +78,7 @@ export function createSetup(definition: SetupDefinition): SetupState {
   if (definition.monsterIds.length < definition.playerCount) throw new Error("The verified monster catalogue has too few entries for this match.");
   if (new Set(definition.monsterIds).size !== definition.monsterIds.length) throw new Error("The setup monster catalogue contains duplicates.");
   if (new Set(definition.eligibleBranches).size !== definition.eligibleBranches.length) throw new Error("The setup branch catalogue contains duplicates.");
-  for (const monsterId of definition.monsterIds.slice(0, definition.playerCount)) {
+  for (const monsterId of definition.monsterIds) {
     const lairs = definition.lairsByMonster[monsterId] ?? [];
     if (lairs.length !== 3 || new Set(lairs).size !== 3) throw new Error(`Monster ${monsterId} must have exactly three distinct verified lairs.`);
   }

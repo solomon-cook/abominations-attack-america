@@ -1,0 +1,12 @@
+{
+  "tool": "image_gen",
+  "sourceImage": "/Users/solomon/.codex/generated_images/01a0a6bf-3a8a-7571-b351-dfd75d04ff60/exec-c95735ff-eed1-4de4-8651-d00c764df110.png",
+  "referenceImage": "output/board-art/assembled-board.png",
+  "promptSummary": "Edit the assembled map into continuous olive-green and teal-blue terrain. Preserve exact extent, orientation, continent, coast and lake positions. Remove hex colour patches, repair small shoreline gaps and triangular cutouts especially Baja and Great Lakes, retain Florida and Baja connections, remove edge glitches. No labels, grid, buildings or shadows. Requested 3456 by 2384.",
+  "promptRecord": "Summary recovered from generation turn; not a verbatim prompt.",
+  "actualDimensions": [
+    1511,
+    1041
+  ],
+  "status": "awaiting-geography-review"
+}

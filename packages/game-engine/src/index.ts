@@ -1,4 +1,6 @@
 export * from "./board.js";
+export * from "./audited-board.js";
+import { AUDITED_BOARD } from "./audited-board.js";
 export * from "./cards.js";
 export * from "./setup.js";
 import { buildBoardIndex, DEVELOPMENT_BOARD, DEVELOPMENT_LOCATIONS, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, hexKeyToLocationId, isHexKey, locationIdToHexKey, toDevelopmentSpaceKey, validateBoardDefinition, type BoardDefinition, type BoardFeature, type HexKey, type SpaceKey, type WaterClass } from "./board.js";
@@ -585,7 +587,7 @@ export const locations = DEVELOPMENT_LOCATIONS;
 
 /** Resolve the immutable board selected by a match; never silently fall back to the fixture. */
 export function boardForState(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash">): BoardDefinition {
-  const candidates = [DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD];
+  const candidates = [DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, AUDITED_BOARD];
   const board = candidates.find((candidate) => candidate.id === state.boardId
     && candidate.version === state.boardVersion
     && candidate.contentHash === state.boardContentHash);
@@ -602,7 +604,8 @@ function developmentKey(value: string): HexKey {
 function canonicalPath(path: readonly string[], board: BoardDefinition = DEVELOPMENT_BOARD): HexKey[] | undefined {
   try {
     return path.map((space) => {
-      const key = locationIdToHexKey(space) ?? (toDevelopmentSpaceKey(space) as HexKey | undefined) ?? (isHexKey(space) ? space : undefined);
+      const key = board.id === AUDITED_BOARD.id ? (isHexKey(space) ? space : undefined)
+        : locationIdToHexKey(space) ?? (toDevelopmentSpaceKey(space) as HexKey | undefined) ?? (isHexKey(space) ? space : undefined);
       if (!key || !board.hexes[key]) throw new Error("unknown board space");
       return key;
     });
@@ -738,22 +741,35 @@ export function createRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `deve
   return state;
 }
 
-/**
- * Provisional production promotion gate for the explicitly versioned
- * best-guess honeycomb board. The board is immutable and match-pinned; strict
- * verified-board validation remains available for the future source-faithful
- * board version.
- */
+/** The completed human audit is the default for newly created matches. */
 export function assertMvpBoardReady(): void {
-  const errors = validateBoardDefinition(PROVISIONAL_AUTHORITATIVE_BOARD, { production: true, allowProvisional: true });
-  if (errors.length > 0) throw new GameDomainError("ILLEGAL_COMMAND", `MVP best-guess board is not playable: ${errors.length} structural validation errors.`);
+  const errors = validateBoardDefinition(AUDITED_BOARD, { production: true });
+  if (errors.length > 0) throw new GameDomainError("ILLEGAL_COMMAND", `Audited board is not playable: ${errors.join("; ")}`);
+}
+
+export function auditedSetupDefinition(playerCount: 2 | 3 | 4): SetupDefinition {
+  return {
+    playerCount,
+    monsterIds: monsters.map((monster) => monster.id),
+    eligibleBranches: ["Army", "Navy", "Air Force", "Marines"],
+    lairsByMonster: Object.fromEntries(monsters.map((monster) => [monster.id,
+      Object.values(AUDITED_BOARD.hexes).filter((hex) => hex.features.some((feature) => feature.kind === "lair" && feature.monsterId === monster.name.toLowerCase())).map((hex) => hex.key),
+    ])),
+  };
 }
 
 export function createMvpRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `mvp-room-${playerCount}-${seed >>> 0}`): GameState {
   assertMvpBoardReady();
-  const state = createProvisionalPlaytestGame(playerCount, seed, matchId);
-  state.setupState = createSetup(provisionalMvpSetupDefinition(playerCount));
-  state.log.unshift("MVP best-guess honeycomb board. Labels, terrain, barriers, feature positions, and lairs remain provisional and replaceable.");
+  const state = createGame(playerCount, seed, matchId);
+  state.boardId = AUDITED_BOARD.id;
+  state.boardVersion = AUDITED_BOARD.version;
+  state.boardContentHash = AUDITED_BOARD.contentHash;
+  state.rulesetVersion = AUDITED_BOARD.rulesetVersion;
+  state.setupState = createSetup(auditedSetupDefinition(playerCount));
+  state.monsters = state.monsters.map((monster) => ({ ...monster, location: state.setupState!.definition.lairsByMonster[monster.id][0] as HexKey }));
+  state.units = state.units.map((unit) => ({ ...unit, location: "record-tile" }));
+  state.log = ["Human-audited North America board. Choose monsters, branches and their printed lairs to begin."];
+  assertInventoryAccounting(state);
   return state;
 }
 
@@ -779,10 +795,8 @@ export function createGameFromSetup(setup: SetupState, seed = 0): GameState {
 }
 
 /**
- * Materialize the choices made by the setup state machine into a playable
- * development/provisional match. This is intentionally limited to the
- * explicitly labelled MVP fixture; verified physical-board setup remains
- * source-gated.
+ * Materialize setup choices on the match-pinned board. Audited games offer the
+ * complete monster catalogue and use the selected monsters' printed lairs.
  */
 export function applyCompletedSetup(state: GameState): GameState {
   if (!state.setupState || state.setupState.phase !== "complete" || state.setupApplied) return state;
@@ -792,6 +806,16 @@ export function applyCompletedSetup(state: GameState): GameState {
   if (!completedSetup) return next;
   next.setupAssignments = structuredClone(completedSetup.seats);
   const board = boardForState(next);
+  if (board.id === AUDITED_BOARD.id) {
+    next.monsters = next.setupAssignments.map((assignment) => {
+      const selected = monsters.find((monster) => monster.id === assignment.monsterId);
+      if (!selected) throw new GameDomainError("ILLEGAL_COMMAND", "Setup monster is not in the catalogue.");
+      return { ...selected };
+    });
+    next.units = next.units.map((unit) => ({ ...unit,
+      ownerPlayer: next.setupAssignments!.find((assignment) => assignment.branch === unit.branch)?.playerIndex ?? unit.ownerPlayer,
+    }));
+  }
   const normalizeLocation = (value: string): HexKey => {
     if (isHexKey(value) && board.hexes[value]) return value;
     const development = locationIdToHexKey(value);
@@ -833,7 +857,7 @@ export function applyCompletedSetup(state: GameState): GameState {
   next.phase = "move";
   next.currentPlayer = 0;
   next.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: next.monsters[0]!.id };
-  next.log.unshift("Setup choices applied. The provisional match is ready for Move.");
+  next.log.unshift("Setup choices applied. The match is ready for Move.");
   return next;
 }
 
@@ -845,8 +869,8 @@ export function getLocation(id: string) {
 function waterClassAllowed(movement: MonsterMovement | UnitMovement, waterClass: WaterClass): boolean {
   if (waterClass === "unresolved") return false;
   if (movement === "fly") return true;
-  if (movement === "land-only") return waterClass === "land" || waterClass === "seacoast";
-  if (movement === "land-lake") return waterClass === "land" || waterClass === "lake" || waterClass === "seacoast";
+  if (movement === "land-only") return waterClass === "land" || waterClass === "seacoast" || waterClass === "lakeshore";
+  if (movement === "land-lake") return waterClass === "land" || waterClass === "lake" || waterClass === "seacoast" || waterClass === "lakeshore";
   if (movement === "land-lake-sea") return true;
   if (movement === "sea-seacoast-only" || movement === "sea-seacoast-or-fly") return waterClass === "sea" || waterClass === "seacoast";
   return false;
@@ -1019,7 +1043,7 @@ export function moveUnit(state: GameState, unitId: string, path: string[]): Game
     if (existing) existing.militaryUnitIds = [...new Set([...existing.militaryUnitIds, unitId])];
     else next.pendingBattles = [...next.pendingBattles, { id: `${monster.id}:${next.round}:${destination}`, monsterId: monster.id, location: destination, militaryUnitIds: [unitId] }];
   }
-  next.log.push(`${unit.branch} unit moved to ${getLocation(destination)?.name}.`);
+  next.log.push(`${unit.branch} unit moved to ${board.hexes[destination]?.label ?? destination}.`);
   return next;
 }
 
@@ -1067,7 +1091,7 @@ export function moveMonster(state: GameState, monsterId: string, path: string[])
   next.pendingDecision = next.pendingBattles[0]
     ? { type: "battle-resolution", playerIndex: next.currentPlayer, battleId: next.pendingBattles[0].id }
     : { type: "encounter-resolution", playerIndex: next.currentPlayer, location: destination };
-  next.log.push(`${monster.name} moved to ${getLocation(destination)?.name}.${returnedGuardIds.length > 0 ? " Kinda Friendly returned National Guard units to their record tile." : " Fight any units in the space."}`);
+  next.log.push(`${monster.name} moved to ${board.hexes[destination]?.label ?? destination}.${returnedGuardIds.length > 0 ? " Kinda Friendly returned National Guard units to their record tile." : " Fight any units in the space."}`);
   return next;
 }
 
@@ -1931,7 +1955,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
   const next = structuredClone(state);
   if (!Array.isArray(next.stompedLocations)) next.stompedLocations = [];
   const monster = next.monsters[next.currentPlayer];
-  const place = getLocation(monster.location);
+  const place = board.id === DEVELOPMENT_BOARD.id ? getLocation(monster.location) : undefined;
   const effects: Array<Readonly<{ type: "health" | "infamy" | "stomp"; amount: number; source: string }>> = [];
   const rolls: number[] = [];
   const mutationDraws: Array<Readonly<{ siteId: string; cardDrawn: boolean; effectStatus: "implemented" | "source-gated" | "none" }>> = [];
@@ -2032,7 +2056,7 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
       return { state: next, effects, rolls, mutationDraws };
     }
   }
-  next.log.push(`${monster.name} encountered ${place?.name}.`);
+  next.log.push(`${monster.name} encountered ${board.hexes[canonicalLocationKey]?.label ?? canonicalLocationKey}.`);
   const developmentBoardExhausted = next.developmentScenario === "temporary-victory"
     ? DEVELOPMENT_STOMPABLE_KEYS.every((key) => next.stompedLocations.includes(key))
     : next.rulesetVersion === "prototype-0.1" && locations.every((location) => next.stompedLocations.includes(locationIdToHexKey(location.id)!));
@@ -2477,10 +2501,13 @@ function prepareMonsterForTurn(state: GameState): { monsterId: string; recoveryR
     if (monster.health < 5) {
       state.log.push(`${monster.name} recovered ${roll} Health in Hollywood but remains there.`);
     } else {
-      const losAngeles = developmentKey("los-angeles");
+      const board = boardForState(state);
+      const losAngeles = board.id === DEVELOPMENT_BOARD.id ? developmentKey("los-angeles")
+        : Object.values(board.hexes).find((hex) => hex.features.some((feature) => feature.kind === "los-angeles"))?.key;
+      if (!losAngeles) throw new GameDomainError("ILLEGAL_COMMAND", "Active board has no Los Angeles destination.");
       const assignment = state.setupAssignments?.find((seat) => seat.monsterId === monster.id);
       const destination = state.monsters.some((candidate) => candidate.id !== monster.id && candidate.location === losAngeles)
-        ? assignment?.lair ? developmentKey(assignment.lair) : undefined
+        ? assignment?.lair ? canonicalPath([assignment.lair], boardForState(state))?.[0] : undefined
         : losAngeles;
       if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", "A Hollywood monster needs a verified lair when Los Angeles is occupied.");
       monster.location = destination;
@@ -2490,7 +2517,9 @@ function prepareMonsterForTurn(state: GameState): { monsterId: string; recoveryR
   } else if (monster.location === "disappeared") {
     const assignment = state.setupAssignments?.find((seat) => seat.monsterId === monster.id);
     if (!assignment?.lair) throw new GameDomainError("ILLEGAL_COMMAND", "A disappeared monster cannot return without a verified setup lair.");
-    monster.location = developmentKey(assignment.lair);
+    const lair = canonicalPath([assignment.lair], boardForState(state))?.[0];
+    if (!lair) throw new GameDomainError("ILLEGAL_COMMAND", "Assigned lair is not on the active board.");
+    monster.location = lair;
     if (monster.health < monster.startingHealth) monster.health = monster.startingHealth;
     returnedFromLair = true;
     state.log.push(`${monster.name} returned to its lair${monsterHasMutation(state, monster, "Rampage") ? " and may move through Rampage" : " for the entire Move step"}.`);

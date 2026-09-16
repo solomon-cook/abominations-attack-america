@@ -8,8 +8,9 @@ import {
   chooseStartingChoice,
   createGame,
   createDevelopmentVictoryGame,
-  createProvisionalPlaytestGame,
-  createGameFromSetup,
+  createMvpRoomGame,
+  applyCompletedSetup,
+  AUDITED_BOARD,
   FULL_HONEYCOMB_BOARD,
   PROVISIONAL_AUTHORITATIVE_BOARD,
   isHexKey,
@@ -61,6 +62,7 @@ import { TurnPrompt } from "./components/TurnPrompt";
 import { TurnProgress } from "./components/TurnProgress";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
+import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
 import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
@@ -72,22 +74,7 @@ import { playSound, type SoundCategory } from "./audio";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
 import "./fullscreen-shell.css";
-
-const MAP_ZOOM_MIN = 0.9;
-const MAP_ZOOM_MAX = 1.75;
-const MAP_PAN_STEP = 8;
-
-function clampMapPan(pan: { x: number; y: number }, zoom: number) {
-  const extent = Math.max(0, (zoom - 1) * 50);
-  return {
-    x: Math.max(-extent, Math.min(extent, pan.x)),
-    y: Math.max(-extent, Math.min(extent, pan.y)),
-  };
-}
-
-function clampMapZoom(zoom: number) {
-  return Math.max(MAP_ZOOM_MIN, Math.min(MAP_ZOOM_MAX, Number(zoom.toFixed(2))));
-}
+import "./board-terrain.css";
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -133,8 +120,6 @@ function safeStoredNumber(key: string, fallback: number): number {
 
 function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapDragRef = useRef<{ pointerId: number; x: number; y: number; panX: number; panY: number } | null>(null);
   const [game, setGame] = useState<GameState>(() => createGame(2));
   const [localPlaytestStarted, setLocalPlaytestStarted] = useState(false);
   const [session, setSession] = useState<SessionResponse | null>(null);
@@ -161,8 +146,6 @@ function App() {
   const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
   const [focusedHexKey, setFocusedHexKey] = useState<HexKey | null>(null);
   const [retreatChoices, setRetreatChoices] = useState<Record<string, HexKey | "disappeared">>({});
-  const [mapZoom, setMapZoom] = useState(1);
-  const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
   const [onboardingOpen, setOnboardingOpen] = useState(() => safeStorageGet("abominations-onboarding-seen") !== "1");
   const [homeRulesOpen, setHomeRulesOpen] = useState(false);
   const [boardReviewOpen, setBoardReviewOpen] = useState(false);
@@ -186,7 +169,6 @@ function App() {
   const activeGame = room?.state ?? game;
   const activePlayer = activeGame.monsters[activeGame.currentPlayer];
   const activeLocation = getLocation(activePlayer.location);
-  const cameraMode = mapZoom >= 1.25 ? "Tactical detail" : "Strategic overview";
   const activeBoard = boardForGame(activeGame);
   const activeBoardHex = activeBoard && isHexKey(activePlayer.location) ? activeBoard.hexes[activePlayer.location] : undefined;
   const focusedBoardHex = focusedHexKey && activeBoard?.hexes[focusedHexKey] ? activeBoard.hexes[focusedHexKey] : activeBoardHex;
@@ -330,12 +312,14 @@ function App() {
     !pendingAction &&
     activeGame.phase !== "game-over" &&
     (!online ||
-      (participant?.role === "player" &&
+      (room?.status === "active" && participant?.role === "player" &&
         participant.playerIndex === decisionPlayer));
   const unavailableReason = pendingAction
     ? "Waiting for the server."
     : !setupComplete
       ? "Complete setup before taking a gameplay action."
+      : online && room?.status === "waiting"
+        ? "Waiting for all players to press Ready."
       : online && participant?.role !== "player"
         ? "Spectators can follow the match but cannot submit actions."
         : online && participant?.playerIndex !== decisionPlayer
@@ -360,44 +344,21 @@ function App() {
         : activeGame.phase === "deploy"
           ? { label: "Pass deployment", command: { type: "pass-deploy" } as GameCommand }
           : { label: "Match complete", command: undefined };
-  const resetMapView = () => {
-    setMapZoom(1);
-    setMapPan({ x: 0, y: 0 });
-  };
-  const panMap = (x: number, y: number) => setMapPan((current) => clampMapPan({ x: current.x + x, y: current.y + y }, mapZoom));
-  const setClampedMapZoom = (nextZoom: number) => {
-    const zoom = clampMapZoom(nextZoom);
-    setMapZoom(zoom);
-    setMapPan((current) => clampMapPan(current, zoom));
-  };
-  const startMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
-    mapDragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, panX: mapPan.x, panY: mapPan.y };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-  const moveMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    const drag = mapDragRef.current;
-    const map = mapRef.current;
-    if (!drag || drag.pointerId !== event.pointerId || !map) return;
-    const bounds = map.getBoundingClientRect();
-    setMapPan(clampMapPan({
-      x: drag.panX + ((event.clientX - drag.x) / bounds.width) * 100,
-      y: drag.panY + ((event.clientY - drag.y) / bounds.height) * 100,
-    }, mapZoom));
-  };
-  const endMapDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (mapDragRef.current?.pointerId !== event.pointerId) return;
-    mapDragRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-  };
-  const zoomMapWithWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setClampedMapZoom(mapZoom + (event.deltaY < 0 ? .1 : -.1));
-  };
 
   useEffect(() => {
-    actionHeadingRef.current?.focus();
+    actionHeadingRef.current?.focus({ preventScroll: true });
   }, [activeGame.phase, activeGame.round, room?.version, localPlaytestStarted]);
+  useEffect(() => {
+    if (!settingsOpen && !onboardingOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const selector = settingsOpen ? ".settings-panel" : ".onboarding";
+    document.querySelector<HTMLElement>(`${selector} button, ${selector} input`)?.focus({ preventScroll: true });
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setSettingsOpen(false); setOnboardingOpen(false); }
+    };
+    window.addEventListener("keydown", close);
+    return () => { window.removeEventListener("keydown", close); previous?.focus({ preventScroll: true }); };
+  }, [settingsOpen, onboardingOpen]);
   useEffect(() => {
     // Setup is intentionally panel-open, but gameplay should return to the
     // board-first presentation as soon as the authoritative setup completes.
@@ -651,7 +612,7 @@ function App() {
 
   const applyLocalSetup = (next: SetupState) => {
     setLocalSetup(next);
-    if (next.phase === "complete") setGame(createGameFromSetup(next));
+    setGame((current) => { const updated = { ...current, setupState: next }; return next.phase === "complete" ? applyCompletedSetup(updated) : updated; });
   };
   const chooseSetupOption = async (value: string) => {
     if (
@@ -714,7 +675,7 @@ function App() {
             ? Object.values(board.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch))?.key
             : undefined;
           if (!branch || !unit || !destination) {
-            throw new Error("This branch has no provisional base available for initial deployment.");
+            throw new Error("This branch has no base available for initial deployment.");
           }
           return { kind, unitId: unit.id, destination } as const;
         })();
@@ -739,8 +700,9 @@ function App() {
   };
   const changePlayerCount = (value: 2 | 3 | 4) => {
     setPlayerCount(value);
-    setLocalSetup(createDevelopmentSetup(value));
-    setGame(createGame(value));
+    const next = createMvpRoomGame(value);
+    setLocalSetup(next.setupState!);
+    setGame(next);
   };
   const resetLocal = () => {
     setLocalPlaytestStarted(true);
@@ -753,8 +715,9 @@ function App() {
     setRoom(null);
     setError("");
     setPlayerCount(2);
-    setLocalSetup(createDevelopmentSetup(2));
-    setGame(createGame(2));
+    const next = createMvpRoomGame(2);
+    setLocalSetup(next.setupState!);
+    setGame(next);
     localStorage.removeItem("abominations-session");
   };
   const startTemporaryVictoryScenario = () => {
@@ -769,18 +732,7 @@ function App() {
     setGame(createDevelopmentVictoryGame());
     localStorage.removeItem("abominations-session");
   };
-  const startProvisionalPlaytest = () => {
-    setLocalPlaytestStarted(true);
-    setOnboardingOpen(false);
-    setGamePanelOpen(false);
-    setSession(null);
-    setRoom(null);
-    setError("");
-    setPlayerCount(2);
-    setLocalSetup(createCompletedDevelopmentSetup());
-    setGame(createProvisionalPlaytestGame(2));
-    localStorage.removeItem("abominations-session");
-  };
+  const startProvisionalPlaytest = resetLocal;
   const leaveRoom = async () => {
     if (session && room) {
       try {
@@ -959,10 +911,10 @@ function App() {
   }
 
   const renderedBoard = boardForGame(activeGame);
-  const fullBoardVerified = renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
+  const fullBoardVerified = (renderedBoard?.id === AUDITED_BOARD.id || renderedBoard?.id === FULL_HONEYCOMB_BOARD.id)
     && Object.values(renderedBoard.hexes).every((hex) => hex.verification === "verified");
   const boardDescription = fullBoardVerified
-    ? "The reviewed honeycomb board is playable where rules allow."
+    ? "The complete 336-cell human-audited North America board is active. Movement follows its printed features and water barriers."
     : renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
       ? "The full honeycomb coordinate shell is unresolved review tooling and is not a playable board. Physical cell data is still being transcribed."
       : renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
@@ -983,24 +935,28 @@ function App() {
       <header>
         <div>
           <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · WEB PLAYTEST</p>
-          <h1>Take the city. Become the legend.</h1>
+          <h1>Abominations Attack America</h1>
           <p className="lede">A monster strategy game of cities, battles, and bad decisions.</p>
         </div>
         <div className="header-actions">
           <button className="ghost game-panel-toggle" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="game-side-panel">
             {gamePanelOpen ? "Hide details" : "Show details"}
           </button>
-          <button className="ghost" onClick={() => setOnboardingOpen(true)}>
+          <button className="ghost" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>
             How to play
           </button>
-          <button className="ghost" onClick={() => setSettingsOpen((open) => !open)} aria-expanded={settingsOpen}>
+          <button className="ghost" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>
             Settings
           </button>
           <button className="ghost" onClick={resetLocal}>
-            Development playtest
+            New local game
           </button>
+          {online && <span className="room-hud-status" role="status">{room?.code} · {connectionState}</span>}
+          {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
+          {online && <button className="ghost" onClick={leaveRoomSafely}>Leave room</button>}
         </div>
       </header>
+      {error && <p className="error global-game-error" role="alert">{error}</p>}
       <LobbyPanel
         online={online}
         room={room}
@@ -1047,6 +1003,7 @@ function App() {
       {activeSetup && (
         <SetupPanel
           activeSetup={activeSetup}
+          board={renderedBoard}
           setupSeat={setupSeat}
           online={online}
           playerIndex={participant?.playerIndex}
@@ -1080,35 +1037,7 @@ function App() {
                 : `PLAYER ${activeGame.currentPlayer + 1}`}
             </span>
           </div>
-          <div className="map-controls" aria-label="Board view controls">
-            <span className="label">BOARD VIEW</span>
-            <button type="button" aria-label="Pan board left" onClick={() => panMap(-MAP_PAN_STEP, 0)}>←</button>
-            <button type="button" aria-label="Pan board up" onClick={() => panMap(0, -MAP_PAN_STEP)}>↑</button>
-            <button type="button" aria-label="Pan board down" onClick={() => panMap(0, MAP_PAN_STEP)}>↓</button>
-            <button type="button" aria-label="Pan board right" onClick={() => panMap(MAP_PAN_STEP, 0)}>→</button>
-            <button type="button" aria-label="Zoom board out" onClick={() => setClampedMapZoom(mapZoom - .25)}>−</button>
-            <span className="map-zoom" aria-live="polite">{Math.round(mapZoom * 100)}%</span>
-            <button type="button" aria-label="Zoom board in" onClick={() => setClampedMapZoom(mapZoom + .25)}>+</button>
-            <span className="map-camera-mode" aria-live="polite">{cameraMode}</span>
-            <button type="button" className="map-reset" onClick={resetMapView}>Fit / reset</button>
-          </div>
-          <div
-            ref={mapRef}
-            className="map"
-            role="group"
-            aria-label="Board coordinate shell"
-            aria-describedby="board-description"
-            data-board-id={activeGame.boardId}
-            data-board-content-hash={activeGame.boardContentHash}
-            data-rendered-board-id={renderedBoard?.id ?? "unavailable"}
-            data-rendered-board-content-hash={renderedBoard?.contentHash ?? "unavailable"}
-            onPointerDown={startMapDrag}
-            onPointerMove={moveMapDrag}
-            onPointerUp={endMapDrag}
-            onPointerCancel={endMapDrag}
-            onWheel={zoomMapWithWheel}
-          >
-            <div className="map-canvas" style={{ transform: `translate(${mapPan.x}%, ${mapPan.y}%) scale(${mapZoom})` }}>
+          <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
             <HexGrid
               game={activeGame}
               activePlayerId={activePlayer.id}
@@ -1136,8 +1065,7 @@ function App() {
               onPreviewPath={previewPath}
               onClearPreview={() => setHoveredPath([])}
             />
-            </div>
-          </div>
+          </BoardViewport>
           <div className="board-action-bar">
             <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
           </div>

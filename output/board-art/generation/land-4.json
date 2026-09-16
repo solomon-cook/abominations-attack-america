@@ -1,0 +1,8 @@
+{
+  "tool": "image_gen",
+  "sourcePath": "output/board-art/masters/land-4.png",
+  "promptSpecification": "Reusable olive-green inland grass terrain variation, seamless orthographic top-down, diffuse light, no labels, rims, bevels or cast shadows.",
+  "exactPromptUnavailable": true,
+  "variation": 4,
+  "status": "generated-source-preserved"
+}

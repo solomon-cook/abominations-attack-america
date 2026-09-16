@@ -1,0 +1,2023 @@
+{
+  "version": 1,
+  "boardId": "human-audited-north-america",
+  "sourceSha256": "34c9ac6d7f51f3f067cbdd30a4cfbdad32edf4ab0a6f11f43f744a2b3598f952",
+  "cells": {
+    "0,0": {
+      "cellId": "0/0",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "0,1": {
+      "cellId": "1/0",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "0,2": {
+      "cellId": "2/0",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "0,3": {
+      "cellId": "3/0",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "0,4": {
+      "cellId": "4/0",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "0,5": {
+      "cellId": "5/0",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "0,6": {
+      "cellId": "6/0",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "0,7": {
+      "cellId": "7/0",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "0,8": {
+      "cellId": "8/0",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "0,9": {
+      "cellId": "9/0",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "0,10": {
+      "cellId": "10/0",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "0,11": {
+      "cellId": "11/0",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "0,12": {
+      "cellId": "12/0",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "0,13": {
+      "cellId": "13/0",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "1,0": {
+      "cellId": "0/1",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "1,1": {
+      "cellId": "1/1",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "1,2": {
+      "cellId": "2/1",
+      "asset": "r2-c1",
+      "unique": true,
+      "src": "/assets/board/audited/256/r2-c1.webp"
+    },
+    "1,3": {
+      "cellId": "3/1",
+      "asset": "r3-c1",
+      "unique": true,
+      "src": "/assets/board/audited/256/r3-c1.webp"
+    },
+    "1,4": {
+      "cellId": "4/1",
+      "asset": "r4-c1",
+      "unique": true,
+      "src": "/assets/board/audited/256/r4-c1.webp"
+    },
+    "1,5": {
+      "cellId": "5/1",
+      "asset": "r5-c1",
+      "unique": true,
+      "src": "/assets/board/audited/256/r5-c1.webp"
+    },
+    "1,6": {
+      "cellId": "6/1",
+      "asset": "r6-c1",
+      "unique": true,
+      "src": "/assets/board/audited/256/r6-c1.webp"
+    },
+    "1,7": {
+      "cellId": "7/1",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "1,8": {
+      "cellId": "8/1",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "1,9": {
+      "cellId": "9/1",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "1,10": {
+      "cellId": "10/1",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "1,11": {
+      "cellId": "11/1",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "1,12": {
+      "cellId": "12/1",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "1,13": {
+      "cellId": "13/1",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "2,-1": {
+      "cellId": "0/2",
+      "asset": "r0-c2",
+      "unique": true,
+      "src": "/assets/board/audited/256/r0-c2.webp"
+    },
+    "2,0": {
+      "cellId": "1/2",
+      "asset": "r1-c2",
+      "unique": true,
+      "src": "/assets/board/audited/256/r1-c2.webp"
+    },
+    "2,1": {
+      "cellId": "2/2",
+      "asset": "r2-c2",
+      "unique": true,
+      "src": "/assets/board/audited/256/r2-c2.webp"
+    },
+    "2,2": {
+      "cellId": "3/2",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "2,3": {
+      "cellId": "4/2",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "2,4": {
+      "cellId": "5/2",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "2,5": {
+      "cellId": "6/2",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "2,6": {
+      "cellId": "7/2",
+      "asset": "r7-c2",
+      "unique": true,
+      "src": "/assets/board/audited/256/r7-c2.webp"
+    },
+    "2,7": {
+      "cellId": "8/2",
+      "asset": "r8-c2",
+      "unique": true,
+      "src": "/assets/board/audited/256/r8-c2.webp"
+    },
+    "2,8": {
+      "cellId": "9/2",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "2,9": {
+      "cellId": "10/2",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "2,10": {
+      "cellId": "11/2",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "2,11": {
+      "cellId": "12/2",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "2,12": {
+      "cellId": "13/2",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "3,-1": {
+      "cellId": "0/3",
+      "asset": "r0-c3",
+      "unique": true,
+      "src": "/assets/board/audited/256/r0-c3.webp"
+    },
+    "3,0": {
+      "cellId": "1/3",
+      "asset": "r1-c3",
+      "unique": true,
+      "src": "/assets/board/audited/256/r1-c3.webp"
+    },
+    "3,1": {
+      "cellId": "2/3",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "3,2": {
+      "cellId": "3/3",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "3,3": {
+      "cellId": "4/3",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "3,4": {
+      "cellId": "5/3",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "3,5": {
+      "cellId": "6/3",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "3,6": {
+      "cellId": "7/3",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "3,7": {
+      "cellId": "8/3",
+      "asset": "r8-c3",
+      "unique": true,
+      "src": "/assets/board/audited/256/r8-c3.webp"
+    },
+    "3,8": {
+      "cellId": "9/3",
+      "asset": "r9-c3",
+      "unique": true,
+      "src": "/assets/board/audited/256/r9-c3.webp"
+    },
+    "3,9": {
+      "cellId": "10/3",
+      "asset": "r10-c3",
+      "unique": true,
+      "src": "/assets/board/audited/256/r10-c3.webp"
+    },
+    "3,10": {
+      "cellId": "11/3",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "3,11": {
+      "cellId": "12/3",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "3,12": {
+      "cellId": "13/3",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "4,-2": {
+      "cellId": "0/4",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "4,-1": {
+      "cellId": "1/4",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "4,0": {
+      "cellId": "2/4",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "4,1": {
+      "cellId": "3/4",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "4,2": {
+      "cellId": "4/4",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "4,3": {
+      "cellId": "5/4",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "4,4": {
+      "cellId": "6/4",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "4,5": {
+      "cellId": "7/4",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "4,6": {
+      "cellId": "8/4",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "4,7": {
+      "cellId": "9/4",
+      "asset": "r9-c4",
+      "unique": true,
+      "src": "/assets/board/audited/256/r9-c4.webp"
+    },
+    "4,8": {
+      "cellId": "10/4",
+      "asset": "r10-c4",
+      "unique": true,
+      "src": "/assets/board/audited/256/r10-c4.webp"
+    },
+    "4,9": {
+      "cellId": "11/4",
+      "asset": "r11-c4",
+      "unique": true,
+      "src": "/assets/board/audited/256/r11-c4.webp"
+    },
+    "4,10": {
+      "cellId": "12/4",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "4,11": {
+      "cellId": "13/4",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "5,-2": {
+      "cellId": "0/5",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "5,-1": {
+      "cellId": "1/5",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "5,0": {
+      "cellId": "2/5",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "5,1": {
+      "cellId": "3/5",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "5,2": {
+      "cellId": "4/5",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "5,3": {
+      "cellId": "5/5",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "5,4": {
+      "cellId": "6/5",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "5,5": {
+      "cellId": "7/5",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "5,6": {
+      "cellId": "8/5",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "5,7": {
+      "cellId": "9/5",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "5,8": {
+      "cellId": "10/5",
+      "asset": "r10-c5",
+      "unique": true,
+      "src": "/assets/board/audited/256/r10-c5.webp"
+    },
+    "5,9": {
+      "cellId": "11/5",
+      "asset": "r11-c5",
+      "unique": true,
+      "src": "/assets/board/audited/256/r11-c5.webp"
+    },
+    "5,10": {
+      "cellId": "12/5",
+      "asset": "r12-c5",
+      "unique": true,
+      "src": "/assets/board/audited/256/r12-c5.webp"
+    },
+    "5,11": {
+      "cellId": "13/5",
+      "asset": "r13-c5",
+      "unique": true,
+      "src": "/assets/board/audited/256/r13-c5.webp"
+    },
+    "6,-3": {
+      "cellId": "0/6",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "6,-2": {
+      "cellId": "1/6",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "6,-1": {
+      "cellId": "2/6",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "6,0": {
+      "cellId": "3/6",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "6,1": {
+      "cellId": "4/6",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "6,2": {
+      "cellId": "5/6",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "6,3": {
+      "cellId": "6/6",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "6,4": {
+      "cellId": "7/6",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "6,5": {
+      "cellId": "8/6",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "6,6": {
+      "cellId": "9/6",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "6,7": {
+      "cellId": "10/6",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "6,8": {
+      "cellId": "11/6",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "6,9": {
+      "cellId": "12/6",
+      "asset": "r12-c6",
+      "unique": true,
+      "src": "/assets/board/audited/256/r12-c6.webp"
+    },
+    "6,10": {
+      "cellId": "13/6",
+      "asset": "r13-c6",
+      "unique": true,
+      "src": "/assets/board/audited/256/r13-c6.webp"
+    },
+    "7,-3": {
+      "cellId": "0/7",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "7,-2": {
+      "cellId": "1/7",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "7,-1": {
+      "cellId": "2/7",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "7,0": {
+      "cellId": "3/7",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "7,1": {
+      "cellId": "4/7",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "7,2": {
+      "cellId": "5/7",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "7,3": {
+      "cellId": "6/7",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "7,4": {
+      "cellId": "7/7",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "7,5": {
+      "cellId": "8/7",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "7,6": {
+      "cellId": "9/7",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "7,7": {
+      "cellId": "10/7",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "7,8": {
+      "cellId": "11/7",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "7,9": {
+      "cellId": "12/7",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "7,10": {
+      "cellId": "13/7",
+      "asset": "r13-c7",
+      "unique": true,
+      "src": "/assets/board/audited/256/r13-c7.webp"
+    },
+    "8,-4": {
+      "cellId": "0/8",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "8,-3": {
+      "cellId": "1/8",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "8,-2": {
+      "cellId": "2/8",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "8,-1": {
+      "cellId": "3/8",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "8,0": {
+      "cellId": "4/8",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "8,1": {
+      "cellId": "5/8",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "8,2": {
+      "cellId": "6/8",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "8,3": {
+      "cellId": "7/8",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "8,4": {
+      "cellId": "8/8",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "8,5": {
+      "cellId": "9/8",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "8,6": {
+      "cellId": "10/8",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "8,7": {
+      "cellId": "11/8",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "8,8": {
+      "cellId": "12/8",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "8,9": {
+      "cellId": "13/8",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "9,-4": {
+      "cellId": "0/9",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "9,-3": {
+      "cellId": "1/9",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "9,-2": {
+      "cellId": "2/9",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "9,-1": {
+      "cellId": "3/9",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "9,0": {
+      "cellId": "4/9",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "9,1": {
+      "cellId": "5/9",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "9,2": {
+      "cellId": "6/9",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "9,3": {
+      "cellId": "7/9",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "9,4": {
+      "cellId": "8/9",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "9,5": {
+      "cellId": "9/9",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "9,6": {
+      "cellId": "10/9",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "9,7": {
+      "cellId": "11/9",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "9,8": {
+      "cellId": "12/9",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "9,9": {
+      "cellId": "13/9",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "10,-5": {
+      "cellId": "0/10",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "10,-4": {
+      "cellId": "1/10",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "10,-3": {
+      "cellId": "2/10",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "10,-2": {
+      "cellId": "3/10",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "10,-1": {
+      "cellId": "4/10",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "10,0": {
+      "cellId": "5/10",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "10,1": {
+      "cellId": "6/10",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "10,2": {
+      "cellId": "7/10",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "10,3": {
+      "cellId": "8/10",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "10,4": {
+      "cellId": "9/10",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "10,5": {
+      "cellId": "10/10",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "10,6": {
+      "cellId": "11/10",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "10,7": {
+      "cellId": "12/10",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "10,8": {
+      "cellId": "13/10",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "11,-5": {
+      "cellId": "0/11",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "11,-4": {
+      "cellId": "1/11",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "11,-3": {
+      "cellId": "2/11",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "11,-2": {
+      "cellId": "3/11",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "11,-1": {
+      "cellId": "4/11",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "11,0": {
+      "cellId": "5/11",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "11,1": {
+      "cellId": "6/11",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "11,2": {
+      "cellId": "7/11",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "11,3": {
+      "cellId": "8/11",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "11,4": {
+      "cellId": "9/11",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "11,5": {
+      "cellId": "10/11",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "11,6": {
+      "cellId": "11/11",
+      "asset": "r11-c11",
+      "unique": true,
+      "src": "/assets/board/audited/256/r11-c11.webp"
+    },
+    "11,7": {
+      "cellId": "12/11",
+      "asset": "r12-c11",
+      "unique": true,
+      "src": "/assets/board/audited/256/r12-c11.webp"
+    },
+    "11,8": {
+      "cellId": "13/11",
+      "asset": "r13-c11",
+      "unique": true,
+      "src": "/assets/board/audited/256/r13-c11.webp"
+    },
+    "12,-6": {
+      "cellId": "0/12",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "12,-5": {
+      "cellId": "1/12",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "12,-4": {
+      "cellId": "2/12",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "12,-3": {
+      "cellId": "3/12",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "12,-2": {
+      "cellId": "4/12",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "12,-1": {
+      "cellId": "5/12",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "12,0": {
+      "cellId": "6/12",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "12,1": {
+      "cellId": "7/12",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "12,2": {
+      "cellId": "8/12",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "12,3": {
+      "cellId": "9/12",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "12,4": {
+      "cellId": "10/12",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "12,5": {
+      "cellId": "11/12",
+      "asset": "r11-c12",
+      "unique": true,
+      "src": "/assets/board/audited/256/r11-c12.webp"
+    },
+    "12,6": {
+      "cellId": "12/12",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "12,7": {
+      "cellId": "13/12",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "13,-6": {
+      "cellId": "0/13",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "13,-5": {
+      "cellId": "1/13",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "13,-4": {
+      "cellId": "2/13",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "13,-3": {
+      "cellId": "3/13",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "13,-2": {
+      "cellId": "4/13",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "13,-1": {
+      "cellId": "5/13",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "13,0": {
+      "cellId": "6/13",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "13,1": {
+      "cellId": "7/13",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "13,2": {
+      "cellId": "8/13",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "13,3": {
+      "cellId": "9/13",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "13,4": {
+      "cellId": "10/13",
+      "asset": "r10-c13",
+      "unique": true,
+      "src": "/assets/board/audited/256/r10-c13.webp"
+    },
+    "13,5": {
+      "cellId": "11/13",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "13,6": {
+      "cellId": "12/13",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "13,7": {
+      "cellId": "13/13",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "14,-7": {
+      "cellId": "0/14",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "14,-6": {
+      "cellId": "1/14",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "14,-5": {
+      "cellId": "2/14",
+      "asset": "r2-c14",
+      "unique": true,
+      "src": "/assets/board/audited/256/r2-c14.webp"
+    },
+    "14,-4": {
+      "cellId": "3/14",
+      "asset": "r3-c14",
+      "unique": true,
+      "src": "/assets/board/audited/256/r3-c14.webp"
+    },
+    "14,-3": {
+      "cellId": "4/14",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "14,-2": {
+      "cellId": "5/14",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "14,-1": {
+      "cellId": "6/14",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "14,0": {
+      "cellId": "7/14",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "14,1": {
+      "cellId": "8/14",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "14,2": {
+      "cellId": "9/14",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "14,3": {
+      "cellId": "10/14",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "14,4": {
+      "cellId": "11/14",
+      "asset": "r11-c14",
+      "unique": true,
+      "src": "/assets/board/audited/256/r11-c14.webp"
+    },
+    "14,5": {
+      "cellId": "12/14",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "14,6": {
+      "cellId": "13/14",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "15,-7": {
+      "cellId": "0/15",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "15,-6": {
+      "cellId": "1/15",
+      "asset": "r1-c15",
+      "unique": true,
+      "src": "/assets/board/audited/256/r1-c15.webp"
+    },
+    "15,-5": {
+      "cellId": "2/15",
+      "asset": "r2-c15",
+      "unique": true,
+      "src": "/assets/board/audited/256/r2-c15.webp"
+    },
+    "15,-4": {
+      "cellId": "3/15",
+      "asset": "r3-c15",
+      "unique": true,
+      "src": "/assets/board/audited/256/r3-c15.webp"
+    },
+    "15,-3": {
+      "cellId": "4/15",
+      "asset": "r4-c15",
+      "unique": true,
+      "src": "/assets/board/audited/256/r4-c15.webp"
+    },
+    "15,-2": {
+      "cellId": "5/15",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "15,-1": {
+      "cellId": "6/15",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "15,0": {
+      "cellId": "7/15",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "15,1": {
+      "cellId": "8/15",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "15,2": {
+      "cellId": "9/15",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "15,3": {
+      "cellId": "10/15",
+      "asset": "r10-c15",
+      "unique": true,
+      "src": "/assets/board/audited/256/r10-c15.webp"
+    },
+    "15,4": {
+      "cellId": "11/15",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "15,5": {
+      "cellId": "12/15",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "15,6": {
+      "cellId": "13/15",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "16,-8": {
+      "cellId": "0/16",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "16,-7": {
+      "cellId": "1/16",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "16,-6": {
+      "cellId": "2/16",
+      "asset": "r2-c16",
+      "unique": true,
+      "src": "/assets/board/audited/256/r2-c16.webp"
+    },
+    "16,-5": {
+      "cellId": "3/16",
+      "asset": "r3-c16",
+      "unique": true,
+      "src": "/assets/board/audited/256/r3-c16.webp"
+    },
+    "16,-4": {
+      "cellId": "4/16",
+      "asset": "r4-c16",
+      "unique": true,
+      "src": "/assets/board/audited/256/r4-c16.webp"
+    },
+    "16,-3": {
+      "cellId": "5/16",
+      "asset": "r5-c16",
+      "unique": true,
+      "src": "/assets/board/audited/256/r5-c16.webp"
+    },
+    "16,-2": {
+      "cellId": "6/16",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "16,-1": {
+      "cellId": "7/16",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "16,0": {
+      "cellId": "8/16",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "16,1": {
+      "cellId": "9/16",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "16,2": {
+      "cellId": "10/16",
+      "asset": "r10-c16",
+      "unique": true,
+      "src": "/assets/board/audited/256/r10-c16.webp"
+    },
+    "16,3": {
+      "cellId": "11/16",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "16,4": {
+      "cellId": "12/16",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "16,5": {
+      "cellId": "13/16",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "17,-8": {
+      "cellId": "0/17",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "17,-7": {
+      "cellId": "1/17",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "17,-6": {
+      "cellId": "2/17",
+      "asset": "r2-c17",
+      "unique": true,
+      "src": "/assets/board/audited/256/r2-c17.webp"
+    },
+    "17,-5": {
+      "cellId": "3/17",
+      "asset": "r3-c17",
+      "unique": true,
+      "src": "/assets/board/audited/256/r3-c17.webp"
+    },
+    "17,-4": {
+      "cellId": "4/17",
+      "asset": "r4-c17",
+      "unique": true,
+      "src": "/assets/board/audited/256/r4-c17.webp"
+    },
+    "17,-3": {
+      "cellId": "5/17",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "17,-2": {
+      "cellId": "6/17",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "17,-1": {
+      "cellId": "7/17",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "17,0": {
+      "cellId": "8/17",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "17,1": {
+      "cellId": "9/17",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "17,2": {
+      "cellId": "10/17",
+      "asset": "r10-c17",
+      "unique": true,
+      "src": "/assets/board/audited/256/r10-c17.webp"
+    },
+    "17,3": {
+      "cellId": "11/17",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "17,4": {
+      "cellId": "12/17",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "17,5": {
+      "cellId": "13/17",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "18,-9": {
+      "cellId": "0/18",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "18,-8": {
+      "cellId": "1/18",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "18,-7": {
+      "cellId": "2/18",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "18,-6": {
+      "cellId": "3/18",
+      "asset": "r3-c18",
+      "unique": true,
+      "src": "/assets/board/audited/256/r3-c18.webp"
+    },
+    "18,-5": {
+      "cellId": "4/18",
+      "asset": "r4-c18",
+      "unique": true,
+      "src": "/assets/board/audited/256/r4-c18.webp"
+    },
+    "18,-4": {
+      "cellId": "5/18",
+      "asset": "r5-c18",
+      "unique": true,
+      "src": "/assets/board/audited/256/r5-c18.webp"
+    },
+    "18,-3": {
+      "cellId": "6/18",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "18,-2": {
+      "cellId": "7/18",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "18,-1": {
+      "cellId": "8/18",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "18,0": {
+      "cellId": "9/18",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "18,1": {
+      "cellId": "10/18",
+      "asset": "r10-c18",
+      "unique": true,
+      "src": "/assets/board/audited/256/r10-c18.webp"
+    },
+    "18,2": {
+      "cellId": "11/18",
+      "asset": "r11-c18",
+      "unique": true,
+      "src": "/assets/board/audited/256/r11-c18.webp"
+    },
+    "18,3": {
+      "cellId": "12/18",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "18,4": {
+      "cellId": "13/18",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "19,-9": {
+      "cellId": "0/19",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "19,-8": {
+      "cellId": "1/19",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "19,-7": {
+      "cellId": "2/19",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "19,-6": {
+      "cellId": "3/19",
+      "asset": "r3-c19",
+      "unique": true,
+      "src": "/assets/board/audited/256/r3-c19.webp"
+    },
+    "19,-5": {
+      "cellId": "4/19",
+      "asset": "r4-c19",
+      "unique": true,
+      "src": "/assets/board/audited/256/r4-c19.webp"
+    },
+    "19,-4": {
+      "cellId": "5/19",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "19,-3": {
+      "cellId": "6/19",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "19,-2": {
+      "cellId": "7/19",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "19,-1": {
+      "cellId": "8/19",
+      "asset": "r8-c19",
+      "unique": true,
+      "src": "/assets/board/audited/256/r8-c19.webp"
+    },
+    "19,0": {
+      "cellId": "9/19",
+      "asset": "r9-c19",
+      "unique": true,
+      "src": "/assets/board/audited/256/r9-c19.webp"
+    },
+    "19,1": {
+      "cellId": "10/19",
+      "asset": "r10-c19",
+      "unique": true,
+      "src": "/assets/board/audited/256/r10-c19.webp"
+    },
+    "19,2": {
+      "cellId": "11/19",
+      "asset": "r11-c19",
+      "unique": true,
+      "src": "/assets/board/audited/256/r11-c19.webp"
+    },
+    "19,3": {
+      "cellId": "12/19",
+      "asset": "r12-c19",
+      "unique": true,
+      "src": "/assets/board/audited/256/r12-c19.webp"
+    },
+    "19,4": {
+      "cellId": "13/19",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "20,-10": {
+      "cellId": "0/20",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "20,-9": {
+      "cellId": "1/20",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "20,-8": {
+      "cellId": "2/20",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "20,-7": {
+      "cellId": "3/20",
+      "asset": "r3-c20",
+      "unique": true,
+      "src": "/assets/board/audited/256/r3-c20.webp"
+    },
+    "20,-6": {
+      "cellId": "4/20",
+      "asset": "r4-c20",
+      "unique": true,
+      "src": "/assets/board/audited/256/r4-c20.webp"
+    },
+    "20,-5": {
+      "cellId": "5/20",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "20,-4": {
+      "cellId": "6/20",
+      "asset": "r6-c20",
+      "unique": true,
+      "src": "/assets/board/audited/256/r6-c20.webp"
+    },
+    "20,-3": {
+      "cellId": "7/20",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "20,-2": {
+      "cellId": "8/20",
+      "asset": "r8-c20",
+      "unique": true,
+      "src": "/assets/board/audited/256/r8-c20.webp"
+    },
+    "20,-1": {
+      "cellId": "9/20",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "20,0": {
+      "cellId": "10/20",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "20,1": {
+      "cellId": "11/20",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "20,2": {
+      "cellId": "12/20",
+      "asset": "r12-c20",
+      "unique": true,
+      "src": "/assets/board/audited/256/r12-c20.webp"
+    },
+    "20,3": {
+      "cellId": "13/20",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "21,-10": {
+      "cellId": "0/21",
+      "asset": "land-4",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-4.webp"
+    },
+    "21,-9": {
+      "cellId": "1/21",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "21,-8": {
+      "cellId": "2/21",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "21,-7": {
+      "cellId": "3/21",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "21,-6": {
+      "cellId": "4/21",
+      "asset": "r4-c21",
+      "unique": true,
+      "src": "/assets/board/audited/256/r4-c21.webp"
+    },
+    "21,-5": {
+      "cellId": "5/21",
+      "asset": "r5-c21",
+      "unique": true,
+      "src": "/assets/board/audited/256/r5-c21.webp"
+    },
+    "21,-4": {
+      "cellId": "6/21",
+      "asset": "r6-c21",
+      "unique": true,
+      "src": "/assets/board/audited/256/r6-c21.webp"
+    },
+    "21,-3": {
+      "cellId": "7/21",
+      "asset": "r7-c21",
+      "unique": true,
+      "src": "/assets/board/audited/256/r7-c21.webp"
+    },
+    "21,-2": {
+      "cellId": "8/21",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "21,-1": {
+      "cellId": "9/21",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "21,0": {
+      "cellId": "10/21",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "21,1": {
+      "cellId": "11/21",
+      "asset": "r11-c21",
+      "unique": true,
+      "src": "/assets/board/audited/256/r11-c21.webp"
+    },
+    "21,2": {
+      "cellId": "12/21",
+      "asset": "r12-c21",
+      "unique": true,
+      "src": "/assets/board/audited/256/r12-c21.webp"
+    },
+    "21,3": {
+      "cellId": "13/21",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "22,-11": {
+      "cellId": "0/22",
+      "asset": "land-3",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-3.webp"
+    },
+    "22,-10": {
+      "cellId": "1/22",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "22,-9": {
+      "cellId": "2/22",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "22,-8": {
+      "cellId": "3/22",
+      "asset": "r3-c22",
+      "unique": true,
+      "src": "/assets/board/audited/256/r3-c22.webp"
+    },
+    "22,-7": {
+      "cellId": "4/22",
+      "asset": "r4-c22",
+      "unique": true,
+      "src": "/assets/board/audited/256/r4-c22.webp"
+    },
+    "22,-6": {
+      "cellId": "5/22",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "22,-5": {
+      "cellId": "6/22",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "22,-4": {
+      "cellId": "7/22",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "22,-3": {
+      "cellId": "8/22",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "22,-2": {
+      "cellId": "9/22",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "22,-1": {
+      "cellId": "10/22",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "22,0": {
+      "cellId": "11/22",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "22,1": {
+      "cellId": "12/22",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "22,2": {
+      "cellId": "13/22",
+      "asset": "r13-c22",
+      "unique": true,
+      "src": "/assets/board/audited/256/r13-c22.webp"
+    },
+    "23,-11": {
+      "cellId": "0/23",
+      "asset": "land-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-2.webp"
+    },
+    "23,-10": {
+      "cellId": "1/23",
+      "asset": "land-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/land-1.webp"
+    },
+    "23,-9": {
+      "cellId": "2/23",
+      "asset": "r2-c23",
+      "unique": true,
+      "src": "/assets/board/audited/256/r2-c23.webp"
+    },
+    "23,-8": {
+      "cellId": "3/23",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "23,-7": {
+      "cellId": "4/23",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "23,-6": {
+      "cellId": "5/23",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "23,-5": {
+      "cellId": "6/23",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "23,-4": {
+      "cellId": "7/23",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "23,-3": {
+      "cellId": "8/23",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "23,-2": {
+      "cellId": "9/23",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "23,-1": {
+      "cellId": "10/23",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "23,0": {
+      "cellId": "11/23",
+      "asset": "water-1",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-1.webp"
+    },
+    "23,1": {
+      "cellId": "12/23",
+      "asset": "water-2",
+      "unique": false,
+      "src": "/assets/board/audited/256/water-2.webp"
+    },
+    "23,2": {
+      "cellId": "13/23",
+      "asset": "r13-c23",
+      "unique": true,
+      "src": "/assets/board/audited/256/r13-c23.webp"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+/* Decorative layer only. Challenge/lairs fill the hex; other features use half-height lanes. */
+.audited-features{position:absolute;inset:0;z-index:2;pointer-events:none;display:block}
+.audited-features .hex-challenge-overlay,.audited-features .hex-lair-overlay{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.audited-features .hex-upper-features{position:absolute;left:16%;right:16%;top:5%;height:42%;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.audited-features .hex-feature-symbol{display:block;width:100%;min-width:0;height:100%;object-fit:contain;object-position:center bottom}
+.audited-features .hex-lower-bases{position:absolute;left:20%;right:20%;top:63%;height:24%;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:3%;overflow:hidden}
+.audited-features .hex-base-star{display:block;width:22%;min-width:0;height:100%;object-fit:contain}
+
+/* Printed site marks remain subordinate to physical game pieces. */
+.audited-features .hex-challenge-overlay,.audited-features .hex-lair-overlay{opacity:.48;filter:saturate(.45)}
+.audited-grid .hex-tile[data-occupied="true"] .hex-lair-overlay{opacity:.2}
+.audited-grid .hex-tile[data-stomped="true"] .hex-upper-features{opacity:.4;filter:saturate(.25)}
+.audited-grid .hex-tile .board-stomp-marker{position:absolute;left:34%;bottom:10%;width:32%;height:35%;z-index:3;display:flex;flex-direction:column;align-items:center;pointer-events:none;filter:drop-shadow(0 1px 1px #18241c80)}
+.board-stomp-marker img{display:block;width:100%;height:80%;object-fit:contain}
+.board-stomp-marker>span{font-size:3px;font-weight:900;line-height:1.2;letter-spacing:.1px;color:#ffe5b9;background:#392c22e6;border-radius:1px;padding:0 1px}

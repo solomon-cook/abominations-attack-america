@@ -1,0 +1,72 @@
+{
+  "started": "2026-09-16T19:44:42.024Z",
+  "pendingArtAllowed": false,
+  "viewports": [
+    {
+      "width": 320,
+      "height": 740,
+      "checks": [
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize",
+        "movement confirmed; encounter resolved; deployment passed"
+      ],
+      "errors": [],
+      "brokenImages": [],
+      "passed": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "checks": [
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize",
+        "movement confirmed; encounter resolved; deployment passed"
+      ],
+      "errors": [],
+      "brokenImages": [],
+      "passed": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "checks": [
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize",
+        "movement confirmed; encounter resolved; deployment passed"
+      ],
+      "errors": [],
+      "brokenImages": [],
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "checks": [
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize",
+        "movement confirmed; encounter resolved; deployment passed"
+      ],
+      "errors": [],
+      "brokenImages": [],
+      "passed": true
+    },
+    {
+      "width": 2560,
+      "height": 1080,
+      "checks": [
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize",
+        "movement confirmed; encounter resolved; deployment passed"
+      ],
+      "errors": [],
+      "brokenImages": [],
+      "passed": true
+    }
+  ],
+  "finished": "2026-09-16T19:46:45.591Z"
+}

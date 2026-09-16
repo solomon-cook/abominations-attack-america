@@ -2,7 +2,7 @@ export type HexCoord = Readonly<{ q: number; r: number }>;
 export type HexKey = `${number},${number}`;
 export type OffBoardPosition = "record-tile" | "hollywood" | "disappeared" | "trophy" | "defeated" | "permanently-removed";
 export type SpaceKey = HexKey | OffBoardPosition;
-export type WaterClass = "land" | "lake" | "sea" | "seacoast" | "unresolved";
+export type WaterClass = "land" | "lake" | "lakeshore" | "sea" | "seacoast" | "unresolved";
 export type WaterBarrier = "none" | "lake" | "sea" | "unresolved";
 export type BoardVerification = "verified" | "provisional" | "unresolved";
 
@@ -31,6 +31,8 @@ export interface BoardHex {
   readonly key: HexKey;
   readonly coord: HexCoord;
   readonly label?: string;
+  /** Stable physical audit identity; absent on immutable legacy boards. */
+  readonly audit?: Readonly<{ row: number; column: number }>;
   readonly waterClass: WaterClass;
   readonly features: readonly BoardFeature[];
   readonly sourceRefs: readonly string[];

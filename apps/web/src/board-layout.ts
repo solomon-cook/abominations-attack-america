@@ -18,6 +18,10 @@ export const DISPLAY_BOARD_LEFT_PERCENT = 4;
 export const DISPLAY_BOARD_TOP_PERCENT = 4;
 /** The photographed full rectangle has 24 columns and 14 staggered rows. */
 export const DISPLAY_BOARD_ASPECT_RATIO = 1;
+/** Natural, regular flat-top geometry for the audited 24 × 14 board. */
+export const AUDITED_TILE_WIDTH_PERCENT = 100 / 18.25;
+export const AUDITED_BOARD_ASPECT_RATIO = 18.25 / (14.5 / DISPLAY_TILE_ASPECT_RATIO);
+export const AUDITED_BOARD_WORLD = { width: 1000, height: 1000 / AUDITED_BOARD_ASPECT_RATIO };
 /**
  * Top coordinates are percentages of canvas height, while tile width is a
  * percentage of canvas width. Convert the shared-edge tile height into the
@@ -35,6 +39,15 @@ export const DISPLAY_BOARD_TOP_SPAN_PERCENT =
  * the photograph crops or shows them as empty/sea spaces.
  */
 export function buildDisplayHexLayout(board: BoardDefinition = FULL_HONEYCOMB_BOARD): DisplayHex[] {
+  if (Object.values(board.hexes).some((hex) => hex.audit)) {
+    return Object.values(board.hexes).map((hex) => {
+      const { row, column } = hex.audit!;
+      return { hex, row, column,
+        left: (0.5 + column * 0.75) * AUDITED_TILE_WIDTH_PERCENT,
+        top: (0.5 + row + (column % 2 ? 0.5 : 0)) / 14.5 * 100,
+      };
+    });
+  }
   const columns = Array.from({ length: 24 }, (_, column) => Object.values(board.hexes)
     .filter((hex) => hex.coord.q + Math.floor(hex.coord.r / 2) === column)
     .sort((a, b) => a.coord.r - b.coord.r));

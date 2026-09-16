@@ -105,7 +105,8 @@ async function openBrowser(port, name, existingProfile) {
   });
   const command = (method, params = {}) => new Promise((resolve, reject) => {
     const id = ++nextId;
-    pending.set(id, { resolve, reject });
+    const timeout = setTimeout(() => { pending.delete(id); reject(new Error(`${name}: browser command timed out: ${method}`)); }, 20000);
+    pending.set(id, { resolve: value => { clearTimeout(timeout); resolve(value); }, reject: error => { clearTimeout(timeout); reject(error); } });
     socket.send(JSON.stringify({ id, method, params }));
   });
   await command("Page.enable");
@@ -126,14 +127,14 @@ async function openBrowser(port, name, existingProfile) {
     restart: async () => {
       socket.close();
       child.kill("SIGKILL");
-      if (child.exitCode === null) await new Promise((resolve) => child.once("exit", resolve));
+      if (child.exitCode === null && child.signalCode === null) await new Promise((resolve) => child.once("exit", resolve));
       return openBrowser(port, name, profile);
     },
     click: (label) => evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled); if (!button) return false; button.click(); return true; })()`),
     close: async () => {
       socket.close();
       child.kill("SIGKILL");
-      if (child.exitCode === null) await new Promise((resolve) => child.once("exit", resolve));
+      if (child.exitCode === null && child.signalCode === null) await new Promise((resolve) => child.once("exit", resolve));
       await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     },
   };
@@ -190,7 +191,7 @@ try {
   await spectator.waitFor(`!!document.querySelector(".setup-panel")`, "spectator setup projection");
   const boardIdentities = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`(() => { const root = document.querySelector("main.game-screen"); return { id: root?.dataset.boardId ?? "", version: root?.dataset.boardVersion ?? "", hash: root?.dataset.boardContentHash ?? "", renderedId: root?.dataset.renderedBoardId ?? "", renderedHash: root?.dataset.renderedBoardContentHash ?? "" }; })()`)));
   const boardIdentityKeys = boardIdentities.map((identity) => `${identity?.id}:${identity?.version}:${identity?.hash}:${identity?.renderedId}:${identity?.renderedHash}`);
-  if (new Set(boardIdentityKeys).size !== 1 || boardIdentities[0]?.id !== "provisional-authoritative-honeycomb-board" || boardIdentities[0]?.renderedId !== boardIdentities[0]?.id || boardIdentities[0]?.renderedHash !== boardIdentities[0]?.hash) {
+  if (new Set(boardIdentityKeys).size !== 1 || boardIdentities[0]?.id !== "human-audited-north-america" || boardIdentities[0]?.renderedId !== boardIdentities[0]?.id || boardIdentities[0]?.renderedHash !== boardIdentities[0]?.hash) {
     throw new Error(`Online sessions did not share the pinned MVP board identity: ${JSON.stringify(boardIdentities)}`);
   }
   const renderedBoardCells = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`(() => {
@@ -207,7 +208,7 @@ try {
   for (let attempt = 0; attempt < 60; attempt += 1) {
     let progressed = false;
     for (const browser of [first, second]) {
-      const preferredStartingChoice = browser === first ? "Development Deploy" : "Draw Research";
+      const preferredStartingChoice = browser === first ? "Deploy units" : "Draw Research";
       const clicked = await browser.evaluate(`(() => { const phase = document.querySelector(".setup-panel h2")?.textContent?.trim(); const buttons = [...document.querySelectorAll(".setup-options button")].filter((candidate) => !candidate.disabled); const button = phase === "starting choice" ? buttons.find((candidate) => candidate.textContent?.trim() === ${JSON.stringify(preferredStartingChoice)}) : buttons[0]; if (!button) return false; button.click(); return true; })()`);
       if (clicked) { setupClicks += 1; progressed = true; await wait(120); break; }
     }
@@ -337,7 +338,7 @@ try {
   await second.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "reloaded second terminal");
   const reloadedTerminal = await second.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
   if (!reloadedTerminal) throw new Error("Reloaded second browser lost the terminal result.");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-best-guess-honeycomb", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: "verified", onlineConcession: "verified", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: "verified", onlineConcession: "verified", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
 } finally {
   await Promise.all([first?.close(), second?.close(), spectator?.close()]);
   await Promise.all([stopServer(apiServer), stopServer(webServer)]);

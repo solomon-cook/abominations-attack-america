@@ -6,9 +6,10 @@ const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const pinSource = await readFile(resolve(root, "apps/web/src/board-pin.ts"), "utf8");
 const gridSource = await readFile(resolve(root, "apps/web/src/components/HexGrid.tsx"), "utf8");
 const phaseActionsSource = await readFile(resolve(root, "apps/web/src/components/PhaseActions.tsx"), "utf8");
-const mainSource = await readFile(resolve(root, "apps/web/src/main.tsx"), "utf8");
+const mainSource = await readFile(resolve(root, "apps/web/src/main.tsx"), "utf8") + await readFile(resolve(root, "apps/web/src/components/BoardViewport.tsx"), "utf8");
 const stylesheetSource = await readFile(resolve(root, "apps/web/src/styles.css"), "utf8");
 const required = [
+  ["audited board ID, version, and hash match", /game\.boardId === AUDITED_BOARD\.id && game\.boardVersion === AUDITED_BOARD\.version && game\.boardContentHash === AUDITED_BOARD\.contentHash/],
   ["shared board resolver", /export function boardForGame/],
   ["full-board ID, version, and hash match", /game\.boardId === FULL_HONEYCOMB_BOARD\.id && game\.boardVersion === FULL_HONEYCOMB_BOARD\.version && game\.boardContentHash === FULL_HONEYCOMB_BOARD\.contentHash/],
   ["development-board ID, version, and hash match", /game\.boardId === DEVELOPMENT_BOARD\.id && game\.boardVersion === DEVELOPMENT_BOARD\.version && game\.boardContentHash === DEVELOPMENT_BOARD\.contentHash/],
@@ -23,8 +24,8 @@ const required = [
   ["unresolved shell has no implied terrain artwork", /const baseArt = hex\.waterClass === "unresolved"\s*\? undefined/],
   ["unresolved shell has neutral hatch treatment", /\.hex-tile\.unresolved\{background:repeating-linear-gradient/],
   ["grid hides unknown topology", /className="board-unavailable" role="alert"/],
-  ["map metadata uses resolved board", /data-rendered-board-id=\{renderedBoard\?\.id \?\? "unavailable"\}/],
-  ["map metadata uses resolved hash", /data-rendered-board-content-hash=\{renderedBoard\?\.contentHash \?\? "unavailable"\}/],
+  ["map metadata uses resolved board", /data-rendered-board-id=\{board\?\.id \?\? "unavailable"\}/],
+  ["map metadata uses resolved hash", /data-rendered-board-content-hash=\{board\?\.contentHash \?\? "unavailable"\}/],
 ];
 const source = `${pinSource}\n${gridSource}\n${phaseActionsSource}\n${mainSource}\n${stylesheetSource}`;
 const failures = required.filter(([, marker]) => !marker.test(source)).map(([label]) => label);

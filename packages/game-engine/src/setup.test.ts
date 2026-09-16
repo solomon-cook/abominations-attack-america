@@ -9,7 +9,8 @@ const definition = {
   lairsByMonster: {
     "monster-a": ["lair-a-1", "lair-a-2", "lair-a-3"],
     "monster-b": ["lair-b-1", "lair-b-2", "lair-b-3"],
-    "monster-c": ["lair-c-1", "lair-c-2", "lair-c-3"]
+    "monster-c": ["lair-c-1", "lair-c-2", "lair-c-3"],
+    "monster-d": ["lair-d-1", "lair-d-2", "lair-d-3"]
   }
 };
 

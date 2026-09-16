@@ -1,0 +1,13 @@
+{
+  "id": "2/2",
+  "prompt": "Create ONE final square terrain tile 2/2 for a seamless flat-top North America game map. Image1 is precise SAME SIZE compositional guide for this ONE tile; yellow hex boundary must disappear. Image2 neighbor ring is context only; do NOT output neighbor tiles. Image3 shared land texture STYLE. Image4 water/terrain material STYLE only, do not copy rim/holes/shadows. Audit: North edge to southwest edge; Not stated.  Keep shoreline contact positions at invisible hex edges as guide. Smooth and naturalize shore interior. Flat top hex face reaches x0/100 and y6.7/93.3%, tile square framing fixed. Same olive green tiny grass texture as image3, muted teal-blue water with fine soft ripples, narrow shallows. Whole image one flat surface, orthographic overhead, equal diffuse lighting, no horizon. Extend land/water logically beyond invisible hex to all four square corners, fill all pixels. No outline, grid, labels, numbers, roads, buildings, rim, bevel, white background, shadow, embossed circles or tokens.",
+  "referenceImages": [
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/cell-guides/r2-c2.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/guides/r2-c2.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/masters/land-1.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/apps/web/public/assets/board/coast/coast_0deg.png"
+  ],
+  "sourceImage": "/Users/solomon/.codex/generated_images/01a0a6c4-7b6a-7031-9b71-3ce551b848d4/exec-e4646309-d810-4002-9f2a-2ab7c29500b7.png",
+  "model": "built-in imagegen",
+  "status": "generated-awaiting-neighborhood-review"
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { FULL_HONEYCOMB_BOARD } from "@abominations/game-engine";
+import { AUDITED_BOARD, buildBoardIndex } from "@abominations/game-engine";
 import { buildDisplayHexLayout } from "../board-layout";
+import { TerrainArt, BoardGridLines, cellArt } from "./BoardTerrain";
 
 type Props = { onClose: () => void };
 
@@ -17,7 +18,7 @@ const stackFixtureAssets = [
 
 /** Read-only geometry review; unresolved board data must never become a match. */
 export function BoardReview({ onClose }: Props) {
-  const cells = buildDisplayHexLayout(FULL_HONEYCOMB_BOARD);
+  const cells = buildDisplayHexLayout(AUDITED_BOARD);
   const [selectedKey, setSelectedKey] = useState(cells[0]?.hex.key);
   const selectedHex = cells.find(({ hex }) => hex.key === selectedKey)?.hex ?? cells[0]?.hex;
   return (
@@ -25,33 +26,34 @@ export function BoardReview({ onClose }: Props) {
       <header className="board-review-header">
         <div>
           <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · BOARD REVIEW</p>
-          <h1>Full honeycomb geometry</h1>
+          <h1>Audited North America board</h1>
           <p className="board-review-lede">
-            Read-only review of the complete 24-by-14 candidate lattice. Physical details are still being transcribed.
+            The 336 audited cells used by new games. Select a cell to inspect its geography, features, neighbours and artwork assignment.
           </p>
         </div>
         <button type="button" className="ghost" onClick={onClose}>Back to home</button>
       </header>
       <section className="board-review-warning" role="status">
-        <strong>REVIEW TOOLING · NOT MVP PLAY</strong>
-        <span>Every face is intentionally blank until the photographed board is transcribed and signed off.</span>
+        <strong>HUMAN-AUDITED BOARD · 336 CELLS</strong>
+        <span>This view uses the same board definition and cell artwork as local and online matches.</span>
       </section>
       <div className="board-review-layout">
         <div className="board-review-visuals">
-          <section className="board-review-frame" aria-label="336-cell full honeycomb candidate">
-            <div className="board-review-canvas">
+          <section className="board-review-frame" aria-label="336-cell audited North America map">
+            <div className="board-review-canvas audited-review">
             {cells.map(({ hex, left, top }) => (
               <button
                 type="button"
                 className="board-review-hex"
                 key={hex.key}
                 style={{ left: `${left}%`, top: `${top}%` }}
-                aria-label={`Review-pending hex ${hex.key}`}
+                aria-label={`Review cell ${hex.audit?.row}/${hex.audit?.column}: ${hex.label ?? hex.waterClass}`}
                 aria-pressed={hex.key === selectedHex?.key}
                 data-selected={hex.key === selectedHex?.key}
                 onClick={() => setSelectedKey(hex.key)}
-              />
+              ><TerrainArt hex={hex} /></button>
             ))}
+            <BoardGridLines board={AUDITED_BOARD} />
             </div>
           </section>
           <div className="board-review-sources" aria-label="Reference board photographs">
@@ -75,15 +77,17 @@ export function BoardReview({ onClose }: Props) {
         </div>
         {selectedHex && <aside className="board-review-inspector" aria-label="Selected board cell review">
           <span className="label">SELECTED CELL</span>
-          <h2>{selectedHex.key}</h2>
+          <h2>{selectedHex.audit?.row}/{selectedHex.audit?.column} · {selectedHex.label ?? selectedHex.waterClass}</h2>
           <dl>
             <div><dt>Coordinate</dt><dd>q {selectedHex.coord.q}, r {selectedHex.coord.r}</dd></div>
+            <div><dt>Artwork</dt><dd>{cellArt(selectedHex.key)?.asset}</dd></div>
+            <div><dt>Neighbours</dt><dd>{buildBoardIndex(AUDITED_BOARD).neighbours[selectedHex.key]?.map(key => { const a=AUDITED_BOARD.hexes[key].audit; return `${a?.row}/${a?.column}`; }).join(", ")}</dd></div>
             <div><dt>Verification</dt><dd>{selectedHex.verification}</dd></div>
             <div><dt>Water class</dt><dd>{selectedHex.waterClass}</dd></div>
             <div><dt>Features</dt><dd>{selectedHex.features.length ? selectedHex.features.map((feature) => feature.kind).join(", ") : "none authored"}</dd></div>
           </dl>
           <p>{selectedHex.sourceRefs.length ? `Source references: ${selectedHex.sourceRefs.join(", ")}` : "No source reference recorded."}</p>
-          <small>Read-only review metadata. Selecting a face does not promote it into the playable board.</small>
+          <small>Read-only inspection of the active board definition. Selecting a cell does not change a match.</small>
         </aside>}
       </div>
       <section className="dense-stack-review" aria-label="Dense piece stack rendering review">
@@ -103,7 +107,7 @@ export function BoardReview({ onClose }: Props) {
           })}
         </div>
       </section>
-      <p className="board-review-count">336 candidate cells · 14 rows × 24 columns · flat-top hex orientation</p>
+      <p className="board-review-count">336 audited cells · 14 rows × 24 columns · flat-top hex orientation</p>
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import {
   buildBoardIndex,
   FULL_HONEYCOMB_BOARD,
+  AUDITED_BOARD,
   PROVISIONAL_AUTHORITATIVE_BOARD,
   locationIdToHexKey,
   isHexKey,
@@ -10,13 +11,16 @@ import {
   type BoardHex,
 } from "@abominations/game-engine";
 import { useRef } from "react";
-import { buildDisplayHexLayout } from "../board-layout";
+import { buildDisplayHexLayout, AUDITED_TILE_WIDTH_PERCENT } from "../board-layout";
 import { boardForGame } from "../board-pin";
+import { TerrainArt, FeatureMarkers, BoardGridLines } from "./BoardTerrain";
+import { StompedMarker } from "./BoardFeatureOverlays";
+import "../board-pieces.css";
 
 function displayHexesForGame(game: GameState) {
   const board = boardForGame(game);
   if (!board) return [];
-  if (board.id === FULL_HONEYCOMB_BOARD.id || board.id === PROVISIONAL_AUTHORITATIVE_BOARD.id) {
+  if (board.id === AUDITED_BOARD.id || board.id === FULL_HONEYCOMB_BOARD.id || board.id === PROVISIONAL_AUTHORITATIVE_BOARD.id) {
     return buildDisplayHexLayout(board).map(({ hex, left, top }) => ({
       hex,
       // The candidate shell must not inherit the development fixture's named
@@ -116,6 +120,7 @@ type Props = {
 
 export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const board = boardForGame(game);
+  const audited = board?.id === AUDITED_BOARD.id;
   const boardHexes = displayHexesForGame(game);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const boardIndex = board ? buildBoardIndex(board) : undefined;
@@ -137,7 +142,8 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
     .map(({ left, top }) => `${left},${top}`)
     .join(" ");
   return (
-    <div className="hex-grid">
+    <div className={`hex-grid ${audited ? "audited-grid" : ""}`}>
+      {audited && <BoardGridLines board={board} />}
       {!board && <div className="board-unavailable" role="alert">This match references an unavailable board version. The board is hidden until the matching board definition is loaded.</div>}
       {pathPoints && path.length > 1 && (
         <svg className="path-preview" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
@@ -167,8 +173,8 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           ...game.monsters.filter((monster) => monster.location === placeKey).map((monster) => monster.name),
           ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
         ].join(", ");
-        const displayName = place?.name ?? hex.label ?? `Unresolved ${hex.key}`;
-        const provisionalFeatureName = board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id && hex.features.some((feature) => feature.kind === "city")
+        const displayName = place?.name ?? hex.label ?? (audited ? `${hex.waterClass} cell ${hex.audit?.row}/${hex.audit?.column}` : `Unresolved ${hex.key}`);
+        const provisionalFeatureName = (audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id) && hex.features.some((feature) => feature.kind === "city")
           ? hex.label
           : undefined;
         const provisionalFeatureText = board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id ? provisionalFeatureLabel(hex) : undefined;
@@ -203,12 +209,12 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           : hex.waterClass === "land"
             ? "/assets/board/grassland.webp"
             : "/assets/board/coast/coast_0deg.webp";
-        const boardArt = boardArtForHex(hex, place);
+        const boardArt = audited ? undefined : boardArtForHex(hex, place);
         const stomped = game.stompedLocations.includes(placeKey);
         const monstersHere = game.monsters.filter((monster) => monster.location === placeKey);
         const unitsHere = game.units.filter((unit) => unit.location === placeKey);
         const occupantCount = monstersHere.length + unitsHere.length;
-        const provisionalBoard = board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id;
+        const provisionalBoard = audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id;
         const actionUnavailable = !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit);
         const moveFocus = (direction: "left" | "right" | "up" | "down") => {
           if (!provisionalBoard) return;
@@ -230,21 +236,24 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
           const next = ordered[0];
           if (!next) return;
           onFocusHex(next.key);
-          buttonRefs.current[next.key]?.focus();
+          buttonRefs.current[next.key]?.focus({ preventScroll: true });
         };
         return (
           <button
             key={hex.key}
-            aria-label={`${displayName}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+            aria-label={`${displayName}${stomped ? ", stomped" : ""}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-hex-key={hex.key}
-            data-location-name={place?.name}
+            data-location-name={place?.name ?? hex.label}
+            data-audit-cell={hex.audit ? `${hex.audit.row}/${hex.audit.column}` : undefined}
             data-stack-count={occupantCount || undefined}
             title={tooltipText}
             aria-disabled={actionUnavailable || (!place && !provisionalBoard) ? true : undefined}
             disabled={(!place && !provisionalBoard) || (!provisionalBoard && actionUnavailable)}
             tabIndex={provisionalBoard ? (placeKey === (focusedHexKey ?? (isHexKey(activePlayer?.location ?? "") ? activePlayer?.location : undefined)) ? 0 : -1) : undefined}
-            className={`hex-tile ${place?.kind ?? "unresolved"} ${hex.waterClass === "land" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
-            style={{ left: `${left}%`, top: `${top}%` }}
+            data-stomped={stomped || undefined}
+            data-occupied={occupantCount > 0 || undefined}
+            className={`hex-tile ${place?.kind ?? (audited ? "audited-tile" : "unresolved")} ${hex.waterClass === "land" || hex.waterClass === "lakeshore" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
+            style={{ left: `${left}%`, top: `${top}%`, ...(audited ? { width: `${AUDITED_TILE_WIDTH_PERCENT}%` } : {}) }}
             ref={(node) => { buttonRefs.current[placeKey] = node; }}
             onFocus={() => onFocusHex(placeKey)}
             onKeyDown={(event) => {
@@ -265,13 +274,16 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
               else onFocusHex(placeKey);
             }}
           >
-            {baseArt && <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />}
+            {audited ? <TerrainArt hex={hex} /> : baseArt && <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />}
             {boardArt && <img className="tile-art" src={boardArt} alt="" aria-hidden="true" loading="lazy" />}
-            {stomped && <img className="tile-stomp" src="/assets/board/tokens/stomp_token.webp" alt="" aria-hidden="true" loading="lazy" />}
+            {stomped && audited && <StompedMarker />}
+            {stomped && !audited && <img className="tile-stomp" src="/assets/board/tokens/stomp_token.webp" alt="" aria-hidden="true" loading="lazy" />}
             {place?.kind === "infamy" && <img className="tile-infamy" src="/assets/board/tokens/infamy_token.webp" alt="" aria-hidden="true" loading="lazy" />}
+            {audited && <FeatureMarkers hex={hex} />}
+            {audited && visibleName && <span className="audited-city-name">{visibleName}</span>}
             <span className="tile-content">
               {place && <span className="node" aria-hidden="true">{place.kind === "city" ? "✦" : place.kind === "base" ? "⌂" : place.kind === "infamy" ? "★" : place.kind === "mutation" ? "✹" : "⚔"}</span>}
-              {visibleName && <span className="tile-name">{visibleName}</span>}
+              {!audited && visibleName && <span className="tile-name">{visibleName}</span>}
             {provisionalFeatureText && <i className="location-kind provisional-feature-kind">{provisionalFeatureText}</i>}
               {place?.kind === "city" && <i className="city-hp" aria-label={`printed city benefit ${place.marker ?? "not recorded"}`}>{place.marker ?? "benefit n/a"}</i>}
               {place?.kind === "mutation" && <i className="location-kind">MUTATION</i>}

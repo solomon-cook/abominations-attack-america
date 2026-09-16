@@ -1,0 +1,12 @@
+{
+  "cellId": "3/17",
+  "tool": "image_gen",
+  "prompt": "Production North America strategy game terrain cell 3/17. Image1 is exact square composition guide: central hex fills width, top/bottom edges at 6.7%/93.3% image height. Preserve coastline intersection positions and land/water occupancy of the hex; extend terrain to every square corner outside the hex. Images2/3 are olive land and teal water material references. Audit: Lake edge; Lake from northwest edge to southeast edge; Not stated.  Generate one SQUARE edge-to-edge terrain image of this single cell ONLY. Fine tactile top-down surface, natural gentle shoreline curves constrained to guide. Flat orthographic camera. Match muted olive land and muted teal water references. Remove ALL yellow lines, hex boundaries, labels, frames, rims, shadows, peg holes. No buildings, pieces, symbols or text. Uniform illumination to all edges, no vignette, entirely opaque. Pixels will be assembled directly against adjacent cells.",
+  "sourcePath": "/Users/solomon/.codex/generated_images/01a0a6bf-3a8a-7571-b351-dfd75d04ff60/exec-d3557954-acde-4c93-a922-551d3e4b943c.png",
+  "references": [
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/cell-guides/r3-c17.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/masters/land-1.png",
+    "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/board-art/masters/water-1.png"
+  ],
+  "status": "generated-needs-neighbour-review"
+}
