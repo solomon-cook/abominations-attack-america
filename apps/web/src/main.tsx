@@ -60,6 +60,7 @@ import { TurnPrompt } from "./components/TurnPrompt";
 import { TurnProgress } from "./components/TurnProgress";
 import { setupLairLabel } from "./components/setup-location-label";
 import { MilitarySheet, deploymentChoices } from "./components/MilitarySheet";
+import { MovementChecklist } from "./components/MovementChecklist";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
 import { BoardViewport } from "./components/BoardViewport";
@@ -329,7 +330,7 @@ function App() {
       ? { label: "Confirm unit move", command: { type: "move-unit", unitId: selectedUnitId!, path: selectedUnitPath } as GameCommand }
       : selectedPath.length > 1
         ? { label: "Confirm monster move", command: { type: "move", path: selectedPath } as GameCommand }
-        : { label: "Select a highlighted destination", command: undefined }
+        : { label: "Choose a piece to move", command: undefined }
     : activeGame.phase === "fight"
       ? pendingBattle && !pendingAttackTarget && !activeGame.pendingDecision?.type?.includes("retreat") && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length === 1
         ? { label: "Resolve fight", command: { type: "resolve-fight", battleId: pendingBattle.id } as GameCommand }
@@ -517,7 +518,7 @@ function App() {
           : activeGame.phase === "encounter"
             ? { type: "resolve-encounter" }
             : { type: "deploy" }
-        : command;
+        : command.type === "move" ? { ...command, continueMovement: true } : command;
     const acceptedMove = normalized.type === "move"
       ? { path: normalized.path as HexKey[], pieceId: activePlayer.id }
       : normalized.type === "move-unit"
@@ -805,7 +806,7 @@ function App() {
         : "Move the selected military unit along a highlighted path."
       : selectedPath.length > 1
         ? `${selectedPath.map((id) => getLocation(id)?.name ?? id).join(" → ")} · ${selectedPath.length - 1} movement ${selectedPath.length - 1 === 1 ? "space" : "spaces"}`
-        : `Move up to ${activePlayer.move} spaces. Choose a connected location on the map.`
+        : activeGame.movedPieceIds.includes(activePlayer.id) ? (selectableUnitIds.size ? "Monster movement complete. Move your remaining units or end movement." : "Movement complete. End movement to continue.") : `Move ${activePlayer.name} up to ${activePlayer.move} spaces, or select a military unit below.`
     : activeGame.phase === "fight"
       ? activeGame.pendingDecision?.type === "attack-target"
         ? pendingAttackPrompt
@@ -1086,16 +1087,6 @@ function App() {
             <button onClick={() => setDeploymentPieceId(null)}>Cancel placement</button>
           </div>}
           <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} />
-          <SelectedPieceTray
-            game={activeGame}
-            selectedUnitId={selectedUnitId}
-            selectedUnitPath={selectedUnitPath}
-            onClear={() => {
-              setSelectedUnitId(null);
-              setSelectedUnitPath([]);
-              setHoveredPath([]);
-            }}
-          />
           <p className="sr-only" id="board-description">
             {boardDescription}
           </p>
@@ -1127,7 +1118,7 @@ function App() {
             <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="turn-hud-body" aria-label={gamePanelOpen ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelOpen ? "−" : "+"}</button>
           </div>
           {!gamePanelOpen && <div className="board-action-bar">
-            <ActionDock onPrimary={activeGame.phase === "deploy" && militaryChoices.length > 0 ? openMilitarySheet : !actionDock.command ? () => setGamePanelOpen(true) : undefined} secondaryAction={activeGame.phase === "deploy" && militaryChoices.length > 0 ? { label: "Finish deployment", command: { type: "pass-deploy" } } : undefined} label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)}  />
+            <ActionDock onPrimary={activeGame.phase === "deploy" && militaryChoices.length > 0 ? openMilitarySheet : !actionDock.command ? () => setGamePanelOpen(true) : undefined} secondaryAction={activeGame.phase === "move" ? { label: "End movement →", command: { type: "pass-move" } } : activeGame.phase === "deploy" && militaryChoices.length > 0 ? { label: "Finish deployment", command: { type: "pass-deploy" } } : undefined} label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)}  />
           </div>}
           <div id="turn-hud-body" hidden={!gamePanelOpen}>
           <TurnProgress game={activeGame} />
@@ -1161,6 +1152,16 @@ function App() {
               runCommand={runCommand}
               getLocationName={(key) => getLocation(key)?.name ?? key}
             />
+          <SelectedPieceTray
+            game={activeGame}
+            selectedUnitId={selectedUnitId}
+            selectedUnitPath={selectedUnitPath}
+            onClear={() => {
+              setSelectedUnitId(null);
+              setSelectedUnitPath([]);
+              setHoveredPath([]);
+            }}
+          />
             {activeGame.phase === "move" &&
             selectedUnitId &&
             selectedUnitPath.length > 1 ? (
@@ -1208,7 +1209,7 @@ function App() {
               </div>
             ) : activeGame.phase === "move" ? (
               <div className="move-actions">
-                {activeGame.setupAssignments?.[activeGame.currentPlayer]?.lair && activeGame.monsters[activeGame.currentPlayer]?.location !== "hollywood" && (
+                {!activeGame.movedPieceIds.includes(activePlayer.id) && activeGame.setupAssignments?.[activeGame.currentPlayer]?.lair && activeGame.monsters[activeGame.currentPlayer]?.location !== "hollywood" && (
                   <button
                     disabled={!canAct}
                     onClick={() => runIrreversibleAction(() => void runCommand({ type: "disappear-monster" }), "Leave the monster in its lair and consume the Move step?")}
@@ -1216,12 +1217,7 @@ function App() {
                     Disappear instead of moving
                   </button>
                 )}
-                <button
-                  disabled={!canAct}
-                  onClick={() => void runCommand({ type: "pass-move" })}
-                >
-                  Leave monster here & finish Move
-                </button>
+
               </div>
             ) : activeGame.phase === "fight" || activeGame.phase === "encounter" || activeGame.phase === "deploy" ? (
               <PhaseActions
@@ -1250,6 +1246,15 @@ function App() {
                 Resolve {action.toLowerCase()}
               </button>
             )}
+            {activeGame.phase === "move" && <MovementChecklist game={activeGame} canAct={canAct}
+              selectedUnitId={selectedUnitId} movableUnitIds={selectableUnitIds} monsterCanMove={legalPaths.length > 0}
+              onSelect={(unitId) => {
+                setSelectedUnitId(unitId); setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]);
+                const location = unitId ? activeGame.units.find((unit) => unit.id === unitId)?.location : activePlayer.location;
+                if (location && isHexKey(location)) setFocusedHexKey(location);
+              }}
+              onEnd={() => void runCommand({ type: "pass-move" })}
+            />}
             <details className="hud-section"><summary>Match options</summary>
             {setupComplete && activeGame.phase !== "game-over" && (
               <button

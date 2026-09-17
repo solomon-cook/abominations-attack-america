@@ -248,3 +248,41 @@
   .game-screen.setup-in-progress > .setup-panel { right:8px; top:170px; width:240px; max-height:calc(100dvh - 260px); padding:12px; }
 }
 .game-screen.setup-in-progress .board-context-tray { display:none; }
+
+/* Turn actions occupy the lower-right corner; the center edge is for sheets. */
+.game-screen > .layout.panel-open > .game-side-panel,
+.game-screen > .layout.panel-closed > .game-side-panel {
+  inset:auto 14px 16px auto; max-height:calc(100dvh - 165px);
+}
+.movement-checklist { margin:12px 0; }
+.movement-checklist-heading { display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:.8rem; margin-bottom:9px; }
+.movement-checklist-heading > span { font-size:.68rem; color:#dbc991; }
+.movement-piece-list { display:grid; gap:5px; max-height:230px; overflow-y:auto; padding:2px; }
+#turn-hud-body .movement-piece {
+  display:flex; align-items:center; gap:9px; margin:0; padding:10px;
+  border:1px solid #778b684f; background:#2b3931; color:#f4f1ea; text-align:left;
+}
+#turn-hud-body .movement-piece.selected { border-color:#eeb968; background:#4b412b; box-shadow:inset 3px 0 #eeb968; }
+#turn-hud-body .movement-piece.completed { opacity:.7; }
+.movement-piece > span:nth-child(2) { flex:1; min-width:0; }
+.movement-piece strong { display:block; font-size:.79rem; text-transform:capitalize; }
+.movement-piece small { display:block; font-size:.65rem; color:#c0c6b2; margin-top:3px; font-weight:400; }
+.movement-piece-icon { font-size:1rem; color:#dbce96; }
+.movement-piece-status { font-size:.65rem; white-space:nowrap; }
+#turn-hud-body .movement-context { font-size:.74rem; line-height:1.45; margin:10px 0; color:#d4d0bf; }
+#turn-hud-body .end-movement { margin:0; width:100%; }
+@media(max-width:900px) {
+  .game-screen > .layout.panel-open > .game-side-panel,
+  .game-screen > .layout.panel-closed > .game-side-panel { inset:auto 8px 116px auto; width:min(310px,calc(100vw - 80px)); max-height:calc(100dvh - 290px); }
+  .game-screen .map-controls { top:174px; left:8px; bottom:auto; right:auto; width:48px; flex-direction:column; }
+  .game-screen .map-controls .map-reset { font-size:.55rem; white-space:normal; }
+  .game-screen .board-minimap { display:none; }
+  .movement-piece-list { max-height:180px; }
+}
+.game-screen #turn-hud-body .piece-detail-tray {
+  position:static; width:100%; max-height:none; margin:10px 0; padding:10px;
+  background:#2b3931; border:1px solid #778b684f; border-radius:6px;
+}
+#turn-hud-body .piece-detail-tray h3 { font-size:.85rem; }
+#turn-hud-body .piece-detail-tray p { font-size:.72rem; }
+#turn-hud-body .piece-detail-tray .piece-detail-stats { flex-wrap:wrap; }

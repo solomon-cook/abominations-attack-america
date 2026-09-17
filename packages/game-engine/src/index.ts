@@ -437,7 +437,7 @@ function shuffledDeck(ids: readonly string[], seed: number): string[] {
 }
 
 export type GameCommand =
-  | { type: "move"; path: string[] }
+  | { type: "move"; path: string[]; continueMovement?: boolean }
   | { type: "move-unit"; unitId: string; path: string[] }
   | { type: "disappear-monster" }
   | { type: "pass-move" }
@@ -960,7 +960,7 @@ export function movementPathAllowed(board: BoardDefinition, path: readonly HexKe
 }
 
 function legalMonsterPathsWithoutLure(state: GameState, monsterId = state.monsters[state.currentPlayer]?.id): HexKey[][] {
-  if (state.phase !== "move") return [];
+  if (state.phase !== "move" || (monsterId && (state.movedPieceIds ?? []).includes(monsterId))) return [];
   const board = boardForState(state);
   const boardIndex = buildBoardIndex(board);
   const monster = state.monsters.find((candidate) => candidate.id === monsterId);
@@ -1108,6 +1108,16 @@ export function moveUnit(state: GameState, unitId: string, path: string[]): Game
   }
   next.log.push(`${unit.branch} unit moved to ${board.hexes[destination]?.label ?? destination}.`);
   return next;
+}
+
+/** Movement decisions can be submitted separately; battles reflect final positions. */
+function refreshMovementBattles(state: GameState): void {
+  state.pendingBattles = state.pendingBattles.flatMap((battle) => {
+    const monster = state.monsters.find((piece) => piece.id === battle.monsterId);
+    if (monster?.location !== battle.location) return [];
+    const militaryUnitIds = battle.militaryUnitIds.filter((id) => state.units.some((unit) => unit.id === id && unit.location === battle.location && !state.removedUnitIds.includes(id)));
+    return militaryUnitIds.length ? [{ ...battle, militaryUnitIds }] : [];
+  });
 }
 
 export function moveMonster(state: GameState, monsterId: string, path: string[]): GameState {
@@ -2665,6 +2675,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     if (!monsterId) throw new Error("The monster movement decision has already been resolved.");
     const next = structuredClone(state);
     const alreadyMoved = (next.movedPieceIds ?? []).includes(monsterId);
+    refreshMovementBattles(next);
     if (!alreadyMoved) next.movedPieceIds = [...(next.movedPieceIds ?? []), monsterId];
     if (next.activeResearchLure?.monsterId === monsterId) next.activeResearchLure = undefined;
     next.phase = next.encounterSuppressed ? "deploy" : next.pendingBattles.length > 0 ? "fight" : "encounter";
@@ -2677,7 +2688,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       : next.phase === "encounter"
         ? { type: "encounter-resolution", playerIndex: next.currentPlayer, location: next.monsters[next.currentPlayer].location as HexKey }
         : { type: "deployment", playerIndex: next.currentPlayer };
-    next.log.push(next.phase === "deploy" ? `${next.monsters[next.currentPlayer].name} has no Encounter after returning to its lair.` : `${next.monsters[next.currentPlayer].name} stays in place; resolve the Encounter step.`);
+    next.log.push(alreadyMoved ? "Movement finished; proceed to the next phase." : next.phase === "deploy" ? `${next.monsters[next.currentPlayer].name} has no Encounter after returning to its lair.` : `${next.monsters[next.currentPlayer].name} stays in place; resolve the Encounter step.`);
     const eventPayload = { location: next.monsters[next.currentPlayer].location };
     return { state: appendEvent(next, "monster.stayed", eventPayload), eventType: "monster.stayed", eventPayload };
   }
@@ -2704,6 +2715,11 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     requireDecision("monster-movement");
     const next = moveMonster(state, state.monsters[state.currentPlayer].id, command.path);
     if (next === state) throw new Error("That move is not legal in the current phase.");
+    if (command.continueMovement) {
+      refreshMovementBattles(next);
+      next.phase = "move";
+      next.pendingDecision = { type: "monster-movement", playerIndex: next.currentPlayer, pieceId: next.monsters[next.currentPlayer].id };
+    }
     const eventPayload = { path: command.path, destination: command.path.at(-1) };
     return { state: appendEvent(next, "monster.moved", eventPayload), eventType: "monster.moved", eventPayload };
   }

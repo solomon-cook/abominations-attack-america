@@ -111,3 +111,10 @@
   .game-screen .player-sheet-peeks { left:166px; right:4px; justify-content:flex-start; max-height:100px; gap:5px; }
   .game-screen .sheet-peek { width:98px; min-height:90px; padding:10px 7px 24px; }
 }
+.game-screen .player-sheet-peeks {
+  left:50%; right:auto; transform:translateX(-50%);
+  width:clamp(160px,calc(100vw - 760px),600px); justify-content:safe center;
+}
+@media(max-width:900px) {
+  .game-screen .player-sheet-peeks { width:calc(100vw - 24px); justify-content:safe center; }
+}

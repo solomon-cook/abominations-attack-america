@@ -2830,3 +2830,29 @@ test("starting deployment uses the branch allowance, selected pieces and Guard b
   assert.equal(result.phase, "move");
   assert.equal(result.currentPlayer, 0);
 });
+
+
+test("explicit movement flow allows monster and units in either order before ending Move", () => {
+  for (const monsterFirst of [true, false]) {
+    const state = createGame(2);
+    state.units.forEach((unit) => { unit.location = "record-tile"; });
+    state.monsters[1]!.location = "record-tile";
+    const unit = state.units.find((candidate) => candidate.ownerPlayer === 0)!;
+    unit.location = K("san-francisco");
+    const monsterCommand = { type: "move" as const, path: [K("los-angeles"), K("denver")], continueMovement: true };
+    const unitCommand = { type: "move-unit" as const, unitId: unit.id, path: [K("san-francisco"), K("los-angeles")] };
+    const first = applyCommand(state, monsterFirst ? monsterCommand : unitCommand).state;
+    assert.equal(first.phase, "move");
+    const second = applyCommand(first, monsterFirst ? unitCommand : monsterCommand).state;
+    assert.equal(second.phase, "move");
+    assert.equal(second.movedPieceIds.length, 2);
+    assert.deepEqual(legalMonsterPaths(second), []);
+    assert.deepEqual(legalUnitPaths(second, unit.id), []);
+    assert.throws(() => applyCommand(second, monsterCommand), /not legal/);
+    const ended = applyCommand(second, { type: "pass-move" }).state;
+    assert.equal(ended.phase, "encounter");
+    assert.deepEqual(ended.pendingBattles, [], "moving away clears provisional battles");
+    assert.equal(ended.monsters[0]!.location, K("denver"));
+    assert.equal(ended.units.find((candidate) => candidate.id === unit.id)!.location, K("los-angeles"));
+  }
+});
