@@ -933,7 +933,7 @@ function App() {
           <p className="lede">A monster strategy game of cities, battles, and bad decisions.</p>
         </div>
         <div className="header-actions">
-          {setupComplete && <PlayerStatusControls game={activeGame} monster={activePlayer} branch={activeBranch} />}
+          {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={participant?.playerIndex ?? activeGame.currentPlayer} monster={activeGame.monsters[participant?.playerIndex ?? activeGame.currentPlayer]} branch={activeGame.setupAssignments?.[participant?.playerIndex ?? activeGame.currentPlayer]?.branch ?? (["Army", "Navy", "Air Force", "Marines"] as const)[(participant?.playerIndex ?? activeGame.currentPlayer) % 4]} canAct={canAct} runCommand={runCommand} onDeploy={openMilitarySheet} />}
           <button className="ghost game-panel-toggle" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="game-side-panel">
             {gamePanelOpen ? "Hide details" : "Show details"}
           </button>
@@ -1303,7 +1303,7 @@ function App() {
           <LogPanel eventLog={eventLog} log={log} />
         </aside>
       </section>
-      {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet game={activeGame} branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
+      {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet canAct={canAct} runCommand={(command) => { setMilitarySheetOpen(false); return runCommand(command); }} game={activeGame} branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
         setDeploymentPieceId(choice.id);
         setMilitarySheetOpen(false);
         setFocusedHexKey(choice.destinations[0]);

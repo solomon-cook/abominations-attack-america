@@ -1,6 +1,7 @@
+import { SheetCards } from "./SheetCards";
 import { MilitaryReference } from "./SheetReference";
 import { useEffect, useRef, useState } from "react";
-import { deployUnitResult, redeployUnitResult, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalNationalGuardDeploymentDestinations, type GameState, type HexKey } from "@abominations/game-engine";
+import { deployUnitResult, redeployUnitResult, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalNationalGuardDeploymentDestinations, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 
 export type DeploymentChoice = { id: string; typeId: string; sheet: string; kind: "deploy" | "redeploy"; destinations: HexKey[] };
 
@@ -24,14 +25,14 @@ export function deploymentChoices(game: GameState): DeploymentChoice[] {
   });
 }
 
-export function MilitarySheet({ branch, choices, onSelect, onClose, game, referenceOnly = false }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onClose: () => void; game?: GameState; referenceOnly?: boolean }) {
+export function MilitarySheet({ branch, choices, onSelect, onClose, game, referenceOnly = false, canAct = false, runCommand, playerIndex = game?.currentPlayer ?? 0, onDeploy }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onClose: () => void; game?: GameState; referenceOnly?: boolean; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; playerIndex?: number; onDeploy?: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const suppressSelection = useRef(false);
   const [selectedSheet, setSelectedSheet] = useState(branch);
   const extraSheets = referenceOnly && game ? [
-    ...(game.players[game.currentPlayer]?.researchCardIds.includes("Guard Commander") ? ["National Guard"] : []),
-    ...game.units.filter((unit) => unit.ownerPlayer === game.currentPlayer && unit.branch === "Giant").map((unit) => unit.unitTypeId === "x-fighter" ? "X-Fighters" : "Giant"),
+    ...(game.players[playerIndex]?.researchCardIds.includes("Guard Commander") ? ["National Guard"] : []),
+    ...game.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.branch === "Giant").map((unit) => unit.unitTypeId === "x-fighter" ? "X-Fighters" : "Giant"),
   ] : [];
   const sheets = [branch, ...new Set([...choices.map((choice) => choice.sheet), ...extraSheets].filter((sheet) => sheet !== branch))];
   const activeSheet = sheets.includes(selectedSheet) ? selectedSheet : branch;
@@ -46,9 +47,9 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
   return <div className="military-sheet-backdrop" onClick={onClose}>
     <div className={`military-hand ${sheets.length > 1 ? "multiple-sheets" : ""}`} ref={ref} role="dialog" aria-modal="true" aria-labelledby="military-sheet-title" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => {
       if (event.key === "Escape") onClose();
-      if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); turnPage(event.key === "ArrowRight" ? 1 : -1); }
+      if (!(event.target instanceof HTMLSelectElement) && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); turnPage(event.key === "ArrowRight" ? 1 : -1); }
       if (event.key === "Tab") {
-        const buttons = Array.from(ref.current?.querySelectorAll<HTMLElement>("button, summary") ?? []);
+        const buttons = Array.from(ref.current?.querySelectorAll<HTMLElement>("button:not(:disabled), summary, select:not(:disabled)") ?? []);
         const first = buttons[0], last = buttons.at(-1);
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -81,7 +82,8 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
         <span className="label">MILITARY RECORD SHEET</span>
         <h2 id="military-sheet-title">{activeSheet}</h2>
         {!referenceOnly && <p>Choose a piece, then select a glowing location on the map.</p>}
-        <MilitaryReference sheet={activeSheet} game={game} />
+        {referenceOnly && game && <SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} />}
+        <MilitaryReference sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
         {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " Draw Military Research or pass deployment."}</p>}
         {!referenceOnly && (["deploy", "redeploy"] as const).map((kind) => {
           const pieces = pageChoices.filter((choice) => choice.kind === kind);
@@ -94,6 +96,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
             </button>)}</div>
           </section>;
         })}
+        {!referenceOnly && game && <SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} />}
       </div>
       {sheets.length > 1 && <div className="military-hand-navigation">
         <button onClick={() => turnPage(-1)} aria-label="Previous military sheet">← Previous</button>

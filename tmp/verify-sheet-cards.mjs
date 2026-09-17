@@ -1,0 +1,23 @@
+import {chromium} from 'playwright';import {chromePath} from '../scripts/chrome-path.mjs';import assert from 'node:assert/strict';
+const browser=await chromium.launch({executablePath:chromePath,headless:true});
+try{const page=await browser.newPage({viewport:{width:1280,height:950}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://127.0.0.1:5191/sheet-cards-check.html');
+await page.getByRole('button',{name:'Monster sheet',exact:true}).click();
+assert.equal(await page.getByRole('article',{name:'Armored Scales',exact:true}).count(),1);assert.equal(await page.getByRole('article',{name:'Winged Horror',exact:true}).count(),0);
+await page.getByRole('article',{name:'Armored Scales',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:'tmp/monster-sheet-cards.png'});await page.keyboard.press('Escape');
+await page.getByRole('button',{name:'Military sheet',exact:true}).click();
+assert.equal(await page.getByRole('button',{name:'Play Antimatter',exact:true}).count(),0);
+assert.match(await page.getByRole('article',{name:'Fusion Cells',exact:true}).textContent(),/Active while held/);
+assert.match(await page.getByRole('article',{name:'Cutbacks',exact:true}).textContent(),/not implemented/);
+const health=await page.evaluate(()=>window.game.monsters[0].health);await page.getByRole('button',{name:'Play Defense Satellites',exact:true}).click();
+assert.equal(await page.getByRole('dialog').count(),0);assert.ok(await page.evaluate(()=>!window.game.players[0].researchCardIds.includes('Defense Satellites')));assert.ok(await page.evaluate(()=>window.game.monsters[0].health)<health);
+await page.getByRole('button',{name:'Military sheet',exact:true}).click();
+await page.getByLabel('Blonde Lure target or outcome').selectOption({index:1});await page.getByRole('button',{name:'Play Blonde Lure',exact:true}).click();assert.ok(await page.evaluate(()=>window.game.activeResearchLure));
+await page.evaluate(()=>window.resetScenario('fight'));await page.getByRole('button',{name:'Military sheet',exact:true}).click();
+await page.getByRole('button',{name:'Play Antimatter',exact:true}).click();assert.ok(await page.evaluate(()=>window.game.pendingBattles[0].antimatterActive));
+await page.getByRole('button',{name:'Military sheet',exact:true}).click();await page.getByLabel('Stabilizer Ray target or outcome').selectOption({index:1});await page.getByRole('button',{name:'Play Stabilizer Ray',exact:true}).click();assert.ok(await page.evaluate(()=>window.game.pendingBattles[0].stabilizerRayMutationCardId));
+await page.getByRole('button',{name:'Military sheet',exact:true}).click();await page.getByRole('article',{name:'Laser Fence',exact:true}).scrollIntoViewIfNeeded();await page.setViewportSize({width:390,height:844});await page.screenshot({path:'tmp/research-sheet-cards-mobile.png'});await page.keyboard.press('Escape');
+await page.evaluate(()=>window.resetScenario('other'));await page.getByRole('button',{name:'Monster sheet',exact:true}).click();assert.equal(await page.getByRole('article',{name:'Winged Horror',exact:true}).count(),1);assert.equal(await page.getByRole('article',{name:'Armored Scales',exact:true}).count(),0);await page.keyboard.press('Escape');
+await page.getByRole('button',{name:'Military sheet',exact:true}).click();assert.equal(await page.getByRole('article',{name:'Guard Commander',exact:true}).count(),1);assert.equal(await page.getByRole('button',{name:/^Play /}).count(),0);await page.keyboard.press('Escape');await page.evaluate(()=>window.resetScenario('projected'));await page.getByRole('button',{name:'Military sheet',exact:true}).click();await page.getByRole('button',{name:'Play Defense Satellites',exact:true}).click();assert.ok(await page.evaluate(()=>!window.game.players[0].researchCardIds.includes('Defense Satellites')));assert.deepEqual(errors,[]);
+console.log('PASS: cards visible, private ownership, passive/unsupported states, timing restrictions, Satellites discard/damage, Lure targets, Antimatter, Stabilizer targets, mobile, no browser errors or state mutation during action discovery.');
+}finally{await browser.close();}
