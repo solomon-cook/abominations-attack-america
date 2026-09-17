@@ -26,7 +26,7 @@ export function deploymentChoices(game: GameState): DeploymentChoice[] {
   });
 }
 
-export function MilitarySheet({ branch, choices, onSelect, onClose, game, referenceOnly = false, canAct = false, runCommand, playerIndex = game?.currentPlayer ?? 0, onDeploy, initialSheet }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onClose: () => void; game?: GameState; referenceOnly?: boolean; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; playerIndex?: number; onDeploy?: () => void; initialSheet?: string }) {
+export function MilitarySheet({ branch, choices, onSelect, onClose, game, referenceOnly = false, canAct = false, runCommand, playerIndex = game?.currentPlayer ?? 0, onDeploy, initialSheet }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onClose: () => void; game?: GameState; referenceOnly?: boolean; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; playerIndex?: number; onDeploy?: (sheet?: string) => void; initialSheet?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const suppressSelection = useRef(false);
@@ -80,6 +80,11 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
         <span className="label">MILITARY RECORD SHEET</span>
         <h2 id="military-sheet-title">{activeSheet}</h2>
         {!referenceOnly && <p>Choose a piece, then select a glowing location on the map.</p>}
+        {referenceOnly && sheets.includes("National Guard") && (activeSheet === branch || activeSheet === "National Guard") && <div className="guard-sheet-action">
+          {activeSheet !== "National Guard" && <button type="button" onClick={() => setSelectedSheet("National Guard")}>View National Guard sheet →</button>}
+          {onDeploy && <button type="button" disabled={!canAct || !game || !deploymentChoices(game).some((choice) => choice.sheet === "National Guard")} onClick={() => onDeploy("National Guard")}>Deploy National Guard</button>}
+          {game?.phase !== "deploy" && <small>Guard deployment is available during Deploy.</small>}
+        </div>}
         {referenceOnly && game && <SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} />}
         <MilitaryReference sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
         {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " Draw Military Research or pass deployment."}</p>}

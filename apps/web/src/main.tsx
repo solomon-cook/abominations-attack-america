@@ -138,6 +138,7 @@ function App() {
   const [pendingAction, setPendingAction] = useState(false);
   const [selectedPath, setSelectedPath] = useState<HexKey[]>([]);
   const [hoveredPath, setHoveredPath] = useState<HexKey[]>([]);
+  const [militaryInitialSheet, setMilitaryInitialSheet] = useState<string | undefined>();
   const [militarySheetOpen, setMilitarySheetOpen] = useState(false);
   const [deploymentPieceId, setDeploymentPieceId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
@@ -198,7 +199,7 @@ function App() {
   const militaryChoices = useMemo(() => deploymentChoices(activeGame), [activeGame]);
   const deploymentPiece = militaryChoices.find((choice) => choice.id === deploymentPieceId);
   const deploymentDestinations = new Set(deploymentPiece?.destinations ?? []);
-  const openMilitarySheet = () => { setMilitarySheetOpen(true); setGamePanelOpen(false); };
+  const openMilitarySheet = (sheet?: string) => { setMilitaryInitialSheet(typeof sheet === "string" ? sheet : undefined); setMilitarySheetOpen(true); setGamePanelOpen(false); };
   const activeResearchLure = activeGame.activeResearchLure?.monsterId === activePlayer.id
     ? activeGame.activeResearchLure
     : undefined;
@@ -1303,7 +1304,7 @@ function App() {
           <LogPanel eventLog={eventLog} log={log} />
         </aside>
       </section>
-      {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet canAct={canAct} runCommand={(command) => { setMilitarySheetOpen(false); return runCommand(command); }} game={activeGame} branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
+      {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet initialSheet={militaryInitialSheet} canAct={canAct} runCommand={(command) => { setMilitarySheetOpen(false); return runCommand(command); }} game={activeGame} branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
         setDeploymentPieceId(choice.id);
         setMilitarySheetOpen(false);
         setFocusedHexKey(choice.destinations[0]);

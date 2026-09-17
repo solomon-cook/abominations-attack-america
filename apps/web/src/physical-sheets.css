@@ -77,3 +77,20 @@
 .monster-physical-record{background:linear-gradient(115deg,#747b70,#59635c)}
 @media(max-width:600px){.sheet-peek{min-height:60px}.player-sheet-peeks{gap:5px}}
 .sheet-peek[data-sheet="monster"],.sheet-peek[data-sheet="Mecha-Monster"],.sheet-peek[data-sheet="Captain Colossal"]{background-image:linear-gradient(115deg,#89908755,#343d3d55)}
+
+/* Desktop hands overlap on the table. Hover or keyboard focus makes room. */
+@media(min-width:901px) and (hover:hover){
+  .sheet-held-card-grid{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:30px 42px 28px;scroll-padding-inline:42px;isolation:isolate}
+  .sheet-held-card-grid .sheet-held-card{position:relative;flex:0 0 220px;width:220px;min-height:420px;margin-left:-90px;transform:rotate(-2deg);transform-origin:50% 90%;transition:transform .22s ease,box-shadow .22s ease;box-shadow:-5px 4px 12px #0005;z-index:1}
+  .sheet-held-card-grid .sheet-held-card:first-child{margin-left:0}
+  .sheet-held-card-grid .sheet-held-card:nth-child(even){transform:rotate(2deg)}
+  .sheet-held-card-grid .sheet-held-card:is(:hover,:focus-within){transform:translateY(-18px) rotate(0);z-index:5;box-shadow:0 12px 24px #0008,0 0 0 2px #f4dc89}
+  .sheet-held-card-grid .sheet-held-card:has(~ .sheet-held-card:is(:hover,:focus-within)){transform:translateX(-26px) rotate(-4deg)}
+  .sheet-held-card-grid .sheet-held-card:is(:hover,:focus-within) ~ .sheet-held-card{transform:translateX(92px) rotate(3deg)}
+  .sheet-held-card-grid:has(.sheet-held-card:is(:hover,:focus-within)){padding-right:134px}
+  .sheet-held-card-grid .sheet-held-card h4{font-size:15px;min-height:36px}
+}
+@media(prefers-reduced-motion:reduce){.sheet-held-card-grid .sheet-held-card{transition:none}}
+.manual-reduced-motion .sheet-held-card-grid .sheet-held-card{transition:none}
+.guard-sheet-action{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.guard-sheet-action button{padding:10px 14px;min-height:44px;background:#f5e9bb;color:#263925;border:1px solid #d6d5a0;border-radius:6px;cursor:pointer;font-weight:700}.guard-sheet-action button:disabled{opacity:.55;cursor:default}.guard-sheet-action small{font-size:12px}

@@ -32,7 +32,7 @@ export function MilitaryReference({ sheet, game }: { sheet: string; game?: GameS
   const research = game?.players[game.currentPlayer]?.researchCardIds ?? [];
   return <section className="sheet-reference" aria-label={`${sheet} reference rules`}>
     <p className="sheet-reference-note">Printed reference values · special abilities and research may change combat.</p>
-    {deployment && <p><b>Deploy:</b> {deployment.ownOrGuardUnits} branch or National Guard units{deployment.additionalNationalGuardUnits ? `, plus ${deployment.additionalNationalGuardUnits} National Guard` : ""}, or draw 1 Military Research card. Guard deployment requires Guard Commander in this game.</p>}
+    {deployment && <p><b>Deploy:</b> {deployment.ownOrGuardUnits} branch or National Guard units{deployment.additionalNationalGuardUnits ? `, plus ${deployment.additionalNationalGuardUnits} National Guard` : ""}, or draw 1 Military Research card. Anyone may deploy Guard unless another player holds Guard Commander.</p>}
     {units.map((unit) => <article key={unit.id}>
       <h3>{unit.name} <small>· {unit.quantity} pieces</small></h3>
       <SheetStats values={{ Move: unit.id === "navy-nuclear-submarine" ? "4 / 8 as missile" : unit.move, Movement: movementLabel(unit.movement), Attacks: unit.attacks, Defense: printedValue(unit.defense), Damage: printedValue(unit.damage) }} />

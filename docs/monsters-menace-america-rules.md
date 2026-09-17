@@ -375,7 +375,9 @@ determine the permitted number and mix of deployments.
 - Units from the player's own branch may be deployed only on unstomped bases
   belonging to that branch.
 - National Guard units may be deployed on any unstomped city, military base, or
-  Infamy site.
+  Infamy site. All players may deploy them within their branch allowance unless
+  another player holds Guard Commander; then only the cardholder may deploy them.
+  Deployment alone does not grant movement or redeployment control.
 - A unit may be deployed into a legal space that contains a monster.
 - A player cannot exceed the unit inventory or the branch's printed deployment
   allowance.

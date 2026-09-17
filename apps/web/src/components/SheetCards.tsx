@@ -32,7 +32,7 @@ export function sheetCardActions(game: GameState, cardId: string): CardAction[] 
   });
 }
 
-function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game: GameState; cardId: string; kind: "mutation" | "research"; canPlay: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: () => void }) {
+function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game: GameState; cardId: string; kind: "mutation" | "research"; canPlay: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void }) {
   const [selected, setSelected] = useState("");
   const rule = sourcedCardRule(cardId);
   const implemented = cardDefinition(cardId)?.availability === "implemented";
@@ -58,11 +58,11 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game:
       </select></label>
       <button type="button" disabled={!chosen} onClick={() => chosen && void runCommand(chosen.command)}>Play {cardId}</button>
     </>}
-    {cardId === "X-Fighters" && canPlay && game.phase === "deploy" && onDeploy && <button type="button" onClick={onDeploy}>Choose an X-Fighter to deploy</button>}
+    {cardId === "X-Fighters" && canPlay && game.phase === "deploy" && onDeploy && <button type="button" onClick={() => onDeploy("X-Fighters")}>Choose an X-Fighter to deploy</button>}
   </article>;
 }
 
-export function SheetCards({ game, playerIndex, kind, canAct = false, runCommand, onDeploy }: { game: GameState; playerIndex: number; kind: "mutation" | "research"; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: () => void }) {
+export function SheetCards({ game, playerIndex, kind, canAct = false, runCommand, onDeploy }: { game: GameState; playerIndex: number; kind: "mutation" | "research"; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void }) {
   const cards = game.players[playerIndex]?.[kind === "mutation" ? "mutationCardIds" : "researchCardIds"] ?? [];
   return <section className="sheet-held-cards" aria-label={kind === "mutation" ? "Your Mutation cards" : "Your Military Research cards"}>
     <h3>{kind === "mutation" ? "Monster Mutation" : "Military Research"} · {cards.length}</h3>

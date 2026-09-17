@@ -79,6 +79,14 @@ export interface NationalGuardInventory {
   readonly quantity: number;
   readonly unitIds: readonly string[];
   readonly statistics: "source-gated";
+  /** Public deployment permissions included in client projections without exposing hands. */
+  readonly deploymentPlayerIndices?: readonly number[];
+}
+
+/** Everyone may deploy neutral Guard unless another player holds Guard Commander. */
+export function canDeployNationalGuard(state: Pick<GameState, "players"> & Partial<Pick<GameState, "nationalGuard">>, playerIndex: number): boolean {
+  if (state.nationalGuard?.deploymentPlayerIndices) return state.nationalGuard.deploymentPlayerIndices.includes(playerIndex);
+  return Boolean(state.players[playerIndex]) && !state.players.some((player, index) => index !== playerIndex && player.researchCardIds.includes("Guard Commander"));
 }
 
 function expectedNationalGuardUnitIds(): string[] {
@@ -405,6 +413,7 @@ export function redactCardIdentifiers(value: unknown): unknown {
 export function projectState(state: GameState, audience: StateAudience, viewerPlayerIndex?: number): GameState {
   if (audience === "internal") return structuredClone(state);
   const projected = structuredClone(state);
+  projected.nationalGuard = { ...projected.nationalGuard, deploymentPlayerIndices: state.players.flatMap((_, index) => canDeployNationalGuard(state, index) ? [index] : []) };
   projected.decks.mutation = { ...projected.decks.mutation, order: [], discard: [] };
   projected.decks.research = { ...projected.decks.research, order: [], discard: [] };
   projected.players = projected.players.map((player, index) => audience === "player" && index === viewerPlayerIndex
@@ -1260,7 +1269,7 @@ function researchContinuousEffects(state: Pick<GameState, "players">, playerInde
   const composed = composeContinuousEffects([
     { moveBonus: cards.includes("Fusion Cells") ? 1 : 0 },
     { extraDeployments: cards.includes("2nd Generation") ? 1 : 0 },
-    { canControlNationalGuard, canDeployNationalGuard: canControlNationalGuard },
+    { canControlNationalGuard, canDeployNationalGuard: canDeployNationalGuard(state, playerIndex) },
   ]);
   return {
     moveBonus: composed.moveBonus,
@@ -2109,7 +2118,7 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   const researchEffects = researchContinuousEffects(next, next.currentPlayer);
   const extraDeployment = researchEffects.extraDeployments;
   const allowance = (allowanceDefinition?.ownOrGuardUnits ?? 0) + (guardDeployment ? allowanceDefinition?.additionalNationalGuardUnits ?? 0 : 0) + extraDeployment;
-  if (guardDeployment && !researchEffects.canDeployNationalGuard) throw new GameDomainError("ILLEGAL_COMMAND", "Only the player with the Guard Commander card can deploy National Guard units.");
+  if (guardDeployment && !canDeployNationalGuard(next, next.currentPlayer)) throw new GameDomainError("ILLEGAL_COMMAND", "Another player holds the Guard Commander card; only that player can deploy National Guard units.");
   if (next.deploymentsThisTurn >= allowance) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} deployment allowance is exhausted; pass Deploy or draw Research when that source rule is implemented.`);
   const baseHex = Object.values(board.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch));
   const destination = guardDeployment

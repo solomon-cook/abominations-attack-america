@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CARD_STACKING_RULES, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { canDeployNationalGuard, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -121,7 +121,7 @@ test("ordinary movement cannot move a neutral National Guard unit", () => {
   assert.equal(state.nationalGuard.control, "neutral");
 });
 
-test("Guard Commander grants only its holder National Guard movement and deployment control", () => {
+test("Guard is deployable by everyone until Guard Commander grants its holder exclusive control", () => {
   const state = createGame(2);
   const guard = {
     ...state.units[0],
@@ -142,7 +142,16 @@ test("Guard Commander grants only its holder National Guard movement and deploym
   const noCard = createGame(2);
   noCard.phase = "deploy";
   noCard.pendingDecision = { type: "deployment", playerIndex: noCard.currentPlayer };
+  const deployed = applyCommand(noCard, { type: "deploy", unitId: "national-guard-tank-1", destination: K("infamy-site") });
+  assert.equal(deployed.state.units.find((unit) => unit.id === "national-guard-tank-1")?.location, K("infamy-site"));
+  deployed.state.phase = "move";
+  assert.deepEqual(legalUnitPaths(deployed.state, "national-guard-tank-1"), []);
+  noCard.players[1].researchCardIds = ["Guard Commander"];
   assert.throws(() => applyCommand(noCard, { type: "deploy", unitId: "national-guard-tank-1", destination: K("infamy-site") }), /Guard Commander card/);
+  const projected = projectState(noCard, "player", 0);
+  assert.deepEqual(projected.players[1].researchCardIds, []);
+  assert.equal(canDeployNationalGuard(projected, 0), false);
+  assert.equal(canDeployNationalGuard(projected, 1), true);
 });
 
 test("inventory accounting rejects structural identity and reference drift", () => {

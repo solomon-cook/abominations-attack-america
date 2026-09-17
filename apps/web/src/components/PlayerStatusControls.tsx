@@ -7,7 +7,7 @@ import { MONSTER_DEFINITIONS, type GameCommand, type GameState } from "@abominat
 import { MilitarySheet } from "./MilitarySheet";
 import { movementLabel, SheetStats, SourcePhoto } from "./SheetReference";
 
-type Props = { game: GameState; monster: GameState["monsters"][number]; branch: string; playerIndex: number; canAct: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: () => void };
+type Props = { game: GameState; monster: GameState["monsters"][number]; branch: string; playerIndex: number; canAct: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void };
 
 function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose }: Pick<Props, "monster" | "game" | "playerIndex" | "canAct" | "runCommand"> & { onClose: () => void }) {
   const definition = MONSTER_DEFINITIONS.find((candidate) => candidate.name === monster.name);
@@ -74,6 +74,6 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
     </nav>
     {open && createPortal(open === "monster"
       ? <MonsterSheet monster={monster} game={game} playerIndex={playerIndex} canAct={canAct} runCommand={playCard} onClose={() => setOpen(null)} />
-      : <MilitarySheet key={open} initialSheet={open} playerIndex={playerIndex} canAct={canAct} runCommand={playCard} onDeploy={() => { setOpen(null); onDeploy(); }} branch={branch} game={game} choices={[]} referenceOnly onSelect={() => {}} onClose={() => setOpen(null)} />, document.body)}
+      : <MilitarySheet key={open} initialSheet={open} playerIndex={playerIndex} canAct={canAct} runCommand={playCard} onDeploy={(sheet) => { setOpen(null); onDeploy(sheet); }} branch={branch} game={game} choices={[]} referenceOnly onSelect={() => {}} onClose={() => setOpen(null)} />, document.body)}
   </>;
 }
