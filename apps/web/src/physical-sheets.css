@@ -45,3 +45,35 @@
 .sheet-held-card details{margin-top:10px}.sheet-held-card summary{cursor:pointer;font-weight:700;font-size:13px}.sheet-held-card p{font-size:13px;line-height:1.5;white-space:pre-line}
 .sheet-held-card .sheet-card-status{font-size:12px;color:#40513f}.sheet-held-card button,.sheet-held-card select{width:100%;min-height:44px;padding:10px;border:1px solid #536047;border-radius:6px;background:#294532;color:#fff7d5;font-weight:700;cursor:pointer;margin-top:8px}.sheet-held-card select{background:#fffbed;color:#243226;max-width:100%}.sheet-held-card label{font-size:12px}.sheet-held-card button:disabled{opacity:.5;cursor:default}
 @media(max-width:600px){.sheet-held-card-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Owned records peek out from the table edge; keyboard focus lifts them too. */
+.player-sheet-peeks{position:fixed;z-index:24;right:0;top:190px;width:190px;max-height:calc(100dvh - 410px);display:flex;flex-direction:column;gap:9px;overflow-y:auto;overflow-x:hidden;padding:5px 0 12px 6px;pointer-events:none;scrollbar-width:thin}
+.sheet-peek{position:relative;flex-shrink:0;min-height:76px;width:182px;transform:translateX(64px);padding:12px 10px;text-align:left;border:2px solid #e8dfae;border-right:0;border-radius:10px 0 0 10px;background:#526e24 url('/assets/reference-sheets/camouflage.svg') center/190px;color:#fff7d1;box-shadow:-4px 5px 14px #0007;cursor:pointer;pointer-events:auto;transition:transform .18s ease,box-shadow .18s ease}
+.sheet-peek[data-sheet="monster"],.sheet-peek[data-sheet="Mecha-Monster"],.sheet-peek[data-sheet="Captain Colossal"],.sheet-peek[data-sheet="X-Fighters"]{background-color:#646c6c}
+.sheet-peek[data-sheet="Navy"]{background-color:#17679a}.sheet-peek[data-sheet="Marines"]{background-color:#a3392d}.sheet-peek[data-sheet="Air Force"]{background-color:#ddc549;color:#252819}.sheet-peek[data-sheet="National Guard"]{background-color:#d48d2d;color:#251e14}
+.sheet-peek-title{display:block;max-width:104px;font-family:Georgia,serif;font-weight:900;font-size:16px;line-height:1.1}.sheet-peek small{display:block;max-width:104px;font-size:10px;margin-top:5px}
+.sheet-peek-invite{position:absolute;right:8px;top:50%;writing-mode:vertical-rl;transform:translateY(-50%);font-size:10px;font-weight:800;opacity:0}
+.sheet-peek:hover,.sheet-peek:focus-visible{transform:translateX(0);box-shadow:-5px 5px 22px #d4ec8470;outline:2px solid #fff4ae;outline-offset:-4px}.sheet-peek:hover .sheet-peek-invite,.sheet-peek:focus-visible .sheet-peek-invite{opacity:1}
+@media(max-width:600px){.player-sheet-peeks{top:205px;width:145px;max-height:calc(100dvh - 420px);gap:6px}.sheet-peek{width:140px;min-height:66px;transform:translateX(42px);padding:9px 7px}.sheet-peek-title,.sheet-peek small{max-width:86px}.sheet-peek-title{font-size:13px}}
+@media(max-height:580px){.player-sheet-peeks{top:135px;max-height:calc(100dvh - 260px)}}
+@media(prefers-reduced-motion:reduce){.sheet-peek{transition:none}}
+.manual-reduced-motion .sheet-peek{transition:none}
+/* The original monster tile is a landscape record, with tens/units rails. */
+.monster-reference-sheet{width:min(920px,calc(100vw - 32px))}
+.military-hand .physical-monster-sheet{padding:16px;background:#acb0a7;box-shadow:none;border:0}
+.monster-physical-record{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;background:linear-gradient(115deg,#999f96,#7d8780);border:2px solid #e6e1c9;border-radius:14px;overflow:hidden;min-height:390px}
+.record-health-rail{display:flex;flex-direction:column;align-items:center;justify-content:space-around;background:#22262a;color:#e5e5d5;padding:12px 0 6px;font-weight:900;font-size:19px;clip-path:polygon(0 0,70% 0,100% 6%,60% 12%,100% 18%,60% 24%,100% 30%,60% 36%,100% 42%,60% 48%,100% 54%,60% 60%,100% 66%,60% 72%,100% 78%,60% 84%,100% 90%,70% 100%,0 100%)}
+.record-health-rail.ones{clip-path:polygon(100% 0,30% 0,0 6%,40% 12%,0 18%,40% 24%,0 30%,40% 36%,0 42%,40% 48%,0 54%,40% 60%,0 66%,40% 72%,0 78%,40% 84%,0 90%,30% 100%,100% 100%)}
+.record-health-rail span{position:relative;z-index:1;text-shadow:1px 1px #000}.record-health-rail .health-marker{color:#ffe263;filter:drop-shadow(0 0 3px #e4a630);font-size:24px}.record-health-rail small{font-size:8px;color:#f8df64}
+.monster-record-face{padding:16px 16px 0;min-width:0}.physical-monster-sheet .monster-record-face h2{font-size:40px;margin:0 0 12px;color:#ffce31;letter-spacing:1px;text-shadow:2px 3px #111,-1px -1px #111}
+.monster-record-columns{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.monster-record-face .sheet-stats{display:block;margin:0}.monster-record-face .sheet-stats>div{display:flex;gap:8px;align-items:baseline;padding:3px 0;border:0;background:none;color:#fff9de}.monster-record-face .sheet-stats dt{font-size:12px;color:#fff18b;flex:0 0 108px}.monster-record-face .sheet-stats dd{margin:0;font-size:17px}
+.physical-monster-sheet .monster-record-face h3{font-size:12px;color:#fff18b;margin:14px 0 6px}.monster-record-face p{color:#fffbe8;font-size:14px;line-height:1.5;margin-top:0}.monster-record-face .record-live-health{margin-top:16px;font-size:12px}.record-live-health b{font-size:23px;color:#ffdc6e}
+.monster-record-silhouette{height:155px;margin-top:12px;background:#d7d9c477;mask:var(--monster-silhouette) center/contain no-repeat;filter:drop-shadow(0 0 2px #ffface)}
+.monster-record-face .monster-record-skyline{margin:0 -16px;height:64px;background:linear-gradient(transparent,#d7c644)}
+.monster-current-values{margin-top:14px}.monster-current-values summary{cursor:pointer;padding:10px;background:#343d38;color:#fff6d5;border-radius:4px;font-size:13px}
+@media(max-width:600px){.military-hand .physical-monster-sheet{padding:8px}.monster-physical-record{grid-template-columns:25px minmax(0,1fr) 25px;min-height:410px}.monster-record-face{padding:12px 8px 0}.monster-record-columns{gap:12px;grid-template-columns:1fr 1fr}.physical-monster-sheet .monster-record-face h2{font-size:29px}.monster-record-face .sheet-stats>div{display:block;padding-bottom:7px}.monster-record-face .sheet-stats dt{font-size:9px}.monster-record-face .sheet-stats dd{font-size:13px}.monster-record-face p{font-size:11px}.physical-monster-sheet .monster-record-face h3{font-size:10px}.record-health-rail{font-size:13px}.record-health-rail .health-marker{font-size:17px}.record-health-rail small{font-size:6px}.monster-record-silhouette{height:105px}.monster-record-face .monster-record-skyline{margin-inline:-8px}}
+.physical-military-sheet[data-branch="Mecha-Monster"],.physical-military-sheet[data-branch="Captain Colossal"]{--sheet-color:#656b6d;--sheet-dark:#303b3d;--sheet-accent:#ffe083}
+.monster-physical-record{background:linear-gradient(115deg,#747b70,#59635c)}
+@media(max-width:600px){.sheet-peek{min-height:60px}.player-sheet-peeks{gap:5px}}
+.sheet-peek[data-sheet="monster"],.sheet-peek[data-sheet="Mecha-Monster"],.sheet-peek[data-sheet="Captain Colossal"]{background-image:linear-gradient(115deg,#89908755,#343d3d55)}

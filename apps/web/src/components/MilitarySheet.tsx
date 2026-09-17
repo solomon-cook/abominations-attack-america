@@ -1,3 +1,4 @@
+import { ownedMilitarySheets } from "./owned-sheets";
 import { SheetCards } from "./SheetCards";
 import { MilitaryReference } from "./SheetReference";
 import { useEffect, useRef, useState } from "react";
@@ -25,15 +26,12 @@ export function deploymentChoices(game: GameState): DeploymentChoice[] {
   });
 }
 
-export function MilitarySheet({ branch, choices, onSelect, onClose, game, referenceOnly = false, canAct = false, runCommand, playerIndex = game?.currentPlayer ?? 0, onDeploy }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onClose: () => void; game?: GameState; referenceOnly?: boolean; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; playerIndex?: number; onDeploy?: () => void }) {
+export function MilitarySheet({ branch, choices, onSelect, onClose, game, referenceOnly = false, canAct = false, runCommand, playerIndex = game?.currentPlayer ?? 0, onDeploy, initialSheet }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onClose: () => void; game?: GameState; referenceOnly?: boolean; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; playerIndex?: number; onDeploy?: () => void; initialSheet?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const suppressSelection = useRef(false);
-  const [selectedSheet, setSelectedSheet] = useState(branch);
-  const extraSheets = referenceOnly && game ? [
-    ...(game.players[playerIndex]?.researchCardIds.includes("Guard Commander") ? ["National Guard"] : []),
-    ...game.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.branch === "Giant").map((unit) => unit.unitTypeId === "x-fighter" ? "X-Fighters" : "Giant"),
-  ] : [];
+  const [selectedSheet, setSelectedSheet] = useState(initialSheet ?? branch);
+  const extraSheets = referenceOnly && game ? ownedMilitarySheets(game, playerIndex, branch) : [];
   const sheets = [branch, ...new Set([...choices.map((choice) => choice.sheet), ...extraSheets].filter((sheet) => sheet !== branch))];
   const activeSheet = sheets.includes(selectedSheet) ? selectedSheet : branch;
   const pageIndex = sheets.indexOf(activeSheet);

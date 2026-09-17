@@ -28,7 +28,7 @@ function ReserveSlots({ typeId, quantity, game }: { typeId: string; quantity: nu
 export function MilitaryReference({ sheet, game }: { sheet: string; game?: GameState }) {
   const units = UNIT_DEFINITIONS.filter((unit) => unit.branch === sheet);
   const deployment = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === sheet);
-  const source = units[0]?.sourceRefs[0]?.split("/").at(-1) ?? (sheet === "National Guard" || sheet === "Giant" ? "giant-units-national-guard.jpg" : undefined);
+  const source = units[0]?.sourceRefs[0]?.split("/").at(-1) ?? (sheet === "National Guard" || sheet === "Giant" || sheet === "Mecha-Monster" || sheet === "Captain Colossal" ? "giant-units-national-guard.jpg" : undefined);
   const research = game?.players[game.currentPlayer]?.researchCardIds ?? [];
   return <section className="sheet-reference" aria-label={`${sheet} reference rules`}>
     <p className="sheet-reference-note">Printed reference values · special abilities and research may change combat.</p>
@@ -44,7 +44,7 @@ export function MilitaryReference({ sheet, game }: { sheet: string; game?: GameS
       {NATIONAL_GUARD_DEFINITIONS.map((unit) => <article key={unit.id}><h3>{unit.name} <small>· {unit.quantity} pieces</small></h3><SheetStats values={{ "Printed move": unit.printedMove, "With Guard Commander": unit.move, Movement: unit.name === "Fighter" ? "Fly with commander" : "Land with commander", Attacks: 1, Defense: unit.defense, Damage: unit.damage }} /><ReserveSlots typeId={unit.id} quantity={unit.quantity} game={game} /><p>{unit.specialAbilityText}</p></article>)}
       <p>Guard Commander: {research.includes("Guard Commander") ? "active" : "not held by this player"}.</p>
     </>}
-    {sheet === "Giant" && GIANT_UNIT_DEFINITIONS.map((unit) => <article key={unit.id}><h3>{unit.name}</h3><SheetStats values={{ Health: unit.health, Move: unit.move, Movement: movementLabel(unit.movement), Attacks: unit.attacks, Defense: unit.defense, Damage: unit.damage }} /></article>)}
+    {GIANT_UNIT_DEFINITIONS.filter((unit) => sheet === "Giant" || unit.name === sheet).map((unit) => <article key={unit.id}><h3>{unit.name}</h3><SheetStats values={{ Health: unit.health, Move: unit.move, Movement: movementLabel(unit.movement), Attacks: unit.attacks, Defense: unit.defense, Damage: unit.damage }} /></article>)}
     {sheet === "X-Fighters" && game?.units.filter((unit) => unit.unitTypeId === "x-fighter" && unit.ownerPlayer === game.currentPlayer).slice(0, 1).map((unit) => <article key={unit.id}><h3>X-Fighters</h3><p>Research units · current game values. Deploy in place of a branch unit.</p><SheetStats values={{ Move: unit.move, Movement: movementLabel(unit.movement), Attacks: unit.attacks, Defense: unit.defense, Damage: unit.damage }} /></article>)}
     {source && <SourcePhoto file={source} />}
   </section>;
