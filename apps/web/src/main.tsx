@@ -15,12 +15,9 @@ import {
   PROVISIONAL_AUTHORITATIVE_BOARD,
   isHexKey,
   getLocation,
-    legalNationalGuardDeploymentDestinations,
-    legalOwnedDeploymentDestinations,
   legalMonsterDestinations,
   legalMonsterPaths,
   legalUnitPaths,
-  BRANCH_DEPLOYMENT_DEFINITIONS,
   type GameCommand,
   type GameState,
   type HexKey,
@@ -60,6 +57,7 @@ import { SetupPanel } from "./components/SetupPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
 import { TurnPrompt } from "./components/TurnPrompt";
 import { TurnProgress } from "./components/TurnProgress";
+import { MilitarySheet, deploymentChoices } from "./components/MilitarySheet";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
 import { BoardViewport } from "./components/BoardViewport";
@@ -139,6 +137,8 @@ function App() {
   const [pendingAction, setPendingAction] = useState(false);
   const [selectedPath, setSelectedPath] = useState<HexKey[]>([]);
   const [hoveredPath, setHoveredPath] = useState<HexKey[]>([]);
+  const [militarySheetOpen, setMilitarySheetOpen] = useState(false);
+  const [deploymentPieceId, setDeploymentPieceId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
   const [acceptedMoveAnimation, setAcceptedMoveAnimation] = useState<{ path: HexKey[]; pieceId: string; key: number } | null>(null);
@@ -172,23 +172,8 @@ function App() {
   const activeBoard = boardForGame(activeGame);
   const activeBoardHex = activeBoard && isHexKey(activePlayer.location) ? activeBoard.hexes[activePlayer.location] : undefined;
   const focusedBoardHex = focusedHexKey && activeBoard?.hexes[focusedHexKey] ? activeBoard.hexes[focusedHexKey] : activeBoardHex;
-  const guardCommanderActive = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Guard Commander") ?? false;
-  const availableGuardUnitId = guardCommanderActive
-    ? activeGame.nationalGuard.unitIds.find((unitId) => !activeGame.units.some((unit) => unit.id === unitId))
-    : undefined;
-  const guardDeploymentDestination = legalNationalGuardDeploymentDestinations(activeGame).at(0);
   const activeBranch = activeGame.setupAssignments?.[activeGame.currentPlayer]?.branch
     ?? (["Army", "Navy", "Air Force", "Marines"] as const)[activeGame.currentPlayer % 4];
-  const activeDeploymentDefinition = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === activeBranch);
-  const ownedDeploymentDestinations = legalOwnedDeploymentDestinations(activeGame);
-  const availableXFighterUnitId = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("X-Fighters")
-    ? activeGame.units.find((unit) => unit.unitTypeId === "x-fighter" && unit.ownerPlayer === activeGame.currentPlayer && unit.location === "record-tile" && !activeGame.removedUnitIds.includes(unit.id))?.id
-    : undefined;
-  const ownDeploymentAvailable = activeGame.deploymentsThisTurn < (activeDeploymentDefinition?.ownOrGuardUnits ?? 0)
-    && ownedDeploymentDestinations.length > 0
-    && (Boolean(availableXFighterUnitId) || activeGame.units.some((unit) => unit.branch === activeBranch && unit.location === "record-tile" && !activeGame.removedUnitIds.includes(unit.id)));
-  const guardDeploymentAvailable = Boolean(availableGuardUnitId && guardDeploymentDestination)
-    && activeGame.deploymentsThisTurn < ((activeDeploymentDefinition?.ownOrGuardUnits ?? 0) + (activeDeploymentDefinition?.additionalNationalGuardUnits ?? 0));
   const legalPaths = useMemo(
     () => legalMonsterPaths(activeGame, activePlayer.id),
     [activeGame, activePlayer.id],
@@ -209,6 +194,10 @@ function App() {
     () => new Set(legalUnitPathsForSelection.map((path) => path.at(-1)!)),
     [legalUnitPathsForSelection],
   );
+  const militaryChoices = useMemo(() => deploymentChoices(activeGame), [activeGame]);
+  const deploymentPiece = militaryChoices.find((choice) => choice.id === deploymentPieceId);
+  const deploymentDestinations = new Set(deploymentPiece?.destinations ?? []);
+  const openMilitarySheet = () => { setMilitarySheetOpen(true); setGamePanelOpen(false); };
   const activeResearchLure = activeGame.activeResearchLure?.monsterId === activePlayer.id
     ? activeGame.activeResearchLure
     : undefined;
@@ -342,7 +331,7 @@ function App() {
           ? { label: "Choose the Encounter decision", command: undefined }
           : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
         : activeGame.phase === "deploy"
-          ? { label: "Pass deployment", command: { type: "pass-deploy" } as GameCommand }
+          ? { label: deploymentPiece ? "Change deployment piece" : "Deploy military", command: undefined }
           : { label: "Match complete", command: undefined };
 
   useEffect(() => {
@@ -386,6 +375,8 @@ function App() {
     setSelectedUnitId(null);
     setSelectedUnitPath([]);
     setRetreatChoices({});
+    setDeploymentPieceId(null);
+    setMilitarySheetOpen(false);
   }, [activeGame.currentPlayer, activeGame.phase, activePlayer.location]);
 
   useEffect(() => {
@@ -527,6 +518,8 @@ function App() {
         if (actionLabel) setAcceptedActionFeedback({ label: actionLabel, key: Date.now() });
         await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
+      if (normalized.type === "deploy" || normalized.type === "redeploy") setDeploymentPieceId(null);
+      if (acceptedMove) { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); setSelectedUnitId(null); }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Action failed");
       if (online && session && room) {
@@ -1042,7 +1035,10 @@ function App() {
               game={activeGame}
               activePlayerId={activePlayer.id}
               canAct={canAct}
-              legalDestinations={legalDestinations}
+              legalDestinations={selectedUnitId ? new Set() : legalDestinations}
+              deploymentDestinations={deploymentDestinations}
+              onDeploy={(destination) => { if (canAct && deploymentPiece) void runCommand({ type: deploymentPiece.kind, unitId: deploymentPiece.id, destination }); }}
+              onSelectMonster={() => { setSelectedUnitId(null); setSelectedUnitPath([]); setHoveredPath([]); }}
               legalUnitDestinations={legalUnitDestinations}
               selectableUnitIds={selectableUnitIds}
               selectedUnitId={selectedUnitId}
@@ -1056,6 +1052,7 @@ function App() {
               onFocusHex={setFocusedHexKey}
               onSelectStack={setSelectedStackKey}
               onSelectUnit={(unitId) => {
+                setHoveredPath([]);
                 setSelectedUnitId(unitId);
                 setSelectedPath([]);
                 setSelectedUnitPath([]);
@@ -1067,8 +1064,12 @@ function App() {
             />
           </BoardViewport>
           <div className="board-action-bar">
-            <ActionDock label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
+            <ActionDock onPrimary={activeGame.phase === "deploy" ? openMilitarySheet : undefined} label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
           </div>
+          {activeGame.phase === "deploy" && deploymentPiece && <div className="deployment-prompt" role="status">
+            Place {deploymentPiece.typeId.replaceAll("-", " ")} · Select a glowing location.
+            <button onClick={() => setDeploymentPieceId(null)}>Cancel placement</button>
+          </div>}
           <AttentionBanner game={activeGame} action={action} canAct={canAct} online={online} />
           <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} />
           <SelectedPieceTray
@@ -1078,6 +1079,7 @@ function App() {
             onClear={() => {
               setSelectedUnitId(null);
               setSelectedUnitPath([]);
+              setHoveredPath([]);
             }}
           />
           <p className="sr-only" id="board-description">
@@ -1263,6 +1265,7 @@ function App() {
             ) : activeGame.phase === "fight" || activeGame.phase === "encounter" || activeGame.phase === "deploy" ? (
               <PhaseActions
                 activeGame={activeGame}
+                onOpenMilitarySheet={openMilitarySheet}
                 canAct={canAct}
                 runCommand={runCommand}
                 getLocationName={(key) => getLocation(key)?.name ?? key}
@@ -1273,11 +1276,6 @@ function App() {
                 canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle}
                 retreatChoices={retreatChoices}
                 setRetreatChoices={setRetreatChoices}
-                ownDeploymentAvailable={ownDeploymentAvailable}
-                availableXFighterUnitId={availableXFighterUnitId}
-                availableGuardUnitId={availableGuardUnitId}
-                guardDeploymentDestination={guardDeploymentDestination}
-                guardDeploymentAvailable={guardDeploymentAvailable}
               />
             ) : activeGame.phase === "challenge" ? (
               <ChallengeActions activeGame={activeGame} canAct={canAct} runCommand={runCommand} />
@@ -1304,6 +1302,12 @@ function App() {
           <LogPanel eventLog={eventLog} log={log} />
         </aside>
       </section>
+      {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
+        setDeploymentPieceId(choice.id);
+        setMilitarySheetOpen(false);
+        setFocusedHexKey(choice.destinations[0]);
+        requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${choice.destinations[0]}"]`)?.focus({ preventScroll: true }));
+      }} />}
       {challengeDuelOpen && lastChallengeEvent && (
         <div className="challenge-duel-overlay" role="dialog" aria-modal="true" aria-label="Monster Challenge result">
           <ChallengeDuelPanel

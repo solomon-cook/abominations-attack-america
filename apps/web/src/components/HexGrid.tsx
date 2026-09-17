@@ -95,6 +95,9 @@ function monsterArtForName(name: string) {
 }
 
 type Props = {
+  deploymentDestinations: ReadonlySet<HexKey>;
+  onDeploy: (destination: HexKey) => void;
+  onSelectMonster: () => void;
   game: GameState;
   activePlayerId: string;
   canAct: boolean;
@@ -118,7 +121,7 @@ type Props = {
   onClearPreview: () => void;
 };
 
-export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
+export function HexGrid({ deploymentDestinations, onDeploy, onSelectMonster, game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const board = boardForGame(game);
   const audited = board?.id === AUDITED_BOARD.id;
   const boardHexes = displayHexesForGame(game);
@@ -162,8 +165,9 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
       )}
       {boardHexes.map(({ hex, place, left, top, developmentFixture }) => {
         const placeKey = hex.key;
-        const monsterLegal = canAct && legalDestinations.has(placeKey);
-        const unitLegal = canAct && legalUnitDestinations.has(placeKey);
+        const deploymentLegal = canAct && game.phase === "deploy" && deploymentDestinations.has(placeKey);
+        const monsterLegal = canAct && game.phase === "move" && legalDestinations.has(placeKey);
+        const unitLegal = canAct && game.phase === "move" && legalUnitDestinations.has(placeKey);
         const selectableUnit = canAct ? game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id)) : undefined;
         const featureText = hex.features.map((feature) => feature.kind).join(", ");
         const neighbourText = (boardIndex?.neighbours[placeKey] ?? [])
@@ -215,7 +219,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         const unitsHere = game.units.filter((unit) => unit.location === placeKey);
         const occupantCount = monstersHere.length + unitsHere.length;
         const provisionalBoard = audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id;
-        const actionUnavailable = !canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit);
+        const actionUnavailable = !deploymentLegal && (!canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit));
         const moveFocus = (direction: "left" | "right" | "up" | "down") => {
           if (!provisionalBoard) return;
           const origin = displayByKey.get(placeKey);
@@ -241,7 +245,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
         return (
           <button
             key={hex.key}
-            aria-label={`${displayName}${stomped ? ", stomped" : ""}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+            aria-label={`${displayName}${stomped ? ", stomped" : ""}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${deploymentLegal ? "legal deployment location" : selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-hex-key={hex.key}
             data-location-name={place?.name ?? hex.label}
             data-audit-cell={hex.audit ? `${hex.audit.row}/${hex.audit.column}` : undefined}
@@ -252,7 +256,7 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             tabIndex={provisionalBoard ? (placeKey === (focusedHexKey ?? (isHexKey(activePlayer?.location ?? "") ? activePlayer?.location : undefined)) ? 0 : -1) : undefined}
             data-stomped={stomped || undefined}
             data-occupied={occupantCount > 0 || undefined}
-            className={`hex-tile ${place?.kind ?? (audited ? "audited-tile" : "unresolved")} ${hex.waterClass === "land" || hex.waterClass === "lakeshore" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
+            className={`hex-tile ${place?.kind ?? (audited ? "audited-tile" : "unresolved")} ${hex.waterClass === "land" || hex.waterClass === "lakeshore" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${deploymentLegal ? "deployment-legal" : ""} ${deploymentLegal || monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%`, ...(audited ? { width: `${AUDITED_TILE_WIDTH_PERCENT}%` } : {}) }}
             ref={(node) => { buttonRefs.current[placeKey] = node; }}
             onFocus={() => onFocusHex(placeKey)}
@@ -265,8 +269,9 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
             onMouseEnter={() => (monsterLegal || unitLegal) && onPreviewPath(placeKey)}
             onMouseLeave={onClearPreview}
             onClick={(event) => {
+              if (deploymentLegal) { onDeploy(placeKey); return; }
               if (event.shiftKey && occupantCount > 0) onSelectStack(placeKey);
-              else if (selectableUnit && !monsterLegal && !unitLegal) onSelectUnit(selectableUnit.id);
+              else if (selectableUnit && !selectedUnitId) onSelectUnit(selectableUnit.id);
               else if (monsterLegal || unitLegal) {
                 if (selectedUnitId) onChooseUnitPath(placeKey);
                 else onChoosePath(placeKey);
@@ -297,13 +302,13 @@ export function HexGrid({ game, activePlayerId, canAct, legalDestinations, legal
                 {monstersHere.map((monster) => {
                   const monsterArt = monsterArtForName(monster.name);
                   return monsterArt
-                    ? <img className={`tile-monster tile-occupant ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id} src={monsterArt} alt={monster.name} loading="lazy" />
+                    ? <img className={`tile-monster tile-occupant ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id} onClick={monster.id === activePlayerId && canAct && game.phase === "move" ? (event) => { event.stopPropagation(); onSelectMonster(); } : undefined} src={monsterArt} alt={monster.name} loading="lazy" />
                     : <b className={`tile-occupant ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id}>{monster.name.slice(0, 1)}</b>;
                 })}
                 {unitsHere.map((unit) => {
                   const unitArt = unitArtForType(unit.unitTypeId);
                   return unitArt
-                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={canAct && selectableUnitIds.has(unit.id) ? (event) => { event.stopPropagation(); onSelectUnit(unit.id); } : undefined} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
                     : <i className="unit-mark tile-occupant" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
                 })}
               </span>}

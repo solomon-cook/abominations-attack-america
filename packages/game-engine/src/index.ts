@@ -2138,7 +2138,7 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
       })()
     : xFighterDeployment
       ? next.units.find((candidate) => candidate.id === requested?.unitId && isXFighter(candidate) && candidate.ownerPlayer === next.currentPlayer && candidate.location === "record-tile" && !next.removedUnitIds.includes(candidate.id))
-      : next.units.find((candidate) => candidate.branch === branch && candidate.location === "record-tile" && !next.removedUnitIds.includes(candidate.id));
+      : next.units.find((candidate) => (!requested?.unitId || candidate.id === requested.unitId) && candidate.branch === branch && candidate.location === "record-tile" && !next.removedUnitIds.includes(candidate.id));
   if (!unit) throw new GameDomainError("ILLEGAL_COMMAND", `No ${branch} unit remains on its record tile for deployment.`);
   if (guardDeployment) next.units.push(unit);
   else {

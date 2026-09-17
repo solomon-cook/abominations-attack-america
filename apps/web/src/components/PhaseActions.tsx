@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import { BRANCH_DEPLOYMENT_DEFINITIONS, legalOwnedRedeploymentDestinations, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
+import { type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 import { boardForGame } from "../board-pin";
 
 type AttackTargetDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type: "attack-target" }>;
@@ -7,6 +7,7 @@ type BattleDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type:
 
 type Props = {
   activeGame: GameState;
+  onOpenMilitarySheet: () => void;
   canAct: boolean;
   runCommand: (command: GameCommand) => void | Promise<void>;
   getLocationName: (key: HexKey) => string;
@@ -17,15 +18,11 @@ type Props = {
   canSpendInfamyOnPendingBattle: boolean;
   retreatChoices: Record<string, HexKey | "disappeared">;
   setRetreatChoices: Dispatch<SetStateAction<Record<string, HexKey | "disappeared">>>;
-  ownDeploymentAvailable: boolean;
-  availableXFighterUnitId?: string;
-  availableGuardUnitId?: string;
-  guardDeploymentDestination?: HexKey;
-  guardDeploymentAvailable: boolean;
 };
 
 export function PhaseActions({
   activeGame,
+  onOpenMilitarySheet,
   canAct,
   runCommand,
   getLocationName,
@@ -36,11 +33,6 @@ export function PhaseActions({
   canSpendInfamyOnPendingBattle,
   retreatChoices,
   setRetreatChoices,
-  ownDeploymentAvailable,
-  availableXFighterUnitId,
-  availableGuardUnitId,
-  guardDeploymentDestination,
-  guardDeploymentAvailable,
 }: Props) {
   const optionalMutationCards = activeGame.players[activeGame.currentPlayer]?.mutationCardIds.filter((cardId) => cardId === "Berserk" || cardId === "Son of a Monster") ?? [];
   const mutationButtons = (battleId: string) => optionalMutationCards.length > 0 ? (
@@ -164,23 +156,9 @@ export function PhaseActions({
   }
 
   if (activeGame.phase === "deploy") {
-    const activeBranch = activeGame.setupAssignments?.[activeGame.currentPlayer]?.branch
-      ?? (["Army", "Navy", "Air Force", "Marines"] as const)[activeGame.currentPlayer % 4];
-    const regularUnitAvailable = activeGame.units.some((unit) => unit.branch === activeBranch && unit.location === "record-tile" && !activeGame.removedUnitIds.includes(unit.id));
-    const allowance = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === activeBranch)?.ownOrGuardUnits ?? 0;
-    const canRedeploy = activeGame.deploymentsThisTurn < allowance;
-    const redeploymentChoices = canRedeploy
-      ? activeGame.units.flatMap((unit) => legalOwnedRedeploymentDestinations(activeGame, unit.id).map((destination) => ({ unit, destination })))
-      : [];
     return <div className="path-controls">
       {defenseSatellitesButton}
-      <button disabled={!canAct || !ownDeploymentAvailable || !regularUnitAvailable} onClick={() => void runCommand({ type: "deploy" })}>{regularUnitAvailable ? "Deploy one unit" : "No branch unit available"}</button>
-      {availableXFighterUnitId && <button disabled={!canAct || !ownDeploymentAvailable} onClick={() => void runCommand({ type: "deploy", unitId: availableXFighterUnitId })}>Deploy X-Fighter instead of branch unit</button>}
-      {availableGuardUnitId && guardDeploymentDestination && <button disabled={!canAct || !guardDeploymentAvailable} onClick={() => void runCommand({ type: "deploy", unitId: availableGuardUnitId, destination: guardDeploymentDestination })}>Deploy Guard to {getLocationName(guardDeploymentDestination)}</button>}
-      {redeploymentChoices.length > 0 && <div className="battle-choice" aria-label="Choose unit redeployment">
-        <span>Redeploy an owned branch unit to an unstomped base:</span>
-        {redeploymentChoices.map(({ unit, destination }) => <button key={`${unit.id}-${destination}`} disabled={!canAct} onClick={() => void runCommand({ type: "redeploy", unitId: unit.id, destination })}>{unit.unitTypeId ?? unit.id} → {getLocationName(destination)}</button>)}
-      </div>}
+      <button disabled={!canAct} onClick={onOpenMilitarySheet}>Open military sheet · deploy or redeploy</button>
       <button disabled={!canAct || activeGame.decks.research.exhausted} onClick={() => void runCommand({ type: "draw-research" })}>{activeGame.decks.research.exhausted ? "Military Research exhausted" : "Draw Military Research instead"}</button>
       <button className="cancel" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Pass deployment</button>
     </div>;

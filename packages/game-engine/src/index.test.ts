@@ -2750,3 +2750,20 @@ test("development city markers resolve fixed and dice health benefits with the c
   assert.equal(diceResult.state.rng.cursor, 3);
   assert.equal((diceResult.eventPayload.effects as Array<{ type: string; amount: number }>).find((effect) => effect.type === "health")?.amount, 1);
 });
+
+test("deployment places the requested reserve piece rather than the first piece", () => {
+  const state = createGame(2);
+  state.phase = "deploy";
+  const reserves = state.units.filter((unit) => unit.branch === "Army");
+  for (const unit of reserves) unit.location = "record-tile";
+  const chosen = reserves.at(-1)!;
+  const destination = legalOwnedDeploymentDestinations(state)[0];
+  const result = applyCommand(state, { type: "deploy", unitId: chosen.id, destination }).state;
+  assert.equal(result.units.find((unit) => unit.id === chosen.id)?.location, destination);
+  assert.equal(result.units.find((unit) => unit.id === reserves[0].id)?.location, "record-tile");
+  for (const unitId of ["missing-unit", state.units.find((unit) => unit.branch === "Navy")!.id]) {
+    assert.throws(() => applyCommand(state, { type: "deploy", unitId, destination }));
+  }
+  chosen.location = destination;
+  assert.throws(() => applyCommand(state, { type: "deploy", unitId: chosen.id, destination }));
+});

@@ -2,6 +2,7 @@ import type { GameCommand } from "@abominations/game-engine";
 
 type Props = {
   label: string;
+  onPrimary?: () => void;
   canAct: boolean;
   command?: GameCommand;
   unavailableReason?: string;
@@ -9,7 +10,7 @@ type Props = {
   onOpenPanel: () => void;
 };
 
-export function ActionDock({ label, canAct, command, unavailableReason, onAction, onOpenPanel }: Props) {
+export function ActionDock({ onPrimary, label, canAct, command, unavailableReason, onAction, onOpenPanel }: Props) {
   const actionIcon = command?.type === "move" || command?.type === "move-unit"
     ? "↝"
     : command?.type === "resolve-fight"
@@ -29,7 +30,7 @@ export function ActionDock({ label, canAct, command, unavailableReason, onAction
   return (
     <div className="action-dock" aria-label="Current action control">
       <span className="label">TAKE ACTION</span>
-      <button type="button" data-action-icon={actionIcon} aria-label={label} disabled={!canAct || !command} title={status} aria-describedby="action-dock-status" onClick={() => command && onAction(command)}>
+      <button type="button" data-action-icon={actionIcon} aria-label={label} disabled={!canAct || (!command && !onPrimary)} title={status} aria-describedby="action-dock-status" onClick={() => onPrimary ? onPrimary() : command && onAction(command)}>
         {label}
       </button>
       <small id="action-dock-status" className="action-dock-status" aria-live="polite">{status}</small>

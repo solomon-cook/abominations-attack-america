@@ -137,3 +137,21 @@ html,body,#root{width:100%;max-width:100%;overflow-x:clip}main{width:100%}
 .dense-stack-review{display:grid;grid-template-columns:minmax(180px,.45fr) minmax(0,1fr);gap:18px;align-items:center;margin-top:18px;padding:16px;border:1px solid #6b5846;background:#211b18;color:#f4f1ea;border-radius:5px}.dense-stack-review h2{margin:5px 0;color:#fff0d4;font-family:Georgia,serif;font-weight:400}.dense-stack-review p{color:#c9bdae;font-size:.75rem;line-height:1.4}.dense-stack-fixtures{display:grid;grid-template-columns:repeat(8,minmax(42px,1fr));gap:8px;align-items:center}.dense-stack-fixture{display:grid;width:100%;aspect-ratio:1;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;justify-items:center;padding:8px;border:1px solid #d9c993;background:linear-gradient(145deg,#eee7cb,#cfc5a2);border-radius:50%;overflow:hidden}.dense-stack-fixture.stack-count-1{grid-template-columns:1fr}.dense-stack-fixture img{width:100%;max-width:30px;aspect-ratio:1;object-fit:contain;filter:drop-shadow(0 1px 1px #101a12)}.dense-stack-fixture.stack-count-4 img,.dense-stack-fixture.stack-count-5 img,.dense-stack-fixture.stack-count-6 img{max-width:22px}.dense-stack-fixture.stack-count-7 img,.dense-stack-fixture.stack-count-8 img{max-width:17px}@media(max-width:900px){.dense-stack-review{grid-template-columns:1fr}.dense-stack-fixtures{grid-template-columns:repeat(4,minmax(42px,1fr))}}@media(max-width:450px){.dense-stack-fixtures{grid-template-columns:repeat(2,minmax(42px,1fr))}}
 .hex-tile,.board-review-hex{aspect-ratio:1.1547005;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
 .hex-tile.development-fixture{aspect-ratio:1.1547005;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+
+/* Military record sheet and board placement flow. */
+.military-sheet-backdrop{position:fixed;inset:0;z-index:150;background:#071014b8;display:grid;place-items:center;padding:20px}
+.military-sheet{width:min(760px,100%);max-height:85dvh;overflow:auto;background:#eee6cc;color:#202c25;border:3px solid #728168;border-radius:12px;padding:24px;box-shadow:0 20px 80px #0009}
+.military-sheet .label{color:#46553e}.military-sheet h2{font-size:32px;margin:8px 0}.military-sheet h3{font-size:16px;margin-top:24px}
+.military-sheet-close{float:right}.military-sheet-pieces{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.military-sheet-pieces button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;background:#fff9e8;color:#202c25;border:2px solid #77866c;border-radius:8px;text-transform:capitalize}
+.military-sheet-pieces button:hover,.military-sheet-pieces button:focus-visible{background:#d8edbc;border-color:#355d24;outline:3px solid #7aa251}
+.military-sheet-pieces img{width:100px;height:90px;object-fit:contain}.military-sheet-pieces small{font-size:12px}
+.deployment-prompt{position:absolute;left:50%;top:90px;transform:translateX(-50%);z-index:30;max-width:90%;padding:12px 18px;border:1px solid #e2e899;border-radius:10px;background:#172c26;color:#f8f6d3;box-shadow:0 4px 20px #0008}
+.deployment-prompt button{margin-left:12px}
+.hex-tile.deployment-legal{filter:drop-shadow(0 0 8px #e2ff76);outline:3px solid #e2ff76}
+.audited-grid .hex-tile.deployment-legal .hex-highlight{fill:#dfff6544;stroke:#e4ff81;stroke-width:5}
+.hex-tile .tile-occupants .tile-piece,.hex-tile .tile-occupants .tile-monster{pointer-events:auto;cursor:pointer}
+.deployment-prompt{pointer-events:auto}
+.military-sheet-close,.deployment-prompt button{padding:8px 12px;min-height:36px;border:1px solid #728168;border-radius:6px;background:#e9efd7;color:#203b29;font-weight:700;cursor:pointer}
+.hex-grid.audited-grid .hex-tile.deployment-legal .hex-highlight{fill:#dfff6538;stroke:#e4ff81;stroke-width:5;filter:drop-shadow(0 0 4px #caff57)}
+@media(max-width:600px){.deployment-prompt{top:160px;width:calc(100% - 28px);font-size:13px}.deployment-prompt button{margin:8px 0 0;display:block}.military-sheet{padding:18px}.military-sheet-pieces{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}}

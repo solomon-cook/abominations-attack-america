@@ -24,12 +24,12 @@ export function UnitCard({ game, canAct, selectedUnitId, onSelect }: Props) {
         return (
           <button
             key={unit.id}
-            aria-label={`Your ${unit.branch} unit at ${location}${paths.length ? " · movable" : " · already moved or unavailable"}`}
+            aria-label={`Your ${unit.unitTypeId?.replaceAll("-", " ") ?? unit.branch} unit at ${location}${paths.length ? " · movable" : " · already moved or unavailable"}`}
             className={selectedUnitId === unit.id ? "unit-selected" : ""}
             disabled={!canAct || game.phase !== "move" || !paths.length}
             onClick={() => onSelect(unit.id)}
           >
-            {unit.branch} · {location}
+            {unit.unitTypeId?.replaceAll("-", " ") ?? unit.branch} · {location}
           </button>
         );
       })}
