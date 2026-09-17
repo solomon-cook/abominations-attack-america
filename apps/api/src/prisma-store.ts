@@ -1,5 +1,5 @@
 import { randomBytes, createHash } from "node:crypto";
-import { applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
+import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicRoomSummary, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, terminalResultSummary, type RoomStore } from "./store.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
@@ -137,6 +137,11 @@ export class PrismaRoomStore implements RoomStore {
     const state = room.state as unknown as GameState;
     if (!state.setupState) throw new Error("This room has no setup state.");
     const nextSetup = applySetupAction(state.setupState, actor.playerIndex, action);
+    if (action.type === "choose-starting-choice" && action.startingChoice.kind === "deploy") {
+      const choice = action.startingChoice;
+      setupDeploymentState(state, actor.playerIndex, "placements" in choice ? choice.placements : [choice]);
+    }
+    if (nextSetup.phase === "complete") applyCompletedSetup({ ...state, setupState: nextSetup });
     const nextState = { ...state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
     const version = room.version + 1;
     await this.prismaClient.$transaction(async (tx: any) => {

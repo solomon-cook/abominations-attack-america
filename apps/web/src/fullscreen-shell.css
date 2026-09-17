@@ -167,3 +167,84 @@
 .game-screen .map-controls button{min-width:44px;min-height:44px}
 @media(max-width:600px){.game-screen .map-controls{gap:1px;padding:3px}.game-screen .map-controls .map-reset{padding-inline:4px}.game-screen .map-zoom{min-width:32px}.game-screen.online-game>header h1{font-size:.9rem}.game-screen.online-game>header .header-actions{gap:3px}.game-screen.online-game>header .ghost{font-size:.58rem;padding:5px}.game-screen.online-game>header .room-hud-status{font-size:.55rem}.game-screen .global-game-error{top:166px}}
 @media(max-width:420px){.game-screen .map-controls button:nth-child(-n+4){display:none}.game-screen .map-controls{justify-content:center}}
+
+/* A persistent turn panel keeps decisions beside the board, even when minimized. */
+.game-screen > .layout.panel-open > .game-side-panel,
+.game-screen > .layout.panel-closed > .game-side-panel {
+  position:absolute; inset:140px 14px auto auto; display:block;
+  z-index:25; width:min(350px,calc(100vw - 28px)); height:auto;
+  max-height:calc(100dvh - 230px); padding:0; overflow:auto;
+  overscroll-behavior:contain; pointer-events:auto;
+  background:var(--hud-bg); border:1px solid var(--hud-border);
+  border-radius:10px; box-shadow:0 8px 30px #06131155;
+}
+.game-screen .layout.panel-closed > .game-side-panel > .turn-hud-heading,
+.game-screen .layout.panel-closed > .game-side-panel > .board-action-bar { display:flex; }
+.turn-hud-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px; }
+.turn-hud-heading h2 { margin:4px 0 0; font-size:1.05rem; }
+.turn-hud-heading .label { color:#d8c58d; font-size:.6rem; }
+.turn-hud-heading button { margin:0; min-width:44px; min-height:44px; padding:6px; font-size:1.3rem; }
+#turn-hud-body { padding:0 14px 14px; }
+#turn-hud-body[hidden] { display:none; }
+#turn-hud-body .card { margin:0; padding:12px 0; border:0; background:transparent; box-shadow:none; }
+#turn-hud-body .action-card > .label, #turn-hud-body .action-card > h2 { display:none; }
+#turn-hud-body .action-card > p { margin:0 0 12px; font-size:.85rem; line-height:1.5; }
+#turn-hud-body .turn-progress { display:block; padding:0 0 10px; margin:0; border:0; background:transparent; }
+#turn-hud-body .turn-progress > .label, #turn-hud-body .turn-progress > p { display:none; }
+#turn-hud-body .turn-progress ol { display:flex; gap:4px; margin:0; }
+#turn-hud-body .turn-progress li { flex:1; min-width:0; padding:6px 2px; text-align:center; font-size:.6rem; }
+#turn-hud-body .turn-progress li > span { display:none; }
+#turn-hud-body .turn-progress strong { font-size:.6rem; }
+#turn-hud-body .path-controls, #turn-hud-body .move-actions { display:grid; gap:7px; margin:12px 0; }
+#turn-hud-body button { min-height:44px; }
+.hud-section { border-top:1px solid #a69b6933; padding:10px 0; }
+.hud-section > summary, .decision-rules-help > summary { cursor:pointer; color:#ded5b9; font-size:.75rem; padding:5px 0; }
+#turn-hud-body .decision-rules-help { margin:8px 0; padding:7px 10px; }
+#turn-hud-body .decision-rules-help > .label { display:none; }
+.game-screen .game-side-panel .board-action-bar { position:static; width:auto; margin:0 14px 14px; }
+.game-screen .game-side-panel .action-dock { border:0; padding:0; box-shadow:none; background:transparent; }
+.game-screen .game-side-panel .action-dock > .label,
+.game-screen .game-side-panel .action-dock-status { display:none; }
+.game-screen .map-controls { left:14px; right:auto; bottom:16px; transform:none; width:180px; justify-content:center; }
+.game-screen .map-controls .map-zoom { display:none; }
+.game-screen .map-controls .map-reset { font-size:.65rem; padding:5px; }
+.game-screen .board-minimap { bottom:80px; }
+.game-screen .board-context-tray { bottom:245px; }
+.game-screen .piece-detail-tray { right:378px; bottom:100px; width:280px; }
+@media(max-width:600px) {
+  .game-screen > .layout.panel-open > .game-side-panel,
+.game-screen > .layout.panel-closed > .game-side-panel { inset:170px 8px auto auto; width:min(310px,calc(100vw - 16px)); max-height:calc(100dvh - 270px); }
+  .game-screen .map-controls { left:8px; right:auto; bottom:12px; width:150px; }
+  .game-screen .map-controls button:nth-child(-n+4) { display:block; }
+  .game-screen .board-minimap { bottom:72px; }
+  .game-screen .board-context-tray { display:none; }
+  .game-screen .piece-detail-tray { right:8px; bottom:75px; width:calc(100% - 144px); max-height:100px; }
+  .game-screen > .status div:nth-child(n+5) { display:block; }
+  .game-screen > .status div:nth-child(3), .game-screen > .status div:nth-child(4), .game-screen > .status div:nth-child(n+7) { display:none; }
+}
+@media(max-height:540px) and (min-width:601px) {
+  .game-screen > .layout.panel-open > .game-side-panel,
+.game-screen > .layout.panel-closed > .game-side-panel { top:110px; max-height:calc(100dvh - 185px); }
+}
+#turn-hud-body .turn-progress li { display:block; letter-spacing:0; }
+#turn-hud-body .turn-progress strong { font-size:.56rem; }
+#turn-hud-body .action-card button { margin-top:0; }
+#turn-hud-body .hud-section { padding:8px 0; }
+.game-screen > .layout.panel-open > .game-side-panel,
+.game-screen > .layout.panel-closed > .game-side-panel { max-height:calc(100dvh - 260px); }
+@media(max-width:600px) {
+  .game-screen > .layout.panel-open > .game-side-panel,
+  .game-screen > .layout.panel-closed > .game-side-panel { max-height:calc(100dvh - 285px); }
+}
+.game-screen.setup-in-progress > .layout > .game-side-panel { display:none; }
+.game-screen.setup-in-progress > .setup-panel {
+  left:auto; right:14px; top:140px; transform:none; width:min(350px,calc(100% - 28px));
+  max-height:calc(100dvh - 240px); padding:18px;
+}
+.game-screen .setup-panel h2 { font-size:1.4rem; text-transform:capitalize; }
+.game-screen .setup-panel .setup-options { display:grid; gap:8px; }
+.game-screen .setup-panel button { min-height:44px; }
+@media(max-width:600px) {
+  .game-screen.setup-in-progress > .setup-panel { right:8px; top:170px; width:240px; max-height:calc(100dvh - 260px); padding:12px; }
+}
+.game-screen.setup-in-progress .board-context-tray { display:none; }

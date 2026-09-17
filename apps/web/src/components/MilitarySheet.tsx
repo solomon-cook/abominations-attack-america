@@ -55,6 +55,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
     }}>
       <div className="military-hand-toolbar">
         <span className="label">YOUR MILITARY SHEETS</span>
+        {!referenceOnly && runCommand && <button type="button" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Finish deployment</button>}
         <button className="military-sheet-close" onClick={onClose}>Close</button>
       </div>
       {sheets.length > 1 && <nav className="military-sheet-tabs" aria-label="Military sheets">
@@ -87,7 +88,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
         </div>}
         {referenceOnly && game && <SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} />}
         <MilitaryReference sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
-        {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " Draw Military Research or pass deployment."}</p>}
+        {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Finish deployment to continue."}</p>}
         {!referenceOnly && (["deploy", "redeploy"] as const).map((kind) => {
           const pieces = pageChoices.filter((choice) => choice.kind === kind);
           return pieces.length > 0 && <section key={kind} aria-label={kind === "deploy" ? "Reserve pieces" : "Deployed pieces"}>

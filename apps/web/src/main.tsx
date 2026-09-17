@@ -10,6 +10,7 @@ import {
   createDevelopmentVictoryGame,
   createMvpRoomGame,
   applyCompletedSetup,
+  setupDeploymentState,
   AUDITED_BOARD,
   FULL_HONEYCOMB_BOARD,
   PROVISIONAL_AUTHORITATIVE_BOARD,
@@ -57,6 +58,7 @@ import { SetupPanel } from "./components/SetupPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
 import { TurnPrompt } from "./components/TurnPrompt";
 import { TurnProgress } from "./components/TurnProgress";
+import { setupLairLabel } from "./components/setup-location-label";
 import { MilitarySheet, deploymentChoices } from "./components/MilitarySheet";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
@@ -67,7 +69,6 @@ import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { FightResolutionPanel } from "./components/FightResolutionPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
-import { AttentionBanner } from "./components/AttentionBanner";
 import { playSound, type SoundCategory } from "./audio";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
@@ -140,6 +141,11 @@ function App() {
   const [hoveredPath, setHoveredPath] = useState<HexKey[]>([]);
   const [militaryInitialSheet, setMilitaryInitialSheet] = useState<string | undefined>();
   const [militarySheetOpen, setMilitarySheetOpen] = useState(false);
+  const [setupPlacementPlayer, setSetupPlacementPlayer] = useState<number | null>(null);
+  const [setupPlacements, setSetupPlacements] = useState<{ unitId: string; destination: HexKey }[]>([]);
+  const [setupDeploying, setSetupDeploying] = useState(false);
+  const [setupSheetOpen, setSetupSheetOpen] = useState(false);
+  const [setupPieceId, setSetupPieceId] = useState<string | null>(null);
   const [deploymentPieceId, setDeploymentPieceId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
@@ -153,7 +159,7 @@ function App() {
   const [boardReviewOpen, setBoardReviewOpen] = useState(false);
   const [challengeDuelOpen, setChallengeDuelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [gamePanelOpen, setGamePanelOpen] = useState(false);
+  const [gamePanelOpen, setGamePanelOpen] = useState(true);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
   const [showBoardLabels, setShowBoardLabels] = useState(() => safeStorageGet("abominations-board-labels") !== "0");
   const [manualReducedMotion, setManualReducedMotion] = useState(() => safeStorageGet("abominations-reduced-motion") === "1");
@@ -199,7 +205,7 @@ function App() {
   const militaryChoices = useMemo(() => deploymentChoices(activeGame), [activeGame]);
   const deploymentPiece = militaryChoices.find((choice) => choice.id === deploymentPieceId);
   const deploymentDestinations = new Set(deploymentPiece?.destinations ?? []);
-  const openMilitarySheet = (sheet?: string) => { setMilitaryInitialSheet(typeof sheet === "string" ? sheet : undefined); setMilitarySheetOpen(true); setGamePanelOpen(false); };
+  const openMilitarySheet = (sheet?: string) => { setMilitaryInitialSheet(typeof sheet === "string" ? sheet : undefined); setMilitarySheetOpen(true); };
   const activeResearchLure = activeGame.activeResearchLure?.monsterId === activePlayer.id
     ? activeGame.activeResearchLure
     : undefined;
@@ -333,7 +339,9 @@ function App() {
           ? { label: "Choose the Encounter decision", command: undefined }
           : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
         : activeGame.phase === "deploy"
-          ? { label: deploymentPiece ? "Change deployment piece" : "Deploy military", command: undefined }
+          ? militaryChoices.length
+            ? { label: deploymentPiece ? "Change deployment piece" : "Deploy military", command: undefined }
+            : { label: "Finish deployment", command: { type: "pass-deploy" } as GameCommand }
           : { label: "Match complete", command: undefined };
 
   useEffect(() => {
@@ -351,10 +359,9 @@ function App() {
     return () => { window.removeEventListener("keydown", close); previous?.focus({ preventScroll: true }); };
   }, [settingsOpen, onboardingOpen]);
   useEffect(() => {
-    // Setup is intentionally panel-open, but gameplay should return to the
-    // board-first presentation as soon as the authoritative setup completes.
+    // Keep turn decisions visible when a match begins.
     if ((localPlaytestStarted || online) && setupComplete) {
-      setGamePanelOpen(false);
+      setGamePanelOpen(true);
     }
   }, [localPlaytestStarted, online, setupComplete]);
   const setupSeat =
@@ -371,6 +378,23 @@ function App() {
             (seat) =>
               !seat.startingChoice && activeSetup.phase === "starting-choice",
           ));
+  const canSetup = Boolean(setupSeat && (!online || participant?.playerIndex === setupSeat.playerIndex));
+  const setupPreview = useMemo(() => activeSetup?.phase === "starting-choice" && setupSeat
+    ? setupDeploymentState(activeGame, setupSeat.playerIndex, setupPlacementPlayer === setupSeat.playerIndex ? setupPlacements : []) : undefined,
+    [activeGame, activeSetup?.phase, setupSeat, setupPlacements, setupPlacementPlayer]);
+  const setupChoices = useMemo(() => setupPreview ? deploymentChoices(setupPreview).filter((choice) => choice.kind === "deploy") : [], [setupPreview]);
+  const setupPiece = setupChoices.find((choice) => choice.id === setupPieceId);
+  const setupLocations = new Map<HexKey, string>();
+  if (canSetup && activeSetup?.phase === "lair-selection" && setupSeat?.monsterId) {
+    for (const lair of activeSetup.definition.lairsByMonster[setupSeat.monsterId] ?? []) {
+      if (isHexKey(lair) && !activeSetup.seats.some((seat) => seat.lair === lair)) setupLocations.set(lair, setupLairLabel(activeSetup, activeBoard, setupSeat.monsterId, lair));
+    }
+  } else if (canSetup && setupPiece) {
+    for (const destination of setupPiece.destinations) setupLocations.set(destination, activeBoard?.hexes[destination]?.label ?? (setupPiece.sheet + " deployment site"));
+  }
+  useEffect(() => {
+    setSetupPlacements([]); setSetupDeploying(false); setSetupSheetOpen(false); setSetupPieceId(null);
+  }, [setupSeat?.playerIndex, activeSetup?.phase]);
   useEffect(() => {
     setSelectedPath([]);
     setHoveredPath([]);
@@ -540,7 +564,7 @@ function App() {
     setError("");
     setLocalPlaytestStarted(false);
     setOnboardingOpen(false);
-    setGamePanelOpen(false);
+    setGamePanelOpen(true);
     try {
       const result =
         kind === "create"
@@ -660,20 +684,7 @@ function App() {
       (online && participant?.playerIndex !== setupSeat.playerIndex)
     )
       return;
-    const startingChoice = kind === "research"
-      ? ({ kind } as const)
-      : (() => {
-          const branch = setupSeat.branch;
-          const board = boardForGame(activeGame);
-          const unit = activeGame.units.find((candidate) => candidate.branch === branch && candidate.location === "record-tile" && !activeGame.removedUnitIds.includes(candidate.id));
-          const destination = board && branch
-            ? Object.values(board.hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch))?.key
-            : undefined;
-          if (!branch || !unit || !destination) {
-            throw new Error("This branch has no base available for initial deployment.");
-          }
-          return { kind, unitId: unit.id, destination } as const;
-        })();
+    const startingChoice = kind === "research" ? { kind } as const : { kind, placements: setupPlacements } as const;
     if (online && session && room) {
       try {
         setRoom(
@@ -702,9 +713,7 @@ function App() {
   const resetLocal = () => {
     setLocalPlaytestStarted(true);
     setOnboardingOpen(false);
-    // Setup is a focused decision screen: keep the current-step prompt visible
-    // so focus can move to it. The board-first closed layout returns after the
-    // authoritative setup completes or the player closes the panel.
+    // Start with turn instructions expanded.
     setGamePanelOpen(true);
     setSession(null);
     setRoom(null);
@@ -920,7 +929,7 @@ function App() {
 
   return (
     <main
-      className={`game-screen ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}
+      className={`game-screen ${!setupComplete ? "setup-in-progress" : ""} ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}
       data-board-id={renderedBoard?.id ?? ""}
       data-board-version={renderedBoard?.version ?? ""}
       data-board-content-hash={renderedBoard?.contentHash ?? ""}
@@ -935,9 +944,6 @@ function App() {
         </div>
         <div className="header-actions">
           {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={participant?.playerIndex ?? activeGame.currentPlayer} monster={activeGame.monsters[participant?.playerIndex ?? activeGame.currentPlayer]} branch={activeGame.setupAssignments?.[participant?.playerIndex ?? activeGame.currentPlayer]?.branch ?? (["Army", "Navy", "Air Force", "Marines"] as const)[(participant?.playerIndex ?? activeGame.currentPlayer) % 4]} canAct={canAct} runCommand={runCommand} onDeploy={openMilitarySheet} />}
-          <button className="ghost game-panel-toggle" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="game-side-panel">
-            {gamePanelOpen ? "Hide details" : "Show details"}
-          </button>
           <button className="ghost" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>
             How to play
           </button>
@@ -1005,11 +1011,15 @@ function App() {
           playerIndex={participant?.playerIndex}
           participants={room?.participants ?? []}
           onChooseOption={(value) => void chooseSetupOption(value)}
-          onChooseStartingChoice={(kind) => void chooseSetupStartingChoice(kind)}
+          deploymentCount={setupPlacements.length}
+          selectingDeployment={setupDeploying}
+          selectedPiece={setupPiece?.typeId}
+          onFinishDeployment={() => void chooseSetupStartingChoice("deploy")}
+          onUndoDeployment={() => { setSetupPlacements((current) => current.slice(0, -1)); setSetupPieceId(null); }}
+          onChooseStartingChoice={(kind) => { if (kind === "deploy") { setSetupPlacementPlayer(setupSeat?.playerIndex ?? null); setSetupDeploying(true); setSetupSheetOpen(true); } else void chooseSetupStartingChoice(kind); }}
         />
       )}
       <MatchStatus game={activeGame} action={action} />
-      <TurnProgress game={activeGame} />
       <section className="development-notice" aria-label="Development ruleset notice">
         <span className="label">{renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id ? "PROVISIONAL HONEYCOMB PLAYTEST · NOT VERIFIED" : "DEVELOPMENT RULESET · PROTOTYPE 0.1"}</span>
         <p>
@@ -1035,7 +1045,12 @@ function App() {
           </div>
           <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
             <HexGrid
-              game={activeGame}
+              game={setupPreview ?? activeGame}
+              setupLocations={setupLocations}
+              onSetupLocation={(destination) => {
+                if (activeSetup?.phase === "lair-selection") void chooseSetupOption(destination);
+                else if (setupPiece && canSetup) { setSetupPlacements((current) => [...current, { unitId: setupPiece.id, destination }]); setSetupPieceId(null); }
+              }}
               activePlayerId={activePlayer.id}
               canAct={canAct}
               legalDestinations={selectedUnitId ? new Set() : legalDestinations}
@@ -1066,14 +1081,10 @@ function App() {
               onClearPreview={() => setHoveredPath([])}
             />
           </BoardViewport>
-          <div className="board-action-bar">
-            <ActionDock onPrimary={activeGame.phase === "deploy" ? openMilitarySheet : undefined} label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)} onOpenPanel={() => setGamePanelOpen(true)} />
-          </div>
           {activeGame.phase === "deploy" && deploymentPiece && <div className="deployment-prompt" role="status">
             Place {deploymentPiece.typeId.replaceAll("-", " ")} · Select a glowing location.
             <button onClick={() => setDeploymentPieceId(null)}>Cancel placement</button>
           </div>}
-          <AttentionBanner game={activeGame} action={action} canAct={canAct} online={online} />
           <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} />
           <SelectedPieceTray
             game={activeGame}
@@ -1111,45 +1122,15 @@ function App() {
           </div>
         </div>
         <aside id="game-side-panel" className="game-side-panel" aria-label="Game controls and information">
-          <div className="card monster-card">
-            <span className="label">MONSTER RECORD</span>
-            <h2>{activePlayer.name}</h2>
-            <div className="meter">
-              <span
-                style={{
-                  width: `${(activePlayer.health / activePlayer.maxHealth) * 100}%`,
-                }}
-              />
-            </div>
-            <div className="stats">
-              <span>
-                <b>{activePlayer.health}</b> health
-              </span>
-              <span>
-                <b>{activePlayer.infamy}</b> infamy
-              </span>
-              <span>
-                <b>{activePlayer.move}</b> move
-              </span>
-            </div>
+          <div className="turn-hud-heading">
+            <div><span className="label">{canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER {decisionPlayer + 1}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{activePlayer.name} · {action}</h2></div>
+            <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="turn-hud-body" aria-label={gamePanelOpen ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelOpen ? "−" : "+"}</button>
           </div>
-          <BoardReferenceCard />
-          <UnitCard
-            game={activeGame}
-            canAct={canAct}
-            selectedUnitId={selectedUnitId}
-            onSelect={(unitId) => {
-              setSelectedUnitId(unitId);
-              setSelectedPath([]);
-              setSelectedUnitPath([]);
-            }}
-          />
-          <RevealedCardsPanel
-            game={activeGame}
-            playerIndex={participant?.playerIndex ?? activeGame.currentPlayer}
-            canAct={canAct}
-            runCommand={runCommand}
-          />
+          {!gamePanelOpen && <div className="board-action-bar">
+            <ActionDock onPrimary={activeGame.phase === "deploy" && militaryChoices.length > 0 ? openMilitarySheet : !actionDock.command ? () => setGamePanelOpen(true) : undefined} secondaryAction={activeGame.phase === "deploy" && militaryChoices.length > 0 ? { label: "Finish deployment", command: { type: "pass-deploy" } } : undefined} label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)}  />
+          </div>}
+          <div id="turn-hud-body" hidden={!gamePanelOpen}>
+          <TurnProgress game={activeGame} />
           <div className="card action-card">
             <FightResolutionPanel
               game={activeGame}
@@ -1160,7 +1141,6 @@ function App() {
               outcomes={lastFightOutcomes}
             />
             <TurnPrompt
-              actionHeadingRef={actionHeadingRef}
               action={action}
               description={turnDescription}
               rulesHelp={rulesHelp}
@@ -1175,27 +1155,6 @@ function App() {
               lastRecoveryReleased={lastRecoveryEvent?.detail.recoveryReleased === true}
             />
             <ActionResolutionFeedback label={acceptedActionFeedback?.label} animationKey={acceptedActionFeedback?.key} />
-            <ChallengeDuelPanel
-              eventId={lastChallengeEvent?.id}
-              winnerName={typeof lastChallengeEvent?.detail.winnerName === "string" ? lastChallengeEvent.detail.winnerName : undefined}
-              defeatedName={typeof lastChallengeEvent?.detail.defeatedName === "string" ? lastChallengeEvent.detail.defeatedName : undefined}
-              winnerHealth={typeof lastChallengeEvent?.detail.winnerHealth === "number" ? lastChallengeEvent.detail.winnerHealth : undefined}
-              loserWeighIn={typeof lastChallengeEvent?.detail.loserWeighIn === "number" ? lastChallengeEvent.detail.loserWeighIn : undefined}
-              rolls={challengeRolls}
-              attacks={challengeAttacks}
-              victoryType={typeof lastChallengeEvent?.detail.victoryType === "string" ? lastChallengeEvent.detail.victoryType : undefined}
-            />
-            <EncounterResultPanel
-              eventId={lastEncounterEvent?.id}
-              effects={encounterEffects}
-              rolls={encounterRolls}
-              choices={encounterChoices}
-              stomped={typeof lastEncounterEvent?.detail.stomped === "boolean" ? lastEncounterEvent.detail.stomped : undefined}
-              remainingStompMarkers={typeof lastEncounterEvent?.detail.remainingStompMarkers === "number" ? lastEncounterEvent.detail.remainingStompMarkers : undefined}
-              challenge={lastEncounterEvent?.detail.challenge && typeof lastEncounterEvent.detail.challenge === "object" ? lastEncounterEvent.detail.challenge as { declared: boolean; active: boolean; challengerMonsterId?: string; pendingStartPlayerIndex: number; startAtEndOfTurn?: boolean } : undefined}
-              mutationDraws={encounterMutationDraws}
-              nextPhase={typeof lastEncounterEvent?.detail.nextPhase === "string" ? lastEncounterEvent.detail.nextPhase : undefined}
-            />
             <BlondeLureActions
               game={activeGame}
               canAct={canAct}
@@ -1291,6 +1250,7 @@ function App() {
                 Resolve {action.toLowerCase()}
               </button>
             )}
+            <details className="hud-section"><summary>Match options</summary>
             {setupComplete && activeGame.phase !== "game-over" && (
               <button
                 className="cancel"
@@ -1300,10 +1260,59 @@ function App() {
                 Concede match
               </button>
             )}
+            </details>
           </div>
+          <details className="hud-section"><summary>Pieces, cards & board reference</summary>
+          <BoardReferenceCard />
+          <UnitCard
+            game={activeGame}
+            canAct={canAct}
+            selectedUnitId={selectedUnitId}
+            onSelect={(unitId) => {
+              setSelectedUnitId(unitId);
+              setSelectedPath([]);
+              setSelectedUnitPath([]);
+            }}
+          />
+          <RevealedCardsPanel
+            game={activeGame}
+            playerIndex={participant?.playerIndex ?? activeGame.currentPlayer}
+            canAct={canAct}
+            runCommand={runCommand}
+          />
+          </details>
+          <details className="hud-section"><summary>Recent results & turn history</summary>
+            <ChallengeDuelPanel
+              eventId={lastChallengeEvent?.id}
+              winnerName={typeof lastChallengeEvent?.detail.winnerName === "string" ? lastChallengeEvent.detail.winnerName : undefined}
+              defeatedName={typeof lastChallengeEvent?.detail.defeatedName === "string" ? lastChallengeEvent.detail.defeatedName : undefined}
+              winnerHealth={typeof lastChallengeEvent?.detail.winnerHealth === "number" ? lastChallengeEvent.detail.winnerHealth : undefined}
+              loserWeighIn={typeof lastChallengeEvent?.detail.loserWeighIn === "number" ? lastChallengeEvent.detail.loserWeighIn : undefined}
+              rolls={challengeRolls}
+              attacks={challengeAttacks}
+              victoryType={typeof lastChallengeEvent?.detail.victoryType === "string" ? lastChallengeEvent.detail.victoryType : undefined}
+            />
+            <EncounterResultPanel
+              eventId={lastEncounterEvent?.id}
+              effects={encounterEffects}
+              rolls={encounterRolls}
+              choices={encounterChoices}
+              stomped={typeof lastEncounterEvent?.detail.stomped === "boolean" ? lastEncounterEvent.detail.stomped : undefined}
+              remainingStompMarkers={typeof lastEncounterEvent?.detail.remainingStompMarkers === "number" ? lastEncounterEvent.detail.remainingStompMarkers : undefined}
+              challenge={lastEncounterEvent?.detail.challenge && typeof lastEncounterEvent.detail.challenge === "object" ? lastEncounterEvent.detail.challenge as { declared: boolean; active: boolean; challengerMonsterId?: string; pendingStartPlayerIndex: number; startAtEndOfTurn?: boolean } : undefined}
+              mutationDraws={encounterMutationDraws}
+              nextPhase={typeof lastEncounterEvent?.detail.nextPhase === "string" ? lastEncounterEvent.detail.nextPhase : undefined}
+            />
           <LogPanel eventLog={eventLog} log={log} />
+          </details>
+          </div>
         </aside>
       </section>
+      {setupSheetOpen && canSetup && setupPreview && setupSeat?.branch && <MilitarySheet
+        branch={setupSeat.branch} game={setupPreview} choices={setupChoices} canAct={canSetup}
+        onClose={() => setSetupSheetOpen(false)}
+        onSelect={(choice) => { setSetupPieceId(choice.id); setSetupSheetOpen(false); setFocusedHexKey(choice.destinations[0]); }}
+      />}
       {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet initialSheet={militaryInitialSheet} canAct={canAct} runCommand={(command) => { setMilitarySheetOpen(false); return runCommand(command); }} game={activeGame} branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
         setDeploymentPieceId(choice.id);
         setMilitarySheetOpen(false);

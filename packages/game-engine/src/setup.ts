@@ -1,8 +1,11 @@
 import type { Branch } from "./index.js";
 
+export type SetupPlacement = Readonly<{ unitId: string; destination: string }>;
+
 export type SetupStartingChoice =
   | Readonly<{ kind: "research" }>
-  | Readonly<{ kind: "deploy"; unitId: string; destination: string }>;
+  | Readonly<{ kind: "deploy"; unitId: string; destination: string }>
+  | Readonly<{ kind: "deploy"; placements: readonly SetupPlacement[] }>;
 
 export type SetupAction =
   | Readonly<{ type: "choose-monster"; monsterId: string }>
@@ -118,7 +121,9 @@ export function chooseLair(state: SetupState, playerIndex: number, lair: string)
 
 export function chooseStartingChoice(state: SetupState, playerIndex: number, startingChoice: SetupStartingChoice): SetupState {
   if (state.phase !== "starting-choice") throw new Error("Starting choice is not the current setup step.");
+  if (nextUnassigned(state, "startingChoice")?.playerIndex !== playerIndex) throw new Error("Starting choices must follow player order.");
   const current = seat(state, playerIndex);
+  if (startingChoice.kind === "deploy" && "placements" in startingChoice && (!Array.isArray(startingChoice.placements) || startingChoice.placements.length === 0)) throw new Error("Choose at least one starting troop.");
   if (current.startingChoice) throw new Error(`Player ${playerIndex} already chose a starting option.`);
   const next = replaceSeat(state, { ...current, startingChoice, ready: true });
   return nextUnassigned(next, "startingChoice") ? next : { ...next, phase: "complete" };

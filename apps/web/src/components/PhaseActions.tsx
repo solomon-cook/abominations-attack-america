@@ -160,7 +160,7 @@ export function PhaseActions({
       {defenseSatellitesButton}
       <button disabled={!canAct} onClick={onOpenMilitarySheet}>Open military sheet · deploy or redeploy</button>
       <button disabled={!canAct || activeGame.decks.research.exhausted} onClick={() => void runCommand({ type: "draw-research" })}>{activeGame.decks.research.exhausted ? "Military Research exhausted" : "Draw Military Research instead"}</button>
-      <button className="cancel" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Pass deployment</button>
+      <button className="cancel" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Finish deployment</button>
     </div>;
   }
 

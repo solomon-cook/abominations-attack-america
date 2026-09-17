@@ -95,6 +95,8 @@ function monsterArtForName(name: string) {
 }
 
 type Props = {
+  setupLocations?: ReadonlyMap<HexKey, string>;
+  onSetupLocation?: (key: HexKey) => void;
   deploymentDestinations: ReadonlySet<HexKey>;
   onDeploy: (destination: HexKey) => void;
   onSelectMonster: () => void;
@@ -121,7 +123,7 @@ type Props = {
   onClearPreview: () => void;
 };
 
-export function HexGrid({ deploymentDestinations, onDeploy, onSelectMonster, game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
+export function HexGrid({ setupLocations, onSetupLocation, deploymentDestinations, onDeploy, onSelectMonster, game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const board = boardForGame(game);
   const audited = board?.id === AUDITED_BOARD.id;
   const boardHexes = displayHexesForGame(game);
@@ -165,7 +167,8 @@ export function HexGrid({ deploymentDestinations, onDeploy, onSelectMonster, gam
       )}
       {boardHexes.map(({ hex, place, left, top, developmentFixture }) => {
         const placeKey = hex.key;
-        const deploymentLegal = canAct && game.phase === "deploy" && deploymentDestinations.has(placeKey);
+        const setupLegal = setupLocations?.has(placeKey) ?? false;
+        const deploymentLegal = setupLegal || canAct && game.phase === "deploy" && deploymentDestinations.has(placeKey);
         const monsterLegal = canAct && game.phase === "move" && legalDestinations.has(placeKey);
         const unitLegal = canAct && game.phase === "move" && legalUnitDestinations.has(placeKey);
         const selectableUnit = canAct ? game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id)) : undefined;
@@ -177,12 +180,12 @@ export function HexGrid({ deploymentDestinations, onDeploy, onSelectMonster, gam
           ...game.monsters.filter((monster) => monster.location === placeKey).map((monster) => monster.name),
           ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
         ].join(", ");
-        const displayName = place?.name ?? hex.label ?? (audited ? `${hex.waterClass} cell ${hex.audit?.row}/${hex.audit?.column}` : `Unresolved ${hex.key}`);
+        const displayName = setupLocations?.get(placeKey) ?? place?.name ?? hex.label ?? (audited ? `${hex.waterClass} cell ${hex.audit?.row}/${hex.audit?.column}` : `Unresolved ${hex.key}`);
         const provisionalFeatureName = (audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id) && hex.features.some((feature) => feature.kind === "city")
           ? hex.label
           : undefined;
         const provisionalFeatureText = board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id ? provisionalFeatureLabel(hex) : undefined;
-        const visibleName = place?.name ?? (developmentFixture ? hex.label : provisionalFeatureName ?? "");
+        const visibleName = setupLocations?.get(placeKey) ?? place?.name ?? (developmentFixture ? hex.label : provisionalFeatureName ?? "");
         const locationMeta = place?.kind === "city"
           ? `city, ${place.marker ?? "benefit not recorded"}`
           : place?.kind === "mutation"
@@ -245,7 +248,7 @@ export function HexGrid({ deploymentDestinations, onDeploy, onSelectMonster, gam
         return (
           <button
             key={hex.key}
-            aria-label={`${displayName}${stomped ? ", stomped" : ""}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${deploymentLegal ? "legal deployment location" : selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+            aria-label={`${displayName}${stomped ? ", stomped" : ""}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${setupLegal ? "choose starting location" : deploymentLegal ? "legal deployment location" : selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-hex-key={hex.key}
             data-location-name={place?.name ?? hex.label}
             data-audit-cell={hex.audit ? `${hex.audit.row}/${hex.audit.column}` : undefined}
@@ -269,6 +272,7 @@ export function HexGrid({ deploymentDestinations, onDeploy, onSelectMonster, gam
             onMouseEnter={() => (monsterLegal || unitLegal) && onPreviewPath(placeKey)}
             onMouseLeave={onClearPreview}
             onClick={(event) => {
+              if (setupLegal) { onSetupLocation?.(placeKey); return; }
               if (deploymentLegal) { onDeploy(placeKey); return; }
               if (event.shiftKey && occupantCount > 0) onSelectStack(placeKey);
               else if (selectableUnit && !selectedUnitId) onSelectUnit(selectableUnit.id);

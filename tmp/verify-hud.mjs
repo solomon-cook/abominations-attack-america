@@ -1,0 +1,34 @@
+import {chromium} from 'playwright';import {chromePath} from '../scripts/chrome-path.mjs';import assert from 'node:assert/strict';
+const browser=await chromium.launch({executablePath:chromePath,headless:true});
+try {
+const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://127.0.0.1:5191');
+await page.getByRole('button',{name:'Victory test',exact:true}).click();
+const guide=page.getByRole('button',{name:/start playing|got it|close guide/i});if(await guide.count())await guide.first().click();
+console.log((await page.locator('body').innerText()).slice(0,1500));
+await page.screenshot({path:'tmp/hud-desktop.png'});
+console.log('panel',await page.locator('#game-side-panel').boundingBox());
+await page.getByRole('button',{name:'Minimize turn panel'}).click();
+assert.ok(await page.locator('#game-side-panel').isVisible());
+assert.equal(await page.locator('#turn-hud-body').isVisible(),false);
+await page.getByRole('button',{name:'Expand turn panel'}).click();
+assert.ok(await page.getByRole('button',{name:'Leave monster here & finish Move'}).isVisible());
+await page.getByRole('button',{name:'Leave monster here & finish Move'}).click();
+console.log('after move', (await page.locator('#game-side-panel').innerText()).slice(0,500));
+assert.equal(await page.getByRole('button',{name:'Show details',exact:true}).count(),0);
+await page.getByRole('button',{name:'Resolve encounter',exact:true}).click();
+await page.getByRole('button',{name:'Take the city Health benefit',exact:true}).click();
+await page.getByRole('button',{name:'Finish deployment',exact:true}).waitFor();
+await page.getByRole('button',{name:'Minimize turn panel'}).click();
+await page.getByRole('button',{name:'Finish deployment',exact:true}).click();
+await page.getByRole('button',{name:'Expand turn panel'}).click();
+assert.match(await page.locator('.turn-hud-heading').innerText(),/PLAYER 2/);
+const sheet=page.locator('.sheet-peek').first();
+await sheet.click();
+assert.ok(await page.getByRole('dialog').isVisible());
+await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();
+await page.setViewportSize({width:390,height:844});
+await page.screenshot({path:'tmp/hud-mobile.png'});
+const box=await page.locator('#game-side-panel').boundingBox();assert.ok(box.x>=0&&box.x+box.width<=390);
+assert.deepEqual(errors,[]);console.log('PASS: visible turn actions, minimize/expand, move phase progression, mobile bounds, no errors.');
+}finally{await browser.close();}

@@ -3,14 +3,14 @@ import type { GameCommand } from "@abominations/game-engine";
 type Props = {
   label: string;
   onPrimary?: () => void;
+  secondaryAction?: { label: string; command: GameCommand };
   canAct: boolean;
   command?: GameCommand;
   unavailableReason?: string;
   onAction: (command: GameCommand) => void;
-  onOpenPanel: () => void;
 };
 
-export function ActionDock({ onPrimary, label, canAct, command, unavailableReason, onAction, onOpenPanel }: Props) {
+export function ActionDock({ onPrimary, secondaryAction, label, canAct, command, unavailableReason, onAction }: Props) {
   const actionIcon = command?.type === "move" || command?.type === "move-unit"
     ? "↝"
     : command?.type === "resolve-fight"
@@ -34,9 +34,7 @@ export function ActionDock({ onPrimary, label, canAct, command, unavailableReaso
         {label}
       </button>
       <small id="action-dock-status" className="action-dock-status" aria-live="polite">{status}</small>
-      <button type="button" className="action-dock-secondary" onClick={onOpenPanel}>
-        Show details
-      </button>
+      {secondaryAction && <button type="button" disabled={!canAct} onClick={() => onAction(secondaryAction.command)}>{secondaryAction.label}</button>}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
+import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicRoomSummary, RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 
@@ -163,6 +163,11 @@ export class MemoryRoomStore implements RoomStore {
     if (!participant || participant.role !== "player" || participant.playerIndex === undefined) throw new Error("Only seated players can complete setup.");
     if (!room.state.setupState) throw new Error("This room has no setup state.");
     const nextSetup = applySetupAction(room.state.setupState, participant.playerIndex, action);
+    if (action.type === "choose-starting-choice" && action.startingChoice.kind === "deploy") {
+      const choice = action.startingChoice;
+      setupDeploymentState(room.state, participant.playerIndex, "placements" in choice ? choice.placements : [choice]);
+    }
+    if (nextSetup.phase === "complete") applyCompletedSetup({ ...room.state, setupState: nextSetup });
     room.state = { ...room.state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
     this.touch(room);
     room.version += 1;

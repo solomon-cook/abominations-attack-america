@@ -94,3 +94,20 @@
 .manual-reduced-motion .sheet-held-card-grid .sheet-held-card{transition:none}
 .guard-sheet-action{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
 .guard-sheet-action button{padding:10px 14px;min-height:44px;background:#f5e9bb;color:#263925;border:1px solid #d6d5a0;border-radius:6px;cursor:pointer;font-weight:700}.guard-sheet-action button:disabled{opacity:.55;cursor:default}.guard-sheet-action small{font-size:12px}
+
+/* Owned sheets peek up from the table edge, clear of the persistent turn HUD. */
+.game-screen .player-sheet-peeks {
+  top:auto; bottom:0; left:210px; right:14px; width:auto; max-height:112px;
+  flex-direction:row; justify-content:flex-end; align-items:flex-end;
+  gap:8px; padding:8px 4px 0; overflow-x:auto; overflow-y:hidden;
+}
+.game-screen .sheet-peek {
+  width:150px; min-height:96px; border:2px solid #e8dfae; border-bottom:0;
+  border-radius:10px 10px 0 0; transform:translateY(24px); padding:12px 10px 28px;
+}
+.game-screen .sheet-peek:hover,.game-screen .sheet-peek:focus-visible { transform:translateY(0); }
+.game-screen .sheet-peek-invite { writing-mode:horizontal-tb; top:auto; bottom:9px; left:10px; right:auto; transform:none; }
+@media(max-width:600px) {
+  .game-screen .player-sheet-peeks { left:166px; right:4px; justify-content:flex-start; max-height:100px; gap:5px; }
+  .game-screen .sheet-peek { width:98px; min-height:90px; padding:10px 7px 24px; }
+}

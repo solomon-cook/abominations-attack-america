@@ -1,8 +1,6 @@
-import type { RefObject } from "react";
 import { DieCube } from "./DieCube";
 
 type Props = {
-  actionHeadingRef: RefObject<HTMLHeadingElement | null>;
   action: string;
   description: string;
   rulesHelp: { readonly title: string; readonly body: string };
@@ -17,19 +15,19 @@ type Props = {
   lastRecoveryReleased?: boolean;
 };
 
-export function TurnPrompt({ actionHeadingRef, action, description, rulesHelp, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes, hollywoodResearchAwarded, lastRecoveryEventId, lastRecoveryRoll, lastRecoveryReleased }: Props) {
+export function TurnPrompt({ action, description, rulesHelp, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes, hollywoodResearchAwarded, lastRecoveryEventId, lastRecoveryRoll, lastRecoveryReleased }: Props) {
   return (
     <>
       <span className="label">CURRENT STEP</span>
-      <h2 ref={actionHeadingRef} tabIndex={-1}>{action}</h2>
+      <h2>{action}</h2>
       <p>{description}</p>
-      <aside className="decision-rules-help" aria-label="Rules help for current decision">
+      <details className="decision-rules-help"><summary>Rules for this step</summary>
         <span className="label">DECISION HELP</span>
         <strong>{rulesHelp.title}</strong>
         <p>{rulesHelp.body}</p>
-      </aside>
+      </details>
       {unavailableReason && !canAct && <p className="unavailable-reason" role="status">{unavailableReason}</p>}
-      {lastFightEventId && lastFightRolls.length > 0 && (
+      {action === "Fight" && lastFightEventId && lastFightRolls.length > 0 && (
         <div className="combat-result" key={lastFightEventId} aria-live="polite">
           <span className="label">LAST COMBAT ROLLS</span>
           <div className="combat-roll-list">
@@ -40,7 +38,7 @@ export function TurnPrompt({ actionHeadingRef, action, description, rulesHelp, u
           <small>Fight result recorded.</small>
         </div>
       )}
-      {lastRecoveryEventId && typeof lastRecoveryRoll === "number" && (
+      {action === "Move" && lastRecoveryEventId && typeof lastRecoveryRoll === "number" && (
         <div className="combat-result recovery-result" key={lastRecoveryEventId} aria-live="polite">
           <span className="label">LAST HOLLYWOOD RECOVERY</span>
           <div className="combat-roll-list" aria-label="Recorded Hollywood recovery die">

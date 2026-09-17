@@ -454,3 +454,23 @@ test("bounded concurrent room and spectator operations remain isolated", async (
     assert.ok(roomReads.every((view) => view.state.matchId === `room-${expectedCode}`));
   }
 });
+
+
+test("setup rejects illegal starting placements without locking in the choice", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host", "private");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  let revision = host.room.version;
+  const code = host.room.code;
+  for (const [index, session] of [host, guest].entries()) revision = (await store.setupAction(code, session.token, { type: "choose-monster", monsterId: `monster-${index + 1}` }, revision)).version;
+  revision = (await store.setupAction(code, guest.token, { type: "choose-branch", branch: "Navy" }, revision)).version;
+  revision = (await store.setupAction(code, host.token, { type: "choose-branch", branch: "Army" }, revision)).version;
+  revision = (await store.setupAction(code, host.token, { type: "choose-lair", lair: "los-angeles" }, revision)).version;
+  revision = (await store.setupAction(code, guest.token, { type: "choose-lair", lair: "chicago" }, revision)).version;
+  await assert.rejects(() => store.setupAction(code, host.token, { type: "choose-starting-choice", startingChoice: { kind: "deploy", placements: [{ unitId: "missing-unit", destination: "denver" }] } }, revision), /verified base/);
+  const unchanged = await store.getRoom(code, host.token);
+  assert.equal(unchanged.version, revision);
+  assert.equal(unchanged.state.setupState?.seats[0]?.startingChoice, undefined);
+  const corrected = await store.setupAction(code, host.token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, revision);
+  assert.equal(corrected.state.setupState?.seats[0]?.ready, true);
+});

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CARD_STACKING_RULES, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { canDeployNationalGuard, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { setupDeploymentState, canDeployNationalGuard, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -2796,4 +2796,37 @@ test("Air Force cruise-missile hits deal the printed three damage", () => {
   assert.equal(attack?.damage, 3);
   assert.equal(result.state.monsters[0].health, 37);
   assert.equal(result.state.units.find((unit) => unit.id === missile.id)?.location, "record-tile");
+});
+
+
+test("starting deployment uses the branch allowance, selected pieces and Guard bonus", () => {
+  const state = createMvpRoomGame(2, 17);
+  let setup = state.setupState!;
+  setup = chooseMonster(setup, 0, setup.definition.monsterIds[0]!);
+  setup = chooseMonster(setup, 1, setup.definition.monsterIds[1]!);
+  setup = chooseBranch(setup, 1, "Navy");
+  setup = chooseBranch(setup, 0, "Army");
+  for (const seat of setup.seats) setup = chooseLair(setup, seat.playerIndex, setup.definition.lairsByMonster[seat.monsterId!]![0]!);
+  state.setupState = setup;
+  const preview = setupDeploymentState(state, 0);
+  const bases = legalOwnedDeploymentDestinations(preview);
+  const reserves = preview.units.filter((unit) => unit.branch === "Army" && unit.location === "record-tile");
+  const placements = reserves.slice(0, 2).map((unit, index) => ({ unitId: unit.id, destination: bases[index]! }));
+  const twoPlaced = setupDeploymentState(state, 0, placements);
+  assert.equal(twoPlaced.deploymentsThisTurn, 2);
+  assert.equal(state.units.find((unit) => unit.id === reserves[0]!.id)!.location, "record-tile", "preview never mutates the match");
+  assert.throws(() => setupDeploymentState(state, 0, [...placements, { unitId: reserves[2]!.id, destination: bases[2]! }]), /allowance is exhausted/);
+  assert.throws(() => setupDeploymentState(state, 0, [{ ...placements[0]! }, { ...placements[1]!, destination: placements[0]!.destination }]), /one newly deployed unit/);
+  const guardId = state.nationalGuard.unitIds[0]!;
+  const guardDestination = legalNationalGuardDeploymentDestinations(twoPlaced).find((key) => !twoPlaced.deploymentDestinations.includes(key))!;
+  placements.push({ unitId: guardId, destination: guardDestination });
+  setup = chooseStartingChoice(setup, 0, { kind: "deploy", placements });
+  setup = chooseStartingChoice(setup, 1, { kind: "research" });
+  const result = applyCompletedSetup({ ...state, setupState: setup });
+  for (const placement of placements) assert.equal(result.units.find((unit) => unit.id === placement.unitId)!.location, placement.destination);
+  assert.equal(result.units.find((unit) => unit.id === guardId)!.ownerPlayer, undefined);
+  assert.equal(result.players[1]!.researchCardIds.length, 1);
+  assert.equal(result.deploymentsThisTurn, 0);
+  assert.equal(result.phase, "move");
+  assert.equal(result.currentPlayer, 0);
 });

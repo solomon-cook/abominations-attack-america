@@ -413,7 +413,9 @@ export function redactCardIdentifiers(value: unknown): unknown {
 export function projectState(state: GameState, audience: StateAudience, viewerPlayerIndex?: number): GameState {
   if (audience === "internal") return structuredClone(state);
   const projected = structuredClone(state);
-  projected.nationalGuard = { ...projected.nationalGuard, deploymentPlayerIndices: state.players.flatMap((_, index) => canDeployNationalGuard(state, index) ? [index] : []) };
+  const setupPlayer = state.setupState?.phase === "starting-choice" ? state.setupState.seats.find((seat) => !seat.startingChoice)?.playerIndex : undefined;
+  const permissionState = setupPlayer === undefined ? state : setupDeploymentState(state, setupPlayer);
+  projected.nationalGuard = { ...projected.nationalGuard, deploymentPlayerIndices: state.players.flatMap((_, index) => canDeployNationalGuard(permissionState, index) ? [index] : []) };
   projected.decks.mutation = { ...projected.decks.mutation, order: [], discard: [] };
   projected.decks.research = { ...projected.decks.research, order: [], discard: [] };
   projected.players = projected.players.map((player, index) => audience === "player" && index === viewerPlayerIndex
@@ -807,9 +809,7 @@ export function createGameFromSetup(setup: SetupState, seed = 0): GameState {
  * Materialize setup choices on the match-pinned board. Audited games offer the
  * complete monster catalogue and use the selected monsters' printed lairs.
  */
-export function applyCompletedSetup(state: GameState): GameState {
-  if (!state.setupState || state.setupState.phase !== "complete" || state.setupApplied) return state;
-  validateSetup(state.setupState);
+function prepareSetupPositions(state: GameState): GameState {
   const next = structuredClone(state);
   const completedSetup = next.setupState;
   if (!completedSetup) return next;
@@ -838,7 +838,56 @@ export function applyCompletedSetup(state: GameState): GameState {
     monster.location = normalizeLocation(assignment.lair);
   });
 
-  for (const assignment of next.setupAssignments) {
+  return next;
+}
+
+/** Preview only: uses the same deployment rules as the final setup command. */
+export function setupDeploymentState(state: GameState, playerIndex: number, placements: readonly { unitId: string; destination: string }[] = []): GameState {
+  let next = prepareSetupPositions(state);
+  const projectedGuardPermissions = next.nationalGuard.deploymentPlayerIndices;
+  next.nationalGuard = { ...next.nationalGuard, deploymentPlayerIndices: undefined };
+  // Replay earlier choices in order; redacted clients use public Guard permissions.
+  for (const assignment of next.setupAssignments ?? []) {
+    const choice = assignment.startingChoice;
+    if (!choice || assignment.playerIndex >= playerIndex) continue;
+    if (choice.kind === "research") {
+      if (next.decks.research.order.length) {
+        const drawn = drawCardFromDeck(next.decks.research);
+        next.decks.research = drawn.state;
+        if (drawn.cardId) next.players[assignment.playerIndex].researchCardIds.push(drawn.cardId);
+      }
+      continue;
+    }
+    next.currentPlayer = assignment.playerIndex;
+    next.phase = "deploy";
+    next.deploymentsThisTurn = 0;
+    next.deploymentDestinations = [];
+    for (const placement of "placements" in choice ? choice.placements : [choice]) {
+      const destination = isHexKey(placement.destination) ? placement.destination : locationIdToHexKey(placement.destination);
+      if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", "Invalid starting deployment location.");
+      next = deployUnitResult(next, { unitId: placement.unitId, destination }).state;
+    }
+  }
+  if (projectedGuardPermissions) next.nationalGuard = { ...next.nationalGuard, deploymentPlayerIndices: projectedGuardPermissions };
+  next.currentPlayer = playerIndex;
+  next.phase = "deploy";
+  next.deploymentsThisTurn = 0;
+  next.deploymentDestinations = [];
+  next.pendingDecision = { type: "deployment", playerIndex };
+  for (const placement of placements) {
+    const destination = isHexKey(placement.destination) ? placement.destination : locationIdToHexKey(placement.destination);
+    if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", "Choose a legal starting deployment location.");
+    next = deployUnitResult(next, { unitId: placement.unitId, destination }).state;
+  }
+  assertInventoryAccounting(next);
+  return next;
+}
+
+export function applyCompletedSetup(state: GameState): GameState {
+  if (!state.setupState || state.setupState.phase !== "complete" || state.setupApplied) return state;
+  validateSetup(state.setupState);
+  let next = prepareSetupPositions(state);
+  for (const assignment of next.setupAssignments ?? []) {
     const player = next.players[assignment.playerIndex];
     const choice = assignment.startingChoice;
     if (!player || !choice) throw new GameDomainError("ILLEGAL_COMMAND", "Completed setup is missing a starting choice.");
@@ -851,22 +900,27 @@ export function applyCompletedSetup(state: GameState): GameState {
       continue;
     }
 
-    const destination = normalizeLocation(choice.destination);
-    const unit = next.units.find((candidate) => candidate.id === choice.unitId && candidate.branch === assignment.branch && candidate.location === "record-tile" && !next.removedUnitIds.includes(candidate.id));
-    const base = board.hexes[destination]?.features.some((feature) => feature.kind === "military-base" && feature.branch === assignment.branch);
-    if (!unit || !base || next.units.some((candidate) => candidate.location === destination)) {
-      throw new GameDomainError("ILLEGAL_COMMAND", `Initial ${assignment.branch ?? "branch"} deployment is not legal at ${destination}.`);
+    const placements = "placements" in choice ? choice.placements : [choice];
+    if (!placements.length) throw new GameDomainError("ILLEGAL_COMMAND", "Choose at least one unit for initial deployment.");
+    next.currentPlayer = assignment.playerIndex;
+    next.phase = "deploy";
+    next.deploymentsThisTurn = 0;
+    next.deploymentDestinations = [];
+    for (const placement of placements) {
+      const destination = isHexKey(placement.destination) ? placement.destination : locationIdToHexKey(placement.destination);
+      if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", "Choose a legal starting deployment location.");
+      next = deployUnitResult(next, { unitId: placement.unitId, destination }).state;
     }
-    unit.location = destination;
-    unit.ownerPlayer = assignment.playerIndex;
-    next.log.push(`Player ${assignment.playerIndex + 1} deployed ${unit.unitTypeId ?? unit.id} to ${board.hexes[destination]?.label ?? destination} during setup.`);
   }
+  next.deploymentsThisTurn = 0;
+  next.deploymentDestinations = [];
 
   next.setupApplied = true;
   next.phase = "move";
   next.currentPlayer = 0;
   next.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: next.monsters[0]!.id };
   next.log.unshift("Setup choices applied. The match is ready for Move.");
+  assertInventoryAccounting(next);
   return next;
 }
 

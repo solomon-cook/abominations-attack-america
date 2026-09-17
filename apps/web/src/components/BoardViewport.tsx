@@ -37,17 +37,6 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
   }, [world]);
 
   useEffect(() => {
-    const screen = mapRef.current?.closest<HTMLElement>(".game-screen");
-    const dock = screen?.querySelector<HTMLElement>(".board-action-bar");
-    if (!screen || !dock) return;
-    const observer = new ResizeObserver(() => {
-      screen.style.setProperty("--action-dock-height", `${Math.ceil(dock.getBoundingClientRect().height)}px`);
-    });
-    observer.observe(dock);
-    return () => { observer.disconnect(); screen.style.removeProperty("--action-dock-height"); };
-  }, []);
-
-  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const wheel = (event: WheelEvent) => {
@@ -130,10 +119,6 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
       <div className="map-canvas" style={{ width: world.width, height: world.height, transform: `translate(${viewport.width / 2 - camera.center.x * scale}px, ${viewport.height / 2 - camera.center.y * scale}px) scale(${scale})` }}>{children}</div>
     </div>
     <div className="map-controls" aria-label="Board view controls">
-      <button type="button" aria-label="Pan board left" onClick={() => pan(.12, 0)}>←</button>
-      <button type="button" aria-label="Pan board up" onClick={() => pan(0, .12)}>↑</button>
-      <button type="button" aria-label="Pan board down" onClick={() => pan(0, -.12)}>↓</button>
-      <button type="button" aria-label="Pan board right" onClick={() => pan(-.12, 0)}>→</button>
       <button type="button" aria-label="Zoom board out" disabled={camera.zoom <= 1} onClick={() => zoom(1 / 1.25)}>−</button>
       <span className="map-zoom" aria-live="polite">{Math.round(camera.zoom * 100)}%</span>
       <button type="button" aria-label="Zoom board in" disabled={camera.zoom >= 4} onClick={() => zoom(1.25)}>+</button>
