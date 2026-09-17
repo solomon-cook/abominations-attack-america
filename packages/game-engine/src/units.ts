@@ -65,7 +65,7 @@ export const UNIT_DEFINITIONS: readonly UnitDefinition[] = [
   { id: "marines-fighter", branch: "Marines", name: "Fighter", quantity: 4, move: 5, movement: "fly", defense: 4, damage: 1, attacks: 1, sourceRefs: [marinesAirForce], effectsImplementation: "source-gated" },
   { id: "marines-rocket-launcher", branch: "Marines", name: "Rocket Launcher", quantity: 4, move: 4, movement: "land-only", defense: 3, damage: 2, attacks: 1, sourceRefs: [marinesAirForce], effectsImplementation: "source-gated" },
   { id: "air-force-fighter", branch: "Air Force", name: "Fighter", quantity: 6, move: 6, movement: "fly", defense: 4, damage: 1, attacks: 1, sourceRefs: [marinesAirForce], effectsImplementation: "source-gated" },
-  { id: "air-force-cruise-missile", branch: "Air Force", name: "Cruise Missile", quantity: 2, move: 8, movement: "fly", defense: 6, damage: 1, attacks: 1, specialAbilityText: "Destroyed after the first round of combat; if the cruise-missile attack roll is 1, the monster mutates.", sourceRefs: [marinesAirForce], effectsImplementation: "source-gated" },
+  { id: "air-force-cruise-missile", branch: "Air Force", name: "Cruise Missile", quantity: 2, move: 8, movement: "fly", defense: 6, damage: 3, attacks: 1, specialAbilityText: "Destroyed after the first round of combat; if the cruise-missile attack roll is 1, the monster mutates.", sourceRefs: [marinesAirForce], effectsImplementation: "source-gated" },
 ];
 
 export const GIANT_UNIT_DEFINITIONS: readonly GiantUnitDefinition[] = [

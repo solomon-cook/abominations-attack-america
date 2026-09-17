@@ -73,6 +73,7 @@ import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
 import "./fullscreen-shell.css";
 import "./board-terrain.css";
+import "./physical-sheets.css";
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -932,6 +933,7 @@ function App() {
           <p className="lede">A monster strategy game of cities, battles, and bad decisions.</p>
         </div>
         <div className="header-actions">
+          {setupComplete && <PlayerStatusControls game={activeGame} monster={activePlayer} branch={activeBranch} />}
           <button className="ghost game-panel-toggle" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="game-side-panel">
             {gamePanelOpen ? "Hide details" : "Show details"}
           </button>
@@ -1098,7 +1100,6 @@ function App() {
                     : `Select a highlighted reachable space to preview a path for ${activePlayer.name}.`
                 : "Waiting for the active player."}
             </p>
-            <PlayerStatusControls game={activeGame} monster={activePlayer} branch={activeBranch} />
             <PieceStackInspector
               game={activeGame}
               activeMonsterId={activePlayer.id}
@@ -1302,7 +1303,7 @@ function App() {
           <LogPanel eventLog={eventLog} log={log} />
         </aside>
       </section>
-      {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
+      {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet game={activeGame} branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
         setDeploymentPieceId(choice.id);
         setMilitarySheetOpen(false);
         setFocusedHexKey(choice.destinations[0]);

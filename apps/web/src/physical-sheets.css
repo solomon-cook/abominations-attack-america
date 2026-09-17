@@ -1,0 +1,40 @@
+/* Visual language taken from the photographed physical military and monster records. */
+.physical-military-sheet{--sheet-color:#526e24;--sheet-ink:#fffde3;--sheet-dark:#253a12;--sheet-accent:#f4da69}
+.physical-military-sheet[data-branch="Navy"]{--sheet-color:#17679a;--sheet-dark:#10384e;--sheet-accent:#ffe083}
+.physical-military-sheet[data-branch="Marines"]{--sheet-color:#a3392d;--sheet-dark:#551f1c;--sheet-accent:#ffe090}
+.physical-military-sheet[data-branch="Air Force"]{--sheet-color:#ddc549;--sheet-dark:#6d591c;--sheet-ink:#252819;--sheet-accent:#252819}
+.physical-military-sheet[data-branch="National Guard"]{--sheet-color:#d48d2d;--sheet-dark:#714317;--sheet-ink:#251e14;--sheet-accent:#251e14}
+.physical-military-sheet[data-branch="Giant"],.physical-military-sheet[data-branch="X-Fighters"]{--sheet-color:#656b6d;--sheet-dark:#303b3d;--sheet-accent:#ffe083}
+.military-hand .physical-military-sheet{color:var(--sheet-ink);border:3px solid #ded9ba;border-radius:8px 8px 30px 30px;background-color:var(--sheet-color);background-image:radial-gradient(ellipse 52px 22px at 14% 24%,#00000016 98%,transparent),radial-gradient(ellipse 37px 62px at 75% 58%,#ffffff0c 98%,transparent),radial-gradient(ellipse 58px 24px at 45% 80%,#00000012 98%,transparent);background-size:170px 140px,210px 170px,190px 160px;background-attachment:local;box-shadow:inset 0 0 0 5px #ffffff16}
+.physical-military-sheet>h2{margin:4px -24px 16px;padding:12px 24px;background:#151c1cec;border-block:1px solid #e4dfbd;font-family:Georgia,serif;font-weight:900;font-size:38px;letter-spacing:2px;text-transform:uppercase;color:#fffdeb;text-shadow:2px 2px #000}
+.physical-military-sheet>.label{color:var(--sheet-ink);letter-spacing:3px}
+.physical-military-sheet .sheet-reference{background:transparent;border:0;padding:0;margin-top:12px}
+.physical-military-sheet .sheet-reference-note{color:var(--sheet-ink);opacity:.9}
+.physical-military-sheet h3{font-family:Georgia,serif;text-transform:uppercase;font-size:22px;letter-spacing:.6px;color:var(--sheet-ink)}
+.physical-military-sheet h3 small{font-family:Arial,sans-serif;font-size:12px;letter-spacing:0;text-transform:none}
+.physical-military-sheet .sheet-reference article+article{border-top:2px solid #f9f3d466;padding-top:12px;margin-top:22px}
+.physical-military-sheet .sheet-stats{gap:0;border-block:1px solid #fff4}
+.physical-military-sheet .sheet-stats>div{background:#00000017;border-radius:0;color:var(--sheet-ink);padding:8px}
+.physical-military-sheet .sheet-stats dt{font-weight:800;text-transform:uppercase;font-size:11px;color:var(--sheet-accent)}
+.physical-military-sheet .sheet-stats dd{font-size:18px}
+.record-reserve{display:flex;align-items:center;gap:16px;margin:16px 0}
+.record-reserve-slots{display:flex;flex-wrap:wrap;gap:12px;flex:1}
+.record-piece-slot{position:relative;display:grid;place-items:center;width:54px;height:66px;filter:drop-shadow(1px 0 #fff7) drop-shadow(-1px 0 #fff7) drop-shadow(0 1px #fff7) drop-shadow(0 -1px #fff7)}
+.record-piece-slot::before{content:"";position:absolute;inset:0;background:#17201990;mask:var(--piece-mask) center/contain no-repeat}
+.record-piece-slot img{position:relative;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 2px #0009)}
+.record-reserve-count{font-size:16px;white-space:nowrap}.record-reserve-count b{font-family:Georgia,serif;font-size:42px}.record-reserve-count small{display:block;font-size:10px;letter-spacing:1px}
+.physical-military-sheet .military-sheet-pieces button{background:#fff6ddea;border-color:#fff6d6;border-radius:10px;color:#202c25;box-shadow:inset 0 0 0 3px #4d563d33}
+.physical-military-sheet .military-sheet-pieces button:hover,.physical-military-sheet .military-sheet-pieces button:focus-visible{background:#f2ffc4;outline:3px solid #fff}
+.physical-military-sheet .sheet-source summary{color:var(--sheet-ink)}
+.monster-reference-sheet{background:#232629}.monster-reference-sheet .military-hand-toolbar{background:#232629}
+.military-hand .physical-monster-sheet{background:linear-gradient(125deg,#c5c6bd,#9da4a0);color:#202526;border:3px solid #f0eccf;border-radius:12px;box-shadow:inset 8px 0 #32383b,inset -8px 0 #32383b;padding-inline:30px}
+.physical-monster-sheet h2{font-family:Impact,'Arial Black',sans-serif;text-transform:uppercase;font-size:42px;letter-spacing:2px;color:#f2d85d;text-shadow:2px 2px #171a1c,-1px -1px #171a1c;margin-top:0}
+.physical-monster-sheet h3{text-transform:uppercase;font-size:14px;letter-spacing:1px;color:#242b2c;margin-top:22px}
+.physical-monster-sheet .sheet-stats>div{background:#e9e8d680;border:1px solid #555b5340;border-radius:2px}.physical-monster-sheet .sheet-stats dt{text-transform:uppercase;font-size:10px;font-weight:800}.physical-monster-sheet .sheet-reference-note{color:#303a34}
+.physical-monster-sheet .monster-sheet-portrait{width:135px;height:150px;filter:drop-shadow(4px 4px 0 #e8e7da) drop-shadow(-2px -2px 0 #e8e7da)}
+.monster-health-track{clear:both;padding:12px 14px 24px;background:#272d2e;color:#f5df78;border:1px solid #ebe5c1;margin-top:16px}
+.monster-health-track>div:first-child{display:flex;align-items:baseline;justify-content:space-between;letter-spacing:2px;font-size:12px;font-weight:800}.monster-health-track strong{font-size:26px}.monster-health-track small{font-size:14px}
+.monster-health-ticks{display:flex;gap:2px;margin:8px 4px 0}.monster-health-ticks i{position:relative;flex:1;height:14px;background:#535a57;border-radius:1px}.monster-health-ticks i.filled{background:#e6c655}.monster-health-ticks i span{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-size:9px;font-style:normal;color:#fff1b5}
+.monster-record-skyline{position:relative;height:88px;margin:24px -30px 0;background:linear-gradient(transparent,#d8cd7780);overflow:hidden}.monster-record-skyline svg{width:100%;height:70px;fill:#24282a;position:absolute;bottom:0}.monster-record-skyline span{position:absolute;bottom:7px;width:100%;text-align:center;font-size:10px;font-weight:800;letter-spacing:2px;color:#ede7b3}
+@media(max-width:600px){.physical-military-sheet>h2{margin-inline:-18px;padding-inline:18px;font-size:30px}.record-reserve-slots{gap:8px}.record-piece-slot{width:35px;height:48px}.record-reserve{gap:8px}.record-reserve-count b{font-size:30px}.physical-military-sheet .sheet-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.military-hand .physical-monster-sheet{padding-inline:20px}.physical-monster-sheet .monster-sheet-portrait{width:80px;height:95px}.physical-monster-sheet h2{font-size:32px}.monster-record-skyline{margin-inline:-20px}}
+.military-hand .physical-military-sheet{background-image:url('/assets/reference-sheets/camouflage.svg');background-size:240px 190px}

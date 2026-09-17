@@ -92,7 +92,7 @@ test("development military roster uses source-backed unit records", () => {
     ["navy-fighter", 6, 4, 1],
     ["navy-nuclear-submarine", 4, 5, 1],
     ["air-force-fighter", 6, 4, 1],
-    ["air-force-cruise-missile", 8, 6, 1],
+    ["air-force-cruise-missile", 8, 6, 3],
     ["marines-fighter", 5, 4, 1],
     ["marines-rocket-launcher", 4, 3, 2],
   ]);
@@ -2766,4 +2766,25 @@ test("deployment places the requested reserve piece rather than the first piece"
   }
   chosen.location = destination;
   assert.throws(() => applyCommand(state, { type: "deploy", unitId: chosen.id, destination }));
+});
+
+
+test("Air Force cruise-missile hits deal the printed three damage", () => {
+  const state = createGame(2, 0);
+  const monster = state.monsters[0];
+  const missile = state.units.find((unit) => unit.unitTypeId === "air-force-cruise-missile")!;
+  assert.equal(missile.damage, 3);
+  monster.health = 40;
+  monster.attacks = 0;
+  monster.defense = 1;
+  missile.location = monster.location;
+  state.phase = "fight";
+  state.pendingBattles = [{ id: "printed-missile-damage", monsterId: monster.id, location: monster.location as any, militaryUnitIds: [missile.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "printed-missile-damage" };
+  const result = applyCommand(state, { type: "resolve-fight" });
+  const attack = (result.eventPayload.attacks as Array<{ attackerId: string; hit: boolean; damage: number }>).find((entry) => entry.attackerId === missile.id);
+  assert.equal(attack?.hit, true);
+  assert.equal(attack?.damage, 3);
+  assert.equal(result.state.monsters[0].health, 37);
+  assert.equal(result.state.units.find((unit) => unit.id === missile.id)?.location, "record-tile");
 });
