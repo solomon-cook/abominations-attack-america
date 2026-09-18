@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MONSTER_DEFINITIONS, UNIT_DEFINITIONS, type GameCommand, type GameState } from "@abominations/game-engine";
 import { MilitarySheet, type DeploymentChoice } from "./MilitarySheet";
+import { monsterAssetSlug } from "../monster-assets";
 import { movementLabel, SheetStats, SourcePhoto } from "./SheetReference";
 
 type Props = { game: GameState; monster: GameState["monsters"][number]; branch: string; playerIndex: number; canAct: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void; onSelectDeployment?: (choice: DeploymentChoice) => void };
@@ -37,7 +38,7 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
             <h2 id="monster-sheet-title">{monster.name}</h2>
             <div className="monster-record-columns">
               <div className="monster-printed-stats"><SheetStats values={{ "Starting health": definition?.startingHealth ?? monster.startingHealth, Move: definition?.move ?? monster.move, Movement: movementLabel(definition?.movement ?? monster.movement), Defense: definition?.defense ?? monster.defense }} />
-                <img className="monster-record-portrait" src={`/assets/monsters/portraits/${monster.name.toLowerCase()}.webp`} alt={`${monster.name} portrait`} />
+                <img className="monster-record-portrait" src={`/assets/monsters/portraits/${monsterAssetSlug(monster.name)}.webp`} alt={`${monster.name} portrait`} />
               </div>
               <div className="monster-printed-ability"><SheetStats values={{ Attacks: definition?.attacks ?? monster.attacks, Damage: definition?.damage ?? monster.damage }} /><h3>Special ability</h3><p>{definition?.specialAbilityText}</p>
                 <p className="record-live-health"><b>{monster.health}</b> / {monster.maxHealth} Health<br /><b>{monster.infamy}</b> Infamy</p>
@@ -88,7 +89,7 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
       }}>{view === "monster" ? "Monster" : view === "military" ? "Military" : "Map"}</button>)}</div>
       <div id="record-panel" role="tabpanel" aria-labelledby={`record-tab-${tab}`}>
         {tab === "monster" && <button className="record-preview" onClick={() => setOpen("monster")} aria-label={`Open ${monster.name} monster sheet`}>
-          <img src={`/assets/monsters/portraits/${monster.name.toLowerCase()}.webp`} alt="" />
+          <img src={`/assets/monsters/portraits/${monsterAssetSlug(monster.name)}.webp`} alt="" />
           <span className="record-preview-body"><small>PLAYER {playerIndex + 1} · MONSTER RECORD</small><strong>{monster.name}</strong>
             <span>Health <b>{monster.health}/{monster.maxHealth}</b> · ★ {monster.infamy} Infamy</span>
             <meter min={0} max={monster.maxHealth} value={monster.health} aria-label="Monster health" />

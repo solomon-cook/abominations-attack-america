@@ -43,21 +43,16 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
     ref.current?.querySelector<HTMLButtonElement>("button")?.focus();
     return () => previous?.focus({ preventScroll: true });
   }, []);
-  return <div className="military-sheet-backdrop" onClick={onClose}>
-    <div className={`military-hand ${sheets.length > 1 ? "multiple-sheets" : ""}`} ref={ref} role="dialog" aria-modal="true" aria-labelledby="military-sheet-title" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => {
+  return <div className="military-drawer-layer">
+    <div className={`military-hand military-drawer`} ref={ref} role="dialog" aria-labelledby="military-sheet-title" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => {
       if (event.key === "Escape") onClose();
       if (!(event.target instanceof HTMLSelectElement) && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); turnPage(event.key === "ArrowRight" ? 1 : -1); }
-      if (event.key === "Tab") {
-        const buttons = Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled), summary, select:not(:disabled), [tabindex="0"]') ?? []);
-        const first = buttons[0], last = buttons.at(-1);
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-      }
+
     }}>
       <div className="military-hand-toolbar">
-        <span className="label">YOUR MILITARY SHEETS</span>
+        <span className="label">MILITARY RECORDS</span>
         {!referenceOnly && runCommand && <button type="button" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Finish deployment</button>}
-        <button className="military-sheet-close" onClick={onClose}>Close</button>
+        <button className="military-sheet-close" onClick={onClose} aria-label="Close military sheets">Tuck away →</button>
       </div>
       {sheets.length > 1 && <nav className="military-sheet-tabs" aria-label="Military sheets">
         {sheets.map((sheet) => <button key={sheet} aria-pressed={sheet === activeSheet} onClick={() => setSelectedSheet(sheet)}>{sheet}</button>)}
@@ -82,21 +77,11 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
         <span className="label">MILITARY RECORD SHEET</span>
         <h2 id="military-sheet-title">{activeSheet}</h2>
         {!referenceOnly && <p>Choose a piece, then select a glowing location on the map.</p>}
-        {referenceOnly && sheets.includes("National Guard") && (activeSheet === branch || activeSheet === "National Guard") && <div className="guard-sheet-action">
-          {activeSheet !== "National Guard" && <button type="button" onClick={() => setSelectedSheet("National Guard")}>View National Guard sheet →</button>}
-          {onDeploy && <button type="button" disabled={!canAct || !game || !deploymentChoices(game).some((choice) => choice.sheet === "National Guard")} onClick={() => onDeploy("National Guard")}>Deploy National Guard</button>}
-          {game?.phase !== "deploy" && <small>Guard deployment is available during Deploy.</small>}
-        </div>}
-        {referenceOnly && game && <SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} />}
         <MilitaryReference choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
         {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Finish deployment to continue."}</p>}
-        {!referenceOnly && game && <SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} />}
+        {game && <details className="military-drawer-research"><summary>Military research · {game.players[playerIndex]?.researchCardIds.length ?? 0}</summary><SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} /></details>}
       </div>
-      {sheets.length > 1 && <div className="military-hand-navigation">
-        <button onClick={() => turnPage(-1)} aria-label="Previous military sheet">← Previous</button>
-        <span aria-live="polite">{pageIndex + 1} / {sheets.length} · Swipe to switch</span>
-        <button onClick={() => turnPage(1)} aria-label="Next military sheet">Next →</button>
-      </div>}
+
     </div>
   </div>;
 }

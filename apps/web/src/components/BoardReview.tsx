@@ -12,7 +12,7 @@ const stackFixtureAssets = [
   "/assets/military/army-tank.webp",
   "/assets/monsters/megaclaw.webp",
   "/assets/military/air-force-fighter.webp",
-  "/assets/monsters/gargantis.webp",
+  "/assets/monsters/gargantis-light.webp",
   "/assets/military/army-tank.webp",
 ];
 

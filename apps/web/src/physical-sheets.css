@@ -145,3 +145,42 @@
 .sheet-held-card:focus-visible { outline:3px solid #ffe295; outline-offset:3px; }
 .monster-sheet-scroll-hint { display:none; }
 @media(max-width:900px) { .monster-sheet-scroll-hint { display:block; color:#f3e8c9; font-size:12px!important; margin:0 0 10px; } }
+
+/* A board-side folder: only the drawer captures pointer input. */
+.military-drawer-layer{position:fixed;inset:0;z-index:150;pointer-events:none}
+.military-hand.military-drawer{position:absolute;right:0;top:88px;bottom:24px;width:min(390px,42vw);max-height:none;padding:8px 0 0 8px;pointer-events:auto;border:1px solid #8c997d;border-right:0;border-radius:14px 0 0 14px;background:#263a30;box-shadow:-8px 10px 28px #0005;animation:military-drawer-enter .2s ease-out}
+.military-drawer .military-hand-toolbar{padding:4px 10px 10px;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.military-drawer .military-hand-toolbar .label{font-size:10px;letter-spacing:1.8px}
+.military-drawer .military-sheet-close{font-size:12px;min-height:40px}
+.military-drawer .military-sheet-tabs{padding:0 8px;gap:4px;border-radius:0}
+.military-drawer .military-sheet-tabs button{border-radius:9px 9px 0 0;padding:8px 12px;font-size:12px;border-bottom:0}
+.military-drawer .military-sheet-tabs button[aria-pressed=true]{background:#eee6cc;box-shadow:none}
+.military-hand.military-drawer .physical-military-sheet{padding:14px 16px 20px;border:0;border-radius:0 0 0 8px;background:#eee6cc;color:#28362b;box-shadow:none;--sheet-ink:#28362b;--sheet-accent:#46553e;animation:none;font-size:13px;line-height:1.5}
+.military-drawer .physical-military-sheet>.label{display:none}
+.military-drawer .physical-military-sheet>h2{margin:-14px -16px 12px;padding:14px 16px;background-color:var(--sheet-color);background-image:url('/assets/reference-sheets/camouflage.svg');background-size:240px 190px;border:0;font-size:25px;letter-spacing:1px;color:#fffdeb;text-shadow:0 1px 2px #000}
+.military-drawer .physical-military-sheet[data-branch="Air Force"]>h2,.military-drawer .physical-military-sheet[data-branch="National Guard"]>h2{color:#252819;text-shadow:none}
+.military-drawer .physical-military-sheet h3{font-size:16px;margin:14px 0 8px}
+.military-drawer .sheet-stats{grid-template-columns:repeat(3,minmax(0,1fr));border-color:#63714e44}
+.military-drawer .physical-military-sheet .sheet-stats>div{padding:6px;background:#65744d0d}
+.military-drawer .physical-military-sheet .sheet-stats dd{font-size:14px}
+.military-drawer .physical-military-sheet .sheet-stats dt{font-size:9px}
+.military-drawer .record-reserve{flex-wrap:wrap;gap:10px}
+.military-drawer .record-reserve-slots{flex-wrap:wrap;gap:6px}
+.military-drawer .record-reserve-count b{font-size:24px}
+.military-drawer .physical-military-sheet .sheet-reference article+article{border-color:#63714e44;margin-top:16px}
+.military-drawer .physical-military-sheet button.selectable-record-piece{background:#d6d8b8;border-color:#71805d}
+.military-drawer-research{border-top:1px solid #63714e55;margin-top:18px;padding-top:12px}
+.military-drawer-research>summary{cursor:pointer;font-weight:700;min-height:36px}
+.military-drawer .sheet-held-card-grid{display:grid;grid-template-columns:minmax(0,1fr)}
+@keyframes military-drawer-enter{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@media(max-width:600px){
+  .military-hand.military-drawer{top:auto;bottom:0;left:8px;right:8px;width:auto;height:46dvh;max-height:46dvh;border:1px solid #8c997d;border-bottom:0;border-radius:14px 14px 0 0;padding:8px 8px 0;animation-name:military-drawer-rise}
+  .military-drawer .military-hand-toolbar{padding:0 2px 6px}
+  .military-hand.military-drawer .physical-military-sheet{border-radius:0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+}
+@keyframes military-drawer-rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.military-hand.military-drawer{animation:none}}
+.manual-reduced-motion .military-hand.military-drawer{animation:none}
+.military-drawer .sheet-held-card-grid,.military-drawer .sheet-held-card-grid:has(.sheet-held-card:is(:hover,:focus-within)){padding:0;gap:12px;overflow:visible}
+.military-drawer .sheet-held-card-grid .sheet-held-card{width:auto;min-height:0;margin:0;transform:none;transition:none}
+.military-drawer .sheet-held-cards{margin:0;border:0;padding:0}

@@ -1,4 +1,5 @@
 import { DieCube } from "./DieCube";
+import { monsterAssetSlug } from "../monster-assets";
 
 type ChallengeAttack = Readonly<{
   attackerId: string;
@@ -26,7 +27,7 @@ type Props = {
 const monsterAsset = (name?: string) => {
   const slug = name?.toLowerCase().replaceAll(" ", "-");
   return slug && ["gargantis", "konk", "megaclaw", "tomanagi", "toxicor", "zorb"].includes(slug)
-    ? `/assets/monsters/${slug}.webp`
+    ? `/assets/monsters/${monsterAssetSlug(slug)}.webp`
     : undefined;
 };
 
