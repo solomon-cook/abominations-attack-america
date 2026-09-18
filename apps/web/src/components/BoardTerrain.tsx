@@ -11,7 +11,8 @@ export function cellArt(key: HexKey) { return artByKey[key]; }
 let requestedSize = 256;
 const subscribers = new Set<(size: number) => void>();
 function onCamera(event: Event) {
-  const pixels = (event as CustomEvent<{ tilePixels: number }>).detail.tilePixels * Math.min(window.devicePixelRatio || 1, 3);
+  // Keep extra source samples for fine lettering and angled hex edges.
+  const pixels = (event as CustomEvent<{ tilePixels: number }>).detail.tilePixels * (window.devicePixelRatio || 1) * 2;
   const size = pixels > 512 ? 1024 : pixels > 256 ? 512 : 256;
   if (size === requestedSize) return;
   requestedSize = size;
