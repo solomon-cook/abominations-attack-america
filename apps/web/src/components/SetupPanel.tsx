@@ -1,4 +1,4 @@
-import { monsters, type BoardDefinition, type SetupState } from "@abominations/game-engine";
+import { monsterDefinition, monsters, type BoardDefinition, type SetupState } from "@abominations/game-engine";
 import { setupLairLabel } from "./setup-location-label";
 import type { RoomView } from "@abominations/shared";
 
@@ -30,8 +30,33 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
           <p>{activeSetup.phase === "lair-selection" ? "Choose one of your monster’s glowing lairs on the board, or select it below." : activeSetup.phase === "starting-choice" ? "Deploy starting troops using your branch allowance, or draw one Military Research card instead." : "Choose your monster and military branch."}</p>
           {setupSeat && <p className="setup-turn">Choosing for Player {setupSeat.playerIndex + 1}{waiting ? " · waiting" : ""}</p>}
-          <div className="setup-options">
-            {activeSetup.phase === "monster-selection" && activeSetup.definition.monsterIds.filter((id) => !activeSetup.seats.some((seat) => seat.monsterId === id)).map((id) => <button key={id} disabled={disabled} onClick={() => onChooseOption(id)}>{monsters.find(monster => monster.id === id)?.name ?? id}</button>)}
+          <div className={`setup-options ${activeSetup.phase === "monster-selection" ? "monster-options" : ""}`}>
+            {activeSetup.phase === "monster-selection" && activeSetup.definition.monsterIds.map((id, index) => {
+              // The local development fixture uses placeholder IDs; keep its cards visual too.
+              const monster = monsters.find((candidate) => candidate.id === id) ?? monsters[index];
+              if (!monster) return null;
+              const catalogueMonster = monsterDefinition(monster.id);
+              const selectedBy = activeSetup.seats.find((seat) => seat.monsterId === id);
+              return (
+                <button
+                  className={`monster-choice ${selectedBy ? "monster-choice-selected" : ""}`}
+                  key={id}
+                  disabled={disabled || Boolean(selectedBy)}
+                  onClick={() => onChooseOption(id)}
+                  aria-label={`Choose ${monster.name}. Health ${monster.startingHealth}, move ${monster.move}, defense ${monster.defense}. ${catalogueMonster?.specialAbilityText ?? "Special ability details unavailable."}`}
+                >
+                  <img src={`/assets/monsters/${monster.id}.webp`} alt="" aria-hidden="true" />
+                  <strong>{monster.name}</strong>
+                  <span className="monster-choice-stats">♥ {monster.startingHealth} · Move {monster.move} · Def {monster.defense}</span>
+                  <span className="monster-choice-hover">
+                    <b>Special ability</b>
+                    <span>{catalogueMonster?.specialAbilityText ?? "Special ability details unavailable."}</span>
+                    <small>Health {monster.startingHealth} · {monster.attacks} attacks · {monster.damage} damage</small>
+                  </span>
+                  {selectedBy && <em>Player {selectedBy.playerIndex + 1}</em>}
+                </button>
+              );
+            })}
             {activeSetup.phase === "branch-selection" && activeSetup.definition.eligibleBranches.filter((branch) => !activeSetup.seats.some((seat) => seat.branch === branch)).map((branch) => <button key={branch} disabled={disabled} onClick={() => onChooseOption(branch)}>{branch}</button>)}
             {activeSetup.phase === "lair-selection" && setupSeat?.monsterId && activeSetup.definition.lairsByMonster[setupSeat.monsterId]?.filter((lair) => !activeSetup.seats.some((seat) => seat.lair === lair)).map((lair) => <button key={lair} disabled={disabled} onClick={() => onChooseOption(lair)}>{lairLabel(lair)}</button>)}
             {activeSetup.phase === "starting-choice" && <>

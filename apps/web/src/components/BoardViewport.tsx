@@ -3,11 +3,11 @@ import type { BoardDefinition } from "@abominations/game-engine";
 import { AUDITED_BOARD_WORLD, buildDisplayHexLayout } from "../board-layout";
 import { cameraScale, cameraView, clampCamera, panCamera, resetCamera, zoomCamera, type BoardCamera, type Point, type Size } from "../board-camera";
 
-type Props = { board?: BoardDefinition; boardId: string; boardContentHash: string; children: ReactNode; overviewImage?: string };
+type Props = { board?: BoardDefinition; boardId: string; boardContentHash: string; children: ReactNode; overviewImage?: string; focusHexKey?: string | null };
 const INITIAL_VIEWPORT = { width: 1000, height: 700 };
 
 /** One camera owns terrain, pieces, paths and hit targets. HUD stays outside it. */
-export function BoardViewport({ board, boardId, boardContentHash, children, overviewImage }: Props) {
+export function BoardViewport({ board, boardId, boardContentHash, children, overviewImage, focusHexKey }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState<Size>(INITIAL_VIEWPORT);
   const world = AUDITED_BOARD_WORLD;
@@ -23,6 +23,16 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("board-camera-change", { detail: { tilePixels: world.width / 18.25 * scale } }));
   }, [scale, world]);
+
+  useEffect(() => {
+    if (!focusHexKey || !board) return;
+    const target = cells.find(({ hex }) => hex.key === focusHexKey);
+    if (!target) return;
+    setCamera((current) => clampCamera({ ...current, zoom: Math.max(current.zoom, 1.55), center: {
+      x: target.left / 100 * world.width,
+      y: target.top / 100 * world.height,
+    } }, viewport, world));
+  }, [board, cells, focusHexKey, viewport, world]);
 
   useEffect(() => {
     const map = mapRef.current;

@@ -280,7 +280,7 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
               else if (monsterLegal || unitLegal) {
                 if (selectedUnitId) onChooseUnitPath(placeKey);
                 else onChoosePath(placeKey);
-              } else if (inspectableUnit) onSelectUnit(inspectableUnit.id);
+              } else if (inspectableUnit && !selectedUnitId) onSelectUnit(inspectableUnit.id);
               else if (occupantCount > 0) onSelectStack(placeKey);
               else onFocusHex(placeKey);
             }}
@@ -314,7 +314,7 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
                 {unitsHere.map((unit) => {
                   const unitArt = unitArtForType(unit.unitTypeId);
                   return unitArt
-                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={(event) => { event.stopPropagation(); onSelectUnit(unit.id); }} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={(event) => { event.stopPropagation(); if (!selectedUnitId) onSelectUnit(unit.id); }} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
                     : <i className="unit-mark tile-occupant" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
                 })}
               </span>}

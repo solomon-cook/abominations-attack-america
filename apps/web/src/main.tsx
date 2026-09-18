@@ -336,14 +336,16 @@ function App() {
       ? { label: "Confirm unit move", command: { type: "move-unit", unitId: selectedUnitId!, path: selectedUnitPath } as GameCommand }
       : selectedPath.length > 1
         ? { label: "Confirm monster move", command: { type: "move", path: selectedPath } as GameCommand }
-        : { label: "Choose a piece to move", command: undefined }
+        : selectedUnitId
+          ? { label: "Move this unit", command: undefined }
+          : { label: "Choose a piece to move", command: undefined }
     : activeGame.phase === "fight"
       ? pendingBattle && !pendingAttackTarget && !activeGame.pendingDecision?.type?.includes("retreat") && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length === 1
         ? { label: "Resolve fight", command: { type: "resolve-fight", battleId: pendingBattle.id } as GameCommand }
-        : { label: "Choose the Fight decision", command: undefined }
+        : { label: pendingAttackTarget ? "Choose attack target" : "Continue to Fight", command: undefined }
       : activeGame.phase === "encounter"
         ? activeGame.pendingDecision
-          ? { label: "Choose the Encounter decision", command: undefined }
+          ? { label: "Choose encounter option", command: undefined }
           : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
         : activeGame.phase === "deploy"
           ? militaryChoices.length
@@ -1052,7 +1054,7 @@ function App() {
                 : `PLAYER ${activeGame.currentPlayer + 1}`}
             </span>
           </div>
-          <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
+          <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={focusedHexKey} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
             <HexGrid
               game={setupPreview ?? activeGame}
               setupLocations={setupLocations}
@@ -1084,6 +1086,8 @@ function App() {
                 setSelectedUnitId(unitId);
                 setSelectedPath([]);
                 setSelectedUnitPath([]);
+                const location = activeGame.units.find((unit) => unit.id === unitId)?.location;
+                if (location && isHexKey(location)) setFocusedHexKey(location);
               }}
               onChoosePath={choosePath}
               onChooseUnitPath={chooseUnitPath}
@@ -1156,6 +1160,7 @@ function App() {
               runCommand={runCommand}
               getLocationName={(key) => getLocation(key)?.name ?? key}
             />
+          <div className="bottom-context-dock">
           <SelectedPieceTray
             game={activeGame}
             selectedUnitId={selectedUnitId}
@@ -1250,6 +1255,7 @@ function App() {
                 Resolve {action.toLowerCase()}
               </button>
             )}
+          </div>
             {activeGame.phase === "move" && <MovementChecklist game={activeGame} canAct={canAct}
               selectedUnitId={selectedUnitId} movableUnitIds={selectableUnitIds} monsterCanMove={legalPaths.length > 0}
               onSelect={(unitId) => {

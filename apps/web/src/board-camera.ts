@@ -3,6 +3,8 @@ export type Size = { width: number; height: number };
 export type BoardCamera = { center: Point; zoom: number };
 export const MIN_BOARD_ZOOM = 1;
 export const MAX_BOARD_ZOOM = 4;
+/** Presentation-only ocean margin, allowing edge/coastal spaces to center. */
+export const BOARD_EDGE_PADDING = 150;
 
 export function cameraScale(camera: BoardCamera, viewport: Size, world: Size): number {
   return Math.max(viewport.width / world.width, viewport.height / world.height) * camera.zoom;
@@ -14,8 +16,8 @@ export function clampCamera(camera: BoardCamera, viewport: Size, world: Size): B
   const halfWidth = Math.min(world.width / 2, viewport.width / scale / 2);
   const halfHeight = Math.min(world.height / 2, viewport.height / scale / 2);
   return { zoom, center: {
-    x: Math.max(halfWidth, Math.min(world.width - halfWidth, camera.center.x)),
-    y: Math.max(halfHeight, Math.min(world.height - halfHeight, camera.center.y)),
+    x: Math.max(halfWidth - BOARD_EDGE_PADDING, Math.min(world.width - halfWidth + BOARD_EDGE_PADDING, camera.center.x)),
+    y: Math.max(halfHeight - BOARD_EDGE_PADDING, Math.min(world.height - halfHeight + BOARD_EDGE_PADDING, camera.center.y)),
   } };
 }
 
