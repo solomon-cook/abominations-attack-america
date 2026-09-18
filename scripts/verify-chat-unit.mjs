@@ -7,7 +7,11 @@ page.setDefaultTimeout(8000);
 try {
   await page.goto(process.env.BROWSER_TEST_URL || 'http://127.0.0.1:5191');
   await page.getByRole('button',{name:'Start local game',exact:true}).click();
-  for(let i=0;i<6;i++) await page.locator('.setup-options button:enabled').first().click();
+  for(let i=0;i<6;i++) {
+    const lairList=page.locator('.lair-selection-prompt summary');
+    if(await lairList.count()) await lairList.click();
+    await page.locator('.setup-options button:enabled').first().click();
+  }
   await page.getByRole('button',{name:'Deploy starting troops',exact:true}).click();
   await page.getByRole('button',{name:'Deploy navy fighter piece 1',exact:true}).click();
   console.log('deployment cells',await page.locator('.hex-tile.legal').evaluateAll(ns=>ns.map(n=>n.dataset.hexKey)));

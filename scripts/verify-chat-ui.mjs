@@ -17,7 +17,18 @@ try {
     await page.waitForFunction(() => [...document.querySelectorAll('.monster-choice img')].every(i => i.complete && i.naturalWidth));
     const rows = await cards.evaluateAll(nodes => nodes.map(n => n.offsetTop));
     assert.equal(new Set(rows).size, 1, 'monsters form one row');
-    for (let i=0;i<8;i++) await page.locator('.setup-options button:enabled').first().click();
+    for (let i=0;i<8;i++) {
+      if (i===2) {
+        const branches=page.locator('.branch-choice');
+        assert.equal(await branches.count(),4);
+        assert.equal(await branches.evaluateAll(ns=>new Set(ns.map(n=>n.offsetTop)).size),1);
+        await page.waitForFunction(()=>[...document.querySelectorAll('.branch-unit img')].every(n=>n.complete&&n.naturalWidth));
+      }
+      if (i===3) assert.equal(await page.locator('.branch-claimed').count(),1);
+      const lairList=page.locator('.lair-selection-prompt summary');
+      if (await lairList.count()) await lairList.click();
+      await page.locator('.setup-options button:enabled').first().click();
+    }
     await page.locator('.setup-panel').waitFor({state:'detached'});
     assert.ok(await page.locator('.piece-detail-tray').isVisible());
     const tile = page.locator('.hex-tile.legal').first();

@@ -1,4 +1,4 @@
-import { monsterDefinition, monsters, type BoardDefinition, type SetupState } from "@abominations/game-engine";
+import { monsterDefinition, monsters, UNIT_DEFINITIONS, type BoardDefinition, type SetupState } from "@abominations/game-engine";
 import { setupLairLabel } from "./setup-location-label";
 import type { RoomView } from "@abominations/shared";
 
@@ -22,15 +22,27 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
   const waiting = online && playerIndex !== setupSeat?.playerIndex;
   const disabled = Boolean(waiting);
   const lairLabel = (key?: string, monsterId = setupSeat?.monsterId) => key && monsterId ? setupLairLabel(activeSetup, board, monsterId, key) : "Not selected";
+  if (activeSetup.phase === "lair-selection") {
+    const lairs = setupSeat?.monsterId
+      ? activeSetup.definition.lairsByMonster[setupSeat.monsterId]?.filter((lair) => !activeSetup.seats.some((seat) => seat.lair === lair)) ?? [] : [];
+    return <section className="setup-panel lair-selection-prompt" aria-label="Game setup">
+      <strong>{waiting ? `Waiting for Player ${(setupSeat?.playerIndex ?? 0) + 1}` : `Player ${(setupSeat?.playerIndex ?? 0) + 1} · Choose your lair`}</strong>
+      <span>Click a glowing spawn on the map.</span>
+      <details key={setupSeat?.playerIndex}>
+        <summary>Choose from list</summary>
+        <div className="setup-options">{lairs.map((lair) => <button key={lair} disabled={disabled} onClick={() => onChooseOption(lair)}>{lairLabel(lair)}</button>)}</div>
+      </details>
+    </section>;
+  }
   return (
     <>
       {activeSetup.phase !== "complete" && (
         <section className="setup-panel" aria-label="Game setup">
           <span className="label">GAME SETUP</span>
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
-          <p>{activeSetup.phase === "lair-selection" ? "Choose one of your monster’s glowing lairs on the board, or select it below." : activeSetup.phase === "starting-choice" ? "Deploy starting troops using your branch allowance, or draw one Military Research card instead." : "Choose your monster and military branch."}</p>
+          <p>{activeSetup.phase === "starting-choice" ? "Deploy starting troops using your branch allowance, or draw one Military Research card instead." : "Choose your monster and military branch."}</p>
           {setupSeat && <p className="setup-turn">Choosing for Player {setupSeat.playerIndex + 1}{waiting ? " · waiting" : ""}</p>}
-          <div className={`setup-options ${activeSetup.phase === "monster-selection" ? "monster-options" : ""}`}>
+          <div className={`setup-options ${activeSetup.phase === "monster-selection" ? "monster-options" : activeSetup.phase === "branch-selection" ? "branch-options" : ""}`}>
             {activeSetup.phase === "monster-selection" && activeSetup.definition.monsterIds.map((id, index) => {
               // The local development fixture uses placeholder IDs; keep its cards visual too.
               const monster = monsterDefinition(id) ?? monsters.find((candidate) => candidate.id === id) ?? monsters[index];
@@ -57,8 +69,28 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
                 </button>
               );
             })}
-            {activeSetup.phase === "branch-selection" && activeSetup.definition.eligibleBranches.filter((branch) => !activeSetup.seats.some((seat) => seat.branch === branch)).map((branch) => <button key={branch} disabled={disabled} onClick={() => onChooseOption(branch)}>{branch}</button>)}
-            {activeSetup.phase === "lair-selection" && setupSeat?.monsterId && activeSetup.definition.lairsByMonster[setupSeat.monsterId]?.filter((lair) => !activeSetup.seats.some((seat) => seat.lair === lair)).map((lair) => <button key={lair} disabled={disabled} onClick={() => onChooseOption(lair)}>{lairLabel(lair)}</button>)}
+            {activeSetup.phase === "branch-selection" && activeSetup.definition.eligibleBranches.map((branch) => {
+              const owner = activeSetup.seats.find((seat) => seat.branch === branch);
+              const roster = UNIT_DEFINITIONS.filter((unit) => unit.branch === branch);
+              const description = {
+                Army: "Land control: tough tanks and missile launchers with an extra opening attack.",
+                Navy: "Sea and air reach: fast fighters and submarines that can launch as cruise missiles.",
+                "Air Force": "Long-range strikes: six fighters and two powerful, single-use cruise missiles.",
+                Marines: "Combined arms: flying fighters and rocket launchers that deal 2 damage per hit.",
+              }[branch];
+              return <button key={branch} className={`branch-choice ${owner ? "branch-claimed" : ""}`} disabled={disabled || Boolean(owner)} onClick={() => onChooseOption(branch)} aria-label={`Choose ${branch}${owner ? ` · selected by Player ${owner.playerIndex + 1}` : ""}`}>
+                <strong className="branch-title">{branch}</strong>
+                <span className="branch-description">{description}</span>
+                <span className="branch-roster">{roster.map((unit) => <span className="branch-unit" key={unit.id}>
+                  <img src={`/assets/military/${unit.id}.webp`} alt="" />
+                  <strong>{unit.quantity} × {unit.name}</strong>
+                  <span>Move {unit.move} · Defense {Array.isArray(unit.defense) ? unit.defense.join(" / ") : unit.defense} · Damage {Array.isArray(unit.damage) ? unit.damage.join(" / ") : unit.damage}</span>
+                  {unit.id === "navy-nuclear-submarine" && <small>Submarine / missile stats · missile movement 8</small>}
+                  {unit.specialAbilityText && <small>{unit.specialAbilityText}</small>}
+                </span>)}</span>
+                <span className="branch-select-label">{owner ? `✓ Player ${owner.playerIndex + 1}` : `Choose ${branch} →`}</span>
+              </button>;
+            })}
             {activeSetup.phase === "starting-choice" && <>
               <button disabled={disabled || deploymentCount > 0} onClick={() => onChooseStartingChoice("research")}>Draw Research</button>
               <button disabled={disabled} onClick={() => onChooseStartingChoice("deploy")}>{selectingDeployment ? "Choose another starting unit" : "Deploy starting troops"}</button>

@@ -1,4 +1,31 @@
 /* Keep reference-sheet shortcuts clear of the mobile next-action control. */
+.game-screen.setup-in-progress > .setup-panel:has(.branch-options) { left:20px; right:20px; top:145px; width:auto; transform:none; max-height:calc(100dvh - 165px); }
+.game-screen .setup-panel .branch-options { display:flex; flex-wrap:nowrap; align-items:stretch; gap:12px; overflow-x:auto; padding:4px 2px 12px; }
+.game-screen .setup-panel .branch-choice { flex:1 0 230px; display:flex; flex-direction:column; gap:10px; padding:16px; text-align:left; background:#24362e; color:#f7efda; border:1px solid #829177; border-radius:6px; font-weight:400; }
+.branch-title { font:700 1.5rem Georgia,serif; color:#ffe1a0; }
+.branch-description { font-size:.82rem; line-height:1.4; min-height:3.4em; }
+.branch-roster { display:grid; gap:12px; flex:1; }
+.branch-unit { display:grid; gap:5px; border-top:1px solid #65735d; padding-top:10px; font-size:.75rem; line-height:1.4; }
+.branch-unit img { width:100%; height:65px; object-fit:contain; }
+.branch-unit small { color:#c9d2bd; font-size:.7rem; }
+.branch-select-label { padding-top:8px; color:#ffe1a0; font-weight:700; }
+.game-screen .setup-panel .branch-choice:focus-visible { outline:3px solid #ffd478; outline-offset:-3px; }
+.game-screen .setup-panel .branch-claimed { border-color:#a8cf97; opacity:.65; }
+@media(max-width:700px) { .game-screen.setup-in-progress > .setup-panel:has(.branch-options) { left:8px; right:8px; top:165px; max-height:calc(100dvh - 180px); padding:12px; } }
+.game-screen.setup-in-progress > .setup-panel.lair-selection-prompt {
+  position:fixed; top:auto; bottom:16px; left:50%; right:auto;
+  transform:translateX(-50%); width:max-content; max-width:calc(100vw - 32px);
+  max-height:35dvh; margin:0; padding:10px 16px; display:flex;
+  align-items:center; flex-wrap:wrap; gap:8px 16px; overflow:auto;
+  font-size:.8rem;
+}
+.lair-selection-prompt > span { color:#d9d6bd; }
+.lair-selection-prompt summary { cursor:pointer; color:#ffe0a4; min-height:32px; display:flex; align-items:center; }
+.lair-selection-prompt details[open] { flex-basis:100%; }
+.game-screen .lair-selection-prompt .setup-options { display:flex; flex-wrap:wrap; margin-top:6px; }
+@media(max-width:700px) {
+  .game-screen.setup-in-progress > .setup-panel.lair-selection-prompt { bottom:8px; padding:8px 12px; gap:4px 12px; }
+}
 @media (max-width: 700px) {
   .game-screen .player-sheet-peeks {
     top:auto; bottom:8px; left:8px; right:208px; width:auto;
