@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CARD_STACKING_RULES, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { setupDeploymentState, canDeployNationalGuard, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { setupDeploymentState, canDeployNationalGuard, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, legalSubmarineTargets, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -2894,4 +2894,56 @@ test("staying rejects other players' pieces, unknown pieces and decisions outsid
   }
   const ended = applyCommand(state, { type: "pass-move" }).state;
   assert.throws(() => applyCommand(ended, { type: "stay-piece", pieceId: state.monsters[state.currentPlayer].id }));
+});
+
+
+test("submarine missile targets enforce range, ownership and movement, and queue combat", () => {
+  const state = createGame(2);
+  state.phase = "move";
+  state.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: state.monsters[0].id };
+  const unit = state.units.find((piece) => piece.unitTypeId === "navy-nuclear-submarine")!;
+  unit.ownerPlayer = 0;
+  state.monsters[1].location = unit.location;
+  const command = { type: "launch-submarine-at-monster" as const, unitId: unit.id, monsterId: state.monsters[1].id };
+  assert.deepEqual(legalSubmarineTargets(state, unit.id).map((m) => m.id), [state.monsters[1].id]);
+  const next = applyCommand(state, command).state;
+  const missile = next.units.find((piece) => piece.id === unit.id)!;
+  assert.equal(missile.unitTypeId, "navy-nuclear-submarine-missile");
+  assert.equal(missile.move, 8);
+  assert.equal(missile.movement, "fly");
+  assert.equal(missile.defense, 6);
+  assert.equal(missile.damage, 3);
+  assert.ok(next.movedPieceIds.includes(unit.id));
+  assert.ok(next.pendingBattles.some((battle) => battle.monsterId === command.monsterId && battle.militaryUnitIds.includes(unit.id)));
+  assert.equal(unit.unitTypeId, "navy-nuclear-submarine");
+  const fought = resolveDevelopmentFight(applyCommand(next, { type: "pass-move" }).state);
+  const spent = fought.units.find((piece) => piece.id === unit.id)!;
+  assert.equal(spent.location, "record-tile");
+  assert.equal(spent.unitTypeId, "navy-nuclear-submarine");
+  assert.equal(spent.move, 4);
+  assert.deepEqual(validateInventoryAccounting(fought), []);
+  assert.throws(() => applyCommand(next, command), /eligible monster/);
+  assert.throws(() => applyCommand(state, { ...command, monsterId: state.monsters[0].id }), /eligible monster/);
+  unit.ownerPlayer = 1;
+  assert.deepEqual(legalSubmarineTargets(state, unit.id), []);
+  unit.ownerPlayer = 0;
+  state.monsters[1].location = "hollywood";
+  assert.throws(() => applyCommand(state, command), /eligible monster/);
+});
+
+test("submarine missile range includes eight spaces and excludes nine", () => {
+  const state = createProvisionalPlaytestGame(2);
+  state.phase = "move";
+  const unit = state.units.find((piece) => piece.unitTypeId === "navy-nuclear-submarine")!;
+  unit.ownerPlayer = state.currentPlayer;
+  const board = boardForState(state);
+  const keys = Object.keys(board.hexes);
+  const line = keys.find((key) => { const [q, r] = key.split(",").map(Number); return Array.from({ length: 10 }, (_, i) => `${q+i},${r}`).every((k) => keys.includes(k)); });
+  assert.ok(line);
+  const [q, r] = line.split(",").map(Number);
+  unit.location = line as typeof unit.location;
+  state.monsters[1].location = `${q+8},${r}`;
+  assert.equal(legalSubmarineTargets(state, unit.id).length, 1);
+  state.monsters[1].location = `${q+9},${r}`;
+  assert.equal(legalSubmarineTargets(state, unit.id).length, 0);
 });

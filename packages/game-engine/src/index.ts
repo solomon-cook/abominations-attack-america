@@ -444,6 +444,7 @@ export type GameCommand =
   | { type: "stay-piece"; pieceId: string }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
   | { type: "launch-submarine"; battleId: string; unitId: string }
+  | { type: "launch-submarine-at-monster"; unitId: string; monsterId: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
   | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey; targetMonsterId?: string }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
@@ -665,7 +666,10 @@ const developmentUnitRoster: readonly { branch: Branch; definition: UnitDefiniti
 
 export function sourceUnitInventoryErrors(units: readonly Pick<MilitaryUnit, "unitTypeId">[]): string[] {
   const counts = new Map<string, number>();
-  for (const unit of units) if (unit.unitTypeId) counts.set(unit.unitTypeId, (counts.get(unit.unitTypeId) ?? 0) + 1);
+  for (const unit of units) {
+    const typeId = unit.unitTypeId === "navy-nuclear-submarine-missile" ? "navy-nuclear-submarine" : unit.unitTypeId;
+    if (typeId) counts.set(typeId, (counts.get(typeId) ?? 0) + 1);
+  }
   return UNIT_DEFINITIONS.flatMap((definition) => {
     const actual = counts.get(definition.id) ?? 0;
     return actual === definition.quantity ? [] : [`${definition.id}: expected ${definition.quantity}, found ${actual}`];
@@ -1003,6 +1007,27 @@ export function legalMonsterPaths(state: GameState, monsterId = state.monsters[s
 
 export function legalMonsterDestinations(state: GameState, monsterId = state.monsters[state.currentPlayer]?.id): HexKey[] {
   return [...new Set(legalMonsterPaths(state, monsterId).map((path) => path.at(-1)!))];
+}
+
+/** Opposing monsters reachable by an unmoved submarine's eight-space cruise missile. */
+export function legalSubmarineTargets(state: GameState, unitId: string): GameState["monsters"] {
+  const unit = state.units.find((candidate) => candidate.id === unitId);
+  if (state.phase !== "move" || !unit || unit.unitTypeId !== "navy-nuclear-submarine" || unit.ownerPlayer !== state.currentPlayer || state.movedPieceIds.includes(unitId) || state.removedUnitIds.includes(unitId) || !isHexKey(unit.location)) return [];
+  const board = boardForState(state);
+  const index = buildBoardIndex(board);
+  const distances = new Map<string, number>([[unit.location, 0]]);
+  const queue = [unit.location];
+  for (let i = 0; i < queue.length; i++) {
+    const key = queue[i];
+    const distance = distances.get(key)!;
+    if (distance >= 8) continue;
+    for (const neighbour of index.neighbours[key] ?? []) {
+      if (distances.has(neighbour) || !movementPathAllowed(board, [key, neighbour], "fly")) continue;
+      distances.set(neighbour, distance + 1);
+      queue.push(neighbour);
+    }
+  }
+  return state.monsters.filter((monster) => monster.id !== state.monsters[state.currentPlayer].id && monster.health > 0 && distances.has(monster.location));
 }
 
 export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
@@ -2740,6 +2765,21 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const eventPayload = { path: command.path, destination: command.path.at(-1) };
     return { state: appendEvent(next, "monster.moved", eventPayload), eventType: "monster.moved", eventPayload };
   }
+  if (command.type === "launch-submarine-at-monster") {
+    requireDecision("monster-movement");
+    const target = legalSubmarineTargets(state, command.unitId).find((monster) => monster.id === command.monsterId);
+    if (!target || !isHexKey(target.location)) throw new GameDomainError("ILLEGAL_COMMAND", "Choose an eligible monster within eight flying spaces of your unmoved Nuclear Submarine.");
+    const next = structuredClone(state);
+    const launched = next.units.find((unit) => unit.id === command.unitId)!;
+    Object.assign(launched, { unitTypeId: "navy-nuclear-submarine-missile", move: 8, movement: "fly", defense: 6, damage: 3, location: target.location });
+    next.movedPieceIds.push(launched.id);
+    const battle = next.pendingBattles.find((candidate) => candidate.monsterId === target.id && candidate.location === target.location);
+    if (battle) battle.militaryUnitIds = [...new Set([...battle.militaryUnitIds, launched.id])];
+    else next.pendingBattles.push({ id: `${target.id}:${next.round}:${target.location}`, monsterId: target.id, location: target.location, militaryUnitIds: [launched.id] });
+    next.log.push(`Navy Nuclear Submarine launched as a cruise missile against ${target.name}.`);
+    const eventPayload = { unitId: launched.id, monsterId: target.id, destination: target.location, mode: "cruise-missile", nextPhase: next.phase };
+    return { state: appendEvent(next, "unit.transformed", eventPayload), eventType: "unit.transformed", eventPayload };
+  }
   if (command.type === "move-unit") {
     requireDecision("monster-movement");
     const next = moveUnit(state, command.unitId, command.path);
@@ -2909,6 +2949,11 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
 
 function appendEvent(state: GameState, eventType: string, detail: Record<string, unknown>, actorId?: string): GameState {
   const next = structuredClone(state);
+  for (const unit of next.units) {
+    if (unit.unitTypeId === "navy-nuclear-submarine-missile" && unit.location === "record-tile") {
+      Object.assign(unit, { unitTypeId: "navy-nuclear-submarine", move: 4, movement: "sea-seacoast-or-fly", defense: 5, damage: 1 });
+    }
+  }
   // Every successful command crosses this event boundary. Re-check the
   // conservation invariant after mutation so a command cannot return a state
   // that was valid only at its input boundary.

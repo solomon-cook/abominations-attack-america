@@ -19,6 +19,7 @@ import {
   legalMonsterDestinations,
   legalMonsterPaths,
   legalUnitPaths,
+  legalSubmarineTargets,
   type GameCommand,
   type GameState,
   type HexKey,
@@ -150,6 +151,7 @@ function App() {
   const [setupSheetOpen, setSetupSheetOpen] = useState(false);
   const [setupPieceId, setSetupPieceId] = useState<string | null>(null);
   const [deploymentPieceId, setDeploymentPieceId] = useState<string | null>(null);
+  const [submarineTargetingId, setSubmarineTargetingId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
   const [acceptedMoveAnimation, setAcceptedMoveAnimation] = useState<{ path: HexKey[]; pieceId: string; key: number } | null>(null);
@@ -204,7 +206,7 @@ function App() {
     [activeGame, selectedUnitId],
   );
   const selectableUnitIds = useMemo(
-    () => activeGame.phase === "move" ? new Set(activeGame.units.filter((unit) => legalUnitPaths(activeGame, unit.id).length > 0).map((unit) => unit.id)) : new Set<string>(),
+    () => activeGame.phase === "move" ? new Set(activeGame.units.filter((unit) => legalUnitPaths(activeGame, unit.id).length > 0 || legalSubmarineTargets(activeGame, unit.id).length > 0).map((unit) => unit.id)) : new Set<string>(),
     [activeGame],
   );
   useEffect(() => {
@@ -226,6 +228,10 @@ function App() {
     () => new Set(legalUnitPathsForSelection.map((path) => path.at(-1)!)),
     [legalUnitPathsForSelection],
   );
+  const submarineTargets = useMemo(() => selectedUnitId ? legalSubmarineTargets(activeGame, selectedUnitId) : [], [activeGame, selectedUnitId]);
+  const choosingSubmarineTarget = submarineTargetingId !== null && submarineTargetingId === selectedUnitId && submarineTargets.length > 0;
+  const submarineTargetLocations = new Map<HexKey, string>(submarineTargets.filter((monster) => isHexKey(monster.location)).map((monster) => [monster.location as HexKey, `Launch missile at ${monster.name}`]));
+  useEffect(() => { setSubmarineTargetingId(null); }, [activeGame, selectedUnitId]);
   const militaryChoices = useMemo(() => deploymentChoices(activeGame), [activeGame]);
   const deploymentPiece = militaryChoices.find((choice) => choice.id === deploymentPieceId);
   const deploymentDestinations = new Set(deploymentPiece?.destinations ?? []);
@@ -1078,8 +1084,13 @@ function App() {
           <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={setupComplete ? (selectedUnitId ? activeGame.units.find((unit) => unit.id === selectedUnitId)?.location : activePlayer.location) : null} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
             <HexGrid
               game={setupPreview ?? activeGame}
-              setupLocations={setupLocations}
+              setupLocations={choosingSubmarineTarget && canAct ? submarineTargetLocations : setupLocations}
               onSetupLocation={(destination) => {
+                if (choosingSubmarineTarget && canAct && selectedUnitId) {
+                  const target = submarineTargets.find((monster) => monster.location === destination);
+                  if (target) void runCommand({ type: "launch-submarine-at-monster", unitId: selectedUnitId, monsterId: target.id });
+                  return;
+                }
                 if (activeSetup?.phase === "lair-selection") void chooseSetupOption(destination);
                 else if (setupPiece && canSetup) { setSetupPlacements((current) => [...current, { unitId: setupPiece.id, destination }]); setSetupPieceId(null); }
               }}
@@ -1089,7 +1100,7 @@ function App() {
               deploymentDestinations={deploymentDestinations}
               onDeploy={(destination) => { if (canAct && deploymentPiece) void runCommand({ type: deploymentPiece.kind, unitId: deploymentPiece.id, destination }); }}
               onSelectMonster={() => { setSelectedUnitId(null); setSelectedUnitPath([]); setHoveredPath([]); }}
-              legalUnitDestinations={legalUnitDestinations}
+              legalUnitDestinations={choosingSubmarineTarget ? new Set() : legalUnitDestinations}
               selectableUnitIds={selectableUnitIds}
               selectedUnitId={selectedUnitId}
               selectedPath={selectedPath}
@@ -1116,6 +1127,7 @@ function App() {
               onClearPreview={() => setHoveredPath([])}
             />
           </BoardViewport>
+          {choosingSubmarineTarget && <div className="deployment-prompt" role="status">Choose a glowing monster to launch the cruise missile. <button onClick={() => setSubmarineTargetingId(null)}>Cancel</button></div>}
           {activeGame.phase === "deploy" && deploymentPiece && <div className="deployment-prompt" role="status">
             Place {deploymentPiece.typeId.replaceAll("-", " ")} · Select a glowing location.
             <button onClick={() => setDeploymentPieceId(null)}>Cancel placement</button>
@@ -1155,6 +1167,9 @@ function App() {
             game={activeGame}
             selectedUnitId={selectedUnitId}
             selectedUnitPath={selectedUnitPath}
+            canLaunchSubmarine={canAct && submarineTargets.length > 0}
+            choosingSubmarineTarget={choosingSubmarineTarget}
+            onLaunchSubmarine={() => { setSubmarineTargetingId(selectedUnitId); setSelectedUnitPath([]); setHoveredPath([]); setSelectedPath([]); }}
             onClear={() => {
               setSelectedUnitId(null);
               setSelectedUnitPath([]);

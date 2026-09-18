@@ -88,7 +88,7 @@ function provisionalFeatureLabel(hex: BoardHex): string | undefined {
 }
 
 function unitArtForType(unitTypeId?: string) {
-  return unitTypeId ? `/assets/military/${unitTypeId}.webp` : undefined;
+  return unitTypeId ? `/assets/military/${unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unitTypeId}.webp` : undefined;
 }
 
 function monsterArtForName(name: string) {

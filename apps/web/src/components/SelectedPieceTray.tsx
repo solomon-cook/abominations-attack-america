@@ -2,9 +2,9 @@ import { boardForState, getLocation, isHexKey, legalUnitPaths, monsterDefinition
 import { movementLabel, SheetStats } from "./SheetReference";
 import { monsterAssetSlug } from "../monster-assets";
 
-type Props = { game: GameState; selectedUnitId: string | null; selectedUnitPath: readonly HexKey[]; onClear: () => void };
+type Props = { game: GameState; selectedUnitId: string | null; selectedUnitPath: readonly HexKey[]; onClear: () => void; canLaunchSubmarine: boolean; choosingSubmarineTarget: boolean; onLaunchSubmarine: () => void };
 
-export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onClear }: Props) {
+export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onClear, canLaunchSubmarine, choosingSubmarineTarget, onLaunchSubmarine }: Props) {
   const unit = game.units.find((candidate) => candidate.id === selectedUnitId);
   if (!unit) {
     const monster = game.monsters[game.currentPlayer];
@@ -34,12 +34,13 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
   const special = definition?.specialAbilityText ?? guard?.specialAbilityText;
   return <section className="piece-detail-tray" aria-label="Selected piece details" aria-live="polite">
     <div className="unit-detail-heading">
-      <img src={giant ? `/assets/cards/military-research-${giant.id}.webp` : `/assets/military/${unit.unitTypeId === "x-fighter" ? "air-force-fighter" : unit.unitTypeId ?? "army-tank"}.webp`} alt={name} />
+      <img src={giant ? `/assets/cards/military-research-${giant.id}.webp` : `/assets/military/${unit.unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unit.unitTypeId === "x-fighter" ? "air-force-fighter" : unit.unitTypeId ?? "army-tank"}.webp`} alt={name} />
       <div><span className="label">{unit.branch} · {locationName(unit.location)}</span><h3>{name}</h3></div>
     </div>
     <SheetStats values={{ Move: unit.move, Attacks: unit.attacks, Defense: unit.defense, Damage: unit.damage, ...(giant ? { Health: unit.health } : {}) }} />
     <p><b>Movement:</b> {movementLabel(unit.movement)}</p>
     {unit.unitTypeId === "navy-nuclear-submarine" && <div className="unit-special-rules"><strong>Submarine / cruise missile</strong><p>Submarine: move 4 through sea and seacoast, defense 5, damage 1.</p><p>As a cruise missile: fly up to 8, defense 6, damage 3.</p></div>}
+    {unit.unitTypeId === "navy-nuclear-submarine" && <div><button type="button" disabled={!canLaunchSubmarine || choosingSubmarineTarget} onClick={onLaunchSubmarine}>Launch as cruise missile</button><p>{choosingSubmarineTarget ? "Choose a glowing monster on the board, or cancel." : canLaunchSubmarine ? "Choose an opposing monster within 8 flying spaces." : "Requires an unmoved submarine and an opposing monster within 8 flying spaces during Move."}</p></div>}
     {special && <div className="unit-special-rules"><strong>Special rule</strong><p>{special}</p></div>}
     <p className="unit-selection-status">{status}</p>
     <button type="button" className="stack-clear" onClick={onClear}>Deselect</button>
