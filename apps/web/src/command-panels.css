@@ -24,7 +24,7 @@
 .orders-footer { display:flex; flex-basis:100%; align-items:center; justify-content:space-between; gap:8px; border-top:1px solid #93a38f30; margin-top:5px; padding-top:7px; }
 .orders-footer > span { font-size:11px; color:#a6b4aa; }
 .game-screen .bottom-context-dock .movement-orders .order-end { padding-right:0; color:#e1d8ae; }
-.game-screen .bottom-context-dock .unit-command-record { position:relative; display:grid; grid-template-columns:1fr auto; gap:10px; padding:16px; border:0; border-radius:0; background:linear-gradient(120deg,#81927e15,transparent); }
+.game-screen .bottom-context-dock .unit-command-record { position:relative; inset:auto; display:grid; grid-template-columns:1fr auto; gap:10px; padding:16px; border:0; border-radius:0; background:linear-gradient(120deg,#81927e15,transparent); }
 .game-screen .bottom-context-dock .unit-command-record .unit-detail-heading { min-width:0; padding-right:26px; gap:12px; grid-column:1 / -1; }
 .game-screen .bottom-context-dock .unit-command-record .unit-detail-heading img { width:60px; height:60px; margin:0; filter:drop-shadow(0 4px 5px #0008); }
 .game-screen .unit-command-record .label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:#b3c1b7; }
