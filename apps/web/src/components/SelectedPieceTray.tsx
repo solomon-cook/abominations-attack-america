@@ -8,7 +8,7 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
   if (!unit) {
     const monster = game.monsters[game.currentPlayer];
     return <section className="piece-detail-tray" aria-label="Selected piece details">
-      <div className="unit-detail-heading"><img src={`/assets/monsters/${monster.name.toLowerCase()}.webp`} alt="" /><div><span className="label">Player {game.currentPlayer + 1} · Monster</span><h3>{monster.name}</h3></div></div>
+      <div className="unit-detail-heading"><img src={`/assets/monsters/portraits/${monster.name.toLowerCase()}.webp`} alt="" /><div><span className="label">Player {game.currentPlayer + 1} · Monster</span><h3>{monster.name}</h3></div></div>
       <SheetStats values={{ Health: monster.health, Move: monster.move, Attacks: monster.attacks, Defense: monster.defense, Damage: monster.damage }} />
     </section>;
   }

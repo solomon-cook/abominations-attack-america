@@ -45,7 +45,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
                   onClick={() => onChooseOption(id)}
                   aria-label={`Choose ${monster.name}. Health ${monster.startingHealth}, move ${monster.move}, defense ${monster.defense}. ${catalogueMonster?.specialAbilityText ?? "Special ability details unavailable."}`}
                 >
-                  <img src={`/assets/monsters/${catalogueMonster?.id ?? monster.name.toLowerCase()}.webp`} alt="" aria-hidden="true" />
+                  <img src={`/assets/monsters/portraits/${catalogueMonster?.id ?? monster.name.toLowerCase()}.webp`} alt="" aria-hidden="true" />
                   <strong>{monster.name}</strong>
                   <span className="monster-choice-stats">♥ {monster.startingHealth} · Move {monster.move} · Def {monster.defense}</span>
                   <span className="monster-choice-hover">
