@@ -99,6 +99,7 @@ function acceptedActionLabel(command: GameCommand): string | undefined {
     case "draw-research": return "Research card drawn";
     case "pass-deploy": return "Deployment passed";
     case "pass-move": return "Move step resolved";
+    case "stay-piece": return "Piece stays in place";
     case "disappear-monster": return "Monster disappearance resolved";
     case "concede": return "Concession recorded";
     case "advance": return "Action resolved";
@@ -206,6 +207,14 @@ function App() {
     () => activeGame.phase === "move" ? new Set(activeGame.units.filter((unit) => legalUnitPaths(activeGame, unit.id).length > 0).map((unit) => unit.id)) : new Set<string>(),
     [activeGame],
   );
+  useEffect(() => {
+    if (activeGame.phase !== "move" || pendingAction) return;
+    if (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) return;
+    setSelectedUnitId(legalPaths.length > 0 ? null : [...selectableUnitIds][0] ?? null);
+    setSelectedUnitPath([]);
+    setSelectedPath([]);
+    setHoveredPath([]);
+  }, [activeGame.phase, pendingAction, selectedUnitId, selectableUnitIds, legalPaths]);
   useEffect(() => {
     if (activeGame.phase === "deploy" && selectedUnitId) {
       setSelectedUnitId(null);
@@ -566,7 +575,7 @@ function App() {
         await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
       if (normalized.type === "deploy" || normalized.type === "redeploy") setDeploymentPieceId(null);
-      if (acceptedMove) { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); setSelectedUnitId(null); }
+      if (acceptedMove || normalized.type === "stay-piece") { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); setSelectedUnitId(null); }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Action failed");
       if (online && session && room) {
@@ -967,18 +976,18 @@ function App() {
         </div>
         <div className="header-actions">
           {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={participant?.playerIndex ?? activeGame.currentPlayer} monster={activeGame.monsters[participant?.playerIndex ?? activeGame.currentPlayer]} branch={activeGame.setupAssignments?.[participant?.playerIndex ?? activeGame.currentPlayer]?.branch ?? (["Army", "Navy", "Air Force", "Marines"] as const)[(participant?.playerIndex ?? activeGame.currentPlayer) % 4]} canAct={canAct} runCommand={runCommand} onDeploy={openMilitarySheet} onSelectDeployment={(choice) => { setDeploymentPieceId(choice.id); setFocusedHexKey(choice.destinations[0]); }} />}
-          <button className="ghost" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>
+          <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>
             How to play
           </button>
-          <button className="ghost" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>
+          <button className="ghost settings-action" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>
             Settings
           </button>
-          <button className="ghost" onClick={resetLocal}>
+          <button className="ghost new-game-action" onClick={resetLocal}>
             New local game
           </button>
           {online && <span className="room-hud-status" role="status">{room?.code} · {connectionState}</span>}
           {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
-          {online && <button className="ghost" onClick={leaveRoomSafely}>Leave room</button>}
+          {online && <button className="ghost leave-room-action" onClick={leaveRoomSafely}>Leave room</button>}
         </div>
       </header>
       {error && <p className="error global-game-error" role="alert">{error}</p>}
@@ -1152,62 +1161,23 @@ function App() {
               setHoveredPath([]);
             }}
           />
-            {activeGame.phase === "move" &&
-            selectedUnitId &&
-            selectedUnitPath.length > 1 ? (
-              <div className="path-controls">
-                <button
-                  disabled={!canAct}
-                  onClick={() =>
-                    void runCommand({
-                      type: "move-unit",
-                      unitId: selectedUnitId,
-                      path: selectedUnitPath,
-                    })
-                  }
-                >
-                  Confirm unit path
-                </button>
-                <button
-                  className="cancel"
-                  disabled={pendingAction}
-                  onClick={() => {
-                    setSelectedUnitId(null);
-                    setSelectedUnitPath([]);
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : activeGame.phase === "move" && selectedPath.length > 1 ? (
-              <div className="path-controls">
-                <button
-                  disabled={!canAct}
-                  onClick={() =>
-                    void runCommand({ type: "move", path: selectedPath })
-                  }
-                >
-                  Confirm path
-                </button>
-                <button
-                  className="cancel"
-                  disabled={pendingAction}
-                  onClick={() => setSelectedPath([])}
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : activeGame.phase === "move" ? (
-              <div className="move-actions">
+            {activeGame.phase === "move" ? (
+              <div className="path-controls" aria-label="Movement orders">
+                <p aria-live="polite">{selectableUnitIds.size + (legalPaths.length > 0 ? 1 : 0)} pieces remaining · {selectedUnitId ? (activeGame.units.find(unit => unit.id === selectedUnitId)?.unitTypeId ?? "Military unit").replaceAll("-", " ") : legalPaths.length ? activePlayer.name : "Movement complete"}</p>
+                {(selectedUnitId ? selectedUnitPath.length > 1 : selectedPath.length > 1) && <>
+                  <button disabled={!canAct} onClick={() => void runCommand(selectedUnitId
+                    ? { type: "move-unit", unitId: selectedUnitId, path: selectedUnitPath }
+                    : { type: "move", path: selectedPath })}>Confirm {selectedUnitId ? "unit " : ""}path</button>
+                  <button className="cancel" disabled={pendingAction} onClick={() => { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); }}>Cancel path</button>
+                </>}
+                {(selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) && <>
+                  <span>Select a glowing destination, or stay here and continue to the next piece.</span>
+                  <button disabled={!canAct} onClick={() => void runCommand({ type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id })}>Stay · next piece →</button>
+                </>}
                 {!selectedUnitId && !activeGame.movedPieceIds.includes(activePlayer.id) && activeGame.setupAssignments?.[activeGame.currentPlayer]?.lair && activeGame.monsters[activeGame.currentPlayer]?.location !== "hollywood" && (
-                  <button
-                    disabled={!canAct}
-                    onClick={() => runIrreversibleAction(() => void runCommand({ type: "disappear-monster" }), "Leave the monster in its lair and consume the Move step?")}
-                  >
-                    Disappear instead of moving
-                  </button>
+                  <button disabled={!canAct} onClick={() => runIrreversibleAction(() => void runCommand({ type: "disappear-monster" }), "Leave the monster in its lair and consume the Move step?")}>Disappear instead of moving</button>
                 )}
-
+                <button className="cancel" disabled={!canAct} onClick={() => void runCommand({ type: "pass-move" })}>{selectableUnitIds.size || legalPaths.length ? "End movement for all pieces →" : "Finish movement →"}</button>
               </div>
             ) : activeGame.phase === "fight" || activeGame.phase === "encounter" || activeGame.phase === "deploy" ? (
               <PhaseActions

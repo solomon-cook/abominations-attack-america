@@ -57,6 +57,7 @@ export type GameCommand =
   | { type: "move-unit"; unitId: string; path: string[] }
   | { type: "disappear-monster" }
   | { type: "pass-move" }
+  | { type: "stay-piece"; pieceId: string }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
   | { type: "launch-submarine"; battleId: string; unitId: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }

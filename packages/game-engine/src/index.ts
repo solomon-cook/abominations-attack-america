@@ -441,6 +441,7 @@ export type GameCommand =
   | { type: "move-unit"; unitId: string; path: string[] }
   | { type: "disappear-monster" }
   | { type: "pass-move" }
+  | { type: "stay-piece"; pieceId: string }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
   | { type: "launch-submarine"; battleId: string; unitId: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
@@ -2669,6 +2670,20 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const result = resolveMonsterChallengeDuel(state);
     const eventPayload = { challengerMonsterId: result.winnerMonsterId, defeatedMonsterId: result.defeatedMonsterId, winnerPlayer: result.winnerPlayer, winnerName: result.winnerName, defeatedName: result.defeatedName, winnerHealth: result.winnerHealth, loserWeighIn: result.loserWeighIn, rolls: result.rolls, attacks: result.attacks, victoryType: result.state.victoryType, nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "challenge.resolved", eventPayload), eventType: "challenge.resolved", eventPayload };
+  }
+  if (command.type === "stay-piece") {
+    requireDecision("monster-movement");
+    const monster = state.monsters[state.currentPlayer];
+    const isMonster = command.pieceId === monster?.id;
+    const paths = isMonster ? legalMonsterPaths(state, command.pieceId) : legalUnitPaths(state, command.pieceId);
+    if (state.phase !== "move" || paths.length === 0) throw new Error("That piece cannot stay in the current movement decision.");
+    const next = structuredClone(state);
+    next.movedPieceIds = [...(next.movedPieceIds ?? []), command.pieceId];
+    if (isMonster && next.activeResearchLure?.monsterId === command.pieceId) next.activeResearchLure = undefined;
+    const unit = next.units.find((candidate) => candidate.id === command.pieceId);
+    next.log.push(`${isMonster ? monster.name : unit?.unitTypeId ?? command.pieceId} stays in place. Continue with the remaining pieces.`);
+    const eventPayload = { pieceId: command.pieceId, location: isMonster ? monster.location : unit?.location };
+    return { state: appendEvent(next, "piece.stayed", eventPayload), eventType: "piece.stayed", eventPayload };
   }
   if (command.type === "pass-move") {
     requireDecision("monster-movement");

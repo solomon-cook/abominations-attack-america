@@ -2859,3 +2859,39 @@ test("explicit movement flow allows monster and units in either order before end
     assert.equal(ended.units.find((candidate) => candidate.id === unit.id)!.location, K("los-angeles"));
   }
 });
+
+
+test("staying resolves only that piece and preserves the remaining movement decisions", () => {
+  const original = createGame(2);
+  original.units.forEach(unit => { unit.location = "record-tile"; });
+  const units = original.units.filter(unit => unit.ownerPlayer === original.currentPlayer).slice(0, 2);
+  units[0]!.location = K("los-angeles");
+  units[1]!.location = K("san-francisco");
+  const monster = original.monsters[original.currentPlayer];
+  const stayedMonster = applyCommand(original, { type: "stay-piece", pieceId: monster.id }).state;
+  assert.equal(stayedMonster.phase, "move");
+  assert.equal(stayedMonster.monsters[original.currentPlayer].location, monster.location);
+  assert.equal(legalMonsterPaths(stayedMonster).length, 0);
+  const stayedUnit = applyCommand(stayedMonster, { type: "stay-piece", pieceId: units[0]!.id }).state;
+  assert.equal(stayedUnit.phase, "move");
+  assert.equal(stayedUnit.units.find(unit => unit.id === units[0]!.id)?.location, units[0]!.location);
+  assert.equal(legalUnitPaths(stayedUnit, units[0]!.id).length, 0);
+  assert.throws(() => applyCommand(stayedUnit, { type: "stay-piece", pieceId: units[0]!.id }), /cannot stay/);
+  const path = legalUnitPaths(stayedUnit, units[1]!.id)[0]!;
+  assert.ok(path);
+  const moved = applyCommand(stayedUnit, { type: "move-unit", unitId: units[1]!.id, path }).state;
+  assert.equal(moved.phase, "move");
+  assert.equal(moved.units.find(unit => unit.id === units[1]!.id)?.location, path.at(-1));
+  assert.deepEqual(original.movedPieceIds, []);
+  assert.notEqual(applyCommand(moved, { type: "pass-move" }).state.phase, "move");
+});
+
+test("staying rejects other players' pieces, unknown pieces and decisions outside Move", () => {
+  const state = createGame(2);
+  const other = state.units.find(unit => unit.ownerPlayer !== state.currentPlayer)!;
+  for (const pieceId of [other.id, "missing-piece"]) {
+    assert.throws(() => applyCommand(state, { type: "stay-piece", pieceId }), /cannot stay/);
+  }
+  const ended = applyCommand(state, { type: "pass-move" }).state;
+  assert.throws(() => applyCommand(ended, { type: "stay-piece", pieceId: state.monsters[state.currentPlayer].id }));
+});

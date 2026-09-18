@@ -65,11 +65,23 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
 export function PlayerStatusControls({ game, monster, branch, playerIndex, canAct, runCommand, onDeploy, onSelectDeployment }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   const [tab, setTab] = useState<"monster" | "military" | "map">("monster");
+  const [mobileRecordOpen, setMobileRecordOpen] = useState(false);
   const roster = UNIT_DEFINITIONS.filter(unit => unit.branch === branch);
   const available = game.units.filter(unit => unit.ownerPlayer === playerIndex && !game.removedUnitIds.includes(unit.id) && unit.location !== "permanently-removed");
   const playCard = (command: GameCommand) => { setOpen(null); return runCommand(command); };
   return <>
-    <section className="persistent-record" data-record-tab={tab} aria-label="Player record and map">
+    <section className={`persistent-record ${mobileRecordOpen ? "mobile-record-open" : "mobile-record-closed"}`} data-record-tab={tab} aria-label="Player record and map">
+      <button
+        type="button"
+        className="mobile-record-toggle"
+        aria-expanded={mobileRecordOpen}
+        aria-controls="record-panel"
+        aria-label={mobileRecordOpen ? "Minimize monster, military and map record" : "Open monster, military and map record"}
+        onClick={() => setMobileRecordOpen((current) => !current)}
+      >
+        <span aria-hidden="true">{mobileRecordOpen ? "×" : "☰"}</span>
+        <small>{mobileRecordOpen ? "Hide" : "Records"}</small>
+      </button>
       <div className="record-tabs" role="tablist" aria-label="Record view">{(["monster", "military", "map"] as const).map(view => <button key={view} role="tab" id={`record-tab-${view}`} aria-selected={tab === view} aria-controls="record-panel" tabIndex={tab === view ? 0 : -1} onClick={() => setTab(view)} onKeyDown={event => {
         const views = ["monster", "military", "map"] as const;
         if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); const next = views[(views.indexOf(view) + (event.key === "ArrowRight" ? 1 : 2)) % 3]; setTab(next); document.getElementById(`record-tab-${next}`)?.focus(); }
