@@ -109,8 +109,10 @@ export function PhaseActions({
       {defenseSatellitesButton}
       {activeGame.pendingBattles.map((battle) => {
         const monster = activeGame.monsters.find((candidate) => candidate.id === battle.monsterId);
+        const submarines = battle.militaryUnitIds.filter((unitId) => activeGame.units.some((unit) => unit.id === unitId && unit.unitTypeId === "navy-nuclear-submarine"));
         return <div key={battle.id}>
           <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: battle.id })}>Resolve {monster?.name ?? battle.monsterId} at {getLocationName(battle.location)} ({battle.militaryUnitIds.length} unit{battle.militaryUnitIds.length === 1 ? "" : "s"})</button>
+          {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: battle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
           {mutationButtons(battle.id)}
         </div>;
       })}
@@ -118,6 +120,7 @@ export function PhaseActions({
   }
 
   if (activeGame.phase === "fight" && pendingBattle && pendingBattleDecision && canSpendInfamyOnPendingBattle) {
+    const submarines = pendingBattle.militaryUnitIds.filter((unitId) => activeGame.units.some((unit) => unit.id === unitId && unit.unitTypeId === "navy-nuclear-submarine"));
     return <div className="battle-choice" aria-label="Choose whether to spend Infamy on this battle">
       <p>Choose whether to spend one Infamy for an additional monster attack this round.</p>
       {mutationButtons(pendingBattle.id)}
@@ -125,6 +128,7 @@ export function PhaseActions({
       {antimatterButton}
       {laserFenceButtons}
       {stabilizerButtons}
+      {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: pendingBattle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}>Resolve without spending Infamy</button>
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>
     </div>;

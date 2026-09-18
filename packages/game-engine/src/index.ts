@@ -442,6 +442,7 @@ export type GameCommand =
   | { type: "disappear-monster" }
   | { type: "pass-move" }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
+  | { type: "launch-submarine"; battleId: string; unitId: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
   | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey; targetMonsterId?: string }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
@@ -1491,7 +1492,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     const roll = nextD6(next);
     rolls.push(roll);
     const fighterBonus = monster.name === "Konk" && target.unitTypeId?.endsWith("-fighter") ? 1 : 0;
-    const laserBonus = target.unitTypeId === "air-force-cruise-missile" && monsterHasMutation(next, monster, "Laser Beam Eyes") ? 2 : 0;
+    const laserBonus = (target.unitTypeId === "air-force-cruise-missile" || target.unitTypeId === "navy-nuclear-submarine-missile") && monsterHasMutation(next, monster, "Laser Beam Eyes") ? 2 : 0;
     const hit = roll + fighterBonus + laserBonus >= target.defense;
     const smash = hit && roll === 6;
     const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
@@ -1525,7 +1526,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
         const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
         monster.health = Math.max(0, monster.health - damage);
         const destroyed = monster.health === 0;
-        const mutationCardId = unit.unitTypeId === "air-force-cruise-missile" && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
+        const mutationCardId = (unit.unitTypeId === "air-force-cruise-missile" || unit.unitTypeId === "navy-nuclear-submarine-missile") && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
         const antimatterMutationRoll = antimatterActive && damage > 0 ? nextD6(next) : undefined;
         const antimatterMutationCardId = antimatterMutationRoll === 1 ? drawMutationForMonster(next, monster) : undefined;
         const stabilizerMutationCardId = discardStabilizerMutation(damage);
@@ -1598,7 +1599,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   if (runMonsterRemainder()) return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: round, infamySpent: combat.spendInfamy, hollywoodResearchCardId };
   if (monster.health > 0) performCounterAttacks();
   if (round === 1) {
-    for (const unit of next.units.filter((candidate) => pending.militaryUnitIds.includes(candidate.id) && candidate.location === pending.location && candidate.unitTypeId === "air-force-cruise-missile")) {
+    for (const unit of next.units.filter((candidate) => pending.militaryUnitIds.includes(candidate.id) && candidate.location === pending.location && (candidate.unitTypeId === "air-force-cruise-missile" || candidate.unitTypeId === "navy-nuclear-submarine-missile"))) {
       unit.location = "record-tile";
       if (!destroyedUnitIds.includes(unit.id)) destroyedUnitIds.push(unit.id);
       next.log.push(`${unit.branch} cruise missile was destroyed after combat round 1.`);
@@ -1717,7 +1718,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         const roll = nextD6(next);
         rolls.push(roll);
         const fighterBonus = monster.name === "Konk" && target.unitTypeId?.endsWith("-fighter") ? 1 : 0;
-        const laserBonus = target.unitTypeId === "air-force-cruise-missile" && monsterHasMutation(next, monster, "Laser Beam Eyes") ? 2 : 0;
+        const laserBonus = (target.unitTypeId === "air-force-cruise-missile" || target.unitTypeId === "navy-nuclear-submarine-missile") && monsterHasMutation(next, monster, "Laser Beam Eyes") ? 2 : 0;
         const hit = roll + fighterBonus + laserBonus >= target.defense;
         const smash = hit && roll === 6;
         const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
@@ -1746,7 +1747,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
           monster.health = Math.max(0, monster.health - damage);
           const destroyed = monster.health === 0;
-          const mutationCardId = unit.unitTypeId === "air-force-cruise-missile" && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
+          const mutationCardId = (unit.unitTypeId === "air-force-cruise-missile" || unit.unitTypeId === "navy-nuclear-submarine-missile") && roll === 1 ? drawMutationForMonster(next, monster) : undefined;
           const antimatterMutationRoll = antimatterActive && damage > 0 ? nextD6(next) : undefined;
           const antimatterMutationCardId = antimatterMutationRoll === 1 ? drawMutationForMonster(next, monster) : undefined;
           const stabilizerMutationCardId = discardStabilizerMutation(damage);
@@ -1765,7 +1766,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         }
       }
       if (combatRound === 1) {
-        for (const unit of next.units.filter((candidate) => targetIds.includes(candidate.id) && candidate.location === monster.location && candidate.unitTypeId === "air-force-cruise-missile")) {
+        for (const unit of next.units.filter((candidate) => targetIds.includes(candidate.id) && candidate.location === monster.location && (candidate.unitTypeId === "air-force-cruise-missile" || candidate.unitTypeId === "navy-nuclear-submarine-missile"))) {
           unit.location = "record-tile";
           if (!destroyedUnitIds.includes(unit.id)) destroyedUnitIds.push(unit.id);
           next.log.push(`${unit.branch} cruise missile was destroyed after combat round 1.`);
@@ -2772,6 +2773,23 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const result = useResearchCard(state, command.cardId, command.battleId, command.mutationCardId, command.choice, command.destination, command.targetMonsterId);
     const eventPayload = { researchCardId: result.cardId, battleId: result.battleId, mutationCardId: command.mutationCardId, targetMonsterId: command.targetMonsterId, choice: command.choice, destination: command.destination, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "research.used", eventPayload), eventType: "research.used", eventPayload };
+  }
+  if (state.phase === "fight" && command.type === "launch-submarine") {
+    requireDecision("battle-resolution");
+    const battle = state.pendingBattles.find((candidate) => candidate.id === command.battleId);
+    const submarine = state.units.find((unit) => unit.id === command.unitId);
+    if (!battle || !submarine || !battle.militaryUnitIds.includes(submarine.id) || submarine.location !== battle.location) throw new GameDomainError("ILLEGAL_COMMAND", "That submarine is not part of the selected battle.");
+    if (submarine.unitTypeId !== "navy-nuclear-submarine") throw new GameDomainError("ILLEGAL_COMMAND", "Only a Nuclear Submarine can launch as a cruise missile.");
+    if (submarine.ownerPlayer !== state.currentPlayer) throw new GameDomainError("ILLEGAL_COMMAND", "You can only launch your own Nuclear Submarine.");
+    const next = structuredClone(state);
+    const launched = next.units.find((unit) => unit.id === command.unitId)!;
+    launched.unitTypeId = "navy-nuclear-submarine-missile";
+    launched.move = 8;
+    launched.movement = "fly";
+    launched.defense = 6;
+    launched.damage = 3;
+    next.log.push(`Navy Nuclear Submarine ${launched.id} launched as a cruise missile.`);
+    return { state: appendEvent(next, "unit.transformed", { battleId: battle.id, unitId: launched.id, mode: "cruise-missile", nextPhase: next.phase }), eventType: "unit.transformed", eventPayload: { battleId: battle.id, unitId: launched.id, mode: "cruise-missile", nextPhase: next.phase } };
   }
   if (state.phase === "fight" && (command.type === "resolve-fight" || command.type === "advance")) {
     const attackDecision = state.pendingDecision?.type === "attack-target" ? state.pendingDecision : undefined;
