@@ -2528,6 +2528,7 @@ function advanceAfterDeployment(next: GameState): TurnAdvanceResolution {
 /** Draw the current branch's one Military Research alternative and end Deploy. */
 export function drawResearchForDeployment(state: GameState): ResearchDrawResolution {
   if (state.phase !== "deploy") throw new GameDomainError("ILLEGAL_COMMAND", "Military Research can only be drawn during Deploy.");
+  if (state.deploymentsThisTurn > 0) throw new GameDomainError("ILLEGAL_COMMAND", "Military Research must be drawn instead of deploying; deployment has already started this turn.");
   const result = drawCardFromDeck(state.decks.research);
   if (!result.cardId) throw new GameDomainError("ILLEGAL_COMMAND", "The Military Research deck is exhausted; no Research card can be drawn.");
   const next = structuredClone(state);

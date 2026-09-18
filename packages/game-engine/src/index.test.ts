@@ -1345,6 +1345,9 @@ test("Deploy consumes a typed record unit, enforces destination uniqueness, and 
   assert.equal(deployed.state.deploymentsThisTurn, 1);
   assert.equal(deployed.state.units.find((unit) => unit.id === sourceUnit.id)?.location, K("denver"));
   assert.throws(() => applyCommand(deployed.state, { type: "deploy" }), /one newly deployed unit/);
+  const beforeResearchAttempt = JSON.stringify(deployed.state);
+  assert.throws(() => applyCommand(deployed.state, { type: "draw-research" }), /must be drawn instead of deploying/);
+  assert.equal(JSON.stringify(deployed.state), beforeResearchAttempt);
   const passed = applyCommand(deployed.state, { type: "pass-deploy" });
   assert.equal(passed.state.phase, "move");
   assert.equal(passed.state.deploymentsThisTurn, 0);

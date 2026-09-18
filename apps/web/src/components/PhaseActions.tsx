@@ -156,10 +156,11 @@ export function PhaseActions({
   }
 
   if (activeGame.phase === "deploy") {
+    const deploymentStarted = activeGame.deploymentsThisTurn > 0;
     return <div className="path-controls">
       {defenseSatellitesButton}
       <button disabled={!canAct} onClick={onOpenMilitarySheet}>Open military sheet · deploy or redeploy</button>
-      <button disabled={!canAct || activeGame.decks.research.exhausted} onClick={() => void runCommand({ type: "draw-research" })}>{activeGame.decks.research.exhausted ? "Military Research exhausted" : "Draw Military Research instead"}</button>
+      <button disabled={!canAct || deploymentStarted || activeGame.decks.research.exhausted} onClick={() => void runCommand({ type: "draw-research" })}>{activeGame.decks.research.exhausted ? "Military Research exhausted" : deploymentStarted ? "Military Research unavailable after deployment" : "Draw Military Research instead"}</button>
       <button className="cancel" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Finish deployment</button>
     </div>;
   }

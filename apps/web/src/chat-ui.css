@@ -1,4 +1,42 @@
 /* Keep reference-sheet shortcuts clear of the mobile next-action control. */
+.game-screen .layout > .bottom-context-dock {
+  left:210px; right:auto; bottom:90px; width:min(510px,calc(100vw - 580px));
+  padding:0; gap:0; border:1px solid #b6b5a2; border-radius:6px;
+  background:linear-gradient(120deg,#555e5b,#303839); box-shadow:0 8px 24px #0008,inset 0 0 0 3px #191f204d;
+  max-height:38dvh;
+}
+.game-screen .bottom-context-dock .monster-command-record { display:grid; grid-template-columns:98px minmax(0,1fr); gap:0; padding:0; margin:0; border:0; }
+.command-portrait { display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse,#b3b49a55,transparent 75%); border-right:1px solid #ffffff1c; overflow:hidden; }
+.game-screen .command-portrait img { width:96px; height:145px; object-fit:contain; float:none; margin:0; filter:drop-shadow(0 3px 3px #0008); }
+.command-record-body { padding:10px 12px 8px; min-width:0; }
+.command-identity { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.command-eyebrow { font-size:8px; font-weight:800; letter-spacing:1.4px; color:#d1d2c3; }
+.game-screen .monster-command-record h3 { font-family:Impact,'Arial Black',sans-serif; font-size:25px; text-transform:uppercase; letter-spacing:1px; color:#f2d85d; text-shadow:1px 2px #171a1c; margin:2px 0 5px; }
+.command-infamy { color:#f2d85d; white-space:nowrap; font-size:17px; }
+.command-infamy small { display:block; font-size:7px; letter-spacing:1px; }
+.command-health { display:flex; align-items:center; gap:8px; margin:2px 0 8px; }
+.command-health>span { font-size:8px; color:#eee9c9; white-space:nowrap; }
+.command-health b { font-size:16px; margin-left:4px; }
+.command-health small { font-size:9px; color:#bfc3b7; }
+.command-health meter { flex:1; min-width:30px; height:9px; }
+.command-health meter::-webkit-meter-bar { background:#1d2525; border:0; border-radius:1px; }
+.command-health meter::-webkit-meter-optimum-value { background:#e6c655; }
+.game-screen .monster-command-record .sheet-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; border-block:1px solid #d5d3ba44; }
+.game-screen .monster-command-record .sheet-stats>div { padding:4px 6px; background:#171f2055; border-radius:0; }
+.game-screen .monster-command-record .sheet-stats dt { text-transform:uppercase; font-size:8px; letter-spacing:.5px; color:#cccdbb; }
+.game-screen .monster-command-record .sheet-stats dd { font-size:18px; margin:0; color:#fff4c6; }
+.command-movement { display:flex; justify-content:space-between; gap:8px; margin-top:6px; color:#d4d8c8; font-size:9px; }
+.command-movement span { color:#f0d475; }
+.command-ability { margin-top:5px; font-size:10px; color:#ede4bb; }
+.command-ability summary { cursor:pointer; }
+.game-screen .command-ability p { margin:5px 0 0; font-size:11px; color:#f0edd9; }
+.game-screen .bottom-context-dock .move-actions,.game-screen .bottom-context-dock .path-controls { padding:6px 8px; margin:0; background:#1b2324; border-top:1px solid #b7b28c55; }
+.game-screen .bottom-context-dock .move-actions button,.game-screen .bottom-context-dock .path-controls button { min-height:32px; font-size:11px; padding:5px 9px; border-color:#a5a08066; background:#424a43; color:#f4e5b6; }
+@media(max-width:900px) {
+  .game-screen .layout > .bottom-context-dock { left:8px; right:auto; width:min(440px,calc(100vw - 16px)); bottom:205px; max-height:30dvh; }
+  .game-screen .bottom-context-dock .monster-command-record { grid-template-columns:76px minmax(0,1fr); }
+  .game-screen .command-portrait img { width:74px; height:130px; }
+}
 .game-screen.setup-in-progress > .setup-panel:has(.branch-options) { left:20px; right:20px; top:145px; width:auto; transform:none; max-height:calc(100dvh - 165px); }
 .game-screen .setup-panel .branch-options { display:flex; flex-wrap:nowrap; align-items:stretch; gap:12px; overflow-x:auto; padding:4px 2px 12px; }
 .game-screen .setup-panel .branch-choice { flex:1 0 230px; display:flex; flex-direction:column; gap:10px; padding:16px; text-align:left; background:#24362e; color:#f7efda; border:1px solid #829177; border-radius:6px; font-weight:400; }
