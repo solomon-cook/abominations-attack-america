@@ -1166,10 +1166,22 @@ function App() {
           </div>
         </div>
         {setupComplete && <>
+          <div className="command-station">
           <div className="board-action-bar">
-            <ActionDock onPrimary={activeGame.phase === "deploy" && militaryChoices.length > 0 ? openMilitarySheet : activeGame.phase === "move" && !actionDock.command ? () => { const unitId = selectedUnitId && selectableUnitIds.has(selectedUnitId) ? selectedUnitId : legalPaths.length ? null : [...selectableUnitIds][0] ?? null; setSelectedUnitId(unitId); setSelectedUnitPath([]); setSelectedPath([]); setGamePanelOpen(false); const location = unitId ? activeGame.units.find(unit => unit.id === unitId)?.location : activePlayer.location; if (location && isHexKey(location)) { setFocusedHexKey(location); document.querySelector<HTMLElement>(`[data-hex-key="${location}"]`)?.focus({ preventScroll: true }); } } : !actionDock.command ? () => setGamePanelOpen(true) : undefined} secondaryAction={activeGame.phase === "move" ? { label: "End movement →", command: { type: "pass-move" } } : activeGame.phase === "deploy" && militaryChoices.length > 0 ? { label: "Finish deployment", command: { type: "pass-deploy" } } : undefined} label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)}  />
+            {activeGame.phase === "move" ? <ActionDock
+              label={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Confirm move" : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? "Hold position" : "End movement"}
+              contextLabel={`Move · ${selectableUnitIds.size + (legalPaths.length > 0 ? 1 : 0)} remaining`}
+              guidance={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Route ready" : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? "Choose a destination or hold." : "Ready for the next phase."}
+              command={actionDock.command ?? ((selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
+              canAct={canAct} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)}
+            /> : <ActionDock contextLabel={activeGame.phase} guidance={actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
+              onPrimary={!actionDock.command ? () => { const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
+              label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)} />}
           </div>
           <div className="bottom-context-dock">
+          {activeGame.phase === "move" ? <details className="piece-context-tab" key={selectedUnitId ?? activePlayer.id}>
+            <summary><span>{selectedUnitId ? (activeGame.units.find(unit => unit.id === selectedUnitId)?.unitTypeId ?? "Unit").replaceAll("-", " ") : activePlayer.name}</span><small>Details & options <span aria-hidden="true">⌃</span></small></summary>
+            <div className="context-tab-body">
           <SelectedPieceTray
             game={activeGame}
             selectedUnitId={selectedUnitId}
@@ -1183,25 +1195,16 @@ function App() {
               setHoveredPath([]);
             }}
           />
-            {activeGame.phase === "move" ? (
-              <div className="path-controls movement-orders" aria-label="Movement orders">
-                <div className="orders-heading"><span className="orders-kicker">Movement orders</span><span className="orders-count">{selectableUnitIds.size + (legalPaths.length > 0 ? 1 : 0)} remaining</span></div>
-                <p className="orders-instruction" aria-live="polite">{(selectedUnitId ? selectedUnitPath.length > 1 : selectedPath.length > 1) ? "Route plotted. Ready to move." : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? "Choose a glowing destination." : selectableUnitIds.size || legalPaths.length ? "Select another piece to move." : "All pieces accounted for."}</p>
-                {(selectedUnitId ? selectedUnitPath.length > 1 : selectedPath.length > 1) && <>
-                  <button className="order-primary" disabled={!canAct} onClick={() => void runCommand(selectedUnitId
-                    ? { type: "move-unit", unitId: selectedUnitId, path: selectedUnitPath }
-                    : { type: "move", path: selectedPath })}>Confirm move <span aria-hidden="true">→</span></button>
-                  <button className="cancel order-quiet" disabled={pendingAction} onClick={() => { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); }}>Cancel path</button>
-                </>}
-                {(selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) && <>
-                  <button className="order-secondary" disabled={!canAct} onClick={() => void runCommand({ type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id })}>Hold position <span aria-hidden="true">→</span></button>
-                </>}
-                {!selectedUnitId && !activeGame.movedPieceIds.includes(activePlayer.id) && activeGame.setupAssignments?.[activeGame.currentPlayer]?.lair && activeGame.monsters[activeGame.currentPlayer]?.location !== "hollywood" && (
-                  <button className="order-quiet" disabled={!canAct} onClick={() => runIrreversibleAction(() => void runCommand({ type: "disappear-monster" }), "Leave the monster in its lair and consume the Move step?")}>Disappear to lair</button>
-                )}
-                <div className="orders-footer"><span> {selectableUnitIds.size || legalPaths.length ? "Done with all pieces?" : "Proceed to the next phase"}</span><button className="order-end" disabled={!canAct} onClick={() => void runCommand({ type: "pass-move" })}>{selectableUnitIds.size || legalPaths.length ? "End movement" : "Finish movement"} <span aria-hidden="true">→</span></button></div>
+              <div className="piece-context-options">
+                {(selectedUnitId ? selectedUnitPath.length > 1 : selectedPath.length > 1) && <button disabled={pendingAction} onClick={() => { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); }}>Cancel route</button>}
+                {!selectedUnitId && !activeGame.movedPieceIds.includes(activePlayer.id) && activeGame.setupAssignments?.[activeGame.currentPlayer]?.lair && activePlayer.location !== "hollywood" && <button disabled={!canAct} onClick={() => runIrreversibleAction(() => void runCommand({ type: "disappear-monster" }), "Leave the monster in its lair and consume the Move step?")}>Disappear to lair</button>}
+                <button disabled={!canAct} onClick={() => void runCommand({ type: "pass-move" })}>End all movement →</button>
               </div>
-            ) : activeGame.phase === "fight" || activeGame.phase === "encounter" || activeGame.phase === "deploy" ? (
+            </div>
+          </details> : <details id="phase-command-context" className="piece-context-tab" key={activeGame.phase}>
+            <summary><span>{activeGame.phase} options</span><small>Open <span aria-hidden="true">⌃</span></small></summary>
+            <div className="context-tab-body">
+            {activeGame.phase === "fight" || activeGame.phase === "encounter" || activeGame.phase === "deploy" ? (
               <PhaseActions
                 activeGame={activeGame}
                 onOpenMilitarySheet={openMilitarySheet}
@@ -1228,6 +1231,9 @@ function App() {
                 Resolve {action.toLowerCase()}
               </button>
             )}
+            </div>
+          </details>}
+          </div>
           </div>
         </>}
         <aside id="game-side-panel" className="game-side-panel" aria-label="Game controls and information">
