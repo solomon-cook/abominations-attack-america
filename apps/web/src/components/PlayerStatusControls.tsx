@@ -1,5 +1,4 @@
 import { ownedMilitarySheets } from "./owned-sheets";
-import type { CSSProperties } from "react";
 import { SheetCards } from "./SheetCards";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -37,7 +36,7 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
             <h2 id="monster-sheet-title">{monster.name}</h2>
             <div className="monster-record-columns">
               <div className="monster-printed-stats"><SheetStats values={{ "Starting health": definition?.startingHealth ?? monster.startingHealth, Move: definition?.move ?? monster.move, Movement: movementLabel(definition?.movement ?? monster.movement), Defense: definition?.defense ?? monster.defense }} />
-                <div className="monster-record-silhouette" aria-hidden="true" style={{ "--monster-silhouette": `url(/assets/board/overlays/monster-${monster.name.toLowerCase()}.svg)` } as CSSProperties} />
+                <img className="monster-record-portrait" src={`/assets/monsters/portraits/${monster.name.toLowerCase()}.webp`} alt={`${monster.name} portrait`} />
               </div>
               <div className="monster-printed-ability"><SheetStats values={{ Attacks: definition?.attacks ?? monster.attacks, Damage: definition?.damage ?? monster.damage }} /><h3>Special ability</h3><p>{definition?.specialAbilityText}</p>
                 <p className="record-live-health"><b>{monster.health}</b> / {monster.maxHealth} Health<br /><b>{monster.infamy}</b> Infamy</p>
