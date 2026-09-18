@@ -206,7 +206,9 @@ function App() {
     [activeGame, selectedUnitId],
   );
   const selectableUnitIds = useMemo(
-    () => activeGame.phase === "move" ? new Set(activeGame.units.filter((unit) => legalUnitPaths(activeGame, unit.id).length > 0 || legalSubmarineTargets(activeGame, unit.id).length > 0).map((unit) => unit.id)) : new Set<string>(),
+    () => activeGame.phase === "move"
+      ? new Set(activeGame.units.filter((unit) => legalUnitPaths(activeGame, unit.id).length > 0 || legalSubmarineTargets(activeGame, unit.id).length > 0).map((unit) => unit.id))
+      : activeGame.pendingDecision?.type === "trophy-choice" ? new Set(activeGame.pendingDecision.unitIds) : new Set<string>(),
     [activeGame],
   );
   useEffect(() => {
@@ -1113,6 +1115,10 @@ function App() {
               onFocusHex={setFocusedHexKey}
               onSelectStack={setSelectedStackKey}
               onSelectUnit={(unitId) => {
+                if (activeGame.pendingDecision?.type === "trophy-choice" && activeGame.pendingDecision.unitIds.includes(unitId)) {
+                  void runCommand({ type: "resolve-encounter", trophyUnitId: unitId });
+                  return;
+                }
                 setHoveredPath([]);
                 setGamePanelOpen(false);
                 setSelectedUnitId(unitId);
