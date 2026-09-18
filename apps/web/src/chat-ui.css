@@ -1,0 +1,14 @@
+/* Keep reference-sheet shortcuts clear of the mobile next-action control. */
+@media (max-width: 700px) {
+  .game-screen .player-sheet-peeks {
+    top:auto; bottom:8px; left:8px; right:208px; width:auto;
+    transform:none; display:flex; flex-direction:column; max-height:160px;
+    gap:4px; padding:0; overflow:auto;
+  }
+  .game-screen .player-sheet-peeks .sheet-peek {
+    transform:none; min-height:44px; width:100%; padding:5px;
+    border:1px solid #e8dfae; border-radius:5px;
+  }
+  .game-screen .player-sheet-peeks .sheet-peek small,
+  .game-screen .player-sheet-peeks .sheet-peek-invite { display:none; }
+}

@@ -5,7 +5,13 @@ type Props = { game: GameState; selectedUnitId: string | null; selectedUnitPath:
 
 export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onClear }: Props) {
   const unit = game.units.find((candidate) => candidate.id === selectedUnitId);
-  if (!unit) return null;
+  if (!unit) {
+    const monster = game.monsters[game.currentPlayer];
+    return <section className="piece-detail-tray" aria-label="Selected piece details">
+      <div className="unit-detail-heading"><img src={`/assets/monsters/${monster.name.toLowerCase()}.webp`} alt="" /><div><span className="label">Player {game.currentPlayer + 1} · Monster</span><h3>{monster.name}</h3></div></div>
+      <SheetStats values={{ Health: monster.health, Move: monster.move, Attacks: monster.attacks, Defense: monster.defense, Damage: monster.damage }} />
+    </section>;
+  }
   const definition = UNIT_DEFINITIONS.find((candidate) => candidate.id === unit.unitTypeId);
   const guard = NATIONAL_GUARD_DEFINITIONS.find((candidate) => candidate.id === unit.unitTypeId);
   const giant = GIANT_UNIT_DEFINITIONS.find((candidate) => candidate.id === unit.unitTypeId);

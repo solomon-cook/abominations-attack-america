@@ -276,7 +276,7 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
               if (setupLegal) { onSetupLocation?.(placeKey); return; }
               if (deploymentLegal) { onDeploy(placeKey); return; }
               if (event.shiftKey && occupantCount > 0) onSelectStack(placeKey);
-              else if (selectableUnit && !selectedUnitId) onSelectUnit(selectableUnit.id);
+              else if (selectableUnit && !selectedUnitId && selectedPath.length < 2) onSelectUnit(selectableUnit.id);
               else if (monsterLegal || unitLegal) {
                 if (selectedUnitId) onChooseUnitPath(placeKey);
                 else onChoosePath(placeKey);
@@ -308,13 +308,13 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
                 {monstersHere.map((monster) => {
                   const monsterArt = monsterArtForName(monster.name);
                   return monsterArt
-                    ? <img className={`tile-monster tile-occupant ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id} onClick={monster.id === activePlayerId && canAct && game.phase === "move" ? (event) => { event.stopPropagation(); onSelectMonster(); } : undefined} src={monsterArt} alt={monster.name} loading="lazy" />
+                    ? <img className={`tile-monster tile-occupant ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id} onClick={monster.id === activePlayerId && canAct && game.phase === "move" ? (event) => { if (selectedUnitId && game.phase === "move") return; event.stopPropagation(); onSelectMonster(); } : undefined} src={monsterArt} alt={monster.name} loading="lazy" />
                     : <b className={`tile-occupant ${acceptedPieceId === monster.id ? "accepted-arrival" : ""}`} key={monster.id}>{monster.name.slice(0, 1)}</b>;
                 })}
                 {unitsHere.map((unit) => {
                   const unitArt = unitArtForType(unit.unitTypeId);
                   return unitArt
-                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={(event) => { event.stopPropagation(); if (!selectedUnitId) onSelectUnit(unit.id); }} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={(event) => { if (game.phase === "move" && (selectedUnitId || selectedPath.length > 1)) return; event.stopPropagation(); onSelectUnit(unit.id); }} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
                     : <i className="unit-mark tile-occupant" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
                 })}
               </span>}

@@ -330,4 +330,35 @@
 .game-screen #turn-hud-body .piece-detail-tray { display:block; }
 .game-screen > .status div { flex:none; min-width:80px; }
 .game-screen > .status strong { white-space:nowrap; }
+.game-screen .layout > .bottom-context-dock,.game-screen .layout > .board-action-bar { pointer-events:auto; }
+.game-screen .setup-panel:has(.monster-options) { left:20px; right:20px; top:150px; width:auto; max-height:calc(100dvh - 175px); }
+.game-screen .setup-panel .monster-options { display:flex; flex-direction:row; flex-wrap:nowrap; overflow-x:auto; align-items:stretch; }
+.game-screen .setup-panel .monster-choice { flex:1 0 165px; width:auto; min-width:165px; min-height:285px; justify-content:flex-start; }
+.game-screen .setup-panel .monster-choice-hover { position:static; width:auto; transform:none; margin-top:8px; padding:8px; opacity:0; box-shadow:none; pointer-events:none; }
+.game-screen .setup-panel .monster-choice:hover .monster-choice-hover,.game-screen .setup-panel .monster-choice:focus-visible .monster-choice-hover { opacity:1; transform:none; }
+@media(hover:none) { .game-screen .setup-panel .monster-choice-hover { opacity:1; } }
+.game-screen .layout > .board-action-bar { display:flex; position:fixed; right:16px; bottom:16px; z-index:45; }
+.game-screen .layout > .bottom-context-dock { position:fixed; left:210px; right:360px; bottom:90px; width:auto; transform:none; max-height:25dvh; overflow:auto; z-index:40; }
+.game-screen .bottom-context-dock:empty { display:none; }
+.game-screen .bottom-context-dock .piece-detail-tray { position:static; width:auto; max-height:none; display:flex; flex-wrap:wrap; gap:12px; }
+.game-screen .bottom-context-dock .unit-detail-heading { min-width:170px; }
+.game-screen .bottom-context-dock .sheet-stats { display:flex; flex-wrap:wrap; gap:6px; margin:0; }
+.game-screen .bottom-context-dock .piece-detail-tray { padding:6px; background:transparent; }
+.game-screen .bottom-context-dock .unit-detail-heading img { width:44px; height:44px; }
+.game-screen .bottom-context-dock .move-actions { min-height:0; }
+.game-screen .bottom-context-dock .move-actions button { flex:0 1 auto; background:#45392f; font-size:.75rem; }
+.game-screen .bottom-context-dock button:disabled { color:#c8bcae; opacity:.7; cursor:not-allowed; }
+.game-screen .bottom-context-dock button { min-height:44px; border:1px solid #987244; border-radius:4px; background:#483424; color:#fff0d4; padding:8px 12px; }
+.game-screen .board-action-bar .action-dock > button:nth-of-type(2) { display:block; background:#45392f; color:#eee1cf; font-size:.75rem; }
+@media(max-width:700px) {
+  .game-screen .layout > .board-action-bar { left:auto; right:8px; bottom:8px; width:190px; }
+  .game-screen .board-action-bar .action-dock { min-width:0; width:100%; }
+  .game-screen .layout > .bottom-context-dock { left:8px; right:8px; bottom:205px; max-height:22dvh; }
+  .game-screen .bottom-context-dock .piece-detail-tray { gap:6px; }
+  .game-screen .bottom-context-dock .sheet-stats > div { padding:3px; }
+  .game-screen .bottom-context-dock .sheet-stats dd { font-size:.85rem; }
+  .game-screen .player-sheet-peeks { left:8px; right:208px; bottom:8px; width:auto; transform:none; display:flex; flex-direction:column; gap:4px; }
+  .game-screen .player-sheet-peeks .sheet-peek { min-height:44px; width:100%; padding:5px; }
+  .game-screen .player-sheet-peeks .sheet-peek small,.game-screen .player-sheet-peeks .sheet-peek-invite { display:none; }
+}
 .game-screen #turn-hud-body .board-context-tray { position:static; display:block; width:100%; max-height:none; margin:8px 0; padding:10px; }

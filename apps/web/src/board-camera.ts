@@ -4,7 +4,7 @@ export type BoardCamera = { center: Point; zoom: number };
 export const MIN_BOARD_ZOOM = 1;
 export const MAX_BOARD_ZOOM = 4;
 /** Presentation-only ocean margin, allowing edge/coastal spaces to center. */
-export const BOARD_EDGE_PADDING = 150;
+export const BOARD_EDGE_PADDING = 500;
 
 export function cameraScale(camera: BoardCamera, viewport: Size, world: Size): number {
   return Math.max(viewport.width / world.width, viewport.height / world.height) * camera.zoom;

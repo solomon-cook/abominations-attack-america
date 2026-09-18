@@ -76,6 +76,7 @@ import "./styles.css";
 import "./fullscreen-shell.css";
 import "./board-terrain.css";
 import "./physical-sheets.css";
+import "./chat-ui.css";
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -160,7 +161,7 @@ function App() {
   const [boardReviewOpen, setBoardReviewOpen] = useState(false);
   const [challengeDuelOpen, setChallengeDuelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [gamePanelOpen, setGamePanelOpen] = useState(true);
+  const [gamePanelOpen, setGamePanelOpen] = useState(false);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
   const [showBoardLabels, setShowBoardLabels] = useState(() => safeStorageGet("abominations-board-labels") !== "0");
   const [manualReducedMotion, setManualReducedMotion] = useState(() => safeStorageGet("abominations-reduced-motion") === "1");
@@ -193,7 +194,7 @@ function App() {
   );
   useEffect(() => {
     if (!selectedUnitId) return;
-    setGamePanelOpen(true);
+    setGamePanelOpen(false);
     const frame = requestAnimationFrame(() => document.querySelector<HTMLElement>(".piece-detail-tray")?.scrollIntoView({ block: "nearest" }));
     return () => cancelAnimationFrame(frame);
   }, [selectedUnitId]);
@@ -336,6 +337,8 @@ function App() {
       ? { label: "Confirm unit move", command: { type: "move-unit", unitId: selectedUnitId!, path: selectedUnitPath } as GameCommand }
       : selectedPath.length > 1
         ? { label: "Confirm monster move", command: { type: "move", path: selectedPath } as GameCommand }
+        : !legalPaths.length && !selectableUnitIds.size
+          ? { label: "Continue to Fight", command: { type: "pass-move" } as GameCommand }
         : selectedUnitId
           ? { label: "Move this unit", command: undefined }
           : { label: "Choose a piece to move", command: undefined }
@@ -344,14 +347,16 @@ function App() {
         ? { label: "Resolve fight", command: { type: "resolve-fight", battleId: pendingBattle.id } as GameCommand }
         : { label: pendingAttackTarget ? "Choose attack target" : "Continue to Fight", command: undefined }
       : activeGame.phase === "encounter"
-        ? activeGame.pendingDecision
+        ? activeGame.pendingDecision && activeGame.pendingDecision.type !== "encounter-resolution"
           ? { label: "Choose encounter option", command: undefined }
           : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
         : activeGame.phase === "deploy"
           ? militaryChoices.length
             ? { label: deploymentPiece ? "Change deployment piece" : "Deploy military", command: undefined }
             : { label: "Finish deployment", command: { type: "pass-deploy" } as GameCommand }
-          : { label: "Match complete", command: undefined };
+          : activeGame.phase === "challenge"
+            ? { label: "Resolve Monster Challenge", command: undefined }
+            : { label: "Match complete", command: undefined };
 
   useEffect(() => {
     actionHeadingRef.current?.focus({ preventScroll: true });
@@ -368,9 +373,9 @@ function App() {
     return () => { window.removeEventListener("keydown", close); previous?.focus({ preventScroll: true }); };
   }, [settingsOpen, onboardingOpen]);
   useEffect(() => {
-    // Keep turn decisions visible when a match begins.
+    // Start with the map unobstructed; decisions remain in the bottom dock.
     if ((localPlaytestStarted || online) && setupComplete) {
-      setGamePanelOpen(true);
+      setGamePanelOpen(false);
     }
   }, [localPlaytestStarted, online, setupComplete]);
   const setupSeat =
@@ -1054,7 +1059,7 @@ function App() {
                 : `PLAYER ${activeGame.currentPlayer + 1}`}
             </span>
           </div>
-          <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={focusedHexKey} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
+          <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={setupComplete ? (selectedUnitId ? activeGame.units.find((unit) => unit.id === selectedUnitId)?.location : activePlayer.location) : null} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
             <HexGrid
               game={setupPreview ?? activeGame}
               setupLocations={setupLocations}
@@ -1082,7 +1087,7 @@ function App() {
               onSelectStack={setSelectedStackKey}
               onSelectUnit={(unitId) => {
                 setHoveredPath([]);
-                setGamePanelOpen(true);
+                setGamePanelOpen(false);
                 setSelectedUnitId(unitId);
                 setSelectedPath([]);
                 setSelectedUnitPath([]);
@@ -1125,41 +1130,10 @@ function App() {
             />
           </div>
         </div>
-        <aside id="game-side-panel" className="game-side-panel" aria-label="Game controls and information">
-          {!gamePanelOpen && <div className="board-action-bar">
-            <ActionDock onPrimary={activeGame.phase === "deploy" && militaryChoices.length > 0 ? openMilitarySheet : !actionDock.command ? () => setGamePanelOpen(true) : undefined} secondaryAction={activeGame.phase === "move" ? { label: "End movement →", command: { type: "pass-move" } } : activeGame.phase === "deploy" && militaryChoices.length > 0 ? { label: "Finish deployment", command: { type: "pass-deploy" } } : undefined} label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)}  />
-          </div>}
-          <div id="turn-hud-body" hidden={!gamePanelOpen}>
-          <div className="card action-card">
-            <FightResolutionPanel
-              game={activeGame}
-              canAct={canAct}
-              pendingBattle={pendingBattle}
-              pendingAttackTarget={pendingAttackTarget}
-              rolls={lastFightRolls}
-              outcomes={lastFightOutcomes}
-            />
-            <TurnPrompt
-              action={action}
-              description={turnDescription}
-              rulesHelp={rulesHelp}
-              unavailableReason={unavailableReason}
-              canAct={canAct}
-              lastFightEventId={lastFightEvent?.id}
-              lastFightRolls={lastFightRolls}
-              lastFightOutcomes={lastFightOutcomes}
-              hollywoodResearchAwarded={lastFightEvent?.detail.hollywoodResearchAwarded === true}
-              lastRecoveryEventId={lastRecoveryEvent?.id}
-              lastRecoveryRoll={typeof lastRecoveryEvent?.detail.recoveryRoll === "number" ? lastRecoveryEvent.detail.recoveryRoll : undefined}
-              lastRecoveryReleased={lastRecoveryEvent?.detail.recoveryReleased === true}
-            />
-            <ActionResolutionFeedback label={acceptedActionFeedback?.label} animationKey={acceptedActionFeedback?.key} />
-            <BlondeLureActions
-              game={activeGame}
-              canAct={canAct}
-              runCommand={runCommand}
-              getLocationName={(key) => getLocation(key)?.name ?? key}
-            />
+        {setupComplete && <>
+          <div className="board-action-bar">
+            <ActionDock onPrimary={activeGame.phase === "deploy" && militaryChoices.length > 0 ? openMilitarySheet : activeGame.phase === "move" && !actionDock.command ? () => { const unitId = selectedUnitId && selectableUnitIds.has(selectedUnitId) ? selectedUnitId : legalPaths.length ? null : [...selectableUnitIds][0] ?? null; setSelectedUnitId(unitId); setSelectedUnitPath([]); setSelectedPath([]); setGamePanelOpen(false); const location = unitId ? activeGame.units.find(unit => unit.id === unitId)?.location : activePlayer.location; if (location && isHexKey(location)) { setFocusedHexKey(location); document.querySelector<HTMLElement>(`[data-hex-key="${location}"]`)?.focus({ preventScroll: true }); } } : !actionDock.command ? () => setGamePanelOpen(true) : undefined} secondaryAction={activeGame.phase === "move" ? { label: "End movement →", command: { type: "pass-move" } } : activeGame.phase === "deploy" && militaryChoices.length > 0 ? { label: "Finish deployment", command: { type: "pass-deploy" } } : undefined} label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)}  />
+          </div>
           <div className="bottom-context-dock">
           <SelectedPieceTray
             game={activeGame}
@@ -1256,10 +1230,43 @@ function App() {
               </button>
             )}
           </div>
+        </>}
+        <aside id="game-side-panel" className="game-side-panel" aria-label="Game controls and information">
+          <div id="turn-hud-body" hidden={!gamePanelOpen}>
+          <div className="card action-card">
+            <FightResolutionPanel
+              game={activeGame}
+              canAct={canAct}
+              pendingBattle={pendingBattle}
+              pendingAttackTarget={pendingAttackTarget}
+              rolls={lastFightRolls}
+              outcomes={lastFightOutcomes}
+            />
+            <TurnPrompt
+              action={action}
+              description={turnDescription}
+              rulesHelp={rulesHelp}
+              unavailableReason={unavailableReason}
+              canAct={canAct}
+              lastFightEventId={lastFightEvent?.id}
+              lastFightRolls={lastFightRolls}
+              lastFightOutcomes={lastFightOutcomes}
+              hollywoodResearchAwarded={lastFightEvent?.detail.hollywoodResearchAwarded === true}
+              lastRecoveryEventId={lastRecoveryEvent?.id}
+              lastRecoveryRoll={typeof lastRecoveryEvent?.detail.recoveryRoll === "number" ? lastRecoveryEvent.detail.recoveryRoll : undefined}
+              lastRecoveryReleased={lastRecoveryEvent?.detail.recoveryReleased === true}
+            />
+            <ActionResolutionFeedback label={acceptedActionFeedback?.label} animationKey={acceptedActionFeedback?.key} />
+            <BlondeLureActions
+              game={activeGame}
+              canAct={canAct}
+              runCommand={runCommand}
+              getLocationName={(key) => getLocation(key)?.name ?? key}
+            />
             {activeGame.phase === "move" && <MovementChecklist game={activeGame} canAct={canAct}
               selectedUnitId={selectedUnitId} movableUnitIds={selectableUnitIds} monsterCanMove={legalPaths.length > 0}
               onSelect={(unitId) => {
-                setGamePanelOpen(true); setSelectedUnitId(unitId); setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]);
+                setGamePanelOpen(false); setSelectedUnitId(unitId); setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]);
                 const location = unitId ? activeGame.units.find((unit) => unit.id === unitId)?.location : activePlayer.location;
                 if (location && isHexKey(location)) setFocusedHexKey(location);
               }}

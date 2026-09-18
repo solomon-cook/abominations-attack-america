@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import type { BoardDefinition } from "@abominations/game-engine";
 import { AUDITED_BOARD_WORLD, buildDisplayHexLayout } from "../board-layout";
-import { cameraScale, cameraView, clampCamera, panCamera, resetCamera, zoomCamera, type BoardCamera, type Point, type Size } from "../board-camera";
+import { BOARD_EDGE_PADDING, cameraScale, cameraView, clampCamera, panCamera, resetCamera, zoomCamera, type BoardCamera, type Point, type Size } from "../board-camera";
 
 type Props = { board?: BoardDefinition; boardId: string; boardContentHash: string; children: ReactNode; overviewImage?: string; focusHexKey?: string | null };
 const INITIAL_VIEWPORT = { width: 1000, height: 700 };
@@ -126,7 +126,16 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
         const y = tile.top < mapBounds.top + margin ? mapBounds.top + margin - tile.top : tile.bottom > mapBounds.bottom - margin ? mapBounds.bottom - margin - tile.bottom : 0;
         if (x || y) setCamera((current) => panCamera(current, { x, y }, viewport, world));
       }}>
-      <div className="map-canvas" style={{ width: world.width, height: world.height, transform: `translate(${viewport.width / 2 - camera.center.x * scale}px, ${viewport.height / 2 - camera.center.y * scale}px) scale(${scale})` }}>{children}</div>
+      <div className="map-canvas" style={{ width: world.width, height: world.height, transform: `translate(${viewport.width / 2 - camera.center.x * scale}px, ${viewport.height / 2 - camera.center.y * scale}px) scale(${scale})` }}>
+        <svg aria-hidden="true" focusable="false" style={{ position: "absolute", left: -BOARD_EDGE_PADDING, top: -BOARD_EDGE_PADDING, width: world.width + 2 * BOARD_EDGE_PADDING, height: world.height + 2 * BOARD_EDGE_PADDING, pointerEvents: "none" }}>
+          <defs><pattern id="deep-sea-hexes" width="82.1918" height="47.4534" patternUnits="userSpaceOnUse">
+            <rect width="100%" height="100%" fill="#164e65" />
+            <path d="M0 23.7267 L13.6986 0 H41.0959 L54.7945 23.7267 L41.0959 47.4534 H13.6986 Z M54.7945 23.7267 H82.1918" fill="none" stroke="#367487" strokeWidth="0.8" />
+          </pattern></defs>
+          <rect width="100%" height="100%" fill="url(#deep-sea-hexes)" />
+        </svg>
+        {children}
+      </div>
     </div>
     <div className="map-controls" aria-label="Board view controls">
       <button type="button" aria-label="Zoom board out" disabled={camera.zoom <= 1} onClick={() => zoom(1 / 1.25)}>−</button>
