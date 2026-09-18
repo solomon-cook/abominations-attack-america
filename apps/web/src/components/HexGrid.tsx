@@ -171,6 +171,7 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
         const deploymentLegal = setupLegal || canAct && game.phase === "deploy" && deploymentDestinations.has(placeKey);
         const monsterLegal = canAct && game.phase === "move" && legalDestinations.has(placeKey);
         const unitLegal = canAct && game.phase === "move" && legalUnitDestinations.has(placeKey);
+        const inspectableUnit = game.units.find((unit) => unit.location === placeKey);
         const selectableUnit = canAct ? game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id)) : undefined;
         const featureText = hex.features.map((feature) => feature.kind).join(", ");
         const neighbourText = (boardIndex?.neighbours[placeKey] ?? [])
@@ -222,7 +223,7 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
         const unitsHere = game.units.filter((unit) => unit.location === placeKey);
         const occupantCount = monstersHere.length + unitsHere.length;
         const provisionalBoard = audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id;
-        const actionUnavailable = !deploymentLegal && (!canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit));
+        const actionUnavailable = !deploymentLegal && !inspectableUnit && (!canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit));
         const moveFocus = (direction: "left" | "right" | "up" | "down") => {
           if (!provisionalBoard) return;
           const origin = displayByKey.get(placeKey);
@@ -279,7 +280,8 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
               else if (monsterLegal || unitLegal) {
                 if (selectedUnitId) onChooseUnitPath(placeKey);
                 else onChoosePath(placeKey);
-              } else if (occupantCount > 0) onSelectStack(placeKey);
+              } else if (inspectableUnit) onSelectUnit(inspectableUnit.id);
+              else if (occupantCount > 0) onSelectStack(placeKey);
               else onFocusHex(placeKey);
             }}
           >
@@ -312,7 +314,7 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
                 {unitsHere.map((unit) => {
                   const unitArt = unitArtForType(unit.unitTypeId);
                   return unitArt
-                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={canAct && selectableUnitIds.has(unit.id) ? (event) => { event.stopPropagation(); onSelectUnit(unit.id); } : undefined} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={(event) => { event.stopPropagation(); onSelectUnit(unit.id); }} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
                     : <i className="unit-mark tile-occupant" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
                 })}
               </span>}

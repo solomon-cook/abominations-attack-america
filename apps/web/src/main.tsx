@@ -191,6 +191,12 @@ function App() {
     () => new Set(legalMonsterDestinations(activeGame, activePlayer.id)),
     [activeGame, activePlayer.id],
   );
+  useEffect(() => {
+    if (!selectedUnitId) return;
+    setGamePanelOpen(true);
+    const frame = requestAnimationFrame(() => document.querySelector<HTMLElement>(".piece-detail-tray")?.scrollIntoView({ block: "nearest" }));
+    return () => cancelAnimationFrame(frame);
+  }, [selectedUnitId]);
   const legalUnitPathsForSelection = useMemo(
     () => (selectedUnitId ? legalUnitPaths(activeGame, selectedUnitId) : []),
     [activeGame, selectedUnitId],
@@ -938,13 +944,15 @@ function App() {
       data-rendered-board-content-hash={renderedBoard?.contentHash ?? ""}
     >
       <header>
-        <div>
-          <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · WEB PLAYTEST</p>
-          <h1>Abominations Attack America</h1>
-          <p className="lede">A monster strategy game of cities, battles, and bad decisions.</p>
+        <div className="top-turn-summary">
+          <div className="turn-hud-heading">
+            <div><span className="label">{canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER {decisionPlayer + 1}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{activePlayer.name} · {action}</h2></div>
+            <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="turn-hud-body" aria-label={gamePanelOpen ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelOpen ? "−" : "+"}</button>
+          </div>
+          <TurnProgress game={activeGame} />
         </div>
         <div className="header-actions">
-          {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={participant?.playerIndex ?? activeGame.currentPlayer} monster={activeGame.monsters[participant?.playerIndex ?? activeGame.currentPlayer]} branch={activeGame.setupAssignments?.[participant?.playerIndex ?? activeGame.currentPlayer]?.branch ?? (["Army", "Navy", "Air Force", "Marines"] as const)[(participant?.playerIndex ?? activeGame.currentPlayer) % 4]} canAct={canAct} runCommand={runCommand} onDeploy={openMilitarySheet} />}
+          {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={participant?.playerIndex ?? activeGame.currentPlayer} monster={activeGame.monsters[participant?.playerIndex ?? activeGame.currentPlayer]} branch={activeGame.setupAssignments?.[participant?.playerIndex ?? activeGame.currentPlayer]?.branch ?? (["Army", "Navy", "Air Force", "Marines"] as const)[(participant?.playerIndex ?? activeGame.currentPlayer) % 4]} canAct={canAct} runCommand={runCommand} onDeploy={openMilitarySheet} onSelectDeployment={(choice) => { setDeploymentPieceId(choice.id); setFocusedHexKey(choice.destinations[0]); }} />}
           <button className="ghost" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>
             How to play
           </button>
@@ -1072,6 +1080,7 @@ function App() {
               onSelectStack={setSelectedStackKey}
               onSelectUnit={(unitId) => {
                 setHoveredPath([]);
+                setGamePanelOpen(true);
                 setSelectedUnitId(unitId);
                 setSelectedPath([]);
                 setSelectedUnitPath([]);
@@ -1086,7 +1095,7 @@ function App() {
             Place {deploymentPiece.typeId.replaceAll("-", " ")} · Select a glowing location.
             <button onClick={() => setDeploymentPieceId(null)}>Cancel placement</button>
           </div>}
-          <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} />
+
           <p className="sr-only" id="board-description">
             {boardDescription}
           </p>
@@ -1113,15 +1122,10 @@ function App() {
           </div>
         </div>
         <aside id="game-side-panel" className="game-side-panel" aria-label="Game controls and information">
-          <div className="turn-hud-heading">
-            <div><span className="label">{canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER {decisionPlayer + 1}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{activePlayer.name} · {action}</h2></div>
-            <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="turn-hud-body" aria-label={gamePanelOpen ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelOpen ? "−" : "+"}</button>
-          </div>
           {!gamePanelOpen && <div className="board-action-bar">
             <ActionDock onPrimary={activeGame.phase === "deploy" && militaryChoices.length > 0 ? openMilitarySheet : !actionDock.command ? () => setGamePanelOpen(true) : undefined} secondaryAction={activeGame.phase === "move" ? { label: "End movement →", command: { type: "pass-move" } } : activeGame.phase === "deploy" && militaryChoices.length > 0 ? { label: "Finish deployment", command: { type: "pass-deploy" } } : undefined} label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)}  />
           </div>}
           <div id="turn-hud-body" hidden={!gamePanelOpen}>
-          <TurnProgress game={activeGame} />
           <div className="card action-card">
             <FightResolutionPanel
               game={activeGame}
@@ -1209,7 +1213,7 @@ function App() {
               </div>
             ) : activeGame.phase === "move" ? (
               <div className="move-actions">
-                {!activeGame.movedPieceIds.includes(activePlayer.id) && activeGame.setupAssignments?.[activeGame.currentPlayer]?.lair && activeGame.monsters[activeGame.currentPlayer]?.location !== "hollywood" && (
+                {!selectedUnitId && !activeGame.movedPieceIds.includes(activePlayer.id) && activeGame.setupAssignments?.[activeGame.currentPlayer]?.lair && activeGame.monsters[activeGame.currentPlayer]?.location !== "hollywood" && (
                   <button
                     disabled={!canAct}
                     onClick={() => runIrreversibleAction(() => void runCommand({ type: "disappear-monster" }), "Leave the monster in its lair and consume the Move step?")}
@@ -1249,7 +1253,7 @@ function App() {
             {activeGame.phase === "move" && <MovementChecklist game={activeGame} canAct={canAct}
               selectedUnitId={selectedUnitId} movableUnitIds={selectableUnitIds} monsterCanMove={legalPaths.length > 0}
               onSelect={(unitId) => {
-                setSelectedUnitId(unitId); setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]);
+                setGamePanelOpen(true); setSelectedUnitId(unitId); setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]);
                 const location = unitId ? activeGame.units.find((unit) => unit.id === unitId)?.location : activePlayer.location;
                 if (location && isHexKey(location)) setFocusedHexKey(location);
               }}
@@ -1267,6 +1271,9 @@ function App() {
             )}
             </details>
           </div>
+          <details className="hud-section"><summary>Selected board space</summary>
+          <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} />
+          </details>
           <details className="hud-section"><summary>Pieces, cards & board reference</summary>
           <BoardReferenceCard />
           <UnitCard

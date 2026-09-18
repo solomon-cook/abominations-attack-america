@@ -1,34 +1,32 @@
-import { getLocation, type GameState, type HexKey } from "@abominations/game-engine";
+import { boardForState, getLocation, isHexKey, legalUnitPaths, UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, GIANT_UNIT_DEFINITIONS, type GameState, type HexKey } from "@abominations/game-engine";
+import { movementLabel, SheetStats } from "./SheetReference";
 
-type Props = {
-  game: GameState;
-  selectedUnitId: string | null;
-  selectedUnitPath: readonly HexKey[];
-  onClear: () => void;
-};
+type Props = { game: GameState; selectedUnitId: string | null; selectedUnitPath: readonly HexKey[]; onClear: () => void };
 
 export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onClear }: Props) {
-  const unit = selectedUnitId ? game.units.find((candidate) => candidate.id === selectedUnitId) : undefined;
+  const unit = game.units.find((candidate) => candidate.id === selectedUnitId);
   if (!unit) return null;
-  const location = getLocation(unit.location)?.name ?? unit.location;
-  const preview = selectedUnitPath.length > 1
-    ? `Previewing ${selectedUnitPath.length - 1} movement ${selectedUnitPath.length - 1 === 1 ? "space" : "spaces"} to ${getLocation(selectedUnitPath.at(-1)!)?.name ?? selectedUnitPath.at(-1)}`
-    : "Choose a highlighted destination to preview a path.";
-
-  return (
-    <section className="piece-detail-tray" aria-label="Selected piece details" aria-live="polite">
-      <div>
-        <span className="label">SELECTED PIECE</span>
-        <h3>{unit.branch} · {unit.unitTypeId ?? "unit"}</h3>
-        <p>{location} · {preview}</p>
-      </div>
-      <div className="piece-detail-stats" aria-label="Selected piece combat and movement metrics">
-        <span><span className="metric-icon" aria-hidden="true">↝</span> <b>{unit.move}</b> move</span>
-        <span><span className="metric-icon" aria-hidden="true">◇</span> <b>{unit.defense}</b> defense</span>
-        <span><span className="metric-icon" aria-hidden="true">✦</span> <b>{unit.damage}</b> damage</span>
-        <span><span className="metric-icon" aria-hidden="true">⚔</span> <b>{unit.attacks}</b> attack</span>
-      </div>
-      <button type="button" className="stack-clear" onClick={onClear}>Deselect</button>
-    </section>
-  );
+  const definition = UNIT_DEFINITIONS.find((candidate) => candidate.id === unit.unitTypeId);
+  const guard = NATIONAL_GUARD_DEFINITIONS.find((candidate) => candidate.id === unit.unitTypeId);
+  const giant = GIANT_UNIT_DEFINITIONS.find((candidate) => candidate.id === unit.unitTypeId);
+  const name = definition?.name ?? guard?.name ?? giant?.name ?? unit.unitTypeId?.replaceAll("-", " ") ?? unit.branch;
+  const board = boardForState(game);
+  const locationName = (key: string) => getLocation(key)?.name ?? (isHexKey(key) ? board.hexes[key]?.label ?? "On the board" : key === "record-tile" ? "In reserve" : key);
+  const canMove = legalUnitPaths(game, unit.id).length > 0;
+  const status = game.movedPieceIds.includes(unit.id) ? "Already moved this turn."
+    : selectedUnitPath.length > 1 ? `Previewing ${selectedUnitPath.length - 1} spaces to ${locationName(selectedUnitPath.at(-1)!)}.`
+    : canMove ? "Choose a glowing destination to preview this unit’s move." : "This unit cannot move at this point in the turn.";
+  const special = definition?.specialAbilityText ?? guard?.specialAbilityText;
+  return <section className="piece-detail-tray" aria-label="Selected piece details" aria-live="polite">
+    <div className="unit-detail-heading">
+      <img src={giant ? `/assets/cards/military-research-${giant.id}.webp` : `/assets/military/${unit.unitTypeId === "x-fighter" ? "air-force-fighter" : unit.unitTypeId ?? "army-tank"}.webp`} alt={name} />
+      <div><span className="label">{unit.branch} · {locationName(unit.location)}</span><h3>{name}</h3></div>
+    </div>
+    <SheetStats values={{ Move: unit.move, Attacks: unit.attacks, Defense: unit.defense, Damage: unit.damage, ...(giant ? { Health: unit.health } : {}) }} />
+    <p><b>Movement:</b> {movementLabel(unit.movement)}</p>
+    {unit.unitTypeId === "navy-nuclear-submarine" && <div className="unit-special-rules"><strong>Submarine / cruise missile</strong><p>Submarine: move 4 through sea and seacoast, defense 5, damage 1.</p><p>As a cruise missile: fly up to 8, defense 6, damage 3.</p></div>}
+    {special && <div className="unit-special-rules"><strong>Special rule</strong><p>{special}</p></div>}
+    <p className="unit-selection-status">{status}</p>
+    <button type="button" className="stack-clear" onClick={onClear}>Deselect</button>
+  </section>;
 }

@@ -28,8 +28,8 @@ export function MovementChecklist({ game, canAct, selectedUnitId, movableUnitIds
     <div className="movement-piece-list">
       {pieces.map((piece) => {
         const moved = game.movedPieceIds.includes(piece.id);
-        return <button type="button" key={piece.id} className={`movement-piece ${piece.selected && piece.movable ? "selected" : ""} ${moved ? "completed" : ""}`}
-          aria-pressed={piece.selected && piece.movable} disabled={!canAct || !piece.movable} onClick={() => onSelect(piece.unitId)}>
+        return <button type="button" key={piece.id} className={`movement-piece ${piece.selected && (piece.unitId !== null || piece.movable) ? "selected" : ""} ${moved ? "completed" : ""}`}
+          aria-pressed={piece.selected && (piece.unitId !== null || piece.movable)} disabled={piece.unitId === null && (!canAct || !piece.movable)} onClick={() => onSelect(piece.unitId)}>
           <span className="movement-piece-icon" aria-hidden="true">{moved ? "✓" : piece.movable ? "→" : "—"}</span>
           <span><strong>{piece.name}</strong><small>{piece.kind}</small></span>
           <span className="movement-piece-status">{moved ? "Moved" : piece.movable ? "Move" : "No moves"}</span>

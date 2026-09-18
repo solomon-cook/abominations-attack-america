@@ -46,10 +46,10 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game:
     : !canPlay ? "Play on your turn when the card’s timing allows."
     : !actions.length ? "No legal play or target at this point in the turn."
     : "Ready to play.";
-  return <article className="sheet-held-card" aria-label={cardId}>
+  return <article className="sheet-held-card" aria-label={cardId} tabIndex={0}>
     <h4>{cardId}</h4>
-    <img src={`/assets/cards/${kind === "mutation" ? "monster-mutation" : "military-research"}-${slug}.webp`} alt={`${cardId} card`} loading="lazy" />
-    <details><summary>Read card rules</summary><p>{rule?.transcription ?? "Rules text unavailable."}</p><p><b>Timing:</b> {rule?.timing}</p></details>
+    <div className="sheet-card-art"><img src={`/assets/cards/${kind === "mutation" ? "monster-mutation" : "military-research"}-${slug}.webp`} alt="" loading="lazy" /></div>
+    <div className="sheet-card-rules"><p>{rule?.transcription ?? "Rules text unavailable."}</p><p><b>Timing:</b> {rule?.timing}</p></div>
     <p className="sheet-card-status">{status}</p>
     {actions.length === 1 && runCommand && <button type="button" onClick={() => void runCommand(actions[0].command)}>{actions[0].label}</button>}
     {actions.length > 1 && runCommand && <>

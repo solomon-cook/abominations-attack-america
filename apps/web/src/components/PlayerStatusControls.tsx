@@ -4,10 +4,10 @@ import { SheetCards } from "./SheetCards";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MONSTER_DEFINITIONS, type GameCommand, type GameState } from "@abominations/game-engine";
-import { MilitarySheet } from "./MilitarySheet";
+import { MilitarySheet, type DeploymentChoice } from "./MilitarySheet";
 import { movementLabel, SheetStats, SourcePhoto } from "./SheetReference";
 
-type Props = { game: GameState; monster: GameState["monsters"][number]; branch: string; playerIndex: number; canAct: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void };
+type Props = { game: GameState; monster: GameState["monsters"][number]; branch: string; playerIndex: number; canAct: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void; onSelectDeployment?: (choice: DeploymentChoice) => void };
 
 function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose }: Pick<Props, "monster" | "game" | "playerIndex" | "canAct" | "runCommand"> & { onClose: () => void }) {
   const definition = MONSTER_DEFINITIONS.find((candidate) => candidate.name === monster.name);
@@ -21,13 +21,15 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
     <div className="military-hand monster-reference-sheet" ref={ref} role="dialog" aria-modal="true" aria-labelledby="monster-sheet-title" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => {
       if (event.key === "Escape") onClose();
       if (event.key === "Tab") {
-        const controls = Array.from(ref.current?.querySelectorAll<HTMLElement>("button:not(:disabled), summary, select:not(:disabled)") ?? []);
+        const controls = Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled), summary, select:not(:disabled), [tabindex="0"]') ?? []);
         const first = controls[0], last = controls.at(-1);
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     }}>
       <div className="military-hand-toolbar"><span className="label">MONSTER RECORD SHEET</span><button className="military-sheet-close" onClick={onClose}>Close</button></div>
+      <p className="monster-sheet-scroll-hint">Swipe across to view the mutation cards beside your sheet.</p>
+      <div className="monster-sheet-workspace">
       <div className="military-sheet physical-monster-sheet">
         <div className="monster-physical-record" role="group" aria-label={`${monster.name} physical-style record`}>
           <div className="record-health-rail tens" aria-label="Health tens">{[0, 10, 20, 30, 40].map((value) => <span key={value} className={Math.floor(monster.health / 10) * 10 === value ? "health-marker" : ""}>{value}</span>)}<small>HEALTH</small></div>
@@ -52,14 +54,15 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
           <SheetStats values={{ Health: `${monster.health} / ${monster.maxHealth}`, Infamy: monster.infamy, Move: monster.move, Movement: movementLabel(monster.movement), Attacks: monster.attacks, Defense: monster.defense, Damage: monster.damage }} />
           <p>Mutation cards and combat conditions can change the printed values.</p>
         </details>
-        <SheetCards game={game} playerIndex={playerIndex} kind="mutation" canAct={canAct} runCommand={runCommand} />
         {definition && <SourcePhoto file={definition.sourceRefs[0].split("/").at(-1)!} />}
+      </div>
+        <SheetCards game={game} playerIndex={playerIndex} kind="mutation" canAct={canAct} runCommand={runCommand} />
       </div>
     </div>
   </div>;
 }
 
-export function PlayerStatusControls({ game, monster, branch, playerIndex, canAct, runCommand, onDeploy }: Props) {
+export function PlayerStatusControls({ game, monster, branch, playerIndex, canAct, runCommand, onDeploy, onSelectDeployment }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   const playCard = (command: GameCommand) => { setOpen(null); return runCommand(command); };
   return <>
@@ -74,6 +77,6 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
     </nav>
     {open && createPortal(open === "monster"
       ? <MonsterSheet monster={monster} game={game} playerIndex={playerIndex} canAct={canAct} runCommand={playCard} onClose={() => setOpen(null)} />
-      : <MilitarySheet key={open} initialSheet={open} playerIndex={playerIndex} canAct={canAct} runCommand={playCard} onDeploy={(sheet) => { setOpen(null); onDeploy(sheet); }} branch={branch} game={game} choices={[]} referenceOnly onSelect={() => {}} onClose={() => setOpen(null)} />, document.body)}
+      : <MilitarySheet key={open} initialSheet={open} playerIndex={playerIndex} canAct={canAct} runCommand={playCard} onDeploy={(sheet) => { setOpen(null); onDeploy(sheet); }} branch={branch} game={game} choices={[]} referenceOnly onSelect={(choice) => { setOpen(null); onSelectDeployment?.(choice); }} onClose={() => setOpen(null)} />, document.body)}
   </>;
 }

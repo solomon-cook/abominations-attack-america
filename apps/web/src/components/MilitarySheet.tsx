@@ -35,7 +35,8 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
   const sheets = [branch, ...new Set([...choices.map((choice) => choice.sheet), ...extraSheets].filter((sheet) => sheet !== branch))];
   const activeSheet = sheets.includes(selectedSheet) ? selectedSheet : branch;
   const pageIndex = sheets.indexOf(activeSheet);
-  const pageChoices = choices.filter((choice) => choice.sheet === activeSheet);
+  const interactiveChoices = referenceOnly && game && canAct && playerIndex === game.currentPlayer ? deploymentChoices(game) : choices;
+  const pageChoices = interactiveChoices.filter((choice) => choice.sheet === activeSheet);
   const turnPage = (direction: number) => setSelectedSheet(sheets[(pageIndex + direction + sheets.length) % sheets.length]);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -47,7 +48,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
       if (event.key === "Escape") onClose();
       if (!(event.target instanceof HTMLSelectElement) && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); turnPage(event.key === "ArrowRight" ? 1 : -1); }
       if (event.key === "Tab") {
-        const buttons = Array.from(ref.current?.querySelectorAll<HTMLElement>("button:not(:disabled), summary, select:not(:disabled)") ?? []);
+        const buttons = Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled), summary, select:not(:disabled), [tabindex="0"]') ?? []);
         const first = buttons[0], last = buttons.at(-1);
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -87,19 +88,8 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
           {game?.phase !== "deploy" && <small>Guard deployment is available during Deploy.</small>}
         </div>}
         {referenceOnly && game && <SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} />}
-        <MilitaryReference sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
+        <MilitaryReference choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
         {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Finish deployment to continue."}</p>}
-        {!referenceOnly && (["deploy", "redeploy"] as const).map((kind) => {
-          const pieces = pageChoices.filter((choice) => choice.kind === kind);
-          return pieces.length > 0 && <section key={kind} aria-label={kind === "deploy" ? "Reserve pieces" : "Deployed pieces"}>
-            <h3>{kind === "deploy" ? "Reserve · deploy a piece" : "On the board · redeploy a piece"}</h3>
-            <div className="military-sheet-pieces">{pieces.map((choice) => <button key={choice.id} onClick={() => onSelect(choice)} aria-label={`Select ${choice.typeId.replaceAll("-", " ")} ${choice.id}`}>
-              <img src={`/assets/military/${choice.typeId}.webp`} alt="" />
-              <strong>{choice.typeId.replaceAll("-", " ")}</strong>
-              <small>{choice.destinations.length} available location{choice.destinations.length === 1 ? "" : "s"}</small>
-            </button>)}</div>
-          </section>;
-        })}
         {!referenceOnly && game && <SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} />}
       </div>
       {sheets.length > 1 && <div className="military-hand-navigation">

@@ -118,3 +118,30 @@
 @media(max-width:900px) {
   .game-screen .player-sheet-peeks { width:calc(100vw - 24px); justify-content:safe center; }
 }
+.physical-military-sheet button.selectable-record-piece { border:1px solid #fff8; border-radius:8px; background:#ffffff12; padding:5px; margin:0; min-width:54px; height:76px; cursor:pointer; }
+.physical-military-sheet button.selectable-record-piece:hover,.physical-military-sheet button.selectable-record-piece:focus-visible { background:#f5efac44; outline:3px solid #fff1a7; transform:translateY(-4px); }
+.selectable-record-piece > span { position:absolute; bottom:-15px; font-size:9px; color:var(--sheet-ink); }
+.record-piece-slot.on-board img { opacity:.55; }
+.record-reserve { margin-bottom:26px; }
+.monster-reference-sheet { width:min(1320px,calc(100vw - 24px)); }
+.monster-sheet-workspace { display:grid; grid-template-columns:minmax(460px,1.45fr) minmax(300px,1fr); gap:20px; align-items:start; overflow:auto; min-height:0; padding-bottom:10px; }
+.monster-sheet-workspace > .physical-monster-sheet { max-height:none; overflow:visible; margin:0; }
+.monster-sheet-workspace > .sheet-held-cards { margin:0; border:0; padding:12px 0; min-width:0; }
+.monster-sheet-workspace > .sheet-held-cards > h3 { color:#fff1cd; margin:0 0 8px; }
+.sheet-card-art { position:relative; width:100%; aspect-ratio:1.45; overflow:hidden; border-radius:6px; background:#292e24; }
+.sheet-card-art img { position:absolute; width:100%; height:auto; max-height:none; left:0; top:50%; transform:translateY(-50%); }
+.sheet-held-card .sheet-card-rules { margin-top:12px; }
+.sheet-held-card .sheet-card-rules p { color:#18241b; font-size:15px; line-height:1.55; margin:8px 0; }
+.sheet-held-card .sheet-card-status { font-size:13px; }
+@media(min-width:901px) and (hover:hover) {
+  .sheet-held-card-grid .sheet-held-card { flex-basis:280px; width:280px; }
+  .monster-sheet-workspace .sheet-held-card-grid { padding:28px 12px 24px; }
+  .monster-sheet-workspace .sheet-held-card-grid:has(.sheet-held-card:is(:hover,:focus-within)) { padding-right:110px; }
+}
+@media(max-width:900px) {
+  .monster-sheet-workspace { grid-template-columns:460px 280px; gap:16px; }
+  .monster-sheet-workspace .sheet-held-card-grid { grid-template-columns:280px; }
+}
+.sheet-held-card:focus-visible { outline:3px solid #ffe295; outline-offset:3px; }
+.monster-sheet-scroll-hint { display:none; }
+@media(max-width:900px) { .monster-sheet-scroll-hint { display:block; color:#f3e8c9; font-size:12px!important; margin:0 0 10px; } }
