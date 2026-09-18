@@ -537,7 +537,7 @@ export const AUDITED_CELLS = [
     "orientation": "None",
     "barriers": "None",
     "crop": "None",
-    "features": "Gargantis; potential spawn location",
+    "features": "Tomanagi; potential spawn location",
     "sourceRef": "docs/authoritative-board-human-audit.md#L116"
   },
   {
@@ -1362,7 +1362,7 @@ export const AUDITED_CELLS = [
     "orientation": "None",
     "barriers": "None",
     "crop": "None",
-    "features": "Gargantis; potential spawn location",
+    "features": "Tomanagi; potential spawn location",
     "sourceRef": "docs/authoritative-board-human-audit.md#L216"
   },
   {
@@ -1593,7 +1593,7 @@ export const AUDITED_CELLS = [
     "orientation": "None",
     "barriers": "None",
     "crop": "None",
-    "features": "Gargantis; potential spawn location",
+    "features": "Tomanagi; potential spawn location",
     "sourceRef": "docs/authoritative-board-human-audit.md#L247"
   },
   {
@@ -2440,7 +2440,7 @@ export const AUDITED_CELLS = [
     "orientation": "None",
     "barriers": "Northwest, north water barriers",
     "crop": "None",
-    "features": "Tomanagi; potential spawn location",
+    "features": "Gargantis; potential spawn location",
     "sourceRef": "docs/authoritative-board-human-audit.md#L349"
   },
   {
@@ -3353,7 +3353,7 @@ export const AUDITED_CELLS = [
     "orientation": "None",
     "barriers": "None",
     "crop": "None",
-    "features": "Tomanagi; potential spawn location",
+    "features": "Gargantis; potential spawn location",
     "sourceRef": "docs/authoritative-board-human-audit.md#L462"
   },
   {

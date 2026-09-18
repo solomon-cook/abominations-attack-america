@@ -350,10 +350,17 @@
 .game-screen .bottom-context-dock button:disabled { color:#c8bcae; opacity:.7; cursor:not-allowed; }
 .game-screen .bottom-context-dock button { min-height:44px; border:1px solid #987244; border-radius:4px; background:#483424; color:#fff0d4; padding:8px 12px; }
 .game-screen .board-action-bar .action-dock > button:nth-of-type(2) { display:block; background:#45392f; color:#eee1cf; font-size:.75rem; }
+/* Full decision menus take the action dock's place. Optional research alone
+   still needs the dock's primary action to let the player continue. */
+.game-screen .layout:has(> .bottom-context-dock :is(.path-controls:not([aria-label="Available Military Research"]), .battle-choice, .retreat-choice)) > .board-action-bar { display:none; }
+.game-screen .layout > .bottom-context-dock:has(:is(.path-controls:not([aria-label="Available Military Research"]), .battle-choice, .retreat-choice)) {
+  left:auto; right:16px; bottom:16px; width:min(520px,calc(100vw - 230px)); max-height:45dvh; z-index:45;
+}
 @media(max-width:700px) {
   .game-screen .layout > .board-action-bar { left:auto; right:8px; bottom:8px; width:190px; }
   .game-screen .board-action-bar .action-dock { min-width:0; width:100%; }
   .game-screen .layout > .bottom-context-dock { left:8px; right:8px; bottom:205px; max-height:22dvh; }
+  .game-screen .layout > .bottom-context-dock:has(:is(.path-controls:not([aria-label="Available Military Research"]), .battle-choice, .retreat-choice)) { left:8px; right:8px; bottom:78px; width:auto; max-height:40dvh; }
   .game-screen .bottom-context-dock .piece-detail-tray { gap:6px; }
   .game-screen .bottom-context-dock .sheet-stats > div { padding:3px; }
   .game-screen .bottom-context-dock .sheet-stats dd { font-size:.85rem; }

@@ -320,7 +320,7 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
                 {unitsHere.map((unit) => {
                   const unitArt = unitArtForType(unit.unitTypeId);
                   return unitArt
-                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={game.phase === "move" ? (event) => { if (selectedUnitId || selectedPath.length > 1) return; event.stopPropagation(); onSelectUnit(unit.id); } : undefined} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={game.phase === "deploy" && deploymentLegal ? (event) => { event.stopPropagation(); onDeploy(placeKey); } : game.phase === "move" ? (event) => { if (selectedUnitId || selectedPath.length > 1) return; event.stopPropagation(); onSelectUnit(unit.id); } : undefined} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
                     : <i className="unit-mark tile-occupant" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
                 })}
               </span>}
