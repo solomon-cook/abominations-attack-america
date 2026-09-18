@@ -1,0 +1,47 @@
+/* Field orders: one accent for committed actions, quiet utility controls. */
+.game-screen .layout > .bottom-context-dock:has(.movement-orders) {
+  width:min(440px,calc(100vw - 230px)); padding:0; border:1px solid #7e897b;
+  border-radius:8px; background:linear-gradient(135deg,#263332,#151f20);
+  box-shadow:0 12px 36px #07111280,inset 0 1px #ffffff12; overflow:auto;
+}
+.game-screen .bottom-context-dock .movement-orders {
+  display:flex; flex-wrap:wrap; gap:8px; padding:16px; background:transparent;
+  border-top:1px solid #93a38f30; margin:0;
+}
+.orders-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; }
+.orders-kicker { color:#d6c788; text-transform:uppercase; letter-spacing:2px; font-size:10px; font-weight:800; }
+.orders-count { color:#c2cec4; font-size:11px; font-variant-numeric:tabular-nums; }
+.game-screen .movement-orders .orders-instruction { flex-basis:100%; margin:3px 0 6px; color:#f2f0df; font-size:16px; line-height:1.4; }
+.game-screen .bottom-context-dock .movement-orders button { flex:0 1 auto; width:auto; min-height:40px; margin:0; padding:9px 13px; border-radius:4px; font-size:12px; font-weight:600; line-height:1.3; transition:background .15s,color .15s; }
+.game-screen .bottom-context-dock .movement-orders .order-primary { background:#e4ca79; color:#182322; border:1px solid #f3dea0; flex:1 1 60%; display:flex; align-items:center; justify-content:space-between; }
+.game-screen .bottom-context-dock .movement-orders .order-secondary { background:#ffffff08; color:#eee9d3; border:1px solid #9aa88a60; }
+.game-screen .bottom-context-dock .movement-orders .order-quiet,
+.game-screen .bottom-context-dock .movement-orders .order-end { background:transparent; color:#c3cbbf; border:1px solid transparent; }
+.game-screen .bottom-context-dock .movement-orders button:hover:not(:disabled) { background:#42534c; color:#fff4cc; }
+.game-screen .bottom-context-dock .movement-orders .order-primary:hover:not(:disabled) { background:#f3dea0; color:#182322; }
+.game-screen .bottom-context-dock .movement-orders button:disabled { opacity:.45; }
+.game-screen .bottom-context-dock :is(button,summary):focus-visible { outline:2px solid #f3dea0; outline-offset:3px; }
+.orders-footer { display:flex; flex-basis:100%; align-items:center; justify-content:space-between; gap:8px; border-top:1px solid #93a38f30; margin-top:5px; padding-top:7px; }
+.orders-footer > span { font-size:11px; color:#a6b4aa; }
+.game-screen .bottom-context-dock .movement-orders .order-end { padding-right:0; color:#e1d8ae; }
+.game-screen .bottom-context-dock .unit-command-record { position:relative; display:grid; grid-template-columns:1fr auto; gap:10px; padding:16px; border:0; border-radius:0; background:linear-gradient(120deg,#81927e15,transparent); }
+.game-screen .bottom-context-dock .unit-command-record .unit-detail-heading { min-width:0; padding-right:26px; gap:12px; grid-column:1 / -1; }
+.game-screen .bottom-context-dock .unit-command-record .unit-detail-heading img { width:60px; height:60px; margin:0; filter:drop-shadow(0 4px 5px #0008); }
+.game-screen .unit-command-record .label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:#b3c1b7; }
+.game-screen .unit-command-record h3 { font-family:Impact,'Arial Narrow',sans-serif; font-size:26px; text-transform:uppercase; letter-spacing:1px; margin:4px 0 0; color:#f2ecd5; }
+.game-screen .bottom-context-dock .unit-command-record .sheet-stats { grid-column:1 / -1; display:flex; gap:0; margin:0; border-block:1px solid #93a38f30; padding:9px 0; }
+.game-screen .bottom-context-dock .unit-command-record .sheet-stats > div { flex:1; padding:0 12px; border-right:1px solid #93a38f30; border-radius:0; background:transparent; }
+.game-screen .bottom-context-dock .unit-command-record .sheet-stats > div:first-child { padding-left:0; }
+.game-screen .bottom-context-dock .unit-command-record .sheet-stats > div:last-child { border:0; }
+.game-screen .unit-command-record .sheet-stats dt { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:#b3c1b7; }
+.game-screen .unit-command-record .sheet-stats dd { font-size:22px; margin:3px 0 0; color:#f2ecd5; }
+.unit-movement-type { color:#bacaba; font-size:11px; }
+.game-screen .unit-command-record .unit-selection-status { grid-column:1 / -1; margin:0; font-size:12px; color:#bacaba; }
+.game-screen .unit-command-record .unit-special-rules { grid-column:1 / -1; font-size:12px; color:#bacaba; }
+.unit-command-record summary { cursor:pointer; padding:8px 0; }
+.game-screen .bottom-context-dock .unit-command-record .stack-clear { position:absolute; right:8px; top:8px; min-width:36px; min-height:36px; padding:0; font-size:24px; border:0; background:transparent; color:#bacaba; }
+@media(max-width:700px) {
+  .game-screen .layout > .bottom-context-dock:has(.movement-orders) { width:auto; }
+  .game-screen .bottom-context-dock .movement-orders,.game-screen .bottom-context-dock .unit-command-record { padding:12px; }
+}
+@media(prefers-reduced-motion:reduce) { .game-screen .bottom-context-dock .movement-orders button { transition:none; } }

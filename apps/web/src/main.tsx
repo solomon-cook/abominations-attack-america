@@ -78,6 +78,7 @@ import "./fullscreen-shell.css";
 import "./board-terrain.css";
 import "./physical-sheets.css";
 import "./chat-ui.css";
+import "./command-panels.css";
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -1183,22 +1184,22 @@ function App() {
             }}
           />
             {activeGame.phase === "move" ? (
-              <div className="path-controls" aria-label="Movement orders">
-                <p aria-live="polite">{selectableUnitIds.size + (legalPaths.length > 0 ? 1 : 0)} pieces remaining · {selectedUnitId ? (activeGame.units.find(unit => unit.id === selectedUnitId)?.unitTypeId ?? "Military unit").replaceAll("-", " ") : legalPaths.length ? activePlayer.name : "Movement complete"}</p>
+              <div className="path-controls movement-orders" aria-label="Movement orders">
+                <div className="orders-heading"><span className="orders-kicker">Movement orders</span><span className="orders-count">{selectableUnitIds.size + (legalPaths.length > 0 ? 1 : 0)} remaining</span></div>
+                <p className="orders-instruction" aria-live="polite">{(selectedUnitId ? selectedUnitPath.length > 1 : selectedPath.length > 1) ? "Route plotted. Ready to move." : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? "Choose a glowing destination." : selectableUnitIds.size || legalPaths.length ? "Select another piece to move." : "All pieces accounted for."}</p>
                 {(selectedUnitId ? selectedUnitPath.length > 1 : selectedPath.length > 1) && <>
-                  <button disabled={!canAct} onClick={() => void runCommand(selectedUnitId
+                  <button className="order-primary" disabled={!canAct} onClick={() => void runCommand(selectedUnitId
                     ? { type: "move-unit", unitId: selectedUnitId, path: selectedUnitPath }
-                    : { type: "move", path: selectedPath })}>Confirm {selectedUnitId ? "unit " : ""}path</button>
-                  <button className="cancel" disabled={pendingAction} onClick={() => { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); }}>Cancel path</button>
+                    : { type: "move", path: selectedPath })}>Confirm move <span aria-hidden="true">→</span></button>
+                  <button className="cancel order-quiet" disabled={pendingAction} onClick={() => { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); }}>Cancel path</button>
                 </>}
                 {(selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) && <>
-                  <span>Select a glowing destination, or stay here and continue to the next piece.</span>
-                  <button disabled={!canAct} onClick={() => void runCommand({ type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id })}>Stay · next piece →</button>
+                  <button className="order-secondary" disabled={!canAct} onClick={() => void runCommand({ type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id })}>Hold position <span aria-hidden="true">→</span></button>
                 </>}
                 {!selectedUnitId && !activeGame.movedPieceIds.includes(activePlayer.id) && activeGame.setupAssignments?.[activeGame.currentPlayer]?.lair && activeGame.monsters[activeGame.currentPlayer]?.location !== "hollywood" && (
-                  <button disabled={!canAct} onClick={() => runIrreversibleAction(() => void runCommand({ type: "disappear-monster" }), "Leave the monster in its lair and consume the Move step?")}>Disappear instead of moving</button>
+                  <button className="order-quiet" disabled={!canAct} onClick={() => runIrreversibleAction(() => void runCommand({ type: "disappear-monster" }), "Leave the monster in its lair and consume the Move step?")}>Disappear to lair</button>
                 )}
-                <button className="cancel" disabled={!canAct} onClick={() => void runCommand({ type: "pass-move" })}>{selectableUnitIds.size || legalPaths.length ? "End movement for all pieces →" : "Finish movement →"}</button>
+                <div className="orders-footer"><span> {selectableUnitIds.size || legalPaths.length ? "Done with all pieces?" : "Proceed to the next phase"}</span><button className="order-end" disabled={!canAct} onClick={() => void runCommand({ type: "pass-move" })}>{selectableUnitIds.size || legalPaths.length ? "End movement" : "Finish movement"} <span aria-hidden="true">→</span></button></div>
               </div>
             ) : activeGame.phase === "fight" || activeGame.phase === "encounter" || activeGame.phase === "deploy" ? (
               <PhaseActions
