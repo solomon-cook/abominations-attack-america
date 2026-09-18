@@ -93,8 +93,10 @@ function unitArtForType(unitTypeId?: string) {
 
 function monsterArtForName(name: string) {
   const slug = name.toLowerCase().replaceAll(" ", "-");
+  // Board figures for these two monsters are named opposite to their portraits.
+  const boardAssetSlug = slug === "tomanagi" ? "gargantis-light" : slug === "gargantis" ? "tomanagi-dark" : monsterAssetSlug(slug);
   return ["gargantis", "konk", "megaclaw", "tomanagi", "toxicor", "zorb"].includes(slug)
-    ? `/assets/monsters/${monsterAssetSlug(slug)}.webp`
+    ? `/assets/monsters/${boardAssetSlug}.webp`
     : undefined;
 }
 
