@@ -203,9 +203,16 @@ function App() {
     [activeGame, selectedUnitId],
   );
   const selectableUnitIds = useMemo(
-    () => new Set(activeGame.units.filter((unit) => legalUnitPaths(activeGame, unit.id).length > 0).map((unit) => unit.id)),
+    () => activeGame.phase === "move" ? new Set(activeGame.units.filter((unit) => legalUnitPaths(activeGame, unit.id).length > 0).map((unit) => unit.id)) : new Set<string>(),
     [activeGame],
   );
+  useEffect(() => {
+    if (activeGame.phase === "deploy" && selectedUnitId) {
+      setSelectedUnitId(null);
+      setSelectedUnitPath([]);
+      setSelectedPath([]);
+    }
+  }, [activeGame.phase, selectedUnitId]);
   const legalUnitDestinations = useMemo(
     () => new Set(legalUnitPathsForSelection.map((path) => path.at(-1)!)),
     [legalUnitPathsForSelection],

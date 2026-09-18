@@ -10,7 +10,10 @@ import {
   type HexKey,
   type BoardHex,
 } from "@abominations/game-engine";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { mutationArt } from "./MutationStrip";
+import { cardDefinition } from "@abominations/game-engine";
 import { buildDisplayHexLayout, AUDITED_TILE_WIDTH_PERCENT } from "../board-layout";
 import { boardForGame } from "../board-pin";
 import { TerrainArt, FeatureMarkers, BoardGridLines } from "./BoardTerrain";
@@ -124,6 +127,9 @@ type Props = {
 };
 
 export function HexGrid({ setupLocations, onSetupLocation, deploymentDestinations, onDeploy, onSelectMonster, game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
+  const [monsterPeek, setMonsterPeek] = useState<{id:string;x:number;y:number} | null>(null);
+  const peekMonster = game.monsters.find(monster => monster.id === monsterPeek?.id);
+  const peekCards = peekMonster ? (game.players[game.monsters.indexOf(peekMonster)]?.mutationCardIds ?? []).filter(id=>cardDefinition(id)) : [];
   const board = boardForGame(game);
   const audited = board?.id === AUDITED_BOARD.id;
   const boardHexes = displayHexesForGame(game);
@@ -270,18 +276,18 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
                 moveFocus(event.key.slice(5).toLowerCase() as "left" | "right" | "up" | "down");
               }
             }}
-            onMouseEnter={() => (monsterLegal || unitLegal) && onPreviewPath(placeKey)}
-            onMouseLeave={onClearPreview}
+            onMouseEnter={(event) => { if(monsterLegal || unitLegal) onPreviewPath(placeKey); const monster=game.monsters.find(m=>m.location===placeKey); if(monster) {const r=event.currentTarget.getBoundingClientRect();setMonsterPeek({id:monster.id,x:r.left+r.width/2,y:r.top});} }}
+            onMouseLeave={() => {onClearPreview();setMonsterPeek(null);}}
             onClick={(event) => {
               if (setupLegal) { onSetupLocation?.(placeKey); return; }
               if (deploymentLegal) { onDeploy(placeKey); return; }
-              if (event.shiftKey && occupantCount > 0) onSelectStack(placeKey);
-              else if (selectableUnit && !selectedUnitId && selectedPath.length < 2) onSelectUnit(selectableUnit.id);
+              if (game.phase === "move" && event.shiftKey && occupantCount > 0) onSelectStack(placeKey);
+              else if (game.phase === "move" && selectableUnit && !selectedUnitId && selectedPath.length < 2) onSelectUnit(selectableUnit.id);
               else if (monsterLegal || unitLegal) {
                 if (selectedUnitId) onChooseUnitPath(placeKey);
                 else onChoosePath(placeKey);
-              } else if (inspectableUnit && !selectedUnitId) onSelectUnit(inspectableUnit.id);
-              else if (occupantCount > 0) onSelectStack(placeKey);
+              } else if (game.phase === "move" && inspectableUnit && !selectedUnitId) onSelectUnit(inspectableUnit.id);
+              else if (game.phase !== "deploy" && occupantCount > 0) onSelectStack(placeKey);
               else onFocusHex(placeKey);
             }}
           >
@@ -314,7 +320,7 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
                 {unitsHere.map((unit) => {
                   const unitArt = unitArtForType(unit.unitTypeId);
                   return unitArt
-                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={(event) => { if (game.phase === "move" && (selectedUnitId || selectedPath.length > 1)) return; event.stopPropagation(); onSelectUnit(unit.id); }} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={game.phase === "move" ? (event) => { if (selectedUnitId || selectedPath.length > 1) return; event.stopPropagation(); onSelectUnit(unit.id); } : undefined} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
                     : <i className="unit-mark tile-occupant" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
                 })}
               </span>}
@@ -322,6 +328,11 @@ export function HexGrid({ setupLocations, onSetupLocation, deploymentDestination
           </button>
         );
       })}
+      {peekMonster && monsterPeek && createPortal(<aside className="board-monster-peek" style={{left:Math.max(8,Math.min(monsterPeek.x-160,window.innerWidth-328)),top:Math.max(8,monsterPeek.y-(peekCards.length ? 240 : 90))}}>
+        <strong>{peekMonster.name}</strong><span>Health {peekMonster.health}/{peekMonster.maxHealth} · Attacks {peekMonster.attacks} · Defense {peekMonster.defense} · Damage {peekMonster.damage}</span>
+        <div>{peekCards.map(id=><img key={id} src={mutationArt(id)} alt={id} title={id} />)}</div>
+        {!peekCards.length && <small>No revealed mutations</small>}
+      </aside>,document.body)}
     </div>
   );
 }

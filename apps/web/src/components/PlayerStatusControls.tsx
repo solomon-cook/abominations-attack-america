@@ -1,8 +1,9 @@
 import { ownedMilitarySheets } from "./owned-sheets";
+import { MutationStrip } from "./MutationStrip";
 import { SheetCards } from "./SheetCards";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MONSTER_DEFINITIONS, type GameCommand, type GameState } from "@abominations/game-engine";
+import { MONSTER_DEFINITIONS, UNIT_DEFINITIONS, type GameCommand, type GameState } from "@abominations/game-engine";
 import { MilitarySheet, type DeploymentChoice } from "./MilitarySheet";
 import { movementLabel, SheetStats, SourcePhoto } from "./SheetReference";
 
@@ -63,8 +64,38 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
 
 export function PlayerStatusControls({ game, monster, branch, playerIndex, canAct, runCommand, onDeploy, onSelectDeployment }: Props) {
   const [open, setOpen] = useState<string | null>(null);
+  const [tab, setTab] = useState<"monster" | "military" | "map">("monster");
+  const roster = UNIT_DEFINITIONS.filter(unit => unit.branch === branch);
+  const available = game.units.filter(unit => unit.ownerPlayer === playerIndex && !game.removedUnitIds.includes(unit.id) && unit.location !== "permanently-removed");
   const playCard = (command: GameCommand) => { setOpen(null); return runCommand(command); };
   return <>
+    <section className="persistent-record" data-record-tab={tab} aria-label="Player record and map">
+      <div className="record-tabs" role="tablist" aria-label="Record view">{(["monster", "military", "map"] as const).map(view => <button key={view} role="tab" id={`record-tab-${view}`} aria-selected={tab === view} aria-controls="record-panel" tabIndex={tab === view ? 0 : -1} onClick={() => setTab(view)} onKeyDown={event => {
+        const views = ["monster", "military", "map"] as const;
+        if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); const next = views[(views.indexOf(view) + (event.key === "ArrowRight" ? 1 : 2)) % 3]; setTab(next); document.getElementById(`record-tab-${next}`)?.focus(); }
+      }}>{view === "monster" ? "Monster" : view === "military" ? "Military" : "Map"}</button>)}</div>
+      <div id="record-panel" role="tabpanel" aria-labelledby={`record-tab-${tab}`}>
+        {tab === "monster" && <button className="record-preview" onClick={() => setOpen("monster")} aria-label={`Open ${monster.name} monster sheet`}>
+          <img src={`/assets/monsters/portraits/${monster.name.toLowerCase()}.webp`} alt="" />
+          <span className="record-preview-body"><small>PLAYER {playerIndex + 1} · MONSTER RECORD</small><strong>{monster.name}</strong>
+            <span>Health <b>{monster.health}/{monster.maxHealth}</b> · ★ {monster.infamy} Infamy</span>
+            <meter min={0} max={monster.maxHealth} value={monster.health} aria-label="Monster health" />
+            <span className="record-mini-stats">Move <b>{monster.move}</b> · Attacks <b>{monster.attacks}</b> · Defense <b>{monster.defense}</b> · Damage <b>{monster.damage}</b></span>
+            <small>Open full sheet ↗</small>
+          </span>
+        </button>}
+        {tab === "monster" && <MutationStrip cards={game.players[playerIndex]?.mutationCardIds ?? []} />}
+        {tab === "military" && <button className="record-preview military-record-preview" onClick={() => setOpen(branch)} aria-label={`Open ${branch} military sheet`}>
+          <img src={`/assets/military/${roster[0]?.id ?? "army-tank"}.webp`} alt="" />
+          <span className="record-preview-body"><small>PLAYER {playerIndex + 1} · MILITARY RECORD</small><strong>{branch}</strong>
+            <span>{available.filter(unit => unit.location !== "record-tile").length} deployed · {available.filter(unit => unit.location === "record-tile").length} reserve</span>
+            <span>{game.players[playerIndex]?.researchCardIds.length ?? 0} Research cards</span>
+            <span className="record-mini-stats">{roster.map(unit => `${unit.name} · Move ${unit.move}`).join(" / ")}</span><small>Open full sheet ↗</small>
+          </span>
+        </button>}
+        {tab === "map" && <span className="record-map-space" aria-label="Map overview below" />}
+      </div>
+    </section>
     <nav className="player-sheet-peeks" aria-label={`Player ${playerIndex + 1} reference sheets`}>
       {[{ id: "monster", name: monster.name, kind: "Monster", theme: "monster", count: game.players[playerIndex]?.mutationCardIds.length ?? 0 },
         ...ownedMilitarySheets(game, playerIndex, branch).map((name) => ({ id: name, name, kind: "Military", theme: name, count: name === branch ? game.players[playerIndex]?.researchCardIds.length ?? 0 : undefined })),

@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 import { boardForGame } from "../board-pin";
+import { deploymentChoices } from "./MilitarySheet";
 
 type AttackTargetDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type: "attack-target" }>;
 type BattleDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type: "battle-resolution" }>;
@@ -161,10 +162,11 @@ export function PhaseActions({
 
   if (activeGame.phase === "deploy") {
     const deploymentStarted = activeGame.deploymentsThisTurn > 0;
+    const canDeployMore = deploymentChoices(activeGame).length > 0;
     return <div className="path-controls">
       {defenseSatellitesButton}
-      <button disabled={!canAct} onClick={onOpenMilitarySheet}>Open military sheet · deploy or redeploy</button>
-      <button disabled={!canAct || deploymentStarted || activeGame.decks.research.exhausted} onClick={() => void runCommand({ type: "draw-research" })}>{activeGame.decks.research.exhausted ? "Military Research exhausted" : deploymentStarted ? "Military Research unavailable after deployment" : "Draw Military Research instead"}</button>
+      <button disabled={!canAct || !canDeployMore} onClick={onOpenMilitarySheet}>{canDeployMore ? "Open military sheet · deploy or redeploy" : "No legal deployments remaining"}</button>
+      <button disabled={!canAct || !canDeployMore || deploymentStarted || activeGame.decks.research.exhausted} onClick={() => void runCommand({ type: "draw-research" })}>{activeGame.decks.research.exhausted ? "Military Research exhausted" : deploymentStarted ? "Military Research unavailable after deployment" : !canDeployMore ? "No deployment options remaining" : "Draw Military Research instead"}</button>
       <button className="cancel" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Finish deployment</button>
     </div>;
   }
