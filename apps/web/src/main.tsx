@@ -960,7 +960,7 @@ function App() {
       <header>
         <div className="top-turn-summary">
           <div className="turn-hud-heading">
-            <div><span className="label">{canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER {decisionPlayer + 1}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{activePlayer.name} · {action}</h2></div>
+            <div><span className="label">{!setupComplete ? "GAME SETUP" : canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER {decisionPlayer + 1}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? `${activePlayer.name} · ${action}` : "Monster and branch selection"}</h2></div>
             <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="turn-hud-body" aria-label={gamePanelOpen ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelOpen ? "−" : "+"}</button>
           </div>
           <TurnProgress game={activeGame} />

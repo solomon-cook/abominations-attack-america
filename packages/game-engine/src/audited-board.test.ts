@@ -62,7 +62,7 @@ test("Chicago remains land-accessible while lake crossings and naval eligibility
   assert.equal(movementPathAllowed(AUDITED_BOARD, [key(3, 15)], "land-only"), true);
 });
 
-test("all six source monsters receive three audited lairs, including the confirmed Gargantis site", () => {
+test("all six source monsters receive three audited lairs, including confirmed Tomanagi", () => {
   const setup = auditedSetupDefinition(2);
   assert.equal(setup.monsterIds.length, 6);
   for (const monster of monsters) {
@@ -71,7 +71,7 @@ test("all six source monsters receive three audited lairs, including the confirm
     assert.equal(new Set(lairs).size, 3);
     for (const lair of lairs) assert.equal(AUDITED_BOARD.hexes[lair as keyof typeof AUDITED_BOARD.hexes].features.some((feature) => feature.kind === "lair" && feature.monsterId === monster.name.toLowerCase()), true);
   }
-  assert.ok(setup.lairsByMonster["monster-6"].includes(key(10, 2)));
+  assert.ok(setup.lairsByMonster["monster-2"].includes(key(10, 2)));
 });
 
 test("new rooms use audited pins and materialize selected monsters on their actual lairs", () => {
