@@ -22,6 +22,18 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartProv
           <p className="home-kicker">2–4 players · Turn-based strategy</p>
           <h1 id="home-title">Abominations<br /><span>attack</span><br />America.</h1>
           <p className="home-description">Pick your monster. Command your military.<br />Leave your mark on the map.</p>
+          <label className="home-player-count">
+            <span>Players</span>
+            <select
+              aria-label="Number of players"
+              value={lobbyProps.playerCount}
+              onChange={(event) => lobbyProps.onPlayerCountChange(Number(event.target.value) as 2 | 3 | 4)}
+            >
+              <option value="2">2 players</option>
+              <option value="3">3 players</option>
+              <option value="4">4 players</option>
+            </select>
+          </label>
           <button className="home-start" type="button" onClick={onStartLocal}>Start local game <span aria-hidden="true">→</span></button>
           <p className="home-local-note">One screen. Everyone at the table.</p>
         </div>

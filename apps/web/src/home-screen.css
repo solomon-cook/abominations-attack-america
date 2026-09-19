@@ -11,6 +11,9 @@ body:has(.home-screen) { background: #eee9dd; }
 .home-screen h1 { font-family: Impact, 'Arial Narrow', 'Helvetica Neue', sans-serif; font-weight: 900; font-size: clamp(48px, 6.4vw, 84px); line-height: .98; letter-spacing: -.025em; text-transform: uppercase; }
 .home-screen h1 span { color: #ac3d24; }
 .home-description { margin-top: 26px; font-size: 15px; line-height: 1.65; color: #55594e; }
+.home-player-count { display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: 320px; margin-top: 28px; padding: 11px 0; border-block: 1px solid #c7c8b9; color: #55594e; font-size: 13px; }
+.home-player-count span { font-weight: 650; }
+.home-player-count select { min-height: 38px; padding: 0 32px 0 11px; border: 1px solid #a8aa9c; border-radius: 2px; background: #faf6ec; color: #252923; font: inherit; }
 .home-screen .home-start { display: flex; justify-content: space-between; align-items: center; gap: 50px; margin-top: 30px; padding: 16px 22px; border: 1px solid #252923; border-radius: 2px; background: #252923; color: #faf6ec; font-size: 14px; font-weight: 650; }
 .home-start:hover { background: #ac3d24; border-color: #ac3d24; }
 .home-local-note { margin-top: 10px; font-size: 11px; color: #66695f; }

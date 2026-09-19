@@ -834,8 +834,7 @@ function App() {
     setSession(null);
     setRoom(null);
     setError("");
-    setPlayerCount(2);
-    const next = createMvpRoomGame(2);
+    const next = createMvpRoomGame(playerCount);
     setLocalSetup(next.setupState!);
     setGame(next);
     localStorage.removeItem("abominations-session");
