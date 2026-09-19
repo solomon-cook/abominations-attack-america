@@ -16,7 +16,6 @@ import {
   PROVISIONAL_AUTHORITATIVE_BOARD,
   isHexKey,
   getLocation,
-  legalMonsterDestinations,
   legalMonsterPaths,
   legalUnitPaths,
   legalSubmarineTargets,
@@ -84,6 +83,7 @@ import "./command-panels.css";
 import "./encounter-command.css";
 import "./monster-selection.css";
 import "./setup-command.css";
+import "./home-screen.css";
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -205,8 +205,8 @@ function App() {
     [activeGame, activePlayer.id],
   );
   const legalDestinations = useMemo(
-    () => new Set(legalMonsterDestinations(activeGame, activePlayer.id)),
-    [activeGame, activePlayer.id],
+    () => new Set(legalPaths.map((path) => path.at(-1)!)),
+    [legalPaths],
   );
   useEffect(() => {
     if (!selectedUnitId) return;
@@ -1216,7 +1216,7 @@ function App() {
               onChoosePath={choosePath}
               onChooseUnitPath={chooseUnitPath}
               onPreviewPath={previewPath}
-              onClearPreview={() => setHoveredPath([])}
+              onClearPreview={() => setHoveredPath((current) => current.length ? [] : current)}
             />
           </BoardViewport>
           {choosingSubmarineTarget && <div className="deployment-prompt" role="status">Choose a glowing monster to launch the cruise missile. <button onClick={() => setSubmarineTargetingId(null)}>Cancel</button></div>}

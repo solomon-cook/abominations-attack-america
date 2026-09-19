@@ -9,8 +9,9 @@ import {
   type GameState,
   type HexKey,
   type BoardHex,
+  type BoardDefinition,
 } from "@abominations/game-engine";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { mutationArt } from "./MutationStrip";
 import { cardDefinition } from "@abominations/game-engine";
@@ -21,8 +22,7 @@ import { StompedMarker } from "./BoardFeatureOverlays";
 import { monsterAssetSlug } from "../monster-assets";
 import "../board-pieces.css";
 
-function displayHexesForGame(game: GameState) {
-  const board = boardForGame(game);
+function displayHexesForBoard(board: BoardDefinition | undefined) {
   if (!board) return [];
   if (board.id === AUDITED_BOARD.id || board.id === FULL_HONEYCOMB_BOARD.id || board.id === PROVISIONAL_AUTHORITATIVE_BOARD.id) {
     return buildDisplayHexLayout(board).map(({ hex, left, top }) => ({
@@ -137,13 +137,28 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
   const peekCards = peekMonster ? (game.players[game.monsters.indexOf(peekMonster)]?.mutationCardIds ?? []).filter(id=>cardDefinition(id)) : [];
   const board = boardForGame(game);
   const audited = board?.id === AUDITED_BOARD.id;
-  const boardHexes = displayHexesForGame(game);
+  const boardHexes = useMemo(() => displayHexesForBoard(board), [board]);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const boardIndex = board ? buildBoardIndex(board) : undefined;
+  const boardIndex = useMemo(() => board ? buildBoardIndex(board) : undefined, [board]);
   const activeNeighbours = new Set(board && isHexKey(game.monsters.find((monster) => monster.id === activePlayerId)?.location ?? "")
     ? boardIndex?.neighbours[game.monsters.find((monster) => monster.id === activePlayerId)!.location as HexKey] ?? []
     : []);
-  const displayByKey = new Map(boardHexes.map(({ hex, left, top }) => [hex.key, { left, top }]));
+  const displayByKey = useMemo(() => new Map(boardHexes.map(({ hex, left, top }) => [hex.key, { left, top }])), [boardHexes]);
+  const occupants = useMemo(() => {
+    const monsters = new Map<string, GameState["monsters"]>();
+    const units = new Map<string, GameState["units"]>();
+    for (const monster of game.monsters) {
+      const group = monsters.get(monster.location) ?? [];
+      group.push(monster);
+      monsters.set(monster.location, group);
+    }
+    for (const unit of game.units) {
+      const group = units.get(unit.location) ?? [];
+      group.push(unit);
+      units.set(unit.location, group);
+    }
+    return { monsters, units };
+  }, [game.monsters, game.units]);
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
   const selectedDisplayPath = selectedUnitId ? selectedUnitPath : selectedPath;
   const path = hoveredPath.length > 1 ? hoveredPath : selectedDisplayPath;
@@ -178,20 +193,22 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
       )}
       {boardHexes.map(({ hex, place, left, top, developmentFixture }) => {
         const placeKey = hex.key;
+        const monstersHere = occupants.monsters.get(placeKey) ?? [];
+        const unitsHere = occupants.units.get(placeKey) ?? [];
         const setupLegal = setupLocations?.has(placeKey) ?? false;
         const retreatLegal = canAct && game.phase === "fight" && retreatDestinations.has(placeKey);
         const deploymentLegal = setupLegal || canAct && game.phase === "deploy" && deploymentDestinations.has(placeKey);
         const monsterLegal = canAct && game.phase === "move" && legalDestinations.has(placeKey);
         const unitLegal = canAct && game.phase === "move" && legalUnitDestinations.has(placeKey);
-        const inspectableUnit = game.units.find((unit) => unit.location === placeKey);
-        const selectableUnit = canAct ? game.units.find((unit) => unit.location === placeKey && selectableUnitIds.has(unit.id)) : undefined;
+        const inspectableUnit = unitsHere[0];
+        const selectableUnit = canAct ? unitsHere.find((unit) => selectableUnitIds.has(unit.id)) : undefined;
         const featureText = hex.features.map((feature) => feature.kind).join(", ");
         const neighbourText = (boardIndex?.neighbours[placeKey] ?? [])
           .map((neighbourKey) => board?.hexes[neighbourKey]?.label ?? neighbourKey)
           .join(", ");
         const occupantText = [
-          ...game.monsters.filter((monster) => monster.location === placeKey).map((monster) => monster.name),
-          ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} unit`),
+          ...monstersHere.map((monster) => monster.name),
+          ...unitsHere.map((unit) => `${unit.branch} unit`),
         ].join(", ");
         const displayName = setupLocations?.get(placeKey) ?? place?.name ?? hex.label ?? (audited ? `${hex.waterClass} cell ${hex.audit?.row}/${hex.audit?.column}` : `Unresolved ${hex.key}`);
         const provisionalFeatureName = (audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id) && hex.features.some((feature) => feature.kind === "city")
@@ -211,8 +228,8 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
             : "Not currently reachable";
         const selectedPathCost = path.includes(placeKey) ? path.indexOf(placeKey) : undefined;
         const combatStrength = [
-          ...game.units.filter((unit) => unit.location === placeKey).map((unit) => `${unit.branch} ${unit.attacks} attack${unit.attacks === 1 ? "" : "s"}/${unit.damage} damage/${unit.defense} Defense`),
-          ...game.monsters.filter((monster) => monster.location === placeKey).map((monster) => `${monster.name} ${monster.health}/${monster.maxHealth} Health/${monster.infamy} Infamy`),
+          ...unitsHere.map((unit) => `${unit.branch} ${unit.attacks} attack${unit.attacks === 1 ? "" : "s"}/${unit.damage} damage/${unit.defense} Defense`),
+          ...monstersHere.map((monster) => `${monster.name} ${monster.health}/${monster.maxHealth} Health/${monster.infamy} Infamy`),
         ].join(", ");
         const tooltipText = [
           `${displayName || `Hex ${hex.key}`} · ${hex.key}`,
@@ -231,8 +248,6 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
             : "/assets/board/coast/coast_0deg.webp";
         const boardArt = audited ? undefined : boardArtForHex(hex, place);
         const stomped = game.stompedLocations.includes(placeKey);
-        const monstersHere = game.monsters.filter((monster) => monster.location === placeKey);
-        const unitsHere = game.units.filter((unit) => unit.location === placeKey);
         const occupantCount = monstersHere.length + unitsHere.length;
         const provisionalBoard = audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id;
         const actionUnavailable = !deploymentLegal && !retreatLegal && !inspectableUnit && (!canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit));

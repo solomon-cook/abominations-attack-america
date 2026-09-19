@@ -12,24 +12,30 @@ type Props = LobbyPanelProps & {
 export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartProvisionalPlaytest, onOpenBoardReview, onStartVictoryScenario, ...lobbyProps }: Props) {
   return (
     <main className="home-screen">
-      <section className="home-hero" aria-labelledby="home-title">
-        <img src="/assets/board/original-game-hero.webp" alt="Monster and military game board" />
-        <div className="home-hero-copy">
-          <p className="eyebrow">ABOMINATIONS ATTACK AMERICA</p>
-          <h1 id="home-title">Take the city.<br />Become the legend.</h1>
-          <p className="lede">A monster strategy game of cities, battles, and bad decisions.</p>
-          <div className="home-actions">
-            <button type="button" onClick={onStartLocal}>Start local game</button>
-            <button type="button" className="ghost" onClick={onStartProvisionalPlaytest}>Play audited board</button>
-            <button type="button" className="ghost" onClick={onStartVictoryScenario}>Victory test</button>
-            <button type="button" className="ghost" onClick={onOpenBoardReview}>Review full board</button>
-            <button type="button" className="ghost" onClick={onToggleRules}>Rules</button>
-          </div>
+      <header className="home-masthead">
+        <span className="home-wordmark">AAA</span>
+        <span className="home-edition">A game of monsters & military might</span>
+        <button type="button" className="home-text-button" onClick={onToggleRules} aria-expanded={rulesOpen} aria-controls="home-rules">How to play <span aria-hidden="true">↗</span></button>
+      </header>
+      <section className="home-intro" aria-labelledby="home-title">
+        <div className="home-intro-copy">
+          <p className="home-kicker">2–4 players · Turn-based strategy</p>
+          <h1 id="home-title">Abominations<br /><span>attack</span><br />America.</h1>
+          <p className="home-description">Pick your monster. Command your military.<br />Leave your mark on the map.</p>
+          <button className="home-start" type="button" onClick={onStartLocal}>Start local game <span aria-hidden="true">→</span></button>
+          <p className="home-local-note">One screen. Everyone at the table.</p>
         </div>
+        <figure className="home-monster">
+          <img src="/assets/monsters/megaclaw.webp" alt="Megaclaw, the game's giant orange clawed monster" />
+          <figcaption><span>Meet the abominations</span><strong>01 / Megaclaw</strong></figcaption>
+        </figure>
       </section>
-      <LobbyPanel {...lobbyProps} />
+      <details className="home-online" open={lobbyProps.online || Boolean(lobbyProps.roomCode) || undefined}>
+        <summary><span>Playing from different cities?</span><strong>Play online <span aria-hidden="true">+</span></strong></summary>
+        <LobbyPanel {...lobbyProps} />
+      </details>
       {rulesOpen && (
-        <section className="home-rules" aria-label="Rules reference">
+        <section id="home-rules" className="home-rules" aria-label="Rules reference">
           <div>
             <span className="label">QUICK RULES</span>
             <h2>One turn, four decisions</h2>
@@ -38,6 +44,17 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartProv
           <button type="button" className="ghost" onClick={onToggleRules}>Close rules</button>
         </section>
       )}
+      <footer className="home-footer">
+        <span>Abominations Attack America</span>
+        <details className="home-tools">
+          <summary>Playtest tools</summary>
+          <div>
+            <button type="button" onClick={onStartProvisionalPlaytest}>Play audited board</button>
+            <button type="button" onClick={onOpenBoardReview}>Review full board</button>
+            <button type="button" onClick={onStartVictoryScenario}>Victory test</button>
+          </div>
+        </details>
+      </footer>
     </main>
   );
 }

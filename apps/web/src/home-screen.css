@@ -1,0 +1,64 @@
+/* The title screen borrows its palette from the printed game components. */
+body:has(.home-screen) { background: #eee9dd; }
+.home-screen { max-width: 1200px; min-height: 100svh; padding: 32px 56px 24px; color: #252923; }
+.home-masthead { display: flex; align-items: center; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid #252923; }
+.home-wordmark { font: 900 32px/.9 Impact, 'Arial Narrow', sans-serif; letter-spacing: -.05em; }
+.home-edition { margin-right: auto; font-size: 12px; }
+.home-screen .home-text-button { padding: 8px 0; border: 0; background: none; color: inherit; font-size: 13px; }
+.home-text-button span { margin-left: 16px; }
+.home-intro { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 24px; padding: 64px 0 56px; }
+.home-kicker { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; margin-bottom: 25px; }
+.home-screen h1 { font-family: Impact, 'Arial Narrow', 'Helvetica Neue', sans-serif; font-weight: 900; font-size: clamp(48px, 6.4vw, 84px); line-height: .98; letter-spacing: -.025em; text-transform: uppercase; }
+.home-screen h1 span { color: #ac3d24; }
+.home-description { margin-top: 26px; font-size: 15px; line-height: 1.65; color: #55594e; }
+.home-screen .home-start { display: flex; justify-content: space-between; align-items: center; gap: 50px; margin-top: 30px; padding: 16px 22px; border: 1px solid #252923; border-radius: 2px; background: #252923; color: #faf6ec; font-size: 14px; font-weight: 650; }
+.home-start:hover { background: #ac3d24; border-color: #ac3d24; }
+.home-local-note { margin-top: 10px; font-size: 11px; color: #66695f; }
+.home-monster { min-width: 0; margin: 0; padding: 0 0 0 20px; }
+.home-monster img { display: block; width: 100%; height: 365px; object-fit: contain; }
+.home-monster figcaption { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; padding-top: 14px; border-top: 1px solid #c7c8b9; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #63665b; }
+.home-monster figcaption strong { color: #252923; font-weight: 600; }
+.home-online { border-block: 1px solid #b4b6a7; }
+.home-online > summary { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 24px 0; cursor: pointer; list-style: none; font-size: 14px; }
+.home-online > summary::-webkit-details-marker { display: none; }
+.home-online > summary > span { color: #55594e; }
+.home-online summary strong { font-weight: 600; }
+.home-online summary strong span { display: inline-block; margin-left: 30px; font-size: 20px; }
+.home-online[open] summary strong span { transform: rotate(45deg); }
+.home-screen .lobby { margin: 0 0 24px; padding: 24px; border: 1px solid #c7c8b9; background: #e4e1d5; color: #55594e; flex-direction: column; align-items: stretch; }
+.home-screen .lobby-actions { justify-content: flex-start; }
+.home-screen .lobby .label { color: #55594e; }
+.home-screen .lobby input, .home-screen .lobby select { background: #faf6ec; color: #252923; border-color: #a8aa9c; font: inherit; font-size: 13px; min-height: 42px; }
+.home-screen .lobby input::placeholder { color: #626658; }
+.home-screen .lobby button { background: #252923; color: #faf6ec; font-size: 13px; font-weight: 600; }
+.home-screen .lobby button.subtle { background: transparent; color: #252923; border: 1px solid #a8aa9c; }
+.home-screen .lobby strong { color: #ac3d24; }
+.home-screen .error { color: #a02e20 !important; }
+.home-screen .home-rules { margin-top: 24px; background: #e4e1d5; border-color: #b4b6a7; }
+.home-screen .home-rules h2 { font: 700 22px/1.2 system-ui, sans-serif; letter-spacing: -.03em; }
+.home-screen .home-rules p, .home-screen .home-rules .label { color: #55594e; }
+.home-screen .home-rules .ghost { background: transparent; color: #252923; border-color: #a8aa9c; }
+.home-footer { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; padding-top: 24px; font-size: 11px; color: #63665b; }
+.home-tools { text-align: right; }
+.home-tools summary { cursor: pointer; }
+.home-tools > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 14px; margin-top: 16px; }
+.home-tools button { background: none; border: 0; padding: 6px 0; font-size: 11px; text-decoration: underline; text-underline-offset: 4px; color: #55594e; }
+.home-screen :is(button, summary, input, select):focus-visible { outline: 2px solid #ac3d24; outline-offset: 4px; }
+@media (min-width: 1500px) { .home-screen { padding-top: 48px; } .home-intro { padding-block: 80px; } }
+@media (max-width: 700px) {
+  .home-screen { padding: 24px; }
+  .home-masthead { gap: 16px; padding-bottom: 20px; }
+  .home-edition { display: none; }
+  .home-text-button { margin-left: auto; }
+  .home-intro { gap: 8px; padding-block: 40px; grid-template-columns: 1fr; }
+  .home-screen h1 { font-size: clamp(44px, 11.8vw, 78px); }
+  .home-kicker { font-size: 10px; }
+  .home-monster { padding: 22px 0 0; }
+  .home-monster img { height: 230px; }
+  .home-monster figcaption { margin-top: 8px; }
+  .home-online > summary { font-size: 12px; }
+  .home-online summary strong span { margin-left: 12px; }
+  .home-screen .lobby { padding: 16px; }
+  .home-screen .lobby-actions > * { flex: 1 1 120px; min-width: 0; }
+  .home-footer { font-size: 10px; }
+}

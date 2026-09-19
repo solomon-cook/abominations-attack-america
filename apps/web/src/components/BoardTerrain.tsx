@@ -11,12 +11,31 @@ export function cellArt(key: HexKey) { return artByKey[key]; }
 let requestedSize = 256;
 const subscribers = new Set<(size: number) => void>();
 function onCamera(event: Event) {
-  // Keep extra source samples for fine lettering and angled hex edges.
-  const pixels = (event as CustomEvent<{ tilePixels: number }>).detail.tilePixels * (window.devicePixelRatio || 1) * 2;
+  // Match physical screen pixels; extra supersampling quadruples decoded memory.
+  const pixels = (event as CustomEvent<{ tilePixels: number }>).detail.tilePixels * (window.devicePixelRatio || 1);
   const size = pixels > 512 ? 1024 : pixels > 256 ? 512 : 256;
   if (size === requestedSize) return;
   requestedSize = size;
   subscribers.forEach((update) => update(size));
+}
+
+// One observer batches visibility changes across the whole board.
+const visibilityCallbacks = new Map<Element, (visible: boolean) => void>();
+let visibilityObserver: IntersectionObserver | undefined;
+function observeTerrain(element: Element, update: (visible: boolean) => void) {
+  visibilityObserver ??= new IntersectionObserver((entries) => {
+    for (const entry of entries) visibilityCallbacks.get(entry.target)?.(entry.isIntersecting);
+  }, { rootMargin: "300px" });
+  visibilityCallbacks.set(element, update);
+  visibilityObserver.observe(element);
+  return () => {
+    visibilityObserver?.unobserve(element);
+    visibilityCallbacks.delete(element);
+    if (!visibilityCallbacks.size) {
+      visibilityObserver?.disconnect();
+      visibilityObserver = undefined;
+    }
+  };
 }
 
 export const TerrainArt = memo(function TerrainArt({ hex }: { hex: BoardHex }) {
@@ -36,9 +55,7 @@ export const TerrainArt = memo(function TerrainArt({ hex }: { hex: BoardHex }) {
   useEffect(() => {
     const element = image.current;
     if (!element) return;
-    const observer = new IntersectionObserver(([entry]) => setNearby(entry.isIntersecting), { rootMargin: "300px" });
-    observer.observe(element);
-    return () => observer.disconnect();
+    return observeTerrain(element, setNearby);
   }, []);
   if (!art) return null;
   return <img ref={image} className="tile-base audited-terrain" data-art-cell={art.cellId}
