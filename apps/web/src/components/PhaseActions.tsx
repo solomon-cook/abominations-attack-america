@@ -8,6 +8,7 @@ type BattleDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type:
 
 type Props = {
   activeGame: GameState;
+  hideAttackTargets?: boolean;
   onOpenMilitarySheet: () => void;
   canAct: boolean;
   runCommand: (command: GameCommand) => void | Promise<void>;
@@ -23,6 +24,7 @@ type Props = {
 
 export function PhaseActions({
   activeGame,
+  hideAttackTargets = false,
   onOpenMilitarySheet,
   canAct,
   runCommand,
@@ -76,7 +78,7 @@ export function PhaseActions({
         <p>{pendingAttackPrompt}</p>
         {mutationButtons(pendingAttackTarget.battleId)}
         {defenseSatellitesButton}
-        {pendingAttackTarget.targetIds.map((unitId) => {
+        {!hideAttackTargets && pendingAttackTarget.targetIds.map((unitId) => {
           const unit = activeGame.units.find((candidate) => candidate.id === unitId);
           return <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingAttackTarget.battleId, targetUnitId: unitId })}>Attack {unit?.branch ?? unitId} ({unit?.unitTypeId ?? "unit"})</button>;
         })}

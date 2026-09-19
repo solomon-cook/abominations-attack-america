@@ -11,7 +11,7 @@ const source = [
   await readFile(resolve(root, "apps/web/src/board-camera.ts"), "utf8"),
   ...(await Promise.all(componentFiles.map((file) => readFile(file, "utf8")))),
 ].join("\n");
-const styles = await readFile(resolve(root, "apps/web/src/styles.css"), "utf8");
+const styles = (await Promise.all(["styles.css", "dice.css", "combat-stage.css"].map(file => readFile(resolve(root, "apps/web/src", file), "utf8")))).join("\n");
 const failures = [];
 
 const requiredSourceMarkers = [
@@ -39,7 +39,7 @@ const requiredSourceMarkers = [
   ["bounded map zoom", /export function clampCamera/],
   ["bounded map pan", /export function panCamera/],
   ["hover path preview", /onMouseEnter=\{\(\) => \(monsterLegal \|\| unitLegal\)/],
-  ["cream die face textures", /\/assets\/dice\/d6-face-\$\{face\}\.webp/],
+  ["readable die face", /<svg className="die-face"[\s\S]*pips\[value\]/],
   ["authoritative die result label", /aria-label=\{label\}/],
   ["recorded encounter result", /aria-label="Recorded encounter result"/],
   ["accepted action feedback", /<ActionResolutionFeedback label=\{acceptedActionFeedback\?\.label\}/],
@@ -90,8 +90,8 @@ const requiredStyleMarkers = [
   ["no horizontal overflow", /overflow-x:clip/],
   ["generated decorative map backdrop", /\.map::after\{/],
   ["touch-drag board viewport", /\.map\{touch-action:none/],
-  ["3D die transforms", /transform-style:preserve-3d/],
-  ["reduced-motion dice", /\.combat-die \.die-cube\{animation:none\}/],
+  ["settling die animation", /@keyframes die-settle/],
+  ["reduced-motion dice", /@media\(prefers-reduced-motion:reduce\)\{\.combat-die\[data-die\] \.die-face\{animation:none\}/],
   ["encounter result surface", /\.encounter-result\{/],
   ["accepted action motion", /\.action-resolution-feedback\{/],
   ["attention banner layout", /\.attention-banner\{/],

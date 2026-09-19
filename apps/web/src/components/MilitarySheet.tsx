@@ -1,7 +1,7 @@
 import { ownedMilitarySheets } from "./owned-sheets";
 import { SheetCards } from "./SheetCards";
 import { MilitaryReference } from "./SheetReference";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { deployUnitResult, redeployUnitResult, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalNationalGuardDeploymentDestinations, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 
 export type DeploymentChoice = { id: string; typeId: string; sheet: string; kind: "deploy" | "redeploy"; destinations: HexKey[] };
@@ -29,8 +29,11 @@ export function deploymentChoices(game: GameState): DeploymentChoice[] {
 export function MilitarySheet({ branch, choices, onSelect, onClose, game, referenceOnly = false, canAct = false, runCommand, playerIndex = game?.currentPlayer ?? 0, onDeploy, initialSheet }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onClose: () => void; game?: GameState; referenceOnly?: boolean; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; playerIndex?: number; onDeploy?: (sheet?: string) => void; initialSheet?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const drawerDrag = useRef<{ y: number; height: number } | null>(null);
   const suppressSelection = useRef(false);
   const [selectedSheet, setSelectedSheet] = useState(initialSheet ?? branch);
+  const [compactDeployment, setCompactDeployment] = useState(() => window.matchMedia("(max-width: 600px)").matches);
+  const [drawerHeight, setDrawerHeight] = useState<number | null>(null);
   const extraSheets = referenceOnly && game ? ownedMilitarySheets(game, playerIndex, branch) : [];
   const sheets = [branch, ...new Set([...choices.map((choice) => choice.sheet), ...extraSheets].filter((sheet) => sheet !== branch))];
   const activeSheet = sheets.includes(selectedSheet) ? selectedSheet : branch;
@@ -43,16 +46,44 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
     ref.current?.querySelector<HTMLButtonElement>("button")?.focus();
     return () => previous?.focus({ preventScroll: true });
   }, []);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 600px)");
+    const update = () => setCompactDeployment(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  const drawerBounds = () => ({ min: 96, max: Math.max(260, window.innerHeight - 54) });
+  const resizeDrawer = (height: number) => {
+    const { min, max } = drawerBounds();
+    setDrawerHeight(Math.min(max, Math.max(min, height)));
+  };
+  const drawerStyle = compactDeployment && drawerHeight ? { "--mobile-drawer-height": `${drawerHeight}px` } as CSSProperties : undefined;
   return <div className="military-drawer-layer">
-    <div className={`military-hand military-drawer`} ref={ref} role="dialog" aria-labelledby="military-sheet-title" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => {
+    <div className={`military-hand military-drawer ${drawerHeight ? "military-drawer-resized" : ""}`} style={drawerStyle} ref={ref} role="dialog" aria-labelledby="military-sheet-title" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => {
       if (event.key === "Escape") onClose();
       if (!(event.target instanceof HTMLSelectElement) && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); turnPage(event.key === "ArrowRight" ? 1 : -1); }
 
     }}>
+      <div className="military-drawer-grab" role="slider" tabIndex={0} aria-label="Resize military sheet" aria-orientation="vertical" aria-valuemin={96} aria-valuemax={Math.max(260, typeof window === "undefined" ? 800 : window.innerHeight - 54)} aria-valuenow={Math.round(drawerHeight ?? window.innerHeight * .58)} onPointerDown={(event) => {
+        if (!compactDeployment) return;
+        drawerDrag.current = { y: event.clientY, height: ref.current?.getBoundingClientRect().height ?? window.innerHeight * .58 };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }} onPointerMove={(event) => {
+        if (!drawerDrag.current) return;
+        resizeDrawer(drawerDrag.current.height + drawerDrag.current.y - event.clientY);
+      }} onPointerUp={(event) => {
+        drawerDrag.current = null;
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }} onPointerCancel={() => { drawerDrag.current = null; }} onKeyDown={(event) => {
+        if (event.key !== "ArrowUp" && event.key !== "ArrowDown" && event.key !== "Home" && event.key !== "End") return;
+        event.preventDefault();
+        const { min, max } = drawerBounds();
+        resizeDrawer(event.key === "Home" ? min : event.key === "End" ? max : (drawerHeight ?? window.innerHeight * .58) + (event.key === "ArrowUp" ? 48 : -48));
+      }}><span /></div>
       <div className="military-hand-toolbar">
-        <span className="label">MILITARY RECORDS</span>
+        <span className="label">DEPLOY UNITS</span>
         {!referenceOnly && runCommand && <button type="button" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Finish deployment</button>}
-        <button className="military-sheet-close" onClick={onClose} aria-label="Close military sheets">Tuck away →</button>
+        <button className="military-sheet-close" onClick={onClose} aria-label="Close military sheets"><span className="mobile-close-label">Close</span><span className="desktop-close-label">Tuck away →</span></button>
       </div>
       {sheets.length > 1 && <nav className="military-sheet-tabs" aria-label="Military sheets">
         {sheets.map((sheet) => <button key={sheet} aria-pressed={sheet === activeSheet} onClick={() => setSelectedSheet(sheet)}>{sheet}</button>)}
@@ -76,8 +107,8 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
       }}>
         <span className="label">MILITARY RECORD SHEET</span>
         <h2 id="military-sheet-title">{activeSheet}</h2>
-        {!referenceOnly && <p>Choose a piece, then select a glowing location on the map.</p>}
-        <MilitaryReference choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
+        {!referenceOnly && <p className="deployment-instruction">Choose a unit, then tap a glowing location on the map.</p>}
+        <MilitaryReference compactDeployment={!referenceOnly && compactDeployment} choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
         {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Finish deployment to continue."}</p>}
         {game && <details className="military-drawer-research"><summary>Military research · {game.players[playerIndex]?.researchCardIds.length ?? 0}</summary><SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} /></details>}
       </div>

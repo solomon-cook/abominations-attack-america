@@ -1,0 +1,7 @@
+.combat-die[data-die],.combat-roll-list .combat-die[data-die],.resolution-stage .cinema-dice .combat-die[data-die]{position:relative;display:inline-grid;place-items:center;flex:none;width:56px;height:56px;margin:4px;border:0;border-radius:12px;background:transparent;color:#f2dfb6;box-shadow:none;perspective:none;transform-style:flat;scale:1;animation:none}
+.combat-die[data-die]::before,.combat-die[data-die]::after{display:none}
+.combat-die[data-die] .die-face{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 5px 0 #8b7448) drop-shadow(0 9px 10px #0005);transform-origin:50% 65%;animation:die-settle .48s cubic-bezier(.2,.7,.3,1) both}
+.resolution-stage .cinema-dice .combat-die[data-die]{width:72px;height:72px}
+@keyframes die-settle{0%{opacity:0;transform:translateY(-18px) rotate(-24deg) scale(.86)}35%{opacity:1;transform:translateY(0) rotate(9deg)}65%{transform:translateY(-5px) rotate(-4deg)}100%{transform:translateY(0) rotate(0)}}
+@media(prefers-reduced-motion:reduce){.combat-die[data-die] .die-face{animation:none}}
+.manual-reduced-motion .combat-die[data-die] .die-face{animation:none}

@@ -172,11 +172,34 @@
 .military-drawer-research{border-top:1px solid #63714e55;margin-top:18px;padding-top:12px}
 .military-drawer-research>summary{cursor:pointer;font-weight:700;min-height:36px}
 .military-drawer .sheet-held-card-grid{display:grid;grid-template-columns:minmax(0,1fr)}
+.military-drawer-grab{display:none}
 @keyframes military-drawer-enter{from{transform:translateX(100%)}to{transform:translateX(0)}}
 @media(max-width:600px){
-  .military-hand.military-drawer{top:auto;bottom:0;left:8px;right:8px;width:auto;height:46dvh;max-height:46dvh;border:1px solid #8c997d;border-bottom:0;border-radius:14px 14px 0 0;padding:8px 8px 0;animation-name:military-drawer-rise}
-  .military-drawer .military-hand-toolbar{padding:0 2px 6px}
-  .military-hand.military-drawer .physical-military-sheet{border-radius:0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+  .military-hand.military-drawer{top:auto;bottom:0;left:8px;right:8px;width:auto;height:var(--mobile-drawer-height,min(58dvh,560px));max-height:none;border:1px solid #8c997d;border-bottom:0;border-radius:14px 14px 0 0;padding:8px 8px 0;animation-name:military-drawer-rise;overflow:hidden}
+  .military-drawer-grab{display:grid;place-items:center;height:18px;margin:-5px 0 2px;cursor:ns-resize;touch-action:none;outline-offset:2px}
+  .military-drawer-grab>span{width:42px;height:4px;border-radius:99px;background:#dce2c6}
+  .military-drawer-grab:focus-visible{outline:2px solid #f4eabd;border-radius:4px}
+  .military-drawer .military-hand-toolbar{display:grid;grid-template-columns:1fr auto;gap:6px;padding:0 2px 7px;align-items:center}
+  .military-drawer .military-hand-toolbar .label{font-size:11px}
+  .military-drawer .military-hand-toolbar button[type=button]:not(.military-sheet-close){grid-column:1 / -1;grid-row:2;width:100%;min-height:44px;background:#f4eabd;color:#20362a;border-color:#f4eabd;font-size:15px}
+  .military-drawer .military-sheet-close{grid-column:2;grid-row:1;min-height:34px;padding:6px 9px}
+  .desktop-close-label{display:none}.mobile-close-label{display:inline}
+  .military-drawer .military-sheet-tabs{padding:0 2px;gap:4px}
+  .military-drawer .military-sheet-tabs button{min-height:38px;padding:7px 11px}
+  .military-hand.military-drawer .physical-military-sheet{border-radius:0;padding:10px 12px calc(20px + env(safe-area-inset-bottom));overflow-y:auto}
+  .military-drawer .physical-military-sheet>h2{display:none}
+  .military-drawer .deployment-instruction{margin:0 0 10px;font-size:13px;font-weight:700;color:#31472f}
+  .military-drawer .sheet-reference{margin:0}
+  .military-drawer .sheet-reference-note,.military-drawer .deployment-reference,.military-drawer .sheet-source{display:none}
+  .military-drawer .physical-military-sheet .sheet-reference article+article{margin-top:12px;padding-top:10px}
+  .military-drawer .physical-military-sheet h3{margin:0 0 5px;font-size:15px}
+  .military-drawer .record-reserve{margin:4px 0 8px;flex-wrap:nowrap;align-items:center}
+  .military-drawer .record-reserve-slots{flex-wrap:nowrap;overflow-x:auto;padding:3px 1px 14px;gap:8px}
+  .military-drawer .physical-military-sheet button.selectable-record-piece{min-width:58px;height:70px}
+  .military-drawer .record-reserve-count{font-size:13px}.military-drawer .record-reserve-count b{font-size:28px}
+  .military-drawer .unit-reference-details{margin:0}.military-drawer .unit-reference-details>summary{display:inline-block;min-height:34px;padding:7px 0}
+  .military-drawer .unit-reference-details[open]{padding:6px 0 8px;border-top:1px solid #63714e55}
+  .military-drawer-research{margin-top:12px;padding-top:10px}
 }
 @keyframes military-drawer-rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.military-hand.military-drawer{animation:none}}
@@ -184,3 +207,7 @@
 .military-drawer .sheet-held-card-grid,.military-drawer .sheet-held-card-grid:has(.sheet-held-card:is(:hover,:focus-within)){padding:0;gap:12px;overflow:visible}
 .military-drawer .sheet-held-card-grid .sheet-held-card{width:auto;min-height:0;margin:0;transform:none;transition:none}
 .military-drawer .sheet-held-cards{margin:0;border:0;padding:0}
+.mobile-close-label{display:none}
+.unit-reference-details{margin-top:10px}
+.unit-reference-details>summary{cursor:pointer;color:#3d5039;font-weight:700;font-size:12px}
+@media(max-width:600px){.mobile-close-label{display:inline}}

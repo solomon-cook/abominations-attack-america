@@ -281,6 +281,8 @@ function App() {
     ? activeGame.pendingBattles.find((battle) => battle.id === pendingBattleDecision.battleId)
     : undefined;
   const lastFightEvent = [...activeGame.eventLog].reverse().find((entry) => entry.action === "fight.resolved");
+  const lastBattleEvent = [...activeGame.eventLog].reverse().find(entry =>
+    (entry.action === "fight.resolved" || entry.action === "battle.target-required") && Array.isArray(entry.detail.attacks));
   const lastFightRolls = Array.isArray(lastFightEvent?.detail.rolls)
     ? lastFightEvent.detail.rolls.filter((roll): roll is number => typeof roll === "number")
     : [];
@@ -615,7 +617,7 @@ function App() {
     }
   };
   const runBoardAction = (command: GameCommand) => {
-    if (command.type === "resolve-fight") { setFightBaselineEventId(lastFightEvent?.id); setFightOverlayOpen(true); return; }
+    if (command.type === "resolve-fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; }
     if (command.type === "resolve-encounter" && !command.choice && !command.trophyUnitId) {
       setEncounterBaselineEventId(lastEncounterEvent?.id);
       setEncounterOverlayOpen(true);
@@ -1200,7 +1202,7 @@ function App() {
               command={actionDock.command ?? ((selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
               canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
             /> : <ActionDock contextLabel={activeGame.phase} guidance={actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
-              onPrimary={!actionDock.command ? () => { if (activeGame.phase === "fight") { setFightBaselineEventId(lastFightEvent?.id); setFightOverlayOpen(true); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
+              onPrimary={!actionDock.command ? () => { if (activeGame.phase === "fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
               label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
           </div>
           <div className="bottom-context-dock">
@@ -1381,8 +1383,8 @@ function App() {
           />
         </div>
       )}
-      <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} eventId={lastFightEvent?.id} rolls={lastFightEvent?.id !== fightBaselineEventId ? lastFightRolls : []} outcomes={lastFightEvent?.id !== fightBaselineEventId ? lastFightOutcomes : []} controls={<>
-        <PhaseActions activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
+      <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={unitId => { if (pendingAttackTarget) void runCommand({ type: "resolve-fight", battleId: pendingAttackTarget.battleId, targetUnitId: unitId }); }} controls={<>
+        <PhaseActions hideAttackTargets activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
         {activeGame.phase === "fight" && !pendingAttackTarget && !activeGame.pendingRetreat && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length <= 1 && <button className="cinema-primary" disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", ...(pendingBattle ? { battleId: pendingBattle.id } : {}) })}>Resolve fight →</button>}
         {error && <p role="alert">{error}</p>}
       </>} />

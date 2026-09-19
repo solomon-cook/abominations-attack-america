@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-const stylesheet = (await Promise.all(["styles.css", "encounter-command.css"].map(file => readFile(new URL(`../apps/web/src/${file}`, import.meta.url), "utf8")))).join("\n");
+const stylesheet = (await Promise.all(["styles.css", "encounter-command.css", "combat-stage.css", "dice.css"].map(file => readFile(new URL(`../apps/web/src/${file}`, import.meta.url), "utf8")))).join("\n");
 const failures = [];
 
 const animationDeclarations = [...stylesheet.matchAll(/animation\s*:\s*([^;{}]+)/g)].map((match) => match[1].replace(/!important/g, "").trim());

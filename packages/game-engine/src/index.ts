@@ -1228,7 +1228,11 @@ export interface BattleAttack {
   readonly stabilizerMutationCardId?: string;
   /** It's a Robot! deals this much electrocution damage after a Challenge miss. */
   readonly retaliationDamage?: number;
-  /** Present on Monster Challenge attacks so the UI can animate authoritative Health changes. */
+  /** Snapshot at the instant of a normal attack; optional for older saved games. */
+  readonly combatRound?: number;
+  readonly targetDefense?: number;
+  readonly rollModifier?: number;
+  /** Present for targets with Health (monsters and giant military units). */
   readonly targetHealthBefore?: number;
   readonly targetHealthAfter?: number;
 }
@@ -1523,6 +1527,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     const smash = hit && roll === 6;
     const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
     const giantTarget = isGiantUnit(target);
+    const targetHealthBefore = giantTarget ? target.health : undefined;
     const permanentTarget = giantTarget || isXFighter(target);
     if (hit && giantTarget) target.health = Math.max(0, target.health - damage);
     const destroyed = hit && (!giantTarget || target.health === 0);
@@ -1531,7 +1536,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
       ...(laserBonus ? ["Laser Beam Eyes: +2 to hit cruise missiles"] : []),
       ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
     ];
-    attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
+    attacks.push({ combatRound: round, targetDefense: target.defense, rollModifier: fighterBonus + laserBonus, ...(giantTarget ? { targetHealthBefore, targetHealthAfter: target.health } : {}), attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
     if (destroyed) {
       target.location = permanentTarget ? "permanently-removed" : "record-tile";
       if (permanentTarget && !next.removedUnitIds.includes(target.id)) next.removedUnitIds.push(target.id);
@@ -1546,7 +1551,9 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
       for (let attackIndex = 0; attackIndex < (unit.attacks ?? 1) && monster.health > 0 && unit.location === pending.location; attackIndex += 1) {
         const roll = nextD6(next);
         rolls.push(roll);
-        const hit = roll >= effectiveMonsterDefense(next, monster);
+        const targetDefense = effectiveMonsterDefense(next, monster);
+        const targetHealthBefore = monster.health;
+        const hit = roll >= targetDefense;
         const smash = hit && roll === 6;
         const antimatterActive = pending.antimatterActive === true && round === 1;
         const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
@@ -1565,7 +1572,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
           ...(antimatterActive ? ["Antimatter: double first-round damage"] : []),
           ...(attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : []),
         ];
-        attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
+        attacks.push({ combatRound: round, targetDefense, rollModifier: 0, targetHealthBefore, targetHealthAfter: monster.health, attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
         next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${round}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? ` A Mutation card was drawn face up.${mutationDrawStatus(mutationCardId)}` : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
         sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
       }
@@ -1590,7 +1597,9 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
       if (monster.health === 0) break;
       const roll = nextD6(next);
       rolls.push(roll);
-      const hit = roll >= effectiveMonsterDefense(next, monster);
+      const targetDefense = effectiveMonsterDefense(next, monster);
+      const targetHealthBefore = monster.health;
+      const hit = roll >= targetDefense;
       const smash = hit && roll === 6;
         const antimatterActive = pending.antimatterActive === true && round === 1;
         const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
@@ -1599,7 +1608,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
         const antimatterMutationRoll = antimatterActive && damage > 0 ? nextD6(next) : undefined;
         const antimatterMutationCardId = antimatterMutationRoll === 1 ? drawMutationForMonster(next, monster) : undefined;
         const stabilizerMutationCardId = discardStabilizerMutation(damage);
-        attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster", ...(antimatterActive ? ["Antimatter: double first-round damage"] : [])], hit, smash, damage, destroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
+        attacks.push({ combatRound: round, targetDefense, rollModifier: 0, targetHealthBefore, targetHealthAfter: monster.health, attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster", ...(antimatterActive ? ["Antimatter: double first-round damage"] : [])], hit, smash, damage, destroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
       next.log.push(`${unit.branch} missile launcher attacked ${monster.name} before the monster in combat round 1: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).`);
       sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
     }
@@ -1711,7 +1720,9 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           if (monster.health === 0) break;
           const roll = nextD6(next);
           rolls.push(roll);
-          const hit = roll >= effectiveMonsterDefense(next, monster);
+          const targetDefense = effectiveMonsterDefense(next, monster);
+          const targetHealthBefore = monster.health;
+          const hit = roll >= targetDefense;
           const smash = hit && roll === 6;
           const antimatterActive = pending?.antimatterActive === true;
           const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
@@ -1720,7 +1731,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           const antimatterMutationRoll = antimatterActive && damage > 0 ? nextD6(next) : undefined;
           const antimatterMutationCardId = antimatterMutationRoll === 1 ? drawMutationForMonster(next, monster) : undefined;
           const stabilizerMutationCardId = discardStabilizerMutation(damage);
-          attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster", ...(antimatterActive ? ["Antimatter: double first-round damage"] : [])], hit, smash, damage, destroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
+          attacks.push({ combatRound, targetDefense, rollModifier: 0, targetHealthBefore, targetHealthAfter: monster.health, attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers: ["extra first-round attack before monster", ...(antimatterActive ? ["Antimatter: double first-round damage"] : [])], hit, smash, damage, destroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
           next.log.push(`${unit.branch} missile launcher attacked ${monster.name} before the monster in combat round 1: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).`);
           sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
         }
@@ -1749,6 +1760,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         const smash = hit && roll === 6;
         const damage = hit ? effectiveMonsterDamage(next, monster) + (smash ? 1 : 0) : 0;
         const giantTarget = isGiantUnit(target);
+        const targetHealthBefore = giantTarget ? target.health : undefined;
         const permanentTarget = giantTarget || isXFighter(target);
         if (hit && giantTarget) target.health = Math.max(0, target.health - damage);
         const destroyed = hit && (!giantTarget || target.health === 0);
@@ -1757,7 +1769,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           ...(laserBonus ? ["Laser Beam Eyes: +2 to hit cruise missiles"] : []),
           ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
         ];
-        attacks.push({ attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
+        attacks.push({ combatRound, targetDefense: target.defense, rollModifier: fighterBonus + laserBonus, ...(giantTarget ? { targetHealthBefore, targetHealthAfter: target.health } : {}), attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
         if (destroyed) { target.location = permanentTarget ? "permanently-removed" : "record-tile"; if (permanentTarget && !next.removedUnitIds.includes(target.id)) next.removedUnitIds.push(target.id); destroyedUnitIds.push(target.id); next.log.push(`${monster.name} destroyed a ${target.branch} unit; it ${permanentTarget ? "was permanently removed" : "returned to its record tile"} in combat round ${combatRound} (${roll}${smash ? ", smash" : ""}).`); if (isXFighter(target)) discardExhaustedXFighterCard(next, target.ownerPlayer); }
         else next.log.push(`${monster.name} ${hit ? `damaged a ${target.branch} unit for ${damage}` : `missed a ${target.branch} unit`} in combat round ${combatRound} (${roll}).`);
         if (roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles")) whipBonusAttacks += 1;
@@ -1767,7 +1779,9 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
         for (let attackIndex = 0; attackIndex < (unit.attacks ?? 1) && monster.health > 0 && unit.location === monster.location; attackIndex += 1) {
           const roll = nextD6(next);
           rolls.push(roll);
-          const hit = roll >= effectiveMonsterDefense(next, monster);
+          const targetDefense = effectiveMonsterDefense(next, monster);
+          const targetHealthBefore = monster.health;
+          const hit = roll >= targetDefense;
           const smash = hit && roll === 6;
           const antimatterActive = pending?.antimatterActive === true && combatRound === 1;
           const damage = hit ? ((unit.damage ?? 1) + (smash ? 1 : 0)) * (antimatterActive ? 2 : 1) : 0;
@@ -1786,7 +1800,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
             ...(antimatterActive ? ["Antimatter: double first-round damage"] : []),
             ...(attackerDestroyed ? ["Radiation Field: attacker destroyed on roll 1"] : []),
           ];
-          attacks.push({ attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
+          attacks.push({ combatRound, targetDefense, rollModifier: 0, targetHealthBefore, targetHealthAfter: monster.health, attackerId: unit.id, targetId: monster.id, controllerPlayer: unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer ?? next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed, mutationCardId, attackerDestroyed, ...(antimatterMutationRoll === undefined ? {} : { antimatterMutationRoll, antimatterMutationCardId }), ...(stabilizerMutationCardId ? { stabilizerMutationCardId } : {}) });
           next.log.push(`${unit.branch} attacked ${monster.name} in combat round ${combatRound}: ${hit ? `hit for ${damage}${smash ? ", smash" : ""}` : "missed"} (${roll}).${mutationCardId ? ` A Mutation card was drawn face up.${mutationDrawStatus(mutationCardId)}` : ""}${attackerDestroyed ? " Radiation Field destroyed the attacker." : ""}`);
           sendToHollywood(unit.branch === "National Guard" ? next.currentPlayer : unit.ownerPlayer);
         }
@@ -2880,7 +2894,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       }
     }
     const result = resolveFightResult(state, command.type === "resolve-fight" ? command.battleId : undefined, command.type === "resolve-fight" ? command.spendInfamy ?? 0 : 0, command.type === "resolve-fight" ? command.targetUnitId : undefined);
-    const eventPayload = { battleId: command.type === "resolve-fight" ? command.battleId : state.pendingBattles[0]?.id, targetUnitId: command.type === "resolve-fight" ? command.targetUnitId : undefined, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, hollywoodResearchCardId: result.hollywoodResearchCardId, hollywoodResearchAwarded: Boolean(result.hollywoodResearchCardId), nextPhase: result.state.phase };
+    const eventPayload = { battleId: selectedBattle?.id, targetUnitId: command.type === "resolve-fight" ? command.targetUnitId : undefined, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, hollywoodResearchCardId: result.hollywoodResearchCardId, hollywoodResearchAwarded: Boolean(result.hollywoodResearchCardId), nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "fight.resolved", eventPayload), eventType: "fight.resolved", eventPayload };
   }
   if (state.phase === "encounter" && (command.type === "resolve-encounter" || command.type === "advance")) {

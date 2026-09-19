@@ -28,8 +28,11 @@ await page.keyboard.press('ArrowLeft');await page.locator('#military-sheet-title
 await page.screenshot({path:'tmp/military-drawer-desktop.png'});
 await page.locator('.military-drawer-research>summary').click();assert.equal(await page.locator('.military-drawer-research').getAttribute('open'),'');
 await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);
-assert.ok((await drawer.boundingBox()).height<844/2);
+assert.ok((await drawer.boundingBox()).height<=844*.6);
 assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+const grab=page.getByRole('slider',{name:'Resize military sheet'}),grabBox=await grab.boundingBox(),beforeResize=(await drawer.boundingBox()).height;
+await page.mouse.move(grabBox.x+grabBox.width/2,grabBox.y+grabBox.height/2);await page.mouse.down();await page.mouse.move(grabBox.x+grabBox.width/2,grabBox.y-160);await page.mouse.up();await page.waitForTimeout(100);
+assert.ok((await drawer.boundingBox()).height>beforeResize+100);
 await page.locator('.military-sheet').evaluate(el=>el.scrollTop=0);
 await page.screenshot({path:'tmp/military-drawer-mobile.png'});
 await page.getByRole('button',{name:'Close military sheets'}).focus();await page.keyboard.press('Escape');assert.equal(await drawer.count(),0);assert.deepEqual(errors,[]);
