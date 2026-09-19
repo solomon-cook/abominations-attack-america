@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { sourcedCardRule } from "@abominations/game-engine";
+import { useEffect, useState } from "react";
 import { DieCube } from "./DieCube";
-import { mutationArt } from "./MutationStrip";
+import { CardReveal, monsterPortrait, ResolutionStage } from "./ResolutionStage";
 
 type Effect = Readonly<{ type: string; amount: number; source: string }>;
 type MutationDraw = Readonly<{ siteId: string; cardDrawn: boolean; effectStatus: "implemented" | "source-gated" | "none" }>;
 type Props = {
+  error?: string;
   open: boolean;
   canAct: boolean;
   monsterName: string;
@@ -22,27 +22,27 @@ type Props = {
   onClose: () => void;
 };
 
-export function EncounterOverlay({ open, canAct, monsterName, locationName, eventId, baselineEventId, effects, rolls, choices, mutationDraws, mutationCardId, onReveal, onChoice, onClose }: Props) {
+export function EncounterOverlay({ error, open, canAct, monsterName, locationName, eventId, baselineEventId, effects, rolls, choices, mutationDraws, mutationCardId, onReveal, onChoice, onClose }: Props) {
   const resolved = Boolean(eventId && eventId !== baselineEventId);
   const [revealedRolls, setRevealedRolls] = useState(0);
   const [cardRevealed, setCardRevealed] = useState(false);
-  useEffect(() => { if (open) { setRevealedRolls(0); setCardRevealed(false); } }, [eventId, open]);
+  useEffect(() => { setRevealedRolls(0); setCardRevealed(false); }, [eventId, open]);
   const allRollsShown = revealedRolls >= rolls.length;
-  const mutationSiteDrawn = mutationDraws.some((draw) => draw.cardDrawn);
-  const effectHeadline = useMemo(() => effects.find((effect) => effect.type === "infamy" || effect.type === "health"), [effects]);
+  const hasCard = mutationDraws.some(draw => draw.cardDrawn) && Boolean(mutationCardId);
   if (!open) return null;
-  return <div className="encounter-overlay" role="dialog" aria-modal="true" aria-label="Encounter resolution">
-    <section className={`encounter-modal ${resolved ? "is-resolved" : "is-ready"}`}>
-      <button className="encounter-close" type="button" onClick={onClose} aria-label="Close encounter">×</button>
-      <p className="encounter-kicker">ENCOUNTER · {locationName}</p>
-      <div className="encounter-modal-heading"><div><h2>{resolved ? "Encounter revealed" : "A new encounter"}</h2><p>{monsterName} is at {locationName}.</p></div><span className="encounter-sigil" aria-hidden="true">✦</span></div>
-      {!resolved ? <div className="encounter-ready-state"><div className="encounter-space-preview" aria-hidden="true"><span>◆</span><small>THE BOARD<br />REMEMBERS</small></div><p>Resolve this space to reveal its reward, roll, or mutation.</p><button className="encounter-primary" type="button" disabled={!canAct} onClick={onReveal}>Reveal encounter</button></div> : <>
-        {choices.length > 0 && <div className="encounter-choice-stage"><p><strong>Choose the reward</strong><span>This choice is part of the encounter; pick one to continue.</span></p><div className="encounter-choice-buttons">{choices.map((choice) => <button key={choice} type="button" disabled={!canAct} onClick={() => onChoice(choice as "health" | "infamy")}>{choice === "health" ? "Take Health" : "Take 2 Infamy"}</button>)}</div></div>}
-        {rolls.length > 0 && <div className="encounter-roll-stage"><div className="encounter-stage-label"><span>ENCOUNTER ROLL</span><small>{revealedRolls} / {rolls.length} revealed</small></div><div className="encounter-rolls">{rolls.slice(0, revealedRolls).map((roll, index) => <DieCube key={`${eventId}-${index}`} value={roll} label={`Encounter roll ${index + 1}: ${roll}`} />)}{!allRollsShown && <button className="encounter-roll-button" type="button" onClick={() => setRevealedRolls((count) => count + 1)}>Roll die {revealedRolls + 1}</button>}</div></div>}
-        {mutationSiteDrawn && <div className={`encounter-mutation-stage ${cardRevealed ? "card-revealed" : ""}`}><div className="encounter-stage-label"><span>MUTATION SITE</span><small>{cardRevealed ? "Mutation acquired" : "A card was drawn face down"}</small></div>{mutationCardId && cardRevealed ? <div className="encounter-card-reveal"><img src={mutationArt(mutationCardId)} alt={`${mutationCardId} mutation card`} /><div><strong>{mutationCardId}</strong><p>{sourcedCardRule(mutationCardId)?.transcription ?? "Mutation effect recorded."}</p></div></div> : <button className="encounter-card-back" type="button" onClick={() => setCardRevealed(true)}><span>?</span><small>Spin to reveal mutation</small></button>}</div>}
-        {effectHeadline && <p className="encounter-result-headline">{effectHeadline.type === "infamy" ? "Infamy rises." : "Health surges."} <strong>+{effectHeadline.amount}</strong></p>}
-        {(allRollsShown || rolls.length === 0) && !choices.length && (!mutationSiteDrawn || cardRevealed || !mutationCardId) && <button className="encounter-primary" type="button" onClick={onClose}>Return to board</button>}
-      </>}
-    </section>
-  </div>;
+  return <ResolutionStage title={resolved ? "Leave your mark." : "Something stirs."} eyebrow={`ENCOUNTER / ${locationName}`} onClose={onClose}>
+    <div className={`cinema-encounter ${hasCard && resolved ? "has-card" : ""}`}>
+      <aside className="cinema-monster"><img src={monsterPortrait(monsterName)} alt={monsterName} /><div><p className="resolution-eyebrow">THE ABOMINATION</p><h3>{monsterName}</h3><p>{locationName}</p></div></aside>
+      <section className="cinema-event" aria-live="polite">
+        {error && <p role="alert">{error}</p>}
+        {!resolved ? <div className="cinema-intro"><p className="resolution-eyebrow">UNCHARTED CONSEQUENCES</p><h3>Make your<br />presence felt.</h3><p>A reward. A mutation. A twist of fate.<br />Discover what this space holds.</p><button className="cinema-primary" disabled={!canAct} onClick={onReveal}>Reveal encounter <span aria-hidden="true">↗</span></button></div> : <>
+          {allRollsShown && choices.length > 0 && <div className="cinema-choice"><p className="resolution-eyebrow">CHOOSE YOUR REWARD</p><h3>Grow stronger.</h3><div>{choices.map(choice => <button className="cinema-primary" key={choice} disabled={!canAct} onClick={() => onChoice(choice as "health" | "infamy")}>{choice === "health" ? "♥ Take Health" : "✦ Take 2 Infamy"}</button>)}</div></div>}
+          {rolls.length > 0 && <div className="cinema-roll-stage"><p className="resolution-eyebrow">FATE IN MOTION · {revealedRolls} / {rolls.length}</p><div className="combat-roll-list cinema-dice">{rolls.slice(0, revealedRolls).map((roll, index) => <DieCube key={`${eventId}-${index}`} value={roll} label={`Encounter roll ${index + 1}: ${roll}`} />)}</div>{!allRollsShown && <button className="cinema-primary" onClick={() => setRevealedRolls(count => count + 1)}>Roll die {revealedRolls + 1} <span aria-hidden="true">⚄</span></button>}</div>}
+          {allRollsShown && hasCard && <CardReveal key={eventId} cardId={mutationCardId!} onRevealed={() => setCardRevealed(true)} />}
+          {allRollsShown && (!hasCard || cardRevealed) && <div className="cinema-rewards">{effects.filter(effect => effect.type === "health" || effect.type === "infamy").map((effect, index) => <div className={`cinema-reward reward-${effect.type}`} key={`${eventId}-${index}`}><span aria-hidden="true">{effect.type === "health" ? "♥" : "✦"}</span><strong>{effect.amount > 0 ? "+" : ""}{effect.amount}</strong><div><b>{effect.type}</b><small>{effect.source}</small></div></div>)}</div>}
+          {allRollsShown && !choices.length && (!hasCard || cardRevealed) && <button className="cinema-primary" onClick={onClose}>Return to board →</button>}
+        </>}
+      </section>
+    </div>
+  </ResolutionStage>;
 }

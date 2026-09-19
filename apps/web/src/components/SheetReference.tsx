@@ -22,7 +22,7 @@ function ReserveSlots({ typeId, quantity, game, choices = [], onSelect }: { type
     <div className="record-reserve-slots">{Array.from({ length: quantity }, (_, i) => {
       const piece = pieces[i];
       const choice = choices.find((candidate) => candidate.id === piece?.id);
-      const art = <img src={typeId === "x-fighter" ? "/assets/military/air-force-fighter.webp" : typeId === "mecha-monster" || typeId === "captain-colossal" ? `/assets/cards/military-research-${typeId}.webp` : `/assets/military/${typeId}.webp`} alt="" />;
+      const art = <img src={typeId === "mecha-monster" || typeId === "captain-colossal" ? `/assets/cards/military-research-${typeId}.webp` : `/assets/military/${typeId}.webp`} alt="" />;
       const style = { "--piece-mask": `url(/assets/military/${typeId}.webp)` } as CSSProperties;
       return choice && onSelect ? <button type="button" key={piece!.id} className={`record-piece-slot selectable-record-piece ${piece!.reserve ? "in-reserve" : "on-board"}`} style={style}
         aria-label={`${choice.kind === "deploy" ? "Deploy" : "Redeploy"} ${typeId.replaceAll("-", " ")} piece ${i + 1}`} onClick={() => onSelect(choice)}>{art}<span>{choice.kind === "deploy" ? "Deploy" : "Redeploy"}</span></button>

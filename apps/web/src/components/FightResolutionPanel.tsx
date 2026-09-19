@@ -1,7 +1,13 @@
+import { useEffect, useState, type ReactNode } from "react";
+import { monsterPortrait, ResolutionStage } from "./ResolutionStage";
 import type { GameState } from "@abominations/game-engine";
 import { DieCube } from "./DieCube";
 
 type Props = {
+  open: boolean;
+  onClose: () => void;
+  controls: ReactNode;
+  eventId?: string;
   game: GameState;
   canAct: boolean;
   pendingBattle?: GameState["pendingBattles"][number];
@@ -10,48 +16,21 @@ type Props = {
   outcomes: readonly string[];
 };
 
-/** Focused normal-combat presentation; controls and outcomes remain engine-driven. */
-export function FightResolutionPanel({ game, canAct, pendingBattle, pendingAttackTarget, rolls, outcomes }: Props) {
-  const battle = pendingBattle ?? (game.pendingBattles.length === 1 ? game.pendingBattles[0] : undefined);
-  const monster = battle ? game.monsters.find((candidate) => candidate.id === battle.monsterId) : undefined;
-  const units = battle ? game.units.filter((unit) => battle.militaryUnitIds.includes(unit.id)) : [];
-  const activeDecision = pendingAttackTarget
-    ? `Choose attack ${pendingAttackTarget.attackNumber ?? 1}${pendingAttackTarget.attackTotal ? ` of ${pendingAttackTarget.attackTotal}` : ""} target`
-    : battle
-      ? "Resolve the next attack"
-      : "Review the recorded combat result";
-  if (!battle && rolls.length === 0 && outcomes.length === 0) return null;
-  return (
-    <section className="fight-resolution-panel" aria-live="polite" aria-label="Normal fight resolution surface">
-      <div className="fight-resolution-heading">
-        <div><span className="label">NORMAL FIGHT</span><h3>{activeDecision}</h3></div>
-        <span className={`fight-resolution-status ${canAct ? "ready" : "waiting"}`}>{canAct ? "Your decision" : "Waiting"}</span>
-      </div>
-      <div className="fight-resolution-sides">
-        <div className="fight-resolution-side fight-resolution-units">
-          <span className="label">MILITARY UNITS</span>
-          {units.length > 0 ? units.map((unit) => (
-            <span className="fight-resolution-unit" key={unit.id}>
-              <strong>{unit.branch} · {unit.unitTypeId ?? "unit"}</strong>
-              <small><span className="metric-icon" aria-hidden="true">⚔</span> {unit.attacks} attack{unit.attacks === 1 ? "" : "s"} · <span className="metric-icon" aria-hidden="true">✦</span> {unit.damage} damage · <span className="metric-icon" aria-hidden="true">◆</span> {unit.defense} Defense</small>
-            </span>
-          )) : <small>No units recorded.</small>}
-        </div>
-        <div className="fight-resolution-dice" aria-label="Authoritative normal fight dice">
-          <span className="label">DICE</span>
-          {rolls.length > 0
-            ? <div className="combat-roll-list">{rolls.map((roll, index) => <DieCube key={`${roll}-${index}`} value={roll} label={`Fight roll ${index + 1}: ${roll}`} />)}</div>
-            : <strong>Rolls appear after resolution</strong>}
-        </div>
-        <div className="fight-resolution-side fight-resolution-monster">
-          <span className="label">OPPOSING MONSTER</span>
-          <strong>{monster?.name ?? "Monster in pending battle"}</strong>
-          {monster && <small><span className="metric-icon" aria-hidden="true">♥</span> {monster.health}/{monster.maxHealth} Health · <span className="metric-icon" aria-hidden="true">◎</span> {monster.infamy} Infamy · <span className="metric-icon" aria-hidden="true">↗</span> {monster.move} Move</small>}
-          {!monster && <small>Monster not recorded.</small>}
-        </div>
-      </div>
-      {outcomes.length > 0 && <ul className="fight-resolution-outcomes" aria-label="Recorded normal fight outcomes">{outcomes.map((outcome, index) => <li key={`${outcome}-${index}`}>{outcome}</li>)}</ul>}
-      <p className="fight-resolution-note">Use the phase controls to resolve the fight.</p>
-    </section>
-  );
+export function FightResolutionPanel({ open, onClose, controls, eventId, game, canAct, pendingBattle, pendingAttackTarget, rolls, outcomes }: Props) {
+  const battle = pendingBattle ?? game.pendingBattles.find(candidate => candidate.id === pendingAttackTarget?.battleId) ?? game.pendingBattles[0];
+  const [lastBattle, setLastBattle] = useState<GameState["pendingBattles"][number] | undefined>(battle);
+  const [lastUnits, setLastUnits] = useState(game.units);
+  useEffect(() => { if (open && battle) { setLastBattle(battle); setLastUnits(game.units); } else if (!open) { setLastBattle(undefined); } }, [battle, game.units, open]);
+  const shownBattle = battle ?? lastBattle;
+  const monster = game.monsters.find(candidate => candidate.id === shownBattle?.monsterId);
+  const units = (battle ? game.units : lastUnits).filter(unit => shownBattle?.militaryUnitIds.includes(unit.id));
+  if (!open) return null;
+  return <ResolutionStage variant="fight" title={game.phase === "fight" ? "Clash of titans." : "The dust settles."} eyebrow="BATTLE / MONSTER VS MILITARY" onClose={onClose}>
+    <div className="cinema-versus">
+      <section className="cinema-combatant"><p className="resolution-eyebrow">THE ABOMINATION</p>{monster && <img className="cinema-fighter-art" src={monsterPortrait(monster.name)} alt={monster.name} />}<h3>{monster?.name ?? "Choose a battle"}</h3>{monster && <p className="cinema-stats"><span>♥ <b>{monster.health}</b> / {monster.maxHealth} Health</span><span>✦ <b>{monster.infamy}</b> Infamy</span></p>}</section>
+      <div className="cinema-vs" aria-label="versus">VS<small>{canAct ? "YOUR DECISION" : "STAND BY"}</small></div>
+      <section className="cinema-combatant cinema-military"><p className="resolution-eyebrow">THE LAST LINE OF DEFENSE</p><div className="cinema-unit-art">{units.map(unit => <div key={unit.id}>{unit.unitTypeId && <img src={unit.unitTypeId === "mecha-monster" || unit.unitTypeId === "captain-colossal" ? `/assets/cards/military-research-${unit.unitTypeId}.webp` : `/assets/military/${unit.unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unit.unitTypeId}.webp`} alt="" />}<strong>{(unit.unitTypeId ?? unit.branch).replaceAll("-", " ")}</strong><small>{unit.attacks} attacks · {unit.damage} damage · {unit.defense} defense</small></div>)}</div><h3>Military forces</h3><p>{units.length} units engaged</p></section>
+    </div>
+    <section className="cinema-battle-console" aria-live="polite"><div className="cinema-battle-result" key={eventId}><p className="resolution-eyebrow">{rolls.length ? "COMBAT ROLL" : "AWAITING THE FIRST STRIKE"}</p><div className="combat-roll-list cinema-dice">{rolls.map((roll, index) => <DieCube key={index} value={roll} label={`Fight roll ${index + 1}: ${roll}`} />)}</div>{outcomes.length > 0 && <ul>{outcomes.map((outcome, index) => <li key={index}>{outcome}</li>)}</ul>}</div><div className="cinema-battle-actions">{game.phase === "fight" ? controls : <><h3>Battle resolved</h3><button className="cinema-primary" onClick={onClose}>Continue to board →</button></>}</div></section>
+  </ResolutionStage>;
 }

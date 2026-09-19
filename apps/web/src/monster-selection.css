@@ -19,6 +19,16 @@
   .game-screen .setup-panel .monster-choice-ability{flex:1;min-height:0}
 }
 
+/* On a phone the app header already establishes the setup context. Give the record carousel the space. */
+@media(max-width:700px){
+  .game-screen.setup-in-progress>.setup-panel:has(.monster-options)> .label,
+  .game-screen.setup-in-progress>.setup-panel:has(.monster-options)> h2,
+  .game-screen.setup-in-progress>.setup-panel:has(.monster-options)> p:not(.setup-progress){display:none}
+  .game-screen.setup-in-progress>.setup-panel:has(.monster-options){top:165px;padding-top:8px}
+  .game-screen .setup-panel:has(.monster-options) .monster-options{height:calc(100% - 42px);padding-top:4px}
+  .game-screen .setup-panel:has(.monster-options)>.setup-progress{margin:0;padding:4px 12px 0;color:#aebcaf;font-size:.68rem}
+}
+
 /* Branch selection uses the same physical military-sheet palette and mobile carousel. */
 .game-screen .setup-panel:has(.branch-options){background:linear-gradient(135deg,#1b2929ee,#202923ee);border:1px solid #82917e;border-radius:8px;box-shadow:0 14px 34px #07111280,inset 0 1px #ffffff12}
 .game-screen .setup-panel .branch-options{gap:12px;padding:14px 4px 18px;margin-inline:-4px}

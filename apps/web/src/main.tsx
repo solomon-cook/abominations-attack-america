@@ -68,6 +68,7 @@ import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
 import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
+import { CardReveal, ResolutionStage } from "./components/ResolutionStage";
 import { EncounterOverlay } from "./components/EncounterOverlay";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { FightResolutionPanel } from "./components/FightResolutionPanel";
@@ -168,6 +169,9 @@ function App() {
   const [homeRulesOpen, setHomeRulesOpen] = useState(false);
   const [boardReviewOpen, setBoardReviewOpen] = useState(false);
   const [challengeDuelOpen, setChallengeDuelOpen] = useState(false);
+  const [researchReveal, setResearchReveal] = useState<string | null>(null);
+  const [fightBaselineEventId, setFightBaselineEventId] = useState<string>();
+  const [fightOverlayOpen, setFightOverlayOpen] = useState(false);
   const [encounterOverlayOpen, setEncounterOverlayOpen] = useState(false);
   const [encounterBaselineEventId, setEncounterBaselineEventId] = useState<string | undefined>();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -579,12 +583,17 @@ function App() {
           normalized,
         );
         setRoom(nextRoom);
+        if (normalized.type === "draw-research") {
+          const event = nextRoom.state.eventLog.at(-1);
+          if (typeof event?.detail.cardId === "string") setResearchReveal(event.detail.cardId);
+        }
         if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
         const actionLabel = acceptedActionLabel(normalized);
         if (actionLabel) setAcceptedActionFeedback({ label: actionLabel, key: Date.now() });
       } else {
         const result = applyCommand(game, normalized);
         setGame(result.state);
+        if (normalized.type === "draw-research" && typeof result.eventPayload.cardId === "string") setResearchReveal(result.eventPayload.cardId);
         if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
         const actionLabel = acceptedActionLabel(normalized);
         if (actionLabel) setAcceptedActionFeedback({ label: actionLabel, key: Date.now() });
@@ -606,6 +615,7 @@ function App() {
     }
   };
   const runBoardAction = (command: GameCommand) => {
+    if (command.type === "resolve-fight") { setFightBaselineEventId(lastFightEvent?.id); setFightOverlayOpen(true); return; }
     if (command.type === "resolve-encounter" && !command.choice && !command.trophyUnitId) {
       setEncounterBaselineEventId(lastEncounterEvent?.id);
       setEncounterOverlayOpen(true);
@@ -1190,7 +1200,7 @@ function App() {
               command={actionDock.command ?? ((selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
               canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
             /> : <ActionDock contextLabel={activeGame.phase} guidance={actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
-              onPrimary={!actionDock.command ? () => { const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
+              onPrimary={!actionDock.command ? () => { if (activeGame.phase === "fight") { setFightBaselineEventId(lastFightEvent?.id); setFightOverlayOpen(true); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
               label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
           </div>
           <div className="bottom-context-dock">
@@ -1254,14 +1264,6 @@ function App() {
         <aside id="game-side-panel" className="game-side-panel" aria-label="Game controls and information">
           <div id="turn-hud-body" hidden={!gamePanelOpen}>
           <div className="card action-card">
-            <FightResolutionPanel
-              game={activeGame}
-              canAct={canAct}
-              pendingBattle={pendingBattle}
-              pendingAttackTarget={pendingAttackTarget}
-              rolls={lastFightRolls}
-              outcomes={lastFightOutcomes}
-            />
             <TurnPrompt
               action={action}
               description={turnDescription}
@@ -1379,7 +1381,14 @@ function App() {
           />
         </div>
       )}
+      <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} eventId={lastFightEvent?.id} rolls={lastFightEvent?.id !== fightBaselineEventId ? lastFightRolls : []} outcomes={lastFightEvent?.id !== fightBaselineEventId ? lastFightOutcomes : []} controls={<>
+        <PhaseActions activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
+        {activeGame.phase === "fight" && !pendingAttackTarget && !activeGame.pendingRetreat && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length <= 1 && <button className="cinema-primary" disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", ...(pendingBattle ? { battleId: pendingBattle.id } : {}) })}>Resolve fight →</button>}
+        {error && <p role="alert">{error}</p>}
+      </>} />
+      {researchReveal && <ResolutionStage title="A new advantage." eyebrow="MILITARY / RESEARCH DIVISION" variant="research" onClose={() => setResearchReveal(null)}><CardReveal key={researchReveal} cardId={researchReveal} kind="research" /></ResolutionStage>}
       <EncounterOverlay
+        error={error}
         open={encounterOverlayOpen}
         canAct={canAct}
         monsterName={activePlayer.name}

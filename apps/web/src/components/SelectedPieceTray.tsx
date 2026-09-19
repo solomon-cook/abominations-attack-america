@@ -34,7 +34,7 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
   const special = definition?.specialAbilityText ?? guard?.specialAbilityText;
   return <section className="piece-detail-tray unit-command-record" aria-label="Selected piece details" aria-live="polite">
     <div className="unit-detail-heading">
-      <img src={giant ? `/assets/cards/military-research-${giant.id}.webp` : `/assets/military/${unit.unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unit.unitTypeId === "x-fighter" ? "air-force-fighter" : unit.unitTypeId ?? "army-tank"}.webp`} alt={name} />
+      <img src={giant ? `/assets/cards/military-research-${giant.id}.webp` : `/assets/military/${unit.unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unit.unitTypeId ?? "army-tank"}.webp`} alt={name} />
       <div><span className="label">{unit.branch} · {locationName(unit.location)}</span><h3>{name}</h3></div>
     </div>
     <SheetStats values={{ Move: unit.move, Attacks: unit.attacks, Defense: unit.defense, Damage: unit.damage, ...(giant ? { Health: unit.health } : {}) }} />
