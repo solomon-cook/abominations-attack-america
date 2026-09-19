@@ -85,10 +85,12 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
                 <span className="branch-description">{description}</span>
                 <span className="branch-roster">{roster.map((unit) => <span className="branch-unit" key={unit.id}>
                   <img src={`/assets/military/${unit.id}.webp`} alt="" />
+                  <span className="branch-unit-details">
                   <strong>{unit.quantity} × {unit.name}</strong>
                   <span>Move {unit.move} · Defense {Array.isArray(unit.defense) ? unit.defense.join(" / ") : unit.defense} · Damage {Array.isArray(unit.damage) ? unit.damage.join(" / ") : unit.damage}</span>
                   {unit.id === "navy-nuclear-submarine" && <small>Submarine / missile stats · missile movement 8</small>}
                   {unit.specialAbilityText && <small>{unit.specialAbilityText}</small>}
+                  </span>
                 </span>)}</span>
                 <span className="branch-select-label">{owner ? `✓ Player ${owner.playerIndex + 1}` : `Choose ${branch} →`}</span>
               </button>;

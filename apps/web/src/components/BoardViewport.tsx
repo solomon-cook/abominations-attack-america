@@ -126,8 +126,9 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
         const y = tile.top < mapBounds.top + margin ? mapBounds.top + margin - tile.top : tile.bottom > mapBounds.bottom - margin ? mapBounds.bottom - margin - tile.bottom : 0;
         if (x || y) setCamera((current) => panCamera(current, { x, y }, viewport, world));
       }}>
-      {/* Transform the shared board layer without relaying out every tile on zoom. */}
-      <div className="map-canvas" style={{ width: world.width, height: world.height, transformOrigin: "0 0", transform: `translate(${viewport.width / 2 - camera.center.x * scale}px, ${viewport.height / 2 - camera.center.y * scale}px) scale(${scale})`, transition: "none" }}>
+      {/* Layout zoom rasterizes text and SVG at the final display resolution.
+          A transform scale can enlarge a cached low-resolution composited layer. */}
+      <div className="map-canvas" style={{ width: world.width, height: world.height, zoom: scale, transform: `translate(${viewport.width / 2 / scale - camera.center.x}px, ${viewport.height / 2 / scale - camera.center.y}px)`, transition: "none" }}>
         <svg aria-hidden="true" focusable="false" style={{ position: "absolute", left: -BOARD_EDGE_PADDING, top: -BOARD_EDGE_PADDING, width: world.width + 2 * BOARD_EDGE_PADDING, height: world.height + 2 * BOARD_EDGE_PADDING, pointerEvents: "none" }}>
           <defs><pattern id="deep-sea-hexes" width="82.1918" height="47.4534" patternUnits="userSpaceOnUse">
             <rect width="100%" height="100%" fill="#164e65" />
