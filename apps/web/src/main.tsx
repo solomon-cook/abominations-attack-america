@@ -82,6 +82,7 @@ import "./chat-ui.css";
 import "./command-panels.css";
 import "./encounter-command.css";
 import "./monster-selection.css";
+import "./setup-command.css";
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"

@@ -38,7 +38,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
   return (
     <>
       {activeSetup.phase !== "complete" && (
-        <section className="setup-panel" aria-label="Game setup">
+        <section className={`setup-panel ${activeSetup.phase === "starting-choice" ? "setup-command-panel" : ""}`} aria-label="Game setup">
           <span className="label">GAME SETUP</span>
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
           <p>{activeSetup.phase === "starting-choice" ? "Deploy starting troops using your branch allowance, or draw one Military Research card instead." : "Choose your monster and military branch."}</p>
@@ -79,7 +79,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
                 "Air Force": "Long-range strikes: six fighters and two powerful, single-use cruise missiles.",
                 Marines: "Combined arms: flying fighters and rocket launchers that deal 2 damage per hit.",
               }[branch];
-              return <button key={branch} className={`branch-choice ${owner ? "branch-claimed" : ""}`} disabled={disabled || Boolean(owner)} onClick={() => onChooseOption(branch)} aria-label={`Choose ${branch}${owner ? ` · selected by Player ${owner.playerIndex + 1}` : ""}`}>
+              return <button key={branch} data-branch={branch} className={`branch-choice ${owner ? "branch-claimed" : ""}`} disabled={disabled || Boolean(owner)} onClick={() => onChooseOption(branch)} aria-label={`Choose ${branch}${owner ? ` · selected by Player ${owner.playerIndex + 1}` : ""}`}>
                 <strong className="branch-title">{branch}</strong>
                 <span className="branch-description">{description}</span>
                 <span className="branch-roster">{roster.map((unit) => <span className="branch-unit" key={unit.id}>
