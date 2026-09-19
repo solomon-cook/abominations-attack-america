@@ -52,6 +52,9 @@
   position:absolute; z-index:45; right:16px; bottom:16px;
   width:min(480px,calc(100vw - 32px)); height:84px; pointer-events:auto;
 }
+.game-screen .layout > .command-station.deploy-command-station { height:0; }
+.game-screen .command-station.deploy-command-station > .board-action-bar { display:none; }
+.game-screen .command-station.deploy-command-station > .bottom-context-dock { bottom:0; }
 .game-screen .command-station > .board-action-bar {
   position:static; display:block; width:100%; height:84px; margin:0; padding:0; transform:none;
 }
