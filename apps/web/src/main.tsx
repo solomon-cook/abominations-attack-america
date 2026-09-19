@@ -108,6 +108,7 @@ function acceptedActionLabel(command: GameCommand): string | undefined {
     case "pass-move": return "Move step resolved";
     case "stay-piece": return "Piece stays in place";
     case "disappear-monster": return "Monster disappearance resolved";
+    case "use-monster-ability": return "Monster ability used";
     case "concede": return "Concession recorded";
     case "advance": return "Action resolved";
     case "move":

@@ -448,6 +448,7 @@ export type GameCommand =
   | { type: "launch-submarine"; battleId: string; unitId: string }
   | { type: "launch-submarine-at-monster"; unitId: string; monsterId: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
+  | { type: "use-monster-ability"; ability: "gargantis-heal"; mutationCardIds: string[] }
   | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey; targetMonsterId?: string }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
@@ -1239,6 +1240,17 @@ export interface BattleAttack {
   readonly targetHealthAfter?: number;
 }
 
+function insertMutationBackIntoDeck(state: GameState, cardId: string): void {
+  const deck = state.decks.mutation;
+  const remaining = deck.order.length - deck.drawIndex;
+  const value = (state.rng.seed + Math.imul(state.rng.cursor + 1, 0x9e3779b9)) >>> 0;
+  state.rng.cursor += 1;
+  const offset = remaining === 0 ? 0 : value % (remaining + 1);
+  const order = [...deck.order];
+  order.splice(deck.drawIndex + offset, 0, cardId);
+  state.decks.mutation = { ...deck, order, exhausted: false };
+}
+
 function drawMutationForMonster(state: GameState, monster: Monster): string | undefined {
   const playerIndex = state.monsters.findIndex((candidate) => candidate.id === monster.id);
   const player = state.players[playerIndex];
@@ -1246,8 +1258,20 @@ function drawMutationForMonster(state: GameState, monster: Monster): string | un
   const result = drawCardFromDeck(state.decks.mutation);
   state.decks.mutation = result.state;
   if (!result.cardId) return undefined;
-  player.mutationCardIds.push(result.cardId);
-  return result.cardId;
+  let selected = result.cardId;
+  if (monster.name === "Toxicor") {
+    const second = drawCardFromDeck(state.decks.mutation);
+    state.decks.mutation = second.state;
+    if (second.cardId) {
+      // The engine has no hidden UI choice during an in-flight combat roll. Pick
+      // the first revealed card deterministically and return the other card to
+      // the live deck, preserving Toxicor's two-card draw and shuffle-back rule.
+      insertMutationBackIntoDeck(state, second.cardId);
+      state.log.push(`${monster.name} drew two Mutation cards and kept ${selected}; the other card was shuffled back into the deck.`);
+    }
+  }
+  player.mutationCardIds.push(selected);
+  return selected;
 }
 
 function mutationDrawStatus(cardId: string | undefined): string {
@@ -1398,9 +1422,12 @@ function effectiveMonsterDamage(state: Pick<GameState, "monsters" | "players">, 
   return monsterContinuousEffects(state, monster).damagePerHit ?? monster.damage;
 }
 
-function effectiveMonsterAttacks(state: Pick<GameState, "monsters" | "players">, monster: Monster, round: number): number {
+function effectiveMonsterAttacks(state: Pick<GameState, "monsters" | "players" | "boardId" | "boardVersion" | "boardContentHash">, monster: Monster, round: number): number {
   const effects = monsterContinuousEffects(state, monster);
-  return monster.attacks + (round === 1 ? effects.firstRoundAttackBonus : 0);
+  const board = boardForState(state);
+  const seaCombat = isHexKey(monster.location) && ["sea", "seacoast"].includes(board.hexes[monster.location]?.waterClass ?? "");
+  const tomanagiBonus = monster.name === "Tomanagi" && round === 1 && seaCombat ? 1 : 0;
+  return monster.attacks + (round === 1 ? effects.firstRoundAttackBonus : 0) + tomanagiBonus;
 }
 
 function monsterMovementPathAllowed(state: Pick<GameState, "monsters" | "players">, monster: Monster, board: BoardDefinition, path: readonly HexKey[]): boolean {
@@ -2726,6 +2753,28 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     next.log.push(`${isMonster ? monster.name : unit?.unitTypeId ?? command.pieceId} stays in place. Continue with the remaining pieces.`);
     const eventPayload = { pieceId: command.pieceId, location: isMonster ? monster.location : unit?.location };
     return { state: appendEvent(next, "piece.stayed", eventPayload), eventType: "piece.stayed", eventPayload };
+  }
+  if (command.type === "use-monster-ability") {
+    if (!(state.phase === "move" || state.phase === "fight" || state.phase === "encounter" || state.phase === "deploy")) {
+      throw new GameDomainError("ILLEGAL_COMMAND", "Monster abilities can only be used during the active monster turn.");
+    }
+    const monster = state.monsters[state.currentPlayer];
+    if (!monster || monster.name !== "Gargantis") throw new GameDomainError("ILLEGAL_COMMAND", "Only Gargantis can use this ability.");
+    const cardIds = [...new Set(command.mutationCardIds)];
+    if (cardIds.length === 0) throw new GameDomainError("ILLEGAL_COMMAND", "Choose at least one Mutation card to discard.");
+    const player = state.players[state.currentPlayer];
+    if (cardIds.some((cardId) => !player.mutationCardIds.includes(cardId))) throw new GameDomainError("ILLEGAL_COMMAND", "Gargantis can only discard Mutation cards in its controller's hand.");
+    const next = structuredClone(state);
+    const nextPlayer = next.players[next.currentPlayer];
+    for (const cardId of cardIds) {
+      nextPlayer.mutationCardIds = nextPlayer.mutationCardIds.filter((candidate) => candidate !== cardId);
+      next.decks.mutation = discardCardFromDeck(next.decks.mutation, cardId);
+    }
+    const healthBefore = next.monsters[next.currentPlayer].health;
+    next.monsters[next.currentPlayer].health = Math.min(next.monsters[next.currentPlayer].maxHealth, healthBefore + cardIds.length * 3);
+    next.log.push(`Gargantis discarded ${cardIds.length} Mutation card${cardIds.length === 1 ? "" : "s"} and gained ${next.monsters[next.currentPlayer].health - healthBefore} Health.`);
+    const eventPayload = { monsterId: monster.id, mutationCardIds: cardIds, healthBefore, healthAfter: next.monsters[next.currentPlayer].health };
+    return { state: appendEvent(next, "monster.ability.used", eventPayload), eventType: "monster.ability.used", eventPayload };
   }
   if (command.type === "pass-move") {
     requireDecision("monster-movement");

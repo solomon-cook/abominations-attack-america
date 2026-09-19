@@ -43,7 +43,7 @@ test("supported player counts get the correct stomp stack", () => {
   assert.throws(() => createGame(5), /exactly 2, 3, or 4/);
 });
 
-test("source-backed monster catalogue preserves record statistics and unresolved boundaries", () => {
+test("source-backed monster catalogue preserves record statistics and ability boundaries", () => {
   assert.equal(MONSTER_DEFINITIONS.length, 6);
   assert.deepEqual(MONSTER_DEFINITIONS.map((monster) => monster.id), ["zorb", "tomanagi", "gargantis", "megaclaw", "konk", "toxicor"]);
   assert.deepEqual(MONSTER_DEFINITIONS.map((monster) => monster.startingHealth), [11, 11, 10, 12, 10, 9]);
@@ -55,7 +55,7 @@ test("source-backed monster catalogue preserves record statistics and unresolved
     assert.equal(monster.damage, 3);
     assert.equal(monster.sourceRefs.length, 1);
     assert.equal(monster.lairs, "source-gated");
-    assert.equal(monster.specialAbilityImplementation, "source-gated");
+    assert.equal(monster.specialAbilityImplementation, "implemented");
   }
   assert.match(monsterDefinition("toxicor")!.specialAbilityText, /draw 2 Mutation cards/i);
   assert.equal(monsterDefinition("unknown"), undefined);
@@ -2946,4 +2946,53 @@ test("submarine missile range includes eight spaces and excludes nine", () => {
   assert.equal(legalSubmarineTargets(state, unit.id).length, 1);
   state.monsters[1].location = `${q+9},${r}`;
   assert.equal(legalSubmarineTargets(state, unit.id).length, 0);
+});
+
+test("Tomanagi gets one extra first-round attack in sea combat only", () => {
+  const state = createProvisionalPlaytestGame(2);
+  const board = boardForState(state);
+  const sea = Object.values(board.hexes).find((hex) => hex.waterClass === "sea");
+  assert.ok(sea);
+  state.currentPlayer = 0;
+  state.phase = "fight";
+  state.monsters[0].name = "Tomanagi";
+  state.monsters[0].location = sea.key;
+  state.monsters[0].health = 40;
+  const unit = state.units[0];
+  unit.location = sea.key;
+  unit.attacks = 0;
+  unit.defense = 99;
+  state.pendingBattles = [{ id: "tomanagi-sea", monsterId: state.monsters[0].id, location: sea.key, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "tomanagi-sea" };
+  const result = applyCommand(state, { type: "resolve-fight" });
+  const attacks = (result.eventPayload.attacks as Array<{ attackerId: string; combatRound?: number }>).filter((attack) => attack.attackerId === state.monsters[0].id && attack.combatRound === 1);
+  assert.equal(attacks.length, 4);
+});
+
+test("Gargantis can discard one or more Mutation cards for three Health each", () => {
+  const state = createGame(2);
+  state.currentPlayer = 0;
+  state.players[0].mutationCardIds = ["Rampage", "War Spikes"];
+  state.decks.mutation = { ...state.decks.mutation, drawIndex: state.decks.mutation.order.length, exhausted: true };
+  state.monsters[0].name = "Gargantis";
+  state.monsters[0].health = 5;
+  state.phase = "move";
+  const result = applyCommand(state, { type: "use-monster-ability", ability: "gargantis-heal", mutationCardIds: ["Rampage", "War Spikes"] });
+  assert.equal(result.state.monsters[0].health, 11);
+  assert.deepEqual(result.state.players[0].mutationCardIds, []);
+  assert.deepEqual(result.state.decks.mutation.discard.sort(), ["Rampage", "War Spikes"].sort());
+});
+
+test("Toxicor draws two Mutation cards and returns the unchosen card to the deck", () => {
+  const state = createGame(2);
+  state.currentPlayer = 0;
+  state.phase = "encounter";
+  state.monsters[0].name = "Toxicor";
+  state.monsters[0].location = Object.values(boardForState(state).hexes).find((hex) => hex.features.some((feature) => feature.kind === "mutation-site"))!.key;
+  const result = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(result.state.players[0].mutationCardIds.length, 1);
+  assert.equal(result.state.decks.mutation.drawIndex, 2);
+  assert.equal(result.state.decks.mutation.order.length, MONSTER_MUTATION_CARD_IDS.length + 1);
+  assert.equal(result.state.decks.mutation.order.includes(result.state.players[0].mutationCardIds[0]), true);
+  assert.equal(result.state.log.some((entry) => /shuffled back/i.test(entry)), true);
 });

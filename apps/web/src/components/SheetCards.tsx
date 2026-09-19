@@ -14,6 +14,7 @@ export function sheetCardActions(game: GameState, cardId: string): CardAction[] 
   if (cardId === "Defense Satellites") candidates.push({ label: "Play Defense Satellites", command: { type: "use-research", cardId } });
   if (cardId === "Antimatter" && battleId) candidates.push({ label: "Play Antimatter", command: { type: "use-research", cardId, battleId } });
   if ((cardId === "Berserk" || cardId === "Son of a Monster") && battleId) candidates.push({ label: `Play ${cardId}`, command: { type: "use-mutation", cardId, battleId } });
+  if (kindForMonsterCard(game, cardId)) candidates.push({ label: "Gargantis: discard for +3 Health", command: { type: "use-monster-ability", ability: "gargantis-heal", mutationCardIds: [cardId] } });
   if (cardId === "Stabilizer Ray" && battle) {
     const owner = game.monsters.findIndex((monster) => monster.id === battle.monsterId);
     for (const mutationCardId of game.players[owner]?.mutationCardIds ?? []) candidates.push({ label: `Target ${mutationCardId}`, command: { type: "use-research", cardId, battleId, mutationCardId } });
@@ -31,6 +32,14 @@ export function sheetCardActions(game: GameState, cardId: string): CardAction[] 
   return candidates.filter(({ command }) => {
     try { applyCommand(game, command); return true; } catch { return false; }
   });
+}
+
+function kindForMonsterCard(game: GameState, cardId: string): boolean {
+  const activeMonster = game.monsters[game.currentPlayer];
+  return activeMonster?.name === "Gargantis"
+    && game.phase !== "challenge"
+    && game.phase !== "game-over"
+    && game.players[game.currentPlayer]?.mutationCardIds.includes(cardId) === true;
 }
 
 function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game: GameState; cardId: string; kind: "mutation" | "research"; canPlay: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void }) {
