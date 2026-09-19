@@ -68,6 +68,7 @@ import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
 import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
+import { EncounterOverlay } from "./components/EncounterOverlay";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { FightResolutionPanel } from "./components/FightResolutionPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
@@ -79,6 +80,8 @@ import "./board-terrain.css";
 import "./physical-sheets.css";
 import "./chat-ui.css";
 import "./command-panels.css";
+import "./encounter-command.css";
+import "./monster-selection.css";
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -164,6 +167,8 @@ function App() {
   const [homeRulesOpen, setHomeRulesOpen] = useState(false);
   const [boardReviewOpen, setBoardReviewOpen] = useState(false);
   const [challengeDuelOpen, setChallengeDuelOpen] = useState(false);
+  const [encounterOverlayOpen, setEncounterOverlayOpen] = useState(false);
+  const [encounterBaselineEventId, setEncounterBaselineEventId] = useState<string | undefined>();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [gamePanelOpen, setGamePanelOpen] = useState(false);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
@@ -285,6 +290,7 @@ function App() {
       })
     : [];
   const lastEncounterEvent = [...activeGame.eventLog].reverse().find((entry) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required"].includes(entry.action));
+  const encounterRevealCard = activeGame.players[activeGame.currentPlayer]?.mutationCardIds.at(-1);
   const lastChallengeEvent = [...activeGame.eventLog].reverse().find((entry) => entry.action === "challenge.resolved");
   useEffect(() => {
     if (lastChallengeEvent?.id) setChallengeDuelOpen(true);
@@ -597,6 +603,14 @@ function App() {
     } finally {
       setPendingAction(false);
     }
+  };
+  const runBoardAction = (command: GameCommand) => {
+    if (command.type === "resolve-encounter" && !command.choice && !command.trophyUnitId) {
+      setEncounterBaselineEventId(lastEncounterEvent?.id);
+      setEncounterOverlayOpen(true);
+      return;
+    }
+    void runCommand(command);
   };
 
   const startSession = async (kind: "create" | "join" | "spectate") => {
@@ -1173,10 +1187,10 @@ function App() {
               contextLabel={`Move · ${selectableUnitIds.size + (legalPaths.length > 0 ? 1 : 0)} remaining`}
               guidance={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Route ready" : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? "Choose a destination or hold." : "Ready for the next phase."}
               command={actionDock.command ?? ((selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
-              canAct={canAct} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)}
+              canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
             /> : <ActionDock contextLabel={activeGame.phase} guidance={actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
               onPrimary={!actionDock.command ? () => { const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
-              label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={(command) => void runCommand(command)} />}
+              label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
           </div>
           <div className="bottom-context-dock">
           {activeGame.phase === "move" ? <details className="piece-context-tab" key={selectedUnitId ?? activePlayer.id}>
@@ -1209,7 +1223,7 @@ function App() {
                 activeGame={activeGame}
                 onOpenMilitarySheet={openMilitarySheet}
                 canAct={canAct}
-                runCommand={runCommand}
+                runCommand={runBoardAction}
                 getLocationName={(key) => getLocation(key)?.name ?? key}
                 pendingAttackTarget={pendingAttackTarget}
                 pendingAttackPrompt={pendingAttackPrompt}
@@ -1364,6 +1378,22 @@ function App() {
           />
         </div>
       )}
+      <EncounterOverlay
+        open={encounterOverlayOpen}
+        canAct={canAct}
+        monsterName={activePlayer.name}
+        locationName={activeLocation?.name ?? activePlayer.location}
+        eventId={lastEncounterEvent?.id}
+        baselineEventId={encounterBaselineEventId}
+        effects={encounterEffects}
+        rolls={encounterRolls}
+        choices={encounterChoices}
+        mutationDraws={encounterMutationDraws}
+        mutationCardId={encounterMutationDraws.some((draw) => draw.cardDrawn) ? encounterRevealCard : undefined}
+        onReveal={() => void runCommand({ type: "resolve-encounter" })}
+        onChoice={(choice) => void runCommand({ type: "resolve-encounter", choice })}
+        onClose={() => setEncounterOverlayOpen(false)}
+      />
     </main>
   );
 }

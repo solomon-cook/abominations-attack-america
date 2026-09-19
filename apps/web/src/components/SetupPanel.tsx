@@ -61,7 +61,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
                   <img src={`/assets/monsters/portraits/${monsterAssetSlug(catalogueMonster?.id ?? monster.name)}.webp`} alt="" aria-hidden="true" />
                   <strong>{monster.name}</strong>
                   <span className="monster-choice-stats">♥ {monster.startingHealth} · Move {monster.move} · Def {monster.defense}</span>
-                  <span className="monster-choice-hover">
+                  <span className="monster-choice-ability">
                     <b>Special ability</b>
                     <span>{catalogueMonster?.specialAbilityText ?? "Special ability details unavailable."}</span>
                     <small>Health {monster.startingHealth} · {monster.attacks} attacks · {monster.damage} damage</small>
