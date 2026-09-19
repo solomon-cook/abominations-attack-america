@@ -11,7 +11,7 @@ import {
   type BoardHex,
   type BoardDefinition,
 } from "@abominations/game-engine";
-import { useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { mutationArt } from "./MutationStrip";
 import { cardDefinition } from "@abominations/game-engine";
@@ -138,6 +138,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
   const board = boardForGame(game);
   const audited = board?.id === AUDITED_BOARD.id;
   const boardHexes = useMemo(() => displayHexesForBoard(board), [board]);
+  const gridRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const boardIndex = useMemo(() => board ? buildBoardIndex(board) : undefined, [board]);
   const activeNeighbours = new Set(board && isHexKey(game.monsters.find((monster) => monster.id === activePlayerId)?.location ?? "")
@@ -161,7 +162,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
   }, [game.monsters, game.units]);
   const activePlayer = game.monsters.find((monster) => monster.id === activePlayerId);
   const selectedDisplayPath = selectedUnitId ? selectedUnitPath : selectedPath;
-  const path = hoveredPath.length > 1 ? hoveredPath : selectedDisplayPath;
+  const path = selectedDisplayPath.length > 1 ? selectedDisplayPath : hoveredPath;
   const pathPoints = path
     .map((key) => displayByKey.get(key))
     .filter((point): point is { left: number; top: number } => Boolean(point))
@@ -172,8 +173,59 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
     .filter((point): point is { left: number; top: number } => Boolean(point))
     .map(({ left, top }) => `${left},${top}`)
     .join(" ");
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+    if (!grid || !acceptedAnimationKey || acceptedPath.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const destination = grid.querySelector<HTMLElement>(".accepted-arrival");
+    const points = acceptedPath.map(key => displayByKey.get(key));
+    if (!destination || points.some(point => !point)) return;
+    const unit = game.units.find(candidate => candidate.id === acceptedPieceId);
+    const directional = Boolean(unit?.unitTypeId?.includes("fighter"));
+    // Animate above the tiles so their hexagonal clipping never cuts off a piece.
+    const traveller = destination.cloneNode(true) as HTMLElement;
+    traveller.className = "travelling-piece";
+    traveller.setAttribute("aria-hidden", "true");
+    const width = destination.offsetWidth;
+    const height = destination.offsetHeight;
+    Object.assign(traveller.style, { position: "absolute", width: `${width}px`, height: `${height}px`, margin: "0", pointerEvents: "none", zIndex: "20", objectFit: "contain" });
+    grid.appendChild(traveller);
+    destination.style.visibility = "hidden";
+    const coordinates = points.map(point => ({ x: point!.left * grid.clientWidth / 100, y: point!.top * grid.clientHeight / 100 }));
+    // The final stack slot can be off-centre; settle into its actual position.
+    let endX = width / 2;
+    let endY = height / 2;
+    for (let element: HTMLElement | null = destination; element && element !== grid; element = element.offsetParent as HTMLElement | null) {
+      endX += element.offsetLeft;
+      endY += element.offsetTop;
+      if (element.classList.contains("hex-tile")) {
+        endX -= element.offsetWidth / 2;
+        endY -= element.offsetHeight / 2;
+      }
+    }
+    const frames: Keyframe[] = [];
+    let angle = 0;
+    const transform = (x: number, y: number, rotation: number) => `translate(${x - width / 2}px, ${y - height / 2}px) rotate(${rotation}deg)`;
+    coordinates.slice(0, -1).forEach((point, index) => {
+      const next = coordinates[index + 1];
+      const heading = directional ? Math.atan2(next.y - point.y, next.x - point.x) * 180 / Math.PI + 90 : 0;
+      angle += ((heading - angle + 540) % 360) - 180;
+      frames.push({ offset: index / (coordinates.length - 1) * .9, transform: transform(point.x, point.y, angle) });
+      frames.push({ offset: (index + 1) / (coordinates.length - 1) * .9, transform: transform(next.x, next.y, angle) });
+    });
+    const restingAngle = angle + ((-angle % 360 + 540) % 360) - 180;
+    frames.push({ offset: 1, transform: transform(endX, endY, restingAngle) });
+    traveller.style.left = "0";
+    traveller.style.top = "0";
+    const animation = traveller.animate(frames, { duration: (acceptedPath.length - 1) * 400 + 200, easing: "linear", fill: "forwards" });
+    const finish = () => { traveller.remove(); destination.style.visibility = ""; };
+    animation.onfinish = finish;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const stopForReducedMotion = () => { if (reducedMotion.matches) { animation.cancel(); finish(); } };
+    reducedMotion.addEventListener("change", stopForReducedMotion);
+    return () => { animation.cancel(); finish(); reducedMotion.removeEventListener("change", stopForReducedMotion); };
+  }, [acceptedAnimationKey, acceptedPath, acceptedPieceId, displayByKey]);
   return (
-    <div className={`hex-grid ${audited ? "audited-grid" : ""}`}>
+    <div ref={gridRef} className={`hex-grid ${audited ? "audited-grid" : ""}`}>
       {audited && <BoardGridLines board={board} />}
       {!board && <div className="board-unavailable" role="alert">This match references an unavailable board version. The board is hidden until the matching board definition is loaded.</div>}
       {pathPoints && path.length > 1 && (
@@ -343,7 +395,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
                   const unitArt = unitArtForType(unit.unitTypeId);
                   return unitArt
                     ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={game.phase === "deploy" && deploymentLegal ? (event) => { event.stopPropagation(); onDeploy(placeKey); } : game.phase === "move" ? (event) => { if (selectedUnitId || selectedPath.length > 1) return; event.stopPropagation(); if (monsterLegal) onChoosePath(placeKey); else onSelectUnit(unit.id); } : game.phase === "encounter" && selectableUnit ? (event) => { event.stopPropagation(); onSelectUnit(unit.id); } : undefined} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
-                    : <i className="unit-mark tile-occupant" key={unit.id}>{unit.branch.slice(0, 1)}</i>;
+                    : <i className={`unit-mark tile-occupant ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id}>{unit.branch.slice(0, 1)}</i>;
                 })}
               </span>}
             </span>

@@ -477,7 +477,7 @@ function App() {
 
   useEffect(() => {
     if (!acceptedMoveAnimation) return;
-    const timeout = window.setTimeout(() => setAcceptedMoveAnimation(null), 720);
+    const timeout = window.setTimeout(() => setAcceptedMoveAnimation(null), (acceptedMoveAnimation.path.length - 1) * 400 + 250);
     return () => window.clearTimeout(timeout);
   }, [acceptedMoveAnimation]);
 
@@ -980,6 +980,7 @@ function App() {
     if (options[0]) setSelectedUnitPath(options[0]);
   };
   const previewPath = (destination: HexKey) => {
+    if ((selectedUnitId ? selectedUnitPath : selectedPath).length > 1) return;
     const paths = selectedUnitId ? legalUnitPathsForSelection : legalPaths;
     const options = paths
       .filter((path) => path.at(-1) === destination)
