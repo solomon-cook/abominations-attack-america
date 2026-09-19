@@ -157,6 +157,7 @@ function App() {
   const [setupSheetOpen, setSetupSheetOpen] = useState(false);
   const [setupPieceId, setSetupPieceId] = useState<string | null>(null);
   const [deploymentPieceId, setDeploymentPieceId] = useState<string | null>(null);
+  const autoFinishDeploymentRequested = useRef(false);
   const [submarineTargetingId, setSubmarineTargetingId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
@@ -248,7 +249,14 @@ function App() {
   const militaryChoices = useMemo(() => deploymentChoices(activeGame), [activeGame]);
   const deploymentPiece = militaryChoices.find((choice) => choice.id === deploymentPieceId);
   const deploymentDestinations = new Set(deploymentPiece?.destinations ?? []);
-  const openMilitarySheet = (sheet?: string) => { setMilitaryInitialSheet(typeof sheet === "string" ? sheet : undefined); setMilitarySheetOpen(true); };
+  const openMilitarySheet = (sheet?: string) => {
+    const requestedSheet = typeof sheet === "string" ? sheet : undefined;
+    const branchHasChoices = militaryChoices.some((choice) => choice.sheet === activeBranch);
+    const guardIsAvailable = militaryChoices.some((choice) => choice.sheet === "National Guard");
+    const defaultSheet = !requestedSheet && !branchHasChoices && guardIsAvailable ? "National Guard" : requestedSheet;
+    setMilitaryInitialSheet(defaultSheet);
+    setMilitarySheetOpen(true);
+  };
   const activeResearchLure = activeGame.activeResearchLure?.monsterId === activePlayer.id
     ? activeGame.activeResearchLure
     : undefined;
@@ -391,7 +399,7 @@ function App() {
         : activeGame.phase === "deploy"
           ? militaryChoices.length
             ? { label: deploymentPiece ? "Change deployment piece" : "Deploy military", command: undefined }
-            : { label: "Finish deployment", command: { type: "pass-deploy" } as GameCommand }
+            : { label: "Deployment complete", command: undefined }
           : activeGame.phase === "challenge"
             ? { label: "Resolve Monster Challenge", command: undefined }
             : { label: "Match complete", command: undefined };
@@ -555,6 +563,21 @@ function App() {
     };
   }, [session?.token, room?.code]);
 
+  const focusNextMovementUnit = (nextGame: GameState) => {
+    if (nextGame.phase !== "move") return;
+    const monster = nextGame.monsters[nextGame.currentPlayer];
+    if (!monster || !nextGame.movedPieceIds.includes(monster.id)) return;
+    const nextUnit = nextGame.units.find((unit) =>
+      legalUnitPaths(nextGame, unit.id).length > 0 || legalSubmarineTargets(nextGame, unit.id).length > 0,
+    );
+    if (!nextUnit) return;
+    setSelectedUnitId(nextUnit.id);
+    setSelectedPath([]);
+    setSelectedUnitPath([]);
+    setHoveredPath([]);
+    if (isHexKey(nextUnit.location)) setFocusedHexKey(nextUnit.location);
+  };
+
   const runCommand = async (command: GameCommand) => {
     if (pendingAction) return;
     setError("");
@@ -576,6 +599,7 @@ function App() {
         ? { path: normalized.path as HexKey[], pieceId: normalized.unitId }
         : undefined;
     try {
+      let nextGame: GameState;
       if (online && session && room) {
         const nextRoom = await sendCommand(
           room.code,
@@ -585,6 +609,7 @@ function App() {
           normalized,
         );
         setRoom(nextRoom);
+        nextGame = nextRoom.state;
         if (normalized.type === "draw-research") {
           const event = nextRoom.state.eventLog.at(-1);
           if (typeof event?.detail.cardId === "string") setResearchReveal(event.detail.cardId);
@@ -595,6 +620,7 @@ function App() {
       } else {
         const result = applyCommand(game, normalized);
         setGame(result.state);
+        nextGame = result.state;
         if (normalized.type === "draw-research" && typeof result.eventPayload.cardId === "string") setResearchReveal(result.eventPayload.cardId);
         if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
         const actionLabel = acceptedActionLabel(normalized);
@@ -603,6 +629,9 @@ function App() {
       }
       if (normalized.type === "deploy" || normalized.type === "redeploy") setDeploymentPieceId(null);
       if (acceptedMove || normalized.type === "stay-piece") { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); setSelectedUnitId(null); }
+      if (normalized.type === "move" || (normalized.type === "stay-piece" && normalized.pieceId === activePlayer.id)) {
+        focusNextMovementUnit(nextGame);
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Action failed");
       if (online && session && room) {
@@ -616,6 +645,17 @@ function App() {
       setPendingAction(false);
     }
   };
+
+  useEffect(() => {
+    if (activeGame.phase !== "deploy" || militaryChoices.length > 0) {
+      autoFinishDeploymentRequested.current = false;
+      return;
+    }
+    if (!canAct || pendingAction || autoFinishDeploymentRequested.current) return;
+    autoFinishDeploymentRequested.current = true;
+    void runCommand({ type: "pass-deploy" });
+  }, [activeGame.phase, canAct, militaryChoices.length, pendingAction]);
+
   const runBoardAction = (command: GameCommand) => {
     if (command.type === "resolve-fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; }
     if (command.type === "resolve-encounter" && !command.choice && !command.trophyUnitId) {
@@ -1081,6 +1121,7 @@ function App() {
           participants={room?.participants ?? []}
           onChooseOption={(value) => void chooseSetupOption(value)}
           deploymentCount={setupPlacements.length}
+          hasAvailableDeploymentOptions={setupChoices.length > 0}
           selectingDeployment={setupDeploying}
           selectedPiece={setupPiece?.typeId}
           onFinishDeployment={() => void chooseSetupStartingChoice("deploy")}
@@ -1202,7 +1243,7 @@ function App() {
               command={actionDock.command ?? ((selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
               canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
             /> : <ActionDock contextLabel={activeGame.phase} guidance={actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
-              onPrimary={!actionDock.command ? () => { if (activeGame.phase === "fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
+              onPrimary={!actionDock.command && !(activeGame.phase === "deploy" && militaryChoices.length === 0) ? () => { if (activeGame.phase === "fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
               label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
           </div>
           <div className="bottom-context-dock">
@@ -1388,7 +1429,7 @@ function App() {
         {activeGame.phase === "fight" && !pendingAttackTarget && !activeGame.pendingRetreat && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length <= 1 && <button className="cinema-primary" disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", ...(pendingBattle ? { battleId: pendingBattle.id } : {}) })}>Resolve fight →</button>}
         {error && <p role="alert">{error}</p>}
       </>} />
-      {researchReveal && <ResolutionStage title="A new advantage." eyebrow="MILITARY / RESEARCH DIVISION" variant="research" onClose={() => setResearchReveal(null)}><CardReveal key={researchReveal} cardId={researchReveal} kind="research" /></ResolutionStage>}
+      {researchReveal && <ResolutionStage title="Research" eyebrow="MILITARY / RESEARCH DIVISION" variant="research" onClose={() => setResearchReveal(null)}><CardReveal key={researchReveal} cardId={researchReveal} kind="research" /></ResolutionStage>}
       <EncounterOverlay
         error={error}
         open={encounterOverlayOpen}

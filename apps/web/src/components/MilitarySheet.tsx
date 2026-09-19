@@ -82,7 +82,6 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
       }}><span /></div>
       <div className="military-hand-toolbar">
         <span className="label">DEPLOY UNITS</span>
-        {!referenceOnly && runCommand && <button type="button" disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Finish deployment</button>}
         <button className="military-sheet-close" onClick={onClose} aria-label="Close military sheets"><span className="mobile-close-label">Close</span><span className="desktop-close-label">Tuck away →</span></button>
       </div>
       {sheets.length > 1 && <nav className="military-sheet-tabs" aria-label="Military sheets">
@@ -109,7 +108,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
         <h2 id="military-sheet-title">{activeSheet}</h2>
         {!referenceOnly && <p className="deployment-instruction">Choose a unit, then tap a glowing location on the map.</p>}
         <MilitaryReference compactDeployment={!referenceOnly && compactDeployment} choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
-        {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Finish deployment to continue."}</p>}
+        {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Deployment will continue automatically."}</p>}
         {game && <details className="military-drawer-research"><summary>Military research · {game.players[playerIndex]?.researchCardIds.length ?? 0}</summary><SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} /></details>}
       </div>
 

@@ -19,7 +19,7 @@ export function ResolutionStage({ title, eyebrow, onClose, children, variant = "
   return <dialog ref={dialog} className={`resolution-stage resolution-${variant}`} aria-label={title} onCancel={event => { event.preventDefault(); onClose(); }}>
     <header className="resolution-header"><div><p className="resolution-eyebrow">{eyebrow}</p><h2>{title}</h2></div><button autoFocus className="resolution-close" onClick={onClose} aria-label="Return to board">✕ <span>Board</span></button></header>
     <div className="resolution-content">{children}</div>
-    <footer className="resolution-footer"><span>ABOMINATIONS ATTACK AMERICA</span><span>EVERY TURN LEAVES A MARK</span></footer>
+    <footer className="resolution-footer"><span>ABOMINATIONS ATTACK AMERICA</span></footer>
   </dialog>;
 }
 
@@ -27,6 +27,6 @@ export function CardReveal({ cardId, kind = "mutation", onRevealed }: { cardId: 
   const [revealed, setRevealed] = useState(false);
   const rule = sourcedCardRule(cardId);
   return <div className={`cinema-card-reveal ${revealed ? "is-revealed" : ""}`}>
-    {revealed ? <DigitalCard cardId={cardId} kind={kind} className="cinema-digital-card" status={rule?.classification === "persistent" ? "Keep this card face up while its effect applies." : undefined} /> : <button className="cinema-card-back" onClick={() => { setRevealed(true); onRevealed?.(); }}><small>{kind === "mutation" ? "MONSTER MUTATION" : "MILITARY RESEARCH"}</small><span aria-hidden="true">✦</span><strong>Reveal card</strong><small>A NEW ADVANTAGE AWAITS</small></button>}
+    {revealed ? <DigitalCard cardId={cardId} kind={kind} className="cinema-digital-card" status={rule?.classification === "persistent" ? "Keep this card face up while its effect applies." : undefined} /> : <button className="cinema-card-back" onClick={() => { setRevealed(true); onRevealed?.(); }}><small>{kind === "mutation" ? "MONSTER MUTATION" : "MILITARY RESEARCH"}</small><span aria-hidden="true">✦</span><strong>Reveal card</strong></button>}
   </div>;
 }

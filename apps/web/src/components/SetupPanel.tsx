@@ -12,6 +12,7 @@ type Props = {
   participants: RoomView["participants"];
   onChooseOption: (value: string) => void;
   deploymentCount: number;
+  hasAvailableDeploymentOptions: boolean;
   selectingDeployment: boolean;
   selectedPiece?: string;
   onFinishDeployment: () => void;
@@ -19,7 +20,7 @@ type Props = {
   onChooseStartingChoice: (kind: "research" | "deploy") => void;
 };
 
-export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex, participants, onChooseOption, onChooseStartingChoice, deploymentCount, selectingDeployment, selectedPiece, onFinishDeployment, onUndoDeployment }: Props) {
+export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex, participants, onChooseOption, onChooseStartingChoice, deploymentCount, hasAvailableDeploymentOptions, selectingDeployment, selectedPiece, onFinishDeployment, onUndoDeployment }: Props) {
   const waiting = online && playerIndex !== setupSeat?.playerIndex;
   const disabled = Boolean(waiting);
   const lairLabel = (key?: string, monsterId = setupSeat?.monsterId) => key && monsterId ? setupLairLabel(activeSetup, board, monsterId, key) : "Not selected";
@@ -93,9 +94,11 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
               </button>;
             })}
             {activeSetup.phase === "starting-choice" && <>
-              <button disabled={disabled || deploymentCount > 0} onClick={() => onChooseStartingChoice("research")}>Draw Research</button>
-              <button disabled={disabled} onClick={() => onChooseStartingChoice("deploy")}>{selectingDeployment ? "Choose another starting unit" : "Deploy starting troops"}</button>
-              {selectingDeployment && <><p>{deploymentCount} starting troop{deploymentCount === 1 ? "" : "s"} placed.{selectedPiece ? ` Place ${selectedPiece.replaceAll("-", " ")} on a glowing location.` : " Choose a piece from your military sheet."}</p><button disabled={disabled || !deploymentCount} onClick={onFinishDeployment}>Finish starting deployment</button><button disabled={disabled || !deploymentCount} onClick={onUndoDeployment}>Undo last placement</button></>}
+              {!(selectingDeployment && !hasAvailableDeploymentOptions) && <>
+                <button disabled={disabled || deploymentCount > 0} onClick={() => onChooseStartingChoice("research")}>Draw Research</button>
+                <button disabled={disabled} onClick={() => onChooseStartingChoice("deploy")}>{selectingDeployment ? "Choose another starting unit" : "Deploy starting troops"}</button>
+              </>}
+              {selectingDeployment && !hasAvailableDeploymentOptions && <><p>{deploymentCount} starting troop{deploymentCount === 1 ? "" : "s"} placed.{selectedPiece ? ` Place ${selectedPiece.replaceAll("-", " ")} on a glowing location.` : " Choose a piece from your military sheet."}</p><button disabled={disabled || !deploymentCount} onClick={onFinishDeployment}>Finish starting deployment</button><button disabled={disabled || !deploymentCount} onClick={onUndoDeployment}>Undo last placement</button></>}
             </>}
           </div>
           <p className="setup-progress">{activeSetup.seats.filter((seat) => seat.ready).length}/{activeSetup.seats.length} starting choices confirmed</p>
