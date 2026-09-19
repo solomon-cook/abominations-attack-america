@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma.js";
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const token = () => randomBytes(24).toString("base64url");
 const code = () => randomBytes(3).toString("hex").toUpperCase();
+const gameSeed = () => randomBytes(4).readUInt32LE(0);
 const getPrisma = () => {
   if (!prisma) throw new Error("DATABASE_URL is required to initialize Prisma.");
   return prisma;
@@ -29,9 +30,10 @@ export class PrismaRoomStore implements RoomStore {
   async createRoom(maxPlayers: number, displayName = "Player 1", privacy: RoomPrivacy = "private"): Promise<SessionResponse> {
     const accessToken = token();
     const roomCode = code();
+    const seed = gameSeed();
     const state = this.allowDevelopmentFixture
-      ? createRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`)
-      : createMvpRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`);
+      ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`)
+      : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`);
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
     const room = await this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", state: state as any } });
     const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });

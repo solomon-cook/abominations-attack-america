@@ -48,6 +48,7 @@ const hash = (token: string) => createHash("sha256").update(token).digest("hex")
 const token = () => randomBytes(24).toString("base64url");
 const code = () => randomBytes(3).toString("hex").toUpperCase();
 const now = () => new Date().toISOString();
+const gameSeed = () => randomBytes(4).readUInt32LE(0);
 
 export class MemoryRoomStore implements RoomStore {
   private rooms = new Map<string, StoredRoom>();
@@ -62,9 +63,10 @@ export class MemoryRoomStore implements RoomStore {
   async createRoom(maxPlayers: number, displayName = "Player 1", privacy: RoomPrivacy = "private"): Promise<SessionResponse> {
     const id = randomBytes(12).toString("hex");
     const roomCode = code();
+    const seed = gameSeed();
     const state = this.allowDevelopmentFixture
-      ? createRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`)
-      : createMvpRoomGame(maxPlayers as 2 | 3 | 4, 0, `room-${roomCode}`);
+      ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`)
+      : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`);
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
     const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, participants: [], events: [], lastActivityAt: Date.now() };
     this.rooms.set(room.code, room);
