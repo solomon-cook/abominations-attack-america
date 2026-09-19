@@ -31,6 +31,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const drawerDrag = useRef<{ y: number; height: number } | null>(null);
   const suppressSelection = useRef(false);
+  const [section, setSection] = useState<"units" | "research">("units");
   const [selectedSheet, setSelectedSheet] = useState(initialSheet ?? branch);
   const [compactDeployment, setCompactDeployment] = useState(() => window.matchMedia("(max-width: 600px)").matches);
   const [drawerHeight, setDrawerHeight] = useState<number | null>(null);
@@ -81,10 +82,14 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
         resizeDrawer(event.key === "Home" ? min : event.key === "End" ? max : (drawerHeight ?? window.innerHeight * .58) + (event.key === "ArrowUp" ? 48 : -48));
       }}><span /></div>
       <div className="military-hand-toolbar">
-        <span className="label">DEPLOY UNITS</span>
+        <span className="label">MILITARY</span>
         <button className="military-sheet-close" onClick={onClose} aria-label="Close military sheets"><span className="mobile-close-label">Close</span><span className="desktop-close-label">Tuck away →</span></button>
       </div>
-      {sheets.length > 1 && <nav className="military-sheet-tabs" aria-label="Military sheets">
+      <nav className="military-section-nav" aria-label="Military actions">
+        <button type="button" aria-pressed={section === "units"} onClick={() => setSection("units")}>Unit deployment</button>
+        {game && <button type="button" aria-pressed={section === "research"} onClick={() => setSection("research")}>Military research <span>{game.players[playerIndex]?.researchCardIds.length ?? 0}</span></button>}
+      </nav>
+      {section === "units" && sheets.length > 1 && <nav className="military-sheet-tabs" aria-label="Military sheets">
         {sheets.map((sheet) => <button key={sheet} aria-pressed={sheet === activeSheet} onClick={() => setSelectedSheet(sheet)}>{sheet}</button>)}
       </nav>}
       <div className="military-sheet physical-military-sheet" data-branch={activeSheet} key={activeSheet} onTouchStart={(event) => {
@@ -106,10 +111,12 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
       }}>
         <span className="label">MILITARY RECORD SHEET</span>
         <h2 id="military-sheet-title">{activeSheet}</h2>
-        {!referenceOnly && <p className="deployment-instruction">Choose a unit, then tap a glowing location on the map.</p>}
-        <MilitaryReference compactDeployment={!referenceOnly && compactDeployment} choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
+        {section === "units" && <>
+        {pageChoices.length > 0 && <p className="deployment-instruction">Select a piece, then a glowing location on the map.</p>}
+        <MilitaryReference compactDeployment choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
         {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Deployment will continue automatically."}</p>}
-        {game && <details className="military-drawer-research"><summary>Military research · {game.players[playerIndex]?.researchCardIds.length ?? 0}</summary><SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy} /></details>}
+        </>}
+        {section === "research" && game && <div className="military-drawer-research"><SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy ?? ((sheet) => { if (sheet) setSelectedSheet(sheet); setSection("units"); })} /></div>}
       </div>
 
     </div>

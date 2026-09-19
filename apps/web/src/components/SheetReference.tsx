@@ -25,7 +25,7 @@ function ReserveSlots({ typeId, quantity, game, choices = [], onSelect }: { type
       const art = <img src={typeId === "mecha-monster" || typeId === "captain-colossal" ? `/assets/cards/military-research-${typeId}.webp` : `/assets/military/${typeId}.webp`} alt="" />;
       const style = { "--piece-mask": `url(/assets/military/${typeId}.webp)` } as CSSProperties;
       return choice && onSelect ? <button type="button" key={piece!.id} className={`record-piece-slot selectable-record-piece ${piece!.reserve ? "in-reserve" : "on-board"}`} style={style}
-        aria-label={`${choice.kind === "deploy" ? "Deploy" : "Redeploy"} ${typeId.replaceAll("-", " ")} piece ${i + 1}`} onClick={() => onSelect(choice)}>{art}<span>{choice.kind === "deploy" ? "Deploy" : "Redeploy"}</span></button>
+        aria-label={`${choice.kind === "deploy" ? "Deploy" : "Redeploy"} ${typeId.replaceAll("-", " ")} piece ${i + 1}`} onClick={() => onSelect(choice)} title={`${choice.kind === "deploy" ? "Deploy" : "Redeploy"} ${typeId.replaceAll("-", " ")}`}>{art}{choice.kind === "redeploy" && <span>Redeploy</span>}</button>
         : <span key={piece?.id ?? i} className={`record-piece-slot ${piece?.reserve ? "in-reserve" : ""}`} style={style} aria-label={piece?.reserve ? "In reserve; no legal deployment now" : "Not in reserve"}>{piece?.reserve && art}</span>;
     })}</div>
     <span className="record-reserve-count"><b>{reserve}</b> / {quantity}<small>IN RESERVE</small></span>
@@ -42,8 +42,10 @@ export function MilitaryReference({ sheet, game, choices, onSelect, compactDeplo
   const source = units[0]?.sourceRefs[0]?.split("/").at(-1) ?? (sheet === "National Guard" || sheet === "Giant" || sheet === "Mecha-Monster" || sheet === "Captain Colossal" ? "giant-units-national-guard.jpg" : undefined);
   const research = game?.players[game.currentPlayer]?.researchCardIds ?? [];
   return <section className="sheet-reference" aria-label={`${sheet} reference rules`}>
+    <details className="military-reference-details"><summary>Deployment rules & reference</summary>
     <p className="sheet-reference-note">Printed reference values · special abilities and research may change combat.</p>
     {deployment && <p className="deployment-reference"><b>Deploy:</b> {deployment.ownOrGuardUnits} branch or National Guard units{deployment.additionalNationalGuardUnits ? `, plus ${deployment.additionalNationalGuardUnits} National Guard` : ""}, or draw 1 Military Research card. Anyone may deploy Guard unless another player holds Guard Commander.</p>}
+    </details>
     {units.map((unit) => <article key={unit.id}>
       <h3>{unit.name} <small>· {unit.quantity} pieces</small></h3>
       <ReserveSlots typeId={unit.id} quantity={unit.quantity} game={game} choices={choices} onSelect={onSelect} />

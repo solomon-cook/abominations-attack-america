@@ -217,3 +217,33 @@
 .unit-reference-details{margin-top:10px}
 .unit-reference-details>summary{cursor:pointer;color:#3d5039;font-weight:700;font-size:12px}
 @media(max-width:600px){.mobile-close-label{display:inline}}
+
+/* Keep the two primary actions available above the scrolling record. */
+.military-section-nav{display:flex;gap:6px;padding:0 8px 10px;flex-shrink:0}
+.military-section-nav button{flex:1;min-height:44px;padding:8px;border:1px solid #87977f;border-radius:6px;background:transparent;color:#f4efd9;font-size:13px;font-weight:700;cursor:pointer}
+.military-section-nav button[aria-pressed=true]{background:#eee6cc;color:#28362b;border-color:#eee6cc}
+.military-section-nav button:focus-visible{outline:3px solid #ffe295;outline-offset:2px}
+.military-section-nav button span{margin-left:4px;font-variant-numeric:tabular-nums}
+.military-drawer .physical-military-sheet button.selectable-record-piece{width:54px;min-width:54px;height:66px;padding:0;border:0;background:transparent;box-shadow:none;border-radius:4px}
+.military-drawer .physical-military-sheet button.selectable-record-piece:hover{background:transparent;outline:none;transform:translateY(-3px)}
+.military-drawer .physical-military-sheet button.selectable-record-piece:focus-visible{background:transparent;outline:2px solid #355d24;outline-offset:3px}
+.military-drawer .record-reserve{margin:8px 0;gap:10px}
+.military-drawer .record-reserve-slots{gap:8px;padding:4px 2px 14px}
+.military-drawer .record-piece-slot{flex-shrink:0}
+.military-drawer .record-reserve-count{font-size:13px}
+.military-drawer .record-reserve-count small{font-size:9px;letter-spacing:.5px}
+.military-drawer .unit-reference-details{margin:0}
+.military-drawer .unit-reference-details>summary,.military-reference-details>summary{min-height:32px;padding:6px 0;cursor:pointer;font-size:11px;color:#46553e}
+.military-drawer .unit-reference-details p,.military-reference-details p{font-size:12px;line-height:1.5}
+.military-drawer .deployment-instruction{font-size:12px;margin:0 0 6px}
+.military-drawer .physical-military-sheet>h2{font-size:20px;padding-block:9px;margin-bottom:8px}
+.military-drawer .physical-military-sheet .sheet-reference article+article{border-top-width:1px;margin-top:10px;padding-top:10px}
+.military-drawer .military-drawer-research{border:0;padding:0;margin:0}
+.military-drawer .military-reference-details[open] .sheet-reference-note,.military-drawer .military-reference-details[open] .deployment-reference{display:block}
+@media(max-width:600px){.military-section-nav{padding:0 2px 8px}.military-section-nav button{font-size:12px}}
+@media(min-width:601px){
+  .military-drawer .record-piece-slot,.military-drawer .physical-military-sheet button.selectable-record-piece{width:44px;min-width:44px;height:58px}
+  .military-drawer .record-reserve-count{font-size:12px}
+  .military-drawer .record-reserve-count b{font-size:22px}
+  .military-drawer .physical-military-sheet h3{margin-top:10px}
+}
