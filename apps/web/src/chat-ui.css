@@ -3,10 +3,10 @@
 .mutation-strip>div { display:flex; gap:5px; overflow-x:auto; margin-top:5px; }
 .mutation-strip>div>button { flex-shrink:0; }
 .mutation-strip button { width:38px; height:38px; padding:0; border:1px solid #cfbb73; border-radius:4px; overflow:hidden; background:#263329; }
-.mutation-strip button img { width:100%; height:100%; object-fit:cover; object-position:top; }
+.mutation-strip button .digital-card-art { height:100%; border:0; }
 .mutation-card-preview { position:fixed; z-index:150; box-sizing:border-box; width:280px; max-height:min(400px,calc(100dvh - 16px)); overflow:auto; padding:10px; border:1px solid #ddc17e; border-radius:6px; background:#202b28; color:#fff1c9; box-shadow:0 10px 30px #0009; }
 .mutation-card-preview>button { float:right; background:#3c493c; color:#fff; border:0; font-size:20px; }
-.mutation-card-preview>img { display:block; width:100%; max-height:260px; object-fit:contain; margin:7px 0; }
+.mutation-card-preview .digital-card-art { height:170px; margin:7px 0; border-radius:3px; }
 .mutation-card-preview p { font-size:12px; line-height:1.4; }
 .board-monster-peek { position:fixed; z-index:90; width:320px; box-sizing:border-box; padding:10px; border:1px solid #c9b67e; border-radius:6px; background:#1d2925ed; color:#fff2d3; pointer-events:none; box-shadow:0 8px 24px #0008; }
 .board-monster-peek>span { display:block; font-size:11px; line-height:1.5; margin:5px 0; }

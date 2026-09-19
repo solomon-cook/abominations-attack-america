@@ -40,8 +40,15 @@
 .military-hand .physical-military-sheet{background-image:url('/assets/reference-sheets/camouflage.svg');background-size:240px 190px}
 .sheet-held-cards{clear:both;margin:24px 0;padding-top:14px;border-top:2px solid #e9dfa377}
 .sheet-held-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;align-items:start}
-.sheet-held-card{padding:12px;background:#f0ead7;color:#222c26;border:2px solid #9b916e;border-radius:10px;box-shadow:2px 4px 8px #0003;min-width:0}
-.sheet-held-card h4{font-family:Georgia,serif;font-size:18px;margin:0 0 10px}.sheet-held-card>img{display:block;width:100%;max-height:300px;object-fit:contain;border-radius:6px}
+.digital-card{--card-paper:#f0ead7;--card-ink:#202721;--card-edge:#9b916e;--card-accent:#385f3d;display:flex;flex-direction:column;padding:0;overflow:hidden;background:var(--card-paper);color:var(--card-ink);border:2px solid var(--card-edge);border-radius:11px;box-shadow:2px 4px 8px #0003;min-width:0}
+.digital-card-mutation{--card-paper:#f1e2c2;--card-ink:#2a1815;--card-edge:#762f28;--card-accent:#8f2920}.digital-card-research{--card-paper:#e9e4c7;--card-ink:#14231f;--card-edge:#74703e;--card-accent:#2d5446}
+.digital-card-heading{padding:11px 13px 10px;background:linear-gradient(115deg,var(--card-accent),color-mix(in srgb,var(--card-accent) 72%,#101512));color:#fff6d7;border-bottom:2px solid color-mix(in srgb,var(--card-edge) 72%,#16110f)}
+.digital-card-heading span{display:block;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;opacity:.8}.digital-card-heading h4{font-family:Georgia,serif;font-size:20px;line-height:1.05;margin:4px 0 0;color:inherit}
+.digital-card-art{position:relative;width:100%;height:150px;overflow:hidden;background:#181b19;border-block:1px solid #17130f}.digital-card-art img{position:absolute;display:block;width:100%;height:auto;left:0;top:50%;transform:translateY(-50%)}
+.digital-card-art-mutation img{top:55%}.digital-card-art-research img{top:54%}
+.digital-card-rules{padding:10px 13px 11px;flex:1;background:linear-gradient(135deg,#ffffff3d,transparent 60%)}.digital-card-rules p{font-size:14px;line-height:1.45;white-space:pre-line;margin:5px 0 0}.digital-card-rules .digital-card-timing{margin:0;color:var(--card-accent);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.digital-card-status{margin:0;padding:8px 13px;border-top:1px solid #74684955;color:#40513f;font-size:12px;line-height:1.35}.digital-card-actions{display:grid;gap:8px;padding:0 13px 13px}.digital-card-actions button,.digital-card-actions select{width:100%;min-height:44px;padding:10px;border:1px solid #536047;border-radius:6px;background:#294532;color:#fff7d5;font-weight:700;cursor:pointer}.digital-card-actions select{background:#fffbed;color:#243226;max-width:100%}.digital-card-actions label{font-size:12px}.digital-card-actions button:disabled{opacity:.5;cursor:default}
+.sheet-held-card{min-width:0}.sheet-held-card h4{font-size:18px}.sheet-held-card>img{display:block;width:100%;max-height:300px;object-fit:contain;border-radius:6px}
 .sheet-held-card details{margin-top:10px}.sheet-held-card summary{cursor:pointer;font-weight:700;font-size:13px}.sheet-held-card p{font-size:13px;line-height:1.5;white-space:pre-line}
 .sheet-held-card .sheet-card-status{font-size:12px;color:#40513f}.sheet-held-card button,.sheet-held-card select{width:100%;min-height:44px;padding:10px;border:1px solid #536047;border-radius:6px;background:#294532;color:#fff7d5;font-weight:700;cursor:pointer;margin-top:8px}.sheet-held-card select{background:#fffbed;color:#243226;max-width:100%}.sheet-held-card label{font-size:12px}.sheet-held-card button:disabled{opacity:.5;cursor:default}
 @media(max-width:600px){.sheet-held-card-grid{grid-template-columns:minmax(0,1fr)}}
@@ -130,9 +137,8 @@
 .monster-sheet-workspace > .sheet-held-cards > h3 { color:#fff1cd; margin:0 0 8px; }
 .sheet-card-art { position:relative; width:100%; aspect-ratio:1.45; overflow:hidden; border-radius:6px; background:#292e24; }
 .sheet-card-art img { position:absolute; width:100%; height:auto; max-height:none; left:0; top:50%; transform:translateY(-50%); }
-.sheet-held-card .sheet-card-rules { margin-top:12px; }
-.sheet-held-card .sheet-card-rules p { color:#18241b; font-size:15px; line-height:1.55; margin:8px 0; }
-.sheet-held-card .sheet-card-status { font-size:13px; }
+.sheet-held-card .digital-card-rules p { color:#18241b; font-size:15px; line-height:1.55; }
+.sheet-held-card .digital-card-status { font-size:13px; }
 @media(min-width:901px) and (hover:hover) {
   .sheet-held-card-grid .sheet-held-card { flex-basis:280px; width:280px; }
   .monster-sheet-workspace .sheet-held-card-grid { padding:28px 12px 24px; }

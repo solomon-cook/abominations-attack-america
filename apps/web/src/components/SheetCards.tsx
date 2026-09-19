@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { applyCommand, cardDefinition, sourcedCardRule, legalGiantPlacementDestinations, type GameCommand, type GameState } from "@abominations/game-engine";
 import { boardForGame } from "../board-pin";
+import { DigitalCard } from "./DigitalCard";
 
 type CardAction = { label: string; command: GameCommand };
 export function sheetCardActions(game: GameState, cardId: string): CardAction[] {
@@ -38,7 +39,6 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game:
   const implemented = cardDefinition(cardId)?.availability === "implemented";
   const actions = useMemo(() => canPlay && implemented ? sheetCardActions(game, cardId) : [], [game, cardId, canPlay, implemented]);
   const chosen = actions.find((action) => JSON.stringify(action.command) === selected);
-  const slug = cardId.toLowerCase().replaceAll(" ", "-").replaceAll("!", "").replaceAll("'", "");
   const status = !implemented ? "This card’s action is not implemented yet."
     : rule?.classification === "persistent" ? "Active while held · no play action needed."
     : rule?.classification === "conditional" ? "Applies automatically when its conditions are met."
@@ -46,11 +46,7 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game:
     : !canPlay ? "Play on your turn when the card’s timing allows."
     : !actions.length ? "No legal play or target at this point in the turn."
     : "Ready to play.";
-  return <article className="sheet-held-card" aria-label={cardId} tabIndex={0}>
-    <h4>{cardId}</h4>
-    <div className="sheet-card-art"><img src={`/assets/cards/${kind === "mutation" ? "monster-mutation" : "military-research"}-${slug}.webp`} alt="" loading="lazy" /></div>
-    <div className="sheet-card-rules"><p>{rule?.transcription ?? "Rules text unavailable."}</p><p><b>Timing:</b> {rule?.timing}</p></div>
-    <p className="sheet-card-status">{status}</p>
+  return <DigitalCard cardId={cardId} kind={kind} className="sheet-held-card" status={status} tabIndex={0}>
     {actions.length === 1 && runCommand && <button type="button" onClick={() => void runCommand(actions[0].command)}>{actions[0].label}</button>}
     {actions.length > 1 && runCommand && <>
       <label>Choose target or outcome<select aria-label={`${cardId} target or outcome`} value={chosen ? selected : ""} onChange={(event) => setSelected(event.target.value)}>
@@ -59,7 +55,7 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game:
       <button type="button" disabled={!chosen} onClick={() => chosen && void runCommand(chosen.command)}>Play {cardId}</button>
     </>}
     {cardId === "X-Fighters" && canPlay && game.phase === "deploy" && onDeploy && <button type="button" onClick={() => onDeploy("X-Fighters")}>Choose an X-Fighter to deploy</button>}
-  </article>;
+  </DigitalCard>;
 }
 
 export function SheetCards({ game, playerIndex, kind, canAct = false, runCommand, onDeploy }: { game: GameState; playerIndex: number; kind: "mutation" | "research"; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void }) {

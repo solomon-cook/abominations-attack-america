@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cardDefinition, sourcedCardRule } from "@abominations/game-engine";
+import { CardArtwork, cardArtworkSrc } from "./DigitalCard";
 
-export const mutationArt = (id: string) => `/assets/cards/monster-mutation-${id.toLowerCase().replaceAll(" ", "-").replaceAll("!", "").replaceAll("'", "")}.webp`;
+export const mutationArt = (id: string) => cardArtworkSrc(id, "mutation");
 
 export function MutationStrip({ cards }: { cards: readonly string[] }) {
   const [preview, setPreview] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -19,12 +20,12 @@ export function MutationStrip({ cards }: { cards: readonly string[] }) {
       onFocus={event => { const r=event.currentTarget.getBoundingClientRect(); setPreview({id,x:r.left,y:r.top}); }}
       onBlur={closeSoon}
       onClick={event => { const r=event.currentTarget.getBoundingClientRect(); setPreview({id,x:r.left,y:r.top}); }}>
-      <img src={mutationArt(id)} alt="" />
+      <CardArtwork cardId={id} kind="mutation" />
     </button>)}</div>
     {!visible.length && <span>No revealed mutations</span>}
     {preview && createPortal(<aside className="mutation-card-preview" aria-label={preview.id} onMouseEnter={keepOpen} onMouseLeave={closeSoon} onFocus={keepOpen} onBlur={closeSoon} style={{left:Math.max(8,Math.min(preview.x,window.innerWidth-288)),top:Math.max(8,preview.y-410)}}>
       <button aria-label="Close mutation preview" onClick={() => setPreview(null)}>×</button><strong>{preview.id}</strong>
-      <img src={mutationArt(preview.id)} alt={preview.id} />
+      <CardArtwork cardId={preview.id} kind="mutation" alt="" />
       <p>{sourcedCardRule(preview.id)?.transcription}</p>
     </aside>,document.body)}
   </div>;

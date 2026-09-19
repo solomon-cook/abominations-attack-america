@@ -1,4 +1,5 @@
 import { cardDefinition, sourcedCardRule, type GameCommand, type GameState } from "@abominations/game-engine";
+import { CardArtwork } from "./DigitalCard";
 
 type Props = {
   game: GameState;
@@ -19,16 +20,6 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
   const activeMonsterOwnsPendingBattle = pendingBattle?.monsterId === game.monsters[playerIndex]?.id;
   const canUseMutation = canAct && isActivePlayer && game.phase === "fight" && Boolean(activeMonsterOwnsPendingBattle);
   const canUseDefenseSatellites = canAct && isActivePlayer && game.phase !== "challenge" && game.phase !== "game-over" && game.pendingBattles.length === 0 && !game.pendingRetreat;
-  const cardAssetSrc = (cardId: string) => {
-    const slug = cardId.toLowerCase().replaceAll(" ", "-").replaceAll("!", "").replaceAll("'", "");
-    const researchCards = ["Mecha-Monster", "Cutbacks", "Laser Fence", "Guard Commander", "Defense Satellites", "Stabilizer Ray", "Fusion Cells", "X-Fighters", "Molecular Cannon", "2nd Generation", "Blonde Lure", "Anti-Mutagen", "Antimatter", "Scientific Analysis", "Chopper Lift", "Captain Colossal"];
-    const mutationCards = ["Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "Berserk", "War Spikes", "Atomic Breath", "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Son of a Monster", "Winged Horror", "Kinda Friendly", "Laser Beam Eyes", "Armored Scales", "It's a Robot!"];
-    return researchCards.includes(cardId)
-      ? `/assets/cards/military-research-${slug}.webp`
-      : mutationCards.includes(cardId)
-        ? `/assets/cards/monster-mutation-${slug}.webp`
-        : undefined;
-  };
   const cardDetails = (cardId: string) => {
     const definition = cardDefinition(cardId);
     const rule = sourcedCardRule(cardId);
@@ -59,7 +50,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
           <span>{definition?.availability === "implemented" ? "Implemented in this ruleset" : "Source-gated · unavailable"}</span>
           {rule ? (
             <>
-              {cardAssetSrc(cardId) && <img className="hand-card-art" src={cardAssetSrc(cardId)} alt={`${cardId} card artwork with sourced rules text`} loading="lazy" />}
+              <CardArtwork cardId={cardId} kind={definition?.deck === "research" ? "research" : "mutation"} />
               {actionWindow && <span className="hand-card-action-status">{isActivePlayer ? `Playable through current controls: ${actionWindow}` : `Playable by the active player: ${actionWindow}`}</span>}
               {directAction}
               <div className="hand-card-meta" aria-label={`${cardId} rule metadata`}>
@@ -90,7 +81,6 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
         <strong><span className="metric-icon" aria-hidden="true">▤</span> Monster Mutation · {revealedMutationCards.length}</strong>
         {revealedMutationCards.length ? (
           <>
-            <img className="revealed-card-art" src="/assets/cards/monster-mutation-01.webp" alt="Monster Mutation source card artwork" loading="lazy" />
             <div className="hand-card-list">{revealedMutationCards.map(cardDetails)}</div>
           </>
         ) : (
@@ -101,7 +91,6 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
         <strong><span className="metric-icon" aria-hidden="true">▤</span> Military Research · {revealedResearchCards.length}</strong>
         {revealedResearchCards.length ? (
           <>
-            <img className="revealed-card-art" src="/assets/cards/military-research-01.webp" alt="Military Research source card artwork" loading="lazy" />
             <div className="hand-card-list">{revealedResearchCards.map(cardDetails)}</div>
           </>
         ) : <span className="empty-card-state">None revealed</span>}
