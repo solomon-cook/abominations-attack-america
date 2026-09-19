@@ -179,8 +179,6 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
     const destination = grid.querySelector<HTMLElement>(".accepted-arrival");
     const points = acceptedPath.map(key => displayByKey.get(key));
     if (!destination || points.some(point => !point)) return;
-    const unit = game.units.find(candidate => candidate.id === acceptedPieceId);
-    const directional = Boolean(unit?.unitTypeId?.includes("fighter"));
     // Animate above the tiles so their hexagonal clipping never cuts off a piece.
     const traveller = destination.cloneNode(true) as HTMLElement;
     traveller.className = "travelling-piece";
@@ -207,7 +205,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
     const transform = (x: number, y: number, rotation: number) => `translate(${x - width / 2}px, ${y - height / 2}px) rotate(${rotation}deg)`;
     coordinates.slice(0, -1).forEach((point, index) => {
       const next = coordinates[index + 1];
-      const heading = directional ? Math.atan2(next.y - point.y, next.x - point.x) * 180 / Math.PI + 90 : 0;
+      const heading = Math.atan2(next.y - point.y, next.x - point.x) * 180 / Math.PI + 90;
       angle += ((heading - angle + 540) % 360) - 180;
       frames.push({ offset: index / (coordinates.length - 1) * .9, transform: transform(point.x, point.y, angle) });
       frames.push({ offset: (index + 1) / (coordinates.length - 1) * .9, transform: transform(next.x, next.y, angle) });

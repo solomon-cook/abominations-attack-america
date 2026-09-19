@@ -97,7 +97,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
             })}
             {activeSetup.phase === "starting-choice" && <>
               {!(selectingDeployment && !hasAvailableDeploymentOptions) && <>
-                <button disabled={disabled || deploymentCount > 0} onClick={() => onChooseStartingChoice("research")}>Draw Research</button>
+                {deploymentCount === 0 && <button disabled={disabled} onClick={() => onChooseStartingChoice("research")}>Draw Research</button>}
                 <button disabled={disabled} onClick={() => onChooseStartingChoice("deploy")}>{selectingDeployment ? "Choose another starting unit" : "Deploy starting troops"}</button>
               </>}
               {selectingDeployment && !hasAvailableDeploymentOptions && <><p>{deploymentCount} starting troop{deploymentCount === 1 ? "" : "s"} placed.{selectedPiece ? ` Place ${selectedPiece.replaceAll("-", " ")} on a glowing location.` : " Choose a piece from your military sheet."}</p><button disabled={disabled || !deploymentCount} onClick={onFinishDeployment}>Finish starting deployment</button><button disabled={disabled || !deploymentCount} onClick={onUndoDeployment}>Undo last placement</button></>}

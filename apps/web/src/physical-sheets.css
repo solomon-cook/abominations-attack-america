@@ -247,3 +247,11 @@
   .military-drawer .record-reserve-count b{font-size:22px}
   .military-drawer .physical-military-sheet h3{margin-top:10px}
 }
+
+/* Printed details stay visible, with a quieter scale than the pieces. */
+.military-drawer .unit-reference-details p,.military-drawer .military-reference-details p,.military-drawer .deployment-reference{font-size:11px;line-height:1.4;margin:6px 0}
+.military-drawer .physical-military-sheet .sheet-stats{margin:6px 0;gap:0}
+.military-drawer .physical-military-sheet .sheet-stats>div{padding:4px 6px;background:transparent}
+.military-drawer .physical-military-sheet .sheet-stats dt{font-size:9px}
+.military-drawer .physical-military-sheet .sheet-stats dd{font-size:12px;line-height:1.35}
+.military-drawer .sheet-reference-note,.military-drawer .deployment-reference{display:block}

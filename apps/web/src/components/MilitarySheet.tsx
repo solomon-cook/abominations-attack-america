@@ -26,13 +26,20 @@ export function deploymentChoices(game: GameState): DeploymentChoice[] {
   });
 }
 
+/** Prefer the branch until its legal allowance is exhausted, then eligible Guard. */
+export function nextDeploymentSheet(choices: readonly DeploymentChoice[], branch: string): string {
+  return choices.some((choice) => choice.sheet === branch) ? branch
+    : choices.some((choice) => choice.sheet === "National Guard") ? "National Guard"
+    : choices[0]?.sheet ?? branch;
+}
+
 export function MilitarySheet({ branch, choices, onSelect, onClose, game, referenceOnly = false, canAct = false, runCommand, playerIndex = game?.currentPlayer ?? 0, onDeploy, initialSheet }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onClose: () => void; game?: GameState; referenceOnly?: boolean; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; playerIndex?: number; onDeploy?: (sheet?: string) => void; initialSheet?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const drawerDrag = useRef<{ y: number; height: number } | null>(null);
   const suppressSelection = useRef(false);
   const [section, setSection] = useState<"units" | "research">("units");
-  const [selectedSheet, setSelectedSheet] = useState(initialSheet ?? branch);
+  const [selectedSheet, setSelectedSheet] = useState(initialSheet ?? nextDeploymentSheet(choices, branch));
   const [compactDeployment, setCompactDeployment] = useState(() => window.matchMedia("(max-width: 600px)").matches);
   const [drawerHeight, setDrawerHeight] = useState<number | null>(null);
   const extraSheets = referenceOnly && game ? ownedMilitarySheets(game, playerIndex, branch) : [];
@@ -113,7 +120,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
         <h2 id="military-sheet-title">{activeSheet}</h2>
         {section === "units" && <>
         {pageChoices.length > 0 && <p className="deployment-instruction">Select a piece, then a glowing location on the map.</p>}
-        <MilitaryReference compactDeployment choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
+        <MilitaryReference choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
         {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Deployment will continue automatically."}</p>}
         </>}
         {section === "research" && game && <div className="military-drawer-research"><SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy ?? ((sheet) => { if (sheet) setSelectedSheet(sheet); setSection("units"); })} /></div>}

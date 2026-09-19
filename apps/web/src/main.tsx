@@ -59,7 +59,7 @@ import { TerminalSummary } from "./components/TerminalSummary";
 import { TurnPrompt } from "./components/TurnPrompt";
 import { TurnProgress } from "./components/TurnProgress";
 import { setupLairLabel } from "./components/setup-location-label";
-import { MilitarySheet, deploymentChoices } from "./components/MilitarySheet";
+import { MilitarySheet, deploymentChoices, nextDeploymentSheet } from "./components/MilitarySheet";
 import { MovementChecklist } from "./components/MovementChecklist";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
@@ -252,10 +252,7 @@ function App() {
   const deploymentDestinations = new Set(deploymentPiece?.destinations ?? []);
   const openMilitarySheet = (sheet?: string) => {
     const requestedSheet = typeof sheet === "string" ? sheet : undefined;
-    const branchHasChoices = militaryChoices.some((choice) => choice.sheet === activeBranch);
-    const guardIsAvailable = militaryChoices.some((choice) => choice.sheet === "National Guard");
-    const defaultSheet = !requestedSheet && !branchHasChoices && guardIsAvailable ? "National Guard" : requestedSheet;
-    setMilitaryInitialSheet(defaultSheet);
+    setMilitaryInitialSheet(requestedSheet ?? nextDeploymentSheet(militaryChoices, activeBranch));
     setMilitarySheetOpen(true);
   };
   const activeResearchLure = activeGame.activeResearchLure?.monsterId === activePlayer.id
@@ -637,7 +634,14 @@ function App() {
         if (actionLabel) setAcceptedActionFeedback({ label: actionLabel, key: Date.now() });
         await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
-      if (normalized.type === "deploy" || normalized.type === "redeploy") setDeploymentPieceId(null);
+      if (normalized.type === "deploy" || normalized.type === "redeploy") {
+        setDeploymentPieceId(null);
+        const remaining = deploymentChoices(nextGame);
+        if (nextGame.phase === "deploy" && nextGame.currentPlayer === activeGame.currentPlayer && remaining.length) {
+          setMilitaryInitialSheet(nextDeploymentSheet(remaining, activeBranch));
+          setMilitarySheetOpen(true);
+        }
+      }
       if (acceptedMove || normalized.type === "stay-piece") { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); setSelectedUnitId(null); }
       if (normalized.type === "move" || (normalized.type === "stay-piece" && normalized.pieceId === activePlayer.id)) {
         focusNextMovementUnit(nextGame);
@@ -1175,7 +1179,13 @@ function App() {
                   return;
                 }
                 if (activeSetup?.phase === "lair-selection") void chooseSetupOption(destination);
-                else if (setupPiece && canSetup) { setSetupPlacements((current) => [...current, { unitId: setupPiece.id, destination }]); setSetupPieceId(null); }
+                else if (setupPiece && canSetup && setupSeat) {
+                  const placements = [...setupPlacements, { unitId: setupPiece.id, destination }];
+                  setSetupPlacements(placements);
+                  setSetupPieceId(null);
+                  const nextPreview = setupDeploymentState(activeGame, setupSeat.playerIndex, placements);
+                  setSetupSheetOpen(deploymentChoices(nextPreview).some((choice) => choice.kind === "deploy"));
+                }
               }}
               activePlayerId={activePlayer.id}
               canAct={canAct}

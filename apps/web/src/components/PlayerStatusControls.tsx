@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { MONSTER_DEFINITIONS, UNIT_DEFINITIONS, type GameCommand, type GameState } from "@abominations/game-engine";
 import { MilitarySheet, type DeploymentChoice } from "./MilitarySheet";
 import { monsterAssetSlug } from "../monster-assets";
-import { movementLabel, SheetStats, SourcePhoto } from "./SheetReference";
+import { movementLabel, SheetStats } from "./SheetReference";
 
 type Props = { game: GameState; monster: GameState["monsters"][number]; branch: string; playerIndex: number; canAct: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void; onSelectDeployment?: (choice: DeploymentChoice) => void };
 
@@ -55,7 +55,6 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
           <SheetStats values={{ Health: `${monster.health} / ${monster.maxHealth}`, Infamy: monster.infamy, Move: monster.move, Movement: movementLabel(monster.movement), Attacks: monster.attacks, Defense: monster.defense, Damage: monster.damage }} />
           <p>Mutation cards and combat conditions can change the printed values.</p>
         </details>
-        {definition && <SourcePhoto file={definition.sourceRefs[0].split("/").at(-1)!} />}
       </div>
         <SheetCards game={game} playerIndex={playerIndex} kind="mutation" canAct={canAct} runCommand={runCommand} />
       </div>
