@@ -87,6 +87,13 @@ export function PhaseActions({
   }
 
   if (activeGame.phase === "fight" && activeGame.pendingDecision?.type === "retreat" && activeGame.pendingRetreat) {
+    if (activeGame.pendingRetreat.monsterId) {
+      const monster = activeGame.monsters.find((candidate) => candidate.id === activeGame.pendingRetreat?.monsterId);
+      return <div className="retreat-choice" aria-label="Choose monster retreat destination">
+        <strong>{monster?.name ?? "Monster"} must retreat.</strong>
+        <span>Select a glowing adjacent hex on the board.</span>
+      </div>;
+    }
     return (
       <div className="retreat-choice" aria-label="Choose retreat destinations">
         {defenseSatellitesButton}

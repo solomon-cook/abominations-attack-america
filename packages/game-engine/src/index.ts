@@ -272,6 +272,8 @@ export interface PendingCombat {
 
 export interface PendingRetreat {
   readonly battleId: string;
+  /** The monster retreats when military units survive the normal battle. */
+  readonly monsterId?: string;
   readonly unitIds: readonly string[];
   readonly options: Readonly<Record<string, readonly HexKey[]>>;
   /** Player whose units forced the retreat and therefore earns Research. */
@@ -1429,12 +1431,13 @@ function nextD6(state: GameState): number {
   return ((value % 6) + 6) % 6 + 1;
 }
 
-function developmentRetreatOptions(state: GameState, battle: PendingBattle, unitIds: readonly string[]): Record<string, readonly HexKey[]> {
+function developmentRetreatOptions(state: GameState, battle: PendingBattle, unitIds: readonly string[], monsterRetreat = false): Record<string, readonly HexKey[]> {
   const boardIndex = buildBoardIndex(boardForState(state));
   const options: Record<string, readonly HexKey[]> = {};
   for (const unitId of unitIds) {
     options[unitId] = (boardIndex.neighbours[battle.location] ?? [])
-      .filter((destination) => !state.monsters.some((monster) => monster.location === destination));
+      .filter((destination) => !state.monsters.some((monster) => monster.location === destination))
+      .filter((destination) => !monsterRetreat || !state.units.some((unit) => unit.location === destination));
   }
   return options;
 }
@@ -1661,10 +1664,10 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   next.pendingAttackTarget = undefined;
   if (survivingUnitIds.length > 0) {
     pending.militaryUnitIds = survivingUnitIds;
-    next.pendingRetreat = { battleId: pending.id, unitIds: survivingUnitIds, options: developmentRetreatOptions(next, pending, survivingUnitIds), researchPlayerIndex: retreatResearchPlayer(next, survivingUnitIds) };
+    next.pendingRetreat = { battleId: pending.id, monsterId: monster.id, unitIds: [monster.id], options: developmentRetreatOptions(next, pending, [monster.id], true), researchPlayerIndex: retreatResearchPlayer(next, pending.militaryUnitIds) };
     next.phase = "fight";
-    next.pendingDecision = { type: "retreat", playerIndex: next.currentPlayer, battleId: pending.id, unitIds: survivingUnitIds };
-    next.log.push(`${survivingUnitIds.length} military unit${survivingUnitIds.length === 1 ? " requires" : "s require"} retreat after the normal battle.`);
+    next.pendingDecision = { type: "retreat", playerIndex: next.currentPlayer, battleId: pending.id, unitIds: [monster.id] };
+    next.log.push(`${monster.name} must retreat after the normal battle; the surviving military remains in place.`);
   } else {
     next.pendingBattles = next.pendingBattles.filter((battle) => battle.id !== pending.id);
     finishBattleQueue(next);
@@ -1819,10 +1822,10 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
     : [];
   if (pending && survivingUnitIds.length > 0) {
     pending.militaryUnitIds = survivingUnitIds;
-    next.pendingRetreat = { battleId: pending.id, unitIds: survivingUnitIds, options: developmentRetreatOptions(next, pending, survivingUnitIds), researchPlayerIndex: retreatResearchPlayer(next, survivingUnitIds) };
+    next.pendingRetreat = { battleId: pending.id, monsterId: monster.id, unitIds: [monster.id], options: developmentRetreatOptions(next, pending, [monster.id], true), researchPlayerIndex: retreatResearchPlayer(next, pending.militaryUnitIds) };
     next.phase = "fight";
-    next.pendingDecision = { type: "retreat", playerIndex: next.currentPlayer, battleId: pending.id, unitIds: survivingUnitIds };
-    next.log.push(`${survivingUnitIds.length} military unit${survivingUnitIds.length === 1 ? " requires" : "s require"} retreat after the normal battle.`);
+    next.pendingDecision = { type: "retreat", playerIndex: next.currentPlayer, battleId: pending.id, unitIds: [monster.id] };
+    next.log.push(`${monster.name} must retreat after the normal battle; the surviving military remains in place.`);
   } else {
     next.pendingBattles = pending
       ? next.pendingBattles.filter((battle) => battle.id !== pending.id)
@@ -2807,13 +2810,22 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     if (!retreat) throw new Error("There is no retreat decision to resolve.");
     const requestedIds = Object.keys(command.destinations).sort();
     const expectedIds = [...retreat.unitIds].sort();
-    if (requestedIds.join("|") !== expectedIds.join("|")) throw new Error("Every surviving military unit must receive one retreat destination.");
+    if (requestedIds.join("|") !== expectedIds.join("|")) throw new Error("The retreating piece must receive one retreat destination.");
     const next = structuredClone(state);
     const disappearedIds: string[] = [];
+    const monsterRetreat = Boolean(retreat.monsterId);
     for (const unitId of retreat.unitIds) {
       const destination = command.destinations[unitId];
       const allowed = retreat.options[unitId] ?? [];
       const unit = next.units.find((candidate) => candidate.id === unitId);
+      if (monsterRetreat) {
+        const monster = next.monsters.find((candidate) => candidate.id === unitId);
+        if (!monster) throw new Error(`Unknown retreat monster: ${unitId}.`);
+        if (destination === "disappeared") throw new Error("A monster must retreat to a legal adjacent hex.");
+        if (!allowed.includes(destination)) throw new Error(`Illegal retreat destination for ${unitId}: ${destination}.`);
+        monster.location = destination;
+        continue;
+      }
       if (!unit) throw new Error(`Unknown retreat unit: ${unitId}.`);
       if (destination === "disappeared") {
         if (allowed.length > 0) throw new Error(`Unit ${unitId} has a legal retreat and cannot disappear in the development ruleset.`);

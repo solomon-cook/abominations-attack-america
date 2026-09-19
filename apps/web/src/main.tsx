@@ -443,6 +443,11 @@ function App() {
     ? setupDeploymentState(activeGame, setupSeat.playerIndex, setupPlacementPlayer === setupSeat.playerIndex ? setupPlacements : []) : undefined,
     [activeGame, activeSetup?.phase, setupSeat, setupPlacements, setupPlacementPlayer]);
   const setupChoices = useMemo(() => setupPreview ? deploymentChoices(setupPreview).filter((choice) => choice.kind === "deploy") : [], [setupPreview]);
+  const retreatingMonsterId = activeGame.pendingRetreat?.monsterId;
+  const retreatDestinations = useMemo(() => {
+    if (!activeGame.pendingRetreat || !retreatingMonsterId) return new Set<HexKey>();
+    return new Set(activeGame.pendingRetreat.options[retreatingMonsterId] ?? []);
+  }, [activeGame.pendingRetreat, retreatingMonsterId]);
   const setupPiece = setupChoices.find((choice) => choice.id === setupPieceId);
   const setupLocations = new Map<HexKey, string>();
   if (canSetup && activeSetup?.phase === "lair-selection" && setupSeat?.monsterId) {
@@ -464,6 +469,10 @@ function App() {
     setDeploymentPieceId(null);
     setMilitarySheetOpen(false);
   }, [activeGame.currentPlayer, activeGame.phase, activePlayer.location]);
+
+  useEffect(() => {
+    if (activeGame.pendingRetreat?.monsterId) setFightOverlayOpen(false);
+  }, [activeGame.pendingRetreat?.monsterId]);
 
   useEffect(() => {
     if (!acceptedMoveAnimation) return;
@@ -916,7 +925,9 @@ function App() {
       ? activeGame.pendingDecision?.type === "attack-target"
         ? pendingAttackPrompt
         : activeGame.pendingDecision?.type === "retreat"
-          ? "Choose a legal retreat for every surviving military unit."
+          ? activeGame.pendingRetreat?.monsterId
+            ? "The monster must retreat. Select a glowing adjacent hex on the board."
+            : "Choose a legal retreat destination."
           : activeGame.pendingBattles.length > 1
             ? `Choose which of ${activeGame.pendingBattles.length} compulsory battles to resolve first.`
             : "Resolve the compulsory battle started by movement."
@@ -940,7 +951,7 @@ function App() {
       ? activeGame.pendingDecision?.type === "attack-target"
         ? { title: "Choose an attack target", body: "Select a highlighted military unit." }
         : activeGame.pendingDecision?.type === "retreat"
-          ? { title: "Resolve retreat", body: "Choose a legal destination for each surviving unit." }
+          ? { title: "Resolve retreat", body: activeGame.pendingRetreat?.monsterId ? "Select a glowing adjacent hex for the monster." : "Choose a legal destination for each surviving unit." }
           : { title: "Resolve the Fight", body: "Choose a battle if more than one is pending." }
       : activeGame.phase === "encounter"
         ? { title: "Resolve Encounter", body: "Choose from the options shown." }
@@ -1169,6 +1180,11 @@ function App() {
               canAct={canAct}
               legalDestinations={selectedUnitId ? new Set() : legalDestinations}
               deploymentDestinations={deploymentDestinations}
+              retreatDestinations={retreatDestinations}
+              onRetreat={(destination) => {
+                const monsterId = activeGame.pendingRetreat?.monsterId;
+                if (canAct && monsterId) void runCommand({ type: "retreat", destinations: { [monsterId]: destination } });
+              }}
               onDeploy={(destination) => { if (canAct && deploymentPiece) void runCommand({ type: deploymentPiece.kind, unitId: deploymentPiece.id, destination }); }}
               onSelectMonster={() => { setSelectedUnitId(null); setSelectedUnitPath([]); setHoveredPath([]); }}
               legalUnitDestinations={choosingSubmarineTarget ? new Set() : legalUnitDestinations}
@@ -1206,6 +1222,9 @@ function App() {
           {activeGame.phase === "deploy" && deploymentPiece && <div className="deployment-prompt" role="status">
             Place {deploymentPiece.typeId.replaceAll("-", " ")} · Select a glowing location.
             <button onClick={() => setDeploymentPieceId(null)}>Cancel placement</button>
+          </div>}
+          {activeGame.phase === "fight" && activeGame.pendingRetreat?.monsterId && <div className="deployment-prompt retreat-prompt" role="status">
+            {activeGame.monsters.find((monster) => monster.id === activeGame.pendingRetreat?.monsterId)?.name ?? "Monster"} retreats · Select a glowing adjacent hex.
           </div>}
 
           <p className="sr-only" id="board-description">
