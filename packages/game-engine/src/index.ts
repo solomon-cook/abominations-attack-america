@@ -1530,7 +1530,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     monster.location = "hollywood";
     monster.infamy = 0;
     clearPendingChallengerIfLost(next, monster.id);
-    next.encounterSuppressed = true;
+    if (monster.id === next.monsters[next.currentPlayer]?.id) next.encounterSuppressed = true;
     hollywoodResearchCardId = awardHollywoodResearch(next, controllerPlayer);
     next.log.push(`${monster.name} was defeated and went to Hollywood.`);
   };
@@ -1722,7 +1722,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
     monster.location = "hollywood";
     monster.infamy = 0;
     clearPendingChallengerIfLost(next, monster.id);
-    next.encounterSuppressed = true;
+    if (monster.id === next.monsters[next.currentPlayer]?.id) next.encounterSuppressed = true;
     hollywoodResearchCardId = awardHollywoodResearch(next, controllerPlayer);
     next.log.push(`${monster.name} was defeated and went to Hollywood.`);
   };
@@ -1992,7 +1992,7 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
       }
       nextMonster.location = destination;
       next.pendingBattles = next.pendingBattles.filter((candidate) => candidate.id !== battleId);
-      next.encounterSuppressed = true;
+      if (nextMonster.id === next.monsters[next.currentPlayer]?.id) next.encounterSuppressed = true;
       next.log.push(`${nextMonster.name} retreated through the Laser Fence to ${destination}; it will not Encounter that space.`);
       finishBattleQueue(next);
     }
@@ -2885,9 +2885,10 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
         unit.location = destination;
       }
     }
+    const retreatBattle = next.pendingBattles.find((battle) => battle.id === retreat.battleId);
     next.pendingBattles = next.pendingBattles.filter((battle) => battle.id !== retreat.battleId);
     next.pendingRetreat = undefined;
-    next.encounterSuppressed = true;
+    if (retreatBattle?.monsterId === next.monsters[next.currentPlayer]?.id) next.encounterSuppressed = true;
     const researchCardId = retreat.researchPlayerIndex === undefined ? undefined : drawResearchCardForPlayer(next, retreat.researchPlayerIndex);
     if (researchCardId) next.log.push(`Player ${retreat.researchPlayerIndex! + 1} drew a Military Research card after forcing the monster to retreat.`);
     finishBattleQueue(next);
