@@ -13,7 +13,7 @@ export function MutationStrip({ cards }: { cards: readonly string[] }) {
   const closeSoon = () => { keepOpen(); closeTimer.current = setTimeout(() => setPreview(null), 200); };
   useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current); }, []);
   const visible = cards.filter(id => cardDefinition(id));
-  return <div ref={strip} className="mutation-strip" aria-label="Monster mutations" onKeyDown={event => { if(event.key === "Escape") setPreview(null); }}>
+  return <div ref={strip} className="mutation-strip" aria-label="Monster mutations" onKeyDown={event => { if(event.key === "Escape" && preview) { event.preventDefault(); event.stopPropagation(); setPreview(null); } }}>
     <small>MUTATIONS · {visible.length}</small>
     <div>{visible.map(id => <button key={id} aria-label={`Preview ${id}`} aria-expanded={preview?.id === id}
       onMouseEnter={event => { keepOpen(); const r=event.currentTarget.getBoundingClientRect(); setPreview({id,x:r.left,y:r.top}); }}

@@ -24,6 +24,8 @@ const eventLabels: Record<string, string> = {
   "research.drawn": "Research reward recorded",
   "research.used": "Research card resolved",
   "mutation.used": "Mutation card resolved",
+  "challenge.attack.rolled": "Challenge attack rolled",
+  "challenge.turn.passed": "Challenge dice handed over",
   "challenge.resolved": "Monster Challenge resolved",
   "challenge.giant.resolved": "Giant Challenge resolved",
   "monster.disappeared": "Monster disappearance recorded",

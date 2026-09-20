@@ -1336,7 +1336,7 @@ function App() {
                 setRetreatChoices={setRetreatChoices}
               />
             ) : activeGame.phase === "challenge" ? (
-              <ChallengeActions onOpen={() => setChallengeDuelOpen(true)} activeGame={activeGame} canAct={canAct} runCommand={runCommand} />
+              <ChallengeActions onOpen={() => setChallengeDuelOpen(true)} activeGame={activeGame} />
             ) : activeGame.phase === "game-over" ? (
               <TerminalSummary action={action} victoryType={activeGame.victoryType} online={online} onLeaveRoom={leaveRoomSafely} onResetLocal={resetLocal} onRematch={() => void startRematch()} />
             ) : (
@@ -1457,7 +1457,7 @@ function App() {
         setFocusedHexKey(choice.destinations[0]);
         requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${choice.destinations[0]}"]`)?.focus({ preventScroll: true }));
       }} />}
-      {challengeDuelOpen && <ChallengeArena game={activeGame} canAct={canAct} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
+      {challengeDuelOpen && activeGame.challenge?.active && <ChallengeArena game={activeGame} canAct={canAct} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
       <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={unitId => { if (pendingAttackTarget) void runCommand({ type: "resolve-fight", battleId: pendingAttackTarget.battleId, targetUnitId: unitId }); }} controls={<>
         <PhaseActions hideAttackTargets activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
         {activeGame.phase === "fight" && !pendingAttackTarget && !activeGame.pendingRetreat && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length <= 1 && <button className="cinema-primary" disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", ...(pendingBattle ? { battleId: pendingBattle.id } : {}) })}><DieCube value={6} label="Roll battle dice" /> Roll battle dice</button>}

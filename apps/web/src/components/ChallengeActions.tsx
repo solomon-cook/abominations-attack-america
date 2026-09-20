@@ -1,10 +1,8 @@
-import type { GameCommand, GameState } from "@abominations/game-engine";
+import type { GameState } from "@abominations/game-engine";
 
 type Props = {
   onOpen: () => void;
   activeGame: GameState;
-  canAct: boolean;
-  runCommand: (command: GameCommand) => void | Promise<void>;
 };
 
 export function ChallengeActions({ activeGame, onOpen }: Props) {

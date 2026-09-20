@@ -587,7 +587,7 @@ function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer
     if (state.challenge.giantUnitId) return { type: "challenge-giant-resolution", playerIndex: state.currentPlayer, challengerMonsterId: challenger.id, giantUnitId: state.challenge.giantUnitId };
     if (state.challenge.giantUnitIds?.length) return { type: "challenge-giant", playerIndex: state.currentPlayer, challengerMonsterId: challenger.id, giantUnitIds: state.challenge.giantUnitIds };
     const opponentIds = state.monsters
-      .filter((monster) => monster.id !== challenger.id && !state.challenge?.defeatedMonsterIds.includes(monster.id) && monster.location !== "hollywood")
+      .filter((monster) => monster.id !== challenger.id && monster.health > 0 && !state.challenge?.defeatedMonsterIds.includes(monster.id) && monster.location !== "hollywood" && monster.location !== "defeated")
       .map((monster) => monster.id);
     if (state.challenge.opponentMonsterId) return { type: "challenge-resolution", playerIndex: state.currentPlayer, challengerMonsterId: challenger.id, opponentMonsterId: state.challenge.opponentMonsterId };
     return { type: "challenge-opponent", playerIndex: state.currentPlayer, challengerMonsterId: challenger.id, opponentIds };

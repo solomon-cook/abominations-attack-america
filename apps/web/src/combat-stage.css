@@ -132,3 +132,7 @@
  .challenge-opponents{gap:8px}.challenge-opponents button{padding:10px;min-width:110px}.challenge-opponents img{height:100px;width:80px}
 }
 @media(max-width:700px){.resolution-stage.resolution-challenge{padding:18px 16px}}
+.resolution-stage.resolution-fight{padding:24px 32px}
+.battle-ready .battle-target-roll{flex-direction:column;margin:24px 0;border:0;background:transparent;padding:8px;text-align:center}
+.battle-ready .battle-target-roll .combat-die[data-die]{width:100px;height:100px}
+@media(max-width:760px){.resolution-stage.resolution-fight{padding:18px 16px}.battle-ready .battle-target-roll{flex-direction:row;margin:12px 0}.battle-ready .battle-target-roll .combat-die[data-die]{width:64px;height:64px}}

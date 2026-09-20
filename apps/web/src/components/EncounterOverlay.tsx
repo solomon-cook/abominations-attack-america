@@ -22,6 +22,10 @@ type Props = {
   onClose: () => void;
 };
 
+function isCellCoordinate(value: string): boolean {
+  return /^-?\d+,-?\d+$/.test(value.trim());
+}
+
 export function EncounterOverlay({ error, open, canAct, monsterName, locationName, eventId, baselineEventId, effects, rolls, choices, mutationDraws, mutationCardId, onReveal, onChoice, onClose }: Props) {
   const resolved = Boolean(eventId && eventId !== baselineEventId);
   const [revealedRolls, setRevealedRolls] = useState(0);
@@ -29,10 +33,11 @@ export function EncounterOverlay({ error, open, canAct, monsterName, locationNam
   useEffect(() => { setRevealedRolls(0); setCardRevealed(false); }, [eventId, open]);
   const allRollsShown = revealedRolls >= rolls.length;
   const hasCard = mutationDraws.some(draw => draw.cardDrawn) && Boolean(mutationCardId);
+  const displayLocationName = isCellCoordinate(locationName) ? undefined : locationName;
   if (!open) return null;
-  return <ResolutionStage title={resolved ? "Encounter resolved" : "Encounter"} eyebrow={`ENCOUNTER / ${locationName}`} onClose={onClose}>
+  return <ResolutionStage title={resolved ? "Encounter resolved" : "Encounter"} eyebrow={displayLocationName ? `ENCOUNTER / ${displayLocationName}` : "ENCOUNTER"} onClose={onClose}>
     <div className={`cinema-encounter ${hasCard && resolved ? "has-card" : ""}`}>
-      <aside className="cinema-monster"><img src={monsterPortrait(monsterName)} alt={monsterName} /><div><p className="resolution-eyebrow">THE ABOMINATION</p><h3>{monsterName}</h3><p>{locationName}</p></div></aside>
+      <aside className="cinema-monster"><img src={monsterPortrait(monsterName)} alt={monsterName} /><div><p className="resolution-eyebrow">THE ABOMINATION</p><h3>{monsterName}</h3>{displayLocationName && <p>{displayLocationName}</p>}</div></aside>
       <section className="cinema-event" aria-live="polite">
         {error && <p role="alert">{error}</p>}
         {!resolved ? <div className="cinema-intro"><p className="resolution-eyebrow">ENCOUNTER</p><h3>Resolve this encounter.</h3><button className="cinema-primary" disabled={!canAct} onClick={onReveal}>Reveal encounter <span aria-hidden="true">↗</span></button></div> : <>

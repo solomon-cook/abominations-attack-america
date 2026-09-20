@@ -27,11 +27,11 @@ export function TurnProgress({ game }: Props) {
                   : game.pendingDecision?.type === "challenge-opponent"
                     ? "Choose Challenge opponent"
                     : game.pendingDecision?.type === "challenge-resolution"
-                      ? "Resolve Challenge duel"
+                      ? "Roll, spend Infamy, or pass the dice"
                       : game.pendingDecision?.type === "challenge-giant"
                         ? "Choose giant opponent"
                         : game.pendingDecision?.type === "challenge-giant-resolution"
-                          ? "Resolve giant duel"
+                          ? "Roll, then hand over the dice"
                           : game.pendingDecision?.type === "game-over"
                             ? "Match complete"
                             : undefined;
