@@ -1630,7 +1630,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     next.pendingCombat = { ...combat, round, monsterAttackIndex, preMonsterResolved, rolls, attacks, destroyedUnitIds, bonusAttacks };
   };
   const requestNextTarget = (targets: readonly MilitaryUnit[], allowance: number): boolean => {
-    if (targets.length <= 1) return false;
+    if (targets.length === 0) return false;
     saveCombat();
     const targetIds = targets.map((unit) => unit.id);
     next.pendingAttackTarget = { battleId: pending.id, attackerId: monster.id, targetIds, round, attackNumber: monsterAttackIndex + 1, attackTotal: allowance };
@@ -2918,9 +2918,9 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       throw new Error(`Unknown pending battle: ${command.battleId}.`);
     }
     const selectedBattle = state.pendingBattles.find((battle) => battle.id === (command.type === "resolve-fight" ? command.battleId : undefined)) ?? state.pendingBattles[0];
-    if (selectedBattle && selectedBattle.militaryUnitIds.length > 1 && command.type === "resolve-fight" && !command.targetUnitId) {
+    if (selectedBattle && selectedBattle.militaryUnitIds.length > 0 && command.type === "resolve-fight" && (!command.targetUnitId || !state.pendingCombat)) {
       const targetIds = selectedBattle.militaryUnitIds.filter((unitId) => state.units.some((unit) => unit.id === unitId && unit.location === selectedBattle.location));
-      if (targetIds.length > 1) {
+      if (targetIds.length > 1 || (targetIds.length === 1 && command.targetUnitId)) {
         const next = structuredClone(state);
         const monster = state.monsters.find((candidate) => candidate.id === selectedBattle.monsterId);
         const spendInfamy = command.type === "resolve-fight" ? command.spendInfamy ?? 0 : 0;
@@ -2928,6 +2928,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
         const attackTotal = (monster?.attacks ?? 0) + spendInfamy;
         next.pendingAttackTarget = { battleId: selectedBattle.id, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal, spendInfamy };
         next.pendingDecision = { type: "attack-target", playerIndex: next.currentPlayer, battleId: selectedBattle.id, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal };
+        if (command.targetUnitId) return applyCommand(next, { ...command, battleId: selectedBattle.id });
         next.log.push(`Choose the target for ${monster?.name ?? "the monster"}'s attack 1 of ${attackTotal} in combat round 1.`);
         const eventPayload = { battleId: selectedBattle.id, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal, infamySpent: spendInfamy, nextPhase: next.phase };
         return { state: appendEvent(next, "battle.target-required", eventPayload), eventType: "battle.target-required", eventPayload };

@@ -118,3 +118,32 @@ test("legacy logs remain readable without inventing missing Health or Defense", 
   assert.equal(attackResultLabel(legacy), "Miss");
   assert.equal(healthAtAttack("monster", [legacy], 0, 9), 9);
 });
+
+
+test("targeting the final surviving unit keeps every monster attack target-driven", () => {
+  const state = battleState(0, true);
+  state.monsters[0].attacks = 3;
+  state.units[0].defense = 1;
+  state.units[2].defense = 99;
+  const first = applyCommand(state, { type: "resolve-fight", battleId: "presentation", targetUnitId: state.units[0].id });
+  assert.equal(readBattleAttacks(first.eventPayload.attacks).length, 1);
+  assert.equal(first.state.pendingDecision?.type, "attack-target");
+  if (first.state.pendingDecision?.type !== "attack-target") return;
+  assert.deepEqual(first.state.pendingDecision.targetIds, [state.units[2].id]);
+  const second = applyCommand(first.state, { type: "resolve-fight", battleId: "presentation", targetUnitId: state.units[2].id });
+  assert.equal(readBattleAttacks(second.eventPayload.attacks).length, 2);
+  assert.equal(second.state.pendingDecision?.type, "attack-target");
+});
+
+test("a battle starting with one unit supports repeated target clicks and spends Infamy once", () => {
+  const state = battleState();
+  state.units[0].defense = 99;
+  state.monsters[0].infamy = 3;
+  const first = applyCommand(state, { type: "resolve-fight", targetUnitId: state.units[0].id, spendInfamy: 1 });
+  assert.equal(readBattleAttacks(first.eventPayload.attacks).length, 1);
+  assert.equal(first.state.monsters[0].infamy, 2);
+  assert.equal(first.state.pendingDecision?.type, "attack-target");
+  const second = applyCommand(first.state, { type: "resolve-fight", battleId: "presentation", targetUnitId: state.units[0].id });
+  assert.equal(readBattleAttacks(second.eventPayload.attacks).length, 2);
+  assert.equal(second.state.monsters[0].infamy, 2);
+});

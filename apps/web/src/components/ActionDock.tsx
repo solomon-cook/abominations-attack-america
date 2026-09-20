@@ -35,7 +35,7 @@ export function ActionDock({ contextLabel, guidance, onPrimary, secondaryAction,
       <button type="button" data-action-icon={actionIcon} aria-label={label} disabled={!canAct || (!command && !onPrimary)} title={status} aria-describedby="action-dock-status" onClick={() => onPrimary ? onPrimary() : command && onAction(command)}>
         {label}
       </button>
-      {secondaryAction && <button type="button" disabled={!canAct} onClick={() => onAction(secondaryAction.command)}>{secondaryAction.label}</button>}
+      {secondaryAction && <button type="button" className="action-dock-secondary" disabled={!canAct} onClick={() => onAction(secondaryAction.command)}>{secondaryAction.label}</button>}
     </div>
   );
 }

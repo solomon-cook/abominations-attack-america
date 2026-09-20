@@ -69,6 +69,10 @@ export function ChallengeArena({ game, canAct, runCommand, onClose, error }: Pro
           <HealthBar name={name(unit.id)} before={attack ? healthSnapshot("healthBeforeAttack", unit.id, unit.health) : unit.health} after={!settled ? healthSnapshot("healthBeforeAttack", unit.id, unit.health) : !recovered ? healthSnapshot("healthAfterAttack", unit.id, unit.health) : unit.health} maximum={"maxHealth" in unit ? unit.maxHealth : GIANT_UNIT_DEFINITIONS.find(def => def.id === unit.unitTypeId)?.health ?? unit.health} />
           <p className="battle-side-meta">{stats(unit).defense} Defense · {stats(unit).damage} Damage{"infamy" in unit && <> · ✦ {unit.infamy} Infamy</>}</p>
           {"name" in unit && <MutationStrip cards={(game.players[game.monsters.findIndex(monster => monster.id === unit.id)]?.visibleMutationCardIds ?? game.players[game.monsters.findIndex(monster => monster.id === unit.id)]?.mutationCardIds) ?? []} />}
+          {!choosing && !showResult && resolving && unit.id !== attackerId && <div className="battle-target-actions">
+            {remaining > 0 && <button className="battle-target-button" disabled={disabled} onClick={() => void send({ type: "resolve-challenge" })} aria-label={`Roll attack against ${name(unit.id)}`}>Target this monster · roll</button>}
+            {canSpend && <button className="battle-target-button battle-infamy-target" disabled={disabled} onClick={() => void send({ type: "resolve-challenge", spendInfamy: true })}>✦ 1 Infamy · target again</button>}
+          </div>}
         </>}
       </section>)}
       <div className="challenge-live-vs" aria-hidden="true">VS</div>
@@ -78,17 +82,16 @@ export function ChallengeArena({ game, canAct, runCommand, onClose, error }: Pro
         {unit && <img src={"name" in unit ? monsterPortrait(unit.name) : militaryArt(unit.unitTypeId)} alt="" />}<strong>{name(id)}</strong><span>♥ {unit?.health}{unit && "infamy" in unit ? ` · ✦ ${unit.infamy}` : ""}</span>
       </button>; })}</div> : <>
         <div className="challenge-dice-action">
-          <button className={`roll-die-button ${!settled ? "is-rolling" : ""}`} disabled={disabled || showResult || !resolving || remaining <= 0} onClick={() => void send({ type: "resolve-challenge" })} aria-label={`Roll ${name(attackerId)}’s attack`}>
-            <DieCube value={settled ? attack?.roll ?? 6 : 0} label={settled && attack ? `Rolled ${attack.roll}` : "Click to roll"} />
-          </button>
+          <div className={`roll-die-button combat-die-display ${!settled ? "is-rolling" : ""}`}>
+            <DieCube value={settled ? attack?.roll ?? 6 : 0} label={settled && attack ? `Rolled ${attack.roll}` : "Choose the defending monster to roll"} />
+          </div>
           <div aria-live="polite"><strong>{!settled ? "Rolling…" : attack ? attack.smash ? "SMASH!" : attack.hit ? "A direct hit." : "Miss!" : challenge?.turn?.attacks.length ? "Your turn to roll." : "Take the first roll."}</strong><p>{!settled ? "The die is in motion." : attack ? `${name(attack.attackerId)} rolled ${attack.roll} against ${attack.targetDefense} Defense.` : `${name(attackerId)} ${challenge?.turn?.attacks.length ? "has the dice" : "attacks first"}.`}</p>{settled && attack?.retaliationDamage ? <p>It's a Robot! · attacker loses {attack.retaliationDamage} Health.</p> : null}</div>
         </div>
         {showResult ? settled && <div className="challenge-turn-actions">
           {typeof event?.detail.loserWeighIn === "number" && <p>{recovered ? "Recovered" : "Recovering"} {String(event.detail.healthRecovered ?? event.detail.loserWeighIn)} Health from the opponent’s weigh-in.</p>}
           <button className="cinema-primary" disabled={!recovered} onClick={() => game.phase === "game-over" ? onClose() : setAcknowledged(event?.id)}>{game.phase === "game-over" ? "Finish challenge" : "Choose next opponent →"}</button>
         </div> : <div className="challenge-turn-actions">
-          <p>{!canAct ? `Waiting for Player ${(decision?.playerIndex ?? game.currentPlayer) + 1} · ${name(attackerId)}` : remaining > 0 ? `Click the die · ${remaining} attack${remaining === 1 ? "" : "s"} remaining` : "Keep fighting, or hand over the dice."}</p>
-          {canSpend && <button disabled={disabled} onClick={() => void send({ type: "resolve-challenge", spendInfamy: true })}>✦ Spend 1 Infamy · roll again</button>}
+          <p>{!canAct ? `Waiting for Player ${(decision?.playerIndex ?? game.currentPlayer) + 1} · ${name(attackerId)}` : remaining > 0 ? `Choose the defending monster · ${remaining} attack${remaining === 1 ? "" : "s"} remaining` : "Keep fighting, or hand over the dice."}</p>
           {remaining === 0 && <button className="cinema-primary" disabled={disabled} onClick={() => void send({ type: "resolve-challenge", endTurn: true })}>Pass dice to {name(attackerId === leftId ? rightId : leftId)} →</button>}
         </div>}
       </>}

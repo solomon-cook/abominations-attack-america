@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { GIANT_UNIT_DEFINITIONS, monsterCombatStats, type BattleAttack, type GameState } from "@abominations/game-engine";
 import { monsterPortrait, ResolutionStage } from "./ResolutionStage";
 import { MutationStrip } from "./MutationStrip";
@@ -15,7 +15,7 @@ type Props = {
   canAct: boolean;
   pendingBattle?: GameState["pendingBattles"][number];
   pendingAttackTarget?: Extract<NonNullable<GameState["pendingDecision"]>, { type: "attack-target" }>;
-  onChooseTarget: (unitId: string) => void;
+  onChooseTarget: (unitId: string, battleId: string, spendInfamy?: number) => void;
 };
 
 export function HealthBar({ before, after, maximum, name }: { before: number; after: number; maximum: number; name: string }) {
@@ -53,9 +53,8 @@ export function FightResolutionPanel(props: Props) {
 }
 
 function FightSession({ onClose, controls, event, game, canAct, pendingBattle, pendingAttackTarget, onChooseTarget }: Props) {
-  const [chosenTarget, setChosenTarget] = useState<string>();
+  const [selectedBattleId, setSelectedBattleId] = useState<string>();
   const [roster, setRoster] = useState(game.pendingBattles);
-  const forces = useRef<HTMLElement>(null);
   useEffect(() => {
     setRoster(previous => {
       const added = game.pendingBattles.filter(battle => !previous.some(saved => saved.id === battle.id));
@@ -65,7 +64,7 @@ function FightSession({ onClose, controls, event, game, canAct, pendingBattle, p
   const [dismissedEvent, setDismissedEvent] = useState<string>();
   const shownEvent = event?.id === dismissedEvent ? undefined : event;
   const attacks = readBattleAttacks(shownEvent?.detail.attacks);
-  const liveBattle = pendingBattle ?? game.pendingBattles.find(battle => battle.id === pendingAttackTarget?.battleId) ?? game.pendingBattles[0];
+  const liveBattle = game.pendingBattles.find(battle => battle.id === selectedBattleId) ?? pendingBattle ?? game.pendingBattles.find(battle => battle.id === pendingAttackTarget?.battleId) ?? game.pendingBattles[0];
   const eventBattleId = typeof shownEvent?.detail.battleId === "string" ? shownEvent.detail.battleId : undefined;
   const battleId = eventBattleId ?? liveBattle?.id;
   const battle = roster.find(candidate => candidate.id === battleId) ?? game.pendingBattles.find(candidate => candidate.id === battleId);
@@ -81,13 +80,6 @@ function FightSession({ onClose, controls, event, game, canAct, pendingBattle, p
   const index = Math.min(position.index, Math.max(0, attacks.length - 1));
   const attack = attacks[index];
   const beatKey = `${shownEvent?.id}-${index}`;
-  useEffect(() => {
-    const container = forces.current;
-    const active = container?.querySelector<HTMLElement>(".is-attacker, .is-target");
-    if (container && active) {
-      container.scrollTo({ left: container.scrollLeft + active.getBoundingClientRect().left - container.getBoundingClientRect().left, behavior: "instant" });
-    }
-  }, [attack?.attackerId, attack?.targetId]);
   const [settledBeat, setSettledBeat] = useState("");
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches || Boolean(document.querySelector(".manual-reduced-motion"));
@@ -117,14 +109,19 @@ function FightSession({ onClose, controls, event, game, canAct, pendingBattle, p
   const advance = (next: number) => setPosition(current => ({ ...current, index: next }));
   const monsterHealth = monster ? healthAtAttack(monster.id, attacks, revealedIndex, monster.health) : 0;
   const monsterBefore = monster && attack?.targetId === monster.id ? attack.targetHealthBefore ?? monsterHealth : monsterHealth;
-  const canChoose = canAct && atEnd && !nextBattle && Boolean(pendingAttackTarget);
-  const selectedTarget = pendingAttackTarget?.targetIds.includes(chosenTarget ?? "") ? chosenTarget : pendingAttackTarget?.targetIds.length === 1 ? pendingAttackTarget.targetIds[0] : undefined;
+  const canChoose = (!attack || index === attacks.length - 1) && !nextBattle && game.phase === "fight" && !game.pendingRetreat && Boolean(liveBattle);
+  const targetIds = pendingAttackTarget?.targetIds ?? liveBattle?.militaryUnitIds.filter(id => game.units.some(unit => unit.id === id && unit.location === liveBattle.location)) ?? [];
+  const nextAttack = attacks[index + 1];
+  const targetAction = (id: string) => nextAttack?.targetId === id ? <button className="battle-target-button" disabled={!settled} onClick={() => advance(index + 1)} aria-label={`Continue attack against ${nameFor(id)}`}>Target this {id === monster?.id ? "monster" : "unit"} · reveal roll</button> : canChoose && targetIds.includes(id) && liveBattle ? <div className="battle-target-actions">
+    <button className="battle-target-button" disabled={!canAct || !settled} onClick={() => onChooseTarget(id, liveBattle.id)} aria-label={`Roll attack against ${nameFor(id)}`}>Target this unit · roll</button>
+    {!pendingAttackTarget && Boolean(monster?.infamy) && <button className="battle-target-button battle-infamy-target" disabled={!canAct || !settled} onClick={() => onChooseTarget(id, liveBattle.id, 1)}>✦ 1 Infamy · target + extra attack</button>}
+  </div> : null;
   const title = attack ? complete ? "The dust settles." : "Every strike counts." : "Clash of titans.";
 
-  const targetRoll = canChoose && <div className="battle-target-roll"><button className="roll-die-button" disabled={!selectedTarget || !canAct} aria-label={selectedTarget ? `Roll attack against ${nameFor(selectedTarget)}` : "Choose a target before rolling"} onClick={() => { if (selectedTarget) { onChooseTarget(selectedTarget); setChosenTarget(undefined); } }}><DieCube value={6} label="Click to roll attack" /></button><span>{selectedTarget ? `Roll against ${nameFor(selectedTarget)}` : "Choose a target, then click the die."}</span></div>;
 
   return <ResolutionStage variant="fight" title={title} eyebrow={`BATTLE / ${monster?.name ?? "MONSTER"} VS MILITARY`} onClose={onClose}>
     <details className="battle-order"><summary>Combat order · two rounds, then aftermath</summary><nav className="battle-rounds" aria-label="Combat order">{[1, 2].map(value => <div key={value} className={round === value ? "is-current" : ""}><b>ROUND {value}</b><span>Monster <i>→</i> surviving military</span></div>)}<div><b>AFTERMATH</b><span>Resolve survivors</span></div></nav></details>
+    {!game.pendingCombat && !pendingAttackTarget && game.pendingBattles.length > 1 && atEnd && <nav className="battle-selection" aria-label="Choose battle">{game.pendingBattles.map(candidate => <button key={candidate.id} aria-pressed={candidate.id === liveBattle?.id} onClick={() => { setSelectedBattleId(candidate.id); setDismissedEvent(event?.id); }}>{game.monsters.find(item => item.id === candidate.monsterId)?.name ?? "Monster"} · battle {game.pendingBattles.indexOf(candidate) + 1}</button>)}</nav>}
     <div className="battle-turn"><span>{round ? `ROUND ${round} · ` : ""}{currentPhase}</span><small>{attack ? `Attack ${index + 1} / ${attacks.length}${game.pendingCombat ? " recorded" : ""}` : "One die per attack"}</small></div>
     <div className={`battle-arena ${monsterAttacking ? "monster-strikes" : "military-strikes"}`}>
       <section className={`battle-monster battle-side ${Boolean(attack && monster && attack.attackerId === monster.id) ? "is-attacker" : ""} ${Boolean(attack && monster && attack.targetId === monster.id) ? "is-target" : ""}`} aria-label={monster?.name ?? "Monster"}>
@@ -134,16 +131,21 @@ function FightSession({ onClose, controls, event, game, canAct, pendingBattle, p
         </div>
         <h3>{monster?.name ?? "Choose a battle"}</h3>
         {monster && <><HealthBar before={monsterBefore} after={monsterHealth} maximum={monster.maxHealth} name={monster.name} /><p className="battle-side-meta">✦ {monster.infamy} Infamy · {monsterCombatStats(game, monster).defense} Defense · {monsterCombatStats(game, monster).damage} Damage</p><MutationStrip cards={(game.players[game.monsters.findIndex(candidate => candidate.id === monster.id)]?.visibleMutationCardIds ?? game.players[game.monsters.findIndex(candidate => candidate.id === monster.id)]?.mutationCardIds) ?? []} />{destroyed.has(monster.id) && <span className="battle-unit-status">Defeated · Hollywood</span>}</>}
+        {monster && targetAction(monster.id)}
       </section>
-      <div className="battle-direction" aria-label={attack ? `${nameFor(attack.attackerId)} attacks ${nameFor(attack.targetId)}` : "versus"}><span>{attack ? monsterAttacking ? "→" : "←" : "VS"}</span>{attack && <small>{settled ? attack.smash ? "SMASH" : attack.hit ? "HIT" : "MISS" : "ROLL"}</small>}</div>
-      <section ref={forces} className="battle-forces" aria-label={`Military targets · ${units.length} unit${units.length === 1 ? "" : "s"}`}>
+      <div className="battle-center"><span className="battle-center-vs">VS</span>
+    {attack ? <div className="battle-playback" key={beatKey}>
+      <AttackRoll attack={attack} attackerName={nameFor(attack.attackerId)} targetName={nameFor(attack.targetId)} settled={settled} />
+      <div className={`battle-consequence ${settled ? "is-visible" : ""}`} aria-live="polite">{settled && <><small>{nameFor(attack.targetId)}</small><strong>{attackResultLabel(attack)}</strong>{attack.targetHealthBefore !== undefined && <span>♥ {attack.targetHealthBefore} → {attack.targetHealthAfter}</span>}{attack.destroyed && attack.targetHealthAfter === undefined && <p>{game.units.find(unit => unit.id === attack.targetId)?.location === "permanently-removed" ? "Removed from play." : "Returns to its military sheet."}</p>}</>}</div>
+    </div> : <div className="battle-ready"><strong>{pendingAttackTarget ? `Choose ${monster?.name ?? "the monster"}’s attack ${pendingAttackTarget.attackNumber ?? 1} target.` : "Pick a target. Roll. See the impact."}</strong><DieCube value={6} label="Choose a target to roll" /><p>Match or beat Defense to hit. A natural 6 adds one damage. Destroyed units cannot return fire.</p>{units.some(unit => unit.unitTypeId === "army-missile-launcher") && <p>Missile launchers get an opening strike before the monster.</p>}</div>}
+      </div>
+      <section className="battle-forces" aria-label={`Military targets · ${units.length} unit${units.length === 1 ? "" : "s"}`}>
         {units.map((unit, unitIndex) => {
           const targeted = attack?.targetId === unit.id;
           const attacking = attack?.attackerId === unit.id;
           const isDestroyed = destroyed.has(unit.id);
           const giant = unit.unitTypeId === "mecha-monster" || unit.unitTypeId === "captain-colossal";
           const health = healthAtAttack(unit.id, attacks, revealedIndex, unit.health);
-          const selectable = canChoose && pendingAttackTarget!.targetIds.includes(unit.id);
           return <div key={unit.id} className={`battle-unit battle-side ${targeted ? "is-target" : ""} ${attacking ? "is-attacker" : ""} ${isDestroyed ? "is-destroyed" : ""}`}>
             <span className="battle-role">{isDestroyed ? "DESTROYED" : attacking ? "ATTACKING" : targeted ? "UNDER ATTACK" : `UNIT ${unitIndex + 1}`}</span>
             <div className="battle-portrait">{militaryArt(unit.unitTypeId) && <img src={militaryArt(unit.unitTypeId)} alt="" />}
@@ -152,22 +154,18 @@ function FightSession({ onClose, controls, event, game, canAct, pendingBattle, p
             <h3>{nameFor(unit.id)}</h3>
             {giant ? <HealthBar name={nameFor(unit.id)} before={targeted ? attack.targetHealthBefore ?? health : health} after={health} maximum={GIANT_UNIT_DEFINITIONS.find(definition => definition.id === unit.unitTypeId)?.health ?? health} /> : <span className="battle-unit-status">{isDestroyed ? "Destroyed · cannot return fire" : "One hit destroys"}</span>}
             <p className="battle-side-meta">◈ {unit.defense} Defense · {unit.damage} Damage</p>
-            {selectable && <button className="battle-target-button" aria-label={`Choose ${nameFor(unit.id)} as target`} aria-pressed={selectedTarget === unit.id} onClick={() => setChosenTarget(unit.id)}>{selectedTarget === unit.id ? "Target selected ✓" : "Choose target"}</button>}
+            {targetAction(unit.id)}
           </div>;
         })}
         {!units.length && <p className="battle-empty">Select a battle below.</p>}
       </section>
     </div>
-    {units.length > 1 && <p className="battle-roster-hint">{units.length} military units · scroll sideways to inspect or choose a target</p>}
-    {attack ? <div className="battle-playback" key={beatKey}>
-      <AttackRoll attack={attack} attackerName={nameFor(attack.attackerId)} targetName={nameFor(attack.targetId)} settled={settled} />
-      <div className={`battle-consequence ${settled ? "is-visible" : ""}`} aria-live="polite">{settled && <><small>{nameFor(attack.targetId)}</small><strong>{attackResultLabel(attack)}</strong>{attack.targetHealthBefore !== undefined && <span>♥ {attack.targetHealthBefore} → {attack.targetHealthAfter}</span>}{attack.destroyed && attack.targetHealthAfter === undefined && <p>{game.units.find(unit => unit.id === attack.targetId)?.location === "permanently-removed" ? "Removed from play." : "Returns to its military sheet."}</p>}</>}</div>
-    </div> : <div className="battle-ready"><strong>{pendingAttackTarget ? `Choose ${monster?.name ?? "the monster"}’s attack ${pendingAttackTarget.attackNumber ?? 1} target.` : "Pick a target. Roll. See the impact."}</strong>{targetRoll}<p>Match or beat Defense to hit. A natural 6 adds one damage. Destroyed units cannot return fire.</p>{units.some(unit => unit.unitTypeId === "army-missile-launcher") && <p>Missile launchers get an opening strike before the monster.</p>}</div>}
+    {units.length > 1 && <p className="battle-roster-hint">{units.length} military units · choose a target to roll</p>}
+
     {attacks.length > 0 && <>
-      <div className="battle-playback-controls"><button disabled={index === 0} onClick={() => advance(index - 1)}>← Previous</button>{index < attacks.length - 1 ? <button className="cinema-primary" disabled={!settled} onClick={() => advance(index + 1)}><DieCube value={6} label="Show next recorded roll" /> Next roll →</button> : <span>{settled ? "All recorded attacks shown" : "Resolving roll…"}</span>}{index < attacks.length - 1 && <button onClick={() => advance(attacks.length - 1)}>Show final result</button>}</div>
+      <div className="battle-playback-controls"><button disabled={index === 0} onClick={() => advance(index - 1)}>← Previous result</button><span>{!settled ? "Resolving roll…" : nextAttack ? `Next: ${nameFor(nextAttack.attackerId)} attacks. Click ${nameFor(nextAttack.targetId)} to reveal the roll.` : "All recorded attacks shown"}</span></div>
       <details className="battle-history"><summary>Attack sequence · {attacks.length} rolls</summary><ol>{attacks.map((item, step) => <li key={step}><button aria-current={step === index ? "step" : undefined} onClick={() => advance(step)}><span>{item.combatRound ? `R${item.combatRound}` : "—"}</span><b>{nameFor(item.attackerId)} → {nameFor(item.targetId)}</b><span>⚄ {item.roll} · {attackResultLabel(item)}</span></button></li>)}</ol></details>
     </>}
-    {attack && targetRoll}
     {atEnd && <div className="battle-next">
       {complete && <div className="battle-summary"><strong>{monster?.health === 0 ? `${monster.name} is sent to Hollywood.` : destroyed.size ? `${units.filter(unit => destroyed.has(unit.id)).length} military unit${units.filter(unit => destroyed.has(unit.id)).length === 1 ? "" : "s"} destroyed.` : "Combat rounds complete."}</strong>{units.length > 0 && units.every(unit => destroyed.has(unit.id)) && !attacks.some(item => item.targetId === monster?.id) && <p>All units fell before they could return fire. {monster?.name} took no damage from military attacks.</p>}</div>}
       {nextBattle ? <button className="cinema-primary" onClick={() => setDismissedEvent(event?.id)}>Continue to next battle →</button> : game.phase === "fight" ? <div className="cinema-battle-actions">{pendingAttackTarget && <p>Next: choose a target for attack {pendingAttackTarget.attackNumber ?? 1}{pendingAttackTarget.attackTotal ? ` of ${pendingAttackTarget.attackTotal}` : ""}.</p>}{controls}</div> : <button className="cinema-primary" onClick={onClose}>Continue to board →</button>}

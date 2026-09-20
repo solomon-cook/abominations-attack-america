@@ -2681,7 +2681,11 @@ test("a Cruise Missile mutation is active for later attacks in the same battle",
     state.phase = "fight";
     state.pendingBattles = [{ id: "cruise-sequencing-battle", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [missile.id, laterUnit.id] }];
     state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "cruise-sequencing-battle" };
-    const candidate = applyCommand(state, { type: "resolve-fight", battleId: "cruise-sequencing-battle", targetUnitId: missile.id });
+    let candidate = applyCommand(state, { type: "resolve-fight", battleId: "cruise-sequencing-battle", targetUnitId: missile.id });
+    while (candidate.state.pendingDecision?.type === "attack-target") {
+      const decision = candidate.state.pendingDecision;
+      candidate = applyCommand(candidate.state, { type: "resolve-fight", battleId: decision.battleId, targetUnitId: decision.targetIds.includes(missile.id) ? missile.id : decision.targetIds[0] });
+    }
     const attacks = candidate.eventPayload.attacks as Array<{ attackerId: string; roll: number; hit: boolean; modifiers: string[]; mutationCardId?: string }>;
     const laterAttack = attacks.find((attack) => attack.attackerId === laterUnit.id && attack.modifiers.includes("Radiation Field: attacker destroyed on roll 1"));
     const missileMutation = attacks.find((attack) => attack.attackerId === missile.id && attack.roll === 1 && attack.mutationCardId === "Radiation Field");

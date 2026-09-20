@@ -122,7 +122,7 @@ export function PhaseActions({
         const monster = activeGame.monsters.find((candidate) => candidate.id === battle.monsterId);
         const submarines = battle.militaryUnitIds.filter((unitId) => activeGame.units.some((unit) => unit.id === unitId && unit.unitTypeId === "navy-nuclear-submarine"));
         return <div key={battle.id}>
-          <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: battle.id })}>Resolve {monster?.name ?? battle.monsterId} at {getLocationName(battle.location)} ({battle.militaryUnitIds.length} unit{battle.militaryUnitIds.length === 1 ? "" : "s"})</button>
+          {!hideAttackTargets && <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: battle.id })}>Resolve {monster?.name ?? battle.monsterId} at {getLocationName(battle.location)} ({battle.militaryUnitIds.length} unit{battle.militaryUnitIds.length === 1 ? "" : "s"})</button>}
           {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: battle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
           {mutationButtons(battle.id)}
         </div>;
@@ -140,8 +140,8 @@ export function PhaseActions({
       {laserFenceButtons}
       {stabilizerButtons}
       {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: pendingBattle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
-      <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}><DieCube value={6} label="Roll battle dice" /> Roll battle dice</button>
-      <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>
+      {!hideAttackTargets && <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}><DieCube value={6} label="Roll battle dice" /> Roll battle dice</button>}
+      {!hideAttackTargets && <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>}
     </div>;
   }
 

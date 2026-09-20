@@ -136,3 +136,48 @@
 .battle-ready .battle-target-roll{flex-direction:column;margin:24px 0;border:0;background:transparent;padding:8px;text-align:center}
 .battle-ready .battle-target-roll .combat-die[data-die]{width:100px;height:100px}
 @media(max-width:760px){.resolution-stage.resolution-fight{padding:18px 16px}.battle-ready .battle-target-roll{flex-direction:row;margin:12px 0}.battle-ready .battle-target-roll .combat-die[data-die]{width:64px;height:64px}}
+
+/* Target controls stay on combatants; the dice always occupy the center lane. */
+.resolution-fight .resolution-content{display:flex;flex-direction:column}
+.resolution-fight .battle-arena{width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px) minmax(0,1fr);gap:24px;align-items:start}
+.battle-center{min-width:0;align-self:center;text-align:center}
+.battle-center-vs{display:block;font:400 28px/1 Georgia,serif;color:#dfc48d;margin-bottom:20px}
+.resolution-fight .battle-center .battle-playback{display:flex;flex-direction:column;gap:14px;padding:16px;border:0;background:transparent}
+.battle-center .battle-roll-equation{flex-direction:column;gap:14px;justify-content:center}
+.battle-center .battle-roll .combat-die[data-die],.battle-center .battle-ready>.combat-die[data-die]{width:90px;height:90px;margin:18px auto}
+.battle-center .battle-hit-range{justify-content:center}
+.battle-center .battle-consequence{border:0;padding:12px 0 0;border-top:1px solid #bacba735}
+.battle-center .battle-consequence>strong{font-size:28px}
+.battle-center .battle-ready{border:0;background:transparent;padding:12px}
+.resolution-fight .battle-monster .battle-portrait{height:clamp(180px,32vh,360px)}
+.resolution-fight .battle-forces{flex-wrap:wrap;overflow:visible;justify-content:flex-end;gap:12px}
+.resolution-fight .battle-unit{flex:1 1 140px;max-width:220px;min-width:0}
+.resolution-fight .battle-unit:only-child{max-width:none;flex-basis:100%}
+.resolution-fight .battle-unit:only-child .battle-portrait{height:clamp(180px,32vh,360px)}
+.battle-target-actions{display:grid;gap:8px;margin-top:14px}
+.battle-target-actions .battle-target-button{margin:0}
+.battle-target-button:disabled{opacity:.45;cursor:default}
+.battle-infamy-target{background:transparent;color:#e7ce93;font-size:12px}
+.combat-die-display{cursor:default;pointer-events:none}
+.battle-selection{display:flex;flex-wrap:wrap;gap:8px}
+.battle-selection button{min-height:44px;padding:10px 16px;border:1px solid #cdb77977;border-radius:5px;color:#e7ce93;background:transparent}
+.battle-selection [aria-pressed=true]{background:#ddc78e;color:#18251f}
+@media(max-width:900px){
+ .resolution-fight .battle-arena{grid-template-columns:minmax(0,1fr) minmax(140px,.85fr) minmax(0,1fr);gap:8px}
+ .battle-center .battle-roll-heading{flex-direction:column;gap:6px}.battle-center .battle-roll-math>b{font-size:28px}
+ .resolution-fight .battle-center .battle-playback{padding:6px}.battle-center .battle-hit-range>span{width:22px;height:24px}
+ .resolution-fight .battle-unit{flex-basis:100%;max-width:none}.battle-target-button{padding:10px 8px;font-size:12px}
+}
+@media(max-width:560px){
+ .resolution-fight .battle-arena{grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr);gap:2px}
+ .resolution-fight .battle-side{padding:6px 2px}.resolution-fight .battle-monster .battle-portrait,.resolution-fight .battle-unit:only-child .battle-portrait{height:150px}
+ .resolution-fight .battle-side h3{font-size:19px}.resolution-fight .battle-unit h3{font-size:11px;overflow-wrap:anywhere}
+ .battle-center{align-self:start;padding-top:25px}.battle-center-vs{font-size:22px;margin-bottom:12px}
+ .battle-center .battle-roll .combat-die[data-die],.battle-center .battle-ready>.combat-die[data-die]{width:60px;height:60px}
+ .battle-center .battle-ready{padding:4px}.battle-center .battle-ready>strong{font:500 12px/1.5 sans-serif}
+ .battle-center .battle-ready p,.battle-center .battle-roll-explanation,.battle-center .battle-roll-math small{font-size:10px;line-height:1.5}
+ .battle-center .battle-consequence>strong{font-size:19px}.battle-center .battle-hit-range{gap:4px}.battle-center .battle-hit-range small{margin:0}
+ .battle-center .battle-roll-heading .resolution-eyebrow{font-size:8px;overflow-wrap:anywhere}.battle-center .battle-roll-heading>strong{font-size:10px}
+ .battle-center .battle-modifiers>span,.battle-center .battle-special{font-size:10px;overflow-wrap:anywhere}
+ .battle-target-button{font-size:11px;line-height:1.4}.battle-center .battle-roll-math>b{font-size:23px}
+}
