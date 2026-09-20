@@ -42,3 +42,21 @@ assert.ok(actions(game).includes("Draw Military Research instead"));
 assert.ok(!actions(placed).includes("Draw Military Research"));
 assert.ok(!actions(placed).includes("Deploy or draw"));
 console.log("PASS: branch-to-Guard routing, commander ownership including online projection, visible details, removed photo link, and research hidden after deployment.");
+
+// Giants have visible records before placement and retain their portrait in play.
+for (const [id, name, health] of [["captain-colossal", "Captain Colossal", 8], ["mecha-monster", "Mecha-Monster", 6]] as const) {
+  const state = structuredClone(game);
+  state.players[0].researchCardIds = [name];
+  assert.ok(ownedMilitarySheets(state, 0, "Army").includes(name));
+  assert.ok(!ownedMilitarySheets(state, 1, "Navy").includes(name));
+  const held = renderToStaticMarkup(<MilitaryReference sheet={name} game={state} />);
+  assert.ok(held.includes(`/assets/military/portraits/${id}.webp`));
+  assert.ok(held.includes("Ready to deploy"));
+  state.players[0].researchCardIds = [];
+  state.units.push({ id: `${id}-1`, unitTypeId: id, branch: "Giant", ownerPlayer: 0, location: state.monsters[0].location, health: health - 2, move: 4, movement: "land-lake", attacks: 1, defense: 4, damage: 2 });
+  assert.ok(ownedMilitarySheets(state, 0, "Army").includes(name));
+  const placedRecord = renderToStaticMarkup(<MilitaryReference sheet={name} game={state} />);
+  assert.ok(placedRecord.includes(`${health - 2} / ${health}`));
+  assert.ok(placedRecord.includes(`/assets/military/portraits/${id}.webp`));
+}
+console.log("PASS: giant research ownership, persistent portraits, and current health on military records.");

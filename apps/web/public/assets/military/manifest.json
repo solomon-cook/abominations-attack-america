@@ -82,6 +82,22 @@
       "unit": "fighter",
       "color": "#E58A25",
       "src": "/assets/military/national-guard-fighter.webp"
+    },
+    {
+      "id": "captain-colossal",
+      "branch": "Giant",
+      "unit": "Captain Colossal",
+      "color": "#656b6d",
+      "src": "/assets/military/captain-colossal.webp",
+      "portrait": "/assets/military/portraits/captain-colossal.webp"
+    },
+    {
+      "id": "mecha-monster",
+      "branch": "Giant",
+      "unit": "Mecha-Monster",
+      "color": "#656b6d",
+      "src": "/assets/military/mecha-monster.webp",
+      "portrait": "/assets/military/portraits/mecha-monster.webp"
     }
   ]
 }

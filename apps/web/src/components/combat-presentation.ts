@@ -36,6 +36,6 @@ export function attackResultLabel(attack: BattleAttack): string {
 
 export function militaryArt(unitTypeId?: string): string | undefined {
   if (!unitTypeId) return undefined;
-  if (unitTypeId === "mecha-monster" || unitTypeId === "captain-colossal") return `/assets/cards/military-research-${unitTypeId}.webp`;
+  if (unitTypeId === "mecha-monster" || unitTypeId === "captain-colossal") return `/assets/military/portraits/${unitTypeId}.webp`;
   return `/assets/military/${unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unitTypeId}.webp`;
 }

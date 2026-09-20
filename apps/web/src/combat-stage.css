@@ -62,3 +62,73 @@
  .battle-roster-hint{display:none}
  .resolution-fight .resolution-footer{margin-top:8px}
 }
+
+/* A table, two creatures, and one deliberate roll. */
+.resolution-challenge .resolution-content{max-width:1200px;margin:auto;gap:18px;justify-content:flex-start}
+.challenge-live-turn{text-align:center;color:#ead097;font-size:12px;letter-spacing:.12em;text-transform:uppercase;min-height:20px}
+.challenge-live-arena{display:grid;grid-template-columns:1fr 1fr;gap:100px;position:relative;width:100%}
+.challenge-live-side{text-align:center;min-width:0;position:relative}
+.challenge-live-side.is-attacker{background:radial-gradient(ellipse at center,#e4c78716,transparent 70%)}
+.challenge-live-portrait{position:relative;height:clamp(180px,34vh,380px);display:grid;place-items:center}
+.challenge-live-portrait img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 16px 24px #0008)}
+.challenge-live-side h3{font:400 clamp(26px,3vw,42px)/1.1 Georgia,serif;text-transform:capitalize;margin:8px}
+.challenge-live-vs{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font:italic 48px Georgia,serif;color:#d8c294}
+.challenge-silhouette{font:150px Georgia,serif;color:#aab9a838}
+.challenge-table{width:min(760px,100%);margin:8px auto;background:#081515c9;border:1px solid #d7c39738;border-radius:16px;padding:20px 28px}
+.challenge-dice-action{display:flex;align-items:center;justify-content:center;gap:30px;min-height:110px}
+.challenge-dice-action strong{font:400 30px Georgia,serif;color:#efdbb4}.challenge-dice-action p,.challenge-turn-actions p{font-size:13px;line-height:1.5;color:#c6cfbf}
+.roll-die-button{display:inline-grid;place-items:center;background:transparent;border:0;border-radius:18px;padding:12px;cursor:pointer;transition:transform .2s}
+.roll-die-button:not(:disabled):hover{transform:rotate(-8deg) scale(1.08)}
+.roll-die-button:focus-visible{outline:3px solid #f2d193;outline-offset:5px}
+.roll-die-button:disabled{opacity:1;cursor:default}
+.roll-die-button .combat-die[data-die]{width:86px;height:86px}
+.roll-die-button.is-rolling .combat-die{animation:challenge-die-tumble .3s ease-in-out 3 alternate}
+@keyframes challenge-die-tumble{from{transform:translateY(-10px) rotate(-25deg)}to{transform:translateY(5px) rotate(30deg)}}
+.challenge-turn-actions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;text-align:center}.challenge-turn-actions p{width:100%;margin:12px 0 2px}
+.challenge-turn-actions button,.challenge-opponents button{min-height:46px;border:1px solid #d7bd7b70;border-radius:8px;padding:12px 18px;background:#24332a;color:#f1ddac;cursor:pointer}.challenge-turn-actions button:disabled,.challenge-opponents button:disabled{opacity:.5;cursor:default}
+.challenge-opponents{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}.challenge-opponents button{display:grid;gap:6px;justify-items:center;flex:1;min-width:130px;text-transform:capitalize}.challenge-opponents img{width:110px;height:130px;object-fit:contain}.challenge-opponents span{font-size:12px}
+.resolution-challenge .mutation-strip,.resolution-fight .mutation-strip{margin:14px auto 0;justify-content:center;max-width:100%}
+.resolution-challenge .battle-history{width:100%;font-size:12px;color:#b7c7b9}.resolution-challenge .battle-history p{line-height:1.7}.resolution-challenge .battle-history li{padding:9px}
+.battle-playback-controls .combat-die[data-die],.cinema-battle-actions .combat-die[data-die]{width:38px;height:38px;vertical-align:middle}
+@media(max-width:700px){.challenge-live-arena{gap:32px}.challenge-live-portrait{height:200px}.challenge-live-vs{font-size:28px}.challenge-live-side h3{font-size:27px}.challenge-table{padding:14px}.challenge-dice-action{gap:16px}.challenge-dice-action strong{font-size:24px}.roll-die-button .combat-die[data-die]{width:68px;height:68px}.challenge-live-side .battle-side-meta{font-size:10px}.challenge-live-side .mutation-strip button{width:34px}.challenge-live-side .mutation-strip{gap:5px}}
+@media(prefers-reduced-motion:reduce){.resolution-challenge *{animation:none!important;transition:none!important}}
+.manual-reduced-motion .resolution-challenge *{animation:none!important;transition:none!important}
+.resolution-challenge .resolution-content{width:100%}
+.challenge-live-portrait{overflow:hidden}
+.challenge-live-portrait img{min-height:0;min-width:0;max-height:100%;display:block}
+.challenge-live-side .mutation-strip>div,.battle-monster .mutation-strip>div{justify-content:center}
+.resolution-challenge .roll-die-button:disabled{opacity:1}
+.battle-target-roll{display:flex;align-items:center;justify-content:center;gap:20px;padding:12px;color:#ead7aa;font-size:13px;border:1px solid #d8c58c38;border-radius:12px;background:#0a1718}
+.battle-target-button[aria-pressed="true"]{background:#dfe8ca;color:#192921}
+.battle-order summary{cursor:pointer;font-size:11px;color:#b8c7b9;letter-spacing:.08em;padding:8px 0}
+.battle-order .battle-rounds{margin-top:8px}
+.resolution-fight .battle-side{border-color:transparent;background:transparent}
+.resolution-fight .battle-side.is-attacker{background:radial-gradient(ellipse at 50% 30%,#edd58e18,transparent 75%)}
+@media(min-width:960px){.battle-order{grid-column:1 / -1;grid-row:1}.battle-target-roll{grid-column:2;grid-row:5}.resolution-fight .battle-next{grid-row:6}.resolution-fight .battle-portrait{height:clamp(160px,28vh,290px)}}
+.resolution-challenge{padding:22px 32px}
+.resolution-challenge .resolution-header{padding-bottom:14px}
+.resolution-challenge .resolution-header h2{font-size:clamp(30px,3.3vw,46px)}
+.resolution-challenge .resolution-eyebrow{margin-bottom:6px}
+.resolution-challenge .resolution-content{gap:12px;padding:14px 0}
+.resolution-challenge .challenge-live-portrait{height:clamp(170px,24vh,310px)}
+.resolution-challenge .challenge-live-side h3{font-size:clamp(26px,2.8vw,38px);margin:4px}
+.resolution-challenge .challenge-table{padding:12px 22px;margin:0 auto}
+.resolution-challenge .challenge-dice-action{min-height:90px}
+.resolution-challenge .challenge-turn-actions p{margin-top:4px}
+.resolution-challenge .mutation-strip{margin-top:8px;padding-bottom:0}
+.resolution-challenge .battle-health-track{margin:8px 0}
+@media(max-width:700px){.resolution-challenge{padding:18px 16px}.resolution-challenge .challenge-live-portrait{height:180px}.challenge-turn-actions button{padding:10px 12px;font-size:12px}}
+.resolution-stage.resolution-challenge{padding:22px 32px}
+@media(min-width:1100px){
+ .resolution-challenge .resolution-content{display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr auto;align-content:center;align-items:center;gap:14px}
+ .challenge-live-turn{grid-column:1;grid-row:1}
+ .challenge-live-arena{grid-column:1;grid-row:2;gap:360px}
+ .resolution-challenge .challenge-live-portrait{height:clamp(230px,37vh,430px)}
+ .challenge-live-vs{top:9%;font-size:48px}
+ .resolution-challenge .challenge-table{grid-column:1;grid-row:2;position:relative;width:340px;align-self:center;transform:translateY(28px);padding:18px}
+ .challenge-dice-action{flex-direction:column;gap:16px;text-align:center}
+ .challenge-turn-actions{gap:8px}.challenge-turn-actions button{width:100%;font-size:12px}
+ .resolution-challenge .battle-history{grid-column:1;grid-row:3}
+ .challenge-opponents{gap:8px}.challenge-opponents button{padding:10px;min-width:110px}.challenge-opponents img{height:100px;width:80px}
+}
+@media(max-width:700px){.resolution-stage.resolution-challenge{padding:18px 16px}}

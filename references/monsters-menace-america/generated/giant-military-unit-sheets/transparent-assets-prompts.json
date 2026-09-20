@@ -1,0 +1,13 @@
+{
+  "tool": "built-in image_gen",
+  "prompts": [
+    {
+      "id": "captain-colossal",
+      "prompt": "Use case: background-extraction. Create a production game sprite atlas from the reference model sheet. Preserve exactly the character identity, materials, colors and design. Transparent background with real alpha, no ground, no shadows outside figure, no lettering, no borders. Exactly two views arranged in equal square cells side by side on a landscape 1536x768 canvas. LEFT CELL: full-body FRONT view matching the upper left reference figure, centered with all limbs visible, occupy 85% of cell height. RIGHT CELL: TOP DOWN view matching right reference figure, centered, occupy 85% of cell width. Keep each sprite entirely inside its own half with clear transparent padding. These are polished plastic board-game miniature renders for captain-colossal. No other figures or elements."
+    },
+    {
+      "id": "mecha-monster",
+      "prompt": "Use case: background-extraction. Create a production game sprite atlas from the reference model sheet. Preserve exactly the character identity, materials, colors and design. Transparent background with real alpha, no ground, no shadows outside figure, no lettering, no borders. Exactly two views arranged in equal square cells side by side on a landscape 1536x768 canvas. LEFT CELL: full-body FRONT view matching the upper left reference figure, centered with all limbs visible, occupy 85% of cell height. RIGHT CELL: TOP DOWN view matching right reference figure, centered, occupy 85% of cell width. Keep each sprite entirely inside its own half with clear transparent padding. These are polished plastic board-game miniature renders for mecha-monster. No other figures or elements."
+    }
+  ]
+}

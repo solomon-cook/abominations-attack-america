@@ -6,7 +6,7 @@ export function ownedMilitarySheets(game: GameState, playerIndex: number, branch
   return [branch,
     ...(canDeployNationalGuard(game, playerIndex) ? ["National Guard"] : []),
     ...(research.includes("X-Fighters") && units.some((unit) => unit.unitTypeId === "x-fighter") ? ["X-Fighters"] : []),
-    ...(units.some((unit) => unit.unitTypeId === "mecha-monster") ? ["Mecha-Monster"] : []),
-    ...(units.some((unit) => unit.unitTypeId === "captain-colossal") ? ["Captain Colossal"] : []),
+    ...((research.includes("Mecha-Monster") || units.some((unit) => unit.unitTypeId === "mecha-monster")) ? ["Mecha-Monster"] : []),
+    ...((research.includes("Captain Colossal") || units.some((unit) => unit.unitTypeId === "captain-colossal")) ? ["Captain Colossal"] : []),
   ];
 }

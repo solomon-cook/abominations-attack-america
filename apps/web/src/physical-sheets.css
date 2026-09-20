@@ -255,3 +255,9 @@
 .military-drawer .physical-military-sheet .sheet-stats dt{font-size:9px}
 .military-drawer .physical-military-sheet .sheet-stats dd{font-size:12px;line-height:1.35}
 .military-drawer .sheet-reference-note,.military-drawer .deployment-reference{display:block}
+
+/* Giant records keep their figure visible after deployment. */
+.giant-record{display:grid;grid-template-columns:minmax(100px,36%) minmax(0,1fr);gap:16px;align-items:center}
+.giant-record-portrait{width:100%;height:250px;object-fit:contain;filter:drop-shadow(0 6px 5px #0004)}
+.giant-record-details{min-width:0}
+@media(max-width:600px){.giant-record{grid-template-columns:100px minmax(0,1fr);gap:10px}.giant-record-portrait{height:180px}}

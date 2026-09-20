@@ -1732,7 +1732,12 @@ test("Monster Challenge fights surviving giants last and awards America-saved vi
 
   const selected = applyCommand(state, { type: "challenge-giant", giantUnitId: "challenge-mecha" });
   assert.equal(selected.state.pendingDecision?.type, "challenge-giant-resolution");
-  const resolved = applyCommand(selected.state, { type: "resolve-challenge" });
+  const first = applyCommand(selected.state, { type: "resolve-challenge" });
+  assert.equal(first.eventType, "challenge.attack.rolled");
+  assert.equal(first.state.rng.cursor, selected.state.rng.cursor + 1);
+  const passed = applyCommand(first.state, { type: "resolve-challenge", endTurn: true });
+  assert.equal(passed.state.currentPlayer, 1);
+  const resolved = applyCommand(passed.state, { type: "resolve-challenge" });
   assert.equal(resolved.state.victoryType, "america-saved");
   assert.equal(resolved.state.winnerPlayer, 1);
   assert.equal(resolved.state.monsters[0].location, "defeated");

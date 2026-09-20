@@ -69,6 +69,8 @@ import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { CardReveal, ResolutionStage } from "./components/ResolutionStage";
 import { EncounterOverlay } from "./components/EncounterOverlay";
+import { ChallengeArena } from "./components/ChallengeArena";
+import { DieCube } from "./components/DieCube";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { FightResolutionPanel } from "./components/FightResolutionPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
@@ -304,15 +306,16 @@ function App() {
     : [];
   const lastEncounterEvent = [...activeGame.eventLog].reverse().find((entry) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required"].includes(entry.action));
   const encounterRevealCard = activeGame.players[activeGame.currentPlayer]?.mutationCardIds.at(-1);
-  const lastChallengeEvent = [...activeGame.eventLog].reverse().find((entry) => entry.action === "challenge.resolved");
+  const lastChallengeEvent = [...activeGame.eventLog].reverse().find((entry) => ["challenge.resolved", "challenge.giant.resolved"].includes(entry.action));
   useEffect(() => {
-    if (lastChallengeEvent?.id) setChallengeDuelOpen(true);
-  }, [lastChallengeEvent?.id]);
+    if (activeGame.phase === "challenge") setChallengeDuelOpen(true);
+  }, [activeGame.phase]);
+  const challengeHistory = lastChallengeEvent?.detail.duelAttacks ?? lastChallengeEvent?.detail.attacks;
   const challengeRolls = Array.isArray(lastChallengeEvent?.detail.rolls)
     ? lastChallengeEvent.detail.rolls.filter((roll): roll is number => typeof roll === "number")
     : [];
-  const challengeAttacks = Array.isArray(lastChallengeEvent?.detail.attacks)
-    ? lastChallengeEvent.detail.attacks
+  const challengeAttacks = Array.isArray(challengeHistory)
+    ? challengeHistory
       .filter((attack): attack is Record<string, unknown> => Boolean(attack && typeof attack === "object"))
       .map((attack) => ({
         attackerId: typeof attack.attackerId === "string" ? attack.attackerId : "monster",
@@ -903,7 +906,7 @@ function App() {
   useEffect(() => {
     if (!latestEvent?.id) return;
     if (lastSoundEventRef.current === latestEvent.id) return;
-    const category: SoundCategory = latestEvent.action === "fight.resolved" || latestEvent.action === "challenge.resolved"
+    const category: SoundCategory = latestEvent.action === "fight.resolved" || ["challenge.resolved", "challenge.giant.resolved", "challenge.attack.rolled"].includes(latestEvent.action)
       ? "combat"
       : latestEvent.action === "research.drawn" || latestEvent.action === "mutation.used"
         ? "cards"
@@ -1333,7 +1336,7 @@ function App() {
                 setRetreatChoices={setRetreatChoices}
               />
             ) : activeGame.phase === "challenge" ? (
-              <ChallengeActions activeGame={activeGame} canAct={canAct} runCommand={runCommand} />
+              <ChallengeActions onOpen={() => setChallengeDuelOpen(true)} activeGame={activeGame} canAct={canAct} runCommand={runCommand} />
             ) : activeGame.phase === "game-over" ? (
               <TerminalSummary action={action} victoryType={activeGame.victoryType} online={online} onLeaveRoom={leaveRoomSafely} onResetLocal={resetLocal} onRematch={() => void startRematch()} />
             ) : (
@@ -1423,7 +1426,7 @@ function App() {
               defeatedName={typeof lastChallengeEvent?.detail.defeatedName === "string" ? lastChallengeEvent.detail.defeatedName : undefined}
               winnerHealth={typeof lastChallengeEvent?.detail.winnerHealth === "number" ? lastChallengeEvent.detail.winnerHealth : undefined}
               loserWeighIn={typeof lastChallengeEvent?.detail.loserWeighIn === "number" ? lastChallengeEvent.detail.loserWeighIn : undefined}
-              rolls={challengeRolls}
+              rolls={challengeAttacks.length ? challengeAttacks.map(attack => attack.roll) : challengeRolls}
               attacks={challengeAttacks}
               victoryType={typeof lastChallengeEvent?.detail.victoryType === "string" ? lastChallengeEvent.detail.victoryType : undefined}
             />
@@ -1454,24 +1457,10 @@ function App() {
         setFocusedHexKey(choice.destinations[0]);
         requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${choice.destinations[0]}"]`)?.focus({ preventScroll: true }));
       }} />}
-      {challengeDuelOpen && lastChallengeEvent && (
-        <div className="challenge-duel-overlay" role="dialog" aria-modal="true" aria-label="Monster Challenge result">
-          <ChallengeDuelPanel
-            eventId={lastChallengeEvent.id}
-            winnerName={typeof lastChallengeEvent.detail.winnerName === "string" ? lastChallengeEvent.detail.winnerName : undefined}
-            defeatedName={typeof lastChallengeEvent.detail.defeatedName === "string" ? lastChallengeEvent.detail.defeatedName : undefined}
-            winnerHealth={typeof lastChallengeEvent.detail.winnerHealth === "number" ? lastChallengeEvent.detail.winnerHealth : undefined}
-            loserWeighIn={typeof lastChallengeEvent.detail.loserWeighIn === "number" ? lastChallengeEvent.detail.loserWeighIn : undefined}
-            rolls={challengeRolls}
-            attacks={challengeAttacks}
-            victoryType={typeof lastChallengeEvent.detail.victoryType === "string" ? lastChallengeEvent.detail.victoryType : undefined}
-            onClose={() => setChallengeDuelOpen(false)}
-          />
-        </div>
-      )}
+      {challengeDuelOpen && <ChallengeArena game={activeGame} canAct={canAct} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
       <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={unitId => { if (pendingAttackTarget) void runCommand({ type: "resolve-fight", battleId: pendingAttackTarget.battleId, targetUnitId: unitId }); }} controls={<>
         <PhaseActions hideAttackTargets activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
-        {activeGame.phase === "fight" && !pendingAttackTarget && !activeGame.pendingRetreat && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length <= 1 && <button className="cinema-primary" disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", ...(pendingBattle ? { battleId: pendingBattle.id } : {}) })}>Resolve fight →</button>}
+        {activeGame.phase === "fight" && !pendingAttackTarget && !activeGame.pendingRetreat && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length <= 1 && <button className="cinema-primary" disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", ...(pendingBattle ? { battleId: pendingBattle.id } : {}) })}><DieCube value={6} label="Roll battle dice" /> Roll battle dice</button>}
         {error && <p role="alert">{error}</p>}
       </>} />
       {researchReveal && <ResolutionStage title="Research" eyebrow="MILITARY / RESEARCH DIVISION" variant="research" onClose={() => setResearchReveal(null)}><CardReveal key={researchReveal} cardId={researchReveal} kind="research" /></ResolutionStage>}

@@ -1,10 +1,11 @@
 import { readFile } from "node:fs/promises";
 
-const [engine, web, phaseActions, challengeActions] = await Promise.all([
+const [engine, web, phaseActions, challengeActions, challengeArena] = await Promise.all([
   readFile(new URL("../packages/game-engine/src/index.ts", import.meta.url), "utf8"),
   readFile(new URL("../apps/web/src/main.tsx", import.meta.url), "utf8"),
   readFile(new URL("../apps/web/src/components/PhaseActions.tsx", import.meta.url), "utf8"),
   readFile(new URL("../apps/web/src/components/ChallengeActions.tsx", import.meta.url), "utf8"),
+  readFile(new URL("../apps/web/src/components/ChallengeArena.tsx", import.meta.url), "utf8"),
 ]);
 
 const pendingTypes = [...engine.matchAll(/type:\s*"([a-z-]+)"/g)].map((match) => match[1]);
@@ -24,7 +25,7 @@ const uniqueTypes = [...new Set(pendingTypes)].filter((type) => [
   "game-over",
 ].includes(type));
 
-const sources = `${web}\n${phaseActions}\n${challengeActions}`;
+const sources = `${web}\n${phaseActions}\n${challengeActions}\n${challengeArena}`;
 const progress = await readFile(new URL("../apps/web/src/components/TurnProgress.tsx", import.meta.url), "utf8");
 const actionCoverageMarkers = {
   "monster-movement": /legalDestinations|choosePath|disappear-monster|pass-move/,
@@ -34,7 +35,7 @@ const actionCoverageMarkers = {
   "encounter-resolution": /encounter-resolution[\s\S]*Resolve encounter/,
   "encounter-choice": /encounter-choice[\s\S]*resolve-encounter/,
   "trophy-choice": /trophy-choice[\s\S]*trophyUnitId/,
-  deployment: /activeGame\.phase === "deploy"[\s\S]*?runCommand\(\{ type: "deploy"/,
+  deployment: /onDeploy[\s\S]*?runCommand\(\{ type: deploymentPiece.kind/,
   "challenge-opponent": /challenge-opponent[\s\S]*challenge-opponent/,
   "challenge-resolution": /challenge-resolution[\s\S]*resolve-challenge/,
   "challenge-giant": /challenge-giant[\s\S]*challenge-giant/,

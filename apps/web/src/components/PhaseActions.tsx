@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import { type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
+import { DieCube } from "./DieCube";
 import { boardForGame } from "../board-pin";
 import { deploymentChoices } from "./MilitarySheet";
 
@@ -132,14 +133,14 @@ export function PhaseActions({
   if (activeGame.phase === "fight" && pendingBattle && pendingBattleDecision && canSpendInfamyOnPendingBattle) {
     const submarines = pendingBattle.militaryUnitIds.filter((unitId) => activeGame.units.some((unit) => unit.id === unitId && unit.unitTypeId === "navy-nuclear-submarine"));
     return <div className="battle-choice" aria-label="Choose whether to spend Infamy on this battle">
-      <p>Choose whether to spend one Infamy for an additional monster attack this round.</p>
+      <p>Ready to fight. Add an extra attack for 1 Infamy.</p>
       {mutationButtons(pendingBattle.id)}
       {defenseSatellitesButton}
       {antimatterButton}
       {laserFenceButtons}
       {stabilizerButtons}
       {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: pendingBattle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
-      <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}>Resolve without spending Infamy</button>
+      <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}><DieCube value={6} label="Roll battle dice" /> Roll battle dice</button>
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>
     </div>;
   }

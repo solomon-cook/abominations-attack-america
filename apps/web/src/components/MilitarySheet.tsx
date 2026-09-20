@@ -42,7 +42,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
   const [selectedSheet, setSelectedSheet] = useState(initialSheet ?? nextDeploymentSheet(choices, branch));
   const [compactDeployment, setCompactDeployment] = useState(() => window.matchMedia("(max-width: 600px)").matches);
   const [drawerHeight, setDrawerHeight] = useState<number | null>(null);
-  const extraSheets = referenceOnly && game ? ownedMilitarySheets(game, playerIndex, branch) : [];
+  const extraSheets = game ? ownedMilitarySheets(game, playerIndex, branch) : [];
   const sheets = [branch, ...new Set([...choices.map((choice) => choice.sheet), ...extraSheets].filter((sheet) => sheet !== branch))];
   const activeSheet = sheets.includes(selectedSheet) ? selectedSheet : branch;
   const pageIndex = sheets.indexOf(activeSheet);

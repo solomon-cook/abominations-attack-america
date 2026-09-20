@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { legalMonsterPaths } from "@abominations/game-engine";
+import { legalMonsterPaths, locationIdToHexKey } from "@abominations/game-engine";
 import { MAX_RETAINED_ROOM_EVENTS, MemoryRoomStore } from "./store.js";
 
 async function completeDevelopmentSetup(store: MemoryRoomStore, sessions: Array<{ token: string; room: { code: string; version: number } }>) {
@@ -337,7 +337,7 @@ test("refresh restores the exact pending attack-target decision", async () => {
   const active = await store.setReady(host.room.code, guest.token, true);
   const storedRooms = (store as unknown as { rooms: Map<string, { state: any }> }).rooms;
   const storedRoom = [...storedRooms.values()][0]!;
-  storedRoom.state.units.filter((unit: any) => unit.location === "denver").forEach((unit: any) => { unit.defense = 99; });
+  storedRoom.state.units.filter((unit: any) => unit.location === locationIdToHexKey("denver")).forEach((unit: any) => { unit.defense = 99; });
   const moved = await store.submitAction(host.room.code, host.token, {
     actionId: "pending-move",
     actorId: host.participantId,
@@ -473,4 +473,36 @@ test("setup rejects illegal starting placements without locking in the choice", 
   assert.equal(unchanged.state.setupState?.seats[0]?.startingChoice, undefined);
   const corrected = await store.setupAction(code, host.token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, revision);
   assert.equal(corrected.state.setupState?.seats[0]?.ready, true);
+});
+
+test("Challenge roll ownership switches online and reconnect preserves the infamy decision", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2);
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  const active = await store.setReady(host.room.code, guest.token, true);
+  const stored = [...(store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms.values()][0]!;
+  stored.state.phase = "challenge";
+  stored.state.monsters.forEach(monster => { monster.health = 30; monster.attacks = 1; monster.infamy = 2; monster.defense = 1; });
+  stored.state.challenge = { declared: true, active: true, challengerMonsterId: "monster-1", declarationPlayerIndex: 0, pendingStartPlayerIndex: 0, weighInHealth: {}, defeatedMonsterIds: [] };
+  stored.state.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
+  let revision = active.version;
+  const submit = async (session: typeof host, command: import("@abominations/game-engine").GameCommand) => {
+    const result = await store.submitAction(host.room.code, session.token, { actionId: `challenge-${revision}`, actorId: session.participantId, expectedRevision: revision, protocolVersion: 1, command });
+    revision = result.version;
+    return result;
+  };
+  await submit(host, { type: "challenge-opponent", opponentMonsterId: "monster-2" });
+  await submit(host, { type: "resolve-challenge" });
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(refreshed.state.challenge?.turn?.remainingAttacks, 0);
+  assert.equal(refreshed.state.monsters[0].infamy, 2);
+  await assert.rejects(submit(guest, { type: "resolve-challenge", spendInfamy: true }), /not your turn/);
+  await submit(host, { type: "resolve-challenge", spendInfamy: true });
+  await submit(host, { type: "resolve-challenge", endTurn: true });
+  await assert.rejects(submit(host, { type: "resolve-challenge" }), /not your turn/);
+  const response = await submit(guest, { type: "resolve-challenge" });
+  assert.equal(response.state.challenge?.turn?.attacks.length, 3);
+  assert.equal(response.state.monsters[0].infamy, 1);
 });
