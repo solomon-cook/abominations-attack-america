@@ -33,6 +33,12 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
         ? "Deploy · resolves immediately when drawn"
       : cardId === "X-Fighters"
         ? "Deploy · replace a branch unit with an X-Fighter"
+      : cardId === "Cutbacks"
+        ? "Any turn · choose a Research card to remove"
+      : cardId === "Molecular Cannon"
+        ? "Any turn · choose a monster and assigned lair"
+      : cardId === "Chopper Lift"
+        ? "Any turn · choose a monster and legal destination"
       : cardId === "Antimatter" || cardId === "Stabilizer Ray" || cardId === "Laser Fence"
           ? "Fight · battle setup window"
           : undefined;

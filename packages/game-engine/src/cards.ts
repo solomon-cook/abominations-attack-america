@@ -88,7 +88,7 @@ const implementedCardIds = new Set<string>([
   "Fins and Gills", "Rampage", "Radiation Field", "Atomic Recovery", "War Spikes", "Atomic Breath",
   "Iron Stomach", "Whip Tentacles", "High-Octane Blood", "Son of a Monster", "Berserk", "Winged Horror", "Kinda Friendly",
   "Laser Beam Eyes", "Armored Scales", "It's a Robot!", "Guard Commander", "Fusion Cells",
-  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Blonde Lure", "Mecha-Monster", "Captain Colossal", "X-Fighters",
+  "2nd Generation", "Anti-Mutagen", "Scientific Analysis", "Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Blonde Lure", "Mecha-Monster", "Captain Colossal", "X-Fighters", "Cutbacks", "Molecular Cannon", "Chopper Lift",
 ]);
 
 export const MONSTER_MUTATION_CARD_IDS = mutationIds;

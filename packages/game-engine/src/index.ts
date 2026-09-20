@@ -156,6 +156,8 @@ export interface GameState {
   /** Resumable normal-battle sequence used while later multi-target attacks await a choice. */
   pendingCombat?: PendingCombat;
   pendingEncounterChoice?: PendingEncounterChoice;
+  /** Toxicor's two-card Mutation choice, shown only to the active player. */
+  pendingMutationChoice?: PendingMutationChoice;
   pendingTrophyChoice?: PendingTrophyChoice;
   /** Source-backed Monster Challenge declaration, duel, and giant-last state. */
   challenge?: MonsterChallengeState;
@@ -170,6 +172,8 @@ export interface GameState {
   units: MilitaryUnit[];
   /** Permanently removed unit IDs; ordinary destruction returns a unit to record-tile instead. */
   removedUnitIds: string[];
+  /** Research cards removed from play by Cutbacks, rather than discarded. */
+  removedResearchCardIds?: string[];
   nationalGuard: NationalGuardInventory;
   log: string[];
   eventLog: GameLogEntry[];
@@ -191,6 +195,13 @@ export interface PendingEncounterChoice {
   readonly playerIndex: number;
   readonly location: HexKey;
   readonly choices: readonly ("health" | "infamy")[];
+}
+
+export interface PendingMutationChoice {
+  readonly playerIndex: number;
+  readonly monsterId: string;
+  readonly cardIds: readonly string[];
+  readonly siteId: string;
 }
 
 export interface PendingTrophyChoice {
@@ -236,6 +247,7 @@ export type PendingDecision =
   | Readonly<{ type: "retreat"; playerIndex: number; battleId: string; unitIds: readonly string[] }>
   | Readonly<{ type: "encounter-resolution"; playerIndex: number; location: HexKey }>
   | Readonly<{ type: "encounter-choice"; playerIndex: number; location: HexKey; choices: readonly ("health" | "infamy")[] }>
+  | Readonly<{ type: "mutation-choice"; playerIndex: number; monsterId: string; cardIds: readonly string[]; siteId: string }>
   | Readonly<{ type: "trophy-choice"; playerIndex: number; location: HexKey; branch: Branch; unitIds: readonly string[] }>
   | Readonly<{ type: "deployment"; playerIndex: number }>
   | Readonly<{ type: "challenge-opponent"; playerIndex: number; challengerMonsterId: string; opponentIds: readonly string[] }>
@@ -434,6 +446,10 @@ export function projectState(state: GameState, audience: StateAudience, viewerPl
   projected.players = projected.players.map((player, index) => audience === "player" && index === viewerPlayerIndex
     ? player
     : { ...player, visibleMutationCardIds: [...player.mutationCardIds], mutationCardIds: [], researchCardIds: [] });
+  if (projected.pendingMutationChoice && viewerPlayerIndex !== projected.pendingMutationChoice.playerIndex) {
+    projected.pendingMutationChoice = { ...projected.pendingMutationChoice, cardIds: [] };
+    if (projected.pendingDecision?.type === "mutation-choice") projected.pendingDecision = { ...projected.pendingDecision, cardIds: [] };
+  }
   projected.eventLog = projected.eventLog.map((entry) => ({ ...entry, detail: redactCardIdentifiers(entry.detail) as Record<string, unknown> }));
   return projected;
 }
@@ -459,8 +475,9 @@ export type GameCommand =
   | { type: "launch-submarine"; battleId: string; unitId: string }
   | { type: "launch-submarine-at-monster"; unitId: string; monsterId: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
+  | { type: "choose-mutation-card"; cardId: string }
   | { type: "use-monster-ability"; ability: "gargantis-heal"; mutationCardIds: string[] }
-  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey; targetMonsterId?: string }
+  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure" | "Cutbacks" | "Molecular Cannon" | "Chopper Lift"; battleId?: string; mutationCardId?: string; researchCardId?: string; choice?: "infamy" | "retreat"; destination?: HexKey; targetMonsterId?: string }
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy"; unitId?: string; destination?: HexKey }
@@ -515,6 +532,7 @@ export function migrateGameState(input: GameState): GameState {
   if (!state.matchId) state.matchId = `development-match-${state.rng?.seed ?? 0}`;
   if (!state.players) state.players = state.monsters.map((_, seat) => ({ id: `player-${seat + 1}`, seat, mutationCardIds: [], researchCardIds: [] }));
   state.players = state.players.map((player) => ({ ...player, mutationCardIds: Array.isArray(player.mutationCardIds) ? player.mutationCardIds : [], researchCardIds: Array.isArray(player.researchCardIds) ? player.researchCardIds : [] }));
+  if (!Array.isArray(state.removedResearchCardIds)) state.removedResearchCardIds = [];
   if (!state.nationalGuard || typeof state.nationalGuard.quantity !== "number" || state.nationalGuard.unitIds.length !== state.nationalGuard.quantity) {
     state.nationalGuard = createNationalGuardInventory();
   }
@@ -554,9 +572,10 @@ export function migrateGameState(input: GameState): GameState {
   return state;
 }
 
-function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer" | "monsters" | "units" | "pendingBattles" | "winnerPlayer" | "victoryType" | "pendingRetreat" | "pendingEncounterChoice" | "pendingTrophyChoice" | "pendingAttackTarget" | "challenge">): PendingDecision | undefined {
+function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer" | "monsters" | "units" | "pendingBattles" | "winnerPlayer" | "victoryType" | "pendingRetreat" | "pendingEncounterChoice" | "pendingTrophyChoice" | "pendingMutationChoice" | "pendingAttackTarget" | "challenge">): PendingDecision | undefined {
   if (state.pendingRetreat) return { type: "retreat", playerIndex: state.currentPlayer, battleId: state.pendingRetreat.battleId, unitIds: state.pendingRetreat.unitIds };
   if (state.pendingTrophyChoice) return { type: "trophy-choice", playerIndex: state.pendingTrophyChoice.playerIndex, location: state.pendingTrophyChoice.location, branch: state.pendingTrophyChoice.branch, unitIds: state.pendingTrophyChoice.unitIds };
+  if (state.pendingMutationChoice) return { type: "mutation-choice", playerIndex: state.pendingMutationChoice.playerIndex, monsterId: state.pendingMutationChoice.monsterId, cardIds: state.pendingMutationChoice.cardIds, siteId: state.pendingMutationChoice.siteId };
   if (state.pendingAttackTarget) return {
     type: "attack-target",
     playerIndex: state.currentPlayer,
@@ -1889,7 +1908,7 @@ interface MutationUseResolution {
 
 interface ResearchUseResolution {
   readonly state: GameState;
-  readonly cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure";
+  readonly cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure" | "Cutbacks" | "Molecular Cannon" | "Chopper Lift";
   readonly battleId?: string;
   readonly rolls: readonly number[];
   readonly damagedMonsterIds: readonly string[];
@@ -1905,12 +1924,70 @@ function discardResearchFromHand(state: GameState, playerIndex: number, cardId: 
   if (!state.decks.research.discard.includes(cardId)) state.decks.research = { ...state.decks.research, discard: [...state.decks.research.discard, cardId] };
 }
 
+function removeResearchFromPlay(state: GameState, playerIndex: number, cardId: string): void {
+  const player = state.players[playerIndex];
+  if (!player?.researchCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `Player ${playerIndex + 1} does not have ${cardId}.`);
+  player.researchCardIds = player.researchCardIds.filter((candidate) => candidate !== cardId);
+  state.removedResearchCardIds = [...(state.removedResearchCardIds ?? []), cardId];
+}
+
+function shortestBoardDistance(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash">, from: HexKey, to: HexKey): number | undefined {
+  if (from === to) return 0;
+  const neighbours = buildBoardIndex(boardForState(state)).neighbours;
+  const queue: Array<[HexKey, number]> = [[from, 0]];
+  const seen = new Set<HexKey>([from]);
+  while (queue.length) {
+    const [current, distance] = queue.shift()!;
+    for (const next of neighbours[current] ?? []) {
+      if (next === to) return distance + 1;
+      if (!seen.has(next)) { seen.add(next); queue.push([next, distance + 1]); }
+    }
+  }
+  return undefined;
+}
+
 /** Resolve the currently implemented immediate Research windows. */
-function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey, targetMonsterId?: string): ResearchUseResolution {
-  if (!new Set(["Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Mecha-Monster", "Captain Colossal", "Blonde Lure"]).has(cardId as string)) {
+function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure" | "Cutbacks" | "Molecular Cannon" | "Chopper Lift", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey, targetMonsterId?: string, researchCardId?: string): ResearchUseResolution {
+  if (!new Set(["Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Mecha-Monster", "Captain Colossal", "Blonde Lure", "Cutbacks", "Molecular Cannon", "Chopper Lift"]).has(cardId as string)) {
     throw new GameDomainError("ILLEGAL_COMMAND", `${String(cardId)} is source-gated and unavailable in this ruleset.`);
   }
   if (state.phase === "game-over" || state.phase === "challenge") throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} is unavailable during a terminal state or Monster Challenge.`);
+  if (cardId === "Cutbacks") {
+    if (!researchCardId || researchCardId === cardId || !state.players[state.currentPlayer]?.researchCardIds.includes(researchCardId)) throw new GameDomainError("ILLEGAL_COMMAND", "Cutbacks requires choosing another Research card from your hand.");
+    const next = structuredClone(state);
+    discardResearchFromHand(next, next.currentPlayer, cardId);
+    removeResearchFromPlay(next, next.currentPlayer, researchCardId);
+    next.log.push(`Cutbacks removed ${researchCardId} from play.`);
+    return { state: next, cardId, rolls: [], damagedMonsterIds: [], defeatedMonsterIds: [] };
+  }
+  if (cardId === "Molecular Cannon" || cardId === "Chopper Lift") {
+    if (!state.players[state.currentPlayer]?.researchCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `Player ${state.currentPlayer + 1} does not have ${cardId}.`);
+    const monster = state.monsters.find((candidate) => candidate.id === targetMonsterId && candidate.health > 0 && isHexKey(candidate.location));
+    if (!monster || !destination) throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} requires a living monster and a destination.`);
+    const next = structuredClone(state);
+    const target = next.monsters.find((candidate) => candidate.id === monster.id)!;
+    const roll = nextD6(next);
+    if (cardId === "Molecular Cannon") {
+      const lair = next.setupAssignments?.find((seat) => seat.monsterId === target.id)?.lair;
+      const lairKey = lair ? (locationIdToHexKey(lair) ?? lair) as HexKey : undefined;
+      if (!lairKey || destination !== lairKey) throw new GameDomainError("ILLEGAL_COMMAND", "Molecular Cannon must move the monster to one of its assigned lairs.");
+      discardResearchFromHand(next, next.currentPlayer, cardId);
+      target.health = Math.max(0, target.health - roll);
+      target.location = destination;
+      next.log.push(`Molecular Cannon dealt ${roll} damage to ${target.name} and moved it to its lair.`);
+      return { state: next, cardId, rolls: [roll], damagedMonsterIds: [target.id], defeatedMonsterIds: target.health === 0 ? [target.id] : [], destination };
+    }
+    const origin = target.location as HexKey;
+    const hex = boardForState(next).hexes[destination];
+    const featureBlocked = (hex?.features ?? []).some((feature) => feature.kind === "city" || feature.kind === "military-base" || feature.kind === "infamy-site") && !next.stompedLocations.includes(destination);
+    const occupied = next.monsters.some((candidate) => candidate.id !== target.id && candidate.location === destination) || next.units.some((unit) => unit.location === destination);
+    if (destination === origin || (shortestBoardDistance(next, origin, destination) ?? Number.POSITIVE_INFINITY) > roll || hex?.waterClass === "sea" || featureBlocked || occupied) throw new GameDomainError("ILLEGAL_COMMAND", "Chopper Lift destination is not legal for the rolled distance.");
+    discardResearchFromHand(next, next.currentPlayer, cardId);
+    target.location = destination;
+    target.infamy = Math.max(0, target.infamy - 1);
+    next.log.push(`Chopper Lift moved ${target.name} ${shortestBoardDistance(next, origin, destination)} spaces and removed 1 Infamy.`);
+    return { state: next, cardId, rolls: [roll], damagedMonsterIds: [], defeatedMonsterIds: [], destination };
+  }
   if (cardId === "Blonde Lure") {
     if (!(state.phase === "move" || state.phase === "fight" || state.phase === "encounter" || state.phase === "deploy")) throw new GameDomainError("ILLEGAL_COMMAND", "Blonde Lure can only be used during a player's active turn.");
     const player = state.players[state.currentPlayer];
@@ -2133,6 +2210,23 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
     const usedSites = next.mutationSiteUses[monster.id] ?? [];
     if (usedSites.includes(feature.siteId)) continue;
     next.mutationSiteUses[monster.id] = [...usedSites, feature.siteId];
+    if (monster.name === "Toxicor") {
+      const first = drawCardFromDeck(next.decks.mutation);
+      next.decks.mutation = first.state;
+      const second = drawCardFromDeck(next.decks.mutation);
+      next.decks.mutation = second.state;
+      if (first.cardId && second.cardId) {
+        next.pendingMutationChoice = { playerIndex: next.currentPlayer, monsterId: monster.id, cardIds: [first.cardId, second.cardId], siteId: feature.siteId };
+        next.pendingDecision = { type: "mutation-choice", playerIndex: next.currentPlayer, monsterId: monster.id, cardIds: [first.cardId, second.cardId], siteId: feature.siteId };
+        next.log.push(`${monster.name} revealed two Mutation cards at ${feature.siteId}; choose one to keep.`);
+        mutationDraws.push({ siteId: feature.siteId, cardDrawn: true, effectStatus: "implemented" });
+        return { state: next, effects, rolls, mutationDraws };
+      }
+      const mutationCardId = first.cardId ?? second.cardId;
+      if (mutationCardId) next.players[next.currentPlayer].mutationCardIds.push(mutationCardId);
+      mutationDraws.push({ siteId: feature.siteId, cardDrawn: Boolean(mutationCardId), effectStatus: mutationCardId ? sourcedCardRule(mutationCardId)?.effectsImplementation === "implemented" ? "implemented" : "source-gated" : "none" });
+      continue;
+    }
     const mutationCardId = drawMutationForMonster(next, monster);
     mutationDraws.push({ siteId: feature.siteId, cardDrawn: Boolean(mutationCardId), effectStatus: mutationCardId ? sourcedCardRule(mutationCardId)?.effectsImplementation === "implemented" ? "implemented" : "source-gated" : "none" });
     next.log.push(`${monster.name} used Mutation site ${feature.siteId};${mutationCardId ? ` A Mutation card was drawn face up.${mutationDrawStatus(mutationCardId)}` : " No Mutation card was available."}`);
@@ -2754,6 +2848,22 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const eventPayload = { monsterId: monster.id, mutationCardIds: cardIds, healthBefore, healthAfter: next.monsters[next.currentPlayer].health };
     return { state: appendEvent(next, "monster.ability.used", eventPayload), eventType: "monster.ability.used", eventPayload };
   }
+  if (command.type === "choose-mutation-card") {
+    if (state.phase !== "encounter" || state.pendingDecision?.type !== "mutation-choice" || !state.pendingMutationChoice) throw new GameDomainError("ILLEGAL_COMMAND", "There is no pending Mutation choice.");
+    const pending = state.pendingMutationChoice;
+    if (!pending.cardIds.includes(command.cardId)) throw new GameDomainError("ILLEGAL_COMMAND", "Choose one of the two revealed Mutation cards.");
+    const next = structuredClone(state);
+    const monsterPlayer = next.players[pending.playerIndex];
+    monsterPlayer.mutationCardIds.push(command.cardId);
+    const returned = pending.cardIds.find((cardId) => cardId !== command.cardId);
+    if (returned) insertMutationBackIntoDeck(next, returned);
+    next.pendingMutationChoice = undefined;
+    next.pendingDecision = undefined;
+    next.log.push(`${next.monsters[pending.playerIndex].name} chose ${command.cardId}; the other Mutation card was shuffled back into the deck.`);
+    const continued = resolveEncounterResult(next);
+    const eventPayload = { monsterId: pending.monsterId, siteId: pending.siteId, mutationCardId: command.cardId, returnedMutationCardId: returned, nextPhase: continued.state.phase, nextDecision: continued.state.pendingDecision };
+    return { state: appendEvent(continued.state, "mutation.choice", eventPayload), eventType: "mutation.choice", eventPayload };
+  }
   if (command.type === "pass-move") {
     requireDecision("monster-movement");
     if (state.phase !== "move") throw new Error("Move has already been resolved.");
@@ -2879,8 +2989,8 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     return { state: appendEvent(result.state, "mutation.used", eventPayload), eventType: "mutation.used", eventPayload };
   }
   if (command.type === "use-research") {
-    const result = useResearchCard(state, command.cardId, command.battleId, command.mutationCardId, command.choice, command.destination, command.targetMonsterId);
-    const eventPayload = { researchCardId: result.cardId, battleId: result.battleId, mutationCardId: command.mutationCardId, targetMonsterId: command.targetMonsterId, choice: command.choice, destination: command.destination, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
+    const result = useResearchCard(state, command.cardId, command.battleId, command.mutationCardId, command.choice, command.destination, command.targetMonsterId, command.researchCardId);
+    const eventPayload = { researchCardId: result.cardId, removedResearchCardId: command.researchCardId, battleId: result.battleId, mutationCardId: command.mutationCardId, targetMonsterId: command.targetMonsterId, choice: command.choice, destination: command.destination, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "research.used", eventPayload), eventType: "research.used", eventPayload };
   }
   if (state.phase === "fight" && command.type === "launch-submarine") {

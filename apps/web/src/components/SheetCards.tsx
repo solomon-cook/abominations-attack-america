@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { applyCommand, cardDefinition, sourcedCardRule, legalGiantPlacementDestinations, type GameCommand, type GameState } from "@abominations/game-engine";
+import { applyCommand, cardDefinition, sourcedCardRule, legalGiantPlacementDestinations, locationIdToHexKey, type GameCommand, type GameState } from "@abominations/game-engine";
 import { boardForGame } from "../board-pin";
 import { DigitalCard } from "./DigitalCard";
 
@@ -25,6 +25,17 @@ export function sheetCardActions(game: GameState, cardId: string): CardAction[] 
   }
   if (cardId === "Blonde Lure") for (const monster of game.monsters) {
     for (const edge of board?.edges.filter((edge) => edge.enabled && edge.from === monster.location) ?? []) candidates.push({ label: `${monster.name} → ${name(edge.to)}`, command: { type: "use-research", cardId, targetMonsterId: monster.id, destination: edge.to } });
+  }
+  if (cardId === "Cutbacks") for (const researchCardId of game.players[game.currentPlayer]?.researchCardIds ?? []) {
+    if (researchCardId !== cardId) candidates.push({ label: `Remove ${researchCardId} from play`, command: { type: "use-research", cardId, researchCardId } });
+  }
+  if (cardId === "Molecular Cannon") for (const monster of game.monsters) {
+    const lair = game.setupAssignments?.find((seat) => seat.monsterId === monster.id)?.lair;
+    const lairKey = lair ? locationIdToHexKey(lair) ?? lair : undefined;
+    if (lairKey && /^-?\d+,-?\d+$/.test(lairKey)) candidates.push({ label: `Blast ${monster.name} to its lair`, command: { type: "use-research", cardId, targetMonsterId: monster.id, destination: lairKey as `${number},${number}` } });
+  }
+  if (cardId === "Chopper Lift") for (const monster of game.monsters) for (const destination of Object.keys(board?.hexes ?? {}) as `${number},${number}`[]) {
+    if (destination !== monster.location) candidates.push({ label: `Lift ${monster.name} to ${name(destination)}`, command: { type: "use-research", cardId, targetMonsterId: monster.id, destination } });
   }
   if (cardId === "Mecha-Monster" || cardId === "Captain Colossal") for (const destination of legalGiantPlacementDestinations(game)) candidates.push({ label: `Place at ${name(destination)}`, command: { type: "use-research", cardId, destination } });
   // A dry run validates timing and targets using authoritative rules. Its cloned

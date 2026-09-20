@@ -1,11 +1,11 @@
 # Card catalogue report
 
-This report is generated from `packages/game-engine/src/cards.ts`. It describes the `prototype-0.1` development ruleset only; it is not production approval while the physical board and source-gated card effects remain unresolved.
+This report is generated from `packages/game-engine/src/cards.ts`. All inventoried card effects are implemented in the `prototype-0.1` development ruleset; physical-board promotion and source/lifecycle review remain separate production gates.
 
 - Card data version: 1
 - Total source-inventoried cards: 32
-- Available in the selected development ruleset: 29
-- Source-gated and unavailable: 3
+- Available in the selected development ruleset: 32
+- Source-gated and unavailable: 0
 
 ## Available cards
 
@@ -28,17 +28,20 @@ This report is generated from `packages/game-engine/src/cards.ts`. It describes 
 | mutation | Armored Scales | persistent | additive | implemented |
 | mutation | It's a Robot! | persistent | source-gated | implemented |
 | research | Mecha-Monster | one-use/discard | source-gated | implemented |
+| research | Cutbacks | one-use/discard | source-gated | implemented |
 | research | Laser Fence | one-use/discard | source-gated | implemented |
 | research | Guard Commander | persistent | permission-or | implemented |
 | research | Defense Satellites | one-use/discard | source-gated | implemented |
 | research | Stabilizer Ray | one-use/discard | source-gated | implemented |
 | research | Fusion Cells | persistent | additive | implemented |
 | research | X-Fighters | persistent | source-gated | implemented |
+| research | Molecular Cannon | one-use/discard | source-gated | implemented |
 | research | 2nd Generation | persistent | additive | implemented |
 | research | Blonde Lure | one-use/discard | source-gated | implemented |
 | research | Anti-Mutagen | conditional | source-gated | implemented |
 | research | Antimatter | one-use/discard | source-gated | implemented |
 | research | Scientific Analysis | conditional | source-gated | implemented |
+| research | Chopper Lift | one-use/discard | source-gated | implemented |
 | research | Captain Colossal | one-use/discard | source-gated | implemented |
 
 ## Source-gated cards
@@ -47,10 +50,7 @@ These cards are rejected by `assertCardsAvailable` and cannot silently no-op in 
 
 | Deck | Card | Stacking policy | Source status |
 | --- | --- | --- | --- |
-| research | Cutbacks | source-gated | source-gated |
-| research | Molecular Cannon | source-gated | source-gated |
-| research | Chopper Lift | source-gated | source-gated |
 
 ## Promotion boundary
 
-The report intentionally does not claim zero unsupported cards for production. Production selection remains blocked until every source-gated effect, Challenge giant-unit lifecycle, and authoritative board datum has been independently verified and implemented.
+The report confirms zero unsupported cards in the selected development ruleset. Production selection remains separately blocked until the authoritative board and remaining source/lifecycle approvals are complete.

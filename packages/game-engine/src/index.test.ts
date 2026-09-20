@@ -582,17 +582,12 @@ test("card stacking policies are explicit and fail closed when the cited text is
   assert.equal(CARD_STACKING_RULES.filter((rule) => rule.policy === "source-gated").length, 23);
 });
 
-test("runtime commands fail closed for every source-gated card", () => {
+test("every inventoried card is implemented at the current ruleset boundary", () => {
   const unsupportedMutations = CARD_DEFINITIONS.filter((card) => card.deck === "mutation" && card.availability === "source-gated").map((card) => card.id);
   const unsupportedResearch = CARD_DEFINITIONS.filter((card) => card.deck === "research" && card.availability === "source-gated").map((card) => card.id);
   assert.deepEqual(unsupportedMutations, []);
-  assert.deepEqual(unsupportedResearch.sort(), ["Chopper Lift", "Cutbacks", "Molecular Cannon"].sort());
-  for (const cardId of unsupportedResearch) {
-    assert.throws(() => applyCommand(createGame(2), { type: "use-research", cardId } as any), /source-gated and unavailable/);
-  }
-  for (const cardId of unsupportedMutations) {
-    assert.throws(() => applyCommand(createGame(2), { type: "use-mutation", cardId } as any), /source-gated and unavailable/);
-  }
+  assert.deepEqual(unsupportedResearch, []);
+  assert.equal(CARD_DEFINITIONS.every((card) => card.availability === "implemented" && card.lifecycle === "implemented"), true);
 });
 
 test("Blonde Lure constrains the targeted monster's next move when the destination is reachable", () => {
@@ -2999,9 +2994,57 @@ test("Toxicor draws two Mutation cards and returns the unchosen card to the deck
   state.monsters[0].name = "Toxicor";
   state.monsters[0].location = Object.values(boardForState(state).hexes).find((hex) => hex.features.some((feature) => feature.kind === "mutation-site"))!.key;
   const result = applyCommand(state, { type: "resolve-encounter" });
-  assert.equal(result.state.players[0].mutationCardIds.length, 1);
+  assert.equal(result.state.pendingDecision?.type, "mutation-choice");
+  const choices = result.state.pendingDecision?.type === "mutation-choice" ? result.state.pendingDecision.cardIds : [];
+  assert.equal(choices.length, 2);
   assert.equal(result.state.decks.mutation.drawIndex, 2);
-  assert.equal(result.state.decks.mutation.order.length, MONSTER_MUTATION_CARD_IDS.length + 1);
-  assert.equal(result.state.decks.mutation.order.includes(result.state.players[0].mutationCardIds[0]), true);
-  assert.equal(result.state.log.some((entry) => /shuffled back/i.test(entry)), true);
+  assert.equal(result.state.players[0].mutationCardIds.length, 0);
+  const chosen = applyCommand(result.state, { type: "choose-mutation-card", cardId: choices[1]! });
+  assert.equal(chosen.state.players[0].mutationCardIds.length, 1);
+  assert.equal(chosen.state.players[0].mutationCardIds[0], choices[1]);
+  assert.equal(chosen.state.decks.mutation.order.length, MONSTER_MUTATION_CARD_IDS.length + 1);
+  assert.equal(chosen.state.decks.mutation.order.includes(choices[0]!), true);
+  assert.equal(chosen.state.log.some((entry) => /shuffled back/i.test(entry)), true);
+});
+
+test("Cutbacks removes a chosen Research card from play", () => {
+  const state = createGame(2);
+  state.phase = "move";
+  state.players[0].researchCardIds = ["Cutbacks", "Molecular Cannon"];
+  const result = applyCommand(state, { type: "use-research", cardId: "Cutbacks", researchCardId: "Molecular Cannon" });
+  assert.deepEqual(result.state.players[0].researchCardIds, []);
+  assert.deepEqual(result.state.removedResearchCardIds, ["Molecular Cannon"]);
+  assert.equal(result.state.decks.research.discard.includes("Cutbacks"), true);
+});
+
+test("Molecular Cannon damages a monster and moves it to its assigned lair", () => {
+  const state = createGame(2, 0);
+  state.phase = "move";
+  state.players[0].researchCardIds = ["Molecular Cannon"];
+  state.setupAssignments = [{ playerIndex: 0, monsterId: "monster-1", lair: "denver", ready: true }];
+  const result = applyCommand(state, { type: "use-research", cardId: "Molecular Cannon", targetMonsterId: "monster-1", destination: K("denver") });
+  assert.equal(result.state.monsters[0].location, K("denver"));
+  assert.equal(result.state.monsters[0].health < state.monsters[0].health, true);
+  assert.equal((result.eventPayload.rolls as number[]).length, 1);
+});
+
+test("Chopper Lift moves a monster to a legal non-sea destination and removes Infamy", () => {
+  const state = createGame(2, 0);
+  state.phase = "move";
+  state.players[0].researchCardIds = ["Chopper Lift"];
+  state.monsters[0].infamy = 2;
+  const origin = state.monsters[0].location as `${number},${number}`;
+  const destination = boardForState(state).edges.find((edge) => edge.enabled && edge.from === origin && boardForState(state).hexes[edge.to]?.waterClass !== "sea")?.to;
+  assert.ok(destination);
+  state.stompedLocations = [...state.stompedLocations, destination!];
+  let result: ReturnType<typeof applyCommand> | undefined;
+  for (let seed = 0; seed < 64 && !result; seed += 1) {
+    const candidate = structuredClone(state);
+    candidate.rng.seed = seed;
+    try { result = applyCommand(candidate, { type: "use-research", cardId: "Chopper Lift", targetMonsterId: "monster-1", destination: destination! }); } catch { /* the rolled distance may be shorter than the chosen edge */ }
+  }
+  assert.ok(result);
+  assert.equal(result!.state.monsters[0].location, destination);
+  assert.equal(result!.state.monsters[0].infamy, 1);
+  assert.deepEqual(result!.state.players[0].researchCardIds, []);
 });

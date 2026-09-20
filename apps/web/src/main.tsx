@@ -395,7 +395,7 @@ function App() {
         : { label: pendingAttackTarget ? "Choose attack target" : "Continue to Fight", command: undefined }
       : activeGame.phase === "encounter"
         ? activeGame.pendingDecision && activeGame.pendingDecision.type !== "encounter-resolution"
-          ? { label: "Choose encounter option", command: undefined }
+          ? { label: activeGame.pendingDecision.type === "mutation-choice" ? "Choose Toxicor Mutation" : "Choose encounter option", command: undefined }
           : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
         : activeGame.phase === "deploy"
           ? militaryChoices.length

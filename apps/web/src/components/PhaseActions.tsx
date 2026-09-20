@@ -163,6 +163,13 @@ export function PhaseActions({
     </div>;
   }
 
+  if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "mutation-choice") {
+    return <div className="battle-choice" aria-label="Choose Toxicor Mutation card">
+      <p>Toxicor revealed two Mutation cards. Choose one to keep; the other returns to the deck.</p>
+      {activeGame.pendingDecision.cardIds.map((cardId) => <button key={cardId} disabled={!canAct} onClick={() => void runCommand({ type: "choose-mutation-card", cardId })}>Keep {cardId}</button>)}
+    </div>;
+  }
+
   if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "encounter-resolution") {
     return <div className="path-controls" aria-label="Resolve encounter">
       {defenseSatellitesButton}

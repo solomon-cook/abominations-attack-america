@@ -18,7 +18,7 @@ for (const card of CARD_DEFINITIONS) {
 const lines = [
   "# Card catalogue report",
   "",
-  "This report is generated from `packages/game-engine/src/cards.ts`. It describes the `prototype-0.1` development ruleset only; it is not production approval while the physical board and source-gated card effects remain unresolved.",
+  "This report is generated from `packages/game-engine/src/cards.ts`. All inventoried card effects are implemented in the `prototype-0.1` development ruleset; physical-board promotion and source/lifecycle review remain separate production gates.",
   "",
   `- Card data version: ${CARD_DATA_VERSION}`,
   `- Total source-inventoried cards: ${CARD_DEFINITIONS.length}`,
@@ -41,7 +41,7 @@ const lines = [
   "",
   "## Promotion boundary",
   "",
-  "The report intentionally does not claim zero unsupported cards for production. Production selection remains blocked until every source-gated effect, Challenge giant-unit lifecycle, and authoritative board datum has been independently verified and implemented.",
+  "The report confirms zero unsupported cards in the selected development ruleset. Production selection remains separately blocked until the authoritative board and remaining source/lifecycle approvals are complete.",
   "",
 ];
 
