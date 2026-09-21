@@ -1,4 +1,4 @@
-import { getLocation, legalUnitPaths, type GameState } from "@abominations/game-engine";
+import { getLocation, shortestLegalUnitPaths, type GameState } from "@abominations/game-engine";
 
 type Props = {
   game: GameState;
@@ -19,7 +19,7 @@ export function UnitCard({ game, canAct, selectedUnitId, onSelect }: Props) {
     <div className="card unit-card">
       <span className="label">MILITARY UNITS</span>
       {visibleUnits.map((unit) => {
-        const paths = legalUnitPaths(game, unit.id);
+        const paths = shortestLegalUnitPaths(game, unit.id);
         const location = getLocation(unit.location)?.name ?? unit.location;
         return (
           <button

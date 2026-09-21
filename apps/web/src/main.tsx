@@ -17,7 +17,7 @@ import {
   isHexKey,
   getLocation,
   legalMonsterPaths,
-  legalUnitPaths,
+  shortestLegalUnitPaths,
   legalSubmarineTargets,
   type GameCommand,
   type GameState,
@@ -217,12 +217,12 @@ function App() {
     return () => cancelAnimationFrame(frame);
   }, [selectedUnitId]);
   const legalUnitPathsForSelection = useMemo(
-    () => (selectedUnitId ? legalUnitPaths(activeGame, selectedUnitId) : []),
+    () => (selectedUnitId ? shortestLegalUnitPaths(activeGame, selectedUnitId) : []),
     [activeGame, selectedUnitId],
   );
   const selectableUnitIds = useMemo(
     () => activeGame.phase === "move"
-      ? new Set(activeGame.units.filter((unit) => legalUnitPaths(activeGame, unit.id).length > 0 || legalSubmarineTargets(activeGame, unit.id).length > 0).map((unit) => unit.id))
+      ? new Set(activeGame.units.filter((unit) => shortestLegalUnitPaths(activeGame, unit.id).length > 0 || legalSubmarineTargets(activeGame, unit.id).length > 0).map((unit) => unit.id))
       : activeGame.pendingDecision?.type === "trophy-choice" ? new Set(activeGame.pendingDecision.unitIds) : new Set<string>(),
     [activeGame],
   );
@@ -578,7 +578,7 @@ function App() {
     const monster = nextGame.monsters[nextGame.currentPlayer];
     if (!monster || !nextGame.movedPieceIds.includes(monster.id)) return;
     const nextUnit = nextGame.units.find((unit) =>
-      legalUnitPaths(nextGame, unit.id).length > 0 || legalSubmarineTargets(nextGame, unit.id).length > 0,
+      shortestLegalUnitPaths(nextGame, unit.id).length > 0 || legalSubmarineTargets(nextGame, unit.id).length > 0,
     );
     if (!nextUnit) return;
     setSelectedUnitId(nextUnit.id);

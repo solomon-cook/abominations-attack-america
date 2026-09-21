@@ -1064,6 +1064,15 @@ export function legalSubmarineTargets(state: GameState, unitId: string): GameSta
 }
 
 export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
+  return unitMovementPaths(state, unitId, false);
+}
+
+/** One shortest legal route per destination for interactive movement controls. */
+export function shortestLegalUnitPaths(state: GameState, unitId: string): HexKey[][] {
+  return unitMovementPaths(state, unitId, true);
+}
+
+function unitMovementPaths(state: GameState, unitId: string, shortestOnly: boolean): HexKey[][] {
   if (state.phase !== "move") return [];
   const board = boardForState(state);
   const boardIndex = buildBoardIndex(board);
@@ -1072,6 +1081,26 @@ export function legalUnitPaths(state: GameState, unitId: string): HexKey[][] {
   const guardControlled = unit?.branch === "National Guard" && researchContinuousEffects(state, state.currentPlayer).canControlNationalGuard;
   if (!unit || !isHexKey(unit.location) || (!guardControlled && unit.ownerPlayer !== state.currentPlayer) || movedPieceIds.includes(unitId) || !Number.isInteger(unit.move) || unit.move <= 0) return [];
   const paths: HexKey[][] = [];
+  if (shortestOnly) {
+    // Breadth-first search visits each cell once instead of enumerating every
+    // simple route. Unit traversal depends only on the edge and its occupants.
+    const visited = new Set<HexKey>([unit.location]);
+    const queue: HexKey[][] = [[unit.location]];
+    const move = effectiveUnitMove(state, unit);
+    const monsterLocations = new Set(state.monsters.map((monster) => monster.location));
+    for (let index = 0; index < queue.length; index++) {
+      const path = queue[index];
+      if (path.length - 1 >= move) continue;
+      for (const next of boardIndex.neighbours[path.at(-1)!] ?? []) {
+        if (visited.has(next) || !movementPathAllowed(board, [path.at(-1)!, next], unit.movement)) continue;
+        visited.add(next);
+        const nextPath = [...path, next];
+        paths.push(nextPath);
+        if (unit.movement === "fly" || !monsterLocations.has(next)) queue.push(nextPath);
+      }
+    }
+    return paths;
+  }
   const visit = (path: HexKey[]) => {
     if (path.length > 1) paths.push(path);
     if (path.length - 1 >= effectiveUnitMove(state, unit)) return;
@@ -2816,7 +2845,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     requireDecision("monster-movement");
     const monster = state.monsters[state.currentPlayer];
     const isMonster = command.pieceId === monster?.id;
-    const paths = isMonster ? legalMonsterPaths(state, command.pieceId) : legalUnitPaths(state, command.pieceId);
+    const paths = isMonster ? legalMonsterPaths(state, command.pieceId) : shortestLegalUnitPaths(state, command.pieceId);
     if (state.phase !== "move" || paths.length === 0) throw new Error("That piece cannot stay in the current movement decision.");
     const next = structuredClone(state);
     next.movedPieceIds = [...(next.movedPieceIds ?? []), command.pieceId];

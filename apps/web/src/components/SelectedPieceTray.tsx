@@ -1,4 +1,4 @@
-import { boardForState, getLocation, isHexKey, legalUnitPaths, monsterDefinition, UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, GIANT_UNIT_DEFINITIONS, type GameState, type HexKey } from "@abominations/game-engine";
+import { boardForState, getLocation, isHexKey, shortestLegalUnitPaths, monsterDefinition, UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, GIANT_UNIT_DEFINITIONS, type GameState, type HexKey } from "@abominations/game-engine";
 import { movementLabel, SheetStats } from "./SheetReference";
 import { monsterAssetSlug } from "../monster-assets";
 
@@ -27,7 +27,7 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
   const name = definition?.name ?? guard?.name ?? giant?.name ?? unit.unitTypeId?.replaceAll("-", " ") ?? unit.branch;
   const board = boardForState(game);
   const locationName = (key: string) => getLocation(key)?.name ?? (isHexKey(key) ? board.hexes[key]?.label ?? "On the board" : key === "record-tile" ? "In reserve" : key);
-  const canMove = legalUnitPaths(game, unit.id).length > 0;
+  const canMove = shortestLegalUnitPaths(game, unit.id).length > 0;
   const status = game.movedPieceIds.includes(unit.id) ? "Already moved this turn."
     : selectedUnitPath.length > 1 ? `Previewing ${selectedUnitPath.length - 1} spaces to ${locationName(selectedUnitPath.at(-1)!)}.`
     : canMove ? "Choose a glowing destination to preview this unit’s move." : "This unit cannot move at this point in the turn.";
