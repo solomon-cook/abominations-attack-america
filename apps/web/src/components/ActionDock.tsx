@@ -5,14 +5,13 @@ type Props = {
   contextLabel?: string;
   guidance?: string;
   onPrimary?: () => void;
-  secondaryAction?: { label: string; command: GameCommand };
   canAct: boolean;
   command?: GameCommand;
   unavailableReason?: string;
   onAction: (command: GameCommand) => void;
 };
 
-export function ActionDock({ contextLabel, guidance, onPrimary, secondaryAction, label, canAct, command, unavailableReason, onAction }: Props) {
+export function ActionDock({ contextLabel, guidance, onPrimary, label, canAct, command, unavailableReason, onAction }: Props) {
   const actionIcon = command?.type === "move" || command?.type === "move-unit"
     ? "↝"
     : command?.type === "resolve-fight"
@@ -35,7 +34,6 @@ export function ActionDock({ contextLabel, guidance, onPrimary, secondaryAction,
       <button type="button" data-action-icon={actionIcon} aria-label={label} disabled={!canAct || (!command && !onPrimary)} title={status} aria-describedby="action-dock-status" onClick={() => onPrimary ? onPrimary() : command && onAction(command)}>
         {label}
       </button>
-      {secondaryAction && <button type="button" className="action-dock-secondary" disabled={!canAct} onClick={() => onAction(secondaryAction.command)}>{secondaryAction.label}</button>}
     </div>
   );
 }

@@ -25,6 +25,7 @@ const eventLabels: Record<string, string> = {
   "research.used": "Research card resolved",
   "mutation.used": "Mutation card resolved",
   "mutation.choice": "Toxicor Mutation chosen",
+  "mutation.discarded": "Stabilizer Ray Mutation discarded",
   "challenge.attack.rolled": "Challenge attack rolled",
   "challenge.turn.passed": "Challenge dice handed over",
   "challenge.resolved": "Monster Challenge resolved",
@@ -38,6 +39,7 @@ const eventIcons: Record<string, string> = {
   "monster.moved": "↝", "monster.stayed": "↺", "unit.moved": "↝", "unit.deployed": "▣", "unit.redeployed": "↺",
   "fight.resolved": "⚔", "retreat.resolved": "⇱", "encounter.resolved": "✦", "research.drawn": "▤", "research.used": "◆",
   "mutation.used": "◆", "mutation.choice": "◆", "challenge.resolved": "⚔", "challenge.giant.resolved": "⚔", "monster.disappeared": "○",
+  "mutation.discarded": "◆",
   "turn.passed": "▶", "match.conceded": "■",
 };
 

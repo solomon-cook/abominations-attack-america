@@ -314,7 +314,7 @@ export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
     timing: "Any of your turns.",
     duration: "The chosen Research card is removed from play.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-01.jpg"],
-    effectsImplementation: "source-gated",
+    effectsImplementation: "implemented",
   },
   {
     id: "X-Fighters",
@@ -332,7 +332,7 @@ export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
     timing: "Start of a battle involving your units, on any of your turns.",
     duration: "Resolved immediately before normal battle resolution.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-02.jpg"],
-    effectsImplementation: "source-gated",
+    effectsImplementation: "implemented",
   },
   {
     id: "2nd Generation",
@@ -377,7 +377,7 @@ export const SOURCED_CARD_RULES: readonly SourcedCardRule[] = [
     timing: "Any of your turns.",
     duration: "Resolved immediately.",
     sourceRefs: ["references/monsters-menace-america/components/decks/military-research-03.jpg"],
-    effectsImplementation: "source-gated",
+    effectsImplementation: "implemented",
   },
   {
     id: "Captain Colossal",

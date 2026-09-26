@@ -5,11 +5,12 @@ import { MutationStrip } from "./MutationStrip";
 import { monsterPortrait, ResolutionStage } from "./ResolutionStage";
 import { HealthBar } from "./FightResolutionPanel";
 import { militaryArt, readBattleAttacks } from "./combat-presentation";
+import { ChallengeMutationControls } from "./ChallengeMutationControls";
 import "../combat-stage.css";
 
-type Props = { game: GameState; canAct: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onClose: () => void; error?: string };
+type Props = { game: GameState; canAct: boolean; canUseMutation?: boolean; playerIndex?: number; runCommand: (command: GameCommand) => void | Promise<void>; onClose: () => void; error?: string };
 
-export function ChallengeArena({ game, canAct, runCommand, onClose, error }: Props) {
+export function ChallengeArena({ game, canAct, canUseMutation = canAct, playerIndex, runCommand, onClose, error }: Props) {
   const event = game.eventLog.at(-1);
   const [settledId, setSettledId] = useState<string>();
   const [acknowledged, setAcknowledged] = useState<string>();
@@ -43,8 +44,8 @@ export function ChallengeArena({ game, canAct, runCommand, onClose, error }: Pro
   const canSpend = attacker && "infamy" in attacker && attacker.infamy > 0 && Boolean(challenge?.turn?.attacks.length);
   const recovered = !completed || recoveredId === event?.id;
   const disabled = !canAct || busy || !settled;
-  const send = async (command: GameCommand) => {
-    if (submitting.current || disabled) return;
+  const send = async (command: GameCommand, allowed = canAct) => {
+    if (submitting.current || !allowed || busy || !settled) return;
     submitting.current = true; setBusy(true);
     try { await runCommand(command); } finally { submitting.current = false; setBusy(false); }
   };
@@ -58,6 +59,7 @@ export function ChallengeArena({ game, canAct, runCommand, onClose, error }: Pro
   const title = showResult && settled ? `${String(event?.detail.winnerName ?? name(leftId))} wins.` : choosing ? "Who’s next?" : "Clash of titans.";
   return <ResolutionStage title={title} eyebrow="THE FINAL MONSTER CHALLENGE" variant="challenge" onClose={onClose}>
     <div className="challenge-live-turn" aria-live="polite">{showResult ? settled ? game.phase === "game-over" ? game.victoryType === "america-saved" ? "America is saved" : "King of the Giant Monsters" : "A challenger survives" : "The final strike…" : choosing ? "Choose the next opponent" : `Round ${challenge?.turn?.round ?? 1} · ${name(attackerId)}’s turn`}</div>
+    <ChallengeMutationControls game={game} canUseMutation={canUseMutation} playerIndex={playerIndex} disabled={busy || !settled} runCommand={(command) => send(command, canUseMutation)} />
     <div className="challenge-live-arena">
       {[left, right].map((unit, index) => <section key={index} className={`challenge-live-side ${unit?.id === attackerId && !showResult ? "is-attacker" : ""}`}>
         <span className="battle-role">{index === 0 ? "CHALLENGER" : "OPPONENT"}</span>

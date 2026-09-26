@@ -51,7 +51,7 @@ provisional rulesets.
 
 - [x] Defense Satellites — roll damage for each board monster: phase/hand controls, result panel, and fixture.
 - [x] Antimatter — double first-round military damage and mutation rolls: battle-start controls, combat result, and fixture.
-- [x] Stabilizer Ray — choose Mutation to discard after damage: target selector, delayed discard, and fixture.
+- [x] Stabilizer Ray — arm at battle start, then choose a Mutation after damage: persisted choice, delayed discard, resumed battle decision, and fixtures.
 - [x] Laser Fence — pay Infamy or retreat: explicit outcome/destination controls and fixture.
 - [x] Guard Commander — persistent Guard permission: Military Sheet status plus legal selectors and Guard fixtures.
 - [x] Fusion Cells — +1 Move for units: movement highlighting/validation and fixture.

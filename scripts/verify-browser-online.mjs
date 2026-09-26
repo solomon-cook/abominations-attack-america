@@ -205,17 +205,23 @@ try {
   if (!spectatorSetupControls) throw new Error("Spectator exposed an enabled setup control.");
 
   let setupClicks = 0;
+  let consecutiveSetupWaits = 0;
   for (let attempt = 0; attempt < 60; attempt += 1) {
     let progressed = false;
     for (const browser of [first, second]) {
-      const preferredStartingChoice = browser === first ? "Deploy units" : "Draw Research";
-      const clicked = await browser.evaluate(`(() => { const phase = document.querySelector(".setup-panel h2")?.textContent?.trim(); const buttons = [...document.querySelectorAll(".setup-options button")].filter((candidate) => !candidate.disabled); const button = phase === "starting choice" ? buttons.find((candidate) => candidate.textContent?.trim() === ${JSON.stringify(preferredStartingChoice)}) : buttons[0]; if (!button) return false; button.click(); return true; })()`);
-      if (clicked) { setupClicks += 1; progressed = true; await wait(120); break; }
+      const preferredStartingChoice = "Draw Research";
+      const clicked = await browser.evaluate(`(() => { const phase = document.querySelector(".setup-panel h2")?.textContent?.trim(); const buttons = [...document.querySelectorAll(".setup-options button")].filter((candidate) => !candidate.disabled); const button = phase === "starting choice" ? buttons.find((candidate) => candidate.textContent?.trim().toLowerCase().includes(${JSON.stringify(preferredStartingChoice.toLowerCase())})) : buttons[0]; if (!button) return false; button.click(); return true; })()`);
+      if (clicked) { setupClicks += 1; progressed = true; consecutiveSetupWaits = 0; await wait(120); break; }
     }
     if (!progressed) {
       const complete = await first.evaluate("!document.querySelector('.setup-panel')") && await second.evaluate("!document.querySelector('.setup-panel')");
       if (complete) break;
-      throw new Error("Neither online browser exposed the current setup choice.");
+      consecutiveSetupWaits += 1;
+      if (consecutiveSetupWaits >= 8) {
+        const setupStates = await Promise.all([first, second].map((browser) => browser.evaluate(`(() => ({ phase: document.querySelector(".setup-panel h2")?.textContent?.trim(), prompt: document.querySelector(".deployment-prompt")?.textContent?.trim(), progress: document.querySelector(".setup-progress")?.textContent?.trim(), action: document.querySelector(".action-card h2")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), buttons: [...document.querySelectorAll(".setup-options button")].map((button) => ({ text: button.textContent.trim(), disabled: button.disabled, title: button.title })) }))()`)));
+        throw new Error(`Neither online browser exposed the current setup choice: ${JSON.stringify(setupStates)}`);
+      }
+      await wait(180);
     }
   }
   await first.waitFor("!document.querySelector('.setup-panel')", "first setup completion");
@@ -224,6 +230,13 @@ try {
   await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first Move phase");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second Move phase");
   await spectator.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "spectator Move projection");
+  for (const [browser, targetPlayer, label] of [[first, "Player 2", "online opponent"], [spectator, "Player 1", "spectator player"]]) {
+    const clickedPortrait = await browser.evaluate(`(() => { const button = [...document.querySelectorAll(".opponent-portrait")].find((candidate) => candidate.getAttribute("aria-label")?.startsWith(${JSON.stringify(targetPlayer)})); if (!button) return false; button.click(); return true; })()`);
+    if (!clickedPortrait) throw new Error(`${label} portrait was missing.`);
+    await browser.waitFor(`!!document.querySelector("#player-public-status")`, `${label} public status`);
+    const opened = await browser.evaluate(`document.querySelector("#player-public-status")?.textContent ?? ""`);
+    if (!String(opened).toLowerCase().includes(targetPlayer.toLowerCase()) || !/\d+\/\d+/.test(String(opened)) || !/★\s*\d+/.test(String(opened))) throw new Error(`${label} portrait did not expose public health, infamy, and position: ${JSON.stringify(opened)}.`);
+  }
   const spectatorMoveControls = await spectator.evaluate(`(() => {
     const actionButtons = [...document.querySelectorAll(".action-card button, .action-dock button:not(.action-dock-secondary)")];
     const legalTiles = [...document.querySelectorAll(".hex-tile.legal")];
@@ -273,8 +286,10 @@ try {
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
   await first.waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "online legal movement destination");
   if (!await first.evaluate(`(() => { const tiles = [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")]; const tile = tiles.find((candidate) => candidate.querySelector('img[alt^="Navy "]')) ?? tiles.find((candidate) => candidate.getAttribute("data-location-name") === "Denver") ?? tiles[0]; tile?.click(); return Boolean(tile); })()`)) throw new Error("First browser could not select an online legal destination.");
-  await first.waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, "online path confirmation");
-  if (!await first.click("Confirm path")) throw new Error("First browser could not confirm the online path.");
+  await first.waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm move")`, "online path confirmation");
+  if (!await first.click("Confirm move")) throw new Error("First browser could not confirm the online path.");
+  await first.waitFor(`!!document.querySelector(".end-movement:not(:disabled)")`, "online movement completion control");
+  if (!await first.evaluate(`(() => { const button = document.querySelector(".end-movement:not(:disabled)"); if (!button) return false; button.click(); return true; })()`)) throw new Error("First browser could not end online movement.");
   await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase !== "Move" && phase !== "Waiting for server…"; })()`, "first settled post-move phase");
   const nextPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`, "second post-move phase");
@@ -316,19 +331,23 @@ try {
   if (!encounterAction) throw new Error("First browser exposed no legal Encounter action.");
   for (let encounterStep = 0; encounterStep < 4; encounterStep += 1) {
     const currentPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
-    if (currentPhase === "Deploy") break;
+    if (currentPhase === "Deploy" || /^Victory · /.test(currentPhase ?? "")) break;
     if (currentPhase !== "Encounter") throw new Error(`Expected Encounter or Deploy after Encounter action, got ${currentPhase ?? "unknown"}.`);
     const followUp = await clickEncounterDecision();
     if (!followUp) throw new Error("Encounter remained active without an enabled legal decision control in either player session.");
   }
-  const deployPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
-  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(deployPhase)}`, "second synchronized post-encounter phase");
-  if (deployPhase !== "Deploy") throw new Error(`Expected Deploy after Encounter, got ${deployPhase ?? "unknown"}.`);
-  if (!await first.click("Pass deployment")) throw new Error("First browser could not pass Deploy.");
-  await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase === "Move"; })()`, "first next Move phase");
-  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
-  const concessionActor = await first.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled); if (!button) return false; button.click(); return true; })()`) ? "first" : await second.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled); if (!button) return false; button.click(); return true; })()`) ? "second" : undefined;
-  if (!concessionActor) throw new Error("Neither online player exposed an enabled Concede match control.");
+  let postEncounterPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(postEncounterPhase)}`, "second synchronized post-encounter phase");
+  let concessionActor;
+  if (postEncounterPhase === "Deploy") {
+    if (!await first.click("Pass deployment")) throw new Error("First browser could not pass Deploy.");
+    await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first next Move phase");
+    await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
+    concessionActor = await first.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled); if (!button) return false; button.click(); return true; })()`) ? "first" : await second.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled); if (!button) return false; button.click(); return true; })()`) ? "second" : undefined;
+    if (!concessionActor) throw new Error("Neither online player exposed an enabled Concede match control.");
+  } else if (!/^Victory · /.test(postEncounterPhase ?? "")) {
+    throw new Error(`Expected Deploy or an encounter-triggered victory, got ${postEncounterPhase ?? "unknown"}.`);
+  }
   for (const [browser, label] of [[first, "first terminal"], [second, "second terminal"], [spectator, "spectator terminal"]]) {
     await browser.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, label);
     const terminalSummary = await browser.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
@@ -338,7 +357,7 @@ try {
   await second.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "reloaded second terminal");
   const reloadedTerminal = await second.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
   if (!reloadedTerminal) throw new Error("Reloaded second browser lost the terminal result.");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: "verified", onlineConcession: "verified", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineConcession: concessionActor ? "verified" : "skipped-after-victory", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
 } finally {
   await Promise.all([first?.close(), second?.close(), spectator?.close()]);
   await Promise.all([stopServer(apiServer), stopServer(webServer)]);

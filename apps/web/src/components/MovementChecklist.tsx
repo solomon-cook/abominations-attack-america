@@ -1,4 +1,5 @@
 import { boardForState, isHexKey, type GameState } from "@abominations/game-engine";
+import { monsterAssetSlug } from "../monster-assets";
 
 type Props = {
   game: GameState;
@@ -17,22 +18,23 @@ export function MovementChecklist({ game, canAct, selectedUnitId, movableUnitIds
   const units = game.units.filter((unit) => isHexKey(unit.location) && !game.removedUnitIds.includes(unit.id)
     && (unit.ownerPlayer === game.currentPlayer || unit.branch === "National Guard" && controlsGuard));
   const pieces = [
-    { id: monster.id, name: monster.name, kind: "Monster", selected: selectedUnitId === null, movable: monsterCanMove, unitId: null },
+    { id: monster.id, name: monster.name, kind: "Monster", image: `/assets/monsters/portraits/${monsterAssetSlug(monster.name)}.webp`, selected: selectedUnitId === null, movable: monsterCanMove, unitId: null },
     ...units.map((unit) => ({ id: unit.id, name: (unit.unitTypeId ?? unit.branch).replaceAll("-", " "),
       kind: isHexKey(unit.location) ? board.hexes[unit.location]?.label ?? unit.branch : unit.branch,
+      image: `/assets/military/${unit.unitTypeId ?? "army-tank"}.webp`,
       selected: selectedUnitId === unit.id, movable: movableUnitIds.has(unit.id), unitId: unit.id })),
   ];
   const remaining = pieces.filter((piece) => piece.movable).length;
   return <section className="movement-checklist" aria-label="Movement checklist">
-    <div className="movement-checklist-heading"><strong>Movement orders</strong><span aria-live="polite">{remaining} available</span></div>
+    <div className="movement-checklist-heading"><strong>Orders</strong><span aria-live="polite">{remaining} remaining</span></div>
     <div className="movement-piece-list">
       {pieces.map((piece) => {
         const moved = game.movedPieceIds.includes(piece.id);
         return <button type="button" key={piece.id} className={`movement-piece ${piece.selected && (piece.unitId !== null || piece.movable) ? "selected" : ""} ${moved ? "completed" : ""}`}
           aria-pressed={piece.selected && (piece.unitId !== null || piece.movable)} disabled={piece.unitId === null && (!canAct || !piece.movable)} onClick={() => onSelect(piece.unitId)}>
-          <span className="movement-piece-icon" aria-hidden="true">{moved ? "✓" : piece.movable ? "→" : "—"}</span>
-          <span><strong>{piece.name}</strong><small>{piece.kind}</small></span>
-          <span className="movement-piece-status">{moved ? "Resolved" : piece.movable ? "Move" : "No moves"}</span>
+          <span className="movement-piece-portrait"><img src={piece.image} alt="" /><i aria-hidden="true">{moved ? "✓" : piece.movable ? "→" : "—"}</i></span>
+          <span className="movement-piece-label"><strong>{piece.name}</strong><small>{piece.kind}</small></span>
+          <span className="movement-piece-status">{moved ? "Done" : piece.movable ? "Move" : "Held"}</span>
         </button>;
       })}
     </div>

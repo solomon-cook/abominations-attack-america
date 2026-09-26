@@ -1,14 +1,15 @@
-import { cardDefinition, sourcedCardRule, type GameCommand, type GameState } from "@abominations/game-engine";
+import { cardDefinition, legalLaserFenceTargets, sourcedCardRule, type GameCommand, type GameState } from "@abominations/game-engine";
 import { CardArtwork } from "./DigitalCard";
 
 type Props = {
   game: GameState;
   playerIndex: number;
   canAct: boolean;
+  canUseMutation?: boolean;
   runCommand: (command: GameCommand) => void | Promise<void>;
 };
 
-export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Props) {
+export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation = canAct, runCommand }: Props) {
   const player = game.players[playerIndex];
   const isActivePlayer = playerIndex === game.currentPlayer;
   const revealedMutationCards = player?.mutationCardIds ?? [];
@@ -18,13 +19,24 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
     : undefined;
   const pendingBattle = pendingBattleId ? game.pendingBattles.find((battle) => battle.id === pendingBattleId) : undefined;
   const activeMonsterOwnsPendingBattle = pendingBattle?.monsterId === game.monsters[playerIndex]?.id;
-  const canUseMutation = canAct && isActivePlayer && game.phase === "fight" && Boolean(activeMonsterOwnsPendingBattle);
+  const challengeMutationWindow = game.phase === "challenge" && Boolean(game.challenge?.active && game.challenge.turn
+    && (game.challenge.opponentMonsterId || game.challenge.giantUnitId)
+    && (game.pendingDecision?.type === "challenge-resolution" || game.pendingDecision?.type === "challenge-giant-resolution")
+    && [game.challenge.challengerMonsterId, game.challenge.opponentMonsterId].includes(game.monsters[playerIndex]?.id));
+  const mutationBattleId = game.phase === "fight" && activeMonsterOwnsPendingBattle ? pendingBattleId : undefined;
+  const hasMutationWindow = Boolean(mutationBattleId || challengeMutationWindow);
+  const playableMutation = (cardId: string) => (cardId === "Berserk" || cardId === "Son of a Monster") && hasMutationWindow;
   const canUseDefenseSatellites = canAct && isActivePlayer && game.phase !== "challenge" && game.phase !== "game-over" && game.pendingBattles.length === 0 && !game.pendingRetreat;
+  const canStartChopperLift = canAct && isActivePlayer && !game.pendingChopperLift
+    && ((game.phase === "move" && game.pendingDecision?.type === "monster-movement")
+      || (game.phase === "fight" && game.pendingDecision?.type === "battle-resolution")
+      || (game.phase === "encounter" && game.pendingDecision?.type === "encounter-resolution")
+      || (game.phase === "deploy" && game.pendingDecision?.type === "deployment"));
   const cardDetails = (cardId: string) => {
     const definition = cardDefinition(cardId);
     const rule = sourcedCardRule(cardId);
     const actionWindow = cardId === "Berserk" || cardId === "Son of a Monster"
-      ? "Fight · optional Mutation window"
+      ? "Any time during a battle involving this monster"
       : cardId === "Defense Satellites"
       ? "Move/Fight · pre-battle window"
       : cardId === "Blonde Lure"
@@ -36,18 +48,22 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
       : cardId === "Cutbacks"
         ? "Any turn · choose a Research card to remove"
       : cardId === "Molecular Cannon"
-        ? "Any turn · choose a monster and assigned lair"
+        ? "Start of your battle · choose a lair for the battling monster"
       : cardId === "Chopper Lift"
-        ? "Any turn · choose a monster and legal destination"
-      : cardId === "Antimatter" || cardId === "Stabilizer Ray" || cardId === "Laser Fence"
-          ? "Fight · battle setup window"
+        ? "Any turn · roll first, then choose a monster and destination"
+      : cardId === "Laser Fence"
+        ? legalLaserFenceTargets(game).length > 0 ? "Available now · after a monster ends its move" : "After a monster ends its move, before battle"
+      : cardId === "Antimatter" || cardId === "Stabilizer Ray"
+          ? cardId === "Stabilizer Ray" ? "Fight · use before battle; choose a Mutation after damage" : "Fight · battle setup window"
           : undefined;
     const directAction = cardId === "Berserk" || cardId === "Son of a Monster"
-      ? canUseMutation && pendingBattleId
-        ? <button type="button" className="hand-card-play" disabled={!canUseMutation} onClick={() => void runCommand({ type: "use-mutation", cardId, battleId: pendingBattleId })}>Play {cardId}</button>
+      ? playableMutation(cardId)
+        ? <button type="button" className="hand-card-play" disabled={!canUseMutation} onClick={() => void runCommand({ type: "use-mutation", cardId, ...(mutationBattleId ? { battleId: mutationBattleId } : {}) })}>Play {cardId}</button>
         : undefined
       : cardId === "Defense Satellites"
         ? <button type="button" className="hand-card-play" disabled={!canUseDefenseSatellites} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Play Defense Satellites</button>
+        : cardId === "Chopper Lift"
+          ? <button type="button" className="hand-card-play" disabled={!canStartChopperLift} onClick={() => void runCommand({ type: "use-research", cardId: "Chopper Lift" })}>Roll for Chopper Lift</button>
         : undefined;
     return (
       <details className="hand-card" key={cardId}>
@@ -57,7 +73,10 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, runCommand }: Pr
           {rule ? (
             <>
               <CardArtwork cardId={cardId} kind={definition?.deck === "research" ? "research" : "mutation"} />
-              {actionWindow && <span className="hand-card-action-status">{isActivePlayer ? `Playable through current controls: ${actionWindow}` : `Playable by the active player: ${actionWindow}`}</span>}
+              {actionWindow && <span className="hand-card-action-status">{cardId === "Berserk" || cardId === "Son of a Monster"
+                ? `Playable by this monster's controller: ${actionWindow}`
+                : cardId === "Laser Fence" ? `${legalLaserFenceTargets(game).length > 0 ? "Playable now by this card's holder" : "Playable by this card's holder"}: ${actionWindow}`
+                : isActivePlayer ? `Playable through current controls: ${actionWindow}` : `Playable by the active player: ${actionWindow}`}</span>}
               {directAction}
               <div className="hand-card-meta" aria-label={`${cardId} rule metadata`}>
                 <span>Classification: {rule.classification}</span>

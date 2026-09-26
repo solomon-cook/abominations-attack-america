@@ -41,6 +41,81 @@ test("Challenge rolls once, offers repeat Infamy attacks, and passes without rol
   assert.equal(selected.monsters[1].health, 20, "Input state must remain immutable");
 });
 
+test("Berserk and Son of a Monster can be used during either participant's Challenge battle", () => {
+  const selected = duel();
+  selected.players[0]!.mutationCardIds = ["Berserk"];
+  selected.players[1]!.mutationCardIds = ["Son of a Monster"];
+  const attackerUse = applyCommand(selected, { type: "use-mutation", cardId: "Berserk" });
+  assert.equal(attackerUse.state.challenge?.turn?.remainingAttacks, (selected.challenge?.turn?.remainingAttacks ?? 0) + 5);
+  assert.ok(attackerUse.state.decks.mutation.discard.includes("Berserk"));
+
+  const defenderUse = applyCommand(attackerUse.state, { type: "use-mutation", cardId: "Son of a Monster" });
+  assert.equal(defenderUse.state.challenge?.turn?.bonusAttacksByMonster?.["monster-2"], 2);
+  assert.ok(defenderUse.state.decks.mutation.discard.includes("Son of a Monster"));
+  assert.ok((defenderUse.eventPayload.healthRoll as number) >= 1);
+  assert.equal(defenderUse.state.monsters[1]!.health, 20 + (defenderUse.eventPayload.healthRoll as number));
+
+  const passed = structuredClone(defenderUse.state);
+  passed.challenge!.turn = { ...passed.challenge!.turn!, remainingAttacks: 0 };
+  const next = applyCommand(passed, { type: "resolve-challenge", endTurn: true });
+  assert.equal(next.state.challenge?.turn?.attackerId, "monster-2");
+  assert.equal(next.state.challenge?.turn?.remainingAttacks, 1 + 2);
+  assert.equal(next.state.currentPlayer, 1);
+
+  const capped = duel();
+  capped.players[1]!.mutationCardIds = ["Son of a Monster"];
+  capped.monsters[1]!.health = capped.monsters[1]!.maxHealth;
+  const cappedHeal = applyCommand(capped, { type: "use-mutation", cardId: "Son of a Monster" });
+  assert.equal(cappedHeal.state.monsters[1]!.health, capped.monsters[1]!.maxHealth);
+  assert.ok((cappedHeal.eventPayload.healthRoll as number) >= 1);
+
+  const outsider = structuredClone(selected);
+  outsider.players[0]!.mutationCardIds = [];
+  outsider.players[2]!.mutationCardIds = ["Berserk"];
+  assert.throws(() => applyCommand(outsider, { type: "use-mutation", cardId: "Berserk" }), /participating in an active Challenge battle/);
+});
+
+test("War Spikes replaces Challenge hit damage with four before the natural-six smash bonus", () => {
+  let ordinaryHit: { damage: number; smash: boolean } | undefined;
+  let smashHit: { damage: number; smash: boolean } | undefined;
+  for (let seed = 0; seed < 128 && (!ordinaryHit || !smashHit); seed += 1) {
+    const selected = duel(2);
+    selected.players[0]!.mutationCardIds = ["War Spikes"];
+    selected.rng.seed = seed;
+    const result = applyCommand(selected, { type: "resolve-challenge" });
+    const attack = (result.eventPayload.attacks as Array<{ damage: number; hit: boolean; smash: boolean }>).find((entry) => entry.hit);
+    if (attack?.smash) smashHit = attack;
+    else if (attack) ordinaryHit = attack;
+  }
+  assert.equal(ordinaryHit?.damage, 4);
+  assert.equal(ordinaryHit?.smash, false);
+  assert.equal(smashHit?.damage, 5);
+  assert.equal(smashHit?.smash, true);
+});
+
+test("Atomic Breath adds one Challenge attack in round one of every duel only", () => {
+  const game = createGame(2, 0);
+  game.currentPlayer = 0;
+  game.phase = "challenge";
+  game.players[0]!.mutationCardIds = ["Atomic Breath"];
+  game.monsters.forEach((monster) => { monster.health = 40; monster.attacks = 1; monster.defense = 99; monster.damage = 1; });
+  game.challenge = { declared: true, active: true, challengerMonsterId: "monster-1", declarationPlayerIndex: 0, pendingStartPlayerIndex: 0, startAtEndOfTurn: false, weighInHealth: {}, defeatedMonsterIds: [] };
+  game.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
+  const selected = applyCommand(game, { type: "challenge-opponent", opponentMonsterId: "monster-2" }).state;
+  assert.equal(selected.challenge?.turn?.round, 1);
+  assert.equal(selected.challenge?.turn?.remainingAttacks, 2);
+
+  let state = selected;
+  while (state.challenge?.turn?.remainingAttacks) state = applyCommand(state, { type: "resolve-challenge" }).state;
+  state = applyCommand(state, { type: "resolve-challenge", endTurn: true }).state;
+  while (state.challenge?.turn?.remainingAttacks) state = applyCommand(state, { type: "resolve-challenge" }).state;
+  state = applyCommand(state, { type: "resolve-challenge", endTurn: true }).state;
+  assert.equal(state.challenge?.turn?.attackerId, "monster-1");
+  assert.equal(state.challenge?.turn?.round, 2);
+  assert.equal(state.challenge?.turn?.remainingAttacks, 1);
+  assert.equal(state.players[0]!.mutationCardIds.includes("Atomic Breath"), true);
+});
+
 test("Challenge survives persistence between rolls and preserves the next decision owner", () => {
   const first = applyCommand(duel(), { type: "resolve-challenge" }).state;
   const reloaded = migrateGameState(JSON.parse(JSON.stringify(first)));

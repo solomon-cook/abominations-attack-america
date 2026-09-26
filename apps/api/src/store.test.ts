@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { legalMonsterPaths, locationIdToHexKey } from "@abominations/game-engine";
+import { COMMAND_PROTOCOL_VERSION, applyCommand, boardForState, legalChopperLiftDestinations, legalMonsterPaths, locationIdToHexKey, monsterCombatStats } from "@abominations/game-engine";
 import { MAX_RETAINED_ROOM_EVENTS, MemoryRoomStore } from "./store.js";
+import { AUDITED_BOARD } from "../../../packages/game-engine/src/audited-board.js";
 
 async function completeDevelopmentSetup(store: MemoryRoomStore, sessions: Array<{ token: string; room: { code: string; version: number } }>) {
   const code = sessions[0].room.code;
@@ -14,6 +15,471 @@ async function completeDevelopmentSetup(store: MemoryRoomStore, sessions: Array<
   for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) revision = (await store.setupAction(code, sessions[playerIndex].token, { type: "choose-lair", lair: lairs[playerIndex] }, revision)).version;
   for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) revision = (await store.setupAction(code, sessions[playerIndex].token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, revision)).version;
 }
+
+test("authenticated room projections retain Fins and Gills' conditional Defense across refresh", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.boardId = AUDITED_BOARD.id;
+  game.boardVersion = AUDITED_BOARD.version;
+  game.boardContentHash = AUDITED_BOARD.contentHash;
+  const edge = AUDITED_BOARD.edges.find((candidate) => candidate.enabled && candidate.barrier === "sea"
+    && AUDITED_BOARD.hexes[candidate.from]?.waterClass === "seacoast" && AUDITED_BOARD.hexes[candidate.to]?.waterClass === "land")!;
+  game.players[0]!.mutationCardIds = ["Fins and Gills"];
+  game.monsters[0]!.location = edge.to;
+
+  const hostView = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(hostView.state.players[0]!.mutationCardIds, ["Fins and Gills"]);
+  assert.equal(monsterCombatStats(hostView.state, hostView.state.monsters[0]!).defense, 5);
+  const guestView = await store.getRoom(host.room.code, guest.token);
+  assert.deepEqual(guestView.state.players[0]!.mutationCardIds, []);
+  assert.deepEqual(guestView.state.players[0]!.visibleMutationCardIds, ["Fins and Gills"]);
+  assert.equal(monsterCombatStats(guestView.state, guestView.state.monsters[0]!).defense, 5);
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(monsterCombatStats(refreshed.state, refreshed.state.monsters[0]!).defense, 5);
+});
+
+test("authenticated Atomic Recovery updates the monster and turn-start feedback on refresh", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 1;
+  game.phase = "deploy";
+  game.players[0]!.mutationCardIds = ["Atomic Recovery"];
+  game.monsters[0]!.health = 2;
+  game.pendingDecision = { type: "deployment", playerIndex: 1 };
+  const before = await store.getRoom(host.room.code, guest.token);
+  assert.deepEqual(before.state.players[0]!.visibleMutationCardIds, ["Atomic Recovery"]);
+  const hostParticipant = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const command = {
+    actionId: "online-atomic-recovery-turn-start",
+    actorId: guestParticipant.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "pass-deploy" },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, host.token, { ...command, actorId: hostParticipant.id, actionId: "wrong-seat-atomic-recovery" }), /It is not your turn/);
+  const started = await store.submitAction(host.room.code, guest.token, command);
+  assert.equal(started.state.currentPlayer, 0);
+  assert.equal(started.state.monsters[0]!.health, started.state.monsters[0]!.startingHealth);
+  assert.equal(started.state.eventLog.at(-1)?.detail.atomicRecovery, true);
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(refreshed.state.monsters[0]!.health, refreshed.state.monsters[0]!.startingHealth);
+  assert.deepEqual(refreshed.state.players[0]!.mutationCardIds, ["Atomic Recovery"]);
+  assert.equal(refreshed.version, started.version);
+});
+
+test("authenticated Iron Stomach choice names the base rewards and preserves the selected Health", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  const base = Object.values(boardForState(game).hexes).find((hex) => hex.features.some((feature) => feature.kind === "military-base"))!;
+  game.currentPlayer = 0;
+  game.phase = "encounter";
+  game.players[0]!.mutationCardIds = ["Iron Stomach"];
+  game.monsters[0]!.location = base.key;
+  game.monsters[0]!.health = 5;
+  game.pendingDecision = { type: "encounter-resolution", playerIndex: 0, location: base.key };
+  const before = await store.getRoom(host.room.code, host.token);
+  const owner = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const opponent = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const opened = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-iron-stomach-open-choice",
+    actorId: owner.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-encounter" },
+  });
+  assert.equal(opened.state.pendingDecision?.type === "encounter-choice" ? opened.state.pendingDecision.source : undefined, "iron-stomach");
+  assert.equal(opened.state.eventLog.at(-1)?.detail.choiceSource, "iron-stomach");
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(refreshed.state.pendingDecision?.type === "encounter-choice" ? refreshed.state.pendingDecision.source : undefined, "iron-stomach");
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, {
+    actionId: "wrong-seat-iron-stomach-choice",
+    actorId: opponent.id,
+    expectedRevision: refreshed.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-encounter", choice: "health" },
+  }), /It is not your turn/);
+  const chosen = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-iron-stomach-health-choice",
+    actorId: owner.id,
+    expectedRevision: refreshed.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-encounter", choice: "health" },
+  });
+  assert.equal(chosen.state.monsters[0]!.health, 8);
+  assert.equal(chosen.state.monsters[0]!.infamy, 0);
+  const afterRefresh = await store.getRoom(host.room.code, host.token);
+  assert.equal(afterRefresh.state.monsters[0]!.health, 8);
+  assert.deepEqual(afterRefresh.state.players[0]!.mutationCardIds, ["Iron Stomach"]);
+});
+
+test("authenticated War Spikes projection and combat damage stay synchronized", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.players[0]!.mutationCardIds = ["War Spikes"];
+  game.monsters[0]!.attacks = 1;
+  game.monsters[0]!.defense = 99;
+  game.monsters[0]!.health = 40;
+  const unit = game.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = game.monsters[0]!.location;
+  unit.defense = 1;
+  const battleId = "online-war-spikes-damage";
+  game.phase = "fight";
+  game.pendingBattles = [{ id: battleId, monsterId: game.monsters[0]!.id, location: game.monsters[0]!.location as `${number},${number}`, militaryUnitIds: [unit.id] }];
+  game.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+
+  let matchingSeed: number | undefined;
+  for (let seed = 0; seed < 128 && matchingSeed === undefined; seed += 1) {
+    const candidate = structuredClone(game);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight", battleId });
+    if ((result.eventPayload.attacks as Array<{ attackerId: string; damage: number; smash: boolean }>).some((attack) => attack.attackerId === game.monsters[0]!.id && attack.damage === 4 && !attack.smash)) matchingSeed = seed;
+  }
+  assert.notEqual(matchingSeed, undefined, "a deterministic battle seed should produce an ordinary War Spikes hit");
+  game.rng.seed = matchingSeed!;
+  const before = await store.getRoom(host.room.code, host.token);
+  const guestBefore = await store.getRoom(host.room.code, guest.token);
+  assert.equal(monsterCombatStats(before.state, before.state.monsters[0]!).damage, 4);
+  assert.equal(monsterCombatStats(guestBefore.state, guestBefore.state.monsters[0]!).damage, 4);
+  assert.deepEqual(guestBefore.state.players[0]!.visibleMutationCardIds, ["War Spikes"]);
+  const hostParticipant = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const command = {
+    actionId: "online-war-spikes-resolve",
+    actorId: hostParticipant.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-fight", battleId },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...command, actorId: guestParticipant.id, actionId: "wrong-seat-war-spikes" }), /It is not your turn/);
+  const resolved = await store.submitAction(host.room.code, host.token, command);
+  const attack = (resolved.state.eventLog.at(-1)?.detail.attacks as Array<{ attackerId: string; damage: number; smash: boolean }>).find((entry) => entry.attackerId === game.monsters[0]!.id && entry.damage === 4 && !entry.smash);
+  assert.ok(attack);
+  const refreshed = await store.getRoom(host.room.code, guest.token);
+  assert.equal(monsterCombatStats(refreshed.state, refreshed.state.monsters[0]!).damage, 4);
+  assert.deepEqual(refreshed.state.players[0]!.visibleMutationCardIds, ["War Spikes"]);
+});
+
+test("authenticated Atomic Breath battle controls expose the extra first-round attack", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.players[0]!.mutationCardIds = ["Atomic Breath"];
+  game.monsters[0]!.attacks = 1;
+  game.monsters[0]!.defense = 99;
+  game.monsters[0]!.health = 40;
+  const unit = game.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = game.monsters[0]!.location;
+  unit.defense = 99;
+  const secondUnit = game.units.find((candidate) => candidate.id !== unit.id)!;
+  secondUnit.location = game.monsters[0]!.location;
+  secondUnit.defense = 99;
+  const battleId = "online-atomic-breath-rounds";
+  game.phase = "fight";
+  game.pendingBattles = [{ id: battleId, monsterId: game.monsters[0]!.id, location: game.monsters[0]!.location as `${number},${number}`, militaryUnitIds: [unit.id, secondUnit.id] }];
+  game.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+
+  let matchingSeed: number | undefined;
+  for (let seed = 0; seed < 128 && matchingSeed === undefined; seed += 1) {
+    const candidate = structuredClone(game);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight", battleId });
+    if (result.state.pendingDecision?.type === "attack-target" && result.state.pendingDecision.attackTotal === 2) matchingSeed = seed;
+  }
+  assert.notEqual(matchingSeed, undefined, "the first combat round should request its second monster attack");
+  game.rng.seed = matchingSeed!;
+  const before = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(before.state.players[0]!.mutationCardIds, ["Atomic Breath"]);
+  const hostParticipant = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const command = {
+    actionId: "online-atomic-breath-resolve",
+    actorId: hostParticipant.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-fight", battleId },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...command, actorId: guestParticipant.id, actionId: "wrong-seat-atomic-breath" }), /It is not your turn/);
+  const resolved = await store.submitAction(host.room.code, host.token, command);
+  assert.equal(resolved.state.pendingDecision?.type, "attack-target");
+  assert.equal(resolved.state.pendingDecision?.type === "attack-target" ? resolved.state.pendingDecision.attackTotal : undefined, 2);
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(refreshed.state.pendingDecision?.type === "attack-target" ? refreshed.state.pendingDecision.attackTotal : undefined, 2);
+  assert.deepEqual(refreshed.state.players[0]!.mutationCardIds, ["Atomic Breath"]);
+  const extraAttack = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-atomic-breath-extra-attack",
+    actorId: hostParticipant.id,
+    expectedRevision: refreshed.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-fight", battleId, targetUnitId: unit.id },
+  });
+  assert.equal(extraAttack.state.pendingDecision?.type, "attack-target");
+  assert.equal(extraAttack.state.pendingDecision?.type === "attack-target" ? extraAttack.state.pendingDecision.round : undefined, 1);
+  assert.equal(extraAttack.state.pendingDecision?.type === "attack-target" ? extraAttack.state.pendingDecision.attackNumber : undefined, 2);
+  const roundTwo = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-atomic-breath-round-two",
+    actorId: hostParticipant.id,
+    expectedRevision: extraAttack.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-fight", battleId, targetUnitId: secondUnit.id },
+  });
+  assert.equal(roundTwo.state.pendingDecision?.type, "attack-target");
+  assert.equal(roundTwo.state.pendingDecision?.type === "attack-target" ? roundTwo.state.pendingDecision.round : undefined, 2);
+  assert.equal(roundTwo.state.pendingDecision?.type === "attack-target" ? roundTwo.state.pendingDecision.attackTotal : undefined, 1);
+  const afterRefresh = await store.getRoom(host.room.code, host.token);
+  assert.equal(afterRefresh.state.pendingDecision?.type === "attack-target" ? afterRefresh.state.pendingDecision.attackTotal : undefined, 1);
+  assert.equal(afterRefresh.version, roundTwo.version);
+});
+
+test("authenticated Rampage owner can move after emerging from a lair", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.phase = "move";
+  game.encounterSuppressed = true;
+  game.players[0]!.mutationCardIds = ["Rampage"];
+  game.movedPieceIds = [];
+  game.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: game.monsters[0]!.id };
+  const path = legalMonsterPaths(game, game.monsters[0]!.id)[0];
+  assert.ok(path, "the emerging monster should have a legal route");
+
+  const before = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(legalMonsterPaths(before.state, game.monsters[0]!.id)[0], path, "the authenticated player projection should expose the Rampage route");
+  const hostParticipant = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const action = {
+    actionId: "online-rampage-emergence-move",
+    actorId: hostParticipant.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "move", path },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...action, actorId: guestParticipant.id, actionId: "wrong-seat-rampage-move" }), /It is not your turn/);
+  const moved = await store.submitAction(host.room.code, host.token, action);
+  assert.equal(moved.state.monsters[0]!.location, path.at(-1));
+  assert.ok(moved.state.movedPieceIds.includes(game.monsters[0]!.id));
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(refreshed.state.monsters[0]!.location, path.at(-1));
+  assert.equal(refreshed.version, moved.version);
+});
+
+test("authenticated battle projection shows Radiation Field destroying a roll-one attacker", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.phase = "fight";
+  game.monsters[1]!.attacks = 0;
+  game.players[1]!.mutationCardIds = ["Radiation Field"];
+  const unit = game.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = game.monsters[1]!.location;
+  unit.defense = 99;
+  const battleId = "online-radiation-field-roll-one";
+  game.pendingBattles = [{ id: battleId, monsterId: game.monsters[1]!.id, location: game.monsters[1]!.location as `${number},${number}`, militaryUnitIds: [unit.id] }];
+  game.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+
+  let matchingSeed: number | undefined;
+  for (let seed = 0; seed < 128 && matchingSeed === undefined; seed += 1) {
+    const candidate = structuredClone(game);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight", battleId });
+    if ((result.eventPayload.attacks as Array<{ attackerId: string; roll: number }>).some((attack) => attack.attackerId === unit.id && attack.roll === 1)) matchingSeed = seed;
+  }
+  assert.notEqual(matchingSeed, undefined, "a deterministic battle seed should produce a roll of one");
+  game.rng.seed = matchingSeed!;
+  const before = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(before.state.players[1]!.visibleMutationCardIds, ["Radiation Field"]);
+  const hostParticipant = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const command = {
+    actionId: "online-radiation-field-resolve",
+    actorId: hostParticipant.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-fight", battleId },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...command, actorId: guestParticipant.id, actionId: "wrong-seat-radiation-field" }), /It is not your turn/);
+  const resolved = await store.submitAction(host.room.code, host.token, command);
+  const attack = (resolved.state.eventLog.at(-1)?.detail.attacks as Array<{ attackerId: string; roll: number; attackerDestroyed?: boolean }>).find((entry) => entry.attackerId === unit.id && entry.roll === 1);
+  assert.equal(attack?.attackerDestroyed, true);
+  assert.equal(resolved.state.units.find((candidate) => candidate.id === unit.id)?.location, "record-tile");
+  const refreshed = await store.getRoom(host.room.code, guest.token);
+  assert.deepEqual(refreshed.state.players[1]!.mutationCardIds, ["Radiation Field"]);
+  assert.equal(refreshed.state.units.find((candidate) => candidate.id === unit.id)?.location, "record-tile");
+  assert.equal(refreshed.version, resolved.version);
+});
+
+test("authenticated Toxicor Mutation-site choice shows two options and keeps the selected card after refresh", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.monsters[0]!.name = "Toxicor";
+  game.monsters[0]!.location = Object.values(boardForState(game).hexes).find((hex) => hex.features.some((feature) => feature.kind === "mutation-site"))!.key;
+  game.phase = "encounter";
+  game.pendingDecision = { type: "encounter-resolution", playerIndex: 0, location: game.monsters[0]!.location as `${number},${number}` };
+  game.decks.mutation = { order: ["Fins and Gills", "Rampage"], drawIndex: 0, discard: [], exhausted: false };
+
+  const initial = await store.getRoom(host.room.code, host.token);
+  const hostParticipant = initial.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = initial.participants.find((participant) => participant.playerIndex === 1)!;
+  const opened = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-toxicor-open-choice",
+    actorId: hostParticipant.id,
+    expectedRevision: initial.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-encounter" },
+  });
+  assert.equal(opened.state.pendingDecision?.type, "mutation-choice");
+  if (opened.state.pendingDecision?.type !== "mutation-choice") throw new Error("Toxicor did not open a choice.");
+  assert.deepEqual(opened.state.pendingDecision.cardIds, ["Fins and Gills", "Rampage"]);
+
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(refreshed.state.pendingDecision?.type, "mutation-choice");
+  assert.deepEqual(refreshed.state.pendingDecision?.type === "mutation-choice" ? refreshed.state.pendingDecision.cardIds : [], ["Fins and Gills", "Rampage"]);
+  const opponentView = await store.getRoom(host.room.code, guest.token);
+  assert.deepEqual(opponentView.state.pendingDecision?.type === "mutation-choice" ? opponentView.state.pendingDecision.cardIds : [], []);
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, {
+    actionId: "wrong-seat-toxicor-choice",
+    actorId: guestParticipant.id,
+    expectedRevision: refreshed.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "choose-mutation-card", cardId: "Rampage" },
+  }), /It is not your turn/);
+
+  const chosen = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-toxicor-choose-rampage",
+    actorId: hostParticipant.id,
+    expectedRevision: refreshed.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "choose-mutation-card", cardId: "Rampage" },
+  });
+  assert.deepEqual(chosen.state.players[0]!.mutationCardIds, ["Rampage"]);
+  assert.equal(chosen.state.pendingDecision?.type, "deployment");
+  const afterRefresh = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(afterRefresh.state.players[0]!.mutationCardIds, ["Rampage"]);
+  assert.equal(afterRefresh.state.pendingDecision?.type, "deployment");
+  const authoritativeAfterChoice = rooms.get(host.room.code)!.state;
+  assert.equal(authoritativeAfterChoice.decks.mutation.drawIndex, 2);
+  assert.equal(authoritativeAfterChoice.decks.mutation.order.includes("Fins and Gills"), true);
+});
+
+test("authenticated off-turn Toxicor owner chooses a combat Mutation and resumes the saved battle", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const configured = structuredClone(rooms.get(host.room.code)!.state);
+  configured.currentPlayer = 0;
+  configured.phase = "fight";
+  configured.monsters[1]!.name = "Toxicor";
+  configured.monsters[1]!.attacks = 1;
+  configured.monsters[1]!.defense = 1;
+  const unit = configured.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = configured.monsters[1]!.location;
+  unit.defense = 99;
+  unit.damage = 1;
+  const battleId = "authenticated-toxicor-antimatter";
+  configured.pendingBattles = [{ id: battleId, monsterId: configured.monsters[1]!.id, location: configured.monsters[1]!.location as `${number},${number}`, militaryUnitIds: [unit.id], antimatterActive: true }];
+  configured.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  configured.decks.mutation = { order: ["War Spikes", "Atomic Breath"], drawIndex: 0, discard: [], exhausted: false };
+  let paused: import("@abominations/game-engine").GameState | undefined;
+  for (let seed = 0; seed < 256 && !paused; seed += 1) {
+    const candidate = structuredClone(configured);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight", battleId });
+    if (result.state.pendingDecision?.type === "mutation-choice") paused = result.state;
+  }
+  assert.ok(paused, "a deterministic seed should produce a Toxicor Antimatter mutation choice");
+  rooms.get(host.room.code)!.state = paused;
+
+  const hostView = await store.getRoom(host.room.code, host.token);
+  const guestView = await store.getRoom(host.room.code, guest.token);
+  assert.deepEqual(hostView.state.pendingDecision?.type === "mutation-choice" ? hostView.state.pendingDecision.cardIds : [], []);
+  assert.deepEqual(guestView.state.pendingDecision?.type === "mutation-choice" ? guestView.state.pendingDecision.cardIds : [], ["War Spikes", "Atomic Breath"]);
+  const hostParticipant = hostView.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = guestView.participants.find((participant) => participant.playerIndex === 1)!;
+  await assert.rejects(() => store.submitAction(host.room.code, host.token, {
+    actionId: "wrong-seat-toxicor-battle-choice",
+    actorId: hostParticipant.id,
+    expectedRevision: guestView.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "choose-mutation-card", cardId: "War Spikes" },
+  }), /It is not your turn/);
+  const chosen = await store.submitAction(host.room.code, guest.token, {
+    actionId: "authenticated-toxicor-battle-choice",
+    actorId: guestParticipant.id,
+    expectedRevision: guestView.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "choose-mutation-card", cardId: "War Spikes" },
+  });
+  assert.deepEqual(chosen.state.players[1]!.mutationCardIds, ["War Spikes"]);
+  assert.equal(chosen.state.pendingDecision?.type, "attack-target");
+  assert.equal(chosen.state.pendingCombat?.round, 2);
+  const refreshed = await store.getRoom(host.room.code, guest.token);
+  assert.deepEqual(refreshed.state.players[1]!.mutationCardIds, ["War Spikes"]);
+  assert.equal(refreshed.state.pendingDecision?.type, "attack-target");
+  assert.equal(rooms.get(host.room.code)!.state.decks.mutation.order.includes("Atomic Breath"), true);
+});
 
 test("players can create, join, and read a room", async () => {
   const store = new MemoryRoomStore(true);
@@ -35,6 +501,317 @@ test("players can create, join, and read a room", async () => {
   await assert.rejects(() => store.setupAction(host.room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, active.version - 1), /Expected revision/);
   const state = await store.getRoom(host.room.code, host.token);
   assert.equal(state.participants.length, 2);
+});
+
+test("an authenticated active player can play Molecular Cannon through the online room command path", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.players[0]!.researchCardIds = ["Molecular Cannon"];
+  const monster = game.monsters[0]!;
+  const unit = game.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = monster.location;
+  game.phase = "fight";
+  const battleId = "online-molecular-cannon";
+  game.pendingBattles = [{ id: battleId, monsterId: monster.id, location: monster.location as `${number},${number}`, militaryUnitIds: [unit.id] }];
+  game.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+
+  const before = await store.getRoom(host.room.code, host.token);
+  const hostParticipant = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const command = {
+    actionId: "online-cannon-card-use",
+    actorId: hostParticipant.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "use-research", cardId: "Molecular Cannon", battleId, targetMonsterId: monster.id, destination: locationIdToHexKey("seattle")! },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...command, actorId: guestParticipant.id, actionId: "wrong-online-actor" }), /It is not your turn/);
+  const after = await store.submitAction(host.room.code, host.token, command);
+  assert.equal(after.state.monsters[0]!.location, locationIdToHexKey("seattle"));
+  assert.deepEqual(after.state.players[0]!.researchCardIds, []);
+  assert.equal(after.state.pendingBattles.length, 0);
+  assert.equal(after.events[0]!.type, "research.used");
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(refreshed.state.monsters[0]!.location, locationIdToHexKey("seattle"));
+  assert.equal(refreshed.version, after.version);
+});
+
+test("authenticated Stabilizer Ray use opens a persisted post-damage choice against a projected opponent Mutation", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.players[0]!.researchCardIds = ["Stabilizer Ray"];
+  game.players[1]!.mutationCardIds = ["Rampage"];
+  const monster = game.monsters[1]!;
+  monster.defense = 1;
+  const unit = game.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = monster.location;
+  unit.defense = 99;
+  game.phase = "fight";
+  const battleId = "online-stabilizer-ray";
+  game.pendingBattles = [{ id: battleId, monsterId: monster.id, location: monster.location as `${number},${number}`, militaryUnitIds: [unit.id] }];
+  game.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+
+  const projected = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(projected.state.players[1]!.mutationCardIds, []);
+  assert.deepEqual(projected.state.players[1]!.visibleMutationCardIds, ["Rampage"]);
+  const hostParticipant = projected.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = projected.participants.find((participant) => participant.playerIndex === 1)!;
+  const command = {
+    actionId: "online-stabilizer-ray-use",
+    actorId: hostParticipant.id,
+    expectedRevision: projected.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "use-research", cardId: "Stabilizer Ray", battleId },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...command, actorId: guestParticipant.id, actionId: "wrong-online-stabilizer-actor" }), /It is not your turn/);
+  const after = await store.submitAction(host.room.code, host.token, command);
+  assert.deepEqual(after.state.players[0]!.researchCardIds, []);
+  assert.equal(after.state.pendingBattles[0]!.stabilizerRayPlayerIndex, 0);
+  assert.equal(after.state.pendingStabilizerRayChoice, undefined);
+  const armedRefresh = await store.getRoom(host.room.code, host.token);
+  assert.equal(armedRefresh.state.pendingBattles[0]!.stabilizerRayPlayerIndex, 0);
+  const fight = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-stabilizer-ray-fight",
+    actorId: hostParticipant.id,
+    expectedRevision: armedRefresh.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-fight", battleId },
+  });
+  assert.equal(fight.state.pendingDecision?.type, "stabilizer-ray-choice");
+  assert.deepEqual(fight.state.pendingStabilizerRayChoice?.cardIds, ["Rampage"]);
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(refreshed.state.pendingDecision?.type, "stabilizer-ray-choice");
+  assert.deepEqual(refreshed.state.players[1]!.mutationCardIds, []);
+  assert.deepEqual(refreshed.state.players[1]!.visibleMutationCardIds, ["Rampage"]);
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, {
+    actionId: "wrong-online-stabilizer-ray-choice-actor",
+    actorId: guestParticipant.id,
+    expectedRevision: refreshed.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "choose-stabilizer-ray-mutation", cardId: "Rampage" },
+  }), /It is not your turn/);
+  const chosen = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-stabilizer-ray-choice",
+    actorId: hostParticipant.id,
+    expectedRevision: refreshed.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "choose-stabilizer-ray-mutation", cardId: "Rampage" },
+  });
+  assert.deepEqual(chosen.state.players[1]!.mutationCardIds, []);
+  assert.ok(rooms.get(host.room.code)!.state.decks.mutation.discard.includes("Rampage"));
+  assert.equal(chosen.state.pendingStabilizerRayChoice, undefined);
+  assert.equal(chosen.state.pendingDecision?.type, "retreat");
+  const chosenRefresh = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(chosenRefresh.state.players[1]!.visibleMutationCardIds, []);
+  assert.equal(chosenRefresh.state.pendingDecision?.type, "retreat");
+});
+
+test("authenticated Cutbacks use can remove an opponent's public face-up Research card", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.phase = "move";
+  game.players[0]!.researchCardIds = ["Cutbacks"];
+  game.players[1]!.researchCardIds = ["Guard Commander"];
+
+  const before = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(before.state.players[1]!.researchCardIds, []);
+  assert.deepEqual(before.state.players[1]!.visibleResearchCardIds, ["Guard Commander"]);
+  const hostParticipant = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const command = {
+    actionId: "online-cutbacks-card-use",
+    actorId: hostParticipant.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "use-research", cardId: "Cutbacks", researchCardId: "Guard Commander", researchPlayerIndex: 1 },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...command, actorId: guestParticipant.id, actionId: "wrong-cutbacks-actor" }), /It is not your turn/);
+  const after = await store.submitAction(host.room.code, host.token, command);
+  assert.deepEqual(after.state.players[0]!.researchCardIds, []);
+  assert.deepEqual(after.state.players[1]!.visibleResearchCardIds, []);
+  assert.deepEqual(after.state.removedResearchCardIds, ["Guard Commander"]);
+  assert.equal(after.events[0]!.type, "research.used");
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(refreshed.state.players[1]!.researchCardIds, []);
+  assert.deepEqual(refreshed.state.removedResearchCardIds, ["Guard Commander"]);
+  assert.equal(refreshed.version, after.version);
+});
+
+test("authenticated off-turn monster owners can use battle Mutations in Fight and Challenge", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.players[1]!.mutationCardIds = ["Berserk"];
+  const monster = game.monsters[1]!;
+  const unit = game.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = monster.location;
+  game.phase = "fight";
+  const battleId = "online-defending-monster-berserk";
+  game.pendingBattles = [{ id: battleId, monsterId: monster.id, location: monster.location as `${number},${number}`, militaryUnitIds: [unit.id] }];
+  game.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+
+  let view = await store.getRoom(host.room.code, guest.token);
+  const hostParticipant = view.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = view.participants.find((participant) => participant.playerIndex === 1)!;
+  const fightCommand = {
+    actionId: "online-defending-monster-berserk",
+    actorId: guestParticipant.id,
+    expectedRevision: view.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "use-mutation", cardId: "Berserk", battleId },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, host.token, { ...fightCommand, actorId: hostParticipant.id, actionId: "wrong-fight-owner" }), /It is not your turn/);
+  let after = await store.submitAction(host.room.code, guest.token, fightCommand);
+  assert.equal(after.state.pendingBattles[0]!.bonusMonsterAttacks, 5);
+  assert.deepEqual(after.state.players[1]!.mutationCardIds, []);
+  view = await store.getRoom(host.room.code, guest.token);
+  assert.equal(view.version, after.version);
+  assert.equal(view.state.pendingBattles[0]!.bonusMonsterAttacks, 5);
+
+  const challengeGame = rooms.get(host.room.code)!.state;
+  challengeGame.currentPlayer = 0;
+  challengeGame.phase = "challenge";
+  challengeGame.players[1]!.mutationCardIds = ["Son of a Monster"];
+  challengeGame.challenge = {
+    declared: true, active: true, challengerMonsterId: "monster-1", opponentMonsterId: "monster-2",
+    declarationPlayerIndex: 0, pendingStartPlayerIndex: 0, weighInHealth: {}, defeatedMonsterIds: [],
+    turn: { attackerId: "monster-1", firstAttackerId: "monster-1", round: 1, remainingAttacks: 1, attacks: [] },
+  };
+  challengeGame.pendingDecision = { type: "challenge-resolution", playerIndex: 0, challengerMonsterId: "monster-1", opponentMonsterId: "monster-2" };
+  view = await store.getRoom(host.room.code, guest.token);
+  const challengeCommand = {
+    actionId: "online-defending-monster-son",
+    actorId: guestParticipant.id,
+    expectedRevision: view.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "use-mutation", cardId: "Son of a Monster" },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, host.token, { ...challengeCommand, actorId: hostParticipant.id, actionId: "wrong-challenge-owner" }), /It is not your turn/);
+  after = await store.submitAction(host.room.code, guest.token, challengeCommand);
+  assert.equal(after.state.challenge?.turn?.bonusAttacksByMonster?.["monster-2"], 2);
+  assert.ok((after.state.challenge?.turn?.attacks.length ?? 0) === 0);
+  assert.deepEqual(after.state.players[1]!.mutationCardIds, []);
+  const refreshed = await store.getRoom(host.room.code, guest.token);
+  assert.equal(refreshed.state.challenge?.turn?.bonusAttacksByMonster?.["monster-2"], 2);
+  assert.equal(refreshed.version, after.version);
+});
+
+test("authenticated off-turn Laser Fence holder can resolve a post-move reaction", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.phase = "move";
+  game.players[1]!.researchCardIds = ["Laser Fence"];
+  game.monsters[0]!.infamy = 3;
+  game.laserFenceWindowMonsterIds = [game.monsters[0]!.id];
+  game.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: game.monsters[0]!.id };
+
+  const before = await store.getRoom(host.room.code, host.token);
+  const hostParticipant = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const command = {
+    actionId: "online-off-turn-laser-fence",
+    actorId: guestParticipant.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "use-research", cardId: "Laser Fence", targetMonsterId: "monster-1", choice: "infamy" },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, host.token, { ...command, actorId: hostParticipant.id, actionId: "online-wrong-laser-fence-owner" }), /It is not your turn/);
+  const after = await store.submitAction(host.room.code, guest.token, command);
+  assert.equal(after.state.monsters[0]!.infamy, 1);
+  assert.deepEqual(after.state.players[1]!.researchCardIds, []);
+  assert.deepEqual(rooms.get(host.room.code)!.state.decks.research.discard, ["Laser Fence"]);
+  assert.equal(after.events[0]!.type, "research.used");
+  const refreshed = await store.getRoom(host.room.code, guest.token);
+  assert.equal(refreshed.state.monsters[0]!.infamy, 1);
+  assert.equal(refreshed.version, after.version);
+});
+
+test("authenticated Chopper Lift preserves its roll and destination choice through room refresh", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const game = rooms.get(host.room.code)!.state;
+  game.currentPlayer = 0;
+  game.phase = "move";
+  game.players[0]!.researchCardIds = ["Chopper Lift"];
+  game.monsters[0]!.infamy = 2;
+  game.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: game.monsters[0]!.id };
+  const before = await store.getRoom(host.room.code, host.token);
+  const hostParticipant = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const guestParticipant = before.participants.find((participant) => participant.playerIndex === 1)!;
+  const rollCommand = {
+    actionId: "online-chopper-lift-roll",
+    actorId: hostParticipant.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "use-research", cardId: "Chopper Lift" },
+  } as const;
+  const rolled = await store.submitAction(host.room.code, host.token, rollCommand);
+  const roll = rolled.state.pendingChopperLift?.roll;
+  assert.ok(roll);
+  assert.equal(rolled.state.pendingDecision?.type, "chopper-lift-choice");
+  const restoredChoice = await store.getRoom(host.room.code, host.token);
+  assert.equal(restoredChoice.state.pendingChopperLift?.roll, roll);
+  const targetMonsterId = game.monsters[0]!.id;
+  const destination = legalChopperLiftDestinations(restoredChoice.state, targetMonsterId, roll)[0];
+  assert.ok(destination);
+  const chooseCommand = {
+    actionId: "online-chopper-lift-choice",
+    actorId: hostParticipant.id,
+    expectedRevision: restoredChoice.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-chopper-lift", targetMonsterId, destination },
+  } as const;
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...chooseCommand, actorId: guestParticipant.id, actionId: "online-wrong-chopper-actor" }), /It is not your turn/);
+  const completed = await store.submitAction(host.room.code, host.token, chooseCommand);
+  assert.equal(completed.state.monsters[0]!.location, destination);
+  assert.equal(completed.state.monsters[0]!.infamy, 1);
+  assert.equal(completed.state.pendingChopperLift, undefined);
+  assert.equal(completed.events[0]!.type, "research.chopper-lift.resolved");
+  assert.equal(rooms.get(host.room.code)!.state.decks.research.discard.includes("Chopper Lift"), true);
+  assert.equal((await store.getRoom(host.room.code, host.token)).version, completed.version);
 });
 
 test("room creation preserves the host display name", async () => {

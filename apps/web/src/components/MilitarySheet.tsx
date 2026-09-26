@@ -123,7 +123,19 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
         <MilitaryReference choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
         {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Deployment will continue automatically."}</p>}
         </>}
-        {section === "research" && game && <div className="military-drawer-research"><SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy ?? ((sheet) => { if (sheet) setSelectedSheet(sheet); setSection("units"); })} /></div>}
+        {section === "research" && game && <div className="military-drawer-research">
+          {game.phase === "deploy" && <div className="military-research-turn-action">
+            <button className="military-research-draw-choice" type="button" aria-label="Draw a Military Research card instead of deploying a unit" disabled={!canAct || playerIndex !== game.currentPlayer || game.deploymentsThisTurn > 0 || game.decks.research.exhausted || choices.length === 0} onClick={() => void runCommand?.({ type: "draw-research" })}>
+              <span className="military-research-draw-icon" aria-hidden="true">▤</span>
+              <span className="military-research-draw-copy"><strong>Draw a research card</strong><small>Use this turn’s military action instead of deploying.</small></span>
+              <span className="military-research-draw-arrow" aria-hidden="true">→</span>
+            </button>
+            {game.deploymentsThisTurn > 0 && <small>A unit has already deployed this turn.</small>}
+            {game.decks.research.exhausted && <small>The Military Research deck is empty.</small>}
+            {!choices.length && <small>No legal deployment or research action is available.</small>}
+          </div>}
+          <SheetCards game={game} playerIndex={playerIndex} kind="research" canAct={canAct} runCommand={runCommand} onDeploy={onDeploy ?? ((sheet) => { if (sheet) setSelectedSheet(sheet); setSection("units"); })} />
+        </div>}
       </div>
 
     </div>

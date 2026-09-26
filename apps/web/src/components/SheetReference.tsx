@@ -9,7 +9,7 @@ export function SheetStats({ values }: { values: Record<string, string | number>
   return <dl className="sheet-stats">{Object.entries(values).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;
 }
 
-function ReserveSlots({ typeId, quantity, game, choices = [], onSelect }: { typeId: string; quantity: number; game?: GameState; choices?: readonly DeploymentChoice[]; onSelect?: (choice: DeploymentChoice) => void }) {
+function ReserveSlots({ typeId, quantity, game, choices = [], onSelect, trophyUnitIds = [], onTrophy }: { typeId: string; quantity: number; game?: GameState; choices?: readonly DeploymentChoice[]; onSelect?: (choice: DeploymentChoice) => void; trophyUnitIds?: readonly string[]; onTrophy?: (unitId: string) => void }) {
   const pieces = typeId.startsWith("national-guard-")
     ? (game?.nationalGuard.unitIds.filter((id) => id.startsWith(typeId) && !game.removedUnitIds.includes(id)).map((id) => ({ id, reserve: !game.units.some((unit) => unit.id === id && unit.location !== "record-tile") })) ?? [])
     : (game?.units.filter((unit) => unit.unitTypeId === typeId && (typeId !== "x-fighter" || unit.ownerPlayer === game.currentPlayer) && !game.removedUnitIds.includes(unit.id)).map((unit) => ({ id: unit.id, reserve: unit.location === "record-tile" })) ?? []);
@@ -20,6 +20,7 @@ function ReserveSlots({ typeId, quantity, game, choices = [], onSelect }: { type
       const choice = choices.find((candidate) => candidate.id === piece?.id);
       const art = <img src={`/assets/military/${typeId}.webp`} alt="" />;
       const style = { "--piece-mask": `url(/assets/military/${typeId}.webp)` } as CSSProperties;
+      if (piece && trophyUnitIds.includes(piece.id) && onTrophy) return <button type="button" key={piece.id} className="record-piece-slot selectable-record-piece in-reserve trophy-record-piece" style={style} aria-label={`Choose ${typeId.replaceAll("-", " ")} from military record as trophy`} onClick={() => onTrophy(piece.id)} title={`Choose ${typeId.replaceAll("-", " ")} as trophy`}>{art}<span>Trophy</span></button>;
       return choice && onSelect ? <button type="button" key={piece!.id} className={`record-piece-slot selectable-record-piece ${piece!.reserve ? "in-reserve" : "on-board"}`} style={style}
         aria-label={`${choice.kind === "deploy" ? "Deploy" : "Redeploy"} ${typeId.replaceAll("-", " ")} piece ${i + 1}`} onClick={() => onSelect(choice)} title={`${choice.kind === "deploy" ? "Deploy" : "Redeploy"} ${typeId.replaceAll("-", " ")}`}>{art}{choice.kind === "redeploy" && <span>Redeploy</span>}</button>
         : <span key={piece?.id ?? i} className={`record-piece-slot ${piece?.reserve ? "in-reserve" : ""}`} style={style} aria-label={piece?.reserve ? "In reserve; no legal deployment now" : "Not in reserve"}>{piece?.reserve && art}</span>;
@@ -28,7 +29,7 @@ function ReserveSlots({ typeId, quantity, game, choices = [], onSelect }: { type
   </div>;
 }
 
-export function MilitaryReference({ sheet, game, choices, onSelect }: { sheet: string; game?: GameState; choices?: readonly DeploymentChoice[]; onSelect?: (choice: DeploymentChoice) => void }) {
+export function MilitaryReference({ sheet, game, choices, onSelect, trophyUnitIds = [], onTrophy }: { sheet: string; game?: GameState; choices?: readonly DeploymentChoice[]; onSelect?: (choice: DeploymentChoice) => void; trophyUnitIds?: readonly string[]; onTrophy?: (unitId: string) => void }) {
   const units = UNIT_DEFINITIONS.filter((unit) => unit.branch === sheet);
   const deployment = BRANCH_DEPLOYMENT_DEFINITIONS.find((definition) => definition.branch === sheet);
   const research = game?.players[game.currentPlayer]?.researchCardIds ?? [];
@@ -39,7 +40,7 @@ export function MilitaryReference({ sheet, game, choices, onSelect }: { sheet: s
     </div>
     {units.map((unit) => <article key={unit.id}>
       <h3>{unit.name} <small>· {unit.quantity} pieces</small></h3>
-      <ReserveSlots typeId={unit.id} quantity={unit.quantity} game={game} choices={choices} onSelect={onSelect} />
+      <ReserveSlots typeId={unit.id} quantity={unit.quantity} game={game} choices={choices} onSelect={onSelect} trophyUnitIds={trophyUnitIds} onTrophy={onTrophy} />
       <div className="unit-reference-details"><SheetStats values={{ Move: unit.id === "navy-nuclear-submarine" ? "4 / 8 as missile" : unit.move, Movement: movementLabel(unit.movement), Attacks: unit.attacks, Defense: printedValue(unit.defense), Damage: printedValue(unit.damage) }} />{unit.specialAbilityText && <p>{unit.specialAbilityText}</p>}</div>
     </article>)}
     {sheet === "National Guard" && <>

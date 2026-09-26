@@ -13,9 +13,10 @@ type Props = {
   lastRecoveryEventId?: string;
   lastRecoveryRoll?: number;
   lastRecoveryReleased?: boolean;
+  lastAtomicRecovery?: boolean;
 };
 
-export function TurnPrompt({ action, description, rulesHelp, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes, hollywoodResearchAwarded, lastRecoveryEventId, lastRecoveryRoll, lastRecoveryReleased }: Props) {
+export function TurnPrompt({ action, description, rulesHelp, unavailableReason, canAct, lastFightEventId, lastFightRolls, lastFightOutcomes, hollywoodResearchAwarded, lastRecoveryEventId, lastRecoveryRoll, lastRecoveryReleased, lastAtomicRecovery }: Props) {
   return (
     <>
       <span className="label">CURRENT STEP</span>
@@ -38,13 +39,16 @@ export function TurnPrompt({ action, description, rulesHelp, unavailableReason, 
           <small>Fight result recorded.</small>
         </div>
       )}
-      {action === "Move" && lastRecoveryEventId && typeof lastRecoveryRoll === "number" && (
+      {action === "Move" && lastRecoveryEventId && (typeof lastRecoveryRoll === "number" || lastAtomicRecovery) && (
         <div className="combat-result recovery-result" key={lastRecoveryEventId} aria-live="polite">
-          <span className="label">LAST HOLLYWOOD RECOVERY</span>
-          <div className="combat-roll-list" aria-label="Recorded Hollywood recovery die">
-            <DieCube value={lastRecoveryRoll} label={`Hollywood recovery roll: ${lastRecoveryRoll}`} />
-          </div>
-          <small>{lastRecoveryReleased ? "The monster recovered to 5+ Health and left Hollywood." : "The monster recovered Health but remains in Hollywood."}</small>
+          <span className="label">{lastAtomicRecovery ? "TURN-START RECOVERY" : "LAST HOLLYWOOD RECOVERY"}</span>
+          {lastAtomicRecovery && <small>Atomic Recovery restored the monster to its starting Health.</small>}
+          {typeof lastRecoveryRoll === "number" && <>
+            <div className="combat-roll-list" aria-label="Recorded Hollywood recovery die">
+              <DieCube value={lastRecoveryRoll} label={`Hollywood recovery roll: ${lastRecoveryRoll}`} />
+            </div>
+            <small>{lastRecoveryReleased ? "The monster recovered to 5+ Health and left Hollywood." : "The monster recovered Health but remains in Hollywood."}</small>
+          </>}
         </div>
       )}
     </>

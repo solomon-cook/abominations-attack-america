@@ -14,10 +14,15 @@ const sizes = process.env.BROWSER_VIEWPORTS
   : [[320,740],[390,844],[844,390],[768,1024],[1024,768],[1440,900],[2560,1080]];
 assert.ok(sizes.every(size=>size.length===2&&size.every(value=>Number.isInteger(value)&&value>0)), 'Invalid BROWSER_VIEWPORTS');
 async function frame(page) { await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))); }
+async function toggleDetails(page) {
+ const expand=page.getByRole('button',{name:'Expand turn panel',exact:true});
+ if(await expand.count()) await expand.click();
+ else await page.getByRole('button',{name:'Minimize turn panel',exact:true}).click();
+}
 async function snapshot(page) {
   return page.evaluate(() => {
     const map = document.querySelector('.board-viewport'), canvas = map.querySelector('.map-canvas');
-    const a = map.getBoundingClientRect(), b = canvas.getBoundingClientRect();
+    const a = map.getBoundingClientRect(), b = (canvas.querySelector(':scope > svg') ?? canvas).getBoundingClientRect();
     return { zoom: +map.dataset.cameraZoom, transform: canvas.style.transform, cover: b.left <= a.left + .2 && b.top <= a.top + .2 && b.right >= a.right - .2 && b.bottom >= a.bottom - .2,
       overflow: document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight,
       pin: map.dataset.boardId === 'human-audited-north-america' && map.dataset.boardId === map.dataset.renderedBoardId && map.dataset.boardContentHash === map.dataset.renderedBoardContentHash,
@@ -34,21 +39,37 @@ for (const [width,height] of sizes) {
  try {
   await page.goto(process.env.BROWSER_TEST_URL || 'http://127.0.0.1:5173');
   await page.getByRole('button',{name:'Start local game',exact:true}).click();
-  for(let i=0;i<8;i++) { const choices=page.locator('.setup-options button'); if (!await choices.count()) break; await choices.first().click(); }
+  for(let i=0;i<16;i++) {
+   const choices=page.locator('.setup-panel:visible .setup-options button:visible:not(:disabled)');
+   if(await choices.count()) { await choices.first().click(); continue; }
+   if(await page.getByText(/Choose your lair/).isVisible().catch(()=>false)) {
+    const list=page.locator('.lair-selection-prompt details > summary');
+    await list.click();
+    await page.locator('.lair-selection-prompt .setup-options button:visible:not(:disabled)').first().click(); continue;
+   }
+   break;
+  }
   await page.locator('.setup-panel').waitFor({state:'detached'});
   assert.equal(await page.locator('[data-audit-cell]').count(),336);
   item.checks.push('user setup completed; 336 cells');
   await check(page,'initial');
   const canvas=page.locator('.map-canvas'); const before=await canvas.getAttribute('style');
-  await page.locator('header .game-panel-toggle').click(); await frame(page);
+  await toggleDetails(page); await frame(page);
   assert.equal(await canvas.getAttribute('style'),before,'details drawer reframed map');
-  await page.locator('header .game-panel-toggle').click(); item.checks.push('details preserves camera');
+  await toggleDetails(page); item.checks.push('details preserves camera');
   await page.mouse.move(width*.5,height*.5); await page.mouse.wheel(0,-10000); await page.waitForTimeout(250);
   assert.equal((await check(page,'zoom maximum')).zoom,4);
   await page.mouse.move(width*.5,height*.5); await page.mouse.down(); await page.mouse.move(width*.3,height*.65,{steps:8}); await page.mouse.up();
-  await check(page,'drag'); assert.equal(await page.getByRole('button',{name:'Confirm monster move',exact:true}).count(),0,'drag selected movement');
-  const mini=page.getByRole('button',{name:'Board overview. Click to move camera; arrow keys pan.'});
-  await mini.click({position:{x:8,y:8}}); await check(page,'minimap'); await mini.focus(); await page.keyboard.press('ArrowRight'); await check(page,'keyboard pan');
+  await check(page,'drag'); assert.equal(await page.getByRole('button',{name:'Confirm move',exact:true}).count(),0,'drag selected movement');
+  if(width>900) {
+   await page.getByRole('button',{name:'Open monster, military and map record'}).click();
+   await page.getByRole('tab',{name:'Map'}).click();
+   const mini=page.getByRole('button',{name:'Board overview. Click to move camera; arrow keys pan.'});
+   await mini.waitFor({state:'visible'});
+   await mini.click({position:{x:8,y:8}}); await check(page,'minimap'); await mini.focus(); await page.keyboard.press('ArrowRight'); await check(page,'keyboard pan');
+   await page.getByRole('button',{name:'Minimize monster, military and map record'}).click();
+   assert.equal(await mini.isVisible(),false,'minimap remained open after closing the Map tab');
+  }
   await page.getByRole('button',{name:'Reset view',exact:true}).click();
   // Real browser touch events exercise pinch and touch pointer capture.
   const cdp=await context.newCDPSession(page); const y=Math.round(height*.5), x=Math.round(width*.5);
@@ -57,22 +78,44 @@ for (const [width,height] of sizes) {
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   assert.ok((await check(page,'touch pinch')).zoom>1,'pinch did not zoom');
   await page.setViewportSize({width:height,height:width}); await check(page,'resize'); await page.setViewportSize({width,height}); await check(page,'restore');
-  await page.getByRole('button',{name:'Reset view',exact:true}).click(); item.checks.push('bounds/wheel/drag/minimap/keyboard/touch/resize');
+  await page.getByRole('button',{name:'Reset view',exact:true}).click(); item.checks.push(width>900?'bounds/wheel/drag/minimap/keyboard/touch/resize':'bounds/wheel/drag/touch/resize');
   // Keyboard selection is an actual tile action and also tests focus-driven camera panning.
   const tile=page.locator('.hex-tile.legal').first(); await tile.focus(); await page.keyboard.press('Enter');
-  await page.getByRole('button',{name:'Confirm monster move',exact:true}).first().click();
-  await page.locator('header .game-panel-toggle').click();
+  await page.getByRole('button',{name:'Confirm move',exact:true}).first().click();
+  const continueFromMove=page.getByRole('button',{name:'Continue to Fight',exact:true});
+  if(await continueFromMove.isVisible()) await continueFromMove.click();
+  await toggleDetails(page);
   const resolve=page.getByRole('button',{name:'Resolve encounter',exact:true});
   await resolve.last().click();
-  const benefit=page.getByRole('button',{name:'Take the city Health benefit',exact:true});
-  const passDeployment=page.getByRole('button',{name:'Pass deployment',exact:true}).first();
-  // React may render the follow-up decision after the resolve click returns.
-  await benefit.or(passDeployment).first().waitFor({state:'visible'});
-  if(await benefit.isVisible()) await benefit.click();
-  await passDeployment.click();
-  item.checks.push('movement confirmed; encounter resolved; deployment passed');
-  if(await page.locator('.layout.panel-open').count()) await page.locator('header .game-panel-toggle').click();
-  await check(page,'completed turn'); await page.waitForTimeout(500);
+  await page.getByRole('button',{name:'Reveal encounter',exact:true}).click();
+  const encounterBoardAction=page.locator('.resolution-encounter .cinema-primary').filter({hasText:'Return to board'}).last();
+  // Follow the actual encounter result: reveal remaining dice/cards and choose any offered reward.
+  for(let i=0;i<6;i++) {
+   const revealRolls=page.getByRole('button',{name:'Reveal remaining rolls',exact:true});
+   if(await revealRolls.isVisible().catch(()=>false)) { await revealRolls.click(); continue; }
+   const revealCard=page.getByRole('button',{name:'Reveal card',exact:true});
+   if(await revealCard.isVisible().catch(()=>false)) { await revealCard.click(); continue; }
+   const reward=page.locator('.resolution-encounter .cinema-choice button:visible').first();
+   if(await reward.isVisible().catch(()=>false)) { await reward.click(); continue; }
+   if(await encounterBoardAction.isVisible().catch(()=>false)) break;
+   await page.waitForTimeout(120);
+  }
+  await encounterBoardAction.waitFor({state:'visible'});
+  await encounterBoardAction.click();
+  const deploy=page.getByRole('button',{name:'Deploy military',exact:true}).last();
+  if(await deploy.isVisible()) await deploy.click();
+  const researchTab=page.getByRole('button',{name:/Military research/}).last();
+  await researchTab.click();
+  const drawResearch=page.getByRole('button',{name:'Draw a Military Research card instead of deploying a unit'});
+  await drawResearch.waitFor({state:'visible'});
+  assert.ok(await drawResearch.isEnabled(),'research action is unavailable before deployment');
+  await drawResearch.click();
+  await page.locator('dialog.resolution-research').waitFor({state:'visible'});
+  assert.match(await page.locator('.top-turn-summary').innerText(),/PLAYER 2/i,'drawing research did not pass the turn');
+  await page.locator('dialog.resolution-research .resolution-close').click();
+  item.checks.push('movement confirmed; encounter resolved; research alternative used');
+  if(await page.locator('.layout.panel-open').count()) await toggleDetails(page);
+  await check(page,'research action resolved'); await page.waitForTimeout(500);
   item.brokenImages=await page.locator('.audited-terrain').evaluateAll(images=>images.filter(i=>i.complete && !i.naturalWidth).map(i=>i.src));
   item.resources=await page.evaluate(() => {
     const navigation=performance.getEntriesByType('navigation')[0];
@@ -81,7 +124,7 @@ for (const [width,height] of sizes) {
     const uniqueImages=new Map([...document.querySelectorAll('.audited-terrain')].filter(image=>image.complete && image.naturalWidth).map(image=>[image.currentSrc,image]));
     return {
       navigation: navigation ? { domContentLoadedMs: Math.round(navigation.domContentLoadedEventEnd-navigation.startTime), loadMs: Math.round(navigation.loadEventEnd-navigation.startTime) } : null,
-      terrain: { measurement:'Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.',
+      terrain: { measurement:'Cumulative after setup, camera interactions, movement, encounter and research alternative; viewport has a fresh browser context.',
         resourceCount:terrain.length, uniqueResourceCount:new Set(terrain.map(entry=>entry.name)).size,
         transferBytes:total('transferSize'), encodedBodyBytes:total('encodedBodySize'), decodedBodyBytes:total('decodedBodySize'),
         currentDecodedImageCount:uniqueImages.size,

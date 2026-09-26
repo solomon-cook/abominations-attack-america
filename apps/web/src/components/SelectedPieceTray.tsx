@@ -1,4 +1,4 @@
-import { boardForState, getLocation, isHexKey, shortestLegalUnitPaths, monsterDefinition, UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, GIANT_UNIT_DEFINITIONS, type GameState, type HexKey } from "@abominations/game-engine";
+import { boardForState, getLocation, isHexKey, shortestLegalUnitPaths, monsterCombatStats, monsterDefinition, UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, GIANT_UNIT_DEFINITIONS, type GameState, type HexKey } from "@abominations/game-engine";
 import { movementLabel, SheetStats } from "./SheetReference";
 import { monsterAssetSlug } from "../monster-assets";
 
@@ -10,12 +10,13 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
     const monster = game.monsters[game.currentPlayer];
     const definition = monsterDefinition(monster.name.toLowerCase());
     const moved = game.movedPieceIds.includes(monster.id);
+    const combatStats = monsterCombatStats(game, monster);
     return <section className="piece-detail-tray monster-command-record" aria-label="Selected piece details">
       <div className="command-portrait"><img src={`/assets/monsters/portraits/${monsterAssetSlug(monster.name)}.webp`} alt="" /></div>
       <div className="command-record-body">
         <div className="command-identity"><div><span className="command-eyebrow">MONSTER RECORD · PLAYER {game.currentPlayer + 1}</span><h3>{monster.name}</h3></div><span className="command-infamy" title="Infamy">★ <b>{monster.infamy}</b><small>INFAMY</small></span></div>
         <div className="command-health"><span>HEALTH <b>{monster.health}<small> / {monster.maxHealth}</small></b></span><meter aria-label="Monster health" min={0} max={monster.maxHealth} value={monster.health} /></div>
-        <SheetStats values={{ Move: monster.move, Attacks: monster.attacks, Defense: monster.defense, Damage: monster.damage }} />
+        <SheetStats values={{ Move: monster.move, Attacks: combatStats.attacks, Defense: combatStats.defense, Damage: combatStats.damage }} />
         <div className="command-movement">{movementLabel(monster.movement)}<span>{moved ? "✓ Movement complete" : game.phase === "move" ? "Ready to move" : game.phase}</span></div>
         {definition && <details className="command-ability"><summary>Special ability</summary><p>{definition.specialAbilityText}</p></details>}
       </div>

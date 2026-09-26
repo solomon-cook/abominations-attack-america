@@ -1,14 +1,14 @@
 import { ownedMilitarySheets } from "./owned-sheets";
 import { MutationStrip } from "./MutationStrip";
 import { SheetCards } from "./SheetCards";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { MONSTER_DEFINITIONS, UNIT_DEFINITIONS, type GameCommand, type GameState } from "@abominations/game-engine";
+import { getLocation, isHexKey, MONSTER_DEFINITIONS, UNIT_DEFINITIONS, type GameCommand, type GameState } from "@abominations/game-engine";
 import { MilitarySheet, type DeploymentChoice } from "./MilitarySheet";
 import { monsterAssetSlug } from "../monster-assets";
 import { movementLabel, SheetStats } from "./SheetReference";
 
-type Props = { game: GameState; monster: GameState["monsters"][number]; branch: string; playerIndex: number; canAct: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void; onSelectDeployment?: (choice: DeploymentChoice) => void };
+type Props = { game: GameState; monster: GameState["monsters"][number]; branch: string; playerIndex: number; canAct: boolean; mobileCommandExpanded: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void; onSelectDeployment?: (choice: DeploymentChoice) => void };
 
 function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose }: Pick<Props, "monster" | "game" | "playerIndex" | "canAct" | "runCommand"> & { onClose: () => void }) {
   const definition = MONSTER_DEFINITIONS.find((candidate) => candidate.name === monster.name);
@@ -62,25 +62,44 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
   </div>;
 }
 
-export function PlayerStatusControls({ game, monster, branch, playerIndex, canAct, runCommand, onDeploy, onSelectDeployment }: Props) {
+export function PlayerStatusControls({ game, monster, branch, playerIndex, canAct, mobileCommandExpanded, runCommand, onDeploy, onSelectDeployment }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   const [tab, setTab] = useState<"monster" | "military" | "map">("monster");
   const [mobileRecordOpen, setMobileRecordOpen] = useState(false);
+  const [mobileViewport, setMobileViewport] = useState(false);
+  const [mobileRecordHost, setMobileRecordHost] = useState<HTMLElement | null>(null);
+  const [inspectedPlayer, setInspectedPlayer] = useState<number | null>(null);
   const roster = UNIT_DEFINITIONS.filter(unit => unit.branch === branch);
   const available = game.units.filter(unit => unit.ownerPlayer === playerIndex && !game.removedUnitIds.includes(unit.id) && unit.location !== "permanently-removed");
+  const healthPercent = Math.max(0, Math.min(100, Math.round(monster.health / monster.maxHealth * 100)));
   const playCard = (command: GameCommand) => { setOpen(null); return runCommand(command); };
-  return <>
-    <section className={`persistent-record ${mobileRecordOpen ? "mobile-record-open" : "mobile-record-closed"}`} data-record-tab={tab} aria-label="Player record and map">
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 700px)");
+    const update = () => {
+      setMobileViewport(media.matches);
+      setMobileRecordHost(media.matches ? document.querySelector<HTMLElement>(".mobile-record-slot") : null);
+    };
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  const recordExpanded = mobileViewport ? mobileCommandExpanded : mobileRecordOpen;
+  const recordContent = <section className={`persistent-record ${recordExpanded ? "mobile-record-open" : "mobile-record-closed"}`} data-record-tab={tab} aria-label="Player record and map">
       <button
         type="button"
         className="mobile-record-toggle"
-        aria-expanded={mobileRecordOpen}
+        aria-expanded={recordExpanded}
         aria-controls="record-panel"
-        aria-label={mobileRecordOpen ? "Minimize monster, military and map record" : "Open monster, military and map record"}
+        aria-label={recordExpanded ? "Minimize monster, military and map record" : "Open monster, military and map record"}
         onClick={() => setMobileRecordOpen((current) => !current)}
       >
-        <span aria-hidden="true">{mobileRecordOpen ? "×" : "☰"}</span>
-        <small>{mobileRecordOpen ? "Hide" : "Records"}</small>
+        {mobileRecordOpen ? <span aria-hidden="true">×</span> : <>
+          <span className="record-medallion" style={{ "--health-percent": `${healthPercent}%` } as CSSProperties}>
+            <img src={`/assets/monsters/portraits/${monsterAssetSlug(monster.name)}.webp`} alt="" />
+            <b>{monster.health}</b>
+          </span>
+          <small>★ {monster.infamy}</small>
+        </>}
       </button>
       <div className="record-tabs" role="tablist" aria-label="Record view">{(["monster", "military", "map"] as const).map(view => <button key={view} role="tab" id={`record-tab-${view}`} aria-selected={tab === view} aria-controls="record-panel" tabIndex={tab === view ? 0 : -1} onClick={() => setTab(view)} onKeyDown={event => {
         const views = ["monster", "military", "map"] as const;
@@ -89,11 +108,10 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
       <div id="record-panel" role="tabpanel" aria-labelledby={`record-tab-${tab}`}>
         {tab === "monster" && <button className="record-preview" onClick={() => setOpen("monster")} aria-label={`Open ${monster.name} monster sheet`}>
           <img src={`/assets/monsters/portraits/${monsterAssetSlug(monster.name)}.webp`} alt="" />
-          <span className="record-preview-body"><small>PLAYER {playerIndex + 1} · MONSTER RECORD</small><strong>{monster.name}</strong>
-            <span>Health <b>{monster.health}/{monster.maxHealth}</b> · ★ {monster.infamy} Infamy</span>
+          <span className="record-preview-body"><small>PLAYER {playerIndex + 1}</small><strong>{monster.name}</strong>
+            <span>♥ <b>{monster.health}/{monster.maxHealth}</b> · ★ <b>{monster.infamy}</b></span>
             <meter min={0} max={monster.maxHealth} value={monster.health} aria-label="Monster health" />
-            <span className="record-mini-stats">Move <b>{monster.move}</b> · Attacks <b>{monster.attacks}</b> · Defense <b>{monster.defense}</b> · Damage <b>{monster.damage}</b></span>
-            <small>Open full sheet ↗</small>
+            <small>Monster sheet ↗</small>
           </span>
         </button>}
         {tab === "monster" && <MutationStrip cards={game.players[playerIndex]?.mutationCardIds ?? []} />}
@@ -105,9 +123,28 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
             <span className="record-mini-stats">{roster.map(unit => `${unit.name} · Move ${unit.move}`).join(" / ")}</span><small>Open full sheet ↗</small>
           </span>
         </button>}
-        {tab === "map" && <span className="record-map-space" aria-label="Map overview below" />}
+        {tab === "map" && <span className="record-map-space" aria-label="Map overview is open on the board">Overview map is open on the board.</span>}
       </div>
-    </section>
+    </section>;
+  return <>
+    <nav className="opponent-portrait-rail" aria-label="Players">
+      {game.monsters.map((entry, index) => <button key={entry.id} type="button" className={`opponent-portrait ${index === game.currentPlayer ? "is-active" : ""} ${index === playerIndex ? "is-you" : ""}`} aria-label={`Player ${index + 1}: ${entry.name}, ${entry.health} health, ${entry.infamy} infamy${index === game.currentPlayer ? ", active turn" : ""}`} aria-expanded={inspectedPlayer === index} aria-controls="player-public-status" title={`Player ${index + 1} · ${entry.name} · ♥ ${entry.health} · ★ ${entry.infamy}`} onClick={() => setInspectedPlayer((current) => current === index ? null : index)}>
+        <img src={`/assets/monsters/portraits/${monsterAssetSlug(entry.name)}.webp`} alt="" />
+        <span>{index + 1}</span>
+        {index === game.currentPlayer && <i aria-hidden="true" />}
+      </button>)}
+      {inspectedPlayer !== null && (() => {
+        const entry = game.monsters[inspectedPlayer];
+        if (!entry) return null;
+        const position = isHexKey(entry.location) ? game.boardId ? getLocation(entry.location)?.name : undefined : undefined;
+        return <section id="player-public-status" className="player-public-status" aria-label={`Player ${inspectedPlayer + 1} status`}>
+          <button type="button" className="player-public-close" aria-label="Close player status" onClick={() => setInspectedPlayer(null)}>×</button>
+          <img src={`/assets/monsters/portraits/${monsterAssetSlug(entry.name)}.webp`} alt="" />
+          <div><small>PLAYER {inspectedPlayer + 1}{inspectedPlayer === playerIndex ? " · YOU" : ""}</small><strong>{entry.name}</strong><span>♥ {entry.health}/{entry.maxHealth} · ★ {entry.infamy}</span><span>{position ?? entry.location}</span></div>
+        </section>;
+      })()}
+    </nav>
+    {mobileRecordHost ? createPortal(recordContent, mobileRecordHost) : recordContent}
     <nav className="player-sheet-peeks" aria-label={`Player ${playerIndex + 1} reference sheets`}>
       {[{ id: "monster", name: monster.name, kind: "Monster", theme: "monster", count: game.players[playerIndex]?.mutationCardIds.length ?? 0 },
         ...ownedMilitarySheets(game, playerIndex, branch).map((name) => ({ id: name, name, kind: "Military", theme: name, count: name === branch ? game.players[playerIndex]?.researchCardIds.length ?? 0 : undefined })),

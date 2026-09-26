@@ -23,11 +23,14 @@ type Props = {
 export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex, participants, onChooseOption, onChooseStartingChoice, deploymentCount, hasAvailableDeploymentOptions, selectingDeployment, selectedPiece, onFinishDeployment, onUndoDeployment }: Props) {
   const waiting = online && playerIndex !== setupSeat?.playerIndex;
   const disabled = Boolean(waiting);
+  const setupSteps = ["Monster", "Branch", "Lair", "Starting choice"];
+  const activeStep = ({ "monster-selection": 0, "branch-selection": 1, "lair-selection": 2, "starting-choice": 3 } as const)[activeSetup.phase as "monster-selection" | "branch-selection" | "lair-selection" | "starting-choice"] ?? 3;
   const lairLabel = (key?: string, monsterId = setupSeat?.monsterId) => key && monsterId ? setupLairLabel(activeSetup, board, monsterId, key) : "Not selected";
   if (activeSetup.phase === "lair-selection") {
     const lairs = setupSeat?.monsterId
       ? activeSetup.definition.lairsByMonster[setupSeat.monsterId]?.filter((lair) => !activeSetup.seats.some((seat) => seat.lair === lair)) ?? [] : [];
     return <section className="setup-panel lair-selection-prompt" aria-label="Game setup">
+      <ol className="setup-step-track" aria-label="Setup progress">{setupSteps.map((step, index) => <li key={step} className={index < activeStep ? "complete" : index === activeStep ? "current" : "upcoming"}>{step}</li>)}</ol>
       <strong>{waiting ? `Waiting for Player ${(setupSeat?.playerIndex ?? 0) + 1}` : `Player ${(setupSeat?.playerIndex ?? 0) + 1} · Choose your lair`}</strong>
       <span>Click a glowing spawn on the map.</span>
       <details key={setupSeat?.playerIndex}>
@@ -40,6 +43,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
     <>
       {activeSetup.phase !== "complete" && (
         <section className={`setup-panel ${activeSetup.phase === "starting-choice" ? "setup-command-panel" : ""}`} aria-label="Game setup">
+          <ol className="setup-step-track" aria-label="Setup progress">{setupSteps.map((step, index) => <li key={step} className={index < activeStep ? "complete" : index === activeStep ? "current" : "upcoming"}>{step}</li>)}</ol>
           <span className="label">GAME SETUP</span>
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
           <p>{activeSetup.phase === "starting-choice" ? "Deploy starting troops using your branch allowance, or draw one Military Research card instead." : "Choose your monster and military branch."}</p>

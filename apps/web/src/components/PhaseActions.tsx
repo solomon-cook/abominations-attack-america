@@ -1,8 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
-import { type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
+import { legalLaserFenceTargets, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 import { DieCube } from "./DieCube";
-import { boardForGame } from "../board-pin";
 import { deploymentChoices } from "./MilitarySheet";
+import { LaserFenceControls } from "./LaserFenceControls";
+import { StabilizerRayControls } from "./StabilizerRayControls";
+import { ToxicorMutationControls } from "./ToxicorMutationControls";
 
 type AttackTargetDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type: "attack-target" }>;
 type BattleDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type: "battle-resolution" }>;
@@ -10,6 +12,8 @@ type BattleDecision = Extract<NonNullable<GameState["pendingDecision"]>, { type:
 type Props = {
   activeGame: GameState;
   hideAttackTargets?: boolean;
+  canUseMutation?: boolean;
+  canUseLaserFence?: boolean;
   onOpenMilitarySheet: () => void;
   canAct: boolean;
   runCommand: (command: GameCommand) => void | Promise<void>;
@@ -28,6 +32,8 @@ export function PhaseActions({
   hideAttackTargets = false,
   onOpenMilitarySheet,
   canAct,
+  canUseMutation = canAct,
+  canUseLaserFence = canAct,
   runCommand,
   getLocationName,
   pendingAttackTarget,
@@ -38,40 +44,32 @@ export function PhaseActions({
   retreatChoices,
   setRetreatChoices,
 }: Props) {
-  const optionalMutationCards = activeGame.players[activeGame.currentPlayer]?.mutationCardIds.filter((cardId) => cardId === "Berserk" || cardId === "Son of a Monster") ?? [];
-  const mutationButtons = (battleId: string) => optionalMutationCards.length > 0 ? (
+  const mutationButtons = (battleId: string) => {
+    const ownerIndex = activeGame.pendingBattles.find((battle) => battle.id === battleId)
+      ? activeGame.monsters.findIndex((monster) => monster.id === activeGame.pendingBattles.find((battle) => battle.id === battleId)?.monsterId)
+      : -1;
+    const optionalMutationCards = activeGame.players[ownerIndex]?.mutationCardIds.filter((cardId) => cardId === "Berserk" || cardId === "Son of a Monster") ?? [];
+    return optionalMutationCards.length > 0 ? (
     <div className="battle-choice" aria-label="Optional Mutation battle abilities">
       <span>Optional Mutation:</span>
-      {optionalMutationCards.map((cardId) => <button key={cardId} disabled={!canAct} onClick={() => void runCommand({ type: "use-mutation", cardId, battleId })}>{cardId === "Berserk" ? "Berserk · +5 attacks" : "Son of a Monster · +2 attacks and d6 Health"}</button>)}
+      {optionalMutationCards.map((cardId) => <button key={cardId} disabled={!canUseMutation} onClick={() => void runCommand({ type: "use-mutation", cardId, battleId })}>{cardId === "Berserk" ? "Berserk · +5 attacks" : "Son of a Monster · +2 attacks and d6 Health"}</button>)}
     </div>
-  ) : null;
+    ) : null;
+  };
   const defenseSatellitesButton = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Defense Satellites") ? (
     <button disabled={!canAct || activeGame.pendingBattles.length > 0 || Boolean(activeGame.pendingRetreat)} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Use Defense Satellites · roll for each monster</button>
   ) : null;
   const antimatterButton = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Antimatter") ? (
     <button disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Antimatter", battleId: pendingBattle.id })}>Use Antimatter · double first-round damage</button>
   ) : null;
-  const activeBoard = boardForGame(activeGame);
-  const fenceDestinations = pendingBattle && pendingBattleDecision && activeBoard
-    ? (activeBoard.edges.filter((edge) => edge.enabled && edge.from === pendingBattle.location).map((edge) => edge.to).filter((destination) => !activeGame.monsters.some((monster) => monster.location === destination) && !activeGame.units.some((unit) => unit.location === destination)))
-    : [];
-  const laserFenceButtons = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Laser Fence") ? (
-    <div className="battle-choice" aria-label="Choose Laser Fence outcome">
-      <span>Laser Fence:</span>
-      <button disabled={!canAct || (activeGame.monsters.find((monster) => monster.id === pendingBattle.monsterId)?.infamy ?? 0) < 2} onClick={() => void runCommand({ type: "use-research", cardId: "Laser Fence", battleId: pendingBattle.id, choice: "infamy" })}>Pay 2 Infamy and fight</button>
-      {fenceDestinations.map((destination) => <button key={destination} disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Laser Fence", battleId: pendingBattle.id, choice: "retreat", destination })}>Retreat to {getLocationName(destination)}</button>)}
-    </div>
-  ) : null;
-  const stabilizerMonsterPlayer = pendingBattle ? activeGame.monsters.findIndex((monster) => monster.id === pendingBattle.monsterId) : -1;
-  const stabilizerMutationCards = pendingBattle && pendingBattleDecision
-    ? activeGame.players[stabilizerMonsterPlayer]?.mutationCardIds ?? []
-    : [];
-  const stabilizerButtons = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Stabilizer Ray") && stabilizerMutationCards.length > 0 ? (
-    <div className="battle-choice" aria-label="Choose Mutation for Stabilizer Ray">
-      <span>Stabilizer Ray: choose a Mutation to discard if this battle damages the monster.</span>
-      {stabilizerMutationCards.map((mutationCardId) => <button key={mutationCardId} disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Stabilizer Ray", battleId: pendingBattle.id, mutationCardId })}>{mutationCardId}</button>)}
-    </div>
-  ) : null;
+  const laserFenceOwnerIndex = activeGame.players.findIndex((player) => player.researchCardIds.includes("Laser Fence"));
+  const laserFenceControls = <LaserFenceControls game={activeGame} cardOwnerIndex={laserFenceOwnerIndex} canUse={canUseLaserFence} runCommand={runCommand} getLocationName={getLocationName} />;
+  if (activeGame.pendingDecision?.type === "stabilizer-ray-choice" && activeGame.pendingStabilizerRayChoice) {
+    return <StabilizerRayControls game={activeGame} canAct={canAct} runCommand={runCommand} />;
+  }
+  if (activeGame.pendingDecision?.type === "mutation-choice") {
+    return <ToxicorMutationControls game={activeGame} canAct={canAct} runCommand={runCommand} />;
+  }
 
   if (activeGame.phase === "fight" && pendingAttackTarget) {
     return (
@@ -118,6 +116,11 @@ export function PhaseActions({
   if (activeGame.phase === "fight" && activeGame.pendingBattles.length > 1) {
     return <div className="battle-choice" aria-label="Choose battle resolution order">
       {defenseSatellitesButton}
+      {laserFenceControls}
+      {pendingBattle && <>
+        {antimatterButton}
+        <StabilizerRayControls game={activeGame} battleId={pendingBattle.id} canAct={canAct} runCommand={runCommand} />
+      </>}
       {activeGame.pendingBattles.map((battle) => {
         const monster = activeGame.monsters.find((candidate) => candidate.id === battle.monsterId);
         const submarines = battle.militaryUnitIds.filter((unitId) => activeGame.units.some((unit) => unit.id === unitId && unit.unitTypeId === "navy-nuclear-submarine"));
@@ -137,42 +140,52 @@ export function PhaseActions({
       {mutationButtons(pendingBattle.id)}
       {defenseSatellitesButton}
       {antimatterButton}
-      {laserFenceButtons}
-      {stabilizerButtons}
+      {laserFenceControls}
+      {pendingBattle && <StabilizerRayControls game={activeGame} battleId={pendingBattle.id} canAct={canAct} runCommand={runCommand} />}
       {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: pendingBattle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
       {!hideAttackTargets && <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}><DieCube value={6} label="Roll battle dice" /> Roll battle dice</button>}
       {!hideAttackTargets && <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>}
     </div>;
   }
 
+  if (activeGame.phase === "fight" && pendingBattle && pendingBattleDecision) {
+    const submarines = pendingBattle.militaryUnitIds.filter((unitId) => activeGame.units.some((unit) => unit.id === unitId && unit.unitTypeId === "navy-nuclear-submarine"));
+    return <div className="path-controls" aria-label="Battle research options">
+      {mutationButtons(pendingBattle.id)}
+      {defenseSatellitesButton}
+      {antimatterButton}
+      {laserFenceControls}
+      <StabilizerRayControls game={activeGame} battleId={pendingBattle.id} canAct={canAct} runCommand={runCommand} />
+      {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: pendingBattle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
+    </div>;
+  }
+
+  if (activeGame.phase === "fight" && pendingBattleDecision && legalLaserFenceTargets(activeGame).length > 0) {
+    return <div className="path-controls" aria-label="Available Laser Fence reaction">{laserFenceControls}</div>;
+  }
+
   if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "trophy-choice") {
     return <div className="battle-choice" aria-label="Choose a military trophy">
       {defenseSatellitesButton}
-      <p>Player {activeGame.pendingDecision.playerIndex + 1}, choose one {activeGame.pendingDecision.branch} unit as the monster&apos;s trophy.</p>
-      {activeGame.pendingDecision.unitIds.map((unitId) => {
-        const unit = activeGame.units.find((candidate) => candidate.id === unitId);
-        return <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "resolve-encounter", trophyUnitId: unitId })}>Take {unit?.unitTypeId ?? unitId} ({unit?.location === "record-tile" ? "record tile" : "board"})</button>;
-      })}
+      <p>Choose the highlighted {activeGame.pendingDecision.branch} unit from the military record or board.</p>
     </div>;
   }
 
   if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "encounter-choice") {
-    return <div className="battle-choice" aria-label="Choose Zorb city benefit">
+    const encounterDecision = activeGame.pendingDecision;
+    const ironStomach = encounterDecision.source === "iron-stomach";
+    return <div className="battle-choice" aria-label={ironStomach ? "Choose Iron Stomach base reward" : "Choose Zorb city benefit"}>
       {defenseSatellitesButton}
-      {activeGame.pendingDecision.choices.map((choice) => <button key={choice} disabled={!canAct} onClick={() => void runCommand({ type: "resolve-encounter", choice })}>{choice === "health" ? "Take the city Health benefit" : "Take 2 Infamy instead"}</button>)}
-    </div>;
-  }
-
-  if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "mutation-choice") {
-    return <div className="battle-choice" aria-label="Choose Toxicor Mutation card">
-      <p>Toxicor revealed two Mutation cards. Choose one to keep; the other returns to the deck.</p>
-      {activeGame.pendingDecision.cardIds.map((cardId) => <button key={cardId} disabled={!canAct} onClick={() => void runCommand({ type: "choose-mutation-card", cardId })}>Keep {cardId}</button>)}
+      {encounterDecision.healthRoll !== undefined && <p>Zorb rolled {encounterDecision.healthRoll} Health from the city.</p>}
+      {ironStomach && <p>Iron Stomach: choose 3 Health or the base’s 1 Infamy.</p>}
+      {encounterDecision.choices.map((choice) => <button key={choice} disabled={!canAct} onClick={() => void runCommand({ type: "resolve-encounter", choice })}>{choice === "health" ? `Take ${ironStomach ? 3 : encounterDecision.healthRoll ?? "the city"} Health` : `Take ${ironStomach ? 1 : 2} Infamy instead`}</button>)}
     </div>;
   }
 
   if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "encounter-resolution") {
     return <div className="path-controls" aria-label="Resolve encounter">
       {defenseSatellitesButton}
+      {laserFenceControls}
       <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-encounter" })}>Resolve encounter</button>
     </div>;
   }

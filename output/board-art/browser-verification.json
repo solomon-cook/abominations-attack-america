@@ -1,36 +1,36 @@
 {
-  "started": "2026-09-16T21:00:59.747Z",
+  "started": "2026-09-26T17:00:43.519Z",
   "pendingArtAllowed": false,
   "viewports": [
     {
-      "width": 320,
-      "height": 740,
+      "width": 1280,
+      "height": 720,
       "checks": [
         "user setup completed; 336 cells",
         "details preserves camera",
         "bounds/wheel/drag/minimap/keyboard/touch/resize",
-        "movement confirmed; encounter resolved; deployment passed"
+        "movement confirmed; encounter resolved; research alternative used"
       ],
       "errors": [],
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 181,
-          "loadMs": 182
+          "domContentLoadedMs": 186,
+          "loadMs": 188
         },
         "terrain": {
-          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
-          "resourceCount": 336,
-          "uniqueResourceCount": 336,
-          "transferBytes": 954300,
-          "encodedBodyBytes": 853500,
-          "decodedBodyBytes": 853500,
+          "measurement": "Cumulative after setup, camera interactions, movement, encounter and research alternative; viewport has a fresh browser context.",
+          "resourceCount": 820,
+          "uniqueResourceCount": 788,
+          "transferBytes": 4050004,
+          "encodedBodyBytes": 3928686,
+          "decodedBodyBytes": 3928686,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 336,
-            "512": 0,
-            "1024": 0
+            "256": 363,
+            "512": 317,
+            "1024": 140
           }
         }
       },
@@ -42,204 +42,34 @@
       "checks": [
         "user setup completed; 336 cells",
         "details preserves camera",
-        "bounds/wheel/drag/minimap/keyboard/touch/resize",
-        "movement confirmed; encounter resolved; deployment passed"
+        "bounds/wheel/drag/touch/resize",
+        "movement confirmed; encounter resolved; research alternative used"
       ],
       "errors": [],
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 78,
-          "loadMs": 78
+          "domContentLoadedMs": 173,
+          "loadMs": 175
         },
         "terrain": {
-          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
-          "resourceCount": 493,
-          "uniqueResourceCount": 492,
-          "transferBytes": 1221836,
-          "encodedBodyBytes": 1108136,
-          "decodedBodyBytes": 1108136,
+          "measurement": "Cumulative after setup, camera interactions, movement, encounter and research alternative; viewport has a fresh browser context.",
+          "resourceCount": 610,
+          "uniqueResourceCount": 577,
+          "transferBytes": 3004528,
+          "encodedBodyBytes": 2903698,
+          "decodedBodyBytes": 2903698,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 336,
-            "512": 157,
-            "1024": 0
-          }
-        }
-      },
-      "passed": true
-    },
-    {
-      "width": 844,
-      "height": 390,
-      "checks": [
-        "user setup completed; 336 cells",
-        "details preserves camera",
-        "bounds/wheel/drag/minimap/keyboard/touch/resize",
-        "movement confirmed; encounter resolved; deployment passed"
-      ],
-      "errors": [],
-      "brokenImages": [],
-      "resources": {
-        "navigation": {
-          "domContentLoadedMs": 74,
-          "loadMs": 74
-        },
-        "terrain": {
-          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
-          "resourceCount": 336,
-          "uniqueResourceCount": 336,
-          "transferBytes": 954300,
-          "encodedBodyBytes": 853500,
-          "decodedBodyBytes": 853500,
-          "currentDecodedImageCount": 336,
-          "estimatedCurrentBitmapBytes": 76382208,
-          "sizes": {
-            "256": 336,
-            "512": 0,
-            "1024": 0
-          }
-        }
-      },
-      "passed": true
-    },
-    {
-      "width": 768,
-      "height": 1024,
-      "checks": [
-        "user setup completed; 336 cells",
-        "details preserves camera",
-        "bounds/wheel/drag/minimap/keyboard/touch/resize",
-        "movement confirmed; encounter resolved; deployment passed"
-      ],
-      "errors": [],
-      "brokenImages": [],
-      "resources": {
-        "navigation": {
-          "domContentLoadedMs": 449,
-          "loadMs": 449
-        },
-        "terrain": {
-          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
-          "resourceCount": 609,
-          "uniqueResourceCount": 602,
-          "transferBytes": 1551828,
-          "encodedBodyBytes": 1421928,
-          "decodedBodyBytes": 1421928,
-          "currentDecodedImageCount": 336,
-          "estimatedCurrentBitmapBytes": 76382208,
-          "sizes": {
-            "256": 336,
-            "512": 273,
-            "1024": 0
-          }
-        }
-      },
-      "passed": true
-    },
-    {
-      "width": 1024,
-      "height": 768,
-      "checks": [
-        "user setup completed; 336 cells",
-        "details preserves camera",
-        "bounds/wheel/drag/minimap/keyboard/touch/resize",
-        "movement confirmed; encounter resolved; deployment passed"
-      ],
-      "errors": [],
-      "brokenImages": [],
-      "resources": {
-        "navigation": {
-          "domContentLoadedMs": 101,
-          "loadMs": 101
-        },
-        "terrain": {
-          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
-          "resourceCount": 336,
-          "uniqueResourceCount": 336,
-          "transferBytes": 954300,
-          "encodedBodyBytes": 853500,
-          "decodedBodyBytes": 853500,
-          "currentDecodedImageCount": 336,
-          "estimatedCurrentBitmapBytes": 76382208,
-          "sizes": {
-            "256": 336,
-            "512": 0,
-            "1024": 0
-          }
-        }
-      },
-      "passed": true
-    },
-    {
-      "width": 1440,
-      "height": 900,
-      "checks": [
-        "user setup completed; 336 cells",
-        "details preserves camera",
-        "bounds/wheel/drag/minimap/keyboard/touch/resize",
-        "movement confirmed; encounter resolved; deployment passed"
-      ],
-      "errors": [],
-      "brokenImages": [],
-      "resources": {
-        "navigation": {
-          "domContentLoadedMs": 83,
-          "loadMs": 83
-        },
-        "terrain": {
-          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
-          "resourceCount": 757,
-          "uniqueResourceCount": 672,
-          "transferBytes": 1347656,
-          "encodedBodyBytes": 1238568,
-          "decodedBodyBytes": 1238568,
-          "currentDecodedImageCount": 336,
-          "estimatedCurrentBitmapBytes": 76382208,
-          "sizes": {
-            "256": 336,
-            "512": 421,
-            "1024": 0
-          }
-        }
-      },
-      "passed": true
-    },
-    {
-      "width": 2560,
-      "height": 1080,
-      "checks": [
-        "user setup completed; 336 cells",
-        "details preserves camera",
-        "bounds/wheel/drag/minimap/keyboard/touch/resize",
-        "movement confirmed; encounter resolved; deployment passed"
-      ],
-      "errors": [],
-      "brokenImages": [],
-      "resources": {
-        "navigation": {
-          "domContentLoadedMs": 246,
-          "loadMs": 246
-        },
-        "terrain": {
-          "measurement": "Cumulative after setup, camera interactions and a completed turn; viewport has a fresh browser context.",
-          "resourceCount": 933,
-          "uniqueResourceCount": 842,
-          "transferBytes": 1895798,
-          "encodedBodyBytes": 1767698,
-          "decodedBodyBytes": 1767698,
-          "currentDecodedImageCount": 336,
-          "estimatedCurrentBitmapBytes": 76382208,
-          "sizes": {
-            "256": 336,
-            "512": 332,
-            "1024": 265
+            "256": 369,
+            "512": 168,
+            "1024": 73
           }
         }
       },
       "passed": true
     }
   ],
-  "finished": "2026-09-16T21:02:00.607Z"
+  "finished": "2026-09-26T17:01:01.991Z"
 }

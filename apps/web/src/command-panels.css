@@ -72,8 +72,6 @@
 .game-screen .command-station .action-dock > button::before { display:none; }
 .game-screen .command-station .action-dock > button:hover:not(:disabled) { background:#f0dc98; }
 .game-screen .command-station .action-dock > button:disabled { opacity:.5; }
-.game-screen .command-station .action-dock > button.action-dock-secondary { background:#45392f; color:#eee1cf; border-color:#987244; font-size:.75rem; }
-.game-screen .command-station .action-dock > button.action-dock-secondary:hover:not(:disabled) { background:#5a4535; color:#fff0d4; }
 .game-screen .command-station > .bottom-context-dock {
   display:block; position:absolute; left:0; right:0; bottom:84px; top:auto; width:100%;
   max-height:none; padding:0; margin:0; transform:none; overflow:visible;

@@ -51,6 +51,8 @@ import { BlondeLureActions } from "./components/BlondeLureActions";
 import { PieceStackInspector } from "./components/PieceStackInspector";
 import { PlayerStatusControls } from "./components/PlayerStatusControls";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
+import { LaserFenceControls } from "./components/LaserFenceControls";
+import { ChopperLiftChoiceControls } from "./components/ChopperLiftChoiceControls";
 import { SelectedPieceTray } from "./components/SelectedPieceTray";
 import { BoardContextTray } from "./components/BoardContextTray";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -63,6 +65,7 @@ import { MilitarySheet, deploymentChoices, nextDeploymentSheet } from "./compone
 import { MovementChecklist } from "./components/MovementChecklist";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
+import { MilitaryReference } from "./components/SheetReference";
 import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
 import { BoardReview } from "./components/BoardReview";
@@ -75,6 +78,7 @@ import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { FightResolutionPanel } from "./components/FightResolutionPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
 import { playSound, type SoundCategory } from "./audio";
+import { monsterAssetSlug } from "./monster-assets";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
 import "./fullscreen-shell.css";
@@ -86,6 +90,7 @@ import "./encounter-command.css";
 import "./monster-selection.css";
 import "./setup-command.css";
 import "./home-screen.css";
+import "./civ-hud.css";
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -180,6 +185,7 @@ function App() {
   const [encounterBaselineEventId, setEncounterBaselineEventId] = useState<string | undefined>();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [gamePanelOpen, setGamePanelOpen] = useState(false);
+  const [mobileCommandExpanded, setMobileCommandExpanded] = useState(false);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
   const [showBoardLabels, setShowBoardLabels] = useState(() => safeStorageGet("abominations-board-labels") !== "0");
   const [manualReducedMotion, setManualReducedMotion] = useState(() => safeStorageGet("abominations-reduced-motion") === "1");
@@ -196,6 +202,10 @@ function App() {
   const browserSupported = supportsPlaytestBrowser();
   const activeGame = room?.state ?? game;
   const activePlayer = activeGame.monsters[activeGame.currentPlayer];
+  const commandUnit = activeGame.units.find((unit) => unit.id === selectedUnitId);
+  const commandPieceName = commandUnit
+    ? (commandUnit.unitTypeId ?? commandUnit.branch).replaceAll("-", " ")
+    : activePlayer.name;
   const activeLocation = getLocation(activePlayer.location);
   const activeBoard = boardForGame(activeGame);
   const activeBoardHex = activeBoard && isHexKey(activePlayer.location) ? activeBoard.hexes[activePlayer.location] : undefined;
@@ -221,11 +231,14 @@ function App() {
     [activeGame, selectedUnitId],
   );
   const selectableUnitIds = useMemo(
-    () => activeGame.phase === "move"
+    () => activeGame.pendingDecision?.type === "trophy-choice"
+      ? new Set(activeGame.pendingDecision.unitIds)
+      : activeGame.phase === "move"
       ? new Set(activeGame.units.filter((unit) => shortestLegalUnitPaths(activeGame, unit.id).length > 0 || legalSubmarineTargets(activeGame, unit.id).length > 0).map((unit) => unit.id))
-      : activeGame.pendingDecision?.type === "trophy-choice" ? new Set(activeGame.pendingDecision.unitIds) : new Set<string>(),
+      : new Set<string>(),
     [activeGame],
   );
+  const remainingMovementOrders = selectableUnitIds.size + (legalPaths.length > 0 ? 1 : 0);
   useEffect(() => {
     if (activeGame.phase !== "move" || pendingAction) return;
     if (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) return;
@@ -337,12 +350,18 @@ function App() {
   const encounterChoices = Array.isArray(lastEncounterEvent?.detail.choices)
     ? lastEncounterEvent.detail.choices.filter((choice): choice is string => typeof choice === "string")
     : [];
+  const encounterChoiceSource = lastEncounterEvent?.detail.choiceSource === "iron-stomach" || lastEncounterEvent?.detail.choiceSource === "zorb-city"
+    ? lastEncounterEvent.detail.choiceSource
+    : activeGame.pendingDecision?.type === "encounter-choice" ? activeGame.pendingDecision.source : undefined;
   const encounterMutationDraws = Array.isArray(lastEncounterEvent?.detail.mutationDraws)
     ? lastEncounterEvent.detail.mutationDraws.filter((draw): draw is { siteId: string; cardDrawn: boolean; effectStatus: "implemented" | "source-gated" | "none" } => Boolean(draw && typeof draw === "object" && typeof draw.siteId === "string" && typeof draw.cardDrawn === "boolean" && (draw.effectStatus === "implemented" || draw.effectStatus === "source-gated" || draw.effectStatus === "none")))
     : [];
-  const lastRecoveryEvent = [...activeGame.eventLog].reverse().find((entry) =>
-    ["turn.passed", "research.drawn"].includes(entry.action) && typeof entry.detail.recoveryRoll === "number",
+  const lastTurnStartEvent = [...activeGame.eventLog].reverse().find((entry) =>
+    ["turn.passed", "research.drawn"].includes(entry.action) && entry.detail.nextPlayer === activeGame.currentPlayer,
   );
+  const lastRecoveryEvent = lastTurnStartEvent && (typeof lastTurnStartEvent.detail.recoveryRoll === "number" || lastTurnStartEvent.detail.atomicRecovery === true)
+    ? lastTurnStartEvent
+    : undefined;
   const canSpendInfamyOnPendingBattle = Boolean(
     pendingBattle &&
     activePlayer.infamy > 0,
@@ -356,16 +375,41 @@ function App() {
   const activeSetup = online ? activeGame.setupState : localSetup;
   const localSetupComplete = localSetup.phase === "complete";
   const setupComplete = !activeSetup || activeSetup.phase === "complete";
-  const decisionPlayer = activeGame.pendingDecision?.type === "trophy-choice"
+  const decisionPlayer = activeGame.pendingDecision?.type === "trophy-choice" || activeGame.pendingDecision?.type === "mutation-choice"
     ? activeGame.pendingDecision.playerIndex
     : activeGame.currentPlayer;
   const canAct =
     setupComplete &&
     !pendingAction &&
+    !activeGame.pendingChopperLift &&
     activeGame.phase !== "game-over" &&
     (!online ||
       (room?.status === "active" && participant?.role === "player" &&
         participant.playerIndex === decisionPlayer));
+  const mutationWindowOwners = new Set<number>();
+  const pendingFightBattleId = activeGame.pendingDecision?.type === "battle-resolution" || activeGame.pendingDecision?.type === "attack-target"
+    ? activeGame.pendingDecision.battleId
+    : undefined;
+  if (activeGame.phase === "fight" && pendingFightBattleId) {
+    const battle = activeGame.pendingBattles.find((candidate) => candidate.id === pendingFightBattleId);
+    const ownerIndex = battle ? activeGame.monsters.findIndex((monster) => monster.id === battle.monsterId) : -1;
+    if (ownerIndex >= 0 && activeGame.players[ownerIndex]?.mutationCardIds.some((cardId) => cardId === "Berserk" || cardId === "Son of a Monster")) mutationWindowOwners.add(ownerIndex);
+  }
+  if (activeGame.phase === "challenge" && activeGame.challenge?.active && activeGame.challenge.turn
+    && (activeGame.challenge.opponentMonsterId || activeGame.challenge.giantUnitId)
+    && (activeGame.pendingDecision?.type === "challenge-resolution" || activeGame.pendingDecision?.type === "challenge-giant-resolution")) {
+    for (const monsterId of [activeGame.challenge.challengerMonsterId, activeGame.challenge.opponentMonsterId]) {
+      const ownerIndex = activeGame.monsters.findIndex((monster) => monster.id === monsterId);
+      if (ownerIndex >= 0 && activeGame.players[ownerIndex]?.mutationCardIds.some((cardId) => cardId === "Berserk" || cardId === "Son of a Monster")) mutationWindowOwners.add(ownerIndex);
+    }
+  }
+  const localMutationWindow = !online && mutationWindowOwners.size > 0;
+  const canUseMutation = setupComplete && !pendingAction && (localMutationWindow || Boolean(online && participant?.role === "player" && participant.playerIndex !== undefined && mutationWindowOwners.has(participant.playerIndex)));
+  const laserFenceOwnerIndex = activeGame.players.findIndex((player) => player.researchCardIds.includes("Laser Fence"));
+  const canUseLaserFence = setupComplete && !pendingAction && laserFenceOwnerIndex >= 0
+    && (!online || participant?.role === "player" && participant.playerIndex === laserFenceOwnerIndex);
+  const canChooseChopperLift = setupComplete && !pendingAction && Boolean(activeGame.pendingChopperLift)
+    && (!online || room?.status === "active" && participant?.role === "player" && participant.playerIndex === activeGame.pendingChopperLift?.playerIndex);
   const unavailableReason = pendingAction
     ? "Waiting for the server."
     : !setupComplete
@@ -378,7 +422,16 @@ function App() {
           ? `Waiting for Player ${decisionPlayer + 1} to make the current decision.`
           : activeGame.phase === "game-over"
             ? "The match is complete; gameplay actions are disabled."
-            : "";
+        : "";
+  const selectNextMovableUnit = () => {
+    const nextUnit = activeGame.units.find((unit) => selectableUnitIds.has(unit.id));
+    if (!nextUnit) return;
+    setSelectedUnitId(nextUnit.id);
+    setSelectedPath([]);
+    setSelectedUnitPath([]);
+    setHoveredPath([]);
+    if (isHexKey(nextUnit.location)) setFocusedHexKey(nextUnit.location);
+  };
   const actionDock = activeGame.phase === "move"
     ? selectedUnitPath.length > 1
       ? { label: "Confirm unit move", command: { type: "move-unit", unitId: selectedUnitId!, path: selectedUnitPath } as GameCommand }
@@ -386,16 +439,20 @@ function App() {
         ? { label: "Confirm monster move", command: { type: "move", path: selectedPath } as GameCommand }
         : !legalPaths.length && !selectableUnitIds.size
           ? { label: "Continue to Fight", command: { type: "pass-move" } as GameCommand }
-        : selectedUnitId
-          ? { label: "Move this unit", command: undefined }
-          : { label: "Choose a piece to move", command: undefined }
+          : selectedUnitId && selectableUnitIds.has(selectedUnitId)
+            ? { label: "Hold this unit", command: { type: "stay-piece", pieceId: selectedUnitId } as GameCommand }
+            : selectedUnitId
+              ? { label: "Choose another piece", command: undefined }
+              : !activeGame.movedPieceIds.includes(activePlayer.id) && legalPaths.length > 0
+                ? { label: `Hold ${activePlayer.name}`, command: { type: "stay-piece", pieceId: activePlayer.id } as GameCommand }
+                : { label: "Next piece", command: undefined }
     : activeGame.phase === "fight"
       ? pendingBattle && !pendingAttackTarget && !activeGame.pendingDecision?.type?.includes("retreat") && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length === 1
         ? { label: "Resolve fight", command: { type: "resolve-fight", battleId: pendingBattle.id } as GameCommand }
         : { label: pendingAttackTarget ? "Choose attack target" : "Continue to Fight", command: undefined }
       : activeGame.phase === "encounter"
         ? activeGame.pendingDecision && activeGame.pendingDecision.type !== "encounter-resolution"
-          ? { label: activeGame.pendingDecision.type === "mutation-choice" ? "Choose Toxicor Mutation" : "Choose encounter option", command: undefined }
+          ? { label: activeGame.pendingDecision.type === "mutation-choice" ? "Choose Toxicor Mutation" : activeGame.pendingDecision.type === "stabilizer-ray-choice" ? "Choose Mutation to discard" : "Choose encounter option", command: undefined }
           : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
         : activeGame.phase === "deploy"
           ? militaryChoices.length
@@ -1069,18 +1126,18 @@ function App() {
           </div>
           <TurnProgress game={activeGame} />
         </div>
+        <div className="map-control-slot" />
         <div className="header-actions">
           {setupComplete && <MatchStatus game={activeGame} action={action} />}
-          {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={participant?.playerIndex ?? activeGame.currentPlayer} monster={activeGame.monsters[participant?.playerIndex ?? activeGame.currentPlayer]} branch={activeGame.setupAssignments?.[participant?.playerIndex ?? activeGame.currentPlayer]?.branch ?? (["Army", "Navy", "Air Force", "Marines"] as const)[(participant?.playerIndex ?? activeGame.currentPlayer) % 4]} canAct={canAct} runCommand={runCommand} onDeploy={openMilitarySheet} onSelectDeployment={(choice) => { setDeploymentPieceId(choice.id); setFocusedHexKey(choice.destinations[0]); }} />}
-          <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>
-            How to play
-          </button>
-          <button className="ghost settings-action" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>
-            Settings
-          </button>
-          <button className="ghost new-game-action" onClick={resetLocal}>
-            New local game
-          </button>
+          {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={participant?.playerIndex ?? activeGame.currentPlayer} monster={activeGame.monsters[participant?.playerIndex ?? activeGame.currentPlayer]} branch={activeGame.setupAssignments?.[participant?.playerIndex ?? activeGame.currentPlayer]?.branch ?? (["Army", "Navy", "Air Force", "Marines"] as const)[(participant?.playerIndex ?? activeGame.currentPlayer) % 4]} canAct={canAct} mobileCommandExpanded={mobileCommandExpanded} runCommand={runCommand} onDeploy={openMilitarySheet} onSelectDeployment={(choice) => { setDeploymentPieceId(choice.id); setFocusedHexKey(choice.destinations[0]); }} />}
+          <details className="hud-menu">
+            <summary aria-label="Open game menu">☰ <span>Menu</span></summary>
+            <div className="hud-menu-items">
+              <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>How to play</button>
+              <button className="ghost settings-action" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>Settings</button>
+              <button className="ghost new-game-action" onClick={resetLocal}>New local game</button>
+            </div>
+          </details>
           {online && <span className="room-hud-status" role="status">{room?.code} · {connectionState}</span>}
           {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
           {online && <button className="ghost leave-room-action" onClick={leaveRoomSafely}>Leave room</button>}
@@ -1172,6 +1229,11 @@ function App() {
             </span>
           </div>
           <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={setupComplete ? (selectedUnitId ? activeGame.units.find((unit) => unit.id === selectedUnitId)?.location : activePlayer.location) : null} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
+            {activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "trophy-choice" && <div className="deployment-prompt trophy-prompt" role="status">
+              {activeGame.pendingDecision.unitIds.some((id) => activeGame.units.some((unit) => unit.id === id && unit.location === "record-tile"))
+                ? <>Player {activeGame.pendingDecision.playerIndex + 1} · {activeGame.pendingDecision.branch} military record<br />Choose a card still in reserve.</>
+                : <>Player {activeGame.pendingDecision.playerIndex + 1} · {activeGame.pendingDecision.branch} units<br />No cards remain in reserve · choose a highlighted unit on the board.</>}
+            </div>}
             <HexGrid
               game={setupPreview ?? activeGame}
               setupLocations={choosingSubmarineTarget && canAct ? submarineTargetLocations : setupLocations}
@@ -1203,6 +1265,7 @@ function App() {
               onSelectMonster={() => { setSelectedUnitId(null); setSelectedUnitPath([]); setHoveredPath([]); }}
               legalUnitDestinations={choosingSubmarineTarget ? new Set() : legalUnitDestinations}
               selectableUnitIds={selectableUnitIds}
+              trophyUnitIds={activeGame.pendingDecision?.type === "trophy-choice" ? new Set(activeGame.pendingDecision.unitIds.filter((id) => activeGame.units.some((unit) => unit.id === id && unit.location !== "record-tile"))) : new Set()}
               selectedUnitId={selectedUnitId}
               selectedPath={selectedPath}
               hoveredPath={hoveredPath}
@@ -1267,20 +1330,46 @@ function App() {
           </div>
         </div>
         {setupComplete && <>
-          <div className={`command-station ${activeGame.phase === "deploy" ? "deploy-command-station" : ""}`}>
+          <div className={`command-station ${activeGame.phase === "deploy" ? "deploy-command-station" : ""} ${mobileCommandExpanded ? "mobile-command-expanded" : ""}`}>
+          <div id="mobile-record-slot" className="mobile-record-slot" />
+          <button type="button" className="mobile-command-toggle" aria-expanded={mobileCommandExpanded} aria-controls="mobile-record-slot mobile-command-details" onClick={() => setMobileCommandExpanded((expanded) => !expanded)}>
+            <span className="record-medallion command-medallion" style={{ background: `linear-gradient(#182725,#182725) padding-box, conic-gradient(#e6cc83 ${Math.round(activePlayer.health / activePlayer.maxHealth * 100)}%,#45544b 0) border-box` }}>
+              <img src={`/assets/monsters/portraits/${monsterAssetSlug(activePlayer.name)}.webp`} alt="" />
+              <b>{activePlayer.health}</b>
+            </span>
+            <span><strong>{commandPieceName}</strong><small>★ {activePlayer.infamy} · {remainingMovementOrders} {remainingMovementOrders === 1 ? "order" : "orders"}</small></span>
+            <b aria-hidden="true">{mobileCommandExpanded ? "⌄" : "⌃"}</b>
+          </button>
+          {activeGame.phase === "move" && <MovementChecklist game={activeGame} canAct={canAct}
+            selectedUnitId={selectedUnitId} movableUnitIds={selectableUnitIds} monsterCanMove={legalPaths.length > 0}
+            onSelect={(unitId) => {
+              setGamePanelOpen(false); setSelectedUnitId(unitId); setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]);
+              const location = unitId ? activeGame.units.find((unit) => unit.id === unitId)?.location : activePlayer.location;
+              if (location && isHexKey(location)) setFocusedHexKey(location);
+            }}
+            onEnd={() => void runCommand({ type: "pass-move" })}
+          />}
+          {activeGame.phase === "move" && <LaserFenceControls game={activeGame} cardOwnerIndex={laserFenceOwnerIndex} canUse={canUseLaserFence} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} />}
+          {activeGame.pendingChopperLift && <ChopperLiftChoiceControls game={activeGame} canChoose={canChooseChopperLift} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} />}
           <div className="board-action-bar">
             {activeGame.phase === "move" ? <ActionDock
-              label={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Confirm move" : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? "Hold position" : "End movement"}
-              contextLabel={`Move · ${selectableUnitIds.size + (legalPaths.length > 0 ? 1 : 0)} remaining`}
-              guidance={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Route ready" : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? "Choose a destination or hold." : "Ready for the next phase."}
-              command={actionDock.command ?? ((selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
+              label={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Confirm move" : actionDock.label}
+              contextLabel={`Move · ${remainingMovementOrders} ${remainingMovementOrders === 1 ? "order" : "orders"} remaining`}
+              guidance={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Route ready to confirm." : actionDock.label === "Next piece" ? "Select a military piece or continue." : actionDock.command?.type === "pass-move" ? "All movement orders are resolved." : "Choose a destination or hold."}
+              command={actionDock.command ?? (actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? undefined : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
+              onPrimary={actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? selectNextMovableUnit : undefined}
               canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
             /> : <ActionDock contextLabel={activeGame.phase} guidance={activeGame.phase === "deploy" ? "Choose a military action." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
-              onPrimary={!actionDock.command ? () => { if (activeGame.phase === "deploy") { openMilitarySheet(); return; } if (activeGame.phase === "fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
-              secondaryAction={activeGame.phase === "deploy" && militaryChoices.length > 0 && !activeGame.decks.research.exhausted ? { label: "Draw Military Research instead", command: { type: "draw-research" } } : undefined}
+              onPrimary={!actionDock.command ? () => { if (activeGame.phase === "deploy") { openMilitarySheet(); return; } if (activeGame.phase === "fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } if (activeGame.phase === "move" && selectableUnitIds.size) { selectNextMovableUnit(); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
               label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
           </div>
-          <div className="bottom-context-dock">
+          <div id="mobile-command-details" className="bottom-context-dock">
+          {activeGame.pendingDecision?.type === "trophy-choice" && <MilitaryReference
+            sheet={activeGame.pendingDecision.branch}
+            game={{ ...activeGame, currentPlayer: activeGame.pendingDecision.playerIndex }}
+            trophyUnitIds={activeGame.pendingDecision.unitIds.filter((id) => activeGame.units.some((unit) => unit.id === id && unit.location === "record-tile"))}
+            onTrophy={(unitId) => void runCommand({ type: "resolve-encounter", trophyUnitId: unitId })}
+          />}
           {activeGame.phase === "deploy" ? null : activeGame.phase === "move" ? <details className="piece-context-tab" key={selectedUnitId ?? activePlayer.id}>
             <summary><span>{selectedUnitId ? (activeGame.units.find(unit => unit.id === selectedUnitId)?.unitTypeId ?? "Unit").replaceAll("-", " ") : activePlayer.name}</span><small>Details & options <span aria-hidden="true">⌃</span></small></summary>
             <div className="context-tab-body">
@@ -1311,6 +1400,8 @@ function App() {
                 activeGame={activeGame}
                 onOpenMilitarySheet={openMilitarySheet}
                 canAct={canAct}
+                canUseMutation={canUseMutation}
+                canUseLaserFence={canUseLaserFence}
                 runCommand={runBoardAction}
                 getLocationName={(key) => getLocation(key)?.name ?? key}
                 pendingAttackTarget={pendingAttackTarget}
@@ -1354,6 +1445,7 @@ function App() {
               lastRecoveryEventId={lastRecoveryEvent?.id}
               lastRecoveryRoll={typeof lastRecoveryEvent?.detail.recoveryRoll === "number" ? lastRecoveryEvent.detail.recoveryRoll : undefined}
               lastRecoveryReleased={lastRecoveryEvent?.detail.recoveryReleased === true}
+              lastAtomicRecovery={lastRecoveryEvent?.detail.atomicRecovery === true}
             />
             <ActionResolutionFeedback label={acceptedActionFeedback?.label} animationKey={acceptedActionFeedback?.key} />
             <BlondeLureActions
@@ -1362,15 +1454,6 @@ function App() {
               runCommand={runCommand}
               getLocationName={(key) => getLocation(key)?.name ?? key}
             />
-            {activeGame.phase === "move" && <MovementChecklist game={activeGame} canAct={canAct}
-              selectedUnitId={selectedUnitId} movableUnitIds={selectableUnitIds} monsterCanMove={legalPaths.length > 0}
-              onSelect={(unitId) => {
-                setGamePanelOpen(false); setSelectedUnitId(unitId); setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]);
-                const location = unitId ? activeGame.units.find((unit) => unit.id === unitId)?.location : activePlayer.location;
-                if (location && isHexKey(location)) setFocusedHexKey(location);
-              }}
-              onEnd={() => void runCommand({ type: "pass-move" })}
-            />}
             <details className="hud-section"><summary>Match options</summary>
             {setupComplete && activeGame.phase !== "game-over" && (
               <button
@@ -1402,6 +1485,7 @@ function App() {
             game={activeGame}
             playerIndex={participant?.playerIndex ?? activeGame.currentPlayer}
             canAct={canAct}
+            canUseMutation={canUseMutation}
             runCommand={runCommand}
           />
           </details>
@@ -1443,9 +1527,9 @@ function App() {
         setFocusedHexKey(choice.destinations[0]);
         requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${choice.destinations[0]}"]`)?.focus({ preventScroll: true }));
       }} />}
-      {challengeDuelOpen && activeGame.challenge?.active && <ChallengeArena game={activeGame} canAct={canAct} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
+      {challengeDuelOpen && activeGame.challenge?.active && <ChallengeArena game={activeGame} canAct={canAct} canUseMutation={canUseMutation} playerIndex={online ? participant?.playerIndex : undefined} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
       <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={(unitId, battleId, spendInfamy) => { void runCommand({ type: "resolve-fight", battleId, targetUnitId: unitId, spendInfamy }); }} controls={<>
-        <PhaseActions hideAttackTargets activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
+        <PhaseActions hideAttackTargets activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} canUseMutation={canUseMutation} canUseLaserFence={canUseLaserFence} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
         {error && <p role="alert">{error}</p>}
       </>} />
       {researchReveal && <ResolutionStage title="Research" eyebrow="MILITARY / RESEARCH DIVISION" variant="research" onClose={() => setResearchReveal(null)}><CardReveal key={researchReveal} cardId={researchReveal} kind="research" /></ResolutionStage>}
@@ -1460,6 +1544,7 @@ function App() {
         effects={encounterEffects}
         rolls={encounterRolls}
         choices={encounterChoices}
+        choiceSource={encounterChoiceSource}
         mutationDraws={encounterMutationDraws}
         mutationCardId={encounterMutationDraws.some((draw) => draw.cardDrawn) ? encounterRevealCard : undefined}
         onReveal={() => void runCommand({ type: "resolve-encounter" })}

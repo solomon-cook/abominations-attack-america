@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CARD_STACKING_RULES, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { setupDeploymentState, canDeployNationalGuard, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, legalSubmarineTargets, locations, migrateGameState, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type GameState } from "./index.js";
+import { setupDeploymentState, canDeployNationalGuard, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalUnitPaths, legalSubmarineTargets, locations, migrateGameState, monsterCombatStats, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, legalMolecularCannonTargets, legalLaserFenceTargets, legalChopperLiftDestinations, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type BattleAttack, type GameState, type HexKey } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
+import { AUDITED_BOARD } from "./audited-board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
 import { BRANCH_DEPLOYMENT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS } from "./units.js";
 
@@ -489,7 +490,7 @@ test("one-shot Research cards cannot be reused after authoritative discard", () 
   assert.throws(() => applyCommand(used.state, { type: "use-research", cardId: "Antimatter", battleId }), /does not have Antimatter/);
 });
 
-test("Stabilizer Ray discards its selected Mutation only after military damage", () => {
+test("Stabilizer Ray asks the cardholder to choose after military damage and resumes the battle", () => {
   const state = createGame(2, 0);
   state.players[0].researchCardIds = ["Stabilizer Ray"];
   state.players[0].mutationCardIds = ["Rampage"];
@@ -499,18 +500,55 @@ test("Stabilizer Ray discards its selected Mutation only after military damage",
   const battleId = "stabilizer-ray";
   state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
   state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
-  const armed = applyCommand(state, { type: "use-research", cardId: "Stabilizer Ray", battleId, mutationCardId: "Rampage" });
+  const armed = applyCommand(state, { type: "use-research", cardId: "Stabilizer Ray", battleId });
   assert.deepEqual(armed.state.players[0].researchCardIds, []);
   assert.deepEqual(armed.state.players[0].mutationCardIds, ["Rampage"]);
+  assert.equal(armed.state.pendingBattles[0]!.stabilizerRayPlayerIndex, 0);
   let triggered: GameState | undefined;
   for (let seed = 0; seed < 128 && !triggered; seed += 1) {
     const candidate = structuredClone(armed.state);
     candidate.rng.seed = seed;
     const result = applyCommand(candidate, { type: "resolve-fight", battleId });
-    if ((result.eventPayload.attacks as Array<{ stabilizerMutationCardId?: string }>).some((attack) => attack.stabilizerMutationCardId === "Rampage")) triggered = result.state;
+    if (result.state.pendingDecision?.type === "stabilizer-ray-choice") triggered = result.state;
   }
   assert.ok(triggered);
-  assert.deepEqual(triggered!.players[0].mutationCardIds, []);
+  assert.deepEqual(triggered!.pendingStabilizerRayChoice?.cardIds, ["Rampage"]);
+  assert.equal(triggered!.pendingDecision?.type, "stabilizer-ray-choice");
+  assert.deepEqual(triggered!.players[0].mutationCardIds, ["Rampage"]);
+  assert.equal(triggered!.decks.mutation.discard.includes("Rampage"), false);
+  const resolved = applyCommand(triggered!, { type: "choose-stabilizer-ray-mutation", cardId: "Rampage" });
+  assert.equal(resolved.state.pendingStabilizerRayChoice, undefined);
+  assert.equal(resolved.state.pendingDecision?.type === "stabilizer-ray-choice", false);
+  assert.deepEqual(resolved.state.players[0].mutationCardIds, []);
+  assert.ok(resolved.state.decks.mutation.discard.includes("Rampage"));
+  assert.match(resolved.state.log.at(-1) ?? "", /Stabilizer Ray discarded Rampage/);
+});
+
+test("Stabilizer Ray does not prompt or discard a Mutation when military damage misses", () => {
+  const state = createGame(2, 0);
+  state.players[0]!.researchCardIds = ["Stabilizer Ray"];
+  state.players[0]!.mutationCardIds = ["Rampage"];
+  state.phase = "fight";
+  const unit = state.units[0]!;
+  unit.location = state.monsters[0]!.location;
+  state.monsters[0]!.defense = 99;
+  const battleId = "stabilizer-ray-miss";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0]!.location as any, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  const armed = applyCommand(state, { type: "use-research", cardId: "Stabilizer Ray", battleId });
+  let result: GameState | undefined;
+  for (let seed = 0; seed < 128 && !result; seed += 1) {
+    const candidate = structuredClone(armed.state);
+    candidate.rng.seed = seed;
+    const resolved = applyCommand(candidate, { type: "resolve-fight", battleId });
+    const attacks = resolved.eventPayload.attacks as Array<{ attackerId: string; damage: number }>;
+    if (attacks.some((attack) => attack.attackerId === unit.id && attack.damage === 0)) result = resolved.state;
+  }
+  assert.ok(result);
+  assert.equal(result!.pendingStabilizerRayChoice, undefined);
+  assert.notEqual(result!.pendingDecision?.type, "stabilizer-ray-choice");
+  assert.deepEqual(result!.players[0]!.mutationCardIds, ["Rampage"]);
+  assert.equal(result!.decks.mutation.discard.includes("Rampage"), false);
 });
 
 test("a monster may spend Infamy for one recorded extra attack before combat rolls", () => {
@@ -621,10 +659,11 @@ test("Laser Fence either spends 2 Infamy or retreats and suppresses the new Enco
   paid.players[0].researchCardIds = ["Laser Fence"];
   paid.monsters[0].infamy = 2;
   paid.phase = "fight";
+  paid.laserFenceWindowMonsterIds = ["monster-1"];
   paid.units[0].location = paid.monsters[0].location;
   paid.pendingBattles = [{ id: "laser-fence-paid", monsterId: "monster-1", location: paid.monsters[0].location as any, militaryUnitIds: [paid.units[0].id] }];
   paid.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "laser-fence-paid" };
-  const paidResult = applyCommand(paid, { type: "use-research", cardId: "Laser Fence", battleId: "laser-fence-paid", choice: "infamy" });
+  const paidResult = applyCommand(paid, { type: "use-research", cardId: "Laser Fence", battleId: "laser-fence-paid", targetMonsterId: "monster-1", choice: "infamy" });
   assert.equal(paidResult.state.monsters[0].infamy, 0);
   assert.equal(paidResult.state.pendingBattles.length, 1);
   assert.deepEqual(paidResult.state.players[0].researchCardIds, []);
@@ -632,16 +671,54 @@ test("Laser Fence either spends 2 Infamy or retreats and suppresses the new Enco
   const retreated = createGame(2, 0);
   retreated.players[0].researchCardIds = ["Laser Fence"];
   retreated.phase = "fight";
+  retreated.laserFenceWindowMonsterIds = ["monster-1"];
   retreated.units[0].location = retreated.monsters[0].location;
   const destination = DEVELOPMENT_BOARD.edges.find((edge) => edge.from === retreated.monsters[0].location)?.to;
   assert.ok(destination);
   retreated.pendingBattles = [{ id: "laser-fence-retreat", monsterId: "monster-1", location: retreated.monsters[0].location as any, militaryUnitIds: [retreated.units[0].id] }];
   retreated.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "laser-fence-retreat" };
-  const retreatResult = applyCommand(retreated, { type: "use-research", cardId: "Laser Fence", battleId: "laser-fence-retreat", choice: "retreat", destination });
+  const retreatResult = applyCommand(retreated, { type: "use-research", cardId: "Laser Fence", battleId: "laser-fence-retreat", targetMonsterId: "monster-1", choice: "retreat", destination });
   assert.equal(retreatResult.state.monsters[0].location, destination);
   assert.equal(retreatResult.state.pendingBattles.length, 0);
   assert.equal(retreatResult.state.encounterSuppressed, true);
   assert.equal(retreatResult.state.phase, "deploy");
+});
+
+test("Laser Fence opens after any monster move and can be played by its off-turn holder", () => {
+  const state = createGame(2, 0);
+  state.currentPlayer = 0;
+  state.players[1]!.researchCardIds = ["Laser Fence"];
+  state.monsters[0]!.infamy = 3;
+  const start = state.monsters[0]!.location;
+  const destination = legalMonsterDestinations(state, state.monsters[0]!.id)[0]!;
+  const moved = applyCommand(state, { type: "move", path: [start, destination], continueMovement: true }).state;
+  assert.deepEqual(moved.laserFenceWindowMonsterIds, ["monster-1"]);
+  const used = applyCommand(moved, { type: "use-research", cardId: "Laser Fence", targetMonsterId: "monster-1", choice: "infamy" }).state;
+  assert.equal(used.monsters[0]!.infamy, 1);
+  assert.deepEqual(used.players[1]!.researchCardIds, []);
+  assert.deepEqual(used.decks.research.discard, ["Laser Fence"]);
+  assert.equal(used.phase, "move");
+  assert.throws(() => applyCommand(moved, { type: "use-research", cardId: "Laser Fence", targetMonsterId: "monster-2", choice: "infamy" }), /just ended/);
+});
+
+test("Laser Fence retreat during Move removes the battle and suppresses Encounter without ending movement", () => {
+  const state = createGame(2, 0);
+  state.players[1]!.researchCardIds = ["Laser Fence"];
+  state.monsters[0]!.infamy = 0;
+  const monster = state.monsters[0]!;
+  const start = monster.location;
+  const destination = legalMonsterDestinations(state, monster.id)[0]!;
+  const military = state.units.find((unit) => unit.ownerPlayer === 0)!;
+  military.location = destination;
+  const moved = applyCommand(state, { type: "move", path: [start, destination], continueMovement: true }).state;
+  const target = legalLaserFenceTargets(moved).find((candidate) => candidate.targetMonsterId === monster.id)!;
+  assert.ok(target.retreatDestinations.length > 0);
+  const result = applyCommand(moved, { type: "use-research", cardId: "Laser Fence", targetMonsterId: monster.id, choice: "retreat", destination: target.retreatDestinations[0] }).state;
+  assert.equal(result.phase, "move");
+  assert.equal(result.encounterSuppressed, true);
+  assert.equal(result.pendingBattles.some((battle) => battle.monsterId === monster.id), false);
+  assert.equal(result.monsters[0]!.location, target.retreatDestinations[0]);
+  assert.deepEqual(result.laserFenceWindowMonsterIds, []);
 });
 
 test("card lifecycle primitives draw deterministically and exhaust without reshuffling", () => {
@@ -864,6 +941,9 @@ test("player and spectator projections redact deck order while internal state re
   const own = projectState(state, "player", 0);
   assert.deepEqual(own.players[0].researchCardIds, ["Guard Commander"]);
   assert.deepEqual(own.players[1].mutationCardIds, []);
+  assert.deepEqual(own.players[1].visibleMutationCardIds, ["Rampage"]);
+  assert.deepEqual(own.players[1].researchCardIds, []);
+  assert.deepEqual(own.players[1].visibleResearchCardIds, []);
   assert.equal(JSON.stringify(own.eventLog).includes("Guard Commander"), false);
   assert.equal(JSON.stringify(own.eventLog).includes("Rampage"), false);
   assert.deepEqual(projectState(state, "spectator").players.map((player) => player.researchCardIds), [[], []]);
@@ -2163,7 +2243,32 @@ test("Atomic Recovery restores a monster to starting Health at the start of its 
   const result = applyCommand(state, { type: "pass-deploy" });
   assert.equal(result.state.currentPlayer, 0);
   assert.equal(result.state.monsters[0].health, result.state.monsters[0].startingHealth);
+  assert.equal(result.eventPayload.atomicRecovery, true);
+  assert.deepEqual(result.state.players[0].mutationCardIds, ["Atomic Recovery"]);
   assert.equal(result.state.log.some((entry) => /Atomic Recovery/.test(entry)), true);
+});
+
+test("Atomic Recovery waits for its owner's turn and leaves higher Health unchanged", () => {
+  const injured = createGame(2);
+  injured.currentPlayer = 0;
+  injured.phase = "move";
+  injured.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: injured.monsters[0].id };
+  injured.players[0].mutationCardIds = ["Atomic Recovery"];
+  injured.monsters[0].health = 2;
+  const stayed = applyCommand(injured, { type: "pass-move" });
+  assert.equal(stayed.state.monsters[0].health, 2);
+  assert.equal(stayed.eventPayload.atomicRecovery, undefined);
+
+  const aboveStarting = createGame(2);
+  aboveStarting.currentPlayer = 1;
+  aboveStarting.phase = "deploy";
+  aboveStarting.pendingDecision = { type: "deployment", playerIndex: 1 };
+  aboveStarting.players[0].mutationCardIds = ["Atomic Recovery"];
+  aboveStarting.monsters[0].health = aboveStarting.monsters[0].startingHealth + 2;
+  const nextTurn = applyCommand(aboveStarting, { type: "pass-deploy" });
+  assert.equal(nextTurn.state.monsters[0].health, aboveStarting.monsters[0].startingHealth + 2);
+  assert.equal(nextTurn.eventPayload.atomicRecovery, undefined);
+  assert.deepEqual(nextTurn.state.players[0].mutationCardIds, ["Atomic Recovery"]);
 });
 
 test("persistent Mutation movement and combat modifiers alter authoritative outcomes", () => {
@@ -2205,28 +2310,77 @@ test("persistent Mutation movement and combat modifiers alter authoritative outc
   warSpikes.phase = "fight";
   warSpikes.pendingBattles = [{ id: "war-spikes", monsterId: "monster-1", location: warSpikes.monsters[0].location as any, militaryUnitIds: [warSpikes.units[0].id] }];
   warSpikes.units[0].location = warSpikes.monsters[0].location;
+  warSpikes.units[0].defense = 1;
   warSpikes.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "war-spikes" };
-  let attackDamage: number | undefined;
-  for (let seed = 0; seed < 128 && attackDamage === undefined; seed += 1) {
+  let ordinaryHit: { damage: number; smash: boolean } | undefined;
+  let smashHit: { damage: number; smash: boolean } | undefined;
+  for (let seed = 0; seed < 128 && (!ordinaryHit || !smashHit); seed += 1) {
     const candidate = structuredClone(warSpikes);
     candidate.rng.seed = seed;
     const result = applyCommand(candidate, { type: "resolve-fight" });
-    attackDamage = (result.eventPayload.attacks as Array<{ attackerId: string; damage: number }>).find((attack) => attack.attackerId === "monster-1")?.damage;
+    const attack = (result.eventPayload.attacks as Array<{ attackerId: string; damage: number; hit: boolean; smash: boolean }>).find((entry) => entry.attackerId === "monster-1" && entry.hit);
+    if (attack?.smash) smashHit = attack;
+    else if (attack) ordinaryHit = attack;
   }
-  assert.equal(attackDamage, 4);
+  assert.equal(ordinaryHit?.damage, 4);
+  assert.equal(ordinaryHit?.smash, false);
+  assert.equal(smashHit?.damage, 5);
+  assert.equal(smashHit?.smash, true);
 });
 
-test("Atomic Breath adds one first-round monster attack", () => {
+test("Fins and Gills crosses a sea barrier and adds Defense only in a water-barrier space", () => {
+  const state = createGame(2);
+  state.boardId = AUDITED_BOARD.id;
+  state.boardVersion = AUDITED_BOARD.version;
+  state.boardContentHash = AUDITED_BOARD.contentHash;
+  const board = boardForState(state);
+  const barrierEdge = board.edges.find((edge) => edge.enabled && edge.barrier === "sea"
+    && board.hexes[edge.from]?.waterClass === "seacoast" && board.hexes[edge.to]?.waterClass === "land");
+  assert.ok(barrierEdge);
+  const monster = state.monsters[0]!;
+  monster.move = 1;
+  monster.location = barrierEdge.to;
+  state.monsters[1]!.location = "record-tile";
+  state.units.forEach((unit) => { unit.location = "record-tile"; });
+  state.players[0]!.mutationCardIds = ["Fins and Gills"];
+  assert.equal(monsterCombatStats(state, monster).defense, monster.defense + 1);
+
+  monster.location = barrierEdge.from;
+  state.players[0]!.mutationCardIds = [];
+  assert.equal(legalMonsterPaths(state, monster.id).some((path) => path.join(">") === `${barrierEdge.from}>${barrierEdge.to}`), false);
+  state.players[0]!.mutationCardIds = ["Fins and Gills"];
+  assert.equal(legalMonsterPaths(state, monster.id).some((path) => path.join(">") === `${barrierEdge.from}>${barrierEdge.to}`), true);
+
+  const ordinarySpace = Object.values(board.hexes).find((hex) => hex.waterClass !== "unresolved"
+    && !board.edges.some((edge) => edge.enabled && edge.to === hex.key && (edge.barrier === "sea" || edge.barrier === "lake")));
+  assert.ok(ordinarySpace);
+  monster.location = ordinarySpace.key;
+  assert.equal(monsterCombatStats(state, monster).defense, monster.defense);
+
+  monster.location = barrierEdge.to;
+  state.players[0]!.mutationCardIds = [];
+  assert.equal(monsterCombatStats(state, monster).defense, monster.defense);
+});
+
+test("Atomic Breath adds exactly one first-round attack in military battles, but none in round two", () => {
   const state = createGame(2, 0);
   state.players[0].mutationCardIds = ["Atomic Breath"];
-  state.monsters[0].attacks = 0;
+  state.monsters[0].attacks = 1;
+  state.monsters[0].defense = 99;
+  state.monsters[0].health = 40;
   state.units[0].location = state.monsters[0].location;
   state.units[0].defense = 99;
   state.phase = "fight";
   state.pendingBattles = [{ id: "atomic-breath", monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [state.units[0].id] }];
   state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "atomic-breath" };
-  const result = applyCommand(state, { type: "resolve-fight" });
-  assert.equal((result.eventPayload.attacks as Array<{ attackerId: string }>).filter((attack) => attack.attackerId === "monster-1").length, 1);
+  let result = applyCommand(state, { type: "resolve-fight" });
+  while (result.state.pendingDecision?.type === "attack-target") {
+    result = applyCommand(result.state, { type: "resolve-fight", battleId: "atomic-breath", targetUnitId: state.units[0].id });
+  }
+  const monsterAttacks = (result.eventPayload.attacks as Array<{ attackerId: string; combatRound: number }>).filter((attack) => attack.attackerId === "monster-1");
+  assert.equal(monsterAttacks.filter((attack) => attack.combatRound === 1).length, 2);
+  assert.equal(monsterAttacks.filter((attack) => attack.combatRound === 2).length, 1);
+  assert.deepEqual(result.state.players[0].mutationCardIds, ["Atomic Breath"]);
 });
 
 test("Winged Horror grants fly movement and one extra Move", () => {
@@ -2247,6 +2401,7 @@ test("Berserk and Son of a Monster resolve their sourced optional battle windows
   berserk.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "berserk" };
   const berserkResult = applyCommand(berserk, { type: "use-mutation", cardId: "Berserk", battleId: "berserk" });
   assert.deepEqual(berserkResult.state.players[0].mutationCardIds, []);
+  assert.ok(berserkResult.state.decks.mutation.discard.includes("Berserk"));
   assert.equal(berserkResult.state.pendingBattles[0].bonusMonsterAttacks, 5);
   assert.equal(berserkResult.eventType, "mutation.used");
   assert.equal(berserkResult.eventPayload.extraAttacks, 5);
@@ -2260,9 +2415,29 @@ test("Berserk and Son of a Monster resolve their sourced optional battle windows
   son.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "son" };
   const sonResult = applyCommand(son, { type: "use-mutation", cardId: "Son of a Monster", battleId: "son" });
   assert.deepEqual(sonResult.state.players[0].mutationCardIds, []);
+  assert.ok(sonResult.state.decks.mutation.discard.includes("Son of a Monster"));
   assert.equal(sonResult.state.pendingBattles[0].bonusMonsterAttacks, 2);
   assert.equal(sonResult.state.monsters[0].health, 1 + (sonResult.eventPayload.healthRoll as number));
   assert.equal((sonResult.eventPayload.healthRoll as number) >= 1, true);
+});
+
+test("a defending monster may use Berserk during another player's Fight", () => {
+  const state = createGame(2, 0);
+  state.currentPlayer = 0;
+  state.players[1]!.mutationCardIds = ["Berserk"];
+  const monster = state.monsters[1]!;
+  const unit = state.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = monster.location;
+  state.phase = "fight";
+  const battleId = "defending-berserk";
+  state.pendingBattles = [{ id: battleId, monsterId: monster.id, location: monster.location as any, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  const result = applyCommand(state, { type: "use-mutation", cardId: "Berserk", battleId });
+  assert.equal(result.state.players[1]!.mutationCardIds.length, 0);
+  assert.ok(result.state.decks.mutation.discard.includes("Berserk"));
+  assert.equal(result.state.pendingBattles[0]!.bonusMonsterAttacks, 5);
+  assert.equal(result.eventPayload.playerIndex, 1);
+  assert.equal(result.state.currentPlayer, 0);
 });
 
 test("Laser Beam Eyes applies its sourced cruise-missile attack bonus", () => {
@@ -2298,14 +2473,45 @@ test("Radiation Field destroys a military attacker on a roll of one", () => {
   state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
   state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
   let radiationAttack: { attackerDestroyed?: boolean; roll: number } | undefined;
+  let radiationResult: ReturnType<typeof applyCommand> | undefined;
   for (let seed = 0; seed < 128 && !radiationAttack; seed += 1) {
     const candidate = structuredClone(state);
     candidate.rng.seed = seed;
     const result = applyCommand(candidate, { type: "resolve-fight" });
     const attack = (result.eventPayload.attacks as Array<{ attackerId: string; attackerDestroyed?: boolean; roll: number }>).find((entry) => entry.attackerId === unit.id);
-    if (attack?.roll === 1) radiationAttack = attack;
+    if (attack?.roll === 1) { radiationAttack = attack; radiationResult = result; }
   }
   assert.equal(radiationAttack?.attackerDestroyed, true);
+  assert.equal(radiationResult?.state.units.find((candidate) => candidate.id === unit.id)?.location, "record-tile");
+});
+
+test("Radiation Field destroys a cruise missile but preserves its roll-one Mutation draw", () => {
+  const state = createGame(2);
+  state.players[0].mutationCardIds = ["Radiation Field"];
+  state.decks.mutation.order = ["War Spikes", ...state.decks.mutation.order.filter((cardId) => cardId !== "War Spikes")];
+  state.phase = "fight";
+  state.monsters[0].attacks = 0;
+  const missile = state.units.find((unit) => unit.unitTypeId === "air-force-cruise-missile")!;
+  missile.location = state.monsters[0].location;
+  missile.defense = 99;
+  const battleId = "radiation-field-missile-draw";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [missile.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+
+  let resolved: ReturnType<typeof applyCommand> | undefined;
+  for (let seed = 0; seed < 128 && !resolved; seed += 1) {
+    const candidate = structuredClone(state);
+    candidate.rng.seed = seed;
+    const result = applyCommand(candidate, { type: "resolve-fight" });
+    const attack = (result.eventPayload.attacks as Array<{ attackerId: string; roll: number; attackerDestroyed?: boolean; mutationCardId?: string }>).find((entry) => entry.attackerId === missile.id && entry.roll === 1);
+    if (attack) resolved = result;
+  }
+  const attack = (resolved?.eventPayload.attacks as Array<{ attackerId: string; roll: number; attackerDestroyed?: boolean; mutationCardId?: string }> | undefined)?.find((entry) => entry.attackerId === missile.id && entry.roll === 1);
+  assert.ok(attack, "a deterministic seed should produce a cruise-missile roll of one");
+  assert.equal(attack?.attackerDestroyed, true);
+  assert.equal(attack?.mutationCardId, "War Spikes");
+  assert.deepEqual(resolved?.state.players[0].mutationCardIds, ["Radiation Field", "War Spikes"]);
+  assert.equal(resolved?.state.units.find((candidate) => candidate.id === missile.id)?.location, "record-tile");
 });
 
 test("Whip Tentacles adds an attack after each monster roll of six", () => {
@@ -2398,20 +2604,31 @@ test("Megaclaw receives its source-backed three-Infamy site benefit", () => {
   ]);
 });
 
-test("Zorb city encounter exposes and applies its source-backed benefit choice", () => {
+test("Zorb rolls the city Health benefit before choosing Health or Infamy", () => {
   const state = createGame(2);
   state.phase = "encounter";
   state.monsters[0].location = K("los-angeles");
-  state.monsters[0].health = 11;
+  state.monsters[0].health = 1;
+  state.monsters[0].infamy = 0;
   const pending = applyCommand(state, { type: "resolve-encounter" });
   assert.equal(pending.state.phase, "encounter");
   assert.equal(pending.state.pendingDecision?.type, "encounter-choice");
   assert.deepEqual(pending.state.pendingEncounterChoice?.choices, ["health", "infamy"]);
+  assert.equal(pending.state.pendingEncounterChoice?.healthRoll, pending.eventPayload.rolls.reduce((sum, value) => sum + Number(value), 0));
+  assert.equal(pending.state.monsters[0].health, 1, "the rolled Health is not applied before the choice");
+  assert.equal(pending.state.monsters[0].infamy, 0);
   assert.throws(() => applyCommand(pending.state, { type: "advance" }), /city benefit choice is required/);
-  const resolved = applyCommand(pending.state, { type: "resolve-encounter", choice: "infamy" });
-  assert.equal(resolved.state.monsters[0].infamy, 2);
-  assert.equal(resolved.state.monsters[0].health, 11);
+  const resolved = applyCommand(pending.state, { type: "resolve-encounter", choice: "health" });
+  assert.equal(resolved.state.monsters[0].infamy, 0);
+  assert.equal(resolved.state.monsters[0].health, 1 + Number(pending.state.pendingEncounterChoice?.healthRoll));
   assert.equal(resolved.state.pendingDecision?.type, "deployment");
+
+  const infamyState = structuredClone(state);
+  infamyState.monsters[0].location = K("san-francisco");
+  const infamyPending = applyCommand(infamyState, { type: "resolve-encounter" });
+  const infamyResolved = applyCommand(infamyPending.state, { type: "resolve-encounter", choice: "infamy" });
+  assert.equal(infamyResolved.state.monsters[0].infamy, 2);
+  assert.equal(infamyResolved.state.monsters[0].health, 1);
 });
 
 test("Encounter is gated by movement and pending battles, and development features are covered", () => {
@@ -2488,11 +2705,22 @@ test("Iron Stomach lets a monster choose Health instead of military-base Infamy"
   state.monsters[0].health = 5;
   const pending = applyCommand(state, { type: "resolve-encounter" });
   assert.equal(pending.eventType, "encounter.choice-required");
+  assert.equal(pending.eventPayload.choiceSource, "iron-stomach");
   assert.deepEqual(pending.state.pendingEncounterChoice?.choices, ["health", "infamy"]);
+  assert.equal(pending.state.pendingDecision?.type === "encounter-choice" ? pending.state.pendingDecision.source : undefined, "iron-stomach");
   const resolved = applyCommand(pending.state, { type: "resolve-encounter", choice: "health" });
   assert.equal(resolved.state.monsters[0].health, 8);
   assert.equal(resolved.state.monsters[0].infamy, 0);
   assert.equal((resolved.eventPayload.effects as Array<{ type: string; amount: number }>).some((effect) => effect.type === "health" && effect.amount === 3), true);
+
+  const infamyPending = applyCommand(state, { type: "resolve-encounter" });
+  const infamyChoice = applyCommand(infamyPending.state, { type: "resolve-encounter", choice: "infamy" });
+  assert.equal(infamyChoice.state.monsters[0].health, 5);
+  assert.equal(infamyChoice.state.monsters[0].infamy, 1);
+  assert.equal(infamyChoice.state.stompedLocations.includes(K("denver")), true);
+  const repeated = applyCommand({ ...infamyChoice.state, phase: "encounter", pendingDecision: { type: "encounter-resolution", playerIndex: 0, location: K("denver") } }, { type: "resolve-encounter" });
+  assert.equal(repeated.state.monsters[0].infamy, 1, "a later encounter cannot award the same base reward again");
+  assert.equal(repeated.state.pendingDecision?.type === "encounter-choice", false);
 });
 
 test("Mutation sites are usable once per monster and do not invent a Health reward", () => {
@@ -3007,25 +3235,163 @@ test("Toxicor draws two Mutation cards and returns the unchosen card to the deck
   assert.equal(chosen.state.log.some((entry) => /shuffled back/i.test(entry)), true);
 });
 
-test("Cutbacks removes a chosen Research card from play", () => {
-  const state = createGame(2);
-  state.phase = "move";
-  state.players[0].researchCardIds = ["Cutbacks", "Molecular Cannon"];
-  const result = applyCommand(state, { type: "use-research", cardId: "Cutbacks", researchCardId: "Molecular Cannon" });
-  assert.deepEqual(result.state.players[0].researchCardIds, []);
-  assert.deepEqual(result.state.removedResearchCardIds, ["Molecular Cannon"]);
-  assert.equal(result.state.decks.research.discard.includes("Cutbacks"), true);
+test("Toxicor pauses an Antimatter battle for its owner's Mutation choice and resumes without rerolling", () => {
+  let paused: ReturnType<typeof applyCommand> | undefined;
+  for (let seed = 0; seed < 256 && !paused; seed += 1) {
+    const state = createGame(2, seed);
+    state.currentPlayer = 0;
+    state.phase = "fight";
+    state.monsters[1]!.name = "Toxicor";
+    state.monsters[1]!.attacks = 1;
+    state.monsters[1]!.defense = 1;
+    const unit = state.units.find((candidate) => candidate.ownerPlayer === 0)!;
+    unit.location = state.monsters[1]!.location;
+    unit.defense = 99;
+    unit.damage = 1;
+    const battleId = `toxicor-antimatter-${seed}`;
+    state.pendingBattles = [{ id: battleId, monsterId: state.monsters[1]!.id, location: state.monsters[1]!.location as HexKey, militaryUnitIds: [unit.id], antimatterActive: true }];
+    state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+    state.decks.mutation = { order: ["War Spikes", "Atomic Breath"], drawIndex: 0, discard: [], exhausted: false };
+    const result = applyCommand(state, { type: "resolve-fight", battleId });
+    if (result.state.pendingDecision?.type === "mutation-choice") paused = result;
+  }
+  assert.ok(paused, "a deterministic seed should produce an Antimatter mutation roll of 1");
+  const pending = paused.state.pendingDecision;
+  assert.equal(pending?.type, "mutation-choice");
+  if (pending?.type !== "mutation-choice") throw new Error("Toxicor did not open its combat Mutation choice.");
+  assert.equal(pending.playerIndex, 1, "the off-turn Toxicor owner makes the choice");
+  assert.deepEqual(pending.cardIds, ["War Spikes", "Atomic Breath"]);
+  assert.deepEqual(paused.state.players[1]!.mutationCardIds, []);
+  assert.equal(paused.state.pendingCombat?.round, 2);
+  const savedAttacks = structuredClone(paused.state.pendingCombat?.attacks ?? []);
+  assert.ok(savedAttacks.some((attack) => attack.antimatterMutationRoll === 1));
+  const hiddenFromOpponent = projectState(paused.state, "player", 0);
+  assert.deepEqual(hiddenFromOpponent.pendingDecision?.type === "mutation-choice" ? hiddenFromOpponent.pendingDecision.cardIds : [], []);
+
+  const chosen = applyCommand(paused.state, { type: "choose-mutation-card", cardId: "War Spikes" });
+  assert.deepEqual(chosen.state.players[1]!.mutationCardIds, ["War Spikes"]);
+  assert.equal(chosen.state.pendingDecision?.type, "attack-target");
+  assert.equal(chosen.state.pendingCombat?.round, 2);
+  assert.throws(() => applyCommand(paused!.state, { type: "choose-mutation-card", cardId: "Fins and Gills" }), /one of the two revealed/);
+
+  const resumed = applyCommand(chosen.state, { type: "resolve-fight", battleId: chosen.state.pendingAttackTarget!.battleId, targetUnitId: chosen.state.pendingAttackTarget!.targetIds[0]! });
+  const resumedAttacks = resumed.eventPayload.attacks as BattleAttack[];
+  assert.deepEqual(resumedAttacks.slice(0, savedAttacks.length), savedAttacks);
+  assert.equal(resumedAttacks.some((attack) => attack.modifiers.includes("War Spikes: 4 damage")), true);
 });
 
-test("Molecular Cannon damages a monster and moves it to its assigned lair", () => {
+test("Toxicor queues multiple Mutation choices caused by one cruise-missile attack", () => {
+  let paused: ReturnType<typeof applyCommand> | undefined;
+  for (let seed = 0; seed < 512 && !paused; seed += 1) {
+    const state = createGame(2, seed);
+    state.currentPlayer = 0;
+    state.phase = "fight";
+    state.monsters[1]!.name = "Toxicor";
+    state.monsters[1]!.attacks = 1;
+    state.monsters[1]!.defense = 1;
+    const unit = state.units.find((candidate) => candidate.ownerPlayer === 0 && candidate.unitTypeId === "air-force-cruise-missile")!;
+    unit.location = state.monsters[1]!.location;
+    unit.defense = 99;
+    unit.damage = 1;
+    const battleId = `toxicor-double-mutation-${seed}`;
+    state.pendingBattles = [{ id: battleId, monsterId: state.monsters[1]!.id, location: state.monsters[1]!.location as HexKey, militaryUnitIds: [unit.id], antimatterActive: true }];
+    state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+    state.decks.mutation = { order: ["War Spikes", "Atomic Breath", "Laser Beam Eyes", "Fins and Gills"], drawIndex: 0, discard: [], exhausted: false };
+    const result = applyCommand(state, { type: "resolve-fight", battleId });
+    if (result.state.pendingDecision?.type === "mutation-choice" && result.state.pendingMutationChoiceQueue?.length === 1) paused = result;
+  }
+  assert.ok(paused, "a deterministic seed should produce a cruise-missile Mutation draw and an Antimatter Mutation roll");
+  assert.deepEqual(paused.state.pendingDecision?.type === "mutation-choice" ? paused.state.pendingDecision.cardIds : [], ["War Spikes", "Atomic Breath"]);
+  assert.deepEqual(paused.state.pendingMutationChoiceQueue?.[0]?.cardIds, ["Laser Beam Eyes", "Fins and Gills"]);
+
+  const first = applyCommand(paused.state, { type: "choose-mutation-card", cardId: "War Spikes" });
+  assert.deepEqual(first.state.pendingDecision?.type === "mutation-choice" ? first.state.pendingDecision.cardIds : [], ["Laser Beam Eyes", "Fins and Gills"]);
+  const second = applyCommand(first.state, { type: "choose-mutation-card", cardId: "Laser Beam Eyes" });
+  assert.deepEqual(second.state.players[1]!.mutationCardIds, ["War Spikes", "Laser Beam Eyes"]);
+  assert.equal(second.state.pendingDecision?.type, "encounter-resolution");
+  assert.equal(second.state.pendingMutationChoiceQueue, undefined);
+  assert.equal(second.state.decks.mutation.order.includes("Atomic Breath"), true);
+  assert.equal(second.state.decks.mutation.order.includes("Fins and Gills"), true);
+});
+
+test("Cutbacks removes any player's face-up Research card from play on the active player's turn", () => {
+  const state = createGame(2);
+  state.currentPlayer = 0;
+  state.phase = "move";
+  state.players[0].researchCardIds = ["Cutbacks", "Molecular Cannon"];
+  state.players[1].researchCardIds = ["Guard Commander"];
+  const projected = projectState(state, "player", 0);
+  assert.deepEqual(projected.players[1].researchCardIds, []);
+  assert.deepEqual(projected.players[1].visibleResearchCardIds, ["Guard Commander"]);
+  const result = applyCommand(state, { type: "use-research", cardId: "Cutbacks", researchCardId: "Guard Commander", researchPlayerIndex: 1 });
+  assert.deepEqual(result.state.players[0].researchCardIds, ["Molecular Cannon"]);
+  assert.deepEqual(result.state.players[1].researchCardIds, []);
+  assert.deepEqual(result.state.removedResearchCardIds, ["Guard Commander"]);
+  assert.equal(result.state.decks.research.discard.includes("Cutbacks"), true);
+  assert.equal(result.state.decks.research.discard.includes("Guard Commander"), false);
+  assert.throws(() => applyCommand(state, { type: "use-research", cardId: "Cutbacks", researchCardId: "Guard Commander", researchPlayerIndex: 0 }), /face-up Research card in play/);
+  const offTurn = structuredClone(state);
+  offTurn.currentPlayer = 1;
+  assert.throws(() => applyCommand(offTurn, { type: "use-research", cardId: "Cutbacks", researchCardId: "Guard Commander", researchPlayerIndex: 1 }), /does not have Cutbacks/);
+  const wrongTiming = structuredClone(state);
+  wrongTiming.phase = "setup";
+  assert.throws(() => applyCommand(wrongTiming, { type: "use-research", cardId: "Cutbacks", researchCardId: "Molecular Cannon", researchPlayerIndex: 0 }), /only be used during your turn/);
+});
+
+test("Molecular Cannon is available only at its own battle start and offers all configured lairs", () => {
   const state = createGame(2, 0);
   state.phase = "move";
   state.players[0].researchCardIds = ["Molecular Cannon"];
   state.setupAssignments = [{ playerIndex: 0, monsterId: "monster-1", lair: "denver", ready: true }];
-  const result = applyCommand(state, { type: "use-research", cardId: "Molecular Cannon", targetMonsterId: "monster-1", destination: K("denver") });
-  assert.equal(result.state.monsters[0].location, K("denver"));
-  assert.equal(result.state.monsters[0].health < state.monsters[0].health, true);
-  assert.equal((result.eventPayload.rolls as number[]).length, 1);
+  assert.deepEqual(legalMolecularCannonTargets(state), []);
+  assert.throws(() => applyCommand(state, { type: "use-research", cardId: "Molecular Cannon", targetMonsterId: "monster-1", destination: K("denver") }), /start of a battle/);
+
+  const unit = state.units[0]!;
+  unit.location = state.monsters[0]!.location;
+  state.phase = "fight";
+  const battleId = "molecular-cannon-start";
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0]!.location as any, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  state.setupState = { phase: "complete", seats: [], definition: { playerCount: 2, monsterIds: ["monster-1", "monster-2"], eligibleBranches: ["Army", "Navy"], lairsByMonster: { "monster-1": ["denver", "seattle", "los-angeles"], "monster-2": [] } } };
+  const choices = legalMolecularCannonTargets(state);
+  assert.equal(choices.length, 3);
+  assert.deepEqual(choices.map((choice) => choice.destination).sort(), [K("denver"), K("los-angeles"), K("seattle")].sort());
+  const projected = projectState(state, "player", 0);
+  assert.equal(legalMolecularCannonTargets(projected).length, 3);
+
+  state.pendingBattles = [{ ...state.pendingBattles[0]!, id: battleId, monsterId: "monster-2" }];
+  assert.deepEqual(legalMolecularCannonTargets(state), []);
+});
+
+test("Molecular Cannon consumes its battle, moves the monster, and handles lethal damage", () => {
+  const base = createGame(2, 0);
+  base.players[0]!.researchCardIds = ["Molecular Cannon"];
+  base.setupAssignments = [{ playerIndex: 0, monsterId: "monster-1", lair: "denver", ready: true }];
+  const unit = base.units[0]!;
+  unit.location = base.monsters[0]!.location;
+  base.phase = "fight";
+  const battleId = "molecular-cannon-use";
+  base.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: base.monsters[0]!.location as any, militaryUnitIds: [unit.id] }];
+  base.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  let lethal: ReturnType<typeof applyCommand> | undefined;
+  let survivor: ReturnType<typeof applyCommand> | undefined;
+  for (let seed = 0; seed < 128 && (!lethal || !survivor); seed += 1) {
+    const candidate = structuredClone(base);
+    candidate.rng.seed = seed;
+    candidate.monsters[0]!.health = lethal ? candidate.monsters[0]!.maxHealth : 1;
+    const result = applyCommand(candidate, { type: "use-research", cardId: "Molecular Cannon", battleId, targetMonsterId: "monster-1", destination: K("denver") });
+    if (result.eventPayload.defeatedMonsterIds instanceof Array && result.eventPayload.defeatedMonsterIds.includes("monster-1")) lethal = result;
+    else survivor = result;
+  }
+  assert.ok(lethal && survivor);
+  assert.equal(lethal!.state.monsters[0]!.location, "hollywood");
+  for (const result of [lethal!, survivor!]) {
+    assert.equal(result.state.pendingBattles.some((battle) => battle.id === battleId), false);
+    assert.equal(result.state.players[0]!.researchCardIds.includes("Molecular Cannon"), false);
+    assert.equal(result.state.decks.research.discard.includes("Molecular Cannon"), true);
+    assert.equal(result.eventPayload.battleId, battleId);
+  }
+  assert.equal(survivor!.state.monsters[0]!.location, K("denver"));
 });
 
 test("Chopper Lift moves a monster to a legal non-sea destination and removes Infamy", () => {
@@ -3033,18 +3399,49 @@ test("Chopper Lift moves a monster to a legal non-sea destination and removes In
   state.phase = "move";
   state.players[0].researchCardIds = ["Chopper Lift"];
   state.monsters[0].infamy = 2;
+  for (const unit of state.units) if (unit.location === state.monsters[0].location) unit.location = "record-tile";
   const origin = state.monsters[0].location as `${number},${number}`;
-  const destination = boardForState(state).edges.find((edge) => edge.enabled && edge.from === origin && boardForState(state).hexes[edge.to]?.waterClass !== "sea")?.to;
-  assert.ok(destination);
-  state.stompedLocations = [...state.stompedLocations, destination!];
-  let result: ReturnType<typeof applyCommand> | undefined;
-  for (let seed = 0; seed < 64 && !result; seed += 1) {
+  let armed: ReturnType<typeof applyCommand> | undefined;
+  let destination: typeof origin | undefined;
+  for (let seed = 0; seed < 64 && !destination; seed += 1) {
     const candidate = structuredClone(state);
     candidate.rng.seed = seed;
-    try { result = applyCommand(candidate, { type: "use-research", cardId: "Chopper Lift", targetMonsterId: "monster-1", destination: destination! }); } catch { /* the rolled distance may be shorter than the chosen edge */ }
+    const result = applyCommand(candidate, { type: "use-research", cardId: "Chopper Lift" });
+    armed = result;
+    destination = legalChopperLiftDestinations(result.state, "monster-1", result.state.pendingChopperLift!.roll).find((key) => key !== origin);
   }
-  assert.ok(result);
-  assert.equal(result!.state.monsters[0].location, destination);
-  assert.equal(result!.state.monsters[0].infamy, 1);
-  assert.deepEqual(result!.state.players[0].researchCardIds, []);
+  assert.ok(armed && destination);
+  assert.equal(armed.state.pendingDecision?.type, "chopper-lift-choice");
+  assert.equal((armed.eventPayload.rolls as number[]).length, 1);
+  assert.equal(armed.state.rng.cursor, state.rng.cursor + 1);
+  assert.deepEqual(armed.state.players[0].researchCardIds, []);
+  assert.equal(armed.state.decks.research.discard.includes("Chopper Lift"), true);
+  assert.ok(legalChopperLiftDestinations(armed.state, "monster-1", armed.state.pendingChopperLift!.roll).includes(origin), "the rolled-up-to movement includes a zero-space move");
+  const stayed = applyCommand(armed.state, { type: "resolve-chopper-lift", targetMonsterId: "monster-1", destination: origin });
+  assert.equal(stayed.state.monsters[0].location, origin);
+  assert.equal(stayed.state.monsters[0].infamy, 1);
+  const result = applyCommand(armed.state, { type: "resolve-chopper-lift", targetMonsterId: "monster-1", destination });
+  assert.equal(result.state.monsters[0].location, destination);
+  assert.equal(result.state.monsters[0].infamy, 1);
+  assert.equal(result.state.pendingChopperLift, undefined);
+  assert.equal(result.eventPayload.roll, armed.state.pendingChopperLift!.roll);
+});
+
+test("Chopper Lift cancels a pre-combat battle when its chosen monster leaves", () => {
+  const state = createGame(2, 0);
+  state.phase = "fight";
+  state.players[0]!.researchCardIds = ["Chopper Lift"];
+  const monster = state.monsters[0]!;
+  const unit = state.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = monster.location;
+  state.pendingBattles = [{ id: "chopper-cancels-battle", monsterId: monster.id, location: monster.location as HexKey, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "chopper-cancels-battle" };
+  const rolled = applyCommand(state, { type: "use-research", cardId: "Chopper Lift" });
+  const target = rolled.state.monsters[0]!;
+  const destination = legalChopperLiftDestinations(rolled.state, target.id, rolled.state.pendingChopperLift!.roll).find((key) => key !== target.location);
+  assert.ok(destination);
+  const result = applyCommand(rolled.state, { type: "resolve-chopper-lift", targetMonsterId: target.id, destination });
+  assert.equal(result.state.pendingBattles.length, 0);
+  assert.equal(result.state.phase, "encounter");
+  assert.equal(result.state.monsters[0]!.location, destination);
 });

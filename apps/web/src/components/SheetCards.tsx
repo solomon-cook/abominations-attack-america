@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { applyCommand, cardDefinition, sourcedCardRule, legalGiantPlacementDestinations, locationIdToHexKey, type GameCommand, type GameState } from "@abominations/game-engine";
+import { applyCommand, cardDefinition, sourcedCardRule, legalGiantPlacementDestinations, legalMolecularCannonTargets, type GameCommand, type GameState } from "@abominations/game-engine";
 import { boardForGame } from "../board-pin";
 import { DigitalCard } from "./DigitalCard";
 
@@ -15,10 +15,7 @@ export function sheetCardActions(game: GameState, cardId: string): CardAction[] 
   if (cardId === "Antimatter" && battleId) candidates.push({ label: "Play Antimatter", command: { type: "use-research", cardId, battleId } });
   if ((cardId === "Berserk" || cardId === "Son of a Monster") && battleId) candidates.push({ label: `Play ${cardId}`, command: { type: "use-mutation", cardId, battleId } });
   if (kindForMonsterCard(game, cardId)) candidates.push({ label: "Gargantis: discard for +3 Health", command: { type: "use-monster-ability", ability: "gargantis-heal", mutationCardIds: [cardId] } });
-  if (cardId === "Stabilizer Ray" && battle) {
-    const owner = game.monsters.findIndex((monster) => monster.id === battle.monsterId);
-    for (const mutationCardId of game.players[owner]?.mutationCardIds ?? []) candidates.push({ label: `Target ${mutationCardId}`, command: { type: "use-research", cardId, battleId, mutationCardId } });
-  }
+  if (cardId === "Stabilizer Ray" && battle) candidates.push({ label: "Arm Stabilizer Ray", command: { type: "use-research", cardId, battleId } });
   if (cardId === "Laser Fence" && battle) {
     candidates.push({ label: "Monster pays 2 Infamy", command: { type: "use-research", cardId, battleId, choice: "infamy" } });
     for (const edge of board?.edges.filter((edge) => edge.enabled && edge.from === battle.location) ?? []) candidates.push({ label: `Retreat to ${name(edge.to)}`, command: { type: "use-research", cardId, battleId, choice: "retreat", destination: edge.to } });
@@ -26,21 +23,30 @@ export function sheetCardActions(game: GameState, cardId: string): CardAction[] 
   if (cardId === "Blonde Lure") for (const monster of game.monsters) {
     for (const edge of board?.edges.filter((edge) => edge.enabled && edge.from === monster.location) ?? []) candidates.push({ label: `${monster.name} → ${name(edge.to)}`, command: { type: "use-research", cardId, targetMonsterId: monster.id, destination: edge.to } });
   }
-  if (cardId === "Cutbacks") for (const researchCardId of game.players[game.currentPlayer]?.researchCardIds ?? []) {
-    if (researchCardId !== cardId) candidates.push({ label: `Remove ${researchCardId} from play`, command: { type: "use-research", cardId, researchCardId } });
-  }
-  if (cardId === "Molecular Cannon") for (const monster of game.monsters) {
-    const lair = game.setupAssignments?.find((seat) => seat.monsterId === monster.id)?.lair;
-    const lairKey = lair ? locationIdToHexKey(lair) ?? lair : undefined;
-    if (lairKey && /^-?\d+,-?\d+$/.test(lairKey)) candidates.push({ label: `Blast ${monster.name} to its lair`, command: { type: "use-research", cardId, targetMonsterId: monster.id, destination: lairKey as `${number},${number}` } });
-  }
-  if (cardId === "Chopper Lift") for (const monster of game.monsters) for (const destination of Object.keys(board?.hexes ?? {}) as `${number},${number}`[]) {
-    if (destination !== monster.location) candidates.push({ label: `Lift ${monster.name} to ${name(destination)}`, command: { type: "use-research", cardId, targetMonsterId: monster.id, destination } });
-  }
+  if (cardId === "Cutbacks") game.players.forEach((player, researchPlayerIndex) => {
+    const faceUpCards = player.visibleResearchCardIds ?? player.researchCardIds;
+    for (const researchCardId of faceUpCards) {
+      if (researchCardId !== cardId) candidates.push({
+        label: `Remove Player ${researchPlayerIndex + 1}'s ${researchCardId} from play`,
+        command: { type: "use-research", cardId, researchCardId, researchPlayerIndex },
+      });
+    }
+  });
+  if (cardId === "Molecular Cannon") return legalMolecularCannonTargets(game).map((target) => ({
+    label: `Blast ${game.monsters.find((monster) => monster.id === target.targetMonsterId)?.name} to ${name(target.destination)}`,
+    command: { type: "use-research", cardId, ...target },
+  }));
+  if (cardId === "Chopper Lift") candidates.push({ label: "Roll for Chopper Lift", command: { type: "use-research", cardId } });
   if (cardId === "Mecha-Monster" || cardId === "Captain Colossal") for (const destination of legalGiantPlacementDestinations(game)) candidates.push({ label: `Place at ${name(destination)}`, command: { type: "use-research", cardId, destination } });
   // A dry run validates timing and targets using authoritative rules. Its cloned
   // result is discarded; the real command still goes through the normal dispatcher.
   return candidates.filter(({ command }) => {
+    // Opponent Research hands are hidden in player projections even though their
+    // face-up cards are public, so Cutbacks targets must be validated from that
+    // public projection instead of a dry-run against the redacted state.
+    if (cardId === "Cutbacks" && command.type === "use-research") {
+      return game.phase === "move" || game.phase === "fight" || game.phase === "encounter" || game.phase === "deploy";
+    }
     try { applyCommand(game, command); return true; } catch { return false; }
   });
 }

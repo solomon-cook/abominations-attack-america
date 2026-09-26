@@ -26,8 +26,8 @@ Research cards or unresolved physical-board interactions.
   Commander` supplies the explicit National Guard control permission.
 - `Scientific Analysis` and `Anti-Mutagen` resolve at battle start before normal
   combat rolls. `Antimatter` arms the first-round damage rule at that same
-  boundary. `Stabilizer Ray` is discarded when armed and its selected Mutation
-  is discarded only after qualifying military damage.
+  boundary. `Stabilizer Ray` is discarded when armed; after qualifying military
+  damage, its holder chooses a Mutation that was available at that damage event.
 - `Radiation Field`, `Whip Tentacles`, cruise-missile mutation, and Challenge
   retaliation resolve from the recorded roll/event before the next attack.
 

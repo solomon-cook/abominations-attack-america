@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
+import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, legalLaserFenceTargets, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicRoomSummary, RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 
@@ -7,6 +7,40 @@ type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpir
 type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; lastActivityAt: number };
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
+
+export function mutationBattleOwner(state: GameState, envelope: GameCommandEnvelope): number | undefined {
+  const command = envelope.command;
+  if (command.type !== "use-mutation") return undefined;
+  if (state.phase === "fight") {
+    const decision = state.pendingDecision;
+    if (!decision || (decision.type !== "battle-resolution" && decision.type !== "attack-target")) return undefined;
+    const battleId = command.battleId ?? decision.battleId;
+    if (battleId !== decision.battleId) return undefined;
+    const battle = state.pendingBattles.find((candidate) => candidate.id === battleId);
+    return battle ? state.monsters.findIndex((monster) => monster.id === battle.monsterId) : undefined;
+  }
+  if (state.phase === "challenge" && state.challenge?.active && state.challenge.turn
+    && (state.challenge.opponentMonsterId || state.challenge.giantUnitId)
+    && (state.pendingDecision?.type === "challenge-resolution" || state.pendingDecision?.type === "challenge-giant-resolution")) {
+    const participants = [state.challenge.challengerMonsterId, state.challenge.opponentMonsterId].filter((id): id is string => Boolean(id));
+    for (const id of participants) {
+      const monsterIndex = state.monsters.findIndex((monster) => monster.id === id);
+      if (monsterIndex >= 0 && state.players[monsterIndex]?.mutationCardIds.includes(command.cardId)) return monsterIndex;
+    }
+  }
+  return undefined;
+}
+
+/** The face-up Research holder owns a live Laser Fence reaction, even off-turn. */
+export function laserFenceCardOwner(state: GameState, envelope: GameCommandEnvelope): number | undefined {
+  const command = envelope.command;
+  if (command.type !== "use-research" || command.cardId !== "Laser Fence") return undefined;
+  const targetMonsterId = command.targetMonsterId ?? (command.battleId
+    ? state.pendingBattles.find((battle) => battle.id === command.battleId)?.monsterId
+    : undefined);
+  if (!targetMonsterId || !legalLaserFenceTargets(state).some((target) => target.targetMonsterId === targetMonsterId)) return undefined;
+  return state.players.findIndex((player) => player.researchCardIds.includes("Laser Fence"));
+}
 
 export function terminalResultSummary(state: GameState, terminalEvent: { type: string; version: number }): Record<string, unknown> {
   return {
@@ -193,9 +227,9 @@ export class MemoryRoomStore implements RoomStore {
     if (room.status !== "active") throw new Error("This room is not ready for gameplay.");
     if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
     if (this.actionIds.has(`${room.id}:${envelope.actionId}`)) return this.view(room, 0, "player", actor.playerIndex);
-    const requiredPlayer = room.state.pendingDecision?.type === "trophy-choice"
+    const requiredPlayer = laserFenceCardOwner(room.state, envelope) ?? mutationBattleOwner(room.state, envelope) ?? (room.state.pendingDecision?.type === "trophy-choice" || room.state.pendingDecision?.type === "mutation-choice"
       ? room.state.pendingDecision.playerIndex
-      : room.state.currentPlayer;
+      : room.state.currentPlayer);
     if (actor.playerIndex !== requiredPlayer) throw new Error("It is not your turn.");
     const result = applyCommandEnvelope(room.state, envelope, room.version);
     room.state = result.state;

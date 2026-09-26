@@ -15,6 +15,7 @@ type Props = {
   effects: readonly Effect[];
   rolls: readonly number[];
   choices: readonly string[];
+  choiceSource?: "iron-stomach" | "zorb-city";
   mutationDraws: readonly MutationDraw[];
   mutationCardId?: string;
   onReveal: () => void;
@@ -26,7 +27,7 @@ function isCellCoordinate(value: string): boolean {
   return /^-?\d+,-?\d+$/.test(value.trim());
 }
 
-export function EncounterOverlay({ error, open, canAct, monsterName, locationName, eventId, baselineEventId, effects, rolls, choices, mutationDraws, mutationCardId, onReveal, onChoice, onClose }: Props) {
+export function EncounterOverlay({ error, open, canAct, monsterName, locationName, eventId, baselineEventId, effects, rolls, choices, choiceSource, mutationDraws, mutationCardId, onReveal, onChoice, onClose }: Props) {
   const resolved = Boolean(eventId && eventId !== baselineEventId);
   const [revealedRolls, setRevealedRolls] = useState(0);
   const [cardRevealed, setCardRevealed] = useState(false);
@@ -41,8 +42,8 @@ export function EncounterOverlay({ error, open, canAct, monsterName, locationNam
       <section className="cinema-event" aria-live="polite">
         {error && <p role="alert">{error}</p>}
         {!resolved ? <div className="cinema-intro"><p className="resolution-eyebrow">ENCOUNTER</p><h3>Resolve this encounter.</h3><button className="cinema-primary" disabled={!canAct} onClick={onReveal}>Reveal encounter <span aria-hidden="true">↗</span></button></div> : <>
-          {allRollsShown && choices.length > 0 && <div className="cinema-choice"><p className="resolution-eyebrow">CHOOSE YOUR REWARD</p><h3>Grow stronger.</h3><div>{choices.map(choice => <button className="cinema-primary" key={choice} disabled={!canAct} onClick={() => onChoice(choice as "health" | "infamy")}>{choice === "health" ? "♥ Take Health" : "✦ Take 2 Infamy"}</button>)}</div></div>}
-          {rolls.length > 0 && <div className="cinema-roll-stage"><p className="resolution-eyebrow">FATE IN MOTION · {revealedRolls} / {rolls.length}</p><div className="combat-roll-list cinema-dice">{rolls.slice(0, revealedRolls).map((roll, index) => <DieCube key={`${eventId}-${index}`} value={roll} label={`Encounter roll ${index + 1}: ${roll}`} />)}</div>{!allRollsShown && <button className="cinema-primary" onClick={() => setRevealedRolls(count => count + 1)}>Roll die {revealedRolls + 1} <span aria-hidden="true">⚄</span></button>}</div>}
+          {allRollsShown && choices.length > 0 && <div className="cinema-choice"><p className="resolution-eyebrow">CHOOSE YOUR REWARD</p><h3>{choiceSource === "iron-stomach" ? "Iron Stomach." : "Grow stronger."}</h3>{choiceSource === "iron-stomach" && <p>Keep 3 Health or take 1 Infamy for stomping this base.</p>}<div>{choices.map(choice => <button className="cinema-primary" key={choice} disabled={!canAct} onClick={() => onChoice(choice as "health" | "infamy")}>{choice === "health" ? `♥ Take ${choiceSource === "iron-stomach" ? 3 : "city"} Health` : `✦ Take ${choiceSource === "iron-stomach" ? 1 : 2} Infamy`}</button>)}</div></div>}
+          {rolls.length > 0 && <div className="cinema-roll-stage"><p className="resolution-eyebrow">FATE IN MOTION · {revealedRolls} / {rolls.length}</p><div className="combat-roll-list cinema-dice">{rolls.slice(0, revealedRolls).map((roll, index) => <DieCube key={`${eventId}-${index}`} value={roll} label={`Encounter roll ${index + 1}: ${roll}`} />)}</div>{!allRollsShown && <><button className="cinema-primary" onClick={() => setRevealedRolls(count => count + 1)}>Roll die {revealedRolls + 1} <span aria-hidden="true">⚄</span></button><button className="cinema-reveal-all" onClick={() => setRevealedRolls(rolls.length)}>Reveal remaining rolls</button></>}</div>}
           {allRollsShown && hasCard && <CardReveal key={eventId} cardId={mutationCardId!} onRevealed={() => setCardRevealed(true)} />}
           {allRollsShown && (!hasCard || cardRevealed) && <div className="cinema-rewards">{effects.filter(effect => effect.type === "health" || effect.type === "infamy").map((effect, index) => <div className={`cinema-reward reward-${effect.type}`} key={`${eventId}-${index}`}><span aria-hidden="true">{effect.type === "health" ? "♥" : "✦"}</span><strong>{effect.amount > 0 ? "+" : ""}{effect.amount}</strong><div><b>{effect.type}</b><small>{effect.source}</small></div></div>)}</div>}
           {allRollsShown && !choices.length && (!hasCard || cardRevealed) && <button className="cinema-primary" onClick={onClose}>Return to board →</button>}

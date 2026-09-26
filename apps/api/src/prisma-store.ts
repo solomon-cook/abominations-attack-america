@@ -1,7 +1,7 @@
 import { randomBytes, createHash } from "node:crypto";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicRoomSummary, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
-import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, terminalResultSummary, type RoomStore } from "./store.js";
+import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomStore } from "./store.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
 
@@ -167,9 +167,9 @@ export class PrismaRoomStore implements RoomStore {
     if (!actor || actor.role !== "PLAYER") throw new Error("Spectators cannot submit game actions.");
     if (room.status !== "ACTIVE") throw new Error("This room is not ready for gameplay.");
     const gameState = room.state as unknown as GameState;
-    const requiredPlayer = gameState.pendingDecision?.type === "trophy-choice"
+    const requiredPlayer = laserFenceCardOwner(gameState, envelope) ?? mutationBattleOwner(gameState, envelope) ?? (gameState.pendingDecision?.type === "trophy-choice" || gameState.pendingDecision?.type === "mutation-choice"
       ? gameState.pendingDecision.playerIndex
-      : gameState.currentPlayer;
+      : gameState.currentPlayer);
     if (actor.playerIndex !== requiredPlayer) throw new Error("It is not your turn.");
     if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
     const duplicate = await this.prismaClient.commandReceipt.findUnique({ where: { roomId_actionId: { roomId: room.id, actionId: envelope.actionId } } });

@@ -22,6 +22,8 @@ export function TurnProgress({ game }: Props) {
               ? "Choose Encounter reward"
               : game.pendingDecision?.type === "mutation-choice"
                 ? "Choose Toxicor Mutation"
+              : game.pendingDecision?.type === "stabilizer-ray-choice"
+                ? "Choose Mutation to discard"
               : game.pendingDecision?.type === "trophy-choice"
                 ? "Choose trophy"
                 : game.pendingDecision?.type === "deployment"

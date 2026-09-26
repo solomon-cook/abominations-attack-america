@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
+import { createPortal } from "react-dom";
 import type { BoardDefinition } from "@abominations/game-engine";
 import { AUDITED_BOARD_WORLD, buildDisplayHexLayout } from "../board-layout";
 import { BOARD_EDGE_PADDING, cameraScale, cameraView, clampCamera, panCamera, resetCamera, zoomCamera, type BoardCamera, type Point, type Size } from "../board-camera";
@@ -16,6 +17,7 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
   const gesture = useRef<{ start: Point; previous: Point; distance: number; dragged: boolean } | null>(null);
   const suppressClick = useRef(false);
   const [dragging, setDragging] = useState(false);
+  const [controlsHost, setControlsHost] = useState<HTMLElement | null>(null);
   const cells = useMemo(() => board ? buildDisplayHexLayout(board) : [], [board]);
   const view = cameraView(camera, viewport, world);
   const scale = cameraScale(camera, viewport, world);
@@ -28,10 +30,17 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
     if (!focusHexKey || !board) return;
     const target = cells.find(({ hex }) => hex.key === focusHexKey);
     if (!target) return;
-    setCamera((current) => clampCamera({ ...current, zoom: Math.max(current.zoom, 1.55), center: {
-      x: target.left / 100 * world.width,
-      y: target.top / 100 * world.height,
-    } }, viewport, world));
+    setCamera((current) => {
+      const zoom = Math.max(current.zoom, 1.55);
+      // Keep the focused piece clear of the turn HUD on the right and leave
+      // room above the bottom action tray on compact screens.
+      const safeX = Math.min(.12, viewport.width > 700 ? .08 : .02) * viewport.width / cameraScale({ ...current, zoom }, viewport, world);
+      const safeY = viewport.height <= 700 ? .08 * viewport.height / cameraScale({ ...current, zoom }, viewport, world) : 0;
+      return clampCamera({ ...current, zoom, center: {
+      x: target.left / 100 * world.width + safeX,
+      y: target.top / 100 * world.height + safeY,
+      } }, viewport, world);
+    });
   }, [board, cells, focusHexKey, viewport, world]);
 
   useEffect(() => {
@@ -45,6 +54,10 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
     observer.observe(map);
     return () => observer.disconnect();
   }, [world]);
+
+  useEffect(() => {
+    setControlsHost(document.querySelector<HTMLElement>(".map-control-slot"));
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -109,6 +122,14 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
   const zoom = (factor: number) => setCamera((current) => zoomCamera(current, current.zoom * factor, { x: viewport.width / 2, y: viewport.height / 2 }, viewport, world));
   const pan = (x: number, y: number) => setCamera((current) => panCamera(current, { x: x * viewport.width, y: y * viewport.height }, viewport, world));
 
+  const controls = <div className="map-controls" role="group" aria-label="Board view controls">
+    <button type="button" aria-label="Zoom board out" disabled={camera.zoom <= 1} onClick={() => zoom(1 / 1.25)}>−</button>
+    <span className="map-zoom" aria-live="polite">{Math.round(camera.zoom * 100)}%</span>
+    <button type="button" aria-label="Zoom board in" disabled={camera.zoom >= 4} onClick={() => zoom(1.25)}>+</button>
+    <button type="button" className="map-reset" title="Reset view" aria-label="Reset view" onClick={() => setCamera(resetCamera(viewport, world))}>↺</button>
+    <span className="map-camera-mode">{camera.zoom >= 1.25 ? "Tactical detail" : "Strategic overview"}</span>
+  </div>;
+
   return <>
     <div ref={mapRef} className={`map board-viewport${dragging ? " is-dragging" : ""}`} role="group" aria-label="Board coordinate shell" aria-describedby="board-description"
       data-board-id={boardId} data-board-content-hash={boardContentHash} data-rendered-board-id={board?.id ?? "unavailable"} data-rendered-board-content-hash={board?.contentHash ?? "unavailable"}
@@ -139,13 +160,7 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
         {children}
       </div>
     </div>
-    <div className="map-controls" aria-label="Board view controls">
-      <button type="button" aria-label="Zoom board out" disabled={camera.zoom <= 1} onClick={() => zoom(1 / 1.25)}>−</button>
-      <span className="map-zoom" aria-live="polite">{Math.round(camera.zoom * 100)}%</span>
-      <button type="button" aria-label="Zoom board in" disabled={camera.zoom >= 4} onClick={() => zoom(1.25)}>+</button>
-      <button type="button" className="map-reset" onClick={() => setCamera(resetCamera(viewport, world))}>Reset view</button>
-      <span className="map-camera-mode">{camera.zoom >= 1.25 ? "Tactical detail" : "Strategic overview"}</span>
-    </div>
+    {controlsHost ? createPortal(controls, controlsHost) : controls}
     <div className="board-minimap">
       <span>CONTINENT OVERVIEW</span>
       <button type="button" aria-label="Board overview. Click to move camera; arrow keys pan." onClick={(event) => {

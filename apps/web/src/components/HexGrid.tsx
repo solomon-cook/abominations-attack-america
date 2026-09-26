@@ -88,6 +88,7 @@ function provisionalFeatureLabel(hex: BoardHex): string | undefined {
 }
 
 function unitArtForType(unitTypeId?: string) {
+  if (unitTypeId === "mecha-monster" || unitTypeId === "captain-colossal") return `/assets/military/portraits/${unitTypeId}.webp`;
   return unitTypeId ? `/assets/military/${unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unitTypeId}.webp` : undefined;
 }
 
@@ -114,6 +115,7 @@ type Props = {
   legalDestinations: ReadonlySet<HexKey>;
   legalUnitDestinations: ReadonlySet<HexKey>;
   selectableUnitIds: ReadonlySet<string>;
+  trophyUnitIds?: ReadonlySet<string>;
   selectedUnitId: string | null;
   selectedPath: readonly HexKey[];
   hoveredPath: readonly HexKey[];
@@ -131,7 +133,7 @@ type Props = {
   onClearPreview: () => void;
 };
 
-export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, onRetreat, deploymentDestinations, onDeploy, onSelectMonster, game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
+export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, onRetreat, deploymentDestinations, onDeploy, onSelectMonster, game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, trophyUnitIds = new Set(), selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const [monsterPeek, setMonsterPeek] = useState<{id:string;x:number;y:number} | null>(null);
   const peekMonster = game.monsters.find(monster => monster.id === monsterPeek?.id);
   const peekCards = peekMonster ? (game.players[game.monsters.indexOf(peekMonster)]?.mutationCardIds ?? []).filter(id=>cardDefinition(id)) : [];
@@ -300,6 +302,8 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
         const stomped = game.stompedLocations.includes(placeKey);
         const occupantCount = monstersHere.length + unitsHere.length;
         const provisionalBoard = audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id;
+        const trophyChoice = canAct && game.pendingDecision?.type === "trophy-choice";
+        const trophySelectableUnit = trophyChoice ? unitsHere.find((unit) => trophyUnitIds.has(unit.id)) : undefined;
         const actionUnavailable = !deploymentLegal && !retreatLegal && !inspectableUnit && (!canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit));
         const moveFocus = (direction: "left" | "right" | "up" | "down") => {
           if (!provisionalBoard) return;
@@ -337,7 +341,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
             tabIndex={provisionalBoard ? (placeKey === (focusedHexKey ?? (isHexKey(activePlayer?.location ?? "") ? activePlayer?.location : undefined)) ? 0 : -1) : undefined}
             data-stomped={stomped || undefined}
             data-occupied={occupantCount > 0 || undefined}
-            className={`hex-tile ${place?.kind ?? (audited ? "audited-tile" : "unresolved")} ${hex.waterClass === "land" || hex.waterClass === "lakeshore" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${deploymentLegal ? "deployment-legal" : ""} ${retreatLegal ? "retreat-legal" : ""} ${deploymentLegal || retreatLegal || monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
+            className={`hex-tile ${place?.kind ?? (audited ? "audited-tile" : "unresolved")} ${hex.waterClass === "land" || hex.waterClass === "lakeshore" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${deploymentLegal ? "deployment-legal" : ""} ${retreatLegal ? "retreat-legal" : ""} ${trophySelectableUnit ? "deployment-legal trophy-legal" : deploymentLegal || retreatLegal || monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%`, ...(audited ? { width: `${AUDITED_TILE_WIDTH_PERCENT}%` } : {}) }}
             ref={(node) => { buttonRefs.current[placeKey] = node; }}
             onFocus={() => onFocusHex(placeKey)}
@@ -354,6 +358,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
               if (retreatLegal) { onRetreat(placeKey); return; }
               if (deploymentLegal) { onDeploy(placeKey); return; }
               if (game.phase === "move" && event.shiftKey && occupantCount > 0) onSelectStack(placeKey);
+              else if (trophySelectableUnit) onSelectUnit(trophySelectableUnit.id);
               else if (game.phase === "move" && selectableUnit && !selectedUnitId && selectedPath.length < 2) onSelectUnit(selectableUnit.id);
               else if (monsterLegal || unitLegal) {
                 if (selectedUnitId) onChooseUnitPath(placeKey);
@@ -392,7 +397,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
                 {unitsHere.map((unit) => {
                   const unitArt = unitArtForType(unit.unitTypeId);
                   return unitArt
-                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={game.phase === "deploy" && deploymentLegal ? (event) => { event.stopPropagation(); onDeploy(placeKey); } : game.phase === "move" ? (event) => { if (selectedUnitId || selectedPath.length > 1) return; event.stopPropagation(); if (monsterLegal) onChoosePath(placeKey); else onSelectUnit(unit.id); } : game.phase === "encounter" && selectableUnit ? (event) => { event.stopPropagation(); onSelectUnit(unit.id); } : undefined} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
+                    ? <img className={`tile-piece tile-occupant ${selectedUnitId === unit.id ? "selected-piece" : ""} ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id} onClick={game.phase === "deploy" && deploymentLegal ? (event) => { event.stopPropagation(); onDeploy(placeKey); } : game.phase === "move" ? (event) => { if (selectedUnitId || selectedPath.length > 1) return; event.stopPropagation(); if (monsterLegal) onChoosePath(placeKey); else onSelectUnit(unit.id); } : game.pendingDecision?.type === "trophy-choice" && trophyUnitIds.has(unit.id) ? (event) => { event.stopPropagation(); onSelectUnit(unit.id); } : undefined} src={unitArt} alt={`${unit.branch} ${unit.unitTypeId ?? "unit"}`} loading="lazy" />
                     : <i className={`unit-mark tile-occupant ${acceptedPieceId === unit.id ? "accepted-arrival" : ""}`} key={unit.id}>{unit.branch.slice(0, 1)}</i>;
                 })}
               </span>}

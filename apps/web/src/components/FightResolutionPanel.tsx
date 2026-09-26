@@ -26,7 +26,7 @@ export function HealthBar({ before, after, maximum, name }: { before: number; af
   </div>;
 }
 
-function AttackRoll({ attack, attackerName, targetName, settled }: { attack: BattleAttack; attackerName: string; targetName: string; settled: boolean }) {
+export function AttackRoll({ attack, attackerName, targetName, settled }: { attack: BattleAttack; attackerName: string; targetName: string; settled: boolean }) {
   const modifier = attack.rollModifier ?? 0;
   const defense = attack.targetDefense;
   return <section className={`battle-roll ${settled ? "is-settled" : "is-rolling"}`} aria-label={`${attackerName} attacks ${targetName}`}>
@@ -38,7 +38,7 @@ function AttackRoll({ attack, attackerName, targetName, settled }: { attack: Bat
     {defense !== undefined && <div className="battle-hit-range" aria-label={`A roll of ${Math.max(1, defense - modifier)} or higher hits`}>
       {[1, 2, 3, 4, 5, 6].map(face => <span key={face} className={`${face + modifier >= defense ? "can-hit" : "would-miss"} ${settled && face === attack.roll ? "rolled" : ""}`}>{face}</span>)}<small>{Math.max(1, defense - modifier)}+ to hit</small>
     </div>}
-    <p className="battle-roll-explanation">{!settled ? "The die is in motion." : attack.hit ? attack.destroyed && attack.targetHealthAfter === undefined ? "One hit destroys a normal military unit." : attack.smash ? "Natural 6 · +1 damage before other effects." : `${attack.damage} damage to ${targetName}.` : `${targetName} takes no damage.`}</p>
+    <p className="battle-roll-explanation">{!settled ? "The die is in motion." : attack.hit ? attack.destroyed && attack.targetHealthAfter === undefined ? `${attack.damage} damage destroys a normal military unit.` : attack.smash ? `Natural 6 · +1 smash · ${attack.damage} total damage to ${targetName}.` : `${attack.damage} damage to ${targetName}.` : `${targetName} takes no damage.`}</p>
     {settled && (attack.modifiers?.length ?? 0) > 0 && <div className="battle-modifiers">{attack.modifiers.map(modifier => <span key={modifier}>{modifier}</span>)}</div>}
     {settled && (attack.mutationCardId || attack.antimatterMutationCardId) && <p className="battle-special">✦ Mutation drawn: {attack.mutationCardId ?? attack.antimatterMutationCardId}</p>}
     {settled && attack.antimatterMutationRoll !== undefined && <p className="battle-special">Antimatter mutation check: {attack.antimatterMutationRoll}{attack.antimatterMutationRoll === 1 ? " · mutation triggered" : " · no mutation"}</p>}
