@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import { canUseDefenseSatellites, legalLaserFenceTargets, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
+import { canUseAntimatter, canUseDefenseSatellites, legalLaserFenceTargets, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 import { DieCube } from "./DieCube";
 import { deploymentChoices } from "./MilitarySheet";
 import { LaserFenceControls } from "./LaserFenceControls";
@@ -60,7 +60,7 @@ export function PhaseActions({
     <button disabled={!canAct || !canUseDefenseSatellites(activeGame)} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Use Defense Satellites · roll for each monster</button>
   ) : null;
   const antimatterButton = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Antimatter") ? (
-    <button disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Antimatter", battleId: pendingBattle.id })}>Use Antimatter · double first-round damage</button>
+    <button disabled={!canAct || !canUseAntimatter(activeGame)} onClick={() => void runCommand({ type: "use-research", cardId: "Antimatter", battleId: pendingBattle.id })}>Use Antimatter · double first-round damage</button>
   ) : null;
   const laserFenceOwnerIndex = activeGame.players.findIndex((player) => player.researchCardIds.includes("Laser Fence"));
   const laserFenceControls = <LaserFenceControls game={activeGame} cardOwnerIndex={laserFenceOwnerIndex} canUse={canUseLaserFence} runCommand={runCommand} getLocationName={getLocationName} />;

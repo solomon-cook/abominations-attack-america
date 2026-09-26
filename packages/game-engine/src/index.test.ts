@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CARD_STACKING_RULES, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { setupDeploymentState, canDeployNationalGuard, canUseDefenseSatellites, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalGiantPlacementDestinations, legalUnitPaths, legalSubmarineTargets, locations, migrateGameState, monsterCombatStats, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, legalMolecularCannonTargets, legalLaserFenceTargets, legalChopperLiftDestinations, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type BattleAttack, type GameState, type HexKey } from "./index.js";
+import { setupDeploymentState, canDeployNationalGuard, canUseAntimatter, canUseDefenseSatellites, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalGiantPlacementDestinations, legalUnitPaths, legalSubmarineTargets, locations, migrateGameState, militaryUnitStats, monsterCombatStats, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, legalMolecularCannonTargets, legalLaserFenceTargets, legalChopperLiftDestinations, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type BattleAttack, type GameState, type HexKey } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
 import { AUDITED_BOARD } from "./audited-board.js";
@@ -153,6 +153,35 @@ test("Guard is deployable by everyone until Guard Commander grants its holder ex
   assert.deepEqual(projected.players[1].researchCardIds, []);
   assert.equal(canDeployNationalGuard(projected, 0), false);
   assert.equal(canDeployNationalGuard(projected, 1), true);
+});
+
+test("Guard Commander deploys sourced Guard movement profiles and reserves control to its holder", () => {
+  const state = createGame(2);
+  state.currentPlayer = 0;
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  state.players[0]!.researchCardIds = ["Guard Commander"];
+  const tank = applyCommand(state, { type: "deploy", unitId: "national-guard-tank-1", destination: K("denver") }).state.units.find((unit) => unit.id === "national-guard-tank-1")!;
+  assert.equal(tank.move, 3);
+  assert.equal(tank.movement, "land-only");
+  assert.equal(tank.ownerPlayer, undefined);
+  state.units.push(tank);
+  state.phase = "move";
+  assert.ok(legalUnitPaths(state, tank.id).some((path) => path.join(">") === `${K("denver")}>${K("chicago")}`));
+
+  const fighterState = createGame(2);
+  fighterState.currentPlayer = 0;
+  fighterState.phase = "deploy";
+  fighterState.pendingDecision = { type: "deployment", playerIndex: 0 };
+  fighterState.players[0]!.researchCardIds = ["Guard Commander"];
+  const fighter = applyCommand(fighterState, { type: "deploy", unitId: "national-guard-fighter-1", destination: K("denver") }).state.units.find((unit) => unit.id === "national-guard-fighter-1")!;
+  assert.equal(fighter.move, 5);
+  assert.equal(fighter.movement, "fly");
+  fighterState.units.push(fighter);
+  fighterState.phase = "move";
+  assert.ok(legalUnitPaths(fighterState, fighter.id).some((path) => path.length - 1 === 5));
+  fighterState.currentPlayer = 1;
+  assert.deepEqual(legalUnitPaths(fighterState, fighter.id), []);
 });
 
 test("inventory accounting rejects structural identity and reference drift", () => {
@@ -404,37 +433,50 @@ test("normal battle target validation keeps monster and military target classes 
 
 test("Scientific Analysis resolves independently at battle start", () => {
   const state = createGame(2);
-  state.players[0].researchCardIds = ["Scientific Analysis"];
+  state.currentPlayer = 1;
+  state.players[0]!.researchCardIds = ["Scientific Analysis", "Guard Commander"];
   state.phase = "fight";
-  state.monsters[0].health = 10;
-  state.monsters[0].attacks = 0;
-  const unit = state.units[0];
-  unit.location = state.monsters[0].location;
-  unit.attacks = 0;
+  state.monsters[0]!.health = 1;
+  state.monsters[0]!.attacks = 0;
+  const unit = { ...state.units[0]!, id: "scientific-analysis-guard", branch: "National Guard" as const, unitTypeId: "national-guard-tank", ownerPlayer: undefined, location: state.monsters[0]!.location, attacks: 0 };
+  state.units.push(unit);
   const battleId = "research-start-effects";
   state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
-  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 1, battleId };
   const result = applyCommand(state, { type: "resolve-fight", battleId });
-  assert.equal(result.state.monsters[0].health, 9);
+  assert.equal(result.state.monsters[0]!.health, 0);
+  assert.equal(result.state.monsters[0]!.location, "hollywood");
   assert.equal(result.state.log.some((entry) => /Scientific Analysis/.test(entry)), true);
+  assert.equal(result.state.players[0]!.researchCardIds.includes("Scientific Analysis"), true);
 });
 
-test("Anti-Mutagen resolves independently at battle start", () => {
+test("Anti-Mutagen counts the target's Mutation cards for its off-turn Guard Commander holder and can defeat the monster", () => {
   const state = createGame(2);
-  state.players[0].researchCardIds = ["Anti-Mutagen"];
-  state.players[0].mutationCardIds = ["Rampage", "War Spikes"];
+  state.currentPlayer = 1;
+  state.players[0]!.mutationCardIds = ["Rampage", "War Spikes"];
+  state.players[1]!.researchCardIds = ["Anti-Mutagen", "Guard Commander"];
   state.phase = "fight";
-  state.monsters[0].health = 10;
-  state.monsters[0].attacks = 0;
-  const unit = state.units[0];
-  unit.location = state.monsters[0].location;
-  unit.attacks = 0;
+  state.monsters[0]!.health = 2;
+  state.monsters[0]!.attacks = 0;
+  const guard = {
+    ...state.units[0]!,
+    id: "anti-mutagen-guard",
+    branch: "National Guard" as const,
+    unitTypeId: "national-guard-tank",
+    ownerPlayer: undefined,
+    location: state.monsters[0]!.location,
+    attacks: 0,
+  };
+  state.units.push(guard);
   const battleId = "anti-mutagen-start-effects";
-  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
-  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0]!.location as any, militaryUnitIds: [guard.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 1, battleId };
   const result = applyCommand(state, { type: "resolve-fight", battleId });
-  assert.equal(result.state.monsters[0].health, 8);
-  assert.equal(result.state.log.some((entry) => /Anti-Mutagen/.test(entry)), true);
+  assert.equal(result.state.monsters[0]!.health, 0);
+  assert.equal(result.state.monsters[0]!.location, "hollywood");
+  assert.equal(result.eventPayload.attacks && (result.eventPayload.attacks as unknown[]).length, 0);
+  assert.equal(result.state.log.some((entry) => /lost 2 Health from Anti-Mutagen/.test(entry)), true);
+  assert.equal(result.state.players[1]!.researchCardIds.includes("Anti-Mutagen"), true);
 });
 
 test("Defense Satellites discards and resolves one deterministic roll per board monster", () => {
@@ -493,8 +535,33 @@ test("Defense Satellites discards and resolves one deterministic roll per board 
   const inCombat = structuredClone(fight);
   inCombat.pendingAttackTarget = { battleId, attackerId: "monster-1", targetIds: [attacker.id], round: 1, attackNumber: 1, attackTotal: 1, spendInfamy: 0 };
   inCombat.pendingDecision = { type: "attack-target", playerIndex: 0, battleId, attackerId: "monster-1", targetIds: [attacker.id], round: 1, attackNumber: 1, attackTotal: 1 };
-  assert.equal(canUseDefenseSatellites(inCombat), false, "the card cannot interrupt a pending attack target");
-  assert.throws(() => applyCommand(inCombat, { type: "use-research", cardId: "Defense Satellites" }), /before a battle or retreat resolution begins/);
+  assert.equal(canUseDefenseSatellites(inCombat), true, "the any-turn card remains available between attack target decisions");
+  const duringAttack = applyCommand(inCombat, { type: "use-research", cardId: "Defense Satellites" });
+  assert.equal(duringAttack.state.pendingDecision?.type, "attack-target", "a surviving monster keeps the existing target choice");
+
+  const retreat = structuredClone(fight);
+  retreat.pendingRetreat = { battleId, monsterId: "monster-1", unitIds: [attacker.id], options: { [attacker.id]: [] } };
+  retreat.pendingDecision = { type: "retreat", playerIndex: 0, battleId, unitIds: [attacker.id] };
+  assert.equal(canUseDefenseSatellites(retreat), true, "the card is legal during a pending retreat on the active turn");
+  const duringRetreat = applyCommand(retreat, { type: "use-research", cardId: "Defense Satellites" });
+  assert.equal(duringRetreat.state.pendingRetreat?.battleId, battleId, "a surviving monster keeps the retreat choice");
+
+  const lethalRetreat = structuredClone(retreat);
+  lethalRetreat.monsters[0].health = 1;
+  lethalRetreat.monsters[1].health = 30;
+  const defeatedDuringRetreat = applyCommand(lethalRetreat, { type: "use-research", cardId: "Defense Satellites" });
+  assert.equal(defeatedDuringRetreat.state.pendingRetreat, undefined, "a defeated monster cancels the no-longer-relevant retreat");
+  assert.deepEqual(defeatedDuringRetreat.state.pendingBattles, []);
+  assert.equal(defeatedDuringRetreat.state.phase, "deploy");
+
+  const challenge = createGame(2, 0);
+  challenge.players[0].researchCardIds = ["Defense Satellites"];
+  challenge.phase = "challenge";
+  assert.equal(canUseDefenseSatellites(challenge), false);
+  assert.throws(() => applyCommand(challenge, { type: "use-research", cardId: "Defense Satellites" }), /Monster Challenge/);
+  const notOwnerTurn = createGame(2, 0);
+  notOwnerTurn.players[1].researchCardIds = ["Defense Satellites"];
+  assert.equal(canUseDefenseSatellites(notOwnerTurn, 1), false, "only the active player may use this any-turn card");
 });
 
 test("Defense Satellites leaves Captain Colossal and Mecha-Monster unharmed", () => {
@@ -523,21 +590,59 @@ test("Antimatter arms a battle and doubles first-round military damage", () => {
   const battleId = "antimatter";
   state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: [unit.id] }];
   state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  assert.equal(canUseAntimatter(state), true);
   const armed = applyCommand(state, { type: "use-research", cardId: "Antimatter", battleId });
   assert.deepEqual(armed.state.players[0].researchCardIds, []);
   assert.deepEqual(armed.state.decks.research.discard, ["Antimatter"]);
   assert.equal(armed.state.pendingBattles[0].antimatterActive, true);
-  let doubledAttack: { damage: number; modifiers: string[] } | undefined;
+  let doubledAttack: { damage: number; modifiers: string[]; antimatterMutationRoll?: number; smash: boolean } | undefined;
   for (let seed = 0; seed < 128 && !doubledAttack; seed += 1) {
     const candidate = structuredClone(armed.state);
     candidate.rng.seed = seed;
     const result = applyCommand(candidate, { type: "resolve-fight", battleId });
-    doubledAttack = (result.eventPayload.attacks as Array<{ attackerId: string; hit: boolean; damage: number; modifiers: string[] }>)
+    doubledAttack = (result.eventPayload.attacks as Array<{ attackerId: string; hit: boolean; damage: number; modifiers: string[]; antimatterMutationRoll?: number; smash: boolean }>)
       .find((attack) => attack.attackerId === unit.id && attack.hit);
   }
   assert.ok(doubledAttack);
-  assert.equal(doubledAttack!.damage >= unit.damage * 2, true);
+  assert.equal(doubledAttack!.damage, ((unit.damage ?? 1) + (doubledAttack!.smash ? 1 : 0)) * 2);
   assert.equal(doubledAttack!.modifiers.includes("Antimatter: double first-round damage"), true);
+  assert.notEqual(doubledAttack!.antimatterMutationRoll, undefined);
+
+  const noOwnedUnits = structuredClone(state);
+  noOwnedUnits.units.find((candidate) => candidate.id === unit.id)!.ownerPlayer = 1;
+  assert.equal(canUseAntimatter(noOwnedUnits), false);
+  const alreadyResolving = structuredClone(state);
+  alreadyResolving.pendingCombat = { battleId, round: 1 } as NonNullable<GameState["pendingCombat"]>;
+  assert.equal(canUseAntimatter(alreadyResolving), false);
+});
+
+test("Antimatter mutation checks happen once per first-round hit and the effect expires before round two", () => {
+  const state = createGame(2, 17);
+  state.currentPlayer = 0;
+  state.players[0]!.researchCardIds = ["Antimatter"];
+  const monster = state.monsters[0]!;
+  monster.attacks = 1;
+  monster.defense = 1;
+  monster.health = 40;
+  const unit = state.units.find((candidate) => candidate.ownerPlayer === 0)!;
+  unit.location = monster.location;
+  unit.defense = 99;
+  const battleId = "antimatter-round-limit";
+  state.phase = "fight";
+  state.pendingBattles = [{ id: battleId, monsterId: monster.id, location: monster.location as HexKey, militaryUnitIds: [unit.id] }];
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  const armed = applyCommand(state, { type: "use-research", cardId: "Antimatter", battleId }).state;
+  let result = applyCommand(armed, { type: "resolve-fight", battleId });
+  while (result.state.pendingDecision?.type === "attack-target") {
+    result = applyCommand(result.state, { type: "resolve-fight", battleId, targetUnitId: unit.id });
+  }
+  const attacks = result.eventPayload.attacks as Array<{ attackerId: string; combatRound: number; hit: boolean; damage: number; modifiers: string[]; antimatterMutationRoll?: number }>;
+  const firstRoundHits = attacks.filter((attack) => attack.attackerId === unit.id && attack.combatRound === 1 && attack.hit);
+  const secondRound = attacks.filter((attack) => attack.attackerId === unit.id && attack.combatRound === 2);
+  assert.ok(firstRoundHits.length > 0);
+  assert.ok(firstRoundHits.every((attack) => attack.antimatterMutationRoll !== undefined && attack.damage >= (unit.damage ?? 1) * 2));
+  assert.ok(secondRound.length > 0);
+  assert.ok(secondRound.every((attack) => !attack.modifiers.includes("Antimatter: double first-round damage") && attack.antimatterMutationRoll === undefined && attack.damage <= (unit.damage ?? 1) + 1));
 });
 
 test("one-shot Research cards cannot be reused after authoritative discard", () => {
@@ -1328,6 +1433,7 @@ test("Fusion Cells adds one Move to the cardholder's unit selectors and commands
 
   const fused = structuredClone(base);
   fused.players[0].researchCardIds = ["Fusion Cells"];
+  assert.equal(militaryUnitStats(fused, fused.units.find((unit) => unit.id === unitId)!).move, base.units.find((unit) => unit.id === unitId)!.move + 1);
   const fusedPaths = legalUnitPaths(fused, unitId);
   const fusedMaxMove = Math.max(...fusedPaths.map((path) => path.length - 1));
   assert.equal(fusedMaxMove, baseMaxMove + 1);
@@ -1430,22 +1536,84 @@ test("Deploy can draw one deterministic Military Research card instead of deploy
 });
 
 test("giant Research cards place a sourced giant on the active branch base without consuming Deploy", () => {
-  const state = createGame(2);
+  for (const [cardId, unitTypeId, health] of [["Mecha-Monster", "mecha-monster", 6], ["Captain Colossal", "captain-colossal", 8]] as const) {
+    const state = createGame(2);
+    state.phase = "deploy";
+    state.pendingDecision = { type: "deployment", playerIndex: 0 };
+    state.decks.research = { order: [cardId], drawIndex: 0, discard: [], exhausted: false };
+    const result = applyCommand(state, { type: "draw-research" });
+    const giant = result.state.units.find((unit) => unit.unitTypeId === unitTypeId);
+    assert.equal(result.eventType, "research.drawn");
+    assert.equal(giant?.branch, "Giant");
+    assert.equal(giant?.ownerPlayer, 0);
+    assert.equal(giant?.location, K("denver"));
+    assert.equal(giant?.health, health);
+    assert.equal(result.eventPayload.unitId, giant?.id);
+    assert.equal(result.eventPayload.destination, K("denver"));
+    assert.equal(result.state.deploymentsThisTurn, 0);
+    assert.deepEqual(result.state.players[0]?.researchCardIds, []);
+    assert.deepEqual(result.state.decks.research.discard, [cardId]);
+  }
+});
+
+test("Captain Colossal can be played from hand only during Deploy, takes a legal base and is removed at zero Health", () => {
+  const state = createGame(2, 0);
+  state.currentPlayer = 0;
+  state.players[0]!.researchCardIds = ["Captain Colossal"];
   state.phase = "deploy";
   state.pendingDecision = { type: "deployment", playerIndex: 0 };
-  state.decks.research = { order: ["Mecha-Monster"], drawIndex: 0, discard: [], exhausted: false };
-  const result = applyCommand(state, { type: "draw-research" });
-  const giant = result.state.units.find((unit) => unit.unitTypeId === "mecha-monster");
-  assert.equal(result.eventType, "research.drawn");
-  assert.equal(giant?.branch, "Giant");
-  assert.equal(giant?.ownerPlayer, 0);
-  assert.equal(giant?.location, K("denver"));
-  assert.equal(giant?.health, 6);
-  assert.equal(result.eventPayload.unitId, giant?.id);
-  assert.equal(result.eventPayload.destination, K("denver"));
-  assert.equal(result.state.deploymentsThisTurn, 0);
-  assert.deepEqual(result.state.players[0]?.researchCardIds, []);
-  assert.deepEqual(result.state.decks.research.discard, ["Mecha-Monster"]);
+  const base = K("denver");
+  const placed = applyCommand(state, { type: "use-research", cardId: "Captain Colossal", destination: base });
+  const unit = placed.state.units.find((candidate) => candidate.unitTypeId === "captain-colossal")!;
+  assert.equal(unit.location, base);
+  assert.equal(unit.ownerPlayer, 0);
+  assert.equal(unit.health, 8);
+  assert.deepEqual(placed.state.players[0]!.researchCardIds, []);
+  assert.deepEqual(placed.state.decks.research.discard, ["Captain Colossal"]);
+  assert.equal(placed.state.deploymentsThisTurn, state.deploymentsThisTurn);
+
+  const wrongBase = structuredClone(state);
+  assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Captain Colossal", destination: K("chicago") }), /active player's verified bases/);
+  wrongBase.phase = "move";
+  assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Captain Colossal", destination: base }), /during the active Deploy step/);
+
+  unit.health = 1;
+  const monster = placed.state.monsters[0]!;
+  monster.location = base;
+  monster.attacks = 1;
+  monster.damage = 1;
+  monster.defense = 99;
+  placed.state.phase = "fight";
+  placed.state.pendingBattles = [{ id: "captain-battle", monsterId: monster.id, location: base, militaryUnitIds: [unit.id] }];
+  placed.state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "captain-battle" };
+  const destroyed = applyCommand(placed.state, { type: "resolve-fight", battleId: "captain-battle" });
+  const removed = destroyed.state.units.find((candidate) => candidate.id === unit.id)!;
+  assert.equal(removed.location, "permanently-removed");
+  assert.equal(removed.health, 0);
+  assert.ok(destroyed.state.removedUnitIds.includes(unit.id));
+});
+
+test("Mecha-Monster can be played from the hand only during Deploy and immediately takes its own base", () => {
+  const state = createGame(2, 0);
+  state.currentPlayer = 0;
+  state.players[0]!.researchCardIds = ["Mecha-Monster"];
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 0 };
+  const base = K("denver");
+  const placed = applyCommand(state, { type: "use-research", cardId: "Mecha-Monster", destination: base });
+  const unit = placed.state.units.find((candidate) => candidate.unitTypeId === "mecha-monster")!;
+  assert.equal(unit.location, base);
+  assert.equal(unit.ownerPlayer, 0);
+  assert.equal(unit.health, 6);
+  assert.deepEqual(placed.state.players[0]!.researchCardIds, []);
+  assert.deepEqual(placed.state.decks.research.discard, ["Mecha-Monster"]);
+  assert.equal(placed.state.deploymentsThisTurn, state.deploymentsThisTurn);
+  assert.equal(placed.state.phase, "deploy");
+
+  const wrongBase = structuredClone(state);
+  assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Mecha-Monster", destination: K("chicago") }), /active player's verified bases/);
+  wrongBase.phase = "move";
+  assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Mecha-Monster", destination: base }), /during the active Deploy step/);
 });
 
 test("giant units take Health damage and are permanently removed at zero", () => {
@@ -1490,6 +1658,57 @@ test("X-Fighters draw creates two persistent deployable pieces and branch deploy
   assert.equal(deployedFighter.location, K("denver"));
   assert.equal(deployed.state.deploymentsThisTurn, 1);
   assert.equal(deployed.state.players[0]?.researchCardIds.includes("X-Fighters"), true);
+
+  const fighterBeyondBranchAllowance = structuredClone(drawn.state);
+  fighterBeyondBranchAllowance.currentPlayer = 0;
+  fighterBeyondBranchAllowance.phase = "deploy";
+  fighterBeyondBranchAllowance.pendingDecision = { type: "deployment", playerIndex: 0 };
+  fighterBeyondBranchAllowance.deploymentsThisTurn = 2;
+  assert.throws(() => applyCommand(fighterBeyondBranchAllowance, { type: "deploy", unitId: fighters[0]!.id, destination: K("denver") }), /deployment allowance is exhausted/);
+});
+
+test("X-Fighters are removed from play individually and the Research card discards only after both die", () => {
+  const drawn = createGame(2, 7);
+  drawn.currentPlayer = 0;
+  drawn.phase = "deploy";
+  drawn.pendingDecision = { type: "deployment", playerIndex: 0 };
+  drawn.decks.research = { order: ["X-Fighters"], drawIndex: 0, discard: [], exhausted: false };
+  const initialized = applyCommand(drawn, { type: "draw-research" }).state;
+  const fighters = initialized.units.filter((unit) => unit.unitTypeId === "x-fighter");
+  const monster = initialized.monsters[0]!;
+  monster.attacks = 1;
+  monster.defense = 99;
+  monster.health = 100;
+
+  const destroyOne = (state: GameState, unitId: string) => {
+    const candidateState = structuredClone(state);
+    const target = candidateState.units.find((unit) => unit.id === unitId)!;
+    target.location = candidateState.monsters[0]!.location;
+    target.health = 1;
+    candidateState.phase = "fight";
+    const battleId = `x-fighter-loss-${unitId}`;
+    candidateState.pendingBattles = [{ id: battleId, monsterId: candidateState.monsters[0]!.id, location: candidateState.monsters[0]!.location as HexKey, militaryUnitIds: [unitId] }];
+    candidateState.pendingDecision = { type: "battle-resolution", playerIndex: candidateState.currentPlayer, battleId };
+    for (let seed = 0; seed < 256; seed += 1) {
+      const seeded = structuredClone(candidateState);
+      seeded.rng.seed = seed;
+      try {
+        const result = applyCommand(seeded, { type: "resolve-fight", battleId });
+        const removed = result.state.units.find((unit) => unit.id === unitId)?.location === "permanently-removed";
+        if (removed) return result.state;
+      } catch { /* Keep searching for a deterministic hit. */ }
+    }
+    assert.fail(`Could not find a deterministic monster hit against ${unitId}`);
+  };
+
+  const firstDeath = destroyOne(initialized, fighters[0]!.id);
+  assert.equal(firstDeath.units.find((unit) => unit.id === fighters[0]!.id)!.location, "permanently-removed");
+  assert.ok(firstDeath.players[0]!.researchCardIds.includes("X-Fighters"));
+  assert.ok(!firstDeath.decks.research.discard.includes("X-Fighters"));
+  const secondDeath = destroyOne(firstDeath, fighters[1]!.id);
+  assert.equal(secondDeath.units.find((unit) => unit.id === fighters[1]!.id)!.location, "permanently-removed");
+  assert.ok(!secondDeath.players[0]!.researchCardIds.includes("X-Fighters"));
+  assert.ok(secondDeath.decks.research.discard.includes("X-Fighters"));
 });
 
 test("exhausted Military Research cannot consume Deploy or mutate the match", () => {
@@ -1525,6 +1744,7 @@ test("Deploy consumes a typed record unit, enforces destination uniqueness, and 
 
 test("2nd Generation grants one additional deployment slot", () => {
   const state = createGame(2);
+  state.currentPlayer = 0;
   state.phase = "deploy";
   state.pendingDecision = { type: "deployment", playerIndex: 0 };
   state.players[0].researchCardIds = ["2nd Generation"];
@@ -1533,6 +1753,21 @@ test("2nd Generation grants one additional deployment slot", () => {
   const result = applyCommand(state, { type: "deploy", destination: K("denver") });
   assert.equal(result.eventType, "unit.deployed");
   assert.equal(result.state.deploymentsThisTurn, 3);
+  assert.equal(result.state.players[0]!.researchCardIds.includes("2nd Generation"), true);
+  const noCard = structuredClone(state);
+  noCard.players[0]!.researchCardIds = [];
+  assert.throws(() => applyCommand(noCard, { type: "deploy", destination: K("denver") }), /allowance is exhausted/);
+
+  const guardExtra = createGame(2);
+  guardExtra.currentPlayer = 0;
+  guardExtra.phase = "deploy";
+  guardExtra.pendingDecision = { type: "deployment", playerIndex: 0 };
+  guardExtra.players[0]!.researchCardIds = ["2nd Generation"];
+  guardExtra.deploymentsThisTurn = 3;
+  guardExtra.deploymentDestinations = [K("denver"), K("chicago"), K("infamy-site")];
+  const extraGuard = applyCommand(guardExtra, { type: "deploy", unitId: "national-guard-tank-1", destination: K("los-angeles") });
+  assert.equal(extraGuard.state.units.find((unit) => unit.id === "national-guard-tank-1")?.location, K("los-angeles"));
+  assert.equal(extraGuard.state.deploymentsThisTurn, 4);
 });
 
 test("normal deployment rejects an already stomped branch base", () => {

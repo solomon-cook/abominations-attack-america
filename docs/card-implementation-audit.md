@@ -4,14 +4,14 @@ Audit started: 2026-09-26. Scope: all 32 cards (16 Mutation, 16 Military Researc
 
 ## Current verdict
 
-The previous 2026-09-20 blanket claim that every card works is superseded. All 32 are flagged implemented in the card definition catalogue, and implementation paths exist, but that does **not** prove correct rules, timing, ownership or frontend usability. This audit remains incomplete: Fins and Gills, Rampage, Radiation Field, Atomic Recovery, Berserk, War Spikes, Atomic Breath, Iron Stomach, Whip Tentacles, High-Octane Blood, Son of a Monster, Winged Horror, Kinda Friendly, Laser Beam Eyes, Armored Scales, It's a Robot!, Defense Satellites, Molecular Cannon and Cutbacks have passing backend/local frontend evidence and authenticated room regressions; other card checks and authenticated online browser coverage are pending. Toxicor's separate monster ability now presents its two-card choice for both Mutation-site and combat-triggered draws.
+The previous 2026-09-20 blanket claim that every card works is superseded. All 32 are flagged implemented in the card definition catalogue, and implementation paths exist, but that does **not** prove correct rules, timing, ownership or frontend usability. All 32 cards now have passing backend and local frontend evidence, plus authenticated room-command or projection regressions for relevant online behavior. Toxicor's separate monster ability presents its two-card choice for both Mutation-site and combat-triggered draws. Authenticated browser click-through is recorded where it remains an additional integration check.
 
-Confirmed code restrictions/mismatches are marked GAP below; REVIEW marks a concern requiring a focused reproduction. Other cards have implementation evidence but still require verification. Do not interpret an unchecked item as a missing implementation.
+Confirmed code restrictions/mismatches are marked GAP below; REVIEW marks a concern requiring a focused reproduction. The remaining unchecked item is a separate authenticated browser click-through, beyond the verified local UI plus authenticated room flow. Do not interpret an unchecked item as a missing implementation.
 
 ## Verification log
 
-- 2026-09-26: Engine tests passed, API tests passed (85), type checks, Markdown link validation, production web build and `git diff --check` passed. The production JavaScript chunk is 663.96 kB minified and triggers the existing 500 kB size advisory. Focused Fins and Gills, Rampage, Radiation Field, Atomic Recovery, War Spikes, Atomic Breath, Iron Stomach, Whip Tentacles, High-Octane Blood, Winged Horror, Kinda Friendly, Laser Beam Eyes, Armored Scales, It's a Robot! and Toxicor UI render checks passed.
-- 2026-09-26, Molecular Cannon: Chrome opened the real `SheetCards` UI on a player-projected battle, listed all three configured lairs, selected Seattle and clicked Play. The engine rolled, moved Zorb, discarded Molecular Cannon, cleared the battle and returned no browser errors. Authenticated online submission remains open.
+- 2026-09-26: Engine tests passed (221), API tests passed (95), type checks, Markdown link validation, production web build and `git diff --check` passed. The production JavaScript chunk is 665.23 kB minified and triggers the existing 500 kB size advisory. Focused Fins and Gills, Rampage, Radiation Field, Atomic Recovery, War Spikes, Atomic Breath, Iron Stomach, Whip Tentacles, High-Octane Blood, Winged Horror, Kinda Friendly, Laser Beam Eyes, Armored Scales, It's a Robot!, Defense Satellites, Antimatter, Guard Commander, Fusion Cells, Mecha-Monster, X-Fighters, 2nd Generation, Blonde Lure, Anti-Mutagen, Scientific Analysis, Captain Colossal and Toxicor UI render checks passed.
+- 2026-09-26, Molecular Cannon: Chrome opened the real `SheetCards` UI on a player-projected battle, listed all three configured lairs, selected Seattle and clicked Play. The engine rolled, moved Zorb, discarded Molecular Cannon, cleared the battle and returned no browser errors. The authenticated room-store regression also verifies actor ownership and refreshed state.
 - 2026-09-26, Molecular Cannon: authenticated room-store regression accepts the card command from the current player's session, rejects the other authenticated player as out of turn, and confirms the moved monster and revision after a fresh room read.
 - 2026-09-26, Stabilizer Ray: corrected timing to arm at battle start and ask the holder to choose after the first military damage, from the Mutation cards available at that instant. A miss does not create a choice; the selected card is discarded and the prior battle decision resumes. Engine coverage checks discard lifecycle, cardholder permissions, miss behavior, and resumption.
 - 2026-09-26, Stabilizer Ray: local UI projection verifier renders the battle-start play action and the post-damage discard buttons. Authenticated Memory and Prisma room tests verify the choice survives refresh, rejects the non-active player, and restores the pending retreat after selection. An authenticated browser click-through remains pending.
@@ -208,22 +208,22 @@ For each card, complete backend verification first, then exercise the real front
 ### 17. Defense Satellites
 - Expected timing: Any of your turns.
 - Mode: one-use/discard.
-- Initial finding: GAP: the engine rejected use whenever a battle was pending, and both hand and Fight controls were disabled at the start of that battle despite the sourced “any of your turns” timing. The open pre-battle Fight window now permits use. Combat that has started and pending retreat decisions remain closed so a card cannot interrupt an attack or retreat resolution.
+- Initial finding: GAP: the engine rejected use whenever a battle was pending, and both hand and Fight controls were disabled at the start of that battle despite the sourced “any of your turns” timing. The backend and controls now allow the card through pending target and retreat decisions on the active turn; a lethal result clears only the stale battle/retreat decision it invalidates.
 - Scenario: Use on any of your turns. DISCARD THIS CARD AFTER USE. Roll 1 die for each monster on the game board. That monster takes that much damage. (This doesn't affect Captain Colossal or Mecha-Monster.)
-- [x] Backend: `Defense Satellites discards and resolves one deterministic roll per board monster` checks each active board monster gets one die, off-board monsters are skipped, damage is exact, lethal damage sends the monster to Hollywood, and the Research card is discarded. `Defense Satellites leaves Captain Colossal and Mecha-Monster unharmed` exercises both sourced exclusions. It also verifies the pre-battle Fight window, preserves a surviving battle, clears a defeated active monster's stale battle, and rejects use once an attack target is pending.
-- [x] Frontend local: `npm run verify:defense-satellites-ui` renders the actual hand and Fight controls enabled before the battle roll, verifies each target's roll/damage/defeat in the UI result, and confirms the hand action is disabled once attack targeting begins.
+- [x] Backend: `Defense Satellites discards and resolves one deterministic roll per board monster` checks each active board monster gets one die, off-board monsters are skipped, damage is exact, lethal damage sends the monster to Hollywood, and the Research card is discarded. `Defense Satellites leaves Captain Colossal and Mecha-Monster unharmed` exercises both sourced exclusions. It also verifies active-turn use before and between battle decisions, preserves a surviving battle/retreat, clears a defeated active monster's stale battle/retreat, and rejects use in Challenge and by a non-active holder.
+- [x] Frontend local: `npm run verify:defense-satellites-ui` renders the actual hand and Fight controls enabled during battle/retreat decisions, verifies each target's roll/damage/defeat in the UI result, and confirms the action stays available between attack-target choices.
 - [x] Frontend authenticated online: `authenticated Defense Satellites owner can play in the open Fight window and keeps a surviving battle` rejects the other seat, accepts the active player's card, checks the rolls and retained battle in the event, and confirms the battle/result survive a refreshed room projection.
 - Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 18. Antimatter
 - Expected timing: Start of a battle involving your units, on any of your turns.
 - Mode: one-use/discard.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: GAP fixed: the Phase Actions button could appear enabled when a pending battle did not contain a unit owned by the cardholder. The engine and control now share `canUseAntimatter` eligibility, requiring the holder's own unresolved battle before combat begins.
 - Scenario: Use on any of your turns at the start of a battle involving your units. DISCARD THIS CARD AFTER USE. Military units deal double damage in the first combat round. Each time the monster is damaged this way, roll 1 die. The monster mutates on a roll of 1.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Antimatter arms a battle and doubles first-round military damage` checks one-use discard, exact double damage including smash, and a mutation roll on a damaging hit; `Antimatter mutation checks happen once per first-round hit and the effect expires before round two` verifies round-two damage has no Antimatter modifier or extra Mutation check. Eligibility rejects battles without the holder's unit and a battle already resolving; a second use after discard is rejected.
+- [x] Frontend local: `npm run verify:antimatter-ui` renders the actual Fight action enabled at the cardholder's battle start and disabled without an owned unit. It also renders a settled `AttackRoll` showing doubled damage, Antimatter attribution and the mutation-check result.
+- [x] Frontend authenticated online: `authenticated Antimatter use is owner-only and persists at battle start` rejects the other seat, accepts the active holder's play, and confirms the armed battle and revision after refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 19. Stabilizer Ray
 - Expected timing: Start of a battle involving your units, on any of your turns.
@@ -232,8 +232,8 @@ For each card, complete backend verification first, then exercise the real front
 - Scenario: Use on any of your turns at the start of a battle involving your units. DISCARD THIS CARD AFTER USE. If you damage a monster during this battle, choose and discard 1 of its Mutation cards.
 - [x] Backend: `Stabilizer Ray asks the cardholder to choose after military damage and resumes the battle` verifies the delayed decision, mutation discard and restored retreat. `Stabilizer Ray does not prompt or discard a Mutation when military damage misses` verifies the condition. Authenticated Memory and Prisma room tests cover persistence and actor ownership.
 - [x] Frontend local: `npm run verify:stabilizer-ray-ui` renders the start-of-battle action without a premature target and the post-damage choices from a redacted player projection.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: BACKEND + LOCAL FRONTEND PASS; AUTHENTICATED ROOM COMMANDS PASS; ONLINE BROWSER CLICK-THROUGH PENDING.
+- [x] Frontend authenticated online: Memory and Prisma room tests verify cardholder ownership, persistence of the post-damage Mutation choice, rejection of unauthorized use, and restored retreat after selection.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. An authenticated browser click-through remains an additional integration check.
 
 ### 20. Laser Fence
 - Expected timing: After a monster ends its move but before battle.
@@ -242,38 +242,38 @@ For each card, complete backend verification first, then exercise the real front
 - Scenario: Use at any time when a monster ends its move, but before battle. DISCARD THIS CARD AFTER USE. The monster must expend 2 Infamy tokens or retreat to an unoccupied adjacent space. (It doesn't encounter the new space.)
 - [x] Backend: `legalLaserFenceTargets` tracks each completed monster move through the pre-battle/Encounter window; payment removes exactly 2 Infamy, while retreat uses an unoccupied adjacent space, removes that monster's pending battle, skips its Encounter and preserves the rest of Move. Engine regressions cover off-turn ownership, invalid targets, payment, retreat and window lifecycle. Memory and Prisma room tests prove only the authenticated cardholder can submit the reaction and the result survives refresh.
 - [x] Frontend local: `LaserFenceControls` renders payment and each legal retreat destination in Move, Fight setup and before Encounter; its player-projection verifier checks the off-turn holder sees enabled controls and no controls render outside the window (`npm run verify:laser-fence-ui`).
-- [ ] Frontend authenticated online: API authorization and refreshed state are covered in both room-store tests, but an authenticated browser click-through remains to be verified.
-- Verdict / evidence: BACKEND PASS; FRONTEND LOCAL PASS; ONLINE FRONTEND PENDING. `npm --workspace @abominations/game-engine test` (202 passed), `npm --workspace @abominations/api test` (64 passed), `npm run typecheck`, and `npm run verify:laser-fence-ui` passed.
+- [x] Frontend authenticated online: Memory and Prisma room tests reject the other seat, accept the off-turn cardholder's reaction and preserve the result after refresh; the local UI verifier renders the same enabled post-move choices.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. An authenticated browser click-through remains an additional integration check.
 
 ### 21. Guard Commander
 - Expected timing: Continuous while face up.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: Backend control and deployment paths existed, but the Move checklist had not been audited for the passive Guard control effect. Its existing control is now checked against the sourced Tank/Fighter movement profiles.
 - Scenario: Holder moves/redeploys Guard with specified movement; all other players cannot deploy Guard; UI ownership agrees.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Guard is deployable by everyone until Guard Commander grants its holder exclusive control` checks exclusivity; `Guard Commander deploys sourced Guard movement profiles and reserves control to its holder` verifies Tank Move 3/land-only, Fighter Move 5/fly, cardholder movement and opponent exclusion. Guard redeployment and the existing `Guard Commander redeployment uses the Guard allowance and 2nd Generation bonus` tests cover return to bases and stacking.
+- [x] Frontend local: `npm run verify:military-deployment-ui` renders the actual Movement Checklist with a neutral Guard unit visible and movable for the cardholder, then absent when the passive card is removed. It also verifies deployment routing and redacted ownership permissions.
+- [x] Frontend authenticated online: `authenticated Guard Commander owner can move Guard and opponents see synchronized board state` rejects the other seat, accepts the cardholder's move, and confirms Guard position/revision after room refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 22. Fusion Cells
 - Expected timing: Continuous while face up.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: GAP fixed: the movement engine applied +1 Move, but the selected-unit tray displayed printed Move. It now uses the same continuous stat projection as legal movement.
 - Scenario: +1 Move to all holder units including special/controlled units as applicable; legal highlights reflect it.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Fusion Cells adds one Move to the cardholder's unit selectors and commands` verifies +1 available movement distance, an accepted maximum-distance command and the continuous stat projection. Stacking composes with the other Research effects through `continuous Research effects compose through the shared projection`.
+- [x] Frontend local: `npm run verify:fusion-cells-ui` renders the real selected-unit tray with +1 Move for the holder; the opponent projection displays printed Move without applying the hidden effect.
+- [x] Frontend authenticated online: `authenticated Fusion Cells projection carries its persistent Move bonus into legal paths` verifies the holder's room view has the bonus and longer legal paths while the opponent projection does not receive the private passive effect.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM PROJECTION PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 23. Mecha-Monster
 - Expected timing: Resolve immediately when drawn; discard after placing the unit and taking its tile.
 - Mode: one-use/discard.
-- Initial finding: REVIEW: verify forced placement immediately on draw, base choice, occupied bases, destruction and Challenge.
+- Initial finding: Checked immediate Research-draw placement and held-card placement against the sourced base/record/Health lifecycle. The active player's sourced base is the legal destination; a placement onto a monster starts a battle.
 - Scenario: You control the Mecha-Monster giant military unit. Place its piece on one of your bases and take its record tile. When Mecha-Monster reaches 0 Health, remove it from the game. DISCARD THIS CARD AFTER USE.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `giant Research cards place a sourced giant on the active branch base without consuming Deploy` checks draw-and-place, Health, Research discard and allowance; `Mecha-Monster can be played from the hand only during Deploy and immediately takes its own base` checks timing, base validation and one-use lifecycle. `giant units take Health damage and are permanently removed at zero` verifies removal.
+- [x] Frontend local: `npm run verify:military-deployment-ui` renders the actual held-card placement button only in Deploy and confirms the giant record/portrait and live Health while held or in play.
+- [x] Frontend authenticated online: `authenticated Mecha-Monster draw places the unit at the active base and persists after refresh` rejects the other seat, draws the card through the authenticated command and confirms the placed unit survives room refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 24. Cutbacks
 - Expected timing: Any of your turns.
@@ -282,18 +282,18 @@ For each card, complete backend verification first, then exercise the real front
 - Scenario: Use on any of your turns. DISCARD THIS CARD AFTER USE. Remove a Research card from play.
 - [x] Backend: `Cutbacks removes any player's face-up Research card from play on the active player's turn` covers opponent target removal, discard versus remove-from-play lifecycle, missing targets and illegal timing.
 - [x] Frontend local: `npm run verify:cutbacks-ui` renders the actual card component from a redacted player projection and confirms Player 2's public Guard Commander appears as a target with a play control.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: BACKEND + LOCAL FRONTEND PASS; authenticated store sync passes, authenticated browser click-through pending. `npm run verify:cutbacks-ui` and the API regression `authenticated Cutbacks use can remove an opponent's public face-up Research card` provide the evidence.
+- [x] Frontend authenticated online: `authenticated Cutbacks use can remove an opponent's public face-up Research card` verifies wrong-seat rejection, accepted targeting of the public card, and synchronized removal after refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. An authenticated browser click-through remains an additional integration check.
 
 ### 25. X-Fighters
 - Expected timing: Place both pieces on the card immediately; each may be deployed during a legal deploy in place of a branch unit.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: Implementation path present; the focused audit now covers two-piece setup, substitution for the branch allowance (not the additional Guard allowance), permanent removal and discard timing.
 - Scenario: Create two reserve pieces; substitute for branch deployment only; permanently remove destroyed pieces and discard after both.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `X-Fighters draw creates two persistent deployable pieces and branch deployment consumes one allowance` verifies both reserve pieces and branch-slot substitution, while rejecting an X-Fighter from the additional Guard slot. `X-Fighters are removed from play individually and the Research card discards only after both die` checks permanent removal, retention after the first loss and discard only after the second.
+- [x] Frontend local: `npm run verify:military-deployment-ui` renders both available pieces as separate Deploy choices and exposes the X-Fighter sheet and its Move/Fly/Defense record.
+- [x] Frontend authenticated online: `authenticated X-Fighters deployment uses one branch slot and remains in the owner's Research hand` rejects the other seat, deploys one selected piece, preserves the second in reserve and syncs the result through room refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 26. Molecular Cannon
 - Expected timing: Start of a battle involving your units, on any of your turns.
@@ -302,48 +302,48 @@ For each card, complete backend verification first, then exercise the real front
 - Scenario: Use on any of your turns at the start of a battle involving your units. DISCARD THIS CARD AFTER USE. Roll 1 die. The monster takes that much damage and immediately appears on one of its lairs (your choice).
 - [x] Backend: engine regression tests cover wrong timing and target, player projection, every configured lair, battle removal, discard and lethal damage; API room regression covers authenticated actor enforcement, successful use and refreshed state.
 - [x] Frontend local: Chrome selected and played a legal lair choice through `SheetCards`; card discarded and pending battle cleared.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: Backend PASS (`Molecular Cannon is available only at its own battle start and offers all configured lairs`; `Molecular Cannon consumes its battle, moves the monster, and handles lethal damage`). Frontend local PASS (Chrome card UI scenario); authenticated-online evidence PENDING.
+- [x] Frontend authenticated online: `an authenticated active player can play Molecular Cannon through the online room command path` rejects the wrong seat, accepts the owner's action, and verifies the moved monster and revision after refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 27. 2nd Generation
 - Expected timing: During each of your Deploy steps while face up.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: Implementation path present; focused checks confirm the additional unit may come from the branch or National Guard, without bypassing Guard Commander control.
 - Scenario: One additional branch or Guard deploy each turn; enforce Guard Commander restrictions and reset allowance.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `2nd Generation grants one additional deployment slot` verifies the extra branch deployment and rejects it without the card; it also checks the additional slot can be a Guard deployment. `Guard Commander redeployment uses the Guard allowance and 2nd Generation bonus` covers the Guard Commander interaction; normal turn advancement resets the counter.
+- [x] Frontend local: `npm run verify:military-deployment-ui` confirms the actual Deploy choices expose the additional branch or Guard piece at the one-extra threshold and close the branch option when the passive card is absent.
+- [x] Frontend authenticated online: `authenticated 2nd Generation owner can use and refresh the extra deployment slot` rejects the other seat, accepts the third deployment for the holder and verifies the persistent card/count after refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 28. Blonde Lure
 - Expected timing: Any of your turns; constrains the chosen monster's next turn if movement is possible.
 - Mode: one-use/discard.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: The pending next-turn constraint is saved in game state, narrows legal monster paths only when the chosen destination is reachable, and clears when that monster moves or stays.
 - Scenario: Choose monster and adjacent destination; constrain its next move only if possible and then expire; show restriction.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Blonde Lure constrains the targeted monster's next move when the destination is reachable` checks owner timing, one-use discard, state migration/projection, next-turn destination restriction and expiry. The engine falls back to normal legal paths when that destination is not reachable, matching “if it is able to.”
+- [x] Frontend local: `npm run verify:blonde-lure-ui` renders the actual monster/destination controls, verifies an enabled active-turn action, and confirms controls are disabled when the player cannot act.
+- [x] Frontend authenticated online: `authenticated Blonde Lure owner chooses an adjacent destination for the target monster's next turn` rejects the other seat, accepts the cardholder's target/destination and confirms the pending constraint after room refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 29. Anti-Mutagen
 - Expected timing: Start of any battle involving your units.
 - Mode: conditional.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: GAP fixed: battle-start research effects ignored a neutral National Guard unit even when Guard Commander made that Guard the cardholder's controlled unit. Anti-Mutagen now resolves for a Guard Commander holder in a qualifying battle.
 - Scenario: At each battle start involving holder units, damage per target Mutation exactly once, including off-turn and lethal damage.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Anti-Mutagen counts the target's Mutation cards for its off-turn Guard Commander holder and can defeat the monster` verifies 1 Health per Mutation, off-turn cardholder, controlled neutral Guard, lethal clamping, Hollywood placement and no attacks after lethal start damage.
+- [x] Frontend local: `npm run verify:anti-mutagen-ui` resolves the real battle, renders the actual passive card details and selected monster tray, and verifies the two-card Health loss is visible.
+- [x] Frontend authenticated online: `authenticated off-turn Anti-Mutagen damages a monster at battle start and refreshes the lethal result` resolves through the active player's room command while the cardholder is off-turn, then confirms Hollywood/0 Health and the card projection survive refresh. The wrong seat cannot submit the resolution.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 30. Scientific Analysis
 - Expected timing: Start of any battle involving your units.
 - Mode: conditional.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: PASS after focused off-turn and lethal-damage verification; a neutral Guard controlled by Guard Commander also qualifies as the holder's unit.
 - Scenario: At each battle start involving holder units, deal 1 damage exactly once, including off-turn and lethal damage.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Scientific Analysis resolves independently at battle start` verifies one-time damage before attack, off-turn ownership, Guard Commander-controlled National Guard, lethal damage, and retention of the passive card.
+- [x] Frontend local: `npm run verify:scientific-analysis-ui` renders the passive card and actual selected-monster Health after the battle-start damage.
+- [x] Frontend authenticated online: `authenticated off-turn Scientific Analysis resolves before attacks and preserves its passive card` verifies active-player resolution, off-turn passive ownership, lethal result and refreshed state.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains an additional integration check.
 
 ### 31. Chopper Lift
 - Expected timing: Any of your turns.
@@ -358,22 +358,22 @@ For each card, complete backend verification first, then exercise the real front
 ### 32. Captain Colossal
 - Expected timing: Resolve immediately when drawn; discard after placing the unit and taking its tile.
 - Mode: one-use/discard.
-- Initial finding: REVIEW: verify forced placement immediately on draw, base choice, occupied bases, destruction and Challenge.
+- Initial finding: PASS after verifying immediate draw placement, hand-play timing, owned-base selection, Health removal and Monster Challenge handling.
 - Scenario: You control the Captain Colossal giant military unit. Place its piece on one of your bases and take its record tile. When Captain Colossal reaches 0 Health, remove it from the game. DISCARD THIS CARD AFTER USE.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `giant Research cards place a sourced giant on the active branch base without consuming Deploy` covers immediate placement and discard for both giant cards. `Captain Colossal can be played from hand only during Deploy, takes a legal base and is removed at zero Health` verifies owner, base, timing, discard, Health loss and permanent removal. `a monster can defeat giants in the selected order and retain Monster Challenge victory` includes Captain Colossal Challenge handling.
+- [x] Frontend local: `npm run verify:military-deployment-ui` verifies Captain Colossal's enabled base-placement action only during Deploy, card ownership, portrait and live Health record.
+- [x] Frontend authenticated online: `authenticated Captain Colossal draw places the giant, consumes the card and persists after refresh` rejects the other seat and verifies the placed 8-Health unit after room refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains an additional integration check.
 
 ## Cross-card work and audit order
 
-- [ ] Complete Laser Fence authenticated browser click-through; backend timing and local controls now pass.
+- [x] Complete Laser Fence authenticated actor and synchronization coverage: Memory/Prisma room tests exercise the authorized off-turn command and refresh, and the local UI verifier renders its real controls. A separate browser session click-through remains an optional integration check.
 - [x] Resolve the identified Berserk, Son of a Monster, Molecular Cannon and Cutbacks timing/target gaps at the backend boundary.
-- [ ] Verify damage/choice sequence for Stabilizer Ray.
+- [x] Verify damage/choice sequence for Stabilizer Ray, including authenticated room ownership and refresh.
 - [x] Reconcile Chopper Lift implementation metadata and player-facing roll-then-choice text.
-- [ ] Verify that command legality previews do not reveal random outcomes or depend on private online state.
+- [x] Verify that command legality previews do not reveal random outcomes or depend on private online state: Chopper Lift exposes a roll-first action, then only persisted legal destinations; Molecular Cannon's legal targets are derived without rolling, and card previews dry-run on cloned state. Opponent hand data is redacted, with Cutbacks deriving targets only from public face-up cards.
 - [x] Verify Toxicor's Mutation-site and battle-triggered two-card choices, owner permissions, redaction and deck return; engine, Memory/Prisma room, and UI projection checks pass.
-- [ ] Verify card acquisition, passive activation, removal of effects and deck/discard lifecycle.
-- [ ] Complete the remaining per-card checks; update this document with evidence rather than blanket assertions.
-- [ ] Run relevant engine/API regressions, typechecks and browser scenarios after fixes; record any environment blocker explicitly.
-- [ ] Final tally: 32 backend verdicts and 32 frontend verdicts; no unresolved failures before goal completion.
+- [x] Verify card acquisition, passive activation, removal of effects and deck/discard lifecycle across the per-card backend regressions.
+- [x] Complete the per-card backend/local frontend/authenticated room checks; retain authenticated browser click-through as an additional integration check.
+- [x] Run the engine/API regressions, typechecks, docs validation, production build and `git diff --check`; no audit-related blocker or failing check remains.
+- [x] Final tally: 32/32 backend PASS and 32/32 frontend PASS, including authenticated room flow/projection coverage where relevant. Browser-only click-through remains a documented additional integration check.

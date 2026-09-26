@@ -1476,11 +1476,12 @@ function monsterContinuousEffects(state: Pick<GameState, "monsters" | "players">
 }
 
 function applyBattleResearchEffects(state: GameState, pending: PendingBattle, monster: Monster): void {
-  const involvedPlayers = new Set(
-    state.units
-      .filter((unit) => pending.militaryUnitIds.includes(unit.id) && unit.location === pending.location && unit.ownerPlayer !== undefined)
-      .map((unit) => unit.ownerPlayer!),
-  );
+  const guardCommanderPlayer = state.players.findIndex((player) => player.researchCardIds.includes("Guard Commander"));
+  const involvedPlayers = new Set(state.units
+    .filter((unit) => pending.militaryUnitIds.includes(unit.id) && unit.location === pending.location)
+    .flatMap((unit) => unit.ownerPlayer !== undefined
+      ? [unit.ownerPlayer]
+      : unit.branch === "National Guard" && guardCommanderPlayer >= 0 ? [guardCommanderPlayer] : []));
   for (const playerIndex of involvedPlayers) {
     const cards = state.players[playerIndex]?.researchCardIds ?? [];
     const scientificAnalysis = cards.includes("Scientific Analysis") ? 1 : 0;
@@ -1526,6 +1527,11 @@ function researchContinuousEffects(state: Pick<GameState, "players">, playerInde
 
 function effectiveUnitMove(state: Pick<GameState, "players">, unit: MilitaryUnit): number {
   return unit.move + (unit.ownerPlayer === undefined ? 0 : researchContinuousEffects(state, unit.ownerPlayer).moveBonus);
+}
+
+/** Continuous Research-adjusted stats shown on an owned military unit's record. */
+export function militaryUnitStats(state: Pick<GameState, "players">, unit: MilitaryUnit): MilitaryUnit {
+  return { ...unit, move: effectiveUnitMove(state, unit) };
 }
 
 function effectiveMonsterMove(state: Pick<GameState, "monsters" | "players">, monster: Monster): number {
@@ -2132,13 +2138,25 @@ export function legalLaserFenceTargets(state: GameState): Array<{ targetMonsterI
 /** Defense Satellites can be played during an active turn, including before an open Fight battle begins. */
 export function canUseDefenseSatellites(state: GameState, playerIndex = state.currentPlayer): boolean {
   if (playerIndex !== state.currentPlayer || !state.players[playerIndex]?.researchCardIds.includes("Defense Satellites")) return false;
-  if (state.phase === "game-over" || state.phase === "challenge" || state.pendingRetreat) return false;
+  if (state.phase === "game-over" || state.phase === "challenge") return false;
+  if (!new Set(["move", "fight", "encounter", "deploy"]).has(state.phase)) return false;
+  if (state.pendingDecision && "playerIndex" in state.pendingDecision && state.pendingDecision.playerIndex !== state.currentPlayer) return false;
   if (state.pendingBattles.length === 0) return true;
-  return state.phase === "fight"
-    && state.pendingDecision?.type === "battle-resolution"
-    && state.pendingDecision.playerIndex === state.currentPlayer
-    && !state.pendingCombat
-    && !state.pendingAttackTarget;
+  if (state.phase !== "fight") return false;
+  if (state.pendingRetreat) return state.pendingDecision?.type === "retreat" && state.pendingDecision.battleId === state.pendingRetreat.battleId;
+  return (state.pendingDecision?.type === "battle-resolution" || state.pendingDecision?.type === "attack-target")
+    && !state.pendingMutationChoice
+    && !state.pendingStabilizerRayChoice;
+}
+
+/** Antimatter is only playable before the current player's own battle starts resolving. */
+export function canUseAntimatter(state: GameState, playerIndex = state.currentPlayer): boolean {
+  const decision = state.pendingDecision;
+  if (playerIndex !== state.currentPlayer || state.phase !== "fight" || decision?.type !== "battle-resolution" || decision.playerIndex !== playerIndex) return false;
+  if (state.pendingCombat || state.pendingAttackTarget || state.pendingRetreat || state.pendingMutationChoice || state.pendingStabilizerRayChoice) return false;
+  if (!state.players[playerIndex]?.researchCardIds.includes("Antimatter")) return false;
+  const battle = state.pendingBattles.find((candidate) => candidate.id === decision.battleId);
+  return Boolean(battle?.militaryUnitIds.some((id) => state.units.some((unit) => unit.id === id && unit.ownerPlayer === playerIndex && unit.location === battle.location)));
 }
 
 /** Resolve the currently implemented immediate Research windows. */
@@ -2244,12 +2262,12 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
   }
   if (cardId === "Antimatter") {
     if (state.phase !== "fight" || state.pendingDecision?.type !== "battle-resolution") throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter can only be used at the start of an unresolved battle.");
+    if (!state.players[state.currentPlayer]?.researchCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `Player does not have ${cardId}.`);
     const battleId = requestedBattleId ?? state.pendingDecision.battleId;
     if (battleId !== state.pendingDecision.battleId) throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter must target the authoritative pending battle.");
     const battle = state.pendingBattles.find((candidate) => candidate.id === battleId);
-    if (!battle || state.pendingCombat || state.pendingAttackTarget) throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter can only be used before battle resolution begins.");
-    const hasOwnUnit = battle.militaryUnitIds.some((unitId) => state.units.some((unit) => unit.id === unitId && unit.ownerPlayer === state.currentPlayer));
-    if (!hasOwnUnit) throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter requires a battle involving the active player's units.");
+    if (!battle || state.pendingCombat || state.pendingAttackTarget || state.pendingRetreat) throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter can only be used before battle resolution begins.");
+    if (!canUseAntimatter(state)) throw new GameDomainError("ILLEGAL_COMMAND", "Antimatter requires a battle involving the active player's units.");
     const next = structuredClone(state);
     discardResearchFromHand(next, next.currentPlayer, cardId);
     next.pendingBattles.find((candidate) => candidate.id === battleId)!.antimatterActive = true;
@@ -2326,8 +2344,15 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
     next.log.push(`Defense Satellites dealt ${roll} damage to ${monster.name}${monster.health === 0 ? "; it went to Hollywood" : ""}.`);
   }
   if (defeatedMonsterIds.length > 0 && next.phase === "fight") {
+    const decisionBattleId = next.pendingDecision && "battleId" in next.pendingDecision ? next.pendingDecision.battleId : undefined;
+    const invalidatedRetreat = Boolean(next.pendingRetreat?.monsterId && defeatedMonsterIds.includes(next.pendingRetreat.monsterId));
     next.pendingBattles = next.pendingBattles.filter((battle) => !defeatedMonsterIds.includes(battle.monsterId));
-    finishBattleQueue(next);
+    if (invalidatedRetreat) next.pendingRetreat = undefined;
+    if (invalidatedRetreat || (decisionBattleId && !next.pendingBattles.some((battle) => battle.id === decisionBattleId))) {
+      next.pendingAttackTarget = undefined;
+      next.pendingCombat = undefined;
+      finishBattleQueue(next);
+    }
   }
   return { state: next, cardId, rolls, damagedMonsterIds, defeatedMonsterIds };
 }

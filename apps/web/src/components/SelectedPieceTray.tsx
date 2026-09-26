@@ -1,4 +1,4 @@
-import { boardForState, getLocation, isHexKey, shortestLegalUnitPaths, monsterCombatStats, monsterDefinition, UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, GIANT_UNIT_DEFINITIONS, type GameState, type HexKey } from "@abominations/game-engine";
+import { boardForState, getLocation, isHexKey, shortestLegalUnitPaths, militaryUnitStats, monsterCombatStats, monsterDefinition, UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, GIANT_UNIT_DEFINITIONS, type GameState, type HexKey } from "@abominations/game-engine";
 import { movementLabel, SheetStats } from "./SheetReference";
 import { monsterAssetSlug } from "../monster-assets";
 
@@ -26,6 +26,7 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
   const guard = NATIONAL_GUARD_DEFINITIONS.find((candidate) => candidate.id === unit.unitTypeId);
   const giant = GIANT_UNIT_DEFINITIONS.find((candidate) => candidate.id === unit.unitTypeId);
   const name = definition?.name ?? guard?.name ?? giant?.name ?? unit.unitTypeId?.replaceAll("-", " ") ?? unit.branch;
+  const combatStats = militaryUnitStats(game, unit);
   const board = boardForState(game);
   const locationName = (key: string) => getLocation(key)?.name ?? (isHexKey(key) ? board.hexes[key]?.label ?? "On the board" : key === "record-tile" ? "In reserve" : key);
   const canMove = shortestLegalUnitPaths(game, unit.id).length > 0;
@@ -38,7 +39,7 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
       <img src={giant ? `/assets/military/portraits/${giant.id}.webp` : `/assets/military/${unit.unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unit.unitTypeId ?? "army-tank"}.webp`} alt={name} />
       <div><span className="label">{unit.branch} · {locationName(unit.location)}</span><h3>{name}</h3></div>
     </div>
-    <SheetStats values={{ Move: unit.move, Attacks: unit.attacks, Defense: unit.defense, Damage: unit.damage, ...(giant ? { Health: unit.health } : {}) }} />
+    <SheetStats values={{ Move: combatStats.move, Attacks: combatStats.attacks, Defense: combatStats.defense, Damage: combatStats.damage, ...(giant ? { Health: unit.health } : {}) }} />
     <span className="unit-movement-type">{movementLabel(unit.movement)}</span>
     {unit.unitTypeId === "navy-nuclear-submarine" && <div className="unit-special-rules"><strong>Submarine / cruise missile</strong><p>Submarine: move 4 through sea and seacoast, defense 5, damage 1.</p><p>As a cruise missile: fly up to 8, defense 6, damage 3.</p></div>}
     {unit.unitTypeId === "navy-nuclear-submarine" && <div><button type="button" disabled={!canLaunchSubmarine || choosingSubmarineTarget} onClick={onLaunchSubmarine}>Launch as cruise missile</button><p>{choosingSubmarineTarget ? "Choose a glowing monster on the board, or cancel." : canLaunchSubmarine ? "Choose an opposing monster within 8 flying spaces." : "Requires an unmoved submarine and an opposing monster within 8 flying spaces during Move."}</p></div>}
