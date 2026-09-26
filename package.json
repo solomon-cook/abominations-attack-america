@@ -68,6 +68,7 @@
   "verify:atomic-recovery-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-atomic-recovery-ui.tsx",
   "verify:atomic-breath-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-atomic-breath-ui.tsx",
   "verify:iron-stomach-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-iron-stomach-ui.tsx",
+  "verify:whip-tentacles-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-whip-tentacles-ui.tsx",
   "verify:rampage-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-rampage-ui.tsx",
   "verify:radiation-field-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-radiation-field-ui.tsx",
   "verify:war-spikes-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-war-spikes-ui.tsx",
