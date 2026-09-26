@@ -2514,7 +2514,7 @@ test("Radiation Field destroys a cruise missile but preserves its roll-one Mutat
   assert.equal(resolved?.state.units.find((candidate) => candidate.id === missile.id)?.location, "record-tile");
 });
 
-test("Whip Tentacles adds an attack after each monster roll of six", () => {
+test("Whip Tentacles adds one immediately chained attack for each natural six, even when it misses", () => {
   const state = createGame(2);
   state.players[0].mutationCardIds = ["Whip Tentacles"];
   state.phase = "fight";
@@ -2526,8 +2526,8 @@ test("Whip Tentacles adds an attack after each monster roll of six", () => {
   const battleId = "whip-tentacles";
   state.pendingBattles = [{ id: battleId, monsterId: "monster-1", location: state.monsters[0].location as any, militaryUnitIds: battleUnits.map((unit) => unit.id) }];
   state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
-  let monsterAttacks: Array<{ attackerId: string; roll: number }> | undefined;
-  for (let seed = 0; seed < 256 && !monsterAttacks; seed += 1) {
+  let roundOneAttacks: Array<{ attackerId: string; combatRound: number; roll: number; modifiers: string[] }> | undefined;
+  for (let seed = 0; seed < 256 && !roundOneAttacks; seed += 1) {
     let current = structuredClone(state);
     current.rng.seed = seed;
     for (let step = 0; step < 24 && current.phase === "fight"; step += 1) {
@@ -2540,13 +2540,16 @@ test("Whip Tentacles adds an attack after each monster roll of six", () => {
           : applyCommand(current, { type: "advance" });
       current = result.state;
       if (result.eventType === "fight.resolved") {
-        const attacks = result.eventPayload.attacks as Array<{ attackerId: string; roll: number }>;
-        const monsterRolls = attacks.filter((attack) => attack.attackerId === "monster-1");
-        if (monsterRolls.some((attack) => attack.roll === 6) && monsterRolls.length > 6) monsterAttacks = monsterRolls;
+        const attacks = result.eventPayload.attacks as Array<{ attackerId: string; combatRound: number; roll: number; modifiers: string[] }>;
+        const monsterRolls = attacks.filter((attack) => attack.attackerId === "monster-1" && attack.combatRound === 1);
+        if (monsterRolls.length === 4 && monsterRolls.filter((attack) => attack.roll === 6).length === 1) roundOneAttacks = monsterRolls;
       }
     }
   }
-  assert.equal((monsterAttacks?.length ?? 0) > 6, true);
+  assert.equal(roundOneAttacks?.length, 4, "three printed attacks plus exactly one attack granted by a six");
+  const naturalSix = roundOneAttacks?.find((attack) => attack.roll === 6);
+  assert.equal(naturalSix?.modifiers.includes("Whip Tentacles: extra attack after 6"), true);
+  assert.equal(naturalSix?.modifiers.includes("Whip Tentacles: extra attack after 6") && naturalSix.roll === 6, true, "a roll of six grants the attack even when it misses the target's 99 Defense");
 });
 
 test("a rival military player draws Military Research when their attack sends a monster to Hollywood", () => {

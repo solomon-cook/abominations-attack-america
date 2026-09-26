@@ -116,6 +116,39 @@ test("Atomic Breath adds one Challenge attack in round one of every duel only", 
   assert.equal(state.players[0]!.mutationCardIds.includes("Atomic Breath"), true);
 });
 
+test("Whip Tentacles immediately grants a Challenge attack after a natural six, even on a miss", () => {
+  let first: ReturnType<typeof applyCommand> | undefined;
+  let second: ReturnType<typeof applyCommand> | undefined;
+  for (let seed = 0; seed < 256 && !first; seed += 1) {
+    const selected = duel(2);
+    selected.players[0]!.mutationCardIds = ["Whip Tentacles"];
+    selected.monsters[0]!.defense = 99;
+    selected.monsters[1]!.defense = 99;
+    selected.rng.seed = seed;
+    const opening = applyCommand(selected, { type: "resolve-challenge" });
+    if (opening.eventPayload.rolls?.[0] !== 6) continue;
+    const followup = applyCommand(opening.state, { type: "resolve-challenge" });
+    if (followup.eventPayload.rolls?.[0] !== 6) {
+      first = opening;
+      second = followup;
+    }
+  }
+  assert.ok(first && second, "a deterministic duel sequence should roll six then a non-six");
+  assert.equal(first.eventType, "challenge.attack.rolled");
+  const attack = (first.eventPayload.attacks as Array<{ roll: number; hit: boolean; smash: boolean; modifiers: string[] }>)[0]!;
+  assert.equal(attack.roll, 6);
+  assert.equal(attack.hit, false, "high Defense makes this six miss, but does not cancel the extra attack");
+  assert.equal(attack.smash, false);
+  assert.ok(attack.modifiers.includes("Whip Tentacles: extra attack after 6"));
+  assert.equal(first.state.challenge?.turn?.remainingAttacks, 1);
+  assert.equal(second.state.challenge?.turn?.remainingAttacks, 0, "the immediate bonus attack consumes the one granted attack");
+  assert.equal(second.state.currentPlayer, 0);
+  const passed = applyCommand(second.state, { type: "resolve-challenge", endTurn: true });
+  assert.equal(passed.state.challenge?.turn?.attackerId, "monster-2");
+  assert.equal(passed.state.challenge?.turn?.remainingAttacks, 1, "the card grants nothing to the opposing monster");
+  assert.deepEqual(passed.state.players[0]!.mutationCardIds, ["Whip Tentacles"]);
+});
+
 test("Challenge survives persistence between rolls and preserves the next decision owner", () => {
   const first = applyCommand(duel(), { type: "resolve-challenge" }).state;
   const reloaded = migrateGameState(JSON.parse(JSON.stringify(first)));

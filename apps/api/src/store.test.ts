@@ -267,6 +267,68 @@ test("authenticated Atomic Breath battle controls expose the extra first-round a
   assert.equal(afterRefresh.version, roundTwo.version);
 });
 
+test("authenticated Challenge owner spends Whip Tentacles' persisted bonus attack after a six", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const configured = structuredClone(rooms.get(host.room.code)!.state);
+  configured.currentPlayer = 0;
+  configured.phase = "challenge";
+  configured.players[0]!.mutationCardIds = ["Whip Tentacles"];
+  configured.monsters.forEach((monster) => { monster.health = 20; monster.defense = 99; monster.damage = 2; monster.attacks = 1; });
+  configured.challenge = { declared: true, active: true, challengerMonsterId: "monster-1", declarationPlayerIndex: 0, pendingStartPlayerIndex: 0, startAtEndOfTurn: false, weighInHealth: {}, defeatedMonsterIds: [] };
+  configured.pendingDecision = { type: "challenge-opponent", playerIndex: 0, challengerMonsterId: "monster-1", opponentIds: ["monster-2"] };
+  let preRoll: import("@abominations/game-engine").GameState | undefined;
+  for (let seed = 0; seed < 256 && !preRoll; seed += 1) {
+    const candidate = structuredClone(configured);
+    candidate.rng.seed = seed;
+    const selected = applyCommand(candidate, { type: "challenge-opponent", opponentMonsterId: "monster-2" }).state;
+    const first = applyCommand(selected, { type: "resolve-challenge" });
+    if ((first.eventPayload.rolls as number[])[0] !== 6) continue;
+    const second = applyCommand(first.state, { type: "resolve-challenge" });
+    if ((second.eventPayload.rolls as number[])[0] !== 6) preRoll = selected;
+  }
+  assert.ok(preRoll, "a deterministic Challenge sequence should roll six followed by a non-six");
+  rooms.get(host.room.code)!.state = preRoll;
+  const before = await store.getRoom(host.room.code, host.token);
+  const guestBefore = await store.getRoom(host.room.code, guest.token);
+  const owner = before.participants.find((participant) => participant.playerIndex === 0)!;
+  const opponent = guestBefore.participants.find((participant) => participant.playerIndex === 1)!;
+  const first = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-whip-tentacles-six",
+    actorId: owner.id,
+    expectedRevision: before.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-challenge" },
+  });
+  assert.equal(first.state.challenge?.turn?.remainingAttacks, 1);
+  assert.match((first.state.eventLog.at(-1)?.detail.attacks as Array<{ modifiers: string[] }>)[0]!.modifiers.join(" "), /Whip Tentacles: extra attack after 6/);
+  const refreshed = await store.getRoom(host.room.code, host.token);
+  assert.equal(refreshed.state.challenge?.turn?.remainingAttacks, 1);
+  await assert.rejects(() => store.submitAction(host.room.code, guest.token, {
+    actionId: "wrong-seat-whip-bonus",
+    actorId: opponent.id,
+    expectedRevision: refreshed.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-challenge" },
+  }), /It is not your turn/);
+  const bonus = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-whip-bonus-attack",
+    actorId: owner.id,
+    expectedRevision: refreshed.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "resolve-challenge" },
+  });
+  assert.equal(bonus.state.challenge?.turn?.remainingAttacks, 0);
+  assert.equal(bonus.state.challenge?.turn?.attacks.length, 2);
+  assert.equal((await store.getRoom(host.room.code, host.token)).state.challenge?.turn?.attacks.length, 2);
+});
+
 test("authenticated Rampage owner can move after emerging from a lair", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2, "Host");
