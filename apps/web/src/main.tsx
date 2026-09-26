@@ -68,6 +68,7 @@ import { HexGrid } from "./components/HexGrid";
 import { MilitaryReference } from "./components/SheetReference";
 import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
+import { botStrategyHint, runBotTurn } from "./solo-bots";
 import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { CardReveal, ResolutionStage } from "./components/ResolutionStage";
@@ -140,6 +141,9 @@ function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const [game, setGame] = useState<GameState>(() => createGame(2));
   const [localPlaytestStarted, setLocalPlaytestStarted] = useState(false);
+  const [soloMode, setSoloMode] = useState(false);
+  const [botThinking, setBotThinking] = useState(false);
+  const botTurnRunning = useRef(false);
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [room, setRoom] = useState<RoomView | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -383,6 +387,7 @@ function App() {
   const canAct =
     setupComplete &&
     !pendingAction &&
+    (!soloMode || decisionPlayer === 0) &&
     !activeGame.pendingChopperLift &&
     activeGame.phase !== "game-over" &&
     (!online ||
@@ -498,7 +503,7 @@ function App() {
             (seat) =>
               !seat.startingChoice && activeSetup.phase === "starting-choice",
           ));
-  const canSetup = Boolean(setupSeat && (!online || participant?.playerIndex === setupSeat.playerIndex));
+  const canSetup = Boolean(setupSeat && (!online || participant?.playerIndex === setupSeat.playerIndex) && (!soloMode || setupSeat.playerIndex === 0));
   const setupPreview = useMemo(() => activeSetup?.phase === "starting-choice" && setupSeat
     ? setupDeploymentState(activeGame, setupSeat.playerIndex, setupPlacementPlayer === setupSeat.playerIndex ? setupPlacements : []) : undefined,
     [activeGame, activeSetup?.phase, setupSeat, setupPlacements, setupPlacementPlayer]);
@@ -815,11 +820,68 @@ function App() {
     setLocalSetup(next);
     setGame((current) => { const updated = { ...current, setupState: next }; return next.phase === "complete" ? applyCompletedSetup(updated) : updated; });
   };
+
+  useEffect(() => {
+    if (!soloMode || online || localSetup.phase === "complete") return;
+    let next = localSetup;
+    for (let step = 0; step < 12; step += 1) {
+      const seat = next.phase === "monster-selection"
+        ? next.seats.find((candidate) => !candidate.monsterId)
+        : next.phase === "branch-selection"
+          ? [...next.seats].sort((a, b) => b.playerIndex - a.playerIndex).find((candidate) => !candidate.branch)
+          : next.phase === "lair-selection"
+            ? next.seats.find((candidate) => !candidate.lair)
+            : next.phase === "starting-choice"
+              ? next.seats.find((candidate) => !candidate.startingChoice)
+              : undefined;
+      if (!seat || seat.playerIndex === 0) break;
+      if (next.phase === "monster-selection") {
+        const picked = [...next.definition.monsterIds].reverse().find((id) => !next.seats.some((candidate) => candidate.monsterId === id));
+        if (!picked) break;
+        next = chooseMonster(next, seat.playerIndex, picked);
+      } else if (next.phase === "branch-selection") {
+        const branch = ["Marines", "Navy", "Air Force", "Army"].find((candidate) => next.definition.eligibleBranches.includes(candidate as typeof next.definition.eligibleBranches[number]) && !next.seats.some((candidateSeat) => candidateSeat.branch === candidate));
+        if (!branch) break;
+        next = chooseBranch(next, seat.playerIndex, branch as "Army" | "Navy" | "Air Force" | "Marines");
+      } else if (next.phase === "lair-selection") {
+        const lair = next.definition.lairsByMonster[seat.monsterId ?? ""]?.find((candidate) => !next.seats.some((candidateSeat) => candidateSeat.lair === candidate));
+        if (!lair) break;
+        next = chooseLair(next, seat.playerIndex, lair);
+      } else if (next.phase === "starting-choice") {
+        next = chooseStartingChoice(next, seat.playerIndex, { kind: "research" });
+      }
+    }
+    if (next === localSetup) return;
+    setLocalSetup(next);
+    setGame((current) => {
+      const updated = { ...current, setupState: next };
+      return next.phase === "complete" ? applyCompletedSetup(updated) : updated;
+    });
+  }, [localSetup, online, soloMode]);
+
+  useEffect(() => {
+    if (!soloMode || online || !setupComplete || activeGame.phase === "game-over") return;
+    const decision = activeGame.pendingDecision;
+    const actor = decision && "playerIndex" in decision ? decision.playerIndex : activeGame.currentPlayer;
+    if (actor === 0 || botTurnRunning.current) return;
+    botTurnRunning.current = true;
+    setBotThinking(true);
+    const timer = window.setTimeout(() => {
+      setGame((current) => runBotTurn(current));
+      setBotThinking(false);
+      botTurnRunning.current = false;
+    }, 420);
+    return () => {
+      window.clearTimeout(timer);
+      botTurnRunning.current = false;
+    };
+  }, [activeGame, online, setupComplete, soloMode]);
   const chooseSetupOption = async (value: string) => {
     if (
       !setupSeat ||
       !activeSetup ||
-      (online && participant?.playerIndex !== setupSeat.playerIndex)
+      (online && participant?.playerIndex !== setupSeat.playerIndex) ||
+      (soloMode && setupSeat.playerIndex !== 0)
     )
       return;
     if (online && session && room) {
@@ -863,7 +925,8 @@ function App() {
     if (
       !setupSeat ||
       !activeSetup ||
-      (online && participant?.playerIndex !== setupSeat.playerIndex)
+      (online && participant?.playerIndex !== setupSeat.playerIndex) ||
+      (soloMode && setupSeat.playerIndex !== 0)
     )
       return;
     const startingChoice = kind === "research" ? { kind } as const : { kind, placements: setupPlacements } as const;
@@ -893,9 +956,26 @@ function App() {
     setGame(next);
   };
   const resetLocal = () => {
+    setSoloMode(false);
+    setBotThinking(false);
     setLocalPlaytestStarted(true);
     setOnboardingOpen(false);
     // Start with turn instructions expanded.
+    setGamePanelOpen(true);
+    setSession(null);
+    setRoom(null);
+    setError("");
+    const next = createMvpRoomGame(playerCount);
+    setLocalSetup(next.setupState!);
+    setGame(next);
+    localStorage.removeItem("abominations-session");
+  };
+  const startSolo = () => {
+    setSoloMode(true);
+    setBotThinking(false);
+    botTurnRunning.current = false;
+    setLocalPlaytestStarted(true);
+    setOnboardingOpen(false);
     setGamePanelOpen(true);
     setSession(null);
     setRoom(null);
@@ -1091,6 +1171,7 @@ function App() {
         rulesOpen={homeRulesOpen}
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
         onStartLocal={resetLocal}
+        onStartSolo={startSolo}
         onStartProvisionalPlaytest={startProvisionalPlaytest}
         onOpenBoardReview={() => setBoardReviewOpen(true)}
         onStartVictoryScenario={startTemporaryVictoryScenario}
@@ -1123,7 +1204,7 @@ function App() {
       <header>
         <div className="top-turn-summary">
           <div className="turn-hud-heading">
-            <div><span className="label">{!setupComplete ? "GAME SETUP" : canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER {decisionPlayer + 1}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? `${activePlayer.name} · ${action}` : "Monster and branch selection"}</h2></div>
+            <div><span className="label">{!setupComplete ? "GAME SETUP" : soloMode && decisionPlayer !== 0 ? "BOT TURN" : canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER {decisionPlayer + 1}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? `${activePlayer.name} · ${action}` : "Monster and branch selection"}</h2></div>
             <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="turn-hud-body" aria-label={gamePanelOpen ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelOpen ? "−" : "+"}</button>
           </div>
           <TurnProgress game={activeGame} />
@@ -1137,7 +1218,7 @@ function App() {
             <div className="hud-menu-items">
               <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>How to play</button>
               <button className="ghost settings-action" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>Settings</button>
-              <button className="ghost new-game-action" onClick={resetLocal}>New local game</button>
+              <button className="ghost new-game-action" onClick={soloMode ? startSolo : resetLocal}>{soloMode ? "New solo game" : "New local game"}</button>
             </div>
           </details>
           {online && <span className="room-hud-status" role="status">{room?.code} · {connectionState}</span>}
@@ -1146,6 +1227,7 @@ function App() {
         </div>
       </header>
       {error && <p className="error global-game-error" role="alert">{error}</p>}
+      {soloMode && setupComplete && decisionPlayer !== 0 && <aside className="bot-turn-guidance" role="status"><strong>{botThinking ? "Bot is planning" : `${activePlayer.name} bot`}</strong><span>{botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army")}</span></aside>}
       <LobbyPanel
         online={online}
         room={room}

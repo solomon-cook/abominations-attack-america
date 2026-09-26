@@ -16,6 +16,28 @@ body:has(.home-screen) { background: #eee9dd; }
 .home-player-count select { min-height: 38px; padding: 0 32px 0 11px; border: 1px solid #a8aa9c; border-radius: 2px; background: #faf6ec; color: #252923; font: inherit; }
 .home-screen .home-start { display: flex; justify-content: space-between; align-items: center; gap: 50px; margin-top: 30px; padding: 16px 22px; border: 1px solid #252923; border-radius: 2px; background: #252923; color: #faf6ec; font-size: 14px; font-weight: 650; }
 .home-start:hover { background: #ac3d24; border-color: #ac3d24; }
+.home-screen .home-start-solo { margin-top: 12px; background: #eee9dd; color: #252923; }
+.home-screen .home-start-solo:hover { background: #d8d4c8; border-color: #252923; }
+.solo-strategy-guide { border-block: 1px solid #b4b6a7; }
+.solo-strategy-guide > summary { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 22px 0; cursor: pointer; list-style: none; }
+.solo-strategy-guide > summary::-webkit-details-marker { display: none; }
+.solo-strategy-guide > summary > span { color: #77796e; font-size: 10px; letter-spacing: .12em; }
+.solo-strategy-guide > summary strong { font-size: 14px; }
+.solo-strategy-guide > summary strong span { display: inline-block; margin-left: 24px; font-size: 19px; }
+.solo-strategy-guide[open] > summary strong span { transform: rotate(45deg); }
+.solo-strategy-content { padding: 2px 0 30px; max-width: 1000px; color: #55594e; font-size: 13px; line-height: 1.55; }
+.strategy-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; margin-top: 24px; }
+.strategy-columns h2 { margin-bottom: 12px; color: #252923; font: 700 19px/1.15 Georgia, serif; }
+.strategy-columns article { padding: 12px 0; border-top: 1px solid #c7c8b9; }
+.strategy-columns article strong { color: #252923; }
+.strategy-columns article p { margin: 4px 0 0; }
+.strategy-note { margin: 18px 0 0; padding: 14px 16px; border-left: 3px solid #ac3d24; background: #e6e1d5; }
+.bot-turn-guidance { display: flex; align-items: baseline; gap: 14px; margin: 10px 18px; padding: 10px 14px; border-left: 3px solid #ac3d24; background: rgba(238, 233, 221, .92); color: #42463d; font-size: 12px; }
+.bot-turn-guidance strong { flex: none; text-transform: uppercase; letter-spacing: .06em; }
+@media (max-width: 680px) {
+  .strategy-columns { grid-template-columns: 1fr; gap: 20px; }
+  .bot-turn-guidance { align-items: flex-start; flex-direction: column; gap: 3px; margin: 8px 10px; }
+}
 .home-local-note { margin-top: 10px; font-size: 11px; color: #66695f; }
 .home-monster { min-width: 0; margin: 0; padding: 0 0 0 20px; }
 .home-monster img { display: block; width: 100%; height: 365px; object-fit: contain; }
