@@ -1688,6 +1688,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
       ...(laserBonus ? ["Laser Beam Eyes: +2 to hit cruise missiles"] : []),
       ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
       ...(round === 1 && monsterAttackIndex === monster.attacks && monsterHasMutation(next, monster, "Atomic Breath") ? ["Atomic Breath: extra first-round attack"] : []),
+      ...(roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles") ? ["Whip Tentacles: extra attack after 6"] : []),
     ];
     attacks.push({ combatRound: round, targetDefense: target.defense, rollModifier: fighterBonus + laserBonus, ...(giantTarget ? { targetHealthBefore, targetHealthAfter: target.health } : {}), attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
     if (destroyed) {
@@ -1926,6 +1927,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
           ...(laserBonus ? ["Laser Beam Eyes: +2 to hit cruise missiles"] : []),
           ...(monsterHasMutation(next, monster, "War Spikes") ? ["War Spikes: 4 damage"] : []),
           ...(combatRound === 1 && attackIndex === monster.attacks && monsterHasMutation(next, monster, "Atomic Breath") ? ["Atomic Breath: extra first-round attack"] : []),
+          ...(roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles") ? ["Whip Tentacles: extra attack after 6"] : []),
         ];
         attacks.push({ combatRound, targetDefense: target.defense, rollModifier: fighterBonus + laserBonus, ...(giantTarget ? { targetHealthBefore, targetHealthAfter: target.health } : {}), attackerId: monster.id, targetId: target.id, controllerPlayer: next.currentPlayer, roll, modifiers, hit, smash, damage, destroyed });
         if (destroyed) { target.location = permanentTarget ? "permanently-removed" : "record-tile"; if (permanentTarget && !next.removedUnitIds.includes(target.id)) next.removedUnitIds.push(target.id); destroyedUnitIds.push(target.id); next.log.push(`${monster.name} destroyed a ${target.branch} unit; it ${permanentTarget ? "was permanently removed" : "returned to its record tile"} in combat round ${combatRound} (${roll}${smash ? ", smash" : ""}).`); if (isXFighter(target)) discardExhaustedXFighterCard(next, target.ownerPlayer); }
@@ -2835,12 +2837,14 @@ function resolveChallengeStep(state: GameState, command: Extract<GameCommand, { 
     ...(opponent && attacker.id === opponent.id && monsterHasMutation(next, opponent, "High-Octane Blood") ? ["High-Octane Blood: attacks first"] : []),
     ...(isMonster(attacker) && monsterHasMutation(next, attacker, "War Spikes") ? ["War Spikes: 4 damage"] : []),
     ...(isMonster(attacker) && turn.round === 1 && turn.attacks.length === attacker.attacks && monsterHasMutation(next, attacker, "Atomic Breath") ? ["Atomic Breath: extra first-round attack"] : []),
+    ...(isMonster(attacker) && roll === 6 && monsterHasMutation(next, attacker, "Whip Tentacles") ? ["Whip Tentacles: extra attack after 6"] : []),
     ...(retaliationDamage ? ["It's a Robot!: 1 electrocution damage"] : []),
     ...(command.spendInfamy ? ["1 Infamy: extra attack"] : []),
   ] };
   const healthAfterAttack = { [attacker.id]: attacker.health, [defender.id]: defender.health };
   const attacks = [...turn.attacks, attack];
-  next.challenge = { ...challenge, turn: { ...turn, remainingAttacks: turn.remainingAttacks - (command.spendInfamy ? 0 : 1), attacks } };
+  const whipExtraAttack = isMonster(attacker) && roll === 6 && monsterHasMutation(next, attacker, "Whip Tentacles") ? 1 : 0;
+  next.challenge = { ...challenge, turn: { ...turn, remainingAttacks: turn.remainingAttacks - (command.spendInfamy ? 0 : 1) + whipExtraAttack, attacks } };
   if (challenger.health > 0 && rival.health > 0) {
     next.currentPlayer = controller(attacker);
     next.pendingDecision = pendingDecisionForState(next);
