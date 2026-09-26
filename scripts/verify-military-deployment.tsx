@@ -1,15 +1,18 @@
 import React from "react";
+import { createRequire } from "node:module";
 // The standalone tsx runner uses the classic JSX runtime for imported UI files.
 Object.assign(globalThis, { React });
 import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createGame, deployUnitResult, projectState } from "../packages/game-engine/src/index";
-import { deploymentChoices, nextDeploymentSheet } from "../apps/web/src/components/MilitarySheet";
-import { ownedMilitarySheets } from "../apps/web/src/components/owned-sheets";
-import { MilitaryReference } from "../apps/web/src/components/SheetReference";
-import { PhaseActions } from "../apps/web/src/components/PhaseActions";
 
 const game = createGame(2);
+const require = createRequire(import.meta.url);
+require.extensions[".css"] = () => undefined;
+const { deploymentChoices, nextDeploymentSheet } = require("../apps/web/src/components/MilitarySheet.tsx") as typeof import("../apps/web/src/components/MilitarySheet");
+const { ownedMilitarySheets } = require("../apps/web/src/components/owned-sheets.ts") as typeof import("../apps/web/src/components/owned-sheets");
+const { MilitaryReference } = require("../apps/web/src/components/SheetReference.tsx") as typeof import("../apps/web/src/components/SheetReference");
+const { PhaseActions } = require("../apps/web/src/components/PhaseActions.tsx") as typeof import("../apps/web/src/components/PhaseActions");
 game.phase = "deploy";
 game.pendingDecision = { type: "deployment", playerIndex: 0 };
 game.units.filter(unit => unit.branch === "Army").forEach(unit => { unit.location = "record-tile"; });
@@ -20,6 +23,12 @@ assert.ok(branch);
 const placed = deployUnitResult(game, { unitId: branch.id, destination: branch.destinations[0] }).state;
 const remaining = deploymentChoices(placed);
 assert.ok(remaining.some(choice => choice.sheet === "National Guard"));
+const redeploymentState = structuredClone(game);
+redeploymentState.players[0]!.researchCardIds = ["2nd Generation"];
+redeploymentState.units.find(unit => unit.id === branch.id)!.location = branch.destinations[0]!;
+const redeploymentChoices = deploymentChoices(redeploymentState);
+const redeployment = redeploymentChoices.find(choice => choice.kind === "redeploy");
+assert.ok(redeployment, "a deployed piece should remain available as a legal redeployment choice");
 assert.equal(nextDeploymentSheet(remaining, "Army"), "National Guard", "Used branch destination should send the player to legal Guard pieces");
 const exhaustedBranch = structuredClone(game);
 exhaustedBranch.deploymentsThisTurn = 2;
@@ -37,6 +46,9 @@ const reference = renderToStaticMarkup(<MilitaryReference sheet="Army" game={gam
 assert.ok(reference.includes("Defense"));
 assert.ok(!reference.includes("<details"));
 assert.ok(!reference.includes("physical sheet"));
+const deploymentReference = renderToStaticMarkup(<MilitaryReference sheet="Army" game={redeploymentState} choices={redeploymentChoices.filter(choice => choice.sheet === "Army")} onSelect={() => undefined} />);
+assert.match(deploymentReference, /Redeploy army tank piece/);
+assert.match(deploymentReference, /IN RESERVE/);
 const actions = (state: typeof game) => renderToStaticMarkup(<PhaseActions activeGame={state} onOpenMilitarySheet={() => {}} canAct runCommand={() => {}} getLocationName={key => key} pendingAttackPrompt="" canSpendInfamyOnPendingBattle={false} retreatChoices={{}} setRetreatChoices={() => {}} />);
 assert.ok(actions(game).includes("Draw Military Research instead"));
 assert.ok(!actions(placed).includes("Draw Military Research"));

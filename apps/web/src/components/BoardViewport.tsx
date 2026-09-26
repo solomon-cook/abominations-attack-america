@@ -32,10 +32,10 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
     if (!target) return;
     setCamera((current) => {
       const zoom = Math.max(current.zoom, 1.55);
-      // Keep the focused piece clear of the turn HUD on the right and leave
-      // room above the bottom action tray on compact screens.
+      // Keep the focused piece clear of the turn HUD and leave room above the
+      // fixed bottom action tray on phones, including tall portrait viewports.
       const safeX = Math.min(.12, viewport.width > 700 ? .08 : .02) * viewport.width / cameraScale({ ...current, zoom }, viewport, world);
-      const safeY = viewport.height <= 700 ? .08 * viewport.height / cameraScale({ ...current, zoom }, viewport, world) : 0;
+      const safeY = viewport.width <= 700 ? .08 * viewport.height / cameraScale({ ...current, zoom }, viewport, world) : 0;
       return clampCamera({ ...current, zoom, center: {
       x: target.left / 100 * world.width + safeX,
       y: target.top / 100 * world.height + safeY,

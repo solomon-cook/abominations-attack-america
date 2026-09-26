@@ -1,4 +1,4 @@
-import { cardDefinition, legalLaserFenceTargets, sourcedCardRule, type GameCommand, type GameState } from "@abominations/game-engine";
+import { canUseDefenseSatellites, cardDefinition, legalLaserFenceTargets, sourcedCardRule, type GameCommand, type GameState } from "@abominations/game-engine";
 import { CardArtwork } from "./DigitalCard";
 
 type Props = {
@@ -14,6 +14,10 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation =
   const isActivePlayer = playerIndex === game.currentPlayer;
   const revealedMutationCards = player?.mutationCardIds ?? [];
   const revealedResearchCards = player?.researchCardIds ?? [];
+  const satelliteEvent = [...game.eventLog].reverse().find((event) => event.action === "research.used" && event.detail.researchCardId === "Defense Satellites");
+  const satelliteRolls = Array.isArray(satelliteEvent?.detail.rolls) ? satelliteEvent.detail.rolls.filter((roll): roll is number => typeof roll === "number") : [];
+  const satelliteTargets = Array.isArray(satelliteEvent?.detail.damagedMonsterIds) ? satelliteEvent.detail.damagedMonsterIds.filter((id): id is string => typeof id === "string") : [];
+  const satelliteDefeated = new Set(Array.isArray(satelliteEvent?.detail.defeatedMonsterIds) ? satelliteEvent.detail.defeatedMonsterIds.filter((id): id is string => typeof id === "string") : []);
   const pendingBattleId = game.pendingDecision && (game.pendingDecision.type === "battle-resolution" || game.pendingDecision.type === "attack-target")
     ? game.pendingDecision.battleId
     : undefined;
@@ -26,7 +30,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation =
   const mutationBattleId = game.phase === "fight" && activeMonsterOwnsPendingBattle ? pendingBattleId : undefined;
   const hasMutationWindow = Boolean(mutationBattleId || challengeMutationWindow);
   const playableMutation = (cardId: string) => (cardId === "Berserk" || cardId === "Son of a Monster") && hasMutationWindow;
-  const canUseDefenseSatellites = canAct && isActivePlayer && game.phase !== "challenge" && game.phase !== "game-over" && game.pendingBattles.length === 0 && !game.pendingRetreat;
+  const canPlayDefenseSatellites = canAct && isActivePlayer && canUseDefenseSatellites(game, playerIndex);
   const canStartChopperLift = canAct && isActivePlayer && !game.pendingChopperLift
     && ((game.phase === "move" && game.pendingDecision?.type === "monster-movement")
       || (game.phase === "fight" && game.pendingDecision?.type === "battle-resolution")
@@ -38,7 +42,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation =
     const actionWindow = cardId === "Berserk" || cardId === "Son of a Monster"
       ? "Any time during a battle involving this monster"
       : cardId === "Defense Satellites"
-      ? "Move/Fight · pre-battle window"
+      ? "Any of your turns · before a battle or retreat resolves"
       : cardId === "Blonde Lure"
         ? "Any turn · choose monster and adjacent destination"
       : cardId === "Mecha-Monster" || cardId === "Captain Colossal"
@@ -61,7 +65,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation =
         ? <button type="button" className="hand-card-play" disabled={!canUseMutation} onClick={() => void runCommand({ type: "use-mutation", cardId, ...(mutationBattleId ? { battleId: mutationBattleId } : {}) })}>Play {cardId}</button>
         : undefined
       : cardId === "Defense Satellites"
-        ? <button type="button" className="hand-card-play" disabled={!canUseDefenseSatellites} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Play Defense Satellites</button>
+        ? <button type="button" className="hand-card-play" disabled={!canPlayDefenseSatellites} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Play Defense Satellites</button>
         : cardId === "Chopper Lift"
           ? <button type="button" className="hand-card-play" disabled={!canStartChopperLift} onClick={() => void runCommand({ type: "use-research", cardId: "Chopper Lift" })}>Roll for Chopper Lift</button>
         : undefined;
@@ -120,6 +124,10 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation =
           </>
         ) : <span className="empty-card-state">None revealed</span>}
       </div>
+      {satelliteEvent && <div className="hand-card-action-status" aria-label="Defense Satellites damage results">
+        <strong>Defense Satellites resolved</strong>
+        {satelliteTargets.length > 0 ? <ol>{satelliteTargets.map((id, index) => <li key={`${satelliteEvent.id}-${id}`}>{game.monsters.find((monster) => monster.id === id)?.name ?? id} · {satelliteRolls[index] ?? "?"} damage{satelliteDefeated.has(id) ? " · sent to Hollywood" : ""}</li>)}</ol> : <p>No monsters on the board were affected.</p>}
+      </div>}
     </div>
   );
 }

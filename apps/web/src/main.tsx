@@ -267,6 +267,7 @@ function App() {
   const deploymentDestinations = new Set(deploymentPiece?.destinations ?? []);
   const openMilitarySheet = (sheet?: string) => {
     const requestedSheet = typeof sheet === "string" ? sheet : undefined;
+    setGamePanelOpen(false);
     setMilitaryInitialSheet(requestedSheet ?? nextDeploymentSheet(militaryChoices, activeBranch));
     setMilitarySheetOpen(true);
   };
@@ -337,6 +338,7 @@ function App() {
         hit: attack.hit === true,
         smash: attack.smash === true,
         damage: typeof attack.damage === "number" ? attack.damage : 0,
+        retaliationDamage: typeof attack.retaliationDamage === "number" ? attack.retaliationDamage : undefined,
         targetHealthBefore: typeof attack.targetHealthBefore === "number" ? attack.targetHealthBefore : undefined,
         targetHealthAfter: typeof attack.targetHealthAfter === "number" ? attack.targetHealthAfter : undefined,
       }))

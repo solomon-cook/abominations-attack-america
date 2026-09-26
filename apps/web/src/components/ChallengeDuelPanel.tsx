@@ -8,6 +8,7 @@ type ChallengeAttack = Readonly<{
   hit: boolean;
   smash: boolean;
   damage: number;
+  retaliationDamage?: number;
   targetHealthBefore?: number;
   targetHealthAfter?: number;
 }>;
@@ -65,7 +66,7 @@ export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHe
         <ol className="challenge-duel-attacks" aria-label="Authoritative duel Health changes">
         {attacks.map((attack, index) => <li key={`${eventId}-attack-${index}`} style={{ animationDelay: `${index * 180}ms` }}>
           <span>Round {index + 1}: {attack.attackerId} → {attack.targetId}</span>
-          <strong>{attack.hit ? `-${attack.damage} Health${attack.smash ? " · smash" : ""}` : "Miss"}</strong>
+          <strong>{attack.hit ? `-${attack.damage} Health${attack.smash ? " · smash" : ""}` : attack.retaliationDamage ? `Miss · ${attack.retaliationDamage} electrocution damage` : "Miss"}</strong>
           {typeof attack.targetHealthBefore === "number" && typeof attack.targetHealthAfter === "number" && <small aria-label={`Health changed from ${attack.targetHealthBefore} to ${attack.targetHealthAfter}`}>{attack.targetHealthBefore} → {attack.targetHealthAfter} Health</small>}
         </li>)}
         </ol>

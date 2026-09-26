@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import { legalLaserFenceTargets, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
+import { canUseDefenseSatellites, legalLaserFenceTargets, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 import { DieCube } from "./DieCube";
 import { deploymentChoices } from "./MilitarySheet";
 import { LaserFenceControls } from "./LaserFenceControls";
@@ -57,7 +57,7 @@ export function PhaseActions({
     ) : null;
   };
   const defenseSatellitesButton = activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Defense Satellites") ? (
-    <button disabled={!canAct || activeGame.pendingBattles.length > 0 || Boolean(activeGame.pendingRetreat)} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Use Defense Satellites · roll for each monster</button>
+    <button disabled={!canAct || !canUseDefenseSatellites(activeGame)} onClick={() => void runCommand({ type: "use-research", cardId: "Defense Satellites" })}>Use Defense Satellites · roll for each monster</button>
   ) : null;
   const antimatterButton = pendingBattle && pendingBattleDecision && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Antimatter") ? (
     <button disabled={!canAct} onClick={() => void runCommand({ type: "use-research", cardId: "Antimatter", battleId: pendingBattle.id })}>Use Antimatter · double first-round damage</button>

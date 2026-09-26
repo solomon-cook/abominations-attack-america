@@ -1557,7 +1557,7 @@ function effectiveMonsterAttacks(state: Pick<GameState, "monsters" | "players" |
 /** Public combat values include face-up mutations in projected online views. */
 export function monsterCombatStats(state: GameState, monster: Monster, round = 1) {
   const visible = { ...state, players: state.players.map(player => ({ ...player, mutationCardIds: [...(player.visibleMutationCardIds ?? player.mutationCardIds)] })) };
-  return { defense: effectiveMonsterDefense(visible, monster), damage: effectiveMonsterDamage(visible, monster), attacks: effectiveMonsterAttacks(visible, monster, round) };
+  return { move: effectiveMonsterMove(visible, monster), defense: effectiveMonsterDefense(visible, monster), damage: effectiveMonsterDamage(visible, monster), attacks: effectiveMonsterAttacks(visible, monster, round) };
 }
 
 function monsterMovementPathAllowed(state: Pick<GameState, "monsters" | "players">, monster: Monster, board: BoardDefinition, path: readonly HexKey[]): boolean {
@@ -2129,6 +2129,18 @@ export function legalLaserFenceTargets(state: GameState): Array<{ targetMonsterI
   });
 }
 
+/** Defense Satellites can be played during an active turn, including before an open Fight battle begins. */
+export function canUseDefenseSatellites(state: GameState, playerIndex = state.currentPlayer): boolean {
+  if (playerIndex !== state.currentPlayer || !state.players[playerIndex]?.researchCardIds.includes("Defense Satellites")) return false;
+  if (state.phase === "game-over" || state.phase === "challenge" || state.pendingRetreat) return false;
+  if (state.pendingBattles.length === 0) return true;
+  return state.phase === "fight"
+    && state.pendingDecision?.type === "battle-resolution"
+    && state.pendingDecision.playerIndex === state.currentPlayer
+    && !state.pendingCombat
+    && !state.pendingAttackTarget;
+}
+
 /** Resolve the currently implemented immediate Research windows. */
 function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure" | "Cutbacks" | "Molecular Cannon" | "Chopper Lift", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey, targetMonsterId?: string, researchCardId?: string, researchPlayerIndex?: number): ResearchUseResolution {
   if (!new Set(["Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Mecha-Monster", "Captain Colossal", "Blonde Lure", "Cutbacks", "Molecular Cannon", "Chopper Lift"]).has(cardId as string)) {
@@ -2291,7 +2303,9 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
     }
     return { state: next, cardId, battleId: battle?.id, rolls: [], damagedMonsterIds: [], defeatedMonsterIds: [] };
   }
-  if (state.pendingBattles.length > 0 || state.pendingRetreat) throw new GameDomainError("ILLEGAL_COMMAND", "Defense Satellites must be resolved before an unresolved battle or retreat decision.");
+  if (!canUseDefenseSatellites(state)) {
+    throw new GameDomainError("ILLEGAL_COMMAND", "Defense Satellites can be used during your turn before a battle or retreat resolution begins.");
+  }
   const next = structuredClone(state);
   discardResearchFromHand(next, next.currentPlayer, cardId);
   const rolls: number[] = [];
@@ -2307,8 +2321,13 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
       monster.location = "hollywood";
       monster.infamy = 0;
       defeatedMonsterIds.push(monster.id);
+      if (monster.id === next.monsters[next.currentPlayer]?.id) next.encounterSuppressed = true;
     }
     next.log.push(`Defense Satellites dealt ${roll} damage to ${monster.name}${monster.health === 0 ? "; it went to Hollywood" : ""}.`);
+  }
+  if (defeatedMonsterIds.length > 0 && next.phase === "fight") {
+    next.pendingBattles = next.pendingBattles.filter((battle) => !defeatedMonsterIds.includes(battle.monsterId));
+    finishBattleQueue(next);
   }
   return { state: next, cardId, rolls, damagedMonsterIds, defeatedMonsterIds };
 }
@@ -2782,6 +2801,13 @@ function challengeDeclaration(state: GameState, monster: Monster): MonsterChalle
   };
 }
 
+function firstChallengeAttacker(state: GameState, challenger: Monster, opponent: Monster): Monster {
+  const challengerHasPriority = monsterHasMutation(state, challenger, "High-Octane Blood");
+  const opponentHasPriority = monsterHasMutation(state, opponent, "High-Octane Blood");
+  // The challenger retains the default order when both cards request first attack.
+  return opponentHasPriority && !challengerHasPriority ? opponent : challenger;
+}
+
 /** A Challenge command either rolls exactly one attack or hands the dice over. */
 function resolveChallengeStep(state: GameState, command: Extract<GameCommand, { type: "resolve-challenge" }>): GameEventResult {
   const next = structuredClone(state);
@@ -2797,7 +2823,7 @@ function resolveChallengeStep(state: GameState, command: Extract<GameCommand, { 
   }
   const isMonster = (unit: Monster | MilitaryUnit): unit is Monster => "infamy" in unit;
   const allowance = (unit: Monster | MilitaryUnit, round: number) => isMonster(unit) ? effectiveMonsterAttacks(next, unit, round) : unit.attacks;
-  const first = opponent && monsterHasMutation(next, opponent, "High-Octane Blood") ? opponent : challenger;
+  const first = opponent ? firstChallengeAttacker(next, challenger, opponent) : challenger;
   const turn = challenge.turn ?? { attackerId: first.id, firstAttackerId: first.id, round: 1, remainingAttacks: allowance(first, 1), attacks: [] };
   const attacker = turn.attackerId === challenger.id ? challenger : rival;
   const defender = attacker.id === challenger.id ? rival : challenger;
@@ -3058,7 +3084,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const opponent = next.monsters.find((monster) => monster.id === command.opponentMonsterId)!;
     opponent.location = challenger.location;
     next.challenge = { ...challenge, turn: undefined, opponentMonsterId: opponent.id, weighInHealth: { [challenger.id]: challenger.health, [opponent.id]: opponent.health } };
-    const first = monsterHasMutation(next, opponent, "High-Octane Blood") ? opponent : challenger;
+    const first = firstChallengeAttacker(next, challenger, opponent);
     next.challenge = { ...next.challenge, turn: { attackerId: first.id, firstAttackerId: first.id, round: 1, remainingAttacks: effectiveMonsterAttacks(next, first, 1), attacks: [] } };
     next.currentPlayer = challengePlayerIndex(next, first.id);
     next.pendingDecision = pendingDecisionForState(next);

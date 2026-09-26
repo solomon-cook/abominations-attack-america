@@ -9,6 +9,33 @@ require.extensions[".css"] = () => undefined;
 const { ChallengeArena } = require("../apps/web/src/components/ChallengeArena.tsx") as typeof import("../apps/web/src/components/ChallengeArena.js");
 const { AttackRoll } = require("../apps/web/src/components/FightResolutionPanel.tsx") as typeof import("../apps/web/src/components/FightResolutionPanel.js");
 
+type UiAttack = { attackerId: string; targetId: string; roll: number; hit: boolean; smash: boolean; damage: number; targetDefense: number; combatRound: number; destroyed: boolean; targetHealthBefore?: number; targetHealthAfter?: number; modifiers: string[] };
+let militaryAttack: UiAttack | undefined;
+for (let seed = 0; seed < 256 && !militaryAttack; seed += 1) {
+  const battle = createGame(2, seed);
+  battle.players[0]!.mutationCardIds = ["Whip Tentacles"];
+  battle.monsters[0]!.attacks = 1;
+  battle.monsters[0]!.defense = 99;
+  battle.monsters[0]!.health = 40;
+  battle.units[0]!.location = battle.monsters[0]!.location;
+  battle.units[0]!.defense = 99;
+  battle.units[0]!.attacks = 0;
+  battle.phase = "fight";
+  battle.pendingBattles = [{ id: "whip-tentacles-ui", monsterId: "monster-1", location: battle.monsters[0]!.location as `${number},${number}`, militaryUnitIds: [battle.units[0]!.id] }];
+  battle.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId: "whip-tentacles-ui" };
+  const resolved = applyCommand(battle, { type: "resolve-fight" });
+  militaryAttack = (resolved.eventPayload.attacks as UiAttack[])
+    .find((attack) => attack.attackerId === "monster-1" && attack.roll === 6 && attack.modifiers.includes("Whip Tentacles: extra attack after 6"));
+}
+assert.ok(militaryAttack, "a deterministic military attack should expose Whip Tentacles after a six");
+const militaryRollHtml = renderToStaticMarkup(React.createElement(AttackRoll, {
+  attack: militaryAttack,
+  attackerName: "Zorb",
+  targetName: "army tank",
+  settled: true,
+}));
+assert.match(militaryRollHtml, /Whip Tentacles: extra attack after 6/);
+
 let result: ReturnType<typeof applyCommand> | undefined;
 for (let seed = 0; seed < 256 && !result; seed += 1) {
   const game = createGame(2, seed);
@@ -45,4 +72,4 @@ const rollHtml = renderToStaticMarkup(React.createElement(AttackRoll, {
   settled: true,
 }));
 assert.match(rollHtml, /Whip Tentacles: extra attack after 6/);
-console.log("ChallengeArena displays the six-triggered Whip Tentacles bonus and an enabled follow-up attack.");
+console.log("Military and Challenge roll playback label Whip Tentacles; ChallengeArena enables the six-triggered follow-up attack.");

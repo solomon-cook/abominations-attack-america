@@ -314,7 +314,7 @@
   .game-screen .command-station > .board-action-bar .action-dock { grid-template-columns: minmax(0,1fr) 136px; height: 72px; min-height: 72px; padding: 6px; gap: 5px; border-radius: 0 7px 7px 0; }
   .game-screen .command-station > .board-action-bar .action-dock > button { width: 136px; min-height: 48px; height: auto; padding: 5px; font-size: .68rem; }
   .game-screen .command-station > .board-action-bar .action-dock-status { max-height: 34px; font-size: .58rem; }
-  .game-screen .command-station.mobile-command-expanded { height: min(72dvh,560px); min-height: 240px; padding: 56px 8px 80px; display: flex; flex-direction: column; gap: 8px; overflow-x: hidden; overflow-y: auto; border: 1px solid var(--hud-border); border-radius: 8px; background: #142322f7; box-shadow: 0 12px 36px #061311b0; }
+  .game-screen .command-station.mobile-command-expanded { height: auto; max-height: min(72dvh,560px); min-height: 240px; padding: 56px 8px 80px; display: flex; flex-direction: column; gap: 8px; overflow-x: hidden; overflow-y: auto; border: 1px solid var(--hud-border); border-radius: 8px; background: #142322f7; box-shadow: 0 12px 36px #061311b0; }
   .game-screen .command-station.mobile-command-expanded > .mobile-command-toggle { top: 0; bottom: auto; left: 0; right: 0; width: 100%; height: 48px; min-height: 48px; border: 0; border-bottom: 1px solid var(--hud-border); border-radius: 7px 7px 0 0; padding-inline: 8px; }
   .game-screen .command-station.mobile-command-expanded .mobile-command-toggle > b { display: block; }
   .game-screen .command-station.mobile-command-expanded .mobile-record-slot { display: block; width: 100%; flex: 0 0 auto; }
@@ -326,7 +326,7 @@
   .game-screen .command-station.mobile-command-expanded #record-panel { display: grid; gap: 6px; }
   .game-screen .command-station.mobile-command-expanded #record-panel .record-preview { min-height: 64px; }
   .game-screen .command-station.mobile-command-expanded > .movement-checklist { position: static; inset: auto; order: 2; width: 100%; max-height: 104px; flex: 0 0 auto; overflow: auto; border: 1px solid var(--hud-border); border-radius: 6px; }
-  .game-screen .command-station.mobile-command-expanded > .bottom-context-dock { position: static; inset: auto; order: 3; width: 100%; max-height: none; flex: 1 0 auto; overflow: visible; border: 0; background: transparent; }
+  .game-screen .command-station.mobile-command-expanded > .bottom-context-dock { position: static; inset: auto; order: 3; width: 100%; max-height: none; min-height: 0; flex: 0 1 auto; overflow: visible; border: 0; background: transparent; }
   .game-screen .command-station.mobile-command-expanded .context-tab-body { max-height: 24dvh; overflow: auto; }
   .game-screen .command-station.mobile-command-expanded > .board-action-bar { left: 0; right: 0; bottom: 0; width: 100%; }
   .game-screen .command-station.mobile-command-expanded > .board-action-bar .action-dock { border-radius: 0 0 7px 7px; }

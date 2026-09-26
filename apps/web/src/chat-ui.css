@@ -49,6 +49,16 @@
   .game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .board-minimap svg { height:110px; }
 }
 
+@media(max-width:360px) {
+  .game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .board-minimap {
+    left:auto; right:8px; top:126px; width:144px; height:66px; max-height:66px; padding:3px;
+  }
+  .game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .board-minimap > span {
+    margin-bottom:2px; font-size:.4rem; letter-spacing:.08em;
+  }
+  .game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .board-minimap svg { height:44px; }
+}
+
 @media(max-width:600px) {
   .game-screen > header { top:6px; left:6px; right:6px; padding:5px 7px; gap:3px; border-radius:6px; }
   .game-screen > header .top-turn-summary { flex:1 1 auto; width:auto; flex-basis:auto; }

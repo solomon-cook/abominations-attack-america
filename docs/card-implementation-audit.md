@@ -4,13 +4,13 @@ Audit started: 2026-09-26. Scope: all 32 cards (16 Mutation, 16 Military Researc
 
 ## Current verdict
 
-The previous 2026-09-20 blanket claim that every card works is superseded. All 32 are flagged implemented in the card definition catalogue, and implementation paths exist, but that does **not** prove correct rules, timing, ownership or frontend usability. This audit remains incomplete: Fins and Gills, Rampage, Radiation Field, Atomic Recovery, Berserk, War Spikes, Atomic Breath, Molecular Cannon, Cutbacks and Son of a Monster have passing backend/local frontend evidence and authenticated room regressions; other card checks and authenticated online browser coverage are pending. Toxicor's separate monster ability now presents its two-card choice for both Mutation-site and combat-triggered draws.
+The previous 2026-09-20 blanket claim that every card works is superseded. All 32 are flagged implemented in the card definition catalogue, and implementation paths exist, but that does **not** prove correct rules, timing, ownership or frontend usability. This audit remains incomplete: Fins and Gills, Rampage, Radiation Field, Atomic Recovery, Berserk, War Spikes, Atomic Breath, Iron Stomach, Whip Tentacles, High-Octane Blood, Son of a Monster, Winged Horror, Kinda Friendly, Laser Beam Eyes, Armored Scales, It's a Robot!, Defense Satellites, Molecular Cannon and Cutbacks have passing backend/local frontend evidence and authenticated room regressions; other card checks and authenticated online browser coverage are pending. Toxicor's separate monster ability now presents its two-card choice for both Mutation-site and combat-triggered draws.
 
 Confirmed code restrictions/mismatches are marked GAP below; REVIEW marks a concern requiring a focused reproduction. Other cards have implementation evidence but still require verification. Do not interpret an unchecked item as a missing implementation.
 
 ## Verification log
 
-- 2026-09-26: Engine tests passed (211), API tests passed (77); web/API type checks passed. Markdown link validation, production web build and final `git diff --check` remain to be rerun after this turn's card changes. Build reports the existing large JavaScript chunk advisory (660.93 kB minified). Focused Fins and Gills, Rampage, Radiation Field, Atomic Recovery, War Spikes, Atomic Breath, Iron Stomach and Toxicor UI render checks passed.
+- 2026-09-26: Engine tests passed, API tests passed (85), type checks, Markdown link validation, production web build and `git diff --check` passed. The production JavaScript chunk is 663.96 kB minified and triggers the existing 500 kB size advisory. Focused Fins and Gills, Rampage, Radiation Field, Atomic Recovery, War Spikes, Atomic Breath, Iron Stomach, Whip Tentacles, High-Octane Blood, Winged Horror, Kinda Friendly, Laser Beam Eyes, Armored Scales, It's a Robot! and Toxicor UI render checks passed.
 - 2026-09-26, Molecular Cannon: Chrome opened the real `SheetCards` UI on a player-projected battle, listed all three configured lairs, selected Seattle and clicked Play. The engine rolled, moved Zorb, discarded Molecular Cannon, cleared the battle and returned no browser errors. Authenticated online submission remains open.
 - 2026-09-26, Molecular Cannon: authenticated room-store regression accepts the card command from the current player's session, rejects the other authenticated player as out of turn, and confirms the moved monster and revision after a fresh room read.
 - 2026-09-26, Stabilizer Ray: corrected timing to arm at battle start and ask the holder to choose after the first military damage, from the Mutation cards available at that instant. A miss does not create a choice; the selected card is discarded and the prior battle decision resumes. Engine coverage checks discard lifecycle, cardholder permissions, miss behavior, and resumption.
@@ -27,7 +27,10 @@ Confirmed code restrictions/mismatches are marked GAP below; REVIEW marks a conc
 - 2026-09-26, War Spikes: engine regressions verify exactly 4 damage for ordinary monster hits and 5 for natural-six smashes in both military combat and Challenge. `npm run verify:war-spikes-ui` confirms effective Damage 4 in the selected-monster tray and visible 4/5 damage in the fight roll panel. An authenticated room test verifies both players' projected effective stats, the resolved 4-damage hit and refreshed Mutation visibility.
 - 2026-09-26, Toxicor choice: both Mutation-site and combat-triggered draws now reveal two cards and wait for the Toxicor owner to choose. The combat flow pauses before later attacks, persists the choice (including multiple queued draws), and resumes from saved combat rolls without rerolling. Engine coverage verifies an Antimatter-triggered draw, off-turn ownership, opponent redaction, return-to-deck, and round-two War Spikes activation. Authenticated Memory and Prisma regressions cover the owner-only choice and refresh; `npm run verify:toxicor-ui` renders both site and battle controls.
 - 2026-09-26, Mutation discard lifecycle: Berserk, Son of a Monster and Stabilizer Ray now place discarded Mutations in the authoritative Mutation discard pile. Engine regressions verify Berserk/Son discard and Stabilizer Ray discard-on-damage.
-- 2026-09-26: `npm run browser:local:verify` did not reach gameplay: its first selector waits for the removed `Start development playtest` button, while the current home screen renders `Start local game`. Direct Chrome inspection confirmed the current home screen loads without page errors. The stale verifier is not evidence for card usability.
+- 2026-09-26: Replaced the stale local browser harness that waited for the removed `Start development playtest` control. `npm run browser:local:verify` now starts a real local match on the human-audited board and passes at 1280×720, 390×844, and 320×740, including record access, the minimap bounds, and the mobile Military inspector. This verifies the current UI flow; per-card authenticated browser clicks remain a separate audit item.
+- 2026-09-26, Laser Beam Eyes: engine regression verifies +2 against both Air Force and Navy cruise-missile types and no modifier against a normal tank. `npm run verify:laser-beam-eyes-ui` renders the actual fight roll with attribution, modified total, Defense and correct hit range. Authenticated Memory room test rejects the wrong seat, resolves the owner's roll and retains the modifier and public card projection after refresh.
+- 2026-09-26, Armored Scales: backend verifies -1 Move with a floor of 1, +1 Defense and additive cancellation with High-Octane Blood. Fixed the selected-monster tray to show effective Move alongside effective Defense; `npm run verify:armored-scales-ui` checks both values. Authenticated room projection regression confirms both stats and public Mutation visibility survive refresh.
+- 2026-09-26, It's a Robot!: backend regressions verify electrocution only after a Challenge miss, no retaliation on a hit, persistence of the card, and a lethal retaliation ending the duel with the cardholder's monster winning. Fixed Challenge result projection to retain the retaliation amount; `npm run verify:its-a-robot-ui` renders the actual duel history with the electrocution result. Authenticated room regression verifies the active challenger resolves the miss, the non-active seat cannot roll, and the owner's card/attacker Health survive refresh.
 
 ## Evidence and completion criteria
 
@@ -123,22 +126,22 @@ For each card, complete backend verification first, then exercise the real front
 ### 09. Whip Tentacles
 - Expected timing: Immediately after this monster rolls 6 for an attack.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: Military combat already queued attacks after natural sixes, but the Challenge resolver did not. Challenge combat now grants the extra attack immediately to the monster that rolled the six; battle playback labels the trigger.
 - Scenario: Each natural 6 immediately adds an attack, including chained sixes and Challenge; preserve smash.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Whip Tentacles adds one immediately chained attack for each natural six, even when it misses` verifies one extra military attack for a six, including a miss. `Whip Tentacles immediately grants a Challenge attack after a natural six, even on a miss` verifies a persisted extra attack, cardholder ownership, no bonus to the opposing monster, and the natural-six timing.
+- [x] Frontend local: `npm run verify:whip-tentacles-ui` renders the extra attack marker in military/Challenge `AttackRoll` playback and verifies ChallengeArena shows one available follow-up attack with an active target control.
+- [x] Frontend authenticated online: `authenticated Challenge owner spends Whip Tentacles' persisted bonus attack after a six` verifies the authenticated owner’s new Challenge attack, refreshed availability, rejection of the opponent, and successful use of the bonus roll.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 10. High-Octane Blood
 - Expected timing: Move modifier is continuous; attack-order effect applies during the Monster Challenge.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: The +1 Move projection and defender-first Challenge effect were implemented. When both monsters have High-Octane Blood, the card text gives both first priority; the digital tie-break now preserves the challenger's default first attack.
 - Scenario: +1 Move and first attack in Challenge as defender; test both monsters holding ordering effects.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: existing `persistent Mutation movement and combat modifiers alter authoritative outcomes` verifies +1 Move stacks with Winged Horror; `High-Octane Blood lets a non-challenger attack first in the Monster Challenge` verifies defender priority; `High-Octane Blood on both Challenge monsters preserves the challenger's default first attack` covers the digital tie-break.
+- [x] Frontend local: `npm run verify:high-octane-blood-ui` renders an enabled movement action with the longer legal path, the defender’s first Challenge turn/control, and challenger default order when both hold the card.
+- [x] Frontend authenticated online: `authenticated High-Octane Blood owner gets the movement bonus and defends by attacking first` verifies extended legal movement, owner and opponent Mutation projection, challenger-selects/defender-acts ownership, rejection of the wrong seat, and refreshed room state.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Rules text does not define a simultaneous-priority tie; digital play keeps the challenger's normal first position when both monsters have the card. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 11. Son of a Monster
 - Expected timing: Any time during a battle involving this monster.
@@ -153,64 +156,64 @@ For each card, complete backend verification first, then exercise the real front
 ### 12. Winged Horror
 - Expected timing: Continuous while face up.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: The continuous effect already added +1 Move and Fly, but the audit lacked a source-board scenario proving that a sea barrier becomes traversable and stops being legal if the card leaves play.
 - Scenario: +1 Move and flight in authoritative routes and board highlights; removal restores normal movement.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Winged Horror grants fly movement and one extra Move` checks five-step reach and the grounded route; `Winged Horror can move across a sea barrier on the audited board and loses that route when removed` verifies a legal sea crossing, actual movement command, and route revocation after removal.
+- [x] Frontend local: `npm run verify:winged-horror-ui` renders the enabled Move control, the actual sea destination highlighted as legal, and that destination unreachable after removing the Mutation.
+- [x] Frontend authenticated online: `authenticated Winged Horror owner can fly a monster across a sea barrier and keep the effect after refresh` rejects the other seat, submits the coast-to-sea move as the cardholder, and verifies refreshed position and public Mutation projection.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 13. Kinda Friendly
 - Expected timing: During and immediately after this monster's movement involving National Guard units.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: Movement code allowed Guard-only pass-through and returned Guards at the destination, but mixed National Guard/Army stacks and authenticated/UI route evidence were missing.
 - Scenario: Pass through Guard and return Guard at final space without combat; mixed-unit spaces remain correct.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Kinda Friendly passes through and returns National Guard without creating a battle` covers ending on Guard; `Kinda Friendly passes only through Guard-only spaces and returns Guard before mixed-space combat` verifies Guard-only passage, mixed-branch blockage mid-route, and returning only Guard at a mixed destination while other military creates a battle.
+- [x] Frontend local: `npm run verify:kinda-friendly-ui` renders an enabled movement action and highlights the destination through a Guard-only space; removing the card closes that route.
+- [x] Frontend authenticated online: `authenticated Kinda Friendly owner can move through a Guard-only space` verifies wrong-seat rejection, authorized movement through Guard, preserved Guard position during passage, and refresh state/card projection.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 14. Laser Beam Eyes
 - Expected timing: When this monster attacks cruise missiles.
 - Mode: persistent.
 - Initial finding: Implementation path present; correctness and frontend usability remain unverified.
 - Scenario: +2 to hit cruise missiles only; check each missile type and target/dice feedback.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Laser Beam Eyes gives +2 against both cruise-missile types and no other military target` verifies natural 4 +2 hits Defense 6 Air Force and Navy cruise missiles and that a normal tank receives no modifier.
+- [x] Frontend local: `npm run verify:laser-beam-eyes-ui` renders the actual Fight `AttackRoll` with card attribution, `4 + 2 = 6`, Defense 6 and the corrected `4+ to hit` range.
+- [x] Frontend authenticated online: `authenticated Laser Beam Eyes owner hits a cruise missile with the visible +2 after refresh` rejects the other seat, accepts the owner’s Fight resolution, and verifies the modifier and card projection after refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. The authenticated room path is tested through the action API; authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 15. Armored Scales
 - Expected timing: Continuous while face up.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: Backend composed both sourced modifiers and movement path length respected -1 Move, but the selected-monster tray displayed printed Move. The tray now displays effective Move alongside projected Defense.
 - Scenario: +1 Defense and -1 Move with stacking, movement bounds and visible effective stats.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `persistent Mutation movement and combat modifiers alter authoritative outcomes` verifies -1 Move, +1 Defense, additive cancellation with High-Octane Blood, and the minimum Move floor of 1.
+- [x] Frontend local: `npm run verify:armored-scales-ui` renders the actual selected-monster tray from a player projection and verifies the reduced Move and increased Defense.
+- [x] Frontend authenticated online: `authenticated room projections retain Armored Scales' effective Move and Defense across refresh` verifies both stats and the face-up card from the owner and refreshed opponent projections.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM PROJECTION PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 16. It's a Robot!
 - Expected timing: Immediately after another monster misses this monster during the Monster Challenge.
 - Mode: persistent.
-- Initial finding: Implementation path present; correctness and frontend usability remain unverified.
+- Initial finding: Backend applied 1 damage to a monster that missed the holder, but the completed duel-history projection dropped the retaliation amount. The challenge result now carries it into visible history playback.
 - Scenario: Challenge miss deals 1 damage to attacker; handle simultaneous defeat and visible retaliation.
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `It's a Robot! electrocutes a Monster Challenge attacker after a miss, including lethal retaliation` verifies one Health loss for a miss, no loss on a hit, the persistent card remains, and 1-Health retaliation defeats the attacker and awards the duel to the cardholder's monster.
+- [x] Frontend local: `npm run verify:its-a-robot-ui` feeds a real lethal Challenge result into `ChallengeDuelPanel` and verifies the saved duel timeline identifies the electrocution damage.
+- [x] Frontend authenticated online: `authenticated Monster Challenge resolves It's a Robot! retaliation for the cardholder after refresh` verifies the active challenger can roll, the other seat cannot, the retaliation affects attacker Health, and the cardholder retains the Mutation after room refresh.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ## Military Research cards
 
 ### 17. Defense Satellites
 - Expected timing: Any of your turns.
 - Mode: one-use/discard.
-- Initial finding: REVIEW: compare all own-turn windows with pending-battle restrictions and hand-panel gating.
+- Initial finding: GAP: the engine rejected use whenever a battle was pending, and both hand and Fight controls were disabled at the start of that battle despite the sourced “any of your turns” timing. The open pre-battle Fight window now permits use. Combat that has started and pending retreat decisions remain closed so a card cannot interrupt an attack or retreat resolution.
 - Scenario: Use on any of your turns. DISCARD THIS CARD AFTER USE. Roll 1 die for each monster on the game board. That monster takes that much damage. (This doesn't affect Captain Colossal or Mecha-Monster.)
-- [ ] Backend: verify against sourced rule; record regression evidence and fix any confirmed defect.
-- [ ] Frontend local: reproduce relevant window/passive trigger; verify choices and feedback.
-- [ ] Frontend authenticated online: verify actor permissions and state synchronization.
-- Verdict / evidence: PENDING.
+- [x] Backend: `Defense Satellites discards and resolves one deterministic roll per board monster` checks each active board monster gets one die, off-board monsters are skipped, damage is exact, lethal damage sends the monster to Hollywood, and the Research card is discarded. `Defense Satellites leaves Captain Colossal and Mecha-Monster unharmed` exercises both sourced exclusions. It also verifies the pre-battle Fight window, preserves a surviving battle, clears a defeated active monster's stale battle, and rejects use once an attack target is pending.
+- [x] Frontend local: `npm run verify:defense-satellites-ui` renders the actual hand and Fight controls enabled before the battle roll, verifies each target's roll/damage/defeat in the UI result, and confirms the hand action is disabled once attack targeting begins.
+- [x] Frontend authenticated online: `authenticated Defense Satellites owner can play in the open Fight window and keeps a surviving battle` rejects the other seat, accepts the active player's card, checks the rolls and retained battle in the event, and confirms the battle/result survive a refreshed room projection.
+- Verdict / evidence: BACKEND + LOCAL FRONTEND + AUTHENTICATED ROOM FLOW PASS. Authenticated browser click-through remains part of the broader online UI coverage.
 
 ### 18. Antimatter
 - Expected timing: Start of a battle involving your units, on any of your turns.

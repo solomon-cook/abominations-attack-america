@@ -16,7 +16,7 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
       <div className="command-record-body">
         <div className="command-identity"><div><span className="command-eyebrow">MONSTER RECORD · PLAYER {game.currentPlayer + 1}</span><h3>{monster.name}</h3></div><span className="command-infamy" title="Infamy">★ <b>{monster.infamy}</b><small>INFAMY</small></span></div>
         <div className="command-health"><span>HEALTH <b>{monster.health}<small> / {monster.maxHealth}</small></b></span><meter aria-label="Monster health" min={0} max={monster.maxHealth} value={monster.health} /></div>
-        <SheetStats values={{ Move: monster.move, Attacks: combatStats.attacks, Defense: combatStats.defense, Damage: combatStats.damage }} />
+        <SheetStats values={{ Move: combatStats.move, Attacks: combatStats.attacks, Defense: combatStats.defense, Damage: combatStats.damage }} />
         <div className="command-movement">{movementLabel(monster.movement)}<span>{moved ? "✓ Movement complete" : game.phase === "move" ? "Ready to move" : game.phase}</span></div>
         {definition && <details className="command-ability"><summary>Special ability</summary><p>{definition.specialAbilityText}</p></details>}
       </div>

@@ -35,7 +35,9 @@ export function ChallengeArena({ game, canAct, canUseMutation = canAct, playerIn
   const combatant = (id?: string) => game.monsters.find(monster => monster.id === id) ?? game.units.find(unit => unit.id === id);
   const left = combatant(leftId);
   const right = combatant(rightId);
-  const first = right && "name" in right && game.players[game.monsters.findIndex(monster => monster.id === right.id)]?.mutationCardIds.includes("High-Octane Blood") ? right : left;
+  const challengerHasPriority = left && "name" in left && game.players[game.monsters.findIndex(monster => monster.id === left.id)]?.mutationCardIds.includes("High-Octane Blood");
+  const opponentHasPriority = right && "name" in right && game.players[game.monsters.findIndex(monster => monster.id === right.id)]?.mutationCardIds.includes("High-Octane Blood");
+  const first = opponentHasPriority && !challengerHasPriority ? right : left;
   const attackerId = challenge?.turn?.attackerId ?? first?.id;
   const attacker = combatant(attackerId);
   const name = (id?: string) => { const unit = combatant(id); return unit ? "name" in unit ? unit.name : (unit.unitTypeId ?? unit.id).replaceAll("-", " ") : "Opponent"; };

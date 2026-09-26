@@ -104,16 +104,38 @@ for (const [width,height] of sizes) {
   await encounterBoardAction.click();
   const deploy=page.getByRole('button',{name:'Deploy military',exact:true}).last();
   if(await deploy.isVisible()) await deploy.click();
-  const researchTab=page.getByRole('button',{name:/Military research/}).last();
-  await researchTab.click();
-  const drawResearch=page.getByRole('button',{name:'Draw a Military Research card instead of deploying a unit'});
-  await drawResearch.waitFor({state:'visible'});
-  assert.ok(await drawResearch.isEnabled(),'research action is unavailable before deployment');
-  await drawResearch.click();
-  await page.locator('dialog.resolution-research').waitFor({state:'visible'});
-  assert.match(await page.locator('.top-turn-summary').innerText(),/PLAYER 2/i,'drawing research did not pass the turn');
-  await page.locator('dialog.resolution-research .resolution-close').click();
-  item.checks.push('movement confirmed; encounter resolved; research alternative used');
+  if(width<=360) {
+   const beforeUnits=await page.locator('.tile-occupant').count();
+   await page.getByRole('button',{name:/^Deploy .* piece/}).first().click();
+   const destinations=page.locator('.hex-tile.deployment-legal:not(:disabled)');
+   await destinations.first().waitFor({state:'visible'});
+   const available=await destinations.evaluateAll(nodes=>nodes.map((node,index)=>{
+    const rect=node.getBoundingClientRect();
+    const clear=[...document.querySelectorAll('.game-screen > header,.opponent-portrait-rail,.map-controls,.board-action-bar')].every(overlay=>{
+     const other=overlay.getBoundingClientRect();
+     return rect.right<=other.left || rect.left>=other.right || rect.bottom<=other.top || rect.top>=other.bottom;
+    });
+    return {index,left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom,clear};
+   }).filter(rect=>rect.clear&&rect.left>=0&&rect.top>=0&&rect.right<=innerWidth&&rect.bottom<=innerHeight));
+   assert.ok(available.length,`phone view should expose a deployment location clear of the HUD: ${JSON.stringify(available)}`);
+   const destination=destinations.nth(available[0].index);
+   await destination.click();
+   await page.waitForFunction(count=>document.querySelectorAll('.tile-occupant').length>count,beforeUnits);
+   assert.ok(await page.locator('.deployment-prompt').count()===0,'deployment prompt should clear after placement');
+   item.checks.push('movement confirmed; encounter resolved; legal unit deployed on the board');
+   if(await page.locator('.military-drawer').isVisible().catch(()=>false)) await page.locator('.military-sheet-close').click();
+  } else {
+   const researchTab=page.getByRole('button',{name:/Military research/}).last();
+   await researchTab.click();
+   const drawResearch=page.getByRole('button',{name:'Draw a Military Research card instead of deploying a unit'});
+   await drawResearch.waitFor({state:'visible'});
+   assert.ok(await drawResearch.isEnabled(),'research action is unavailable before deployment');
+   await drawResearch.click();
+   await page.locator('dialog.resolution-research').waitFor({state:'visible'});
+   assert.match(await page.locator('.top-turn-summary').innerText(),/PLAYER 2/i,'drawing research did not pass the turn');
+   await page.locator('dialog.resolution-research .resolution-close').click();
+   item.checks.push('movement confirmed; encounter resolved; research alternative used');
+  }
   if(await page.locator('.layout.panel-open').count()) await toggleDetails(page);
   await check(page,'research action resolved'); await page.waitForTimeout(500);
   item.brokenImages=await page.locator('.audited-terrain').evaluateAll(images=>images.filter(i=>i.complete && !i.naturalWidth).map(i=>i.src));
