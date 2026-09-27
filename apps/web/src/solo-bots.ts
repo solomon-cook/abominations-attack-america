@@ -94,6 +94,29 @@ function featureValue(state: GameState, location: HexKey): number {
   return features.reduce((value, feature) => value + (feature.kind === "city" ? 4 : feature.kind === "infamy-site" ? 5 : feature.kind === "military-base" ? 2 : 0), 0);
 }
 
+const challengeMutationPriority: Readonly<Record<string, number>> = {
+  "High-Octane Blood": 100,
+  Berserk: 95,
+  "War Spikes": 92,
+  "Atomic Breath": 90,
+  "Son of a Monster": 88,
+  "Whip Tentacles": 84,
+  "Armored Scales": 80,
+  "It's a Robot!": 74,
+  "Atomic Recovery": 45,
+  "Radiation Field": 35,
+  "Winged Horror": 30,
+  "Fins and Gills": 25,
+  "Iron Stomach": 20,
+  "Laser Beam Eyes": 15,
+  Rampage: 10,
+  "Kinda Friendly": 5,
+};
+
+function selectChallengeMutation(cardIds: readonly string[]): string | undefined {
+  return [...cardIds].sort((a, b) => (challengeMutationPriority[b] ?? 0) - (challengeMutationPriority[a] ?? 0))[0];
+}
+
 function preferredBranch(enemyName: string, available: readonly string[]): BotBranch {
   const preference = branchCounters[enemyName] ?? ["Marines", "Army", "Air Force", "Navy"];
   return (preference.find((branch) => available.includes(branch)) ?? available[0] ?? "Army") as BotBranch;
@@ -172,8 +195,14 @@ function tileScore(state: GameState, destination: HexKey, playerIndex: number, b
   let score = 0;
   const monster = monsterTurn ? state.monsters[playerIndex] : undefined;
   const objectiveAvailable = !state.stompedLocations.includes(destination);
-  if (objectiveAvailable && features.some((feature) => feature.kind === "city")) {
-    score += monsterTurn ? monster?.name === "Zorb" && monster.infamy < 3 ? 15 : 8 : 1;
+  const city = objectiveAvailable ? features.find((feature) => feature.kind === "city") : undefined;
+  if (city) {
+    if (monsterTurn && monster?.name === "Toxicor") {
+      const healing = city.benefit.kind === "health" ? city.benefit.amount : city.benefit.dice * 3.5;
+      score += monster.health < 20 ? 15 + healing : 5;
+    } else {
+      score += monsterTurn ? monster?.name === "Zorb" && monster.infamy < 3 ? 15 : 8 : 1;
+    }
   }
   if (objectiveAvailable && features.some((feature) => feature.kind === "infamy-site")) {
     score += monsterTurn ? monster?.name === "Megaclaw" && monster.infamy < 4 ? 14 : 7 : 0;
@@ -181,13 +210,18 @@ function tileScore(state: GameState, destination: HexKey, playerIndex: number, b
   if (features.some((feature) => feature.kind === "military-base")) score += monsterTurn ? 2 : 4;
   if (features.some((feature) => feature.kind === "lair")) score += monsterTurn ? 0 : 2;
   if (location?.name === "Hollywood") score += monsterTurn ? 3 : 1;
+  if (monsterTurn && monster?.name === "Toxicor") {
+    const unusedMutationSites = features.filter((feature) => feature.kind === "mutation-site" && !(state.mutationSiteUses[monster.id] ?? []).includes(feature.siteId)).length;
+    score += unusedMutationSites * (monster.health >= 20 ? 20 : 4);
+  }
 
   const enemies = state.monsters.filter((candidate, index) => index !== playerIndex && candidate.health > 0 && candidate.location === destination);
   const friendlyUnits = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location === destination);
   const hostileUnits = state.units.filter((unit) => unit.ownerPlayer !== undefined && unit.ownerPlayer !== playerIndex && unit.location === destination);
   if (monsterTurn) {
     const nextObjectiveDistance = Object.values(board.hexes)
-      .filter((candidate) => !state.stompedLocations.includes(candidate.key) && candidate.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site"))
+      .filter((candidate) => !state.stompedLocations.includes(candidate.key) && candidate.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site"
+        || monster?.name === "Toxicor" && monster.health >= 20 && feature.kind === "mutation-site" && !(state.mutationSiteUses[monster.id] ?? []).includes(feature.siteId)))
       .reduce((nearest, candidate) => Math.min(nearest, hexDistance(state, destination, candidate.key)), 99);
     score += Math.max(0, 5 - nextObjectiveDistance) * 2;
     const danger = hostileUnits.reduce((sum, unit) => sum + unit.damage + (unit.unitTypeId?.includes("missile") ? 2 : 0), 0);
@@ -395,7 +429,11 @@ export function chooseBotCommand(state: GameState): GameCommand | undefined {
     if (choice) return { type: "resolve-chopper-lift", targetMonsterId: choice.monster.id, destination: choice.destination };
   }
 
-  if (decision?.type === "mutation-choice") return { type: "choose-mutation-card", cardId: decision.cardIds[0]! };
+  if (decision?.type === "mutation-choice") {
+    const monster = state.monsters.find((candidate) => candidate.id === decision.monsterId);
+    const cardId = monster?.name === "Toxicor" ? selectChallengeMutation(decision.cardIds) : decision.cardIds[0];
+    return cardId ? { type: "choose-mutation-card", cardId } : undefined;
+  }
   if (decision?.type === "stabilizer-ray-choice") return { type: "choose-stabilizer-ray-mutation", cardId: decision.cardIds[0]! };
   if (decision?.type === "trophy-choice") {
     const candidate = [...decision.unitIds].sort((a, b) => {
@@ -412,6 +450,12 @@ export function chooseBotCommand(state: GameState): GameCommand | undefined {
   if (decision?.type === "challenge-giant") return decision.giantUnitIds[0] ? { type: "challenge-giant", giantUnitId: decision.giantUnitIds[0] } : undefined;
   if (decision?.type === "challenge-resolution" || decision?.type === "challenge-giant-resolution") {
     const turn = state.challenge?.turn;
+    const attacker = turn && state.monsters.find((monster) => monster.id === turn.attackerId);
+    if (attacker?.name === "Toxicor" && state.monsters.indexOf(attacker) === actor) {
+      const mutations = state.players[actor]?.mutationCardIds ?? [];
+      if (mutations.includes("Son of a Monster") && attacker.health < attacker.maxHealth) return { type: "use-mutation", cardId: "Son of a Monster" };
+      if (mutations.includes("Berserk")) return { type: "use-mutation", cardId: "Berserk" };
+    }
     if (turn?.remainingAttacks) return { type: "resolve-challenge" };
     return { type: "resolve-challenge", endTurn: true };
   }
@@ -512,6 +556,8 @@ function explainBotCommand(state: GameState, command: GameCommand, actor: number
     const monster = state.monsters[state.currentPlayer];
     const destination = command.path.at(-1)!;
     const tile = boardForState(state).hexes[destination as HexKey];
+    if (monster?.name === "Toxicor" && monster.health < 20 && tile?.features.some((feature) => feature.kind === "city")) return `Moved Toxicor toward ${locationName(state, destination)} to recover to 20 Health before seeking Mutations.`;
+    if (monster?.name === "Toxicor" && monster.health >= 20 && tile?.features.some((feature) => feature.kind === "mutation-site")) return `Moved Toxicor to ${locationName(state, destination)} to collect a Mutation for the Monster Challenge.`;
     if (monster?.name === "Tomanagi" && (tile?.waterClass === "sea" || tile?.waterClass === "seacoast")) return `Moved Tomanagi to ${locationName(state, destination)} to set up its coastal attack bonus.`;
     if (monster?.name === "Zorb" && tile?.features.some((feature) => feature.kind === "city")) return `Moved Zorb toward ${locationName(state, destination)} to gain Infamy from the city.`;
     if (monster?.name === "Megaclaw" && tile?.features.some((feature) => feature.kind === "infamy-site")) return `Moved Megaclaw to ${locationName(state, destination)} to collect its extra Infamy.`;
@@ -530,6 +576,8 @@ function explainBotCommand(state: GameState, command: GameCommand, actor: number
     return `Deployed ${branch} forces to protect objectives and build an attack group.`;
   }
   if (command.type === "draw-research") return "Drew Military Research because the attack group was assembled and no valuable monster route needed an urgent block.";
+  if (command.type === "choose-mutation-card" && state.monsters[actor]?.name === "Toxicor") return `Toxicor kept ${command.cardId} for its Monster Challenge.`;
+  if (command.type === "use-mutation" && state.phase === "challenge") return `Toxicor used ${command.cardId} to strengthen its Monster Challenge turn.`;
   if (command.type === "use-mutation" && command.cardId === "Berserk") return "Used Berserk to add attacks while the monster faced a concentrated force.";
   if (command.type === "use-monster-ability" && command.ability === "gargantis-heal") return "Gargantis spent only the Mutation cards needed to recover before its next fight.";
   if (command.type === "launch-submarine-at-monster") return `Launched the Navy submarine at a supported or vulnerable ${state.monsters.find((monster) => monster.id === command.monsterId)?.name ?? "monster"}.`;

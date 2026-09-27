@@ -97,6 +97,64 @@ for (const [monster, tactic] of Object.entries(monsterTactics)) {
   }
 }
 
+const toxicorMutationState = structuredClone(konkMatch);
+toxicorMutationState.monsters[1]!.name = "Toxicor";
+toxicorMutationState.currentPlayer = 1;
+toxicorMutationState.pendingDecision = { type: "mutation-choice", playerIndex: 1, monsterId: toxicorMutationState.monsters[1]!.id, cardIds: ["Rampage", "High-Octane Blood"] };
+assert.deepEqual(chooseBotCommand(toxicorMutationState), { type: "choose-mutation-card", cardId: "High-Octane Blood" }, "Toxicor should take a mutation that gives it attack priority in a Monster Challenge");
+
+const toxicorChallenge = structuredClone(konkMatch);
+const toxicor = toxicorChallenge.monsters[1]!;
+toxicor.name = "Toxicor";
+toxicor.health = 15;
+toxicorChallenge.currentPlayer = 1;
+toxicorChallenge.phase = "challenge";
+toxicorChallenge.players[1]!.mutationCardIds = ["Son of a Monster", "Berserk"];
+toxicorChallenge.challenge = {
+  declared: true,
+  active: true,
+  challengerMonsterId: toxicor.id,
+  opponentMonsterId: toxicorChallenge.monsters[0]!.id,
+  declarationPlayerIndex: 1,
+  pendingStartPlayerIndex: 1,
+  weighInHealth: {},
+  defeatedMonsterIds: [],
+  turn: { attackerId: toxicor.id, firstAttackerId: toxicor.id, round: 1, remainingAttacks: toxicor.attacks, attacks: [] },
+};
+toxicorChallenge.pendingDecision = { type: "challenge-resolution", playerIndex: 1, challengerMonsterId: toxicor.id, opponentMonsterId: toxicorChallenge.monsters[0]!.id };
+const toxicorChallengeCommand = chooseBotCommand(toxicorChallenge);
+assert.deepEqual(toxicorChallengeCommand, { type: "use-mutation", cardId: "Son of a Monster" }, "Toxicor should heal and add challenge attacks before its duel turn");
+const toxicorAfterSon = applyCommand(toxicorChallenge, toxicorChallengeCommand!).state;
+assert.ok(toxicorAfterSon.monsters[1]!.health > 15);
+assert.equal(toxicorAfterSon.challenge?.turn?.remainingAttacks, toxicor.attacks + 2);
+assert.deepEqual(chooseBotCommand(toxicorAfterSon), { type: "use-mutation", cardId: "Berserk" }, "Toxicor should spend Berserk for extra Monster Challenge attacks");
+
+const toxicorMoveState = beginBotMove(konkMatch);
+toxicorMoveState.monsters[0]!.health = 0;
+const movingToxicor = toxicorMoveState.monsters[1]!;
+movingToxicor.name = "Toxicor";
+movingToxicor.movement = "land-lake";
+const movementBoard = boardForState(toxicorMoveState);
+let healthAndMutationRoutes = false;
+for (const start of Object.keys(movementBoard.hexes) as Array<keyof typeof movementBoard.hexes>) {
+  movingToxicor.location = start;
+  const destinations = new Set(legalMonsterPaths(toxicorMoveState, movingToxicor.id).map((path) => path.at(-1)!));
+  const hasCity = [...destinations].some((key) => movementBoard.hexes[key]?.features.some((feature) => feature.kind === "city"));
+  const hasMutation = [...destinations].some((key) => movementBoard.hexes[key]?.features.some((feature) => feature.kind === "mutation-site" && !(toxicorMoveState.mutationSiteUses[movingToxicor.id] ?? []).includes(feature.siteId)));
+  if (hasCity && hasMutation) { healthAndMutationRoutes = true; break; }
+}
+assert.ok(healthAndMutationRoutes, "the test board should offer Toxicor both a city and Mutation site within movement range");
+movingToxicor.health = 15;
+const healthRoute = chooseBotCommand(toxicorMoveState);
+assert.equal(healthRoute?.type, "move");
+if (healthRoute?.type !== "move") throw new Error("Expected Toxicor to move toward healing while below 20 Health.");
+assert.ok(movementBoard.hexes[healthRoute.path.at(-1)!]?.features.some((feature) => feature.kind === "city"), "Toxicor should choose the health gain before reaching 20 Health");
+movingToxicor.health = 20;
+const mutationRoute = chooseBotCommand(toxicorMoveState);
+assert.equal(mutationRoute?.type, "move");
+if (mutationRoute?.type !== "move") throw new Error("Expected Toxicor to move toward a Mutation site once it reaches 20 Health.");
+assert.ok(movementBoard.hexes[mutationRoute.path.at(-1)!]?.features.some((feature) => feature.kind === "mutation-site"), "Toxicor should pivot to Mutation sites at 20 Health");
+
 // Bots randomly commit to a force-first or research-first policy for the full match.
 const researchMatch = createSoloMatch("monster-4");
 const researchState = structuredClone(researchMatch);
