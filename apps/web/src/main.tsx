@@ -68,7 +68,7 @@ import { HexGrid } from "./components/HexGrid";
 import { MilitaryReference } from "./components/SheetReference";
 import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
-import { botActionDelayMs, botStrategyHint, chooseBotSetupAction, hasBotLaserFenceReaction, runBotActionWithExplanation } from "./solo-bots";
+import { botActionDelayMs, botStrategyHint, botTacticForPlayer, chooseBotSetupAction, hasBotLaserFenceReaction, runBotActionWithExplanation } from "./solo-bots";
 import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { CardReveal, ResolutionStage } from "./components/ResolutionStage";
@@ -82,6 +82,10 @@ import { playSound, type SoundCategory } from "./audio";
 import { monsterAssetSlug } from "./monster-assets";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
+
+function randomGameSeed(): number {
+  return crypto.getRandomValues(new Uint32Array(1))[0]!;
+}
 import "./fullscreen-shell.css";
 import "./board-terrain.css";
 import "./physical-sheets.css";
@@ -1030,7 +1034,7 @@ function App() {
     setSession(null);
     setRoom(null);
     setError("");
-    const next = createMvpRoomGame(playerCount);
+    const next = createMvpRoomGame(playerCount, randomGameSeed());
     setLocalSetup(next.setupState!);
     setGame(next);
     localStorage.removeItem("abominations-session");
@@ -1277,7 +1281,7 @@ function App() {
         </div>
       </header>
       {error && <p className="error global-game-error" role="alert">{error}</p>}
-      {soloMode && setupComplete && (decisionPlayer !== 0 || botExplanation || botThinking) && <aside className="bot-turn-guidance" role="status"><strong>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Bot is reacting" : "Bot is planning" : decisionPlayer !== 0 ? `${activePlayer.name} bot` : "Bot plan"}</strong><span>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Checking whether to force a retreat or make the monster spend Infamy." : botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army") : decisionPlayer !== 0 ? botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army") : botExplanation}</span></aside>}
+      {soloMode && setupComplete && (decisionPlayer !== 0 || botExplanation || botThinking) && <aside className="bot-turn-guidance" role="status"><strong>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Bot is reacting" : "Bot is planning" : decisionPlayer !== 0 ? `${activePlayer.name} bot` : "Bot plan"}</strong><span>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Checking whether to force a retreat or make the monster spend Infamy." : botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army", decisionPlayer > 0 ? botTacticForPlayer(activeGame, decisionPlayer) : undefined) : decisionPlayer !== 0 ? botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army", botTacticForPlayer(activeGame, decisionPlayer)) : botExplanation}</span></aside>}
       <LobbyPanel
         online={online}
         room={room}

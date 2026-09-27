@@ -13,7 +13,7 @@ import {
   type GameState,
 } from "../packages/game-engine/src/index.js";
 import { deploymentChoices } from "../apps/web/src/components/MilitarySheet.js";
-import { botActionDelayMs, botStrategyHint, chooseBotCommand, chooseBotSetupAction, hasBotLaserFenceReaction, routeBlockScores, runBotActionWithExplanation, runBotTurnWithExplanation } from "../apps/web/src/solo-bots.js";
+import { botActionDelayMs, botStrategyHint, botTacticForPlayer, chooseBotCommand, chooseBotSetupAction, hasBotLaserFenceReaction, routeBlockScores, runBotActionWithExplanation, runBotTurnWithExplanation } from "../apps/web/src/solo-bots.js";
 
 function createSoloMatch(humanMonsterId: string): GameState {
   const game = createMvpRoomGame(2, 37);
@@ -50,9 +50,28 @@ function beginBotMove(state: GameState): GameState {
   return next;
 }
 
+function stateWithTactic(state: GameState, tactic: "force-first" | "research-first"): GameState {
+  for (let seed = 0; seed < 100; seed += 1) {
+    const candidate = structuredClone(state);
+    candidate.rng.seed = seed;
+    candidate.matchId = `tactic-test-${seed}`;
+    if (botTacticForPlayer(candidate, 1) === tactic) return candidate;
+  }
+  throw new Error(`Could not select ${tactic} for test fixture`);
+}
+
 // The bot counters Konk with a monster plan and selects a legal branch counter,
 // and prefers legal starting deployments over a blind Research draw.
 const konkMatch = createSoloMatch("monster-5");
+const tacticStyles = new Set(Array.from({ length: 40 }, (_, seed) => {
+  const sample = structuredClone(konkMatch);
+  sample.rng.seed = seed;
+  sample.matchId = `tactic-balance-${seed}`;
+  const tactic = botTacticForPlayer(sample, 1);
+  assert.equal(botTacticForPlayer(sample, 1), tactic, "a bot should keep its tactic throughout the match");
+  return tactic;
+}));
+assert.deepEqual([...tacticStyles].sort(), ["force-first", "research-first"]);
 assert.equal(konkMatch.monsters[1]!.name, "Gargantis");
 assert.ok(["Army", "Marines"].includes(konkMatch.setupAssignments?.[1]?.branch ?? ""));
 assert.ok(konkMatch.units.filter((unit) => unit.ownerPlayer === 1 && unit.location !== "record-tile").length >= 1);
@@ -78,7 +97,7 @@ for (const [monster, tactic] of Object.entries(monsterTactics)) {
   }
 }
 
-// When the force is assembled and there is no immediate objective threat, Research is the better Deploy action.
+// Bots randomly commit to a force-first or research-first policy for the full match.
 const researchMatch = createSoloMatch("monster-4");
 const researchState = structuredClone(researchMatch);
 researchState.currentPlayer = 1;
@@ -100,31 +119,36 @@ const safeHex = Object.values(researchBoard.hexes).sort((a, b) => {
 })[0]!;
 researchState.monsters[0]!.location = safeHex.key;
 researchState.monsters[0]!.infamy = 0;
-researchState.monsters.forEach((monster, index) => { if (index !== 1) monster.health = 0; });
+researchState.monsters.forEach((monster) => { monster.health = 0; });
+const forceFirstState = stateWithTactic(researchState, "force-first");
+assert.notEqual(chooseBotCommand(forceFirstState)?.type, "draw-research", "force-first bots should field more units before taking optional Research");
+const researchFirstState = stateWithTactic(researchState, "research-first");
+assert.equal(chooseBotCommand(researchFirstState)?.type, "draw-research", "research-first bots should draw early once a screen is deployed");
 const deployedAtStart = researchState.units.filter((unit) => unit.ownerPlayer === 1 && unit.location !== "record-tile" && unit.location !== "permanently-removed").length;
 assert.ok(deployedAtStart < 3, "the scenario should begin below the bot's three-unit attack group threshold");
 assert.notEqual(chooseBotCommand(researchState)?.type, "draw-research", "the bot should deploy its force before taking optional Research");
-const attackHex = deploymentChoices(researchState).flatMap((choice) => choice.destinations)[0];
+const attackHex = deploymentChoices(forceFirstState).flatMap((choice) => choice.destinations)[0];
 assert.ok(attackHex, "the bot should have a legal destination for the attack timing scenario");
-const cautiousAttackState = structuredClone(researchState);
+const cautiousAttackState = structuredClone(forceFirstState);
 cautiousAttackState.monsters[0]!.health = cautiousAttackState.monsters[0]!.maxHealth;
 cautiousAttackState.monsters[0]!.location = attackHex;
 const cautiousAttack = chooseBotCommand(cautiousAttackState);
 assert.ok(cautiousAttack?.type === "deploy" || cautiousAttack?.type === "redeploy");
 assert.notEqual(cautiousAttack.destination, attackHex, "the bot should not start a healthy-monster fight with an undersized force");
-const establishedResearchState = structuredClone(researchState);
+const establishedResearchState = structuredClone(researchFirstState);
 const reserveUnits = establishedResearchState.units.filter((unit) => unit.ownerPlayer === 1 && unit.location === "record-tile");
 for (const unit of reserveUnits) {
   if (establishedResearchState.units.filter((candidate) => candidate.ownerPlayer === 1 && candidate.location !== "record-tile" && candidate.location !== "permanently-removed").length >= 3) break;
   unit.location = safeHex.key;
 }
 assert.ok(establishedResearchState.units.filter((unit) => unit.ownerPlayer === 1 && unit.location !== "record-tile" && unit.location !== "permanently-removed").length >= 3);
-assert.equal(chooseBotCommand(establishedResearchState)?.type, "draw-research", "after assembling three units, Research is a valid fallback when no monster route is urgent");
+assert.equal(chooseBotCommand(establishedResearchState)?.type, "draw-research", "research-first bots should continue drawing when no monster route is urgent");
 
 // A high-Infamy monster beside an objective turns the same choice into a deployment to defend.
 const threatenedState = structuredClone(researchState);
 const threatenedCity = objectives.find((hex) => hex.features.some((feature) => feature.kind === "city"))!;
 threatenedState.monsters[0]!.location = threatenedCity.key;
+threatenedState.monsters[0]!.health = threatenedState.monsters[0]!.maxHealth;
 threatenedState.monsters[0]!.infamy = 3;
 assert.notEqual(chooseBotCommand(threatenedState)?.type, "draw-research");
 
@@ -218,4 +242,4 @@ for (const branch of ["Army", "Navy", "Air Force", "Marines"] as const) {
   routeState.setupAssignments![1]!.branch = branch;
   assert.ok(routeBlockScores(routeState).size > 0, `${branch} route scoring should identify spaces where a blocker can intercept objective routes`);
 }
-console.log("Solo bots choose counters and starting forces, draw or deploy based on threat, react with Laser Fence, use Research at battle timing, and finish a turn with an explanation.");
+console.log("Solo bots keep a seeded force-first or research-first tactic, build attack groups, block monster routes, react with Research at battle timing, and finish a turn with an explanation.");

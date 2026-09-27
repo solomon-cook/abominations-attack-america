@@ -26,6 +26,20 @@ import { deploymentChoices } from "./components/MilitarySheet";
 
 export const BRANCHES = ["Army", "Navy", "Air Force", "Marines"] as const;
 export type BotBranch = typeof BRANCHES[number];
+export type BotTactic = "force-first" | "research-first";
+
+/** Pick a match-stable, evenly mixed style from the match seed and bot seat. */
+export function botTacticForPlayer(state: GameState, playerIndex: number): BotTactic {
+  let value = ((state.rng.seed >>> 0) ^ Math.imul(playerIndex + 1, 0x9e3779b1)) >>> 0;
+  for (let index = 0; index < state.matchId.length; index += 1) {
+    value = Math.imul(value ^ state.matchId.charCodeAt(index), 0x85ebca6b) >>> 0;
+    value ^= value >>> 13;
+  }
+  value ^= value >>> 16;
+  value = Math.imul(value, 0x7feb352d) >>> 0;
+  value ^= value >>> 15;
+  return (value & 1) === 0 ? "force-first" : "research-first";
+}
 
 const monsterPlans: Record<string, string> = {
   Konk: "Exploit speed to stomp objectives and slip past a prepared blocker.",
@@ -136,10 +150,13 @@ export function chooseBotSetupAction(game: GameState, setup: SetupState, playerI
   return chooseStartingChoice(setup, playerIndex, placements.length ? { kind: "deploy", placements } : { kind: "research" });
 }
 
-export function botStrategyHint(monsterName: string, branch: string): string {
+export function botStrategyHint(monsterName: string, branch: string, tactic?: BotTactic): string {
   const monster = monsterPlans[monsterName] ?? "Pressure objectives while avoiding a fight on the opponent’s terms.";
   const military = branchPlans[branch as BotBranch] ?? branchPlans.Army;
-  return `${monster} ${military}`;
+  const style = tactic === "force-first" ? "Force-first: deploy the full roster early and block monster routes."
+    : tactic === "research-first" ? "Research-first: draw useful cards early while keeping a small screen in play."
+      : "";
+  return `${style} ${monster} ${military}`.trim();
 }
 
 export function hasBotLaserFenceReaction(state: GameState): boolean {
@@ -205,7 +222,7 @@ function nearestTargetScore(state: GameState, destination: HexKey, playerIndex: 
   const focusWounded = focus.health < 8 ? 5 : 0;
   const nearbyForce = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location !== "record-tile" && unit.location !== "permanently-removed" && hexDistance(state, unit.location, focus.location) <= 2).length;
   const massing = Math.max(0, 3 - nearbyForce) * (distance <= 2 ? 3 : 1.2);
-  const routeBlocking = (routeScores ?? routeBlockScores(state)).get(destination) ?? 0;
+  const routeBlocking = (routeScores ?? routeBlockScores(state, playerIndex)).get(destination) ?? 0;
   const attackedMonster = threats.find((monster) => monster.location === destination);
   const forceAtEngagement = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location === destination).length + 1;
   const prematureAttack = attackedMonster && !(attackedMonster.health <= 5 && forceAtEngagement >= 3) ? -35 : 0;
@@ -231,9 +248,10 @@ function focusTarget(state: GameState, playerIndex: number, branch: BotBranch) {
 }
 
 /** Military positions on a monster's legal route to an unclaimed city or Infamy site gain blocking value. */
-export function routeBlockScores(state: GameState): Map<HexKey, number> {
+export function routeBlockScores(state: GameState, actor = state.currentPlayer): Map<HexKey, number> {
   const scores = new Map<HexKey, number>();
   const board = boardForState(state);
+  const forceFirst = botTacticForPlayer(state, actor) === "force-first";
   const goals = Object.values(board.hexes).filter((hex) => !state.stompedLocations.includes(hex.key)
     && hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site"));
   for (const monster of state.monsters) {
@@ -256,7 +274,9 @@ export function routeBlockScores(state: GameState): Map<HexKey, number> {
           const value = featureValue(state, goal.key);
           path.slice(1, -1).forEach((key, index) => {
             const toGoal = steps - index - 1;
-            const pressure = value * 2 + 4 + Math.max(0, 5 - toGoal) * 3;
+            const pressure = forceFirst
+              ? value * 2 + 4 + Math.max(0, 5 - toGoal) * 3
+              : value * 1.5 + 2 + Math.max(0, 4 - toGoal) * 2;
             scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
           });
           continue;
@@ -299,11 +319,12 @@ function shouldDrawResearch(state: GameState, actor: number, branch: BotBranch, 
     .filter((hex) => hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site") && !state.stompedLocations.includes(hex.key))
     .reduce((nearest, hex) => Math.min(nearest, hexDistance(state, focus.location, hex.key)), 99) : 99;
   const objectiveThreat = Boolean(focus && objectiveDistance <= focus.move + 1 && (focus.infamy >= 2 || objectiveDistance <= 1));
-  const blockerOpportunity = choices.some((choice) => choice.destinations.some((destination) => (routeScores.get(destination) ?? 0) >= 8));
-  const establishedForce = units.length >= 3;
-  // Build a three-piece group first. Research becomes a useful fallback once
-  // the group is assembled and neither an attack nor route block is urgent.
-  return establishedForce && !objectiveThreat && !blockerOpportunity;
+  const researchFirst = botTacticForPlayer(state, actor) === "research-first";
+  if (!researchFirst) return false;
+  const blockerOpportunity = choices.some((choice) => choice.destinations.some((destination) => (routeScores.get(destination) ?? 0) >= 10));
+  // Research-first bots draw once they have a screen in play; force-first bots
+  // keep using every legal deployment before drawing any optional Research.
+  return units.length >= 1 && !objectiveThreat && !blockerOpportunity;
 }
 
 export function chooseBotCommand(state: GameState): GameCommand | undefined {
@@ -430,7 +451,7 @@ export function chooseBotCommand(state: GameState): GameCommand | undefined {
     }
     const options = deploymentChoices(state);
     if (!options.length) return state.deploymentsThisTurn > 0 || state.decks.research.exhausted ? { type: "pass-deploy" } : { type: "draw-research" };
-    const routeScores = branch === "Army" ? routeBlockScores(state) : new Map<HexKey, number>();
+    const routeScores = routeBlockScores(state, actor);
     if (shouldDrawResearch(state, actor, branch, options, routeScores)) return { type: "draw-research" };
     const focus = focusTarget(state, actor, branch);
     const deploymentScore = (option: typeof options[number]) => Math.max(...option.destinations.map((destination) => {
@@ -465,7 +486,7 @@ export function chooseBotCommand(state: GameState): GameCommand | undefined {
         if (targets[0]) return { type: "launch-submarine-at-monster", unitId: unit.id, monsterId: targets[0].id };
       }
       const paths = shortestLegalUnitPaths(state, unit.id);
-      const routeScores = branch === "Army" ? routeBlockScores(state) : new Map<HexKey, number>();
+      const routeScores = routeBlockScores(state, actor);
       const choice = bestPath(paths, (destination) => {
         const score = nearestTargetScore(state, destination, actor, branch, routeScores);
         const focus = focusTarget(state, actor, branch);
@@ -503,7 +524,7 @@ function explainBotCommand(state: GameState, command: GameCommand, actor: number
     const unit = state.units.find((candidate) => candidate.id === command.unitId);
     const destination = command.type === "move-unit" ? command.path.at(-1) : command.destination;
     if (!destination) return undefined;
-    const routeScore = routeBlockScores(state).get(destination as HexKey) ?? 0;
+    const routeScore = routeBlockScores(state, actor).get(destination as HexKey) ?? 0;
     if (routeScore >= 8 && focus) return `Positioned ${unit?.unitTypeId?.replaceAll("-", " ") ?? branch} on a monster route to block ${focus.name} from the next objective.`;
     if (focus) return `Concentrated ${branch} forces toward ${focus.name}${focus.health < 8 ? " to finish the wounded target" : " for a coordinated attack"}.`;
     return `Deployed ${branch} forces to protect objectives and build an attack group.`;
