@@ -52,10 +52,15 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   GameRoom: 'GameRoom',
+  UserAccount: 'UserAccount',
+  AccountSession: 'AccountSession',
+  AccountToken: 'AccountToken',
+  WebSocketTicket: 'WebSocketTicket',
   Participant: 'Participant',
   GameEvent: 'GameEvent',
   CommandReceipt: 'CommandReceipt',
-  GameResult: 'GameResult'
+  GameResult: 'GameResult',
+  PlayerMatchStat: 'PlayerMatchStat'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -79,16 +84,70 @@ export const GameRoomScalarFieldEnum = {
   code: 'code',
   status: 'status',
   privacy: 'privacy',
+  isTest: 'isTest',
   maxPlayers: 'maxPlayers',
   version: 'version',
   state: 'state',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   lastActivityAt: 'lastActivityAt',
-  completedAt: 'completedAt'
+  completedAt: 'completedAt',
+  playerStats: 'playerStats'
 } as const
 
 export type GameRoomScalarFieldEnum = (typeof GameRoomScalarFieldEnum)[keyof typeof GameRoomScalarFieldEnum]
+
+
+export const UserAccountScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  passwordHash: 'passwordHash',
+  username: 'username',
+  emailVerifiedAt: 'emailVerifiedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserAccountScalarFieldEnum = (typeof UserAccountScalarFieldEnum)[keyof typeof UserAccountScalarFieldEnum]
+
+
+export const AccountSessionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  revokedAt: 'revokedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type AccountSessionScalarFieldEnum = (typeof AccountSessionScalarFieldEnum)[keyof typeof AccountSessionScalarFieldEnum]
+
+
+export const AccountTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  purpose: 'purpose',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type AccountTokenScalarFieldEnum = (typeof AccountTokenScalarFieldEnum)[keyof typeof AccountTokenScalarFieldEnum]
+
+
+export const WebSocketTicketScalarFieldEnum = {
+  id: 'id',
+  roomId: 'roomId',
+  participantId: 'participantId',
+  participantTokenHash: 'participantTokenHash',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type WebSocketTicketScalarFieldEnum = (typeof WebSocketTicketScalarFieldEnum)[keyof typeof WebSocketTicketScalarFieldEnum]
 
 
 export const ParticipantScalarFieldEnum = {
@@ -102,6 +161,10 @@ export const ParticipantScalarFieldEnum = {
   connectedAt: 'connectedAt',
   connectionId: 'connectionId',
   ready: 'ready',
+  userId: 'userId',
+  disconnectedAt: 'disconnectedAt',
+  botControlled: 'botControlled',
+  botAssisted: 'botAssisted',
   createdAt: 'createdAt'
 } as const
 
@@ -114,6 +177,7 @@ export const GameEventScalarFieldEnum = {
   version: 'version',
   actorId: 'actorId',
   type: 'type',
+  controlSource: 'controlSource',
   payload: 'payload',
   createdAt: 'createdAt'
 } as const
@@ -144,6 +208,30 @@ export const GameResultScalarFieldEnum = {
 } as const
 
 export type GameResultScalarFieldEnum = (typeof GameResultScalarFieldEnum)[keyof typeof GameResultScalarFieldEnum]
+
+
+export const PlayerMatchStatScalarFieldEnum = {
+  id: 'id',
+  roomId: 'roomId',
+  participantId: 'participantId',
+  userId: 'userId',
+  playerIndex: 'playerIndex',
+  username: 'username',
+  outcome: 'outcome',
+  monsterId: 'monsterId',
+  monsterName: 'monsterName',
+  branch: 'branch',
+  stompedTiles: 'stompedTiles',
+  damageTaken: 'damageTaken',
+  healthGained: 'healthGained',
+  luckTotal: 'luckTotal',
+  luckRolls: 'luckRolls',
+  botAssisted: 'botAssisted',
+  rounds: 'rounds',
+  completedAt: 'completedAt'
+} as const
+
+export type PlayerMatchStatScalarFieldEnum = (typeof PlayerMatchStatScalarFieldEnum)[keyof typeof PlayerMatchStatScalarFieldEnum]
 
 
 export const SortOrder = {

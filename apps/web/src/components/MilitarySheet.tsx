@@ -2,29 +2,8 @@ import { ownedMilitarySheets } from "./owned-sheets";
 import { SheetCards } from "./SheetCards";
 import { MilitaryReference } from "./SheetReference";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { deployUnitResult, redeployUnitResult, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalNationalGuardDeploymentDestinations, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
-
-export type DeploymentChoice = { id: string; typeId: string; sheet: string; kind: "deploy" | "redeploy"; destinations: HexKey[] };
-
-export function deploymentChoices(game: GameState): DeploymentChoice[] {
-  if (game.phase !== "deploy") return [];
-  const candidates = [
-    ...game.units.filter((unit) => !game.removedUnitIds.includes(unit.id)).map((unit) => ({ id: unit.id, typeId: unit.unitTypeId ?? unit.branch, sheet: unit.unitTypeId === "x-fighter" ? "X-Fighters" : unit.branch, kind: unit.location === "record-tile" ? "deploy" as const : "redeploy" as const })),
-    ...game.nationalGuard.unitIds.filter((id) => !game.units.some((unit) => unit.id === id) && !game.removedUnitIds.includes(id)).map((id) => ({ id, typeId: id.replace(/-\d+$/, ""), sheet: "National Guard", kind: "deploy" as const })),
-  ];
-  return candidates.flatMap((choice) => {
-    const destinations = choice.kind === "redeploy" ? legalOwnedRedeploymentDestinations(game, choice.id)
-      : choice.id.startsWith("national-guard-") ? legalNationalGuardDeploymentDestinations(game) : legalOwnedDeploymentDestinations(game);
-    if (!destinations.length) return [];
-    // Validate against the same rules as the submitted action, including research allowances.
-    try {
-      const resolve = choice.kind === "deploy" ? deployUnitResult : redeployUnitResult;
-      const result = resolve(game, { unitId: choice.id, destination: destinations[0] });
-      if (result.unitId !== choice.id) return [];
-      return [{ ...choice, destinations }];
-    } catch { return []; }
-  });
-}
+import { deploymentChoices, type DeploymentChoice, type GameCommand, type GameState } from "@abominations/game-engine";
+export { deploymentChoices, type DeploymentChoice } from "@abominations/game-engine";
 
 /** Prefer the branch until its legal allowance is exhausted, then eligible Guard. */
 export function nextDeploymentSheet(choices: readonly DeploymentChoice[], branch: string): string {

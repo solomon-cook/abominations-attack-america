@@ -25,6 +25,8 @@ test("a normal unit is destroyed by a hit, not shown as losing monster damage in
   const result = applyCommand(state, { type: "resolve-fight" });
   const attacks = readBattleAttacks(result.eventPayload.attacks);
   assert.equal(result.eventPayload.battleId, "presentation", "default-selected battle must retain its identity");
+  assert.equal(result.eventPayload.playerIndex, 0, "combat events should identify the acting player for playback routing");
+  assert.equal(result.eventPayload.location, state.pendingBattles[0].location, "combat events should carry their board location for playback anchoring");
   assert.equal(attacks.length, 1, "destroyed unit cannot return fire");
   assert.equal(attacks[0].targetDefense, 1);
   assert.equal(attacks[0].combatRound, 1);
@@ -94,6 +96,9 @@ test("multi-target continuations retain cumulative attack identity and round sna
   state.units[2].defense = 99;
   state.monsters[0].defense = 1;
   let result = resolve(state);
+  assert.equal(result.eventType, "battle.target-required");
+  assert.equal(result.eventPayload.playerIndex, 0, "target prompts should identify their decision owner for bot playback routing");
+  assert.equal(result.eventPayload.location, state.pendingBattles[0].location, "target prompts should carry the battle tile for board playback");
   let previous: BattleAttack[] = [];
   for (let guard = 0; result.state.pendingDecision?.type === "attack-target" && guard < 12; guard++) {
     const decision = result.state.pendingDecision;

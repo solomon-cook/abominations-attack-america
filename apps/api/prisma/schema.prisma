@@ -25,11 +25,17 @@ enum ParticipantRole {
   SPECTATOR
 }
 
+enum AccountTokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
 model GameRoom {
   id           String       @id @default(cuid())
   code         String       @unique
   status       RoomStatus   @default(WAITING)
   privacy      RoomPrivacy  @default(PRIVATE)
+  isTest       Boolean      @default(false)
   maxPlayers   Int          @default(4)
   version      Int          @default(0)
   state        Json
@@ -41,6 +47,60 @@ model GameRoom {
   events       GameEvent[]
   receipts     CommandReceipt[]
   result       GameResult?
+  playerStats  Json               @default("[]")
+  websocketTickets WebSocketTicket[]
+  matchStats   PlayerMatchStat[]
+}
+
+model UserAccount {
+  id              String              @id @default(cuid())
+  email           String              @unique
+  passwordHash    String
+  username        String              @unique
+  emailVerifiedAt DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  sessions        AccountSession[]
+  tokens          AccountToken[]
+  participants    Participant[]
+  matchStats      PlayerMatchStat[]
+}
+
+model AccountSession {
+  id        String      @id @default(cuid())
+  userId    String
+  user      UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String      @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime    @default(now())
+  @@index([userId, expiresAt])
+}
+
+model AccountToken {
+  id         String              @id @default(cuid())
+  userId     String
+  user       UserAccount         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String              @unique
+  purpose    AccountTokenPurpose
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime            @default(now())
+  @@index([userId, purpose, expiresAt])
+}
+
+model WebSocketTicket {
+  id            String      @id @default(cuid())
+  roomId        String
+  room          GameRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  participantTokenHash String
+  tokenHash     String      @unique
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  createdAt     DateTime    @default(now())
+  @@index([roomId, participantId, expiresAt])
 }
 
 model Participant {
@@ -55,9 +115,19 @@ model Participant {
   connectedAt  DateTime?
   connectionId String?
   ready        Boolean           @default(false)
+  userId       String?
+  user         UserAccount?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  disconnectedAt DateTime?
+  botControlled Boolean         @default(false)
+  botAssisted  Boolean          @default(false)
   createdAt    DateTime          @default(now())
+  websocketTickets WebSocketTicket[]
+  matchStats   PlayerMatchStat[]
   @@unique([roomId, role, playerIndex])
+  @@unique([roomId, userId])
   @@index([roomId, role])
+  @@index([userId, role])
+  @@index([botControlled, disconnectedAt])
 }
 
 model GameEvent {
@@ -67,6 +137,7 @@ model GameEvent {
   version     Int
   actorId     String
   type        String
+  controlSource String   @default("human")
   payload     Json
   createdAt   DateTime @default(now())
   @@unique([roomId, version])
@@ -94,4 +165,31 @@ model GameResult {
   winnerName  String?
   summary     Json
   createdAt   DateTime @default(now())
+}
+
+model PlayerMatchStat {
+  id             String      @id @default(cuid())
+  roomId         String
+  room           GameRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId  String
+  participant    Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  userId         String
+  user           UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playerIndex    Int
+  username       String
+  outcome        String
+  monsterId      String
+  monsterName    String
+  branch         String
+  stompedTiles   Int         @default(0)
+  damageTaken    Int         @default(0)
+  healthGained   Int         @default(0)
+  luckTotal      Float       @default(0)
+  luckRolls      Int         @default(0)
+  botAssisted    Boolean     @default(false)
+  rounds         Int
+  completedAt    DateTime    @default(now())
+  @@unique([roomId, participantId])
+  @@index([userId, completedAt])
+  @@index([outcome, completedAt])
 }

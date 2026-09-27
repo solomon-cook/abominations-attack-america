@@ -1,11 +1,13 @@
 # Security threat model
 
-This is the local security boundary for the current guest-room MVP foundation. It is a review checklist, not a production security sign-off.
+This is the local security boundary for the guest-room and account-linked online MVP. It is a review checklist, not a production security sign-off.
 
 | Asset or boundary | Threat | Current control | Remaining verification |
 | --- | --- | --- | --- |
 | Room codes | Guessing or enumerating active rooms | Six-character codes, explicit join/spectate routes, rate limits, no room listing endpoint | Edge/WAF policy, entropy review, abuse monitoring |
 | Session tokens | Token theft or accidental disclosure | Tokens are sent in headers/query only as required by the current client, are hashed in stores, omitted from logs/errors, never projected to other viewers, expire after 24 hours, and are explicitly rotated by replacement | HTTPS, secure transport policy, browser storage review, audit delivery |
+| Account credentials | Email or password/hash exposure, account enumeration, session theft | Passwords use salted scrypt hashes; account sessions are opaque, HttpOnly cookies; verification/reset links are one-use hashed tokens; room views and public profiles contain usernames only; account route logs are redacted | Configure transactional mail, apply distributed account rate limits, confirm cookie and origin settings at the selected host |
+| Stale room control | Old sockets or bot workers issue commands after a seat is reclaimed | One-use 30-second WebSocket tickets bind to the current room session; connection leases are checked on each socket command; room version CAS and participant-row locks serialize bot actions against reconnect | Exercise multi-instance races against Postgres and proxy reconnect behaviour |
 | Commands | Forged actor, out-of-turn action, replay, stale mutation | Participant/token/seat checks, expected revisions, protocol validation, action receipts, idempotent action IDs | Production multi-instance receipt behavior and incident testing |
 | Hidden information | Opponent or spectator learning deck order/private cards | Player/spectator projections redact hands, deck order, discard order, event card identifiers | Full card visibility matrix after source effects are implemented |
 | HTTP/WebSocket abuse | Burst traffic, handshake storms, slow or oversized requests, resource exhaustion | Separate process-local HTTP and WebSocket limiters, 64 KiB JSON body cap, 15 s request/keep-alive timeout, 20 s header timeout, production requires an explicit HTTPS `ALLOWED_ORIGIN`, security headers, token-free metrics | Distributed limiter and edge rate policy; verify timeout behaviour at the deployed proxy |
@@ -20,7 +22,7 @@ This is the local security boundary for the current guest-room MVP foundation. I
 - Put distributed rate limiting and request-size/time limits at the edge.
 - Give the API a least-privilege database role; keep migration credentials separate.
 - Test backup restore and Prisma migration rollback before serving live rooms.
-- Rotate room/session signing or encryption material if the implementation adds it; current guest tokens are random bearer tokens with a 24-hour expiry and explicit replacement-token rotation, but still need HTTPS, browser-storage, and audit-delivery review.
+- Room tokens are random bearer tokens with a 24-hour expiry and explicit replacement-token rotation. Account cookies are HttpOnly and Secure in production; keep web and API on a compatible site/origin and validate the configured mail sender before release.
 - Alert on health failures, persistence exceptions, command rejection spikes, latency, WebSocket failure rate, and event/snapshot divergence.
 
 The unresolved physical board, card effects, and Challenge rules are content/release blockers rather than security assumptions and must not be filled in by this document.

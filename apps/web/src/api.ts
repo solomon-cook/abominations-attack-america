@@ -1,5 +1,5 @@
 import { COMMAND_PROTOCOL_VERSION, type GameCommand, type GameCommandEnvelope, type SetupAction } from "@abominations/game-engine";
-import type { PublicRoomSummary, RoomPrivacy, RoomSocketServerMessage, RoomView, SessionResponse } from "@abominations/shared";
+import type { AccountGameSummary, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, PublicRoomSummary, RoomPrivacy, RoomSocketServerMessage, RoomView, SessionResponse } from "@abominations/shared";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8787";
 const connectionId = () => {
@@ -12,7 +12,7 @@ const connectionId = () => {
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) } });
+  const response = await fetch(`${API_URL}${path}`, { ...init, credentials: "include", headers: { "content-type": "application/json", ...(init?.headers ?? {}) } });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error ?? "Request failed");
   return data as T;
@@ -25,6 +25,23 @@ export const spectateRoom = (code: string, displayName: string) => request<Sessi
 export const markDisconnected = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/disconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
 export const markReconnected = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/reconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
 export const rotateSession = (code: string, token: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/rotate-session`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
+export const claimRoomSeat = (code: string, token: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/claim`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
+export const createWebSocketTicket = (code: string, token: string) => request<{ ticket: string }>(`/rooms/${code.toUpperCase()}/ws-ticket`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
+export const resumeAccountGame = (roomId: string) => request<SessionResponse>(`/accounts/me/games/${encodeURIComponent(roomId)}/resume`, { method: "POST", body: "{}" });
+export const getAccount = () => request<{ account: AccountSummary }>("/accounts/me");
+export const registerAccount = (email: string, password: string) => request<{ account?: AccountSummary; message: string; developmentLink?: string }>("/accounts/register", { method: "POST", body: JSON.stringify({ email, password }) });
+export const loginAccount = (email: string, password: string) => request<{ account: AccountSummary; message: string }>("/accounts/login", { method: "POST", body: JSON.stringify({ email, password }) });
+export const logoutAccount = () => request<{ message: string }>("/accounts/logout", { method: "POST", body: "{}" });
+export const verifyAccountEmail = (token: string) => request<{ account: AccountSummary; message: string }>("/accounts/verify-email", { method: "POST", body: JSON.stringify({ token }) });
+export const resendAccountVerification = (email: string) => request<{ message: string; developmentLink?: string }>("/accounts/resend-verification", { method: "POST", body: JSON.stringify({ email }) });
+export const requestAccountPasswordReset = (email: string) => request<{ message: string; developmentLink?: string }>("/accounts/password-reset", { method: "POST", body: JSON.stringify({ email }) });
+export const completeAccountPasswordReset = (token: string, password: string) => request<{ message: string }>("/accounts/password-reset/complete", { method: "POST", body: JSON.stringify({ token, password }) });
+export const updateAccountUsername = (username: string) => request<{ account: AccountSummary }>("/accounts/me", { method: "PATCH", body: JSON.stringify({ username }) });
+export const deleteAccount = () => request<{ message: string }>("/accounts/me", { method: "DELETE" });
+export const getAccountGames = () => request<AccountGameSummary[]>("/accounts/me/games");
+export const getAccountStats = () => request<PlayerStats>("/accounts/me/stats");
+export const getPlayerProfile = (username: string) => request<PlayerStats & { botAssistedMatches: number }>(`/players/${encodeURIComponent(username)}`);
+export const getLeaderboard = (category: LeaderboardCategory) => request<LeaderboardEntry[]>(`/leaderboard?category=${encodeURIComponent(category)}`);
 export const setReady = (code: string, token: string, ready: boolean) => request<RoomView>(`/rooms/${code.toUpperCase()}/ready`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ ready }) });
 export const sendSetupAction = (code: string, token: string, expectedRevision: number, action: SetupAction) => request<RoomView>(`/rooms/${code.toUpperCase()}/setup`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ expectedRevision, action }) });
 export const readRoom = (code: string, token: string, afterVersion = 0) => request<RoomView>(`/rooms/${code}/state?token=${encodeURIComponent(token)}&afterVersion=${afterVersion}`);
@@ -128,4 +145,4 @@ export const sendCommand = async (
   }
   return request<RoomView>(`/rooms/${code}/actions`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ envelope }) });
 };
-export const websocketUrl = (code: string, token: string) => `${API_URL.replace(/^http/, "ws")}/ws?code=${encodeURIComponent(code)}&token=${encodeURIComponent(token)}`;
+export const websocketUrl = (code: string, ticket: string) => `${API_URL.replace(/^http/, "ws")}/ws?code=${encodeURIComponent(code)}&ticket=${encodeURIComponent(ticket)}`;

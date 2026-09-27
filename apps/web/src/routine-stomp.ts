@@ -7,6 +7,7 @@ export type RoutineCityStomp = Readonly<{
   locationName: string;
   dice: number;
   fixedHealth?: number;
+  choice?: Readonly<{ healthRoll?: number }>;
 }>;
 
 function foughtAtLocationThisTurn(events: readonly GameLogEntry[], endIndex: number, monsterId: string, location: HexKey): boolean {
@@ -28,19 +29,21 @@ function isSimpleCity(board: BoardDefinition | undefined, location: unknown): lo
 
 export function pendingRoutineCityStomp(game: GameState, board: BoardDefinition | undefined): RoutineCityStomp | undefined {
   const decision = game.pendingDecision;
-  if (game.phase !== "encounter" || decision?.type !== "encounter-resolution" || game.challenge?.active || game.challenge?.declared || game.stompMarkers <= 1) return undefined;
-  const monster = game.monsters[decision.playerIndex];
-  const location = decision.location;
+  const encounterResolution = decision?.type === "encounter-resolution" ? decision : undefined;
+  const zorbRewardChoice = decision?.type === "encounter-choice" && decision.source === "zorb-city" ? decision : undefined;
+  if (game.phase !== "encounter" || (!encounterResolution && !zorbRewardChoice) || game.challenge?.active) return undefined;
+  const playerIndex = encounterResolution?.playerIndex ?? zorbRewardChoice!.playerIndex;
+  const location = encounterResolution?.location ?? zorbRewardChoice!.location;
+  const monster = game.monsters[playerIndex];
   if (!monster || !isSimpleCity(board, location) || game.stompedLocations.includes(location)) return undefined;
   if (foughtAtLocationThisTurn(game.eventLog, game.eventLog.length, monster.id, location)) return undefined;
 
   const features = board!.hexes[location]!.features;
   const city = features.find((feature) => feature.kind === "city");
   if (!city || city.kind !== "city") return undefined;
-  if (monster.name === "Zorb") return undefined;
   const base = features.find((feature) => feature.kind === "military-base");
-  if (base?.kind === "military-base") {
-    if (game.players[decision.playerIndex]?.mutationCardIds.includes("Iron Stomach")) return undefined;
+  if (encounterResolution && base?.kind === "military-base") {
+    if (game.players[playerIndex]?.mutationCardIds.includes("Iron Stomach")) return undefined;
     const trophyAvailable = game.units.some((unit) => unit.branch === base.branch
       && !game.removedUnitIds.includes(unit.id)
       && (unit.location === "record-tile" || isHexKey(unit.location)));
@@ -48,12 +51,13 @@ export function pendingRoutineCityStomp(game: GameState, board: BoardDefinition 
   }
 
   return {
-    playerIndex: decision.playerIndex,
+    playerIndex,
     monsterName: monster.name,
     location,
     locationName: board!.hexes[location]!.label ?? location,
     dice: city.benefit.kind === "health-roll" ? city.benefit.dice : 0,
     ...(city.benefit.kind === "health" ? { fixedHealth: city.benefit.amount } : {}),
+    ...(zorbRewardChoice ? { choice: { ...(zorbRewardChoice.healthRoll === undefined ? {} : { healthRoll: zorbRewardChoice.healthRoll }) } } : {}),
   };
 }
 
@@ -62,7 +66,7 @@ export function isRoutineCityStompEvent(event: GameLogEntry, events: readonly Ga
   const challenge = event.detail.challenge;
   if (challenge && typeof challenge === "object") {
     const challengeState = challenge as Record<string, unknown>;
-    if (challengeState.active === true || challengeState.declared === true) return false;
+    if (challengeState.active === true) return false;
   }
   const location = event.detail.location;
   const monsterId = event.detail.monsterId;

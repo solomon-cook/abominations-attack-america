@@ -462,6 +462,7 @@
 .game-screen .player-public-status { right:76px; width:244px; }
 .game-screen .persistent-record.mobile-record-closed .record-medallion .record-branch-mark { top:-5px; left:-5px; width:17px; height:17px; font-size:7px; }
 .game-screen .command-station .command-medallion .record-branch-mark { top:-5px; left:-5px; width:16px; height:16px; font-size:6px; }
+.game-screen .travelling-piece { display:block; object-fit:contain; transform-origin:center; will-change:transform; filter:drop-shadow(0 2px 3px #101a12); }
 .game-screen .travelling-military-unit { filter:drop-shadow(0 0 5px #f4d780) drop-shadow(0 2px 2px #101a12); }
 @media(max-width:700px) {
   .game-screen .opponent-portrait-rail { top:calc(max(5px,env(safe-area-inset-top)) + 61px); right:max(7px,env(safe-area-inset-right)); left:auto; flex-direction:row; align-items:flex-start; gap:4px; }

@@ -398,10 +398,15 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   GameRoom: 'GameRoom',
+  UserAccount: 'UserAccount',
+  AccountSession: 'AccountSession',
+  AccountToken: 'AccountToken',
+  WebSocketTicket: 'WebSocketTicket',
   Participant: 'Participant',
   GameEvent: 'GameEvent',
   CommandReceipt: 'CommandReceipt',
-  GameResult: 'GameResult'
+  GameResult: 'GameResult',
+  PlayerMatchStat: 'PlayerMatchStat'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -417,7 +422,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "gameRoom" | "participant" | "gameEvent" | "commandReceipt" | "gameResult"
+    modelProps: "gameRoom" | "userAccount" | "accountSession" | "accountToken" | "webSocketTicket" | "participant" | "gameEvent" | "commandReceipt" | "gameResult" | "playerMatchStat"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -492,6 +497,302 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.GameRoomCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.GameRoomCountAggregateOutputType> | number
+        }
+      }
+    }
+    UserAccount: {
+      payload: Prisma.$UserAccountPayload<ExtArgs>
+      fields: Prisma.UserAccountFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserAccountFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserAccountFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload>
+        }
+        findFirst: {
+          args: Prisma.UserAccountFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserAccountFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload>
+        }
+        findMany: {
+          args: Prisma.UserAccountFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload>[]
+        }
+        create: {
+          args: Prisma.UserAccountCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload>
+        }
+        createMany: {
+          args: Prisma.UserAccountCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserAccountCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload>[]
+        }
+        delete: {
+          args: Prisma.UserAccountDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload>
+        }
+        update: {
+          args: Prisma.UserAccountUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload>
+        }
+        deleteMany: {
+          args: Prisma.UserAccountDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserAccountUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserAccountUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload>[]
+        }
+        upsert: {
+          args: Prisma.UserAccountUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAccountPayload>
+        }
+        aggregate: {
+          args: Prisma.UserAccountAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserAccount>
+        }
+        groupBy: {
+          args: Prisma.UserAccountGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserAccountGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserAccountCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserAccountCountAggregateOutputType> | number
+        }
+      }
+    }
+    AccountSession: {
+      payload: Prisma.$AccountSessionPayload<ExtArgs>
+      fields: Prisma.AccountSessionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AccountSessionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AccountSessionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload>
+        }
+        findFirst: {
+          args: Prisma.AccountSessionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AccountSessionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload>
+        }
+        findMany: {
+          args: Prisma.AccountSessionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload>[]
+        }
+        create: {
+          args: Prisma.AccountSessionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload>
+        }
+        createMany: {
+          args: Prisma.AccountSessionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AccountSessionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload>[]
+        }
+        delete: {
+          args: Prisma.AccountSessionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload>
+        }
+        update: {
+          args: Prisma.AccountSessionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload>
+        }
+        deleteMany: {
+          args: Prisma.AccountSessionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AccountSessionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AccountSessionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload>[]
+        }
+        upsert: {
+          args: Prisma.AccountSessionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountSessionPayload>
+        }
+        aggregate: {
+          args: Prisma.AccountSessionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAccountSession>
+        }
+        groupBy: {
+          args: Prisma.AccountSessionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AccountSessionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AccountSessionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AccountSessionCountAggregateOutputType> | number
+        }
+      }
+    }
+    AccountToken: {
+      payload: Prisma.$AccountTokenPayload<ExtArgs>
+      fields: Prisma.AccountTokenFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AccountTokenFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AccountTokenFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload>
+        }
+        findFirst: {
+          args: Prisma.AccountTokenFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AccountTokenFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload>
+        }
+        findMany: {
+          args: Prisma.AccountTokenFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload>[]
+        }
+        create: {
+          args: Prisma.AccountTokenCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload>
+        }
+        createMany: {
+          args: Prisma.AccountTokenCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AccountTokenCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload>[]
+        }
+        delete: {
+          args: Prisma.AccountTokenDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload>
+        }
+        update: {
+          args: Prisma.AccountTokenUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload>
+        }
+        deleteMany: {
+          args: Prisma.AccountTokenDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AccountTokenUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AccountTokenUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload>[]
+        }
+        upsert: {
+          args: Prisma.AccountTokenUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AccountTokenPayload>
+        }
+        aggregate: {
+          args: Prisma.AccountTokenAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAccountToken>
+        }
+        groupBy: {
+          args: Prisma.AccountTokenGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AccountTokenGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AccountTokenCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AccountTokenCountAggregateOutputType> | number
+        }
+      }
+    }
+    WebSocketTicket: {
+      payload: Prisma.$WebSocketTicketPayload<ExtArgs>
+      fields: Prisma.WebSocketTicketFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WebSocketTicketFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WebSocketTicketFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload>
+        }
+        findFirst: {
+          args: Prisma.WebSocketTicketFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WebSocketTicketFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload>
+        }
+        findMany: {
+          args: Prisma.WebSocketTicketFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload>[]
+        }
+        create: {
+          args: Prisma.WebSocketTicketCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload>
+        }
+        createMany: {
+          args: Prisma.WebSocketTicketCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WebSocketTicketCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload>[]
+        }
+        delete: {
+          args: Prisma.WebSocketTicketDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload>
+        }
+        update: {
+          args: Prisma.WebSocketTicketUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload>
+        }
+        deleteMany: {
+          args: Prisma.WebSocketTicketDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WebSocketTicketUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WebSocketTicketUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload>[]
+        }
+        upsert: {
+          args: Prisma.WebSocketTicketUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebSocketTicketPayload>
+        }
+        aggregate: {
+          args: Prisma.WebSocketTicketAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWebSocketTicket>
+        }
+        groupBy: {
+          args: Prisma.WebSocketTicketGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WebSocketTicketGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WebSocketTicketCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WebSocketTicketCountAggregateOutputType> | number
         }
       }
     }
@@ -791,6 +1092,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PlayerMatchStat: {
+      payload: Prisma.$PlayerMatchStatPayload<ExtArgs>
+      fields: Prisma.PlayerMatchStatFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PlayerMatchStatFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PlayerMatchStatFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload>
+        }
+        findFirst: {
+          args: Prisma.PlayerMatchStatFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PlayerMatchStatFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload>
+        }
+        findMany: {
+          args: Prisma.PlayerMatchStatFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload>[]
+        }
+        create: {
+          args: Prisma.PlayerMatchStatCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload>
+        }
+        createMany: {
+          args: Prisma.PlayerMatchStatCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PlayerMatchStatCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload>[]
+        }
+        delete: {
+          args: Prisma.PlayerMatchStatDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload>
+        }
+        update: {
+          args: Prisma.PlayerMatchStatUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload>
+        }
+        deleteMany: {
+          args: Prisma.PlayerMatchStatDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PlayerMatchStatUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PlayerMatchStatUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload>[]
+        }
+        upsert: {
+          args: Prisma.PlayerMatchStatUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlayerMatchStatPayload>
+        }
+        aggregate: {
+          args: Prisma.PlayerMatchStatAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePlayerMatchStat>
+        }
+        groupBy: {
+          args: Prisma.PlayerMatchStatGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlayerMatchStatGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PlayerMatchStatCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlayerMatchStatCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -835,16 +1210,70 @@ export const GameRoomScalarFieldEnum = {
   code: 'code',
   status: 'status',
   privacy: 'privacy',
+  isTest: 'isTest',
   maxPlayers: 'maxPlayers',
   version: 'version',
   state: 'state',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   lastActivityAt: 'lastActivityAt',
-  completedAt: 'completedAt'
+  completedAt: 'completedAt',
+  playerStats: 'playerStats'
 } as const
 
 export type GameRoomScalarFieldEnum = (typeof GameRoomScalarFieldEnum)[keyof typeof GameRoomScalarFieldEnum]
+
+
+export const UserAccountScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  passwordHash: 'passwordHash',
+  username: 'username',
+  emailVerifiedAt: 'emailVerifiedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserAccountScalarFieldEnum = (typeof UserAccountScalarFieldEnum)[keyof typeof UserAccountScalarFieldEnum]
+
+
+export const AccountSessionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  revokedAt: 'revokedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type AccountSessionScalarFieldEnum = (typeof AccountSessionScalarFieldEnum)[keyof typeof AccountSessionScalarFieldEnum]
+
+
+export const AccountTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  purpose: 'purpose',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type AccountTokenScalarFieldEnum = (typeof AccountTokenScalarFieldEnum)[keyof typeof AccountTokenScalarFieldEnum]
+
+
+export const WebSocketTicketScalarFieldEnum = {
+  id: 'id',
+  roomId: 'roomId',
+  participantId: 'participantId',
+  participantTokenHash: 'participantTokenHash',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type WebSocketTicketScalarFieldEnum = (typeof WebSocketTicketScalarFieldEnum)[keyof typeof WebSocketTicketScalarFieldEnum]
 
 
 export const ParticipantScalarFieldEnum = {
@@ -858,6 +1287,10 @@ export const ParticipantScalarFieldEnum = {
   connectedAt: 'connectedAt',
   connectionId: 'connectionId',
   ready: 'ready',
+  userId: 'userId',
+  disconnectedAt: 'disconnectedAt',
+  botControlled: 'botControlled',
+  botAssisted: 'botAssisted',
   createdAt: 'createdAt'
 } as const
 
@@ -870,6 +1303,7 @@ export const GameEventScalarFieldEnum = {
   version: 'version',
   actorId: 'actorId',
   type: 'type',
+  controlSource: 'controlSource',
   payload: 'payload',
   createdAt: 'createdAt'
 } as const
@@ -900,6 +1334,30 @@ export const GameResultScalarFieldEnum = {
 } as const
 
 export type GameResultScalarFieldEnum = (typeof GameResultScalarFieldEnum)[keyof typeof GameResultScalarFieldEnum]
+
+
+export const PlayerMatchStatScalarFieldEnum = {
+  id: 'id',
+  roomId: 'roomId',
+  participantId: 'participantId',
+  userId: 'userId',
+  playerIndex: 'playerIndex',
+  username: 'username',
+  outcome: 'outcome',
+  monsterId: 'monsterId',
+  monsterName: 'monsterName',
+  branch: 'branch',
+  stompedTiles: 'stompedTiles',
+  damageTaken: 'damageTaken',
+  healthGained: 'healthGained',
+  luckTotal: 'luckTotal',
+  luckRolls: 'luckRolls',
+  botAssisted: 'botAssisted',
+  rounds: 'rounds',
+  completedAt: 'completedAt'
+} as const
+
+export type PlayerMatchStatScalarFieldEnum = (typeof PlayerMatchStatScalarFieldEnum)[keyof typeof PlayerMatchStatScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -991,6 +1449,13 @@ export type ListEnumRoomPrivacyFieldRefInput<$PrismaModel> = FieldRefInputType<$
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -1033,6 +1498,20 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'AccountTokenPurpose'
+ */
+export type EnumAccountTokenPurposeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountTokenPurpose'>
+
+
+
+/**
+ * Reference to a field of type 'AccountTokenPurpose[]'
+ */
+export type ListEnumAccountTokenPurposeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountTokenPurpose[]'>
+
+
+
+/**
  * Reference to a field of type 'ParticipantRole'
  */
 export type EnumParticipantRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ParticipantRole'>
@@ -1043,13 +1522,6 @@ export type EnumParticipantRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$
  * Reference to a field of type 'ParticipantRole[]'
  */
 export type ListEnumParticipantRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ParticipantRole[]'>
-
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
 
 
 
@@ -1218,10 +1690,15 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   gameRoom?: Prisma.GameRoomOmit
+  userAccount?: Prisma.UserAccountOmit
+  accountSession?: Prisma.AccountSessionOmit
+  accountToken?: Prisma.AccountTokenOmit
+  webSocketTicket?: Prisma.WebSocketTicketOmit
   participant?: Prisma.ParticipantOmit
   gameEvent?: Prisma.GameEventOmit
   commandReceipt?: Prisma.CommandReceiptOmit
   gameResult?: Prisma.GameResultOmit
+  playerMatchStat?: Prisma.PlayerMatchStatOmit
 }
 
 /* Types for Logging */

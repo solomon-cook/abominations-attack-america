@@ -1,0 +1,62 @@
+.account-panel {
+  margin: 1rem auto;
+  width: min(100% - 2rem, 52rem);
+  color: #f7ecce;
+  border: 1px solid rgb(238 203 129 / 28%);
+  border-radius: 0.9rem;
+  background: rgb(25 30 37 / 95%);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 24%);
+  text-align: left;
+}
+
+.account-panel > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.account-panel > summary::-webkit-details-marker { display: none; }
+.account-panel > summary span { color: #dfb970; font-size: 0.7rem; letter-spacing: 0.13em; }
+.account-panel > summary strong { font-size: 0.95rem; }
+.account-panel-content { padding: 0 1rem 1rem; }
+.account-private-note, .account-message, .account-choices { color: #d2c7b2; font-size: 0.85rem; }
+.account-message { color: #b9d4a4; }
+.account-mode-tabs, .account-secondary-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.7rem 0; }
+.account-mode-tabs button, .account-secondary-actions button { border: 1px solid rgb(238 203 129 / 24%); border-radius: 99px; padding: 0.45rem 0.8rem; color: #eadfc8; background: transparent; cursor: pointer; }
+.account-mode-tabs button.selected { color: #201b15; background: #dfb970; }
+.account-form, .account-inline-form { display: flex; align-items: end; flex-wrap: wrap; gap: 0.65rem; margin: 0.8rem 0; }
+.account-form label, .account-inline-form label { display: grid; flex: 1 1 12rem; gap: 0.35rem; color: #d2c7b2; font-size: 0.8rem; }
+.account-form input, .account-inline-form input, .account-leaderboard select { min-width: 0; padding: 0.6rem 0.7rem; color: #f7ecce; border: 1px solid rgb(238 203 129 / 30%); border-radius: 0.45rem; background: #11171d; }
+.account-form button, .account-inline-form button, .account-link-seat, .account-matches button { border: 0; border-radius: 0.45rem; padding: 0.65rem 0.9rem; color: #201b15; background: #dfb970; font-weight: 700; cursor: pointer; }
+.account-action-link { display: inline-block; margin: 0.3rem 0; color: #dfb970; }
+.account-identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.55rem 1rem; margin: 0.8rem 0; }
+.account-identity span { color: #d2c7b2; font-size: 0.8rem; }
+.account-identity strong { font-size: 1.15rem; }
+.account-link-seat { margin: 0.3rem 0 0.7rem; }
+.account-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 0.55rem; margin: 0.8rem 0; }
+.account-stats span { display: grid; gap: 0.1rem; padding: 0.55rem; border: 1px solid rgb(238 203 129 / 16%); border-radius: 0.5rem; color: #d2c7b2; font-size: 0.75rem; }
+.account-stats strong { color: #f7ecce; font-size: 1rem; }
+.account-matches, .account-leaderboard { margin: 1rem 0; }
+.account-matches h3, .account-leaderboard h3 { margin: 0 0 0.5rem; font-size: 0.9rem; }
+.account-match, .leaderboard-row { display: flex; justify-content: space-between; align-items: center; gap: 0.7rem; padding: 0.45rem 0; border-bottom: 1px solid rgb(238 203 129 / 12%); color: #d2c7b2; font-size: 0.82rem; }
+.account-match button { padding: 0.4rem 0.65rem; }
+.account-leaderboard select { width: 100%; }
+.leaderboard-row strong { color: #f7ecce; }
+.leaderboard-profile-button { padding: 0; border: 0; color: #dfb970; background: transparent; text-decoration: underline; cursor: pointer; }
+.account-public-profile { display: grid; gap: 0.35rem; margin: 0.7rem 0; padding: 0.7rem; border: 1px solid rgb(238 203 129 / 18%); border-radius: 0.5rem; color: #d2c7b2; font-size: 0.82rem; }
+.account-public-profile strong { color: #f7ecce; font-size: 1rem; }
+.account-signout, .account-delete { margin: 0.5rem 0.5rem 0 0; padding: 0.5rem 0.75rem; border: 1px solid rgb(238 203 129 / 24%); border-radius: 0.45rem; color: #eadfc8; background: transparent; cursor: pointer; }
+.account-delete { color: #e6a19a; border-color: rgb(230 161 154 / 40%); }
+
+.hud-menu-items > .account-panel { width: min(30rem, calc(100vw - 2rem)); max-height: min(75vh, 42rem); overflow: auto; }
+.hud-menu-items > .account-panel .account-panel-content { max-height: 35rem; overflow: auto; }
+
+@media (max-width: 640px) {
+  .account-panel { width: calc(100% - 1rem); }
+  .account-form button { flex: 1 1 100%; }
+  .account-match { align-items: flex-start; }
+}

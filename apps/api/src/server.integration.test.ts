@@ -20,6 +20,17 @@ async function waitForHealth(baseUrl: string): Promise<void> {
   throw new Error("API server did not become healthy in time.");
 }
 
+async function createWebSocketTicket(baseUrl: string, code: string, token: string): Promise<string> {
+  const response = await fetch(`${baseUrl}/rooms/${code}/ws-ticket`, {
+    method: "POST",
+    headers: { "x-room-token": token },
+  });
+  const result = await response.json() as { ticket?: string; error?: string };
+  assert.equal(response.ok, true, result.error ?? `WebSocket ticket failed with HTTP ${response.status}`);
+  assert.ok(result.ticket);
+  return result.ticket;
+}
+
 function nextWebSocketMessage(socket: WebSocket): Promise<RoomPayload> {
   return new Promise((resolve, reject) => {
     const onMessage = (data: WebSocket.RawData) => {
@@ -75,7 +86,8 @@ test("API WebSocket and polling share revisioned room updates", async () => {
     const created = await createResponse.json() as { room?: RoomPayload; token?: string; participantId?: string; error?: string };
     assert.equal(createResponse.ok, true, created.error ?? `Room creation failed with HTTP ${createResponse.status}`);
     assert.ok(created.room && created.token && created.participantId);
-    const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&token=${encodeURIComponent(created.token)}`);
+    const ticket = await createWebSocketTicket(baseUrl, created.room.code, created.token);
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&ticket=${encodeURIComponent(ticket)}`);
     await new Promise<void>((resolve, reject) => { socket.once("open", () => resolve()); socket.once("error", reject); });
     const initialSocketRoom = await nextWebSocketMessage(socket);
     const initialHttpRoom = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((response) => response.json()) as RoomPayload;
@@ -119,7 +131,7 @@ test("API responses expose the documented security and CORS headers", async () =
     assert.equal(response.headers.get("access-control-allow-origin"), "https://example.test");
     const preflight = await fetch(`${baseUrl}/health`, { method: "OPTIONS" });
     assert.equal(preflight.status, 204);
-    assert.equal(preflight.headers.get("access-control-allow-methods"), "GET,POST,OPTIONS");
+    assert.equal(preflight.headers.get("access-control-allow-methods"), "GET,POST,PATCH,DELETE,OPTIONS");
     assert.equal(preflight.headers.get("access-control-allow-headers"), "content-type,x-room-token");
   } finally {
     await stop(child);
@@ -226,7 +238,8 @@ test("bounded concurrent rooms fan out WebSocket and polling updates without cro
       const spectatorResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/spectate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName: `Spectator ${index}` }) });
       const spectator = await spectatorResponse.json() as { token: string };
       assert.equal(spectatorResponse.ok, true);
-      const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&token=${encodeURIComponent(created.token)}`);
+      const ticket = await createWebSocketTicket(baseUrl, created.room.code, created.token);
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&ticket=${encodeURIComponent(ticket)}`);
       sockets.push(socket);
       const initialSocketPromise = nextWebSocketMessage(socket);
       await new Promise<void>((resolve, reject) => { socket.once("open", () => resolve()); socket.once("error", reject); });
@@ -325,7 +338,8 @@ test("bounded reconnect storm restores the same room revision without duplicate 
     const settled = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((result) => result.json()) as RoomPayload;
 
     const restored = await Promise.all(Array.from({ length: 12 }, async () => {
-      const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&token=${encodeURIComponent(created.token)}`);
+      const ticket = await createWebSocketTicket(baseUrl, created.room.code, created.token);
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&ticket=${encodeURIComponent(ticket)}`);
       sockets.push(socket);
       const socketRoomPromise = nextWebSocketMessage(socket);
       await new Promise<void>((resolve, reject) => { socket.once("open", () => resolve()); socket.once("error", reject); });

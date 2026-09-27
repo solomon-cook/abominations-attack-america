@@ -21,6 +21,7 @@ export interface RoomEvent {
   version: number;
   actorId: string;
   type: string;
+  controlSource?: "human" | "bot";
   payload: Record<string, unknown>;
   createdAt: string;
 }
@@ -28,10 +29,58 @@ export interface RoomEvent {
 export interface RoomParticipantView {
   id: string;
   displayName: string;
+  username?: string;
   role: ParticipantRole;
   playerIndex?: number;
   connected: boolean;
   ready: boolean;
+  botControlled?: boolean;
+  botAssisted?: boolean;
+}
+
+export type LeaderboardCategory = "wins" | "win-rate" | "stomped-tiles" | "damage-taken" | "health-gained" | "luck";
+
+export interface PlayerStats {
+  username: string;
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  winRate: number;
+  stompedTiles: number;
+  damageTaken: number;
+  healthGained: number;
+  luckTotal: number;
+  luckRolls: number;
+  luckAverage: number | null;
+  monsterChoices: Record<string, number>;
+  branchChoices: Record<string, number>;
+  mostChosenMonster?: string;
+  mostChosenBranch?: string;
+}
+
+export interface LeaderboardEntry extends PlayerStats {
+  rank: number;
+  value: number;
+}
+
+export interface AccountSummary {
+  id: string;
+  username: string;
+  emailVerified: boolean;
+}
+
+export interface AccountGameSummary {
+  roomId: string;
+  code: string;
+  status: RoomStatus;
+  privacy: RoomPrivacy;
+  playerIndex: number;
+  displayName: string;
+  botControlled: boolean;
+  botAssisted: boolean;
+  completedAt?: string;
+  outcome?: "win" | "loss" | "tie";
 }
 
 export interface RoomView {
@@ -87,4 +136,5 @@ export interface SessionResponse {
   room: RoomView;
   participantId: string;
   token: string;
+  accountLinked?: boolean;
 }

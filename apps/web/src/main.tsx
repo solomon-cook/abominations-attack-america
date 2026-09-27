@@ -24,9 +24,11 @@ import {
   type HexKey,
   type SetupState,
 } from "@abominations/game-engine";
-import type { RoomView, SessionResponse } from "@abominations/shared";
+import type { AccountSummary, RoomView, SessionResponse } from "@abominations/shared";
 import {
+  claimRoomSeat,
   createRoom,
+  createWebSocketTicket,
   joinRoom,
   listPublicRooms,
   markDisconnected,
@@ -69,6 +71,7 @@ import { HexGrid } from "./components/HexGrid";
 import { MilitaryReference } from "./components/SheetReference";
 import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
+import { AccountPanel } from "./components/AccountPanel";
 import { botActionDelayMs, botStrategyHint, botTacticForPlayer, chooseBotSetupAction, hasBotLaserFenceReaction, runBotActionWithExplanation } from "./solo-bots";
 import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
@@ -101,6 +104,7 @@ import "./monster-selection.css";
 import "./setup-command.css";
 import "./home-screen.css";
 import "./civ-hud.css";
+import "./account-panel.css";
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -154,11 +158,11 @@ function App() {
   const [soloMode, setSoloMode] = useState(false);
   const [botThinking, setBotThinking] = useState(false);
   const [botExplanation, setBotExplanation] = useState("");
-  const [botFightPlayback, setBotFightPlayback] = useState(false);
   const botTurnRunning = useRef(false);
   const nextBotStepDelay = useRef(650);
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [room, setRoom] = useState<RoomView | null>(null);
+  const [account, setAccount] = useState<AccountSummary | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -187,6 +191,8 @@ function App() {
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
   const [acceptedMoveAnimation, setAcceptedMoveAnimation] = useState<{ path: HexKey[]; pieceId: string; key: number } | null>(null);
+  const latestAnimatedUnitMoveRef = useRef<{ matchId: string; eventId?: string } | null>(null);
+  const moveAnimationSequence = useRef(0);
   const [acceptedActionFeedback, setAcceptedActionFeedback] = useState<{ label: string; key: number } | null>(null);
   const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
   const [focusedHexKey, setFocusedHexKey] = useState<HexKey | null>(null);
@@ -585,6 +591,24 @@ function App() {
   }, [activeGame.pendingRetreat?.monsterId]);
 
   useEffect(() => {
+    const latestMove = [...activeGame.eventLog].reverse().find((event) => event.action === "unit.moved");
+    const previous = latestAnimatedUnitMoveRef.current;
+    if (!previous || previous.matchId !== activeGame.matchId) {
+      latestAnimatedUnitMoveRef.current = { matchId: activeGame.matchId, eventId: latestMove?.id };
+      return;
+    }
+    if (!latestMove || latestMove.id === previous.eventId) return;
+    latestAnimatedUnitMoveRef.current = { matchId: activeGame.matchId, eventId: latestMove.id };
+    const unitId = latestMove.detail.unitId;
+    const pathValue = latestMove.detail.path;
+    if (typeof unitId !== "string" || !Array.isArray(pathValue) || pathValue.length < 2 || !pathValue.every(isHexKey)) return;
+    const path = pathValue as HexKey[];
+    if (!activeGame.units.some((unit) => unit.id === unitId && unit.location === path.at(-1))) return;
+    moveAnimationSequence.current += 1;
+    setAcceptedMoveAnimation({ path, pieceId: unitId, key: moveAnimationSequence.current });
+  }, [activeGame.eventLog, activeGame.matchId, activeGame.units]);
+
+  useEffect(() => {
     if (!acceptedMoveAnimation) return;
     const timeout = window.setTimeout(() => setAcceptedMoveAnimation(null), (acceptedMoveAnimation.path.length - 1) * 400 + 250);
     return () => window.clearTimeout(timeout);
@@ -624,11 +648,11 @@ function App() {
 
   useEffect(() => {
     if (!session || !room) return;
-    const socket = new WebSocket(websocketUrl(room.code, session.token));
-    const commandChannel = new RoomCommandChannel(socket);
-    commandChannelRef.current = commandChannel;
+    let socket: WebSocket | undefined;
+    let commandChannel: RoomCommandChannel | undefined;
     let polling: ReturnType<typeof setInterval> | undefined;
     let disconnected = false;
+    let cancelled = false;
     const markOffline = () => {
       if (disconnected) return;
       disconnected = true;
@@ -647,41 +671,32 @@ function App() {
           .catch(() => setConnectionState("stale"));
       }, 2000);
     };
-    socket.onopen = () => {
-      void markReconnected(room.code, session.token)
-        .then((nextRoom) => {
-          setRoom(nextRoom);
-          setConnectionState("online");
-          if (polling) {
-            clearInterval(polling);
-            polling = undefined;
-          }
-        })
-        .catch(() => setConnectionState("stale"));
-    };
-    socket.onmessage = (event) => {
-      const message = JSON.parse(event.data) as {
-        type: string;
-        room: RoomView;
-      };
-      if (message.type === "room.updated") {
-        setRoom(message.room);
+    void createWebSocketTicket(room.code, session.token).then(({ ticket }) => {
+      if (cancelled) return;
+      socket = new WebSocket(websocketUrl(room.code, ticket));
+      commandChannel = new RoomCommandChannel(socket);
+      commandChannelRef.current = commandChannel;
+      socket.onopen = () => {
         setConnectionState("online");
-      }
-    };
-    socket.onerror = () => {
+        if (polling) { clearInterval(polling); polling = undefined; }
+      };
+      socket.onmessage = (event) => {
+        const message = JSON.parse(event.data) as { type: string; room: RoomView };
+        if (message.type === "room.updated") { setRoom(message.room); setConnectionState("online"); }
+      };
+      socket.onerror = () => { markOffline(); startPolling(); };
+      socket.onclose = () => { markOffline(); startPolling(); };
+    }).catch(() => {
+      if (cancelled) return;
       markOffline();
       startPolling();
-    };
-    socket.onclose = () => {
-      markOffline();
-      startPolling();
-    };
+    });
     return () => {
+      cancelled = true;
       markOffline();
-      commandChannel.dispose();
+      commandChannel?.dispose();
       if (commandChannelRef.current === commandChannel) commandChannelRef.current = null;
-      socket.close();
+      socket?.close();
       if (polling) clearInterval(polling);
     };
   }, [session?.token, room?.code]);
@@ -805,29 +820,32 @@ function App() {
     void runCommand(command);
   };
 
+  const replaceOnlineSession = (next: SessionResponse | null) => {
+    if (!next) {
+      setSession(null);
+      setRoom(null);
+      localStorage.removeItem("abominations-session");
+      return;
+    }
+    setSession(next);
+    setRoom(next.room);
+    setRoomCode(next.room.code);
+    localStorage.setItem("abominations-session", JSON.stringify({ token: next.token, participantId: next.participantId, room: { code: next.room.code } }));
+  };
   const startSession = async (kind: "create" | "join" | "spectate") => {
     setError("");
     setLocalPlaytestStarted(false);
     setOnboardingOpen(false);
     setGamePanelOpen(true);
     try {
-      const result =
+      const created =
         kind === "create"
           ? await createRoom(playerCount, displayName || "Player 1", roomPrivacy)
           : kind === "join"
             ? await joinRoom(roomCode, displayName || "Player")
             : await spectateRoom(roomCode, displayName || "Spectator");
-      setSession(result);
-      setRoom(result.room);
-      setRoomCode(result.room.code);
-      localStorage.setItem(
-        "abominations-session",
-        JSON.stringify({
-          token: result.token,
-          participantId: result.participantId,
-          room: { code: result.room.code },
-        }),
-      );
+      const result = account && kind !== "spectate" ? await claimRoomSeat(created.room.code, created.token) : created;
+      replaceOnlineSession(result);
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Could not join room",
@@ -849,12 +867,10 @@ function App() {
     try {
       const count = room.participants.filter((candidate) => candidate.role === "player").length;
       const rematchPlayerCount = (count === 3 || count === 4 ? count : 2) as 2 | 3 | 4;
-      const result = await createRoom(rematchPlayerCount, displayName || "Player 1");
+      const created = await createRoom(rematchPlayerCount, (account?.username ?? displayName) || "Player 1");
+      const result = account ? await claimRoomSeat(created.room.code, created.token) : created;
       setPlayerCount(rematchPlayerCount);
-      setSession(result);
-      setRoom(result.room);
-      setRoomCode(result.room.code);
-      localStorage.setItem("abominations-session", JSON.stringify({ token: result.token, participantId: result.participantId, room: { code: result.room.code } }));
+      replaceOnlineSession(result);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not create rematch room");
     } finally {
@@ -942,15 +958,28 @@ function App() {
         return;
       }
       if (command.type === "move" || command.type === "move-unit") {
-        const pieceId = command.type === "move" ? currentGame.monsters[currentGame.currentPlayer]?.id : command.unitId;
-        if (pieceId) setAcceptedMoveAnimation({ path: command.path as HexKey[], pieceId, key: Date.now() });
+        if (command.type === "move") {
+          const pieceId = currentGame.monsters[currentGame.currentPlayer]?.id;
+          if (pieceId) {
+            moveAnimationSequence.current += 1;
+            setAcceptedMoveAnimation({ path: command.path as HexKey[], pieceId, key: moveAnimationSequence.current });
+          }
+        }
         const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches || Boolean(document.querySelector(".manual-reduced-motion"));
         nextBotStepDelay.current = botActionDelayMs(command, reducedMotion);
       } else if (command.type === "resolve-fight") {
-        setFightBaselineEventId(lastBattleEvent?.id);
-        setFightOverlayOpen(true);
-        setBotFightPlayback(true);
-        nextBotStepDelay.current = botActionDelayMs(command);
+        const resolvedEvent = nextState.eventLog.at(-1);
+        const previousBattleEvent = resolvedEvent && (resolvedEvent.action === "fight.resolved" || resolvedEvent.action === "battle.target-required")
+          ? [...currentGame.eventLog].reverse().find((event) => (event.action === "fight.resolved" || event.action === "battle.target-required") && event.detail.battleId === resolvedEvent.detail.battleId && Array.isArray(event.detail.attacks))
+          : undefined;
+        const totalAttacks = Array.isArray(resolvedEvent?.detail.attacks) ? resolvedEvent.detail.attacks.length : 0;
+        const priorAttacks = Array.isArray(previousBattleEvent?.detail.attacks) ? previousBattleEvent.detail.attacks.length : 0;
+        const newAttacks = Math.max(0, totalAttacks - priorAttacks);
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches || Boolean(document.querySelector(".manual-reduced-motion"));
+        // Let the board playback show each newly logged strike before the bot takes its next action.
+        nextBotStepDelay.current = newAttacks > 0
+          ? reducedMotion ? 1600 : Math.max(1600, newAttacks * 720 + 800)
+          : botActionDelayMs(command, reducedMotion);
       } else if (command.type === "resolve-encounter") {
         // Other players follow the bot encounter from the board instead of opening its modal.
         nextBotStepDelay.current = botActionDelayMs(command);
@@ -1053,7 +1082,6 @@ function App() {
     setSoloMode(false);
     setBotThinking(false);
     setBotExplanation("");
-    setBotFightPlayback(false);
     setLocalPlaytestStarted(true);
     setOnboardingOpen(false);
     // Start with turn instructions expanded.
@@ -1070,7 +1098,6 @@ function App() {
     setSoloMode(true);
     setBotThinking(false);
     setBotExplanation("");
-    setBotFightPlayback(false);
     botTurnRunning.current = false;
     nextBotStepDelay.current = 650;
     setLocalPlaytestStarted(true);
@@ -1274,6 +1301,7 @@ function App() {
         onStartProvisionalPlaytest={startProvisionalPlaytest}
         onOpenBoardReview={() => setBoardReviewOpen(true)}
         onStartVictoryScenario={startTemporaryVictoryScenario}
+        accountPanel={<AccountPanel account={account} session={session} onAccountChange={setAccount} onSessionChange={replaceOnlineSession} />}
       />
     );
   }
@@ -1318,6 +1346,7 @@ function App() {
               <button className="ghost new-game-action" onClick={soloMode ? startSolo : resetLocal}>{soloMode ? "New solo game" : "New local game"}</button>
               {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
               {online && <button className="ghost leave-room-action" onClick={leaveRoomSafely}>Leave room</button>}
+              <AccountPanel account={account} session={session} onAccountChange={setAccount} onSessionChange={replaceOnlineSession} />
             </div>
           </details>
         </div>
@@ -1725,7 +1754,7 @@ function App() {
         requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${choice.destinations[0]}"]`)?.focus({ preventScroll: true }));
       }} />}
       {challengeDuelOpen && activeGame.challenge?.active && <ChallengeArena game={activeGame} canAct={canAct} canUseMutation={canUseMutation} playerIndex={online ? participant?.playerIndex : undefined} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
-      <FightResolutionPanel open={fightOverlayOpen} onClose={() => { setFightOverlayOpen(false); setBotFightPlayback(false); }} game={activeGame} canAct={canAct} autoPlay={soloMode && botFightPlayback} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={(unitId, battleId, spendInfamy) => { void runCommand({ type: "resolve-fight", battleId, targetUnitId: unitId, spendInfamy }); }} controls={<>
+      <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={(unitId, battleId, spendInfamy) => { void runCommand({ type: "resolve-fight", battleId, targetUnitId: unitId, spendInfamy }); }} controls={<>
         <PhaseActions hideAttackTargets activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} canUseMutation={canUseMutation} canUseLaserFence={canUseLaserFence} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
         {error && <p role="alert">{error}</p>}
       </>} />
@@ -1753,14 +1782,17 @@ function App() {
         matchId={activeGame.matchId}
         events={activeGame.eventLog}
         monsters={activeGame.monsters}
+        units={activeGame.units}
         board={activeBoard}
         enabled={online || soloMode || Boolean(routineStompPrompt) || routineStompEvent}
+        botPlayback={soloMode}
         spectator={online && participant?.role !== "player"}
         viewerPlayerIndex={online ? participant?.playerIndex : soloMode ? 0 : activeGame.currentPlayer}
         reducedMotion={manualReducedMotion}
         routineStomp={routineStompPrompt}
         canResolveRoutineStomp={canAct}
         onResolveRoutineStomp={() => void runCommand({ type: "resolve-encounter" })}
+        onResolveRoutineStompChoice={(choice) => void runCommand({ type: "resolve-encounter", choice })}
       />
     </main>
   );

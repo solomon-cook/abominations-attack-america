@@ -1,4 +1,5 @@
 import { LobbyPanel, type LobbyPanelProps } from "./LobbyPanel";
+import type { ReactNode } from "react";
 
 type Props = LobbyPanelProps & {
   rulesOpen: boolean;
@@ -8,9 +9,10 @@ type Props = LobbyPanelProps & {
   onStartProvisionalPlaytest: () => void;
   onOpenBoardReview: () => void;
   onStartVictoryScenario: () => void;
+  accountPanel: ReactNode;
 };
 
-export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo, onStartProvisionalPlaytest, onOpenBoardReview, onStartVictoryScenario, ...lobbyProps }: Props) {
+export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo, onStartProvisionalPlaytest, onOpenBoardReview, onStartVictoryScenario, accountPanel, ...lobbyProps }: Props) {
   return (
     <main className="home-screen">
       <header className="home-masthead">
@@ -49,6 +51,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
         <summary><span>Playing from different cities?</span><strong>Play online <span aria-hidden="true">+</span></strong></summary>
         <LobbyPanel {...lobbyProps} />
       </details>
+      {accountPanel}
       {rulesOpen && (
         <section id="home-rules" className="home-rules" aria-label="Rules reference">
           <div>

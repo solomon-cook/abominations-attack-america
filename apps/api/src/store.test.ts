@@ -1670,7 +1670,7 @@ test("a setup snapshot restores after a refresh with its revision", async () => 
   await assert.rejects(() => store.setupAction(host.room.code, guest.token, { type: "choose-monster", monsterId: "monster-2" }, host.room.version), /Expected revision/);
 });
 
-test("disconnect and reconnect preserve setup state and recover an abandoned room", async () => {
+test("disconnect and reconnect preserve setup state while the room awaits takeover", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2, "Player 1", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
@@ -1688,8 +1688,8 @@ test("disconnect and reconnect preserve setup state and recover an abandoned roo
   await store.setReady(host.room.code, host.token, true);
   await store.setReady(host.room.code, guest.token, true);
   assert.equal((await store.disconnect(host.room.code, host.token, "tab-a")).status, "active");
-  assert.equal((await store.disconnect(host.room.code, guest.token)).status, "abandoned");
-  assert.equal((await store.reconnect(host.room.code, guest.token)).status, "abandoned");
+  assert.equal((await store.disconnect(host.room.code, guest.token)).status, "active");
+  assert.equal((await store.reconnect(host.room.code, guest.token)).status, "active");
   assert.equal((await store.reconnect(host.room.code, host.token)).status, "active");
 });
 

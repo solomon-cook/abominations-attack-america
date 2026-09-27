@@ -243,6 +243,28 @@ test("terminal command persists completed room status and winner result atomical
   });
 });
 
+test("terminal transaction writes one public stat row for each linked account seat, including bot-assisted play", async () => {
+  const { adapter, room, participant, matchStats } = persistentAdapter();
+  room.state.stompMarkers = 1;
+  room.state.setupAssignments = [
+    { playerIndex: 0, branch: "Navy" },
+    { playerIndex: 1, branch: "Army" },
+  ] as any;
+  (participant as any).userId = "account-1";
+  (participant as any).user = { username: "public-player" };
+  participant.botAssisted = true;
+  const store = new PrismaRoomStore(adapter);
+  const command = async (actionId: string, expectedRevision: number, commandValue: any) => store.submitAction(room.code, "token", { actionId, actorId: "player-1", expectedRevision, protocolVersion: 1, command: commandValue });
+  await command("finish-linked-move", 0, { type: "move", path: ["los-angeles", "san-francisco"] });
+  await command("finish-linked-encounter", 1, { type: "resolve-encounter", choice: "health" });
+  const rows = [...matchStats.values()] as Array<Record<string, unknown>>;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.username, "public-player");
+  assert.equal(rows[0]?.outcome, "win");
+  assert.equal(rows[0]?.branch, "Navy");
+  assert.equal(rows[0]?.botAssisted, true);
+});
+
 test("Prisma setup actions persist the shared state and reject stale revisions", async () => {
   const { adapter, room } = persistentAdapter();
   room.state = createRoomGame(2);

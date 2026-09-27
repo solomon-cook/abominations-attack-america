@@ -3,6 +3,7 @@ export * from "./audited-board.js";
 import { AUDITED_BOARD } from "./audited-board.js";
 export * from "./cards.js";
 export * from "./setup.js";
+export * from "./bots.js";
 import { buildBoardIndex, DEVELOPMENT_BOARD, DEVELOPMENT_LOCATIONS, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, hexKeyToLocationId, isHexKey, locationIdToHexKey, toDevelopmentSpaceKey, validateBoardDefinition, type BoardDefinition, type BoardFeature, type HexKey, type SpaceKey, type WaterClass } from "./board.js";
 import { createCardDeckState, discardCard as discardCardFromDeck, drawCard as drawCardFromDeck, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, type CardDeckState } from "./cards.js";
 import { monsterDefinition, type MonsterMovement } from "./monsters.js";
@@ -148,6 +149,8 @@ export interface GameState {
   winnerPlayer?: number;
   victoryType?: "development-stomp-exhaustion" | "development-board-exhaustion" | "monster-challenge" | "america-saved" | "concession";
   rng: { seed: number; cursor: number };
+  /** Raw d6 outcomes, retained so match statistics can calculate luck exactly. */
+  dieRollHistory?: number[];
   nextUnitSequence: number;
   decks: DeckState;
   pendingBattles: PendingBattle[];
@@ -578,6 +581,7 @@ export interface CommandResult extends GameEventResult {
 export function migrateGameState(input: GameState): GameState {
   const state = structuredClone(input) as GameState & { schemaVersion: number; stompedLocations: string[] };
   if (!state.matchId) state.matchId = `development-match-${state.rng?.seed ?? 0}`;
+  if (!Array.isArray(state.dieRollHistory)) state.dieRollHistory = [];
   if (!state.players) state.players = state.monsters.map((_, seat) => ({ id: `player-${seat + 1}`, seat, mutationCardIds: [], researchCardIds: [] }));
   state.players = state.players.map((player) => ({ ...player, mutationCardIds: Array.isArray(player.mutationCardIds) ? player.mutationCardIds : [], researchCardIds: Array.isArray(player.researchCardIds) ? player.researchCardIds : [] }));
   if (!Array.isArray(state.removedResearchCardIds)) state.removedResearchCardIds = [];
@@ -1591,7 +1595,9 @@ function nextD6(state: GameState): number {
   value = Math.imul(value, 0x85ebca6b) >>> 0;
   value ^= value >>> 13;
   state.rng.cursor += 1;
-  return ((value % 6) + 6) % 6 + 1;
+  const roll = ((value % 6) + 6) % 6 + 1;
+  (state.dieRollHistory ??= []).push(roll);
+  return roll;
 }
 
 function developmentRetreatOptions(state: GameState, battle: PendingBattle, unitIds: readonly string[], monsterRetreat = false): Record<string, readonly HexKey[]> {
@@ -2744,6 +2750,27 @@ export function redeployUnitResult(state: GameState, requested: { unitId: string
   return { state: next, unitId: unit.id, branch, destination };
 }
 
+export type DeploymentChoice = { id: string; typeId: string; sheet: string; kind: "deploy" | "redeploy"; destinations: HexKey[] };
+
+/** Enumerate legal deploy and redeploy actions using the authoritative rules. */
+export function deploymentChoices(game: GameState): DeploymentChoice[] {
+  if (game.phase !== "deploy") return [];
+  const candidates = [
+    ...game.units.filter((unit) => !game.removedUnitIds.includes(unit.id)).map((unit) => ({ id: unit.id, typeId: unit.unitTypeId ?? unit.branch, sheet: unit.unitTypeId === "x-fighter" ? "X-Fighters" : unit.branch, kind: unit.location === "record-tile" ? "deploy" as const : "redeploy" as const })),
+    ...game.nationalGuard.unitIds.filter((id) => !game.units.some((unit) => unit.id === id) && !game.removedUnitIds.includes(id)).map((id) => ({ id, typeId: id.replace(/-\d+$/, ""), sheet: "National Guard", kind: "deploy" as const })),
+  ];
+  return candidates.flatMap((choice) => {
+    const destinations = choice.kind === "redeploy" ? legalOwnedRedeploymentDestinations(game, choice.id)
+      : choice.id.startsWith("national-guard-") ? legalNationalGuardDeploymentDestinations(game) : legalOwnedDeploymentDestinations(game);
+    if (!destinations.length) return [];
+    try {
+      const result = choice.kind === "deploy" ? deployUnitResult(game, { unitId: choice.id, destination: destinations[0] }) : redeployUnitResult(game, { unitId: choice.id, destination: destinations[0] });
+      if (result.unitId !== choice.id) return [];
+      return [{ ...choice, destinations }];
+    } catch { return []; }
+  });
+}
+
 export interface ResearchDrawResolution {
   readonly state: GameState;
   readonly cardId: string;
@@ -3370,7 +3397,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       if (!selectedUnit || !selectedBattle || selectedUnit.location !== selectedBattle.location) throw new Error("That battle target is no longer present.");
       const result = resolvePendingMultiTargetFight(state, command.targetUnitId);
       const eventType = result.state.pendingAttackTarget ? "battle.target-required" : "fight.resolved";
-      const eventPayload = { battleId: attackDecision.battleId, targetUnitId: command.targetUnitId, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, hollywoodResearchCardId: result.hollywoodResearchCardId, hollywoodResearchAwarded: Boolean(result.hollywoodResearchCardId), nextPhase: result.state.phase, nextDecision: result.state.pendingDecision };
+      const eventPayload = { battleId: attackDecision.battleId, playerIndex: state.currentPlayer, location: selectedBattle.location, targetUnitId: command.targetUnitId, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, hollywoodResearchCardId: result.hollywoodResearchCardId, hollywoodResearchAwarded: Boolean(result.hollywoodResearchCardId), nextPhase: result.state.phase, nextDecision: result.state.pendingDecision };
       return { state: appendEvent(result.state, eventType, eventPayload), eventType, eventPayload };
     }
     requireDecision("battle-resolution");
@@ -3396,12 +3423,12 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
         if (command.targetUnitId) return applyCommand(next, { ...command, battleId: selectedBattle.id });
         if (targetIds.length === 1) return applyCommand(next, { ...command, battleId: selectedBattle.id, targetUnitId: targetIds[0] });
         next.log.push(`Choose the target for ${monster?.name ?? "the monster"}'s attack 1 of ${attackTotal} in combat round 1.`);
-        const eventPayload = { battleId: selectedBattle.id, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal, infamySpent: spendInfamy, nextPhase: next.phase };
+        const eventPayload = { battleId: selectedBattle.id, playerIndex: state.currentPlayer, location: selectedBattle.location, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal, infamySpent: spendInfamy, nextPhase: next.phase };
         return { state: appendEvent(next, "battle.target-required", eventPayload), eventType: "battle.target-required", eventPayload };
       }
     }
     const result = resolveFightResult(state, command.type === "resolve-fight" ? command.battleId : undefined, command.type === "resolve-fight" ? command.spendInfamy ?? 0 : 0, command.type === "resolve-fight" ? command.targetUnitId : undefined);
-    const eventPayload = { battleId: selectedBattle?.id, targetUnitId: command.type === "resolve-fight" ? command.targetUnitId : undefined, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, hollywoodResearchCardId: result.hollywoodResearchCardId, hollywoodResearchAwarded: Boolean(result.hollywoodResearchCardId), nextPhase: result.state.phase };
+    const eventPayload = { battleId: selectedBattle?.id, playerIndex: state.currentPlayer, location: selectedBattle?.location, targetUnitId: command.type === "resolve-fight" ? command.targetUnitId : undefined, remainingBattleIds: result.state.pendingBattles.map((battle) => battle.id), combatRounds: result.combatRounds, rolls: result.rolls, destroyedUnitIds: result.destroyedUnitIds, attacks: result.attacks, infamySpent: result.infamySpent, hollywoodResearchCardId: result.hollywoodResearchCardId, hollywoodResearchAwarded: Boolean(result.hollywoodResearchCardId), nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "fight.resolved", eventPayload), eventType: "fight.resolved", eventPayload };
   }
   if (state.phase === "encounter" && (command.type === "resolve-encounter" || command.type === "advance")) {

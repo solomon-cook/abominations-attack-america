@@ -1,10 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
-import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, legalLaserFenceTargets, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
+import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupAction, createMvpRoomGame, createRoomGame, legalLaserFenceTargets, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicRoomSummary, RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
+import { emptyMatchCounters, updateMatchCounters, type MatchCounters } from "./player-stats.js";
 
-type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string };
-type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; lastActivityAt: number };
+type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string; disconnectedAt?: number };
+type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
+export interface RoomSocketPrincipal { roomCode: string; participantId: string; sessionHash: string }
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
 
@@ -76,6 +78,13 @@ export interface RoomStore {
   setupAction(code: string, token: string, action: SetupAction, expectedRevision: number): Promise<RoomView>;
   getRoom(code: string, token: string, afterVersion?: number): Promise<RoomView>;
   submitAction(code: string, token: string, envelope: GameCommandEnvelope): Promise<RoomView>;
+  createSocketTicket(code: string, token: string): Promise<string>;
+  consumeSocketTicket(code: string, ticket: string): Promise<RoomSocketPrincipal>;
+  getRoomForParticipant(code: string, participantId: string, afterVersion?: number): Promise<RoomView>;
+  submitActionForParticipant(code: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomView>;
+  connectParticipant(code: string, participantId: string, connectionId: string, sessionHash: string): Promise<RoomView>;
+  disconnectParticipant(code: string, participantId: string, connectionId?: string): Promise<RoomView>;
+  processBotTakeovers(now?: number): Promise<string[]>;
 }
 
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");
@@ -87,6 +96,7 @@ const gameSeed = () => randomBytes(4).readUInt32LE(0);
 export class MemoryRoomStore implements RoomStore {
   private rooms = new Map<string, StoredRoom>();
   private actionIds = new Set<string>();
+  private socketTickets = new Map<string, { roomCode: string; participantId: string; sessionHash: string; expiresAt: number }>();
 
   constructor(private readonly allowDevelopmentFixture = false) {}
 
@@ -102,7 +112,7 @@ export class MemoryRoomStore implements RoomStore {
       ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`)
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`);
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
-    const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, participants: [], events: [], lastActivityAt: Date.now() };
+    const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, participants: [], events: [], playerStats: emptyMatchCounters(maxPlayers), lastActivityAt: Date.now() };
     this.rooms.set(room.code, room);
     return this.addParticipant(room, displayName, "player", 0);
   }
@@ -149,6 +159,7 @@ export class MemoryRoomStore implements RoomStore {
     if (!participant) throw new Error("Invalid room token.");
     if (participant.connectionId && participant.connectionId !== connectionId) return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
     participant.connected = false;
+    participant.disconnectedAt = Date.now();
     this.touch(room);
     this.refreshStatus(room);
     return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
@@ -159,6 +170,8 @@ export class MemoryRoomStore implements RoomStore {
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
     if (!participant) throw new Error("Invalid room token.");
     participant.connected = true;
+    participant.disconnectedAt = undefined;
+    participant.botControlled = false;
     participant.connectionId = connectionId;
     this.touch(room);
     this.refreshStatus(room);
@@ -172,6 +185,9 @@ export class MemoryRoomStore implements RoomStore {
     participant.sessionExpiresAt = sessionExpiresAt().getTime();
     const replacement = token();
     participant.tokenHash = hash(replacement);
+    participant.connected = false;
+    participant.connectionId = undefined;
+    participant.disconnectedAt = Date.now();
     return { room: this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex), participantId: participant.id, token: replacement };
   }
 
@@ -223,6 +239,7 @@ export class MemoryRoomStore implements RoomStore {
     const room = this.authorize(roomCode, accessToken);
     const actor = room.participants.find((participant) => participant.tokenHash === hash(accessToken));
     if (!actor || actor.role !== "player") throw new Error("Spectators cannot submit game actions.");
+    if (actor.botControlled) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
     if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
     if (this.actionIds.has(`${room.id}:${envelope.actionId}`)) return this.view(room, 0, "player", actor.playerIndex);
     if (room.status === "completed") throw new Error("This room is completed; no further gameplay actions are legal.");
@@ -231,11 +248,144 @@ export class MemoryRoomStore implements RoomStore {
       ? room.state.pendingDecision.playerIndex
       : room.state.currentPlayer);
     if (actor.playerIndex !== requiredPlayer) throw new Error("It is not your turn.");
+    return this.applyRoomCommand(room, actor, envelope, "human");
+  }
+
+  async createSocketTicket(roomCode: string, accessToken: string): Promise<string> {
+    const room = this.authorize(roomCode, accessToken);
+    const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!participant) throw new Error("Invalid room token.");
+    const ticket = token();
+    this.socketTickets.set(hash(ticket), { roomCode: room.code, participantId: participant.id, sessionHash: participant.tokenHash, expiresAt: Date.now() + 30_000 });
+    return ticket;
+  }
+
+  async consumeSocketTicket(roomCode: string, ticket: string): Promise<RoomSocketPrincipal> {
+    const record = this.socketTickets.get(hash(ticket));
+    if (!record || record.expiresAt <= Date.now() || record.roomCode !== roomCode.toUpperCase()) throw new Error("WebSocket ticket is invalid or expired.");
+    this.socketTickets.delete(hash(ticket));
+    return { roomCode: record.roomCode, participantId: record.participantId, sessionHash: record.sessionHash };
+  }
+
+  async getRoomForParticipant(roomCode: string, participantId: string, afterVersion = 0): Promise<RoomView> {
+    const room = this.requireRoom(roomCode);
+    const viewer = room.participants.find((participant) => participant.id === participantId);
+    if (!viewer) throw new Error("Room participant not found.");
+    return this.view(room, afterVersion, viewer.role === "player" ? "player" : "spectator", viewer.playerIndex);
+  }
+
+  async submitActionForParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomView> {
+    const room = this.requireRoom(roomCode);
+    const actor = room.participants.find((candidate) => candidate.id === participantId);
+    if (!actor || actor.role !== "player") throw new Error("Spectators cannot submit game actions.");
+    if (!actor.connected || actor.connectionId !== connectionId || actor.tokenHash !== sessionHash) throw new Error("This WebSocket connection has been replaced. Reconnect to continue.");
+    if (actor.botControlled) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
+    if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
+    if (this.actionIds.has(`${room.id}:${envelope.actionId}`)) return this.view(room, 0, "player", actor.playerIndex);
+    if (room.status !== "active") throw new Error("This room is not ready for gameplay.");
+    const requiredPlayer = this.requiredPlayer(room.state, envelope);
+    if (actor.playerIndex !== requiredPlayer) throw new Error("It is not your turn.");
+    return this.applyRoomCommand(room, actor, envelope, "human");
+  }
+
+  async disconnectParticipant(roomCode: string, participantId: string, connectionId = "legacy"): Promise<RoomView> {
+    const room = this.requireRoom(roomCode);
+    const participant = room.participants.find((candidate) => candidate.id === participantId);
+    if (!participant) throw new Error("Room participant not found.");
+    if (participant.connectionId && participant.connectionId !== connectionId) return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+    participant.connected = false;
+    participant.disconnectedAt = Date.now();
+    this.touch(room);
+    this.refreshStatus(room);
+    return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+  }
+
+  async connectParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string): Promise<RoomView> {
+    const room = this.requireRoom(roomCode);
+    const participant = room.participants.find((candidate) => candidate.id === participantId);
+    if (!participant) throw new Error("Room participant not found.");
+    if (participant.tokenHash !== sessionHash) throw new Error("WebSocket ticket was issued for a replaced room session.");
+    participant.connected = true;
+    participant.disconnectedAt = undefined;
+    participant.botControlled = false;
+    participant.connectionId = connectionId;
+    this.touch(room);
+    this.refreshStatus(room);
+    return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+  }
+
+  async processBotTakeovers(nowMs = Date.now()): Promise<string[]> {
+    const updated: string[] = [];
+    for (const room of this.rooms.values()) {
+      if (room.status === "completed" || room.status === "expired") continue;
+      for (const participant of room.participants) {
+        if (participant.role === "player" && !participant.connected && participant.disconnectedAt !== undefined && nowMs - participant.disconnectedAt >= 4 * 60_000 && !participant.botControlled) {
+          participant.botControlled = true;
+          participant.botAssisted = true;
+          updated.push(room.code);
+        }
+      }
+      for (let step = 0; step < 12; step += 1) {
+        const setup = room.state.setupState;
+        if (setup && setup.phase !== "complete") {
+          const setupPlayer = this.nextSetupPlayer(setup);
+          const actor = room.participants.find((candidate) => candidate.playerIndex === setupPlayer && candidate.role === "player");
+          if (!actor?.botControlled) break;
+          const nextSetup = chooseBotSetupAction(room.state, setup, setupPlayer);
+          if (nextSetup === setup) break;
+          const seat = nextSetup.seats.find((candidate) => candidate.playerIndex === setupPlayer);
+          if (seat?.startingChoice?.kind === "deploy") setupDeploymentState({ ...room.state, setupState: nextSetup }, setupPlayer, "placements" in seat.startingChoice ? seat.startingChoice.placements : [seat.startingChoice]);
+          room.state = { ...room.state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
+          actor.ready = Boolean(seat?.startingChoice);
+          this.touch(room);
+          room.version += 1;
+          room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: "setup.updated", controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, createdAt: now() });
+          room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
+          this.refreshStatus(room);
+          if (room.status === "active" && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
+            room.state = applyCompletedSetup(room.state);
+            room.version += 1;
+          }
+          updated.push(room.code);
+          continue;
+        }
+        this.refreshStatus(room);
+        if (room.status !== "active") break;
+        if (room.state.phase === "game-over") break;
+        const botIndices = new Set(room.participants.filter((candidate) => candidate.role === "player" && candidate.botControlled && candidate.playerIndex !== undefined).map((candidate) => candidate.playerIndex!));
+        const command = chooseBotCommand(room.state, botIndices);
+        if (!command) break;
+        const playerIndex = this.requiredPlayer(room.state, { actionId: "bot-probe", actorId: "bot-probe", expectedRevision: room.version, protocolVersion: 1, command });
+        const actor = room.participants.find((candidate) => candidate.role === "player" && candidate.playerIndex === playerIndex);
+        if (!actor?.botControlled) break;
+        const envelope = { actionId: randomBytes(16).toString("hex"), actorId: actor.id, expectedRevision: room.version, protocolVersion: 1 as const, command };
+        this.applyRoomCommand(room, actor, envelope, "bot");
+        updated.push(room.code);
+      }
+    }
+    return [...new Set(updated)];
+  }
+
+  private requiredPlayer(state: GameState, envelope?: GameCommandEnvelope): number {
+    const specialOwner = envelope ? laserFenceCardOwner(state, envelope) ?? mutationBattleOwner(state, envelope) : undefined;
+    if (specialOwner !== undefined) return specialOwner;
+    const decision = state.pendingDecision;
+    return decision && "playerIndex" in decision ? decision.playerIndex : state.currentPlayer;
+  }
+
+  private nextSetupPlayer(setup: NonNullable<GameState["setupState"]>): number {
+    const field = setup.phase === "monster-selection" ? "monsterId" : setup.phase === "branch-selection" ? "branch" : setup.phase === "lair-selection" ? "lair" : "startingChoice";
+    const seats = [...setup.seats].sort((left, right) => setup.phase === "branch-selection" ? right.playerIndex - left.playerIndex : left.playerIndex - right.playerIndex);
+    return seats.find((seat) => seat[field] === undefined)?.playerIndex ?? -1;
+  }
+
+  private applyRoomCommand(room: StoredRoom, actor: StoredParticipant, envelope: GameCommandEnvelope, controlSource: "human" | "bot"): RoomView {
     const result = applyCommandEnvelope(room.state, envelope, room.version);
+    room.playerStats = updateMatchCounters(room.state, result.state, room.playerStats, actor.playerIndex ?? 0);
     room.state = result.state;
     this.touch(room);
     room.version += 1;
-    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: result.eventType, payload: { ...result.eventPayload, receipt: result.receipt }, createdAt: now() });
+    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: result.eventType, controlSource, payload: { ...result.eventPayload, receipt: result.receipt }, createdAt: now() });
     room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.actionIds.add(`${room.id}:${envelope.actionId}`);
     if (room.state.phase === "game-over") room.status = "completed";
@@ -244,7 +394,7 @@ export class MemoryRoomStore implements RoomStore {
 
   private addParticipant(room: StoredRoom, displayName: string, role: "player" | "spectator", playerIndex?: number): SessionResponse {
     const accessToken = token();
-    const participant: StoredParticipant = { id: randomBytes(10).toString("hex"), displayName: displayName.trim().slice(0, 32) || "Player", role, playerIndex, connected: true, ready: false, tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt().getTime() };
+    const participant: StoredParticipant = { id: randomBytes(10).toString("hex"), displayName: displayName.trim().slice(0, 32) || "Player", role, playerIndex, connected: true, ready: false, botControlled: false, botAssisted: false, tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt().getTime() };
     room.participants.push(participant);
     return { room: this.view(room), participantId: participant.id, token: accessToken };
   }
@@ -266,11 +416,11 @@ export class MemoryRoomStore implements RoomStore {
     const setupComplete = !room.state.setupState || room.state.setupState.phase === "complete";
     if (room.status === "completed") return;
     if (room.status === "active") {
-      room.status = players.length > 0 && players.every((participant) => !participant.connected) ? "abandoned" : "active";
+      room.status = "active";
       return;
     }
     if (room.status === "abandoned" && !(setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.ready && participant.connected))) return;
-    room.status = setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.ready && participant.connected) ? "active" : "waiting";
+    room.status = setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.ready && (participant.connected || participant.botControlled)) ? "active" : "waiting";
   }
 
   private requireRoom(roomCode: string) {
@@ -285,6 +435,6 @@ export class MemoryRoomStore implements RoomStore {
   }
 
   private view(room: StoredRoom, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number): RoomView {
-    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map(({ tokenHash: _tokenHash, ...participant }) => participant), events: room.events.filter((event) => event.version > afterVersion).map((event) => ({ ...event, payload: redactCardIdentifiers(event.payload) as Record<string, unknown> })) };
+    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map((participant) => ({ id: participant.id, displayName: participant.displayName, role: participant.role, playerIndex: participant.playerIndex, connected: participant.connected, ready: participant.ready, botControlled: participant.botControlled, botAssisted: participant.botAssisted })), events: room.events.filter((event) => event.version > afterVersion).map((event) => ({ ...event, payload: redactCardIdentifiers(event.payload) as Record<string, unknown> })) };
   }
 }

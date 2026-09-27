@@ -1,6 +1,6 @@
 # Room lifecycle contract
 
-The room stores expose explicit `disconnect` and `reconnect` transitions for a participant. A reconnect uses the existing room token, so setup selections, the authoritative snapshot, and the room revision are preserved.
+The room stores expose explicit `disconnect` and `reconnect` transitions for a participant. A reconnect uses the current room token, so setup selections, the authoritative snapshot, and the room revision are preserved. Socket closure also writes the participant's disconnect timestamp; the four-minute server worker then gives a disconnected seat to the tactical bot until the next legal decision is reclaimed by its player.
 
 | State | Transition | Current behavior |
 | --- | --- | --- |
@@ -21,15 +21,15 @@ The expiry window is an operational policy, not a game rule: `ROOM_IDLE_TIMEOUT_
 
 ## Session and access policy
 
-Guest access is bearer-token access: the room code identifies the room and the session token identifies the participant. Tokens are generated with 192 bits of random entropy and only their SHA-256 hashes are retained by the stores. A token never grants authority beyond its participant role, seat, current room status, and the authoritative revision/actor checks.
+Guest access is bearer-token access: the room code identifies the room and the session token identifies the participant. Tokens are generated with 192 bits of random entropy and only their SHA-256 hashes are retained by the stores. WebSockets exchange this room token for a one-use ticket that expires after 30 seconds. A token never grants authority beyond its participant role, seat, current room status, and the authoritative revision/actor checks.
 
 The current MVP policy is:
 
 - A session is valid for 24 hours from creation or its most recent explicit rotation. A completed room remains readable only with a non-expired session, while an expired room or expired session rejects reads, reconnects, and gameplay.
 - Disconnect has no short grace timer: the participant may reconnect during the room's 24-hour idle window. A room becomes abandoned only when every player is disconnected, and can recover when all ready players reconnect.
-- There is no host privilege and no token transfer between participants. A creator's departure therefore follows ordinary disconnect rules.
+- There is no host privilege and no token transfer between participants. A creator's departure therefore follows ordinary disconnect rules. Verified accounts can link the current player seat; completed guest matches are not retroactively attached.
 - Voluntary concession is the explicit inactive-player resolution; the client never converts a network failure into a concession.
-- The API now exposes `POST /rooms/:code/rotate-session`; both stores atomically replace the stored hash, issue a replacement token, preserve the participant/role/seat, and reject the old token. Security-event/audit delivery and an authenticated automatic-rotation policy remain release requirements; neither token is exposed in projections or logs.
-- Room privacy is bearer-token based in the current guest model: possession of a player token permits that player's projection, while a spectator token permits only the redacted spectator projection. Room codes and tokens are never sufficient to bypass role or revision checks.
+- The API exposes `POST /rooms/:code/rotate-session`; the Prisma store replaces the stored hash, issues a replacement token, preserves the participant/role/seat, and rejects the old token. Account holders can resume a linked match from another device, replacing the prior room session.
+- Room privacy is bearer-token based: possession of a player token permits that player's projection, while a spectator token permits only the redacted spectator projection. Public usernames may appear in participant views, but account email and credential data remain private. Room codes and tokens are never sufficient to bypass role or revision checks.
 
 The release checklist must revisit audit delivery, automatic rotation, and external identity integration before production deployment; the current endpoint is an explicit guest-session primitive, not an identity provider.

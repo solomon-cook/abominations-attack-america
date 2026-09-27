@@ -280,6 +280,7 @@ botUnitMoveFixture.movedPieceIds = [botUnitMoveFixture.monsters[1]!.id];
 const botUnitMove = runBotActionWithExplanation(botUnitMoveFixture);
 assert.equal(botUnitMove.command?.type, "move-unit", "the bot should move a military unit along its selected route");
 assert.equal(botUnitMove.state.eventLog.at(-1)?.action, "unit.moved", "the accepted bot unit move should be available to animate from its event path");
+assert.deepEqual(botUnitMove.state.eventLog.at(-1)?.detail.path, botUnitMove.command?.type === "move-unit" ? botUnitMove.command.path : undefined, "the authoritative unit.moved event should carry the complete route consumed by the board animation");
 assert.ok(botActionDelayMs({ type: "move", path: ["0,0", "1,0", "2,0"] }) >= 1200, "multi-hex bot movement should wait for its board animation to finish");
 assert.equal(botActionDelayMs({ type: "move", path: ["0,0", "1,0", "2,0"] }, true), 650, "reduced motion should not retain the movement animation delay");
 assert.ok(botActionDelayMs(botUnitMove.command!) >= 650, "the bot should allow time for a military route animation to finish");
