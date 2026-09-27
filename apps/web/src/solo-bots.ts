@@ -12,6 +12,7 @@ import {
   legalLaserFenceTargets,
   legalMolecularCannonTargets,
   legalMonsterPaths,
+  movementPathAllowed,
   legalSubmarineTargets,
   monsters,
   shortestLegalUnitPaths,
@@ -202,11 +203,13 @@ function nearestTargetScore(state: GameState, destination: HexKey, playerIndex: 
   const pressure = (branch === "Army" || branch === "Marines" ? 3.2 : 2.6) * Math.max(0, 9 - distance);
   const blocker = distance <= 2 && focus.infamy >= 2 ? 6 : 0;
   const focusWounded = focus.health < 8 ? 5 : 0;
-  const friendlyAttack = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location !== "record-tile" && unit.location !== "permanently-removed" && hexDistance(state, unit.location, focus.location) <= 1).reduce((sum, unit) => sum + unit.damage, 0);
-  const requiredForce = Math.max(2, focus.health / 2);
-  const massing = friendlyAttack < requiredForce ? (requiredForce - friendlyAttack) * (distance <= 2 ? 1.4 : 0.35) : 0;
-  const routeBlocking = branch === "Army" ? (routeScores ?? routeBlockScores(state)).get(destination) ?? 0 : 0;
-  return pressure + blocker + focusWounded + massing + routeBlocking + tileScore(state, destination, playerIndex, branch, false);
+  const nearbyForce = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location !== "record-tile" && unit.location !== "permanently-removed" && hexDistance(state, unit.location, focus.location) <= 2).length;
+  const massing = Math.max(0, 3 - nearbyForce) * (distance <= 2 ? 3 : 1.2);
+  const routeBlocking = (routeScores ?? routeBlockScores(state)).get(destination) ?? 0;
+  const attackedMonster = threats.find((monster) => monster.location === destination);
+  const forceAtEngagement = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location === destination).length + 1;
+  const prematureAttack = attackedMonster && !(attackedMonster.health <= 5 && forceAtEngagement >= 3) ? -35 : 0;
+  return pressure + blocker + focusWounded + massing + routeBlocking + prematureAttack + tileScore(state, destination, playerIndex, branch, false);
 }
 
 function focusTarget(state: GameState, playerIndex: number, branch: BotBranch) {
@@ -230,16 +233,43 @@ function focusTarget(state: GameState, playerIndex: number, branch: BotBranch) {
 /** Military positions on a monster's legal route to an unclaimed city or Infamy site gain blocking value. */
 export function routeBlockScores(state: GameState): Map<HexKey, number> {
   const scores = new Map<HexKey, number>();
+  const board = boardForState(state);
+  const goals = Object.values(board.hexes).filter((hex) => !state.stompedLocations.includes(hex.key)
+    && hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site"));
   for (const monster of state.monsters) {
-    if (monster.health <= 0 || !boardForState(state).hexes[monster.location as HexKey]) continue;
-    for (const path of legalMonsterPaths(state, monster.id)) {
-      const goal = path.at(-1)!;
-      const value = featureValue(state, goal);
-      if (value < 4 || path.length < 2) continue;
-      path.slice(1).forEach((key, index) => {
-        const pressure = value + Math.max(0, 3 - index);
-        scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
-      });
+    const start = monster.location as HexKey;
+    if (monster.health <= 0 || !board.hexes[start]) continue;
+    const movement = monster.movement;
+    for (const goal of goals) {
+      if (goal.key === start) continue;
+      // Follow the monster's actual legal edges beyond this turn's move range so
+      // military pieces can occupy a corridor before the monster reaches it.
+      const queue: HexKey[][] = [[start]];
+      const distance = new Map<HexKey, number>([[start, 0]]);
+      let shortest = Infinity;
+      while (queue.length) {
+        const path = queue.shift()!;
+        const current = path.at(-1)!;
+        const steps = path.length - 1;
+        if (current === goal.key) {
+          shortest = steps;
+          const value = featureValue(state, goal.key);
+          path.slice(1, -1).forEach((key, index) => {
+            const toGoal = steps - index - 1;
+            const pressure = value * 2 + 4 + Math.max(0, 5 - toGoal) * 3;
+            scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
+          });
+          continue;
+        }
+        if (steps >= shortest || steps >= 10) continue;
+        for (const edge of board.edges) {
+          if (!edge.enabled || edge.from !== current || distance.has(edge.to)) continue;
+          const nextPath = [...path, edge.to];
+          if (!movementPathAllowed(board, nextPath, movement)) continue;
+          distance.set(edge.to, steps + 1);
+          queue.push(nextPath);
+        }
+      }
     }
   }
   return scores;
@@ -265,16 +295,15 @@ function shouldDrawResearch(state: GameState, actor: number, branch: BotBranch, 
   if (hand.length >= 2) return false;
   const units = state.units.filter((unit) => unit.ownerPlayer === actor && unit.location !== "record-tile" && unit.location !== "permanently-removed");
   const focus = focusTarget(state, actor, branch);
-  const nearTarget = focus ? units.filter((unit) => hexDistance(state, unit.location, focus.location) <= 2).reduce((sum, unit) => sum + unit.damage, 0) : 0;
   const objectiveDistance = focus ? Object.values(boardForState(state).hexes)
     .filter((hex) => hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site") && !state.stompedLocations.includes(hex.key))
     .reduce((nearest, hex) => Math.min(nearest, hexDistance(state, focus.location, hex.key)), 99) : 99;
   const objectiveThreat = Boolean(focus && objectiveDistance <= focus.move + 1 && (focus.infamy >= 2 || objectiveDistance <= 1));
   const blockerOpportunity = choices.some((choice) => choice.destinations.some((destination) => (routeScores.get(destination) ?? 0) >= 8));
-  const readyToAttack = Boolean(focus && nearTarget >= Math.max(4, focus.health * 0.4));
-  const establishedForce = units.length >= (branch === "Marines" ? 3 : 2);
-  // Draw after the attack group is assembled, while there is no urgent objective or open route to block.
-  return (readyToAttack || establishedForce) && !objectiveThreat && !blockerOpportunity;
+  const establishedForce = units.length >= 3;
+  // Build a three-piece group first. Research becomes a useful fallback once
+  // the group is assembled and neither an attack nor route block is urgent.
+  return establishedForce && !objectiveThreat && !blockerOpportunity;
 }
 
 export function chooseBotCommand(state: GameState): GameCommand | undefined {
@@ -406,7 +435,8 @@ export function chooseBotCommand(state: GameState): GameCommand | undefined {
     const focus = focusTarget(state, actor, branch);
     const deploymentScore = (option: typeof options[number]) => Math.max(...option.destinations.map((destination) => {
       const target = state.monsters.find((monster) => monster.location === destination && monster.id !== state.monsters[actor]?.id);
-      const immediateAttack = target ? (target.health <= 5 ? 12 : -Math.max(0, 8 - target.health)) : 0;
+      const attackersAtTarget = target ? state.units.filter((unit) => unit.ownerPlayer === actor && unit.location === destination).length + 1 : 0;
+      const immediateAttack = target && target.health <= 5 && attackersAtTarget >= 3 ? 12 : 0;
       const toxicorAmmoPenalty = option.typeId === "air-force-cruise-missile" && focus?.name === "Toxicor" && focus.health > 5 ? 30 : 0;
       const unitPriority = branch === "Marines" && option.typeId === "marines-rocket-launcher" ? 3 : 0;
       return nearestTargetScore(state, destination, actor, branch, routeScores) + immediateAttack + unitPriority - toxicorAmmoPenalty;
@@ -473,7 +503,7 @@ function explainBotCommand(state: GameState, command: GameCommand, actor: number
     const unit = state.units.find((candidate) => candidate.id === command.unitId);
     const destination = command.type === "move-unit" ? command.path.at(-1) : command.destination;
     if (!destination) return undefined;
-    const routeScore = branch === "Army" ? routeBlockScores(state).get(destination as HexKey) ?? 0 : 0;
+    const routeScore = routeBlockScores(state).get(destination as HexKey) ?? 0;
     if (routeScore >= 8 && focus) return `Positioned ${unit?.unitTypeId?.replaceAll("-", " ") ?? branch} on a monster route to block ${focus.name} from the next objective.`;
     if (focus) return `Concentrated ${branch} forces toward ${focus.name}${focus.health < 8 ? " to finish the wounded target" : " for a coordinated attack"}.`;
     return `Deployed ${branch} forces to protect objectives and build an attack group.`;

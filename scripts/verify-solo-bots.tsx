@@ -12,6 +12,7 @@ import {
   legalMonsterPaths,
   type GameState,
 } from "../packages/game-engine/src/index.js";
+import { deploymentChoices } from "../apps/web/src/components/MilitarySheet.js";
 import { botActionDelayMs, botStrategyHint, chooseBotCommand, chooseBotSetupAction, hasBotLaserFenceReaction, routeBlockScores, runBotActionWithExplanation, runBotTurnWithExplanation } from "../apps/web/src/solo-bots.js";
 
 function createSoloMatch(humanMonsterId: string): GameState {
@@ -99,7 +100,26 @@ const safeHex = Object.values(researchBoard.hexes).sort((a, b) => {
 })[0]!;
 researchState.monsters[0]!.location = safeHex.key;
 researchState.monsters[0]!.infamy = 0;
-assert.equal(chooseBotCommand(researchState)?.type, "draw-research");
+researchState.monsters.forEach((monster, index) => { if (index !== 1) monster.health = 0; });
+const deployedAtStart = researchState.units.filter((unit) => unit.ownerPlayer === 1 && unit.location !== "record-tile" && unit.location !== "permanently-removed").length;
+assert.ok(deployedAtStart < 3, "the scenario should begin below the bot's three-unit attack group threshold");
+assert.notEqual(chooseBotCommand(researchState)?.type, "draw-research", "the bot should deploy its force before taking optional Research");
+const attackHex = deploymentChoices(researchState).flatMap((choice) => choice.destinations)[0];
+assert.ok(attackHex, "the bot should have a legal destination for the attack timing scenario");
+const cautiousAttackState = structuredClone(researchState);
+cautiousAttackState.monsters[0]!.health = cautiousAttackState.monsters[0]!.maxHealth;
+cautiousAttackState.monsters[0]!.location = attackHex;
+const cautiousAttack = chooseBotCommand(cautiousAttackState);
+assert.ok(cautiousAttack?.type === "deploy" || cautiousAttack?.type === "redeploy");
+assert.notEqual(cautiousAttack.destination, attackHex, "the bot should not start a healthy-monster fight with an undersized force");
+const establishedResearchState = structuredClone(researchState);
+const reserveUnits = establishedResearchState.units.filter((unit) => unit.ownerPlayer === 1 && unit.location === "record-tile");
+for (const unit of reserveUnits) {
+  if (establishedResearchState.units.filter((candidate) => candidate.ownerPlayer === 1 && candidate.location !== "record-tile" && candidate.location !== "permanently-removed").length >= 3) break;
+  unit.location = safeHex.key;
+}
+assert.ok(establishedResearchState.units.filter((unit) => unit.ownerPlayer === 1 && unit.location !== "record-tile" && unit.location !== "permanently-removed").length >= 3);
+assert.equal(chooseBotCommand(establishedResearchState)?.type, "draw-research", "after assembling three units, Research is a valid fallback when no monster route is urgent");
 
 // A high-Infamy monster beside an objective turns the same choice into a deployment to defend.
 const threatenedState = structuredClone(researchState);
@@ -194,5 +214,8 @@ const routeState = beginBotMove(konkMatch);
 routeState.setupAssignments![1]!.branch = "Army";
 const routes = legalMonsterPaths(routeState, konkMatch.monsters[0]!.id);
 assert.ok(routes.length > 0, "the enemy monster should have legal routes for blocker evaluation");
-assert.ok(routeBlockScores(routeState).size > 0, "Army route scoring should identify spaces where a blocker can intercept objective routes");
+for (const branch of ["Army", "Navy", "Air Force", "Marines"] as const) {
+  routeState.setupAssignments![1]!.branch = branch;
+  assert.ok(routeBlockScores(routeState).size > 0, `${branch} route scoring should identify spaces where a blocker can intercept objective routes`);
+}
 console.log("Solo bots choose counters and starting forces, draw or deploy based on threat, react with Laser Fence, use Research at battle timing, and finish a turn with an explanation.");
