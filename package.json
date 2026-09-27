@@ -63,6 +63,7 @@
     "verify:mutation-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-mutation-ui.tsx",
     "verify:stabilizer-ray-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-stabilizer-ray-ui.tsx",
     "verify:laser-fence-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-laser-fence-ui.tsx",
+    "verify:solo-bots": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-solo-bots.tsx",
     "verify:chopper-lift-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-chopper-lift-ui.tsx",
   "verify:fins-and-gills-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-fins-and-gills-ui.tsx",
   "verify:atomic-recovery-ui": "tsx --tsconfig apps/web/tsconfig.json scripts/verify-atomic-recovery-ui.tsx",

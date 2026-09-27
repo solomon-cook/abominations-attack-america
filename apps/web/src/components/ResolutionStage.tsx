@@ -23,9 +23,14 @@ export function ResolutionStage({ title, eyebrow, onClose, children, variant = "
   </dialog>;
 }
 
-export function CardReveal({ cardId, kind = "mutation", onRevealed }: { cardId: string; kind?: "mutation" | "research"; onRevealed?: () => void }) {
+export function CardReveal({ cardId, kind = "mutation", onRevealed, autoReveal = false }: { cardId: string; kind?: "mutation" | "research"; onRevealed?: () => void; autoReveal?: boolean }) {
   const [revealed, setRevealed] = useState(false);
   const rule = sourcedCardRule(cardId);
+  useEffect(() => {
+    if (!autoReveal || revealed) return;
+    const timer = window.setTimeout(() => { setRevealed(true); onRevealed?.(); }, 650);
+    return () => window.clearTimeout(timer);
+  }, [autoReveal, revealed, onRevealed]);
   return <div className={`cinema-card-reveal ${revealed ? "is-revealed" : ""}`}>
     {revealed ? <DigitalCard cardId={cardId} kind={kind} className="cinema-digital-card" status={rule?.classification === "persistent" ? "Keep this card face up while its effect applies." : undefined} /> : <button className="cinema-card-back" onClick={() => { setRevealed(true); onRevealed?.(); }}><small>{kind === "mutation" ? "MONSTER MUTATION" : "MILITARY RESEARCH"}</small><span aria-hidden="true">✦</span><strong>Reveal card</strong></button>}
   </div>;

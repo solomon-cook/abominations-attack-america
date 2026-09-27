@@ -177,7 +177,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
     .join(" ");
   useLayoutEffect(() => {
     const grid = gridRef.current;
-    if (!grid || !acceptedAnimationKey || acceptedPath.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!grid || !acceptedAnimationKey || acceptedPath.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches || Boolean(document.querySelector(".manual-reduced-motion"))) return;
     const destination = grid.querySelector<HTMLElement>(".accepted-arrival");
     const points = acceptedPath.map(key => displayByKey.get(key));
     if (!destination || points.some(point => !point)) return;

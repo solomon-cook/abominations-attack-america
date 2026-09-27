@@ -13,6 +13,7 @@ type Props = {
   event?: GameState["eventLog"][number];
   game: GameState;
   canAct: boolean;
+  autoPlay?: boolean;
   pendingBattle?: GameState["pendingBattles"][number];
   pendingAttackTarget?: Extract<NonNullable<GameState["pendingDecision"]>, { type: "attack-target" }>;
   onChooseTarget: (unitId: string, battleId: string, spendInfamy?: number) => void;
@@ -52,7 +53,7 @@ export function FightResolutionPanel(props: Props) {
   return props.open ? <FightSession {...props} /> : null;
 }
 
-function FightSession({ onClose, controls, event, game, canAct, pendingBattle, pendingAttackTarget, onChooseTarget }: Props) {
+function FightSession({ onClose, controls, event, game, canAct, autoPlay = false, pendingBattle, pendingAttackTarget, onChooseTarget }: Props) {
   const [selectedBattleId, setSelectedBattleId] = useState<string>();
   const [roster, setRoster] = useState(game.pendingBattles);
   useEffect(() => {
@@ -94,6 +95,17 @@ function FightSession({ onClose, controls, event, game, canAct, pendingBattle, p
   const atEnd = !attack || (index === attacks.length - 1 && settled);
   const nextBattle = Boolean(atEnd && eventBattleId && liveBattle && liveBattle.id !== eventBattleId);
   const complete = shownEvent?.action === "fight.resolved" && !game.pendingCombat && atEnd;
+  useEffect(() => {
+    if (!autoPlay || !attack || !settled) return;
+    if (index < attacks.length - 1) {
+      const timer = window.setTimeout(() => advance(index + 1), 240);
+      return () => window.clearTimeout(timer);
+    }
+    if (complete && !pendingAttackTarget) {
+      const timer = window.setTimeout(onClose, 850);
+      return () => window.clearTimeout(timer);
+    }
+  }, [autoPlay, attack, settled, index, attacks.length, complete, pendingAttackTarget, onClose]);
   const nameFor = (id: string) => {
     const namedMonster = game.monsters.find(candidate => candidate.id === id);
     if (namedMonster) return namedMonster.name;

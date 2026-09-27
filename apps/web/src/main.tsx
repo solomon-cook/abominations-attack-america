@@ -68,7 +68,7 @@ import { HexGrid } from "./components/HexGrid";
 import { MilitaryReference } from "./components/SheetReference";
 import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
-import { botStrategyHint, runBotTurn } from "./solo-bots";
+import { botActionDelayMs, botStrategyHint, chooseBotSetupAction, hasBotLaserFenceReaction, runBotActionWithExplanation } from "./solo-bots";
 import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { CardReveal, ResolutionStage } from "./components/ResolutionStage";
@@ -143,7 +143,11 @@ function App() {
   const [localPlaytestStarted, setLocalPlaytestStarted] = useState(false);
   const [soloMode, setSoloMode] = useState(false);
   const [botThinking, setBotThinking] = useState(false);
+  const [botExplanation, setBotExplanation] = useState("");
+  const [botFightPlayback, setBotFightPlayback] = useState(false);
+  const [botEncounterPlayback, setBotEncounterPlayback] = useState(false);
   const botTurnRunning = useRef(false);
+  const nextBotStepDelay = useRef(650);
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [room, setRoom] = useState<RoomView | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -386,6 +390,7 @@ function App() {
     : activeGame.currentPlayer;
   const canAct =
     setupComplete &&
+    !botThinking &&
     !pendingAction &&
     (!soloMode || decisionPlayer === 0) &&
     !activeGame.pendingChopperLift &&
@@ -835,21 +840,9 @@ function App() {
               ? next.seats.find((candidate) => !candidate.startingChoice)
               : undefined;
       if (!seat || seat.playerIndex === 0) break;
-      if (next.phase === "monster-selection") {
-        const picked = [...next.definition.monsterIds].reverse().find((id) => !next.seats.some((candidate) => candidate.monsterId === id));
-        if (!picked) break;
-        next = chooseMonster(next, seat.playerIndex, picked);
-      } else if (next.phase === "branch-selection") {
-        const branch = ["Marines", "Navy", "Air Force", "Army"].find((candidate) => next.definition.eligibleBranches.includes(candidate as typeof next.definition.eligibleBranches[number]) && !next.seats.some((candidateSeat) => candidateSeat.branch === candidate));
-        if (!branch) break;
-        next = chooseBranch(next, seat.playerIndex, branch as "Army" | "Navy" | "Air Force" | "Marines");
-      } else if (next.phase === "lair-selection") {
-        const lair = next.definition.lairsByMonster[seat.monsterId ?? ""]?.find((candidate) => !next.seats.some((candidateSeat) => candidateSeat.lair === candidate));
-        if (!lair) break;
-        next = chooseLair(next, seat.playerIndex, lair);
-      } else if (next.phase === "starting-choice") {
-        next = chooseStartingChoice(next, seat.playerIndex, { kind: "research" });
-      }
+      const updated = chooseBotSetupAction({ ...game, setupState: next }, next, seat.playerIndex);
+      if (updated === next) break;
+      next = updated;
     }
     if (next === localSetup) return;
     setLocalSetup(next);
@@ -857,20 +850,70 @@ function App() {
       const updated = { ...current, setupState: next };
       return next.phase === "complete" ? applyCompletedSetup(updated) : updated;
     });
-  }, [localSetup, online, soloMode]);
+  }, [game, localSetup, online, soloMode]);
 
   useEffect(() => {
     if (!soloMode || online || !setupComplete || activeGame.phase === "game-over") return;
     const decision = activeGame.pendingDecision;
     const actor = decision && "playerIndex" in decision ? decision.playerIndex : activeGame.currentPlayer;
-    if (actor === 0 || botTurnRunning.current) return;
+    const botFenceReaction = hasBotLaserFenceReaction(activeGame);
+    if ((actor === 0 && !botFenceReaction) || botTurnRunning.current) return;
     botTurnRunning.current = true;
     setBotThinking(true);
+    const currentGame = activeGame;
     const timer = window.setTimeout(() => {
-      setGame((current) => runBotTurn(current));
-      setBotThinking(false);
+      const result = runBotActionWithExplanation(currentGame);
+      let nextState = result.state;
+      let command = result.command;
+      let explanation = result.explanation;
+      if (!command || nextState === currentGame) {
+        const fallback: GameCommand | undefined = currentGame.phase === "deploy"
+          ? { type: "pass-deploy" }
+          : currentGame.phase === "move"
+            ? { type: "pass-move" }
+            : undefined;
+        if (fallback) {
+          try {
+            nextState = applyCommand(currentGame, fallback).state;
+            command = fallback;
+            explanation = currentGame.phase === "deploy"
+              ? "Finished Deploy and passed the turn after checking the remaining legal choices."
+              : "Finished movement and continued the turn after checking the remaining legal moves.";
+          } catch { /* Surface the stalled choice below rather than repeat it indefinitely. */ }
+        }
+      }
+      if (!command || nextState === currentGame) {
+        setError(`The bot could not finish its ${currentGame.phase} action. The match state has been preserved.`);
+        setBotThinking(false);
+        botTurnRunning.current = false;
+        return;
+      }
+      if (command.type === "move" || command.type === "move-unit") {
+        const pieceId = command.type === "move" ? currentGame.monsters[currentGame.currentPlayer]?.id : command.unitId;
+        if (pieceId) setAcceptedMoveAnimation({ path: command.path as HexKey[], pieceId, key: Date.now() });
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches || Boolean(document.querySelector(".manual-reduced-motion"));
+        nextBotStepDelay.current = botActionDelayMs(command, reducedMotion);
+      } else if (command.type === "resolve-fight") {
+        setFightBaselineEventId(lastBattleEvent?.id);
+        setFightOverlayOpen(true);
+        setBotFightPlayback(true);
+        nextBotStepDelay.current = botActionDelayMs(command);
+      } else if (command.type === "resolve-encounter") {
+        setEncounterBaselineEventId(lastEncounterEvent?.id);
+        setEncounterOverlayOpen(true);
+        setBotEncounterPlayback(true);
+        nextBotStepDelay.current = botActionDelayMs(command);
+      } else {
+        nextBotStepDelay.current = 650;
+      }
+      const nextDecision = nextState.pendingDecision;
+      const nextActor = nextDecision && "playerIndex" in nextDecision ? nextDecision.playerIndex : nextState.currentPlayer;
+      const botContinues = nextState.phase !== "game-over" && (nextActor !== 0 || hasBotLaserFenceReaction(nextState));
+      setGame(nextState);
+      if (explanation) setBotExplanation(explanation);
+      setBotThinking(botContinues);
       botTurnRunning.current = false;
-    }, 420);
+    }, nextBotStepDelay.current);
     return () => {
       window.clearTimeout(timer);
       botTurnRunning.current = false;
@@ -958,6 +1001,9 @@ function App() {
   const resetLocal = () => {
     setSoloMode(false);
     setBotThinking(false);
+    setBotExplanation("");
+    setBotFightPlayback(false);
+    setBotEncounterPlayback(false);
     setLocalPlaytestStarted(true);
     setOnboardingOpen(false);
     // Start with turn instructions expanded.
@@ -973,7 +1019,11 @@ function App() {
   const startSolo = () => {
     setSoloMode(true);
     setBotThinking(false);
+    setBotExplanation("");
+    setBotFightPlayback(false);
+    setBotEncounterPlayback(false);
     botTurnRunning.current = false;
+    nextBotStepDelay.current = 650;
     setLocalPlaytestStarted(true);
     setOnboardingOpen(false);
     setGamePanelOpen(true);
@@ -1227,7 +1277,7 @@ function App() {
         </div>
       </header>
       {error && <p className="error global-game-error" role="alert">{error}</p>}
-      {soloMode && setupComplete && decisionPlayer !== 0 && <aside className="bot-turn-guidance" role="status"><strong>{botThinking ? "Bot is planning" : `${activePlayer.name} bot`}</strong><span>{botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army")}</span></aside>}
+      {soloMode && setupComplete && (decisionPlayer !== 0 || botExplanation || botThinking) && <aside className="bot-turn-guidance" role="status"><strong>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Bot is reacting" : "Bot is planning" : decisionPlayer !== 0 ? `${activePlayer.name} bot` : "Bot plan"}</strong><span>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Checking whether to force a retreat or make the monster spend Infamy." : botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army") : decisionPlayer !== 0 ? botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army") : botExplanation}</span></aside>}
       <LobbyPanel
         online={online}
         room={room}
@@ -1612,7 +1662,7 @@ function App() {
         requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${choice.destinations[0]}"]`)?.focus({ preventScroll: true }));
       }} />}
       {challengeDuelOpen && activeGame.challenge?.active && <ChallengeArena game={activeGame} canAct={canAct} canUseMutation={canUseMutation} playerIndex={online ? participant?.playerIndex : undefined} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
-      <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={(unitId, battleId, spendInfamy) => { void runCommand({ type: "resolve-fight", battleId, targetUnitId: unitId, spendInfamy }); }} controls={<>
+      <FightResolutionPanel open={fightOverlayOpen} onClose={() => { setFightOverlayOpen(false); setBotFightPlayback(false); }} game={activeGame} canAct={canAct} autoPlay={soloMode && botFightPlayback} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={(unitId, battleId, spendInfamy) => { void runCommand({ type: "resolve-fight", battleId, targetUnitId: unitId, spendInfamy }); }} controls={<>
         <PhaseActions hideAttackTargets activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} canUseMutation={canUseMutation} canUseLaserFence={canUseLaserFence} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
         {error && <p role="alert">{error}</p>}
       </>} />
@@ -1621,6 +1671,8 @@ function App() {
         error={error}
         open={encounterOverlayOpen}
         canAct={canAct}
+        autoPlay={soloMode && botEncounterPlayback}
+        pendingChoice={activeGame.pendingDecision?.type === "encounter-choice"}
         monsterName={activePlayer.name}
         locationName={activeLocation?.name ?? activePlayer.location}
         eventId={lastEncounterEvent?.id}
@@ -1633,7 +1685,7 @@ function App() {
         mutationCardId={encounterMutationDraws.some((draw) => draw.cardDrawn) ? encounterRevealCard : undefined}
         onReveal={() => void runCommand({ type: "resolve-encounter" })}
         onChoice={(choice) => void runCommand({ type: "resolve-encounter", choice })}
-        onClose={() => setEncounterOverlayOpen(false)}
+        onClose={() => { setEncounterOverlayOpen(false); setBotEncounterPlayback(false); }}
       />
     </main>
   );
