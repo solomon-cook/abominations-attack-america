@@ -352,6 +352,9 @@
 .game-screen .command-station > .movement-checklist { position:fixed; z-index:42; right:auto; bottom:calc(16px + 84px + 12px); left:50%; width:max-content; max-width:min(720px,calc(100vw - 48px)); max-height:136px; overflow:hidden; transform:translateX(-50%); }
 .game-screen .movement-piece-list { box-sizing:border-box; width:max-content; max-width:100%; overflow-x:auto; overflow-y:hidden; padding-right:14px; padding-left:14px; scroll-padding-inline:14px; scroll-snap-type:x proximity; scrollbar-width:thin; overscroll-behavior-x:contain; }
 .game-screen .movement-piece { scroll-snap-align:center; }
+@media (max-height:540px) and (min-width:1640px) {
+  .game-screen .command-station > .movement-checklist { bottom:max(16px,env(safe-area-inset-bottom)); margin:0; }
+}
 
 /* Player identity badges sit outside the portrait artwork and remain labeled. */
 .opponent-portrait-rail [data-branch="Army"],.record-medallion[data-branch="Army"] { --branch-color:#a65d3a; }
@@ -459,6 +462,7 @@
 .game-screen .player-public-status { right:76px; width:244px; }
 .game-screen .persistent-record.mobile-record-closed .record-medallion .record-branch-mark { top:-5px; left:-5px; width:17px; height:17px; font-size:7px; }
 .game-screen .command-station .command-medallion .record-branch-mark { top:-5px; left:-5px; width:16px; height:16px; font-size:6px; }
+.game-screen .travelling-military-unit { filter:drop-shadow(0 0 5px #f4d780) drop-shadow(0 2px 2px #101a12); }
 @media(max-width:700px) {
   .game-screen .opponent-portrait-rail { top:calc(max(5px,env(safe-area-inset-top)) + 61px); right:max(7px,env(safe-area-inset-right)); left:auto; flex-direction:row; align-items:flex-start; gap:4px; }
   .game-screen .opponent-player-card.has-trophies { min-height:64px; }

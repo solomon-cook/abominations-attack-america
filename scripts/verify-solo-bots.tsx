@@ -10,6 +10,7 @@ import {
   createMvpRoomGame,
   legalGiantPlacementDestinations,
   legalMonsterPaths,
+  shortestLegalUnitPaths,
   type GameState,
 } from "../packages/game-engine/src/index.js";
 import { deploymentChoices } from "../apps/web/src/components/MilitarySheet.js";
@@ -271,8 +272,17 @@ const firstBotInput = beginBotMove(konkMatch);
 const firstBotStep = runBotActionWithExplanation(firstBotInput);
 assert.ok(firstBotStep.command, "the UI runner should expose one bot command at a time");
 assert.ok(firstBotStep.state !== firstBotInput, "one bot step should apply only its selected action");
+const botUnitMoveFixture = beginBotMove(konkMatch);
+const movingBotUnit = botUnitMoveFixture.units.find((unit) => unit.ownerPlayer === 1 && shortestLegalUnitPaths(botUnitMoveFixture, unit.id).length > 0);
+assert.ok(movingBotUnit, "the bot fixture should have an available military route");
+botUnitMoveFixture.pendingDecision = { type: "monster-movement", playerIndex: 1, pieceId: movingBotUnit.id };
+botUnitMoveFixture.movedPieceIds = [botUnitMoveFixture.monsters[1]!.id];
+const botUnitMove = runBotActionWithExplanation(botUnitMoveFixture);
+assert.equal(botUnitMove.command?.type, "move-unit", "the bot should move a military unit along its selected route");
+assert.equal(botUnitMove.state.eventLog.at(-1)?.action, "unit.moved", "the accepted bot unit move should be available to animate from its event path");
 assert.ok(botActionDelayMs({ type: "move", path: ["0,0", "1,0", "2,0"] }) >= 1200, "multi-hex bot movement should wait for its board animation to finish");
 assert.equal(botActionDelayMs({ type: "move", path: ["0,0", "1,0", "2,0"] }, true), 650, "reduced motion should not retain the movement animation delay");
+assert.ok(botActionDelayMs(botUnitMove.command!) >= 650, "the bot should allow time for a military route animation to finish");
 let pacedTurn = beginBotMove(konkMatch);
 for (let action = 0; action < 30 && pacedTurn.currentPlayer === 1 && pacedTurn.phase !== "game-over"; action += 1) {
   const step = runBotActionWithExplanation(pacedTurn);

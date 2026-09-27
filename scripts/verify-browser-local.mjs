@@ -177,6 +177,14 @@ try {
       const queue = await page.locator(".movement-checklist").boundingBox();
       assert.ok(queue && Math.abs(queue.x + queue.width / 2 - width / 2) <= 2, `desktop orders should be horizontally centered: ${JSON.stringify(queue)}`);
       assert.ok(queue.width < 360, `short rosters should not leave a wide empty order panel: ${JSON.stringify(queue)}`);
+      if (width === 1280) {
+        await page.setViewportSize({ width: 2048, height: 400 });
+        const panoramicQueue = await page.locator(".movement-checklist").boundingBox();
+        const panoramicCommand = await page.locator(".command-station").boundingBox();
+        assert.ok(panoramicQueue && Math.abs(panoramicQueue.y + panoramicQueue.height - 384) <= 2, `short panoramic desktop orders should align with the bottom HUD row: ${JSON.stringify(panoramicQueue)}`);
+        assert.ok(panoramicQueue && panoramicCommand && (panoramicQueue.x + panoramicQueue.width <= panoramicCommand.x || panoramicCommand.x + panoramicCommand.width <= panoramicQueue.x || panoramicQueue.y + panoramicQueue.height <= panoramicCommand.y || panoramicCommand.y + panoramicCommand.height <= panoramicQueue.y), `short panoramic desktop orders should clear the action dock: queue=${JSON.stringify(panoramicQueue)} command=${JSON.stringify(panoramicCommand)}`);
+        await page.setViewportSize({ width, height });
+      }
     }
 
     if (width > 700) {
@@ -291,6 +299,8 @@ try {
   for (let attempt = 0; attempt < 16 && await soloPage.locator(".setup-panel").count(); attempt += 1) {
     const list = soloPage.locator(".lair-selection-prompt details");
     if (await list.count() && !(await list.evaluate((node) => node.open))) await list.locator("summary").click();
+    const konk = soloPage.getByRole("button", { name: /^Choose Konk\./ });
+    if (await konk.count()) { await konk.click(); continue; }
     const choices = soloPage.locator(".setup-panel .setup-options button:visible:not(:disabled)");
     await choices.first().waitFor({ state: "visible" });
     await choices.first().click();
@@ -301,22 +311,40 @@ try {
 
   const playerOneName = (await soloPage.locator(".persistent-record .record-preview strong").textContent())?.trim();
   assert.ok(playerOneName, "the solo player's monster record should be present before the first turn");
-  const humanCamera = await soloPage.locator(".map-canvas").getAttribute("style");
-  await soloPage.locator(".movement-checklist .end-movement").evaluate((node) => (node instanceof HTMLButtonElement) && node.click());
-  const resolveEncounter = soloPage.locator(".board-action-bar .action-dock > button");
+  assert.equal(playerOneName, "Konk", "the city-stomp fixture should use a monster without a forced city choice");
+  const legalCity = soloPage.locator(".hex-tile.legal[aria-label*='city,']").first();
+  assert.ok(await legalCity.count(), "Konk should be able to reach a city from the selected audited-board lair");
+  await legalCity.click();
+  await soloPage.getByRole("button", { name: "Confirm move", exact: true }).first().click();
+  const continueFromMove = soloPage.getByRole("button", { name: "Continue to Fight", exact: true });
+  if (await continueFromMove.isVisible().catch(() => false)) await continueFromMove.click();
   await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("Encounter"));
-  await resolveEncounter.click();
-  await soloPage.getByRole("button", { name: "Reveal encounter", exact: true }).click();
-  for (let step = 0; step < 12; step += 1) {
-    const revealRolls = soloPage.getByRole("button", { name: "Reveal remaining rolls", exact: true });
-    if (await revealRolls.isVisible().catch(() => false)) { await revealRolls.click(); continue; }
-    const revealCard = soloPage.getByRole("button", { name: "Reveal card", exact: true });
-    if (await revealCard.isVisible().catch(() => false)) { await revealCard.click(); continue; }
-    const reward = soloPage.locator(".resolution-encounter .cinema-choice button:visible").first();
-    if (await reward.isVisible().catch(() => false)) { await reward.click(); continue; }
-    const returnToBoard = soloPage.locator(".resolution-encounter .cinema-primary").filter({ hasText: "Return to board" }).last();
-    if (await returnToBoard.isVisible().catch(() => false)) { await returnToBoard.click(); break; }
-    await soloPage.waitForTimeout(100);
+  const routineStompButton = soloPage.locator(".board-event-playback.is-interactive .board-event-roll-all");
+  await routineStompButton.waitFor({ state: "visible" });
+  assert.match((await routineStompButton.textContent()) ?? "", /Roll all 2 dice/, "the two-die San Francisco benefit should offer one all-dice action");
+  assert.equal(await soloPage.locator(".board-action-bar .action-dock > button").isVisible().catch(() => false), false, "the compact city popup should replace the duplicate bottom action dock");
+  assert.equal(await soloPage.locator("#phase-command-context").isVisible().catch(() => false), false, "routine city stomps should not leave the Encounter options panel on screen");
+  await routineStompButton.click();
+  const encounterPresentation = await soloPage.waitForFunction(() => {
+    if (document.querySelector(".resolution-stage[open]")) return "overlay";
+    return document.querySelector('.board-event-playback[data-event-action="encounter.resolved"]') ? "board" : false;
+  });
+  if (await encounterPresentation.jsonValue() === "board") {
+    await soloPage.waitForFunction(() => document.querySelector('.board-event-playback[data-event-action="encounter.resolved"]')?.dataset.outcomeVisible === "true");
+    assert.equal(await soloPage.locator(".resolution-stage[open]").count(), 0, "a routine city stomp should resolve in board playback instead of opening the Encounter panel");
+  } else {
+    await soloPage.getByRole("button", { name: "Reveal encounter", exact: true }).click();
+    for (let step = 0; step < 12; step += 1) {
+      const revealRolls = soloPage.getByRole("button", { name: "Reveal remaining rolls", exact: true });
+      if (await revealRolls.isVisible().catch(() => false)) { await revealRolls.click(); continue; }
+      const revealCard = soloPage.getByRole("button", { name: "Reveal card", exact: true });
+      if (await revealCard.isVisible().catch(() => false)) { await revealCard.click(); continue; }
+      const reward = soloPage.locator(".resolution-encounter .cinema-choice button:visible").first();
+      if (await reward.isVisible().catch(() => false)) { await reward.click(); continue; }
+      const returnToBoard = soloPage.locator(".resolution-encounter .cinema-primary").filter({ hasText: "Return to board" }).last();
+      if (await returnToBoard.isVisible().catch(() => false)) { await returnToBoard.click(); break; }
+      await soloPage.waitForTimeout(100);
+    }
   }
   await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("Deploy"));
   await soloPage.locator(".board-action-bar .action-dock > button").click();
@@ -324,6 +352,7 @@ try {
   await soloPage.getByRole("button", { name: "Draw a Military Research card instead of deploying a unit" }).click();
   await soloPage.locator("dialog.resolution-research").waitFor({ state: "visible" });
   await soloPage.locator("dialog.resolution-research .resolution-close").click();
+  const humanCamera = await soloPage.locator(".map-canvas").getAttribute("style");
   const militaryClose = soloPage.locator(".military-drawer .military-sheet-close").last();
   if (await militaryClose.isVisible().catch(() => false)) await militaryClose.click();
 
@@ -363,7 +392,7 @@ try {
   });
   assert.ok(contrastRatio(followColors.foreground, followColors.background) >= 4.5, `the selected follow control should retain AA text contrast: ${JSON.stringify(followColors)}`);
   assert.deepEqual(failures.splice(0), [], "the solo browser flow should not report runtime errors");
-  console.log(JSON.stringify({ ok: true, mode: "solo", check: "player record stays interactive; camera follow is opt-in" }));
+  console.log(JSON.stringify({ ok: true, mode: "solo", check: "routine city dice play inline; player record stays interactive; camera follow is opt-in" }));
   await soloContext.close();
 } finally {
   await browser.close();

@@ -77,6 +77,8 @@
   max-height:none; padding:0; margin:0; transform:none; overflow:visible;
   border:0; border-radius:0; background:none; box-shadow:none; backdrop-filter:none;
 }
+.game-screen .command-station.routine-stomp-pending > .board-action-bar,
+.game-screen .command-station.routine-stomp-pending > .bottom-context-dock { display:none; }
 .piece-context-tab { display:flex; flex-direction:column-reverse; margin:0; }
 .piece-context-tab > summary {
   display:flex; justify-content:space-between; align-items:center; gap:16px; cursor:pointer;

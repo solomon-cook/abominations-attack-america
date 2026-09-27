@@ -353,6 +353,8 @@ try {
   const clickEncounterDecision = async () => {
     for (const [browser, label] of [[first, "first"], [second, "second"]]) {
       const clicked = await browser.evaluate(`(() => {
+        const routineStomp = document.querySelector(".board-event-roll-all:not(:disabled)");
+        if (routineStomp) { routineStomp.click(); return true; }
         const trophy = [...document.querySelectorAll('button[aria-label*="as trophy"]')].find((candidate) => !candidate.disabled);
         if (trophy) { trophy.click(); return true; }
         const trophyTile = document.querySelector(".hex-tile.trophy-legal:not(:disabled)");

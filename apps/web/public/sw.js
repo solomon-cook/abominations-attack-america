@@ -1,4 +1,4 @@
-const CACHE_NAME = "abominations-shell-audited-v2";
+const CACHE_NAME = "abominations-shell-audited-v3";
 const SHELL = ["/", "/offline.html", "/reference.html", "/manifest.webmanifest", "/pwa-icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -18,16 +18,20 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).then((response) => {
-      const copy = response.clone();
-      void caches.open(CACHE_NAME).then((cache) => cache.put("/", copy));
+      if (response.ok) {
+        const copy = response.clone();
+        void caches.open(CACHE_NAME).then((cache) => cache.put("/", copy));
+      }
       return response;
     }).catch(() => caches.match("/offline.html")));
     return;
   }
   if (["script", "style", "image", "font"].includes(request.destination)) {
     event.respondWith(caches.match(request).then((cached) => cached ?? fetch(request).then((response) => {
-      const copy = response.clone();
-      void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      if (response.ok) {
+        const copy = response.clone();
+        void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      }
       return response;
     })));
   }

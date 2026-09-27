@@ -75,6 +75,7 @@ import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { CardReveal, ResolutionStage } from "./components/ResolutionStage";
 import { EncounterOverlay } from "./components/EncounterOverlay";
 import { BoardEventPlayback } from "./components/BoardEventPlayback";
+import { isRoutineCityStompEvent, pendingRoutineCityStomp } from "./routine-stomp";
 import { ChallengeArena } from "./components/ChallengeArena";
 import { DieCube } from "./components/DieCube";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
@@ -337,6 +338,9 @@ function App() {
       })
     : [];
   const lastEncounterEvent = [...activeGame.eventLog].reverse().find((entry) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required"].includes(entry.action));
+  const routineStompEvent = lastEncounterEvent && activeBoard
+    ? isRoutineCityStompEvent(lastEncounterEvent, activeGame.eventLog, activeBoard)
+    : false;
   const encounterRevealCard = activeGame.players[activeGame.currentPlayer]?.mutationCardIds.at(-1);
   const lastChallengeEvent = [...activeGame.eventLog].reverse().find((entry) => ["challenge.resolved", "challenge.giant.resolved"].includes(entry.action));
   useEffect(() => {
@@ -428,6 +432,7 @@ function App() {
     (!online ||
       (room?.status === "active" && participant?.role === "player" &&
         participant.playerIndex === decisionPlayer));
+  const routineStompPrompt = canAct ? pendingRoutineCityStomp(activeGame, activeBoard) : undefined;
   useEffect(() => {
     if (!soloBotTurn) setFollowBotTurns(false);
   }, [soloBotTurn]);
@@ -498,7 +503,9 @@ function App() {
       : activeGame.phase === "encounter"
         ? activeGame.pendingDecision && activeGame.pendingDecision.type !== "encounter-resolution"
           ? { label: activeGame.pendingDecision.type === "mutation-choice" ? "Choose Toxicor Mutation" : activeGame.pendingDecision.type === "stabilizer-ray-choice" ? "Choose Mutation to discard" : "Choose encounter option", command: undefined }
-          : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
+          : routineStompPrompt
+            ? { label: routineStompPrompt.dice > 0 ? `Roll all ${routineStompPrompt.dice} dice` : "Resolve city stomp", command: { type: "resolve-encounter" } as GameCommand }
+            : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
         : activeGame.phase === "deploy"
           ? militaryChoices.length
             ? { label: deploymentPiece ? "Change deployment piece" : "Deploy military", command: undefined }
@@ -789,6 +796,7 @@ function App() {
   const runBoardAction = (command: GameCommand) => {
     if (command.type === "resolve-fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; }
     if (command.type === "resolve-encounter" && !command.choice && !command.trophyUnitId) {
+      if (routineStompPrompt) { void runCommand(command); return; }
       setEncounterBaselineEventId(lastEncounterEvent?.id);
       encounterOverlayOwnerRef.current = activeGame.currentPlayer;
       setEncounterOverlayOpen(true);
@@ -1506,7 +1514,7 @@ function App() {
           </div>
         </div>
         {setupComplete && <>
-          <div className={`command-station ${activeGame.phase === "deploy" ? "deploy-command-station" : ""} ${mobileCommandExpanded ? "mobile-command-expanded" : ""}`}>
+          <div className={`command-station ${activeGame.phase === "deploy" ? "deploy-command-station" : ""} ${mobileCommandExpanded ? "mobile-command-expanded" : ""} ${routineStompPrompt ? "routine-stomp-pending" : ""}`}>
           <div id="mobile-record-slot" className="mobile-record-slot" />
           <button type="button" className="mobile-command-toggle" aria-label={mobileCommandExpanded ? "Collapse player record and commands" : `Open ${playerRecordMonster.name} player record`} aria-expanded={mobileCommandExpanded} aria-controls="mobile-record-slot mobile-command-details" onClick={() => setMobileCommandExpanded((expanded) => !expanded)}>
             <span className="record-medallion command-medallion" data-branch={commandMedallionBranch} style={{ background: `linear-gradient(#182725,#182725) padding-box, conic-gradient(#e6cc83 ${commandMedallionHealthPercent}%,#45544b 0) border-box` }}>
@@ -1746,10 +1754,13 @@ function App() {
         events={activeGame.eventLog}
         monsters={activeGame.monsters}
         board={activeBoard}
-        enabled={online || soloMode}
+        enabled={online || soloMode || Boolean(routineStompPrompt) || routineStompEvent}
         spectator={online && participant?.role !== "player"}
-        viewerPlayerIndex={online ? participant?.playerIndex : soloMode ? 0 : undefined}
+        viewerPlayerIndex={online ? participant?.playerIndex : soloMode ? 0 : activeGame.currentPlayer}
         reducedMotion={manualReducedMotion}
+        routineStomp={routineStompPrompt}
+        canResolveRoutineStomp={canAct}
+        onResolveRoutineStomp={() => void runCommand({ type: "resolve-encounter" })}
       />
     </main>
   );

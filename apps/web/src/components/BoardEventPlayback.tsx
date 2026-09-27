@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { isHexKey, type BoardDefinition, type GameLogEntry, type GameState } from "@abominations/game-engine";
 import { DieCube } from "./DieCube";
+import { isRoutineCityStompEvent, type RoutineCityStomp } from "../routine-stomp";
 
 type Props = {
   matchId: string;
@@ -12,6 +13,9 @@ type Props = {
   spectator: boolean;
   viewerPlayerIndex?: number;
   reducedMotion: boolean;
+  routineStomp?: RoutineCityStomp;
+  canResolveRoutineStomp?: boolean;
+  onResolveRoutineStomp?: () => void;
 };
 
 type BoardEvent = GameLogEntry & { detail: Record<string, unknown> };
@@ -44,7 +48,7 @@ function isBoardPresentationEvent(event: GameLogEntry): event is BoardEvent {
     || event.action === "research.drawn";
 }
 
-export function BoardEventPlayback({ matchId, events, monsters, board, enabled, spectator, viewerPlayerIndex, reducedMotion }: Props) {
+export function BoardEventPlayback({ matchId, events, monsters, board, enabled, spectator, viewerPlayerIndex, reducedMotion, routineStomp, canResolveRoutineStomp = false, onResolveRoutineStomp }: Props) {
   const initialized = useRef(false);
   const initializedMatch = useRef(matchId);
   const seenEvents = useRef(new Set<string>());
@@ -69,12 +73,14 @@ export function BoardEventPlayback({ matchId, events, monsters, board, enabled, 
   const locationKey = requestedLocation && isHexKey(requestedLocation) && board?.hexes[requestedLocation]
     ? requestedLocation
     : fallbackLocation && isHexKey(fallbackLocation) ? fallbackLocation : undefined;
-  const locationName = locationKey ? board?.hexes[locationKey]?.label : undefined;
+  const presentationLocationKey = current ? locationKey : routineStomp?.location;
+  const locationName = current ? locationKey ? board?.hexes[locationKey]?.label : undefined : routineStomp?.locationName;
   const outcomeText = current?.action === "encounter.choice-required"
     ? "Choosing encounter reward…"
     : !effects.length && !cards.length
       ? "Encounter complete"
       : undefined;
+  const isRoutineStompPlayback = current ? isRoutineCityStompEvent(current, events, board) : false;
 
   useEffect(() => {
     if (!initialized.current || initializedMatch.current !== matchId) {
@@ -94,10 +100,10 @@ export function BoardEventPlayback({ matchId, events, monsters, board, enabled, 
     const presentations = fresh.filter((event): event is BoardEvent => {
       if (!isBoardPresentationEvent(event)) return false;
       const owner = eventPlayerIndex(event);
-      return owner !== undefined && (spectator || owner !== viewerPlayerIndex);
+      return owner !== undefined && (spectator || owner !== viewerPlayerIndex || isRoutineCityStompEvent(event, events, board));
     });
     if (presentations.length) setQueue((existing) => [...existing, ...presentations]);
-  }, [enabled, events, matchId, spectator, viewerPlayerIndex]);
+  }, [board, enabled, events, matchId, spectator, viewerPlayerIndex]);
 
   useEffect(() => {
     if (!current) return;
@@ -125,19 +131,19 @@ export function BoardEventPlayback({ matchId, events, monsters, board, enabled, 
   }, [current?.id, reducedMotion, rolls.length]);
 
   useEffect(() => {
-    if (!current) return;
+    if (!current && !routineStomp) return;
     let frame = 0;
     let previous = "";
     const place = () => {
       const tiles = document.querySelectorAll<HTMLElement>(".hex-tile[data-hex-key]");
-      const tile = [...tiles].find((candidate) => candidate.dataset.hexKey === locationKey);
+      const tile = [...tiles].find((candidate) => candidate.dataset.hexKey === presentationLocationKey);
       const rect = tile?.getBoundingClientRect();
       if (!rect || rect.width === 0 || rect.height === 0) {
         frame = requestAnimationFrame(place);
         return;
       }
       const width = playbackRef.current?.getBoundingClientRect().width || Math.min(286, window.innerWidth - 20);
-      const height = playbackRef.current?.getBoundingClientRect().height || 140;
+      const height = playbackRef.current?.getBoundingClientRect().height || (routineStomp ? 170 : 140);
       const x = Math.max(width / 2 + 10, Math.min(window.innerWidth - width / 2 - 10, rect.left + rect.width / 2));
       const above = rect.bottom + height + 16 > window.innerHeight - 72;
       const y = above ? Math.max(58, rect.top - 8) : rect.bottom + 8;
@@ -151,38 +157,52 @@ export function BoardEventPlayback({ matchId, events, monsters, board, enabled, 
     };
     place();
     return () => cancelAnimationFrame(frame);
-  }, [current?.id, locationKey]);
+  }, [current?.id, presentationLocationKey, Boolean(routineStomp)]);
 
-  if (!current || !position || typeof document === "undefined") return null;
+  if ((!current && !routineStomp) || !position || typeof document === "undefined") return null;
   const visibleRolls = rolls.slice(0, shownDice);
   const labels = [playerName, locationName, ...effects.map((effect) => `${effect.type} ${effect.amount > 0 ? "+" : ""}${effect.amount}`), ...cards.map((card) => card.label)].filter(Boolean);
+  const prompt = !current ? routineStomp : undefined;
   return createPortal(<div
     ref={playbackRef}
-    className={`board-event-playback${position.above ? " is-above" : ""}${reducedMotion ? " reduced-motion" : ""}`}
+    className={`board-event-playback${position.above ? " is-above" : ""}${reducedMotion ? " reduced-motion" : ""}${prompt ? " is-interactive" : ""}`}
     style={{ left: `${position.x}px`, top: `${position.y}px` }}
-    data-event-action={current.action}
+    data-event-action={current?.action ?? "encounter.pending"}
     data-roll-count={visibleRolls.length}
     data-outcome-visible={showOutcome}
     data-card-count={showOutcome ? cards.length : 0}
-    role="status"
-    aria-live="polite"
-    aria-label={`${playerName}'s ${isResearchDraw ? "Military Research draw" : "Encounter"}${locationName ? ` at ${locationName}` : ""}: ${labels.join(", ")}`}
-    data-event-id={current.id}
+    role={prompt ? "group" : "status"}
+    aria-live={prompt ? undefined : "polite"}
+    aria-label={prompt
+      ? `${prompt.monsterName} is ready to stomp ${prompt.locationName}${prompt.dice ? `; roll ${prompt.dice} city dice` : ""}`
+      : `${playerName}'s ${isResearchDraw ? "Military Research draw" : isRoutineStompPlayback ? "city stomp" : "Encounter"}${locationName ? ` at ${locationName}` : ""}: ${labels.join(", ")}`}
+    data-event-id={current?.id}
   >
-    <header className="board-event-heading"><span><small>PLAYER {playerIndex === undefined ? "?" : playerIndex + 1} · {isResearchDraw ? "RESEARCH" : "ENCOUNTER"}</small><strong>{playerName}</strong></span>{locationName && <small className="board-event-location">{locationName}</small>}</header>
-    {rolls.length > 0 && <div className="board-event-dice" aria-label={`${shownDice} of ${rolls.length} dice revealed`}>
-      {visibleRolls.map((roll, index) => <span className="board-event-die" key={`${current.id}-die-${index}`}><DieCube value={roll} label={`Encounter die ${index + 1}: ${roll}`} /></span>)}
-    </div>}
-    {showOutcome && <div className="board-event-outcome">
-      {effects.map((effect, index) => {
-        const kind = effect.type === "health" ? effect.amount < 0 ? "health-loss" : "health-gain" : effect.type === "infamy" ? "infamy" : effect.type === "stomp" ? "stomp" : "other";
-        const icon = effect.type === "health" ? "♥" : effect.type === "infamy" ? "🔥" : effect.type === "stomp" ? "●" : "✦";
-        const amount = effect.amount > 0 ? `+${effect.amount}` : String(effect.amount).replace("-", "−");
-        const label = effect.type === "stomp" ? "Stomp" : effect.type === "infamy" ? "Infamy" : "Health";
-        return <div className={`board-event-reward ${kind}`} key={`${current.id}-effect-${index}`}><span aria-hidden="true">{icon}</span><strong>{effect.type === "stomp" ? "+" : amount}</strong><small>{label}</small></div>;
-      })}
-      {cards.map((card, index) => <div className={`board-event-card ${card.kind}`} key={`${current.id}-card-${index}`} aria-label={`${card.label} card drawn`}><span aria-hidden="true">+</span><small>{card.label}</small></div>)}
-      {outcomeText && <span className="board-event-note">{outcomeText}</span>}
-    </div>}
+    {prompt ? <>
+      <header className="board-event-heading"><span><small>PLAYER {prompt.playerIndex + 1} · CITY STOMP</small><strong>{prompt.monsterName}</strong></span><small className="board-event-location">{prompt.locationName}</small></header>
+      {prompt.dice > 0
+        ? <div className="board-event-prompt-dice" aria-label={`${prompt.dice} city dice ready to roll`}>{Array.from({ length: prompt.dice }, (_, index) => <span key={index} aria-hidden="true">⚄</span>)}</div>
+        : <p className="board-event-prompt-copy">{prompt.fixedHealth ? `City benefit · +${prompt.fixedHealth} Health` : "City benefit ready"}</p>}
+      <button className="board-event-roll-all" type="button" disabled={!canResolveRoutineStomp} onClick={onResolveRoutineStomp}>
+        {prompt.dice > 0 ? `Roll all ${prompt.dice} dice` : "Resolve city stomp"}
+        {prompt.dice > 0 && <span aria-hidden="true"> ⚄</span>}
+      </button>
+    </> : current ? <>
+      <header className="board-event-heading"><span><small>PLAYER {playerIndex === undefined ? "?" : playerIndex + 1} · {isResearchDraw ? "RESEARCH" : isRoutineStompPlayback ? "CITY STOMP" : "ENCOUNTER"}</small><strong>{playerName}</strong></span>{locationName && <small className="board-event-location">{locationName}</small>}</header>
+      {rolls.length > 0 && <div className="board-event-dice" aria-label={`${shownDice} of ${rolls.length} dice revealed`}>
+        {visibleRolls.map((roll, index) => <span className="board-event-die" key={`${current.id}-die-${index}`}><DieCube value={roll} label={`Encounter die ${index + 1}: ${roll}`} /></span>)}
+      </div>}
+      {showOutcome && <div className="board-event-outcome">
+        {effects.map((effect, index) => {
+          const kind = effect.type === "health" ? effect.amount < 0 ? "health-loss" : "health-gain" : effect.type === "infamy" ? "infamy" : effect.type === "stomp" ? "stomp" : "other";
+          const icon = effect.type === "health" ? "♥" : effect.type === "infamy" ? "🔥" : effect.type === "stomp" ? "●" : "✦";
+          const amount = effect.amount > 0 ? `+${effect.amount}` : String(effect.amount).replace("-", "−");
+          const label = effect.type === "stomp" ? "Stomp" : effect.type === "infamy" ? "Infamy" : "Health";
+          return <div className={`board-event-reward ${kind}`} key={`${current.id}-effect-${index}`}><span aria-hidden="true">{icon}</span><strong>{effect.type === "stomp" ? "+" : amount}</strong><small>{label}</small></div>;
+        })}
+        {cards.map((card, index) => <div className={`board-event-card ${card.kind}`} key={`${current.id}-card-${index}`} aria-label={`${card.label} card drawn`}><span aria-hidden="true">+</span><small>{card.label}</small></div>)}
+        {outcomeText && <span className="board-event-note">{outcomeText}</span>}
+      </div>}
+    </> : null}
   </div>, document.body);
 }

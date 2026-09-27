@@ -19,6 +19,11 @@ async function toggleDetails(page) {
  if(await expand.count()) await expand.click();
  else await page.getByRole('button',{name:'Minimize turn panel',exact:true}).click();
 }
+async function resetView(page) {
+ const controls=page.locator('.board-map-controls');
+ if(!(await controls.evaluate(node=>node.open))) await controls.locator('summary').click();
+ await page.getByRole('button',{name:'Reset view',exact:true}).click();
+}
 async function snapshot(page) {
   return page.evaluate(() => {
     const map = document.querySelector('.board-viewport'), canvas = map.querySelector('.map-canvas');
@@ -62,7 +67,7 @@ for (const [width,height] of sizes) {
   await page.mouse.move(width*.5,height*.5); await page.mouse.down(); await page.mouse.move(width*.3,height*.65,{steps:8}); await page.mouse.up();
   await check(page,'drag'); assert.equal(await page.getByRole('button',{name:'Confirm move',exact:true}).count(),0,'drag selected movement');
   if(width>900) {
-   await page.getByRole('button',{name:'Open monster, military and map record'}).click();
+   await page.locator('.persistent-record .mobile-record-toggle').click();
    await page.getByRole('tab',{name:'Map'}).click();
    const mini=page.getByRole('button',{name:'Board overview. Click to move camera; arrow keys pan.'});
    await mini.waitFor({state:'visible'});
@@ -70,7 +75,7 @@ for (const [width,height] of sizes) {
    await page.getByRole('button',{name:'Minimize monster, military and map record'}).click();
    assert.equal(await mini.isVisible(),false,'minimap remained open after closing the Map tab');
   }
-  await page.getByRole('button',{name:'Reset view',exact:true}).click();
+  await resetView(page);
   // Real browser touch events exercise pinch and touch pointer capture.
   const cdp=await context.newCDPSession(page); const y=Math.round(height*.5), x=Math.round(width*.5);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x-20,y,id:1},{x:x+20,y,id:2}]});
@@ -78,30 +83,38 @@ for (const [width,height] of sizes) {
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   assert.ok((await check(page,'touch pinch')).zoom>1,'pinch did not zoom');
   await page.setViewportSize({width:height,height:width}); await check(page,'resize'); await page.setViewportSize({width,height}); await check(page,'restore');
-  await page.getByRole('button',{name:'Reset view',exact:true}).click(); item.checks.push(width>900?'bounds/wheel/drag/minimap/keyboard/touch/resize':'bounds/wheel/drag/touch/resize');
+  await resetView(page); item.checks.push(width>900?'bounds/wheel/drag/minimap/keyboard/touch/resize':'bounds/wheel/drag/touch/resize');
   // Keyboard selection is an actual tile action and also tests focus-driven camera panning.
   const tile=page.locator('.hex-tile.legal').first(); await tile.focus(); await page.keyboard.press('Enter');
   await page.getByRole('button',{name:'Confirm move',exact:true}).first().click();
   const continueFromMove=page.getByRole('button',{name:'Continue to Fight',exact:true});
   if(await continueFromMove.isVisible()) await continueFromMove.click();
   await toggleDetails(page);
-  const resolve=page.getByRole('button',{name:'Resolve encounter',exact:true});
-  await resolve.last().click();
-  await page.getByRole('button',{name:'Reveal encounter',exact:true}).click();
-  const encounterBoardAction=page.locator('.resolution-encounter .cinema-primary').filter({hasText:'Return to board'}).last();
-  // Follow the actual encounter result: reveal remaining dice/cards and choose any offered reward.
-  for(let i=0;i<6;i++) {
-   const revealRolls=page.getByRole('button',{name:'Reveal remaining rolls',exact:true});
-   if(await revealRolls.isVisible().catch(()=>false)) { await revealRolls.click(); continue; }
-   const revealCard=page.getByRole('button',{name:'Reveal card',exact:true});
-   if(await revealCard.isVisible().catch(()=>false)) { await revealCard.click(); continue; }
-   const reward=page.locator('.resolution-encounter .cinema-choice button:visible').first();
-   if(await reward.isVisible().catch(()=>false)) { await reward.click(); continue; }
-   if(await encounterBoardAction.isVisible().catch(()=>false)) break;
-   await page.waitForTimeout(120);
+  const compactStompRoll=page.locator('.board-event-playback.is-interactive .board-event-roll-all');
+  if(await compactStompRoll.isVisible().catch(()=>false)) {
+   assert.equal(await page.locator('.resolution-stage[open]').count(),0,'a routine city stomp should not open the full Encounter panel');
+   await compactStompRoll.click();
+   await page.waitForFunction(()=>document.querySelector('.board-event-playback[data-event-action="encounter.resolved"]')?.dataset.outcomeVisible==='true');
+   assert.equal(await page.locator('.resolution-stage[open]').count(),0,'routine city rewards should resolve in board playback');
+  } else {
+   const resolve=page.getByRole('button',{name:'Resolve encounter',exact:true});
+   await resolve.last().click();
+   await page.getByRole('button',{name:'Reveal encounter',exact:true}).click();
+   const encounterBoardAction=page.locator('.resolution-encounter .cinema-primary').filter({hasText:'Return to board'}).last();
+   // Follow the actual encounter result: reveal remaining dice/cards and choose any offered reward.
+   for(let i=0;i<6;i++) {
+    const revealRolls=page.getByRole('button',{name:'Reveal remaining rolls',exact:true});
+    if(await revealRolls.isVisible().catch(()=>false)) { await revealRolls.click(); continue; }
+    const revealCard=page.getByRole('button',{name:'Reveal card',exact:true});
+    if(await revealCard.isVisible().catch(()=>false)) { await revealCard.click(); continue; }
+    const reward=page.locator('.resolution-encounter .cinema-choice button:visible').first();
+    if(await reward.isVisible().catch(()=>false)) { await reward.click(); continue; }
+    if(await encounterBoardAction.isVisible().catch(()=>false)) break;
+    await page.waitForTimeout(120);
+   }
+   await encounterBoardAction.waitFor({state:'visible'});
+   await encounterBoardAction.click();
   }
-  await encounterBoardAction.waitFor({state:'visible'});
-  await encounterBoardAction.click();
   const deploy=page.getByRole('button',{name:'Deploy military',exact:true}).last();
   if(await deploy.isVisible()) await deploy.click();
   if(width<=360) {

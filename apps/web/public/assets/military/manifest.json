@@ -84,6 +84,13 @@
       "src": "/assets/military/national-guard-fighter.webp"
     },
     {
+      "id": "x-fighter",
+      "branch": "Giant",
+      "unit": "X-Fighter",
+      "color": "#171a1d",
+      "src": "/assets/military/x-fighter.webp"
+    },
+    {
       "id": "captain-colossal",
       "branch": "Giant",
       "unit": "Captain Colossal",

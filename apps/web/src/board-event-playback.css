@@ -1,4 +1,5 @@
 .board-event-playback{position:fixed;z-index:86;display:grid;gap:6px;width:max-content;min-width:154px;max-width:min(286px,calc(100vw - 20px));padding:8px 10px;border:1px solid #d9bd7a;border-radius:8px;background:linear-gradient(145deg,#26372ff5,#12201ef7);box-shadow:0 8px 22px #07110f9c;color:#f2ecd7;pointer-events:none;transform:translate(-50%,0);animation:board-event-arrive .32s cubic-bezier(.18,.8,.25,1) both}
+.board-event-playback.is-interactive{pointer-events:auto}
 .board-event-playback.is-above{transform:translate(-50%,-100%)}
 .board-event-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
 .board-event-heading>span{display:grid;gap:1px;min-width:0}
@@ -9,6 +10,13 @@
 .board-event-die{display:inline-grid;place-items:center;width:40px;height:40px;animation:board-event-die-pop .35s cubic-bezier(.2,.8,.2,1) both}
 .board-event-die .combat-die[data-die]{width:36px;height:36px;margin:0}
 .board-event-outcome{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;border-top:1px solid #e1d49a36;padding-top:6px;animation:board-event-outcome-in .26s ease both}
+.board-event-prompt-dice{display:flex;justify-content:center;gap:5px;padding:3px 0}
+.board-event-prompt-dice>span{display:grid;place-items:center;width:30px;height:30px;border:1px solid #e2ca84;border-radius:5px;background:linear-gradient(145deg,#f2d88e,#b47a3c);color:#24302a;font-size:17px;font-weight:900;box-shadow:2px 3px 0 #6e4a2c}
+.board-event-prompt-copy{margin:2px 0;color:#dfe6d5;font-size:11px;text-align:center}
+.board-event-roll-all{min-height:34px;padding:7px 10px;border:1px solid #f0dda0;border-radius:5px;background:#e2ca7e;color:#182623;font-size:11px;font-weight:850;cursor:pointer}
+.board-event-roll-all:hover:not(:disabled){background:#f1dfa0}
+.board-event-roll-all:disabled{opacity:.55;cursor:default}
+.board-event-roll-all:focus-visible{outline:2px solid #fff1b5;outline-offset:2px}
 .board-event-reward{display:grid;grid-template-columns:auto auto;align-items:center;gap:0 4px;padding:4px 6px;border:1px solid #fff2;border-radius:7px;background:#111b1ad9;color:#eaf1dc}
 .board-event-reward>span{grid-row:1 / span 2;font-size:16px;line-height:1}
 .board-event-reward>strong{font-size:14px;font-weight:900;line-height:1}

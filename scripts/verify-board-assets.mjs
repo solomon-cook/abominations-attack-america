@@ -101,11 +101,14 @@ await assertFile(join(cardAssetRoot, "README.md"), "Card asset provenance README
 
 const monsterManifest = JSON.parse(await readFile(join(monsterAssetRoot, "manifest.json"), "utf8"));
 if (monsterManifest.format !== "webp" || !Array.isArray(monsterManifest.monsters) || monsterManifest.monsters.length !== 6) throw new Error("Monster asset manifest is incomplete");
-for (const monster of monsterManifest.monsters) await assertFile(join(monsterAssetRoot, monster.id + ".webp"), "Optimized monster sprite");
+for (const monster of monsterManifest.monsters) {
+  if (typeof monster.src !== "string" || !monster.src.startsWith("/assets/monsters/") || !monster.src.endsWith(".webp")) throw new Error(`Monster asset manifest has an invalid source for ${monster.id ?? "unknown"}`);
+  await assertFile(join(scriptDirectory, "../apps/web/public", monster.src.slice(1)), "Optimized monster sprite");
+}
 await assertFile(join(monsterAssetRoot, "README.md"), "Monster asset provenance README");
 
 const militaryManifest = JSON.parse(await readFile(join(scriptDirectory, "../apps/web/public/assets/military/manifest.json"), "utf8"));
-if (militaryManifest.format !== "webp" || !Array.isArray(militaryManifest.units) || militaryManifest.units.length !== 13) throw new Error("Military asset manifest is incomplete");
+if (militaryManifest.format !== "webp" || !Array.isArray(militaryManifest.units) || militaryManifest.units.length !== 14) throw new Error("Military asset manifest is incomplete");
 const militaryIds = new Set();
 for (const unit of militaryManifest.units) {
   if (typeof unit.id !== "string" || militaryIds.has(unit.id)) throw new Error(`Military asset manifest has an invalid or duplicate ID: ${unit.id ?? "missing"}`);
@@ -117,6 +120,7 @@ for (const unit of militaryManifest.units) {
     await assertFile(join(scriptDirectory, "../apps/web/public", unit.portrait.slice(1)), "Optimized military portrait");
   }
 }
+if (!militaryIds.has("x-fighter")) throw new Error("Military asset manifest is missing the X-Fighter sprite");
 await assertFile(join(scriptDirectory, "../apps/web/public/assets/military/README.md"), "Military asset provenance README");
 
 const diceManifest = JSON.parse(await readFile(join(diceAssetRoot, "manifest.json"), "utf8"));

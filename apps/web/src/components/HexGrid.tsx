@@ -88,7 +88,6 @@ function provisionalFeatureLabel(hex: BoardHex): string | undefined {
 }
 
 function unitArtForType(unitTypeId?: string) {
-  if (unitTypeId === "mecha-monster" || unitTypeId === "captain-colossal") return `/assets/military/portraits/${unitTypeId}.webp`;
   return unitTypeId ? `/assets/military/${unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unitTypeId}.webp` : undefined;
 }
 
@@ -182,8 +181,10 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
     const points = acceptedPath.map(key => displayByKey.get(key));
     if (!destination || points.some(point => !point)) return;
     // Animate above the tiles so their hexagonal clipping never cuts off a piece.
+    const militaryUnit = destination.classList.contains("tile-piece") || destination.classList.contains("unit-mark");
     const traveller = destination.cloneNode(true) as HTMLElement;
-    traveller.className = "travelling-piece";
+    traveller.className = `travelling-piece${militaryUnit ? " travelling-military-unit" : ""}`;
+    traveller.dataset.motionPiece = militaryUnit ? "military" : "monster";
     traveller.setAttribute("aria-hidden", "true");
     const width = destination.offsetWidth;
     const height = destination.offsetHeight;
@@ -204,19 +205,22 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
     }
     const frames: Keyframe[] = [];
     let angle = 0;
-    const transform = (x: number, y: number, rotation: number) => `translate(${x - width / 2}px, ${y - height / 2}px) rotate(${rotation}deg)`;
+    const travellingScale = militaryUnit ? 1.2 : 1;
+    const hop = militaryUnit ? 5 : 0;
+    const transform = (x: number, y: number, rotation: number, scale = 1) => `translate(${x - width / 2}px, ${y - height / 2 - hop}px) rotate(${rotation}deg) scale(${scale})`;
     coordinates.slice(0, -1).forEach((point, index) => {
       const next = coordinates[index + 1];
       const heading = Math.atan2(next.y - point.y, next.x - point.x) * 180 / Math.PI + 90;
       angle += ((heading - angle + 540) % 360) - 180;
-      frames.push({ offset: index / (coordinates.length - 1) * .9, transform: transform(point.x, point.y, angle) });
-      frames.push({ offset: (index + 1) / (coordinates.length - 1) * .9, transform: transform(next.x, next.y, angle) });
+      frames.push({ offset: index / (coordinates.length - 1) * .9, transform: transform(point.x, point.y, angle, travellingScale) });
+      frames.push({ offset: (index + 1) / (coordinates.length - 1) * .9, transform: transform(next.x, next.y, angle, travellingScale) });
     });
     const restingAngle = angle + ((-angle % 360 + 540) % 360) - 180;
     frames.push({ offset: 1, transform: transform(endX, endY, restingAngle) });
     traveller.style.left = "0";
     traveller.style.top = "0";
-    const animation = traveller.animate(frames, { duration: (acceptedPath.length - 1) * 400 + 200, easing: "linear", fill: "forwards" });
+    const acceptedMoveDurationMs = (acceptedPath.length - 1) * 400 + 200;
+    const animation = traveller.animate(frames, { duration: acceptedMoveDurationMs, easing: "linear", fill: "forwards" });
     const finish = () => { traveller.remove(); destination.style.visibility = ""; };
     animation.onfinish = finish;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -240,7 +244,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
       )}
       {acceptedAnimationKey && acceptedPathPoints && acceptedPath.length > 1 && (
         <svg className="accepted-path" key={acceptedAnimationKey} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polyline points={acceptedPathPoints} />
+          <polyline points={acceptedPathPoints} style={{ animationDuration: `${(acceptedPath.length - 1) * 400 + 200}ms` }} />
         </svg>
       )}
       {boardHexes.map(({ hex, place, left, top, developmentFixture }) => {

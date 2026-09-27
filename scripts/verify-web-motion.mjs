@@ -1,6 +1,10 @@
 import { readFile } from "node:fs/promises";
 
-const stylesheet = (await Promise.all(["styles.css", "encounter-command.css", "combat-stage.css", "dice.css"].map(file => readFile(new URL(`../apps/web/src/${file}`, import.meta.url), "utf8")))).join("\n");
+const [stylesheet, hudStyles, hexGrid] = await Promise.all([
+  Promise.all(["styles.css", "encounter-command.css", "combat-stage.css", "dice.css"].map(file => readFile(new URL(`../apps/web/src/${file}`, import.meta.url), "utf8"))).then(files => files.join("\n")),
+  readFile(new URL("../apps/web/src/civ-hud.css", import.meta.url), "utf8"),
+  readFile(new URL("../apps/web/src/components/HexGrid.tsx", import.meta.url), "utf8"),
+]);
 const failures = [];
 
 const animationDeclarations = [...stylesheet.matchAll(/animation\s*:\s*([^;{}]+)/g)].map((match) => match[1].replace(/!important/g, "").trim());
@@ -18,6 +22,8 @@ if (!/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*animation-duration:\s*
 if (!/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*transition-duration:\s*0\.01ms\s*!important/.test(stylesheet)) failures.push("global reduced-motion transition override");
 if (!/\.accepted-path polyline[\s\S]*animation:accepted-path-in/.test(stylesheet) || !/@keyframes accepted-path-in[\s\S]*100%\{opacity:0/.test(stylesheet)) failures.push("accepted-path animation does not settle");
 if (!/\.accepted-arrival[\s\S]*animation:accepted-arrival-in/.test(stylesheet) || !/@keyframes accepted-arrival-in[\s\S]*100%\{[^}]*opacity:1/.test(stylesheet)) failures.push("accepted-arrival animation does not settle");
+if (!/travelling-piece\$\{militaryUnit \? " travelling-military-unit"/.test(hexGrid) || !/travelling-military-unit\s*\{\s*filter:drop-shadow/.test(hudStyles)) failures.push("military movement traveller has no clear board-side visual cue");
+if (!/animationDuration:\s*`\$\{\(acceptedPath\.length - 1\) \* 400 \+ 200\}ms`/.test(hexGrid)) failures.push("military movement route does not remain visible for the full travel duration");
 
 if (failures.length) {
   console.error(`Web motion contract failed:\n- ${failures.join("\n- ")}`);
