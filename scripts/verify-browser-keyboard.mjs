@@ -87,7 +87,7 @@ try {
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => !document.querySelector(".hud-menu")?.open);
 
-  const recordToggle = page.getByRole("button", { name: "Open monster, military and map record" });
+  const recordToggle = page.getByRole("button", { name: /^Open .* health \d+, infamy \d+$/ }).first();
   await activateByKeyboard(recordToggle, "player record");
   const monsterTab = page.getByRole("tab", { name: "Monster" });
   await monsterTab.waitFor({ state: "visible" });

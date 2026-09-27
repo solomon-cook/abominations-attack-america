@@ -165,15 +165,15 @@ export class PrismaRoomStore implements RoomStore {
     const room = await this.authorize(roomCode, accessToken);
     const actor = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
     if (!actor || actor.role !== "PLAYER") throw new Error("Spectators cannot submit game actions.");
+    if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
+    const duplicate = await this.prismaClient.commandReceipt.findUnique({ where: { roomId_actionId: { roomId: room.id, actionId: envelope.actionId } } });
+    if (duplicate) return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
     if (room.status !== "ACTIVE") throw new Error("This room is not ready for gameplay.");
     const gameState = room.state as unknown as GameState;
     const requiredPlayer = laserFenceCardOwner(gameState, envelope) ?? mutationBattleOwner(gameState, envelope) ?? (gameState.pendingDecision?.type === "trophy-choice" || gameState.pendingDecision?.type === "mutation-choice"
       ? gameState.pendingDecision.playerIndex
       : gameState.currentPlayer);
     if (actor.playerIndex !== requiredPlayer) throw new Error("It is not your turn.");
-    if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
-    const duplicate = await this.prismaClient.commandReceipt.findUnique({ where: { roomId_actionId: { roomId: room.id, actionId: envelope.actionId } } });
-    if (duplicate) return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
     const result = applyCommandEnvelope(room.state as unknown as GameState, envelope, room.version);
     const version = room.version + 1;
     try {

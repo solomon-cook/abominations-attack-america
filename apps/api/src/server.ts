@@ -28,11 +28,13 @@ const configuredDevelopmentLimit = (name: string, fallback: number) => {
 };
 const RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_API_RATE_LIMIT", 120);
 const WEBSOCKET_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_WS_RATE_LIMIT", 30);
+const WEBSOCKET_COMMAND_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_WS_COMMAND_RATE_LIMIT", 120);
 const MAX_JSON_BODY_BYTES = 64 * 1024;
 const REQUEST_TIMEOUT_MS = 15_000;
 const HEADERS_TIMEOUT_MS = 20_000;
 const mutationRate = new Map<string, RateBucket>();
 const socketRate = new Map<string, RateBucket>();
+const socketCommandRate = new Map<string, RateBucket>();
 const metrics = new ApiMetrics();
 const errorReporter = new ErrorReporter(createErrorReporterSink({
   endpoint: process.env.ERROR_ALERT_URL,
@@ -147,7 +149,7 @@ server.on("error", (error) => {
   operationalLog({ event: "deployment.failure", message: error instanceof Error ? error.message : "API listen failure" });
   process.exitCode = 1;
 });
-const wsServer = new WebSocketServer({ server, path: "/ws" });
+const wsServer = new WebSocketServer({ server, path: "/ws", maxPayload: MAX_JSON_BODY_BYTES });
 wsServer.on("connection", async (socket, request) => {
   if (!withinRate(socketRate, requestAddress(request), Date.now(), RATE_WINDOW_MS, WEBSOCKET_RATE_LIMIT)) {
     metrics.websocketFailure();
@@ -162,6 +164,51 @@ wsServer.on("connection", async (socket, request) => {
     group.set(socket, token);
     sockets.set(code, group);
     socket.send(JSON.stringify({ type: "room.updated", room }));
+    socket.on("message", (data, isBinary) => {
+      const send = (message: unknown) => {
+        if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(message));
+      };
+      const rejectProtocol = (error: string) => send({ type: "protocol.error", error });
+      if (isBinary) {
+        rejectProtocol("Only JSON text messages are supported.");
+        return;
+      }
+      const address = requestAddress(request);
+      if (!withinRate(socketCommandRate, address, Date.now(), RATE_WINDOW_MS, WEBSOCKET_COMMAND_RATE_LIMIT)) {
+        rejectProtocol("Too many commands. Try again shortly.");
+        return;
+      }
+      let message: unknown;
+      try { message = JSON.parse(data.toString()); }
+      catch {
+        rejectProtocol("Message must be valid JSON.");
+        return;
+      }
+      if (!isCommandSubmitMessage(message)) {
+        rejectProtocol("Unsupported WebSocket message.");
+        return;
+      }
+      const { envelope } = message;
+      const startedAt = Date.now();
+      void store.submitAction(code, token, envelope)
+        .then(async (updatedRoom) => {
+          metrics.commandAccepted();
+          metrics.latency(Date.now() - startedAt);
+          if (updatedRoom.status === "completed") metrics.roomCompleted();
+          if (updatedRoom.status === "abandoned") metrics.roomAbandoned();
+          operationalLog({ event: "command.accepted", transport: "websocket", roomCode: code, actionId: envelope.actionId, actorId: envelope.actorId, commandType: envelope.command.type, revision: updatedRoom.version });
+          send({ type: "command.accepted", actionId: envelope.actionId, room: updatedRoom });
+          await broadcast(code);
+        })
+        .catch((error) => {
+          metrics.commandFailed();
+          metrics.errorReport("command");
+          const message = error instanceof Error ? error.message : "Command failed.";
+          errorReporter.report({ category: "command", method: "WS", path: "/ws", roomCode: code, message });
+          operationalLog({ event: "command.failed", transport: "websocket", roomCode: code, actionId: envelope.actionId, actorId: envelope.actorId, commandType: envelope.command.type, error: message });
+          send({ type: "command.rejected", actionId: envelope.actionId, error: message });
+        });
+    });
     socket.on("close", () => {
       group.delete(socket);
       if (group.size === 0) sockets.delete(code);
@@ -188,3 +235,16 @@ const shutdown = async (signal: string) => {
 process.once("SIGTERM", () => { void shutdown("SIGTERM"); });
 process.once("SIGINT", () => { void shutdown("SIGINT"); });
 server.listen(port, () => console.log(`API listening on http://localhost:${port}`));
+
+function isCommandSubmitMessage(value: unknown): value is { type: "command.submit"; envelope: GameCommandEnvelope } {
+  if (!value || typeof value !== "object") return false;
+  const message = value as Record<string, unknown>;
+  if (message.type !== "command.submit" || !message.envelope || typeof message.envelope !== "object") return false;
+  const envelope = message.envelope as Record<string, unknown>;
+  if (typeof envelope.actionId !== "string" || envelope.actionId.length < 1 || envelope.actionId.length > 128) return false;
+  if (typeof envelope.actorId !== "string" || envelope.actorId.length < 1 || envelope.actorId.length > 128) return false;
+  if (!Number.isSafeInteger(envelope.expectedRevision) || Number(envelope.expectedRevision) < 0) return false;
+  if (!Number.isSafeInteger(envelope.protocolVersion)) return false;
+  if (!envelope.command || typeof envelope.command !== "object") return false;
+  return typeof (envelope.command as Record<string, unknown>).type === "string";
+}

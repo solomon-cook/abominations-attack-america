@@ -3421,7 +3421,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       next.deploymentDestinations = [];
       next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
       next.log.push(`${trophy.branch} ${trophy.unitTypeId ?? trophy.id} became a permanent trophy.`);
-      const eventPayload = { location: pendingTrophy.location, branch: pendingTrophy.branch, unitId: trophy.id, nextPhase: next.phase };
+      const eventPayload = { location: pendingTrophy.location, branch: pendingTrophy.branch, unitId: trophy.id, takerPlayerIndex: next.currentPlayer, nextPhase: next.phase };
       return { state: appendEvent(next, "trophy.chosen", eventPayload), eventType: "trophy.chosen", eventPayload };
     }
     if (!decision || (decision.type !== "encounter-resolution" && decision.type !== "encounter-choice") || decision.playerIndex !== state.currentPlayer) {
@@ -3434,8 +3434,10 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       throw new Error("A city benefit choice is required before resolving the Encounter.");
     }
     const result = resolveEncounterResult(state, command.type === "resolve-encounter" ? command.choice : undefined);
-    const location = state.monsters[state.currentPlayer]?.location;
-    const eventPayload = { location, stomped: isHexKey(location) && !(state.stompedLocations ?? []).includes(location), effects: result.effects, rolls: result.rolls, mutationDraws: result.mutationDraws, remainingStompMarkers: result.state.stompMarkers, choices: result.state.pendingEncounterChoice?.choices, choiceSource: result.state.pendingEncounterChoice?.source, challenge: result.state.challenge ? { declared: result.state.challenge.declared, active: result.state.challenge.active, challengerMonsterId: result.state.challenge.challengerMonsterId, pendingStartPlayerIndex: result.state.challenge.pendingStartPlayerIndex, startAtEndOfTurn: result.state.challenge.startAtEndOfTurn } : undefined, nextPhase: result.state.phase };
+    const playerIndex = state.currentPlayer;
+    const monsterId = state.monsters[playerIndex]?.id;
+    const location = state.monsters[playerIndex]?.location;
+    const eventPayload = { playerIndex, monsterId, location, stomped: isHexKey(location) && !(state.stompedLocations ?? []).includes(location), effects: result.effects, rolls: result.rolls, mutationDraws: result.mutationDraws, remainingStompMarkers: result.state.stompMarkers, choices: result.state.pendingEncounterChoice?.choices, choiceSource: result.state.pendingEncounterChoice?.source, challenge: result.state.challenge ? { declared: result.state.challenge.declared, active: result.state.challenge.active, challengerMonsterId: result.state.challenge.challengerMonsterId, pendingStartPlayerIndex: result.state.challenge.pendingStartPlayerIndex, startAtEndOfTurn: result.state.challenge.startAtEndOfTurn } : undefined, nextPhase: result.state.phase };
     const eventType = result.state.pendingEncounterChoice ? "encounter.choice-required" : result.state.pendingTrophyChoice ? "trophy.choice-required" : "encounter.resolved";
     return { state: appendEvent(result.state, eventType, eventPayload), eventType, eventPayload };
   }

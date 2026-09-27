@@ -31,6 +31,7 @@ import {
   listPublicRooms,
   markDisconnected,
   markReconnected,
+  RoomCommandChannel,
   readRoom,
   sendCommand,
   sendSetupAction,
@@ -73,6 +74,7 @@ import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { CardReveal, ResolutionStage } from "./components/ResolutionStage";
 import { EncounterOverlay } from "./components/EncounterOverlay";
+import { BoardEventPlayback } from "./components/BoardEventPlayback";
 import { ChallengeArena } from "./components/ChallengeArena";
 import { DieCube } from "./components/DieCube";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
@@ -80,6 +82,7 @@ import { FightResolutionPanel } from "./components/FightResolutionPanel";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
 import { playSound, type SoundCategory } from "./audio";
 import { monsterAssetSlug } from "./monster-assets";
+import { BRANCH_MARK } from "./player-visuals";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
 
@@ -92,6 +95,7 @@ import "./physical-sheets.css";
 import "./chat-ui.css";
 import "./command-panels.css";
 import "./encounter-command.css";
+import "./board-event-playback.css";
 import "./monster-selection.css";
 import "./setup-command.css";
 import "./home-screen.css";
@@ -143,13 +147,13 @@ function safeStoredNumber(key: string, fallback: number): number {
 
 function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
+  const commandChannelRef = useRef<RoomCommandChannel | null>(null);
   const [game, setGame] = useState<GameState>(() => createGame(2));
   const [localPlaytestStarted, setLocalPlaytestStarted] = useState(false);
   const [soloMode, setSoloMode] = useState(false);
   const [botThinking, setBotThinking] = useState(false);
   const [botExplanation, setBotExplanation] = useState("");
   const [botFightPlayback, setBotFightPlayback] = useState(false);
-  const [botEncounterPlayback, setBotEncounterPlayback] = useState(false);
   const botTurnRunning = useRef(false);
   const nextBotStepDelay = useRef(650);
   const [session, setSession] = useState<SessionResponse | null>(null);
@@ -195,9 +199,11 @@ function App() {
   const [fightOverlayOpen, setFightOverlayOpen] = useState(false);
   const [encounterOverlayOpen, setEncounterOverlayOpen] = useState(false);
   const [encounterBaselineEventId, setEncounterBaselineEventId] = useState<string | undefined>();
+  const encounterOverlayOwnerRef = useRef<number | undefined>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [gamePanelOpen, setGamePanelOpen] = useState(false);
   const [mobileCommandExpanded, setMobileCommandExpanded] = useState(false);
+  const [followBotTurns, setFollowBotTurns] = useState(false);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
   const [showBoardLabels, setShowBoardLabels] = useState(() => safeStorageGet("abominations-board-labels") !== "0");
   const [manualReducedMotion, setManualReducedMotion] = useState(() => safeStorageGet("abominations-reduced-motion") === "1");
@@ -386,12 +392,32 @@ function App() {
           (candidate) => candidate.id === session.participantId,
         )
       : undefined;
+  const localSolo = soloMode && !online;
+  const playerRecordIndex = localSolo ? 0 : participant?.playerIndex ?? activeGame.currentPlayer;
+  const playerRecordMonster = activeGame.monsters[playerRecordIndex] ?? activePlayer;
+  const playerRecordBranch = activeGame.setupAssignments?.[playerRecordIndex]?.branch
+    ?? (["Army", "Navy", "Air Force", "Marines"] as const)[playerRecordIndex % 4];
   const activeSetup = online ? activeGame.setupState : localSetup;
   const localSetupComplete = localSetup.phase === "complete";
   const setupComplete = !activeSetup || activeSetup.phase === "complete";
   const decisionPlayer = activeGame.pendingDecision?.type === "trophy-choice" || activeGame.pendingDecision?.type === "mutation-choice"
     ? activeGame.pendingDecision.playerIndex
     : activeGame.currentPlayer;
+  const soloBotTurn = localSolo && activeGame.phase !== "game-over" && decisionPlayer !== 0;
+  const soloOtherPlayerTurn = localSolo && activeGame.currentPlayer !== 0;
+  const commandMedallionPlayer = localSolo ? playerRecordMonster : activePlayer;
+  const commandMedallionBranch = localSolo ? playerRecordBranch : activeBranch;
+  const commandMedallionHealthPercent = Math.round(commandMedallionPlayer.health / commandMedallionPlayer.maxHealth * 100);
+  const commandMedallionSummary = soloOtherPlayerTurn
+    ? `★ ${playerRecordMonster.infamy} · Your record`
+    : `★ ${activePlayer.infamy} · ${remainingMovementOrders} ${remainingMovementOrders === 1 ? "order" : "orders"}`;
+  const selectedFollowUnit = selectedUnitId ? activeGame.units.find((unit) => unit.id === selectedUnitId
+    && isHexKey(unit.location)
+    && !activeGame.removedUnitIds.includes(unit.id)
+    && (unit.ownerPlayer === activeGame.currentPlayer || unit.branch === "National Guard" && activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes("Guard Commander"))) : undefined;
+  const boardFollowHexKey = setupComplete && (!soloOtherPlayerTurn || soloBotTurn && followBotTurns)
+    ? selectedFollowUnit?.location ?? activePlayer.location
+    : null;
   const canAct =
     setupComplete &&
     !botThinking &&
@@ -402,6 +428,9 @@ function App() {
     (!online ||
       (room?.status === "active" && participant?.role === "player" &&
         participant.playerIndex === decisionPlayer));
+  useEffect(() => {
+    if (!soloBotTurn) setFollowBotTurns(false);
+  }, [soloBotTurn]);
   const mutationWindowOwners = new Set<number>();
   const pendingFightBattleId = activeGame.pendingDecision?.type === "battle-resolution" || activeGame.pendingDecision?.type === "attack-target"
     ? activeGame.pendingDecision.battleId
@@ -589,6 +618,8 @@ function App() {
   useEffect(() => {
     if (!session || !room) return;
     const socket = new WebSocket(websocketUrl(room.code, session.token));
+    const commandChannel = new RoomCommandChannel(socket);
+    commandChannelRef.current = commandChannel;
     let polling: ReturnType<typeof setInterval> | undefined;
     let disconnected = false;
     const markOffline = () => {
@@ -641,6 +672,8 @@ function App() {
     };
     return () => {
       markOffline();
+      commandChannel.dispose();
+      if (commandChannelRef.current === commandChannel) commandChannelRef.current = null;
       socket.close();
       if (polling) clearInterval(polling);
     };
@@ -690,6 +723,7 @@ function App() {
           session.participantId,
           room.version,
           normalized,
+          commandChannelRef.current,
         );
         setRoom(nextRoom);
         nextGame = nextRoom.state;
@@ -746,10 +780,17 @@ function App() {
     void runCommand({ type: "pass-deploy" });
   }, [activeGame.phase, canAct, militaryChoices.length, pendingAction]);
 
+  useEffect(() => {
+    if (!online || !encounterOverlayOpen || encounterOverlayOwnerRef.current === decisionPlayer) return;
+    encounterOverlayOwnerRef.current = undefined;
+    setEncounterOverlayOpen(false);
+  }, [decisionPlayer, encounterOverlayOpen, online]);
+
   const runBoardAction = (command: GameCommand) => {
     if (command.type === "resolve-fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; }
     if (command.type === "resolve-encounter" && !command.choice && !command.trophyUnitId) {
       setEncounterBaselineEventId(lastEncounterEvent?.id);
+      encounterOverlayOwnerRef.current = activeGame.currentPlayer;
       setEncounterOverlayOpen(true);
       return;
     }
@@ -903,9 +944,7 @@ function App() {
         setBotFightPlayback(true);
         nextBotStepDelay.current = botActionDelayMs(command);
       } else if (command.type === "resolve-encounter") {
-        setEncounterBaselineEventId(lastEncounterEvent?.id);
-        setEncounterOverlayOpen(true);
-        setBotEncounterPlayback(true);
+        // Other players follow the bot encounter from the board instead of opening its modal.
         nextBotStepDelay.current = botActionDelayMs(command);
       } else {
         nextBotStepDelay.current = 650;
@@ -1007,7 +1046,6 @@ function App() {
     setBotThinking(false);
     setBotExplanation("");
     setBotFightPlayback(false);
-    setBotEncounterPlayback(false);
     setLocalPlaytestStarted(true);
     setOnboardingOpen(false);
     // Start with turn instructions expanded.
@@ -1025,7 +1063,6 @@ function App() {
     setBotThinking(false);
     setBotExplanation("");
     setBotFightPlayback(false);
-    setBotEncounterPlayback(false);
     botTurnRunning.current = false;
     nextBotStepDelay.current = 650;
     setLocalPlaytestStarted(true);
@@ -1256,30 +1293,31 @@ function App() {
       data-rendered-board-content-hash={renderedBoard?.contentHash ?? ""}
     >
       <header>
-        <div className="top-turn-summary">
+        <div className="top-turn-summary" aria-live="polite">
           <div className="turn-hud-heading">
-            <div><span className="label">{!setupComplete ? "GAME SETUP" : soloMode && decisionPlayer !== 0 ? "BOT TURN" : canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER {decisionPlayer + 1}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? `${activePlayer.name} · ${action}` : "Monster and branch selection"}</h2></div>
+            <div><span className="label">{!setupComplete ? "GAME SETUP" : `ROUND ${activeGame.round} · ${soloMode && decisionPlayer !== 0 ? "BOT TURN" : canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER ${decisionPlayer + 1}`}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? action : "Monster and branch selection"}</h2></div>
             <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="turn-hud-body" aria-label={gamePanelOpen ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelOpen ? "−" : "+"}</button>
           </div>
-          <TurnProgress game={activeGame} />
         </div>
-        <div className="map-control-slot" />
         <div className="header-actions">
-          {setupComplete && <MatchStatus game={activeGame} action={action} />}
-          {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={participant?.playerIndex ?? activeGame.currentPlayer} monster={activeGame.monsters[participant?.playerIndex ?? activeGame.currentPlayer]} branch={activeGame.setupAssignments?.[participant?.playerIndex ?? activeGame.currentPlayer]?.branch ?? (["Army", "Navy", "Air Force", "Marines"] as const)[(participant?.playerIndex ?? activeGame.currentPlayer) % 4]} canAct={canAct} mobileCommandExpanded={mobileCommandExpanded} runCommand={runCommand} onDeploy={openMilitarySheet} onSelectDeployment={(choice) => { setDeploymentPieceId(choice.id); setFocusedHexKey(choice.destinations[0]); }} />}
+          {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={playerRecordIndex} monster={playerRecordMonster} branch={playerRecordBranch} canAct={canAct} mobileCommandExpanded={mobileCommandExpanded} runCommand={runCommand} onDeploy={openMilitarySheet} onSelectDeployment={(choice) => { setDeploymentPieceId(choice.id); setFocusedHexKey(choice.destinations[0]); }} />}
           <details className="hud-menu">
             <summary aria-label="Open game menu">☰ <span>Menu</span></summary>
             <div className="hud-menu-items">
+              {online && <span className="room-hud-menu-status" role="status">{room?.code} · {connectionState}</span>}
               <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>How to play</button>
               <button className="ghost settings-action" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>Settings</button>
               <button className="ghost new-game-action" onClick={soloMode ? startSolo : resetLocal}>{soloMode ? "New solo game" : "New local game"}</button>
+              {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
+              {online && <button className="ghost leave-room-action" onClick={leaveRoomSafely}>Leave room</button>}
             </div>
           </details>
-          {online && <span className="room-hud-status" role="status">{room?.code} · {connectionState}</span>}
-          {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
-          {online && <button className="ghost leave-room-action" onClick={leaveRoomSafely}>Leave room</button>}
         </div>
       </header>
+      <details className="board-map-controls">
+        <summary aria-label="Open map view controls" title="Map controls">⌖</summary>
+        <div className="map-control-slot" />
+      </details>
       {error && <p className="error global-game-error" role="alert">{error}</p>}
       {soloMode && setupComplete && (decisionPlayer !== 0 || botExplanation || botThinking) && <aside className="bot-turn-guidance" role="status"><strong>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Bot is reacting" : "Bot is planning" : decisionPlayer !== 0 ? `${activePlayer.name} bot` : "Bot plan"}</strong><span>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Checking whether to force a retreat or make the monster spend Infamy." : botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army", decisionPlayer > 0 ? botTacticForPlayer(activeGame, decisionPlayer) : undefined) : decisionPlayer !== 0 ? botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army", botTacticForPlayer(activeGame, decisionPlayer)) : botExplanation}</span></aside>}
       <LobbyPanel
@@ -1366,7 +1404,7 @@ function App() {
                 : `PLAYER ${activeGame.currentPlayer + 1}`}
             </span>
           </div>
-          <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={setupComplete ? (selectedUnitId ? activeGame.units.find((unit) => unit.id === selectedUnitId)?.location : activePlayer.location) : null} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
+          <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={boardFollowHexKey} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
             {activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "trophy-choice" && <div className="deployment-prompt trophy-prompt" role="status">
               {activeGame.pendingDecision.unitIds.some((id) => activeGame.units.some((unit) => unit.id === id && unit.location === "record-tile"))
                 ? <>Player {activeGame.pendingDecision.playerIndex + 1} · {activeGame.pendingDecision.branch} military record<br />Choose a card still in reserve.</>
@@ -1470,12 +1508,13 @@ function App() {
         {setupComplete && <>
           <div className={`command-station ${activeGame.phase === "deploy" ? "deploy-command-station" : ""} ${mobileCommandExpanded ? "mobile-command-expanded" : ""}`}>
           <div id="mobile-record-slot" className="mobile-record-slot" />
-          <button type="button" className="mobile-command-toggle" aria-expanded={mobileCommandExpanded} aria-controls="mobile-record-slot mobile-command-details" onClick={() => setMobileCommandExpanded((expanded) => !expanded)}>
-            <span className="record-medallion command-medallion" style={{ background: `linear-gradient(#182725,#182725) padding-box, conic-gradient(#e6cc83 ${Math.round(activePlayer.health / activePlayer.maxHealth * 100)}%,#45544b 0) border-box` }}>
-              <img src={`/assets/monsters/portraits/${monsterAssetSlug(activePlayer.name)}.webp`} alt="" />
-              <b>{activePlayer.health}</b>
+          <button type="button" className="mobile-command-toggle" aria-label={mobileCommandExpanded ? "Collapse player record and commands" : `Open ${playerRecordMonster.name} player record`} aria-expanded={mobileCommandExpanded} aria-controls="mobile-record-slot mobile-command-details" onClick={() => setMobileCommandExpanded((expanded) => !expanded)}>
+            <span className="record-medallion command-medallion" data-branch={commandMedallionBranch} style={{ background: `linear-gradient(#182725,#182725) padding-box, conic-gradient(#e6cc83 ${commandMedallionHealthPercent}%,#45544b 0) border-box` }}>
+              <img src={`/assets/monsters/portraits/${monsterAssetSlug(commandMedallionPlayer.name)}.webp`} alt="" />
+              <b>{commandMedallionPlayer.health}</b>
+              <i className="record-branch-mark" aria-hidden="true" title={commandMedallionBranch}>{BRANCH_MARK[commandMedallionBranch]}</i>
             </span>
-            <span><strong>{commandPieceName}</strong><small>★ {activePlayer.infamy} · {remainingMovementOrders} {remainingMovementOrders === 1 ? "order" : "orders"}</small></span>
+            <span><strong>{soloOtherPlayerTurn ? playerRecordMonster.name : commandPieceName}</strong><small>{commandMedallionSummary}</small></span>
             <b aria-hidden="true">{mobileCommandExpanded ? "⌄" : "⌃"}</b>
           </button>
           {activeGame.phase === "move" && <MovementChecklist game={activeGame} canAct={canAct}
@@ -1490,7 +1529,15 @@ function App() {
           {activeGame.phase === "move" && <LaserFenceControls game={activeGame} cardOwnerIndex={laserFenceOwnerIndex} canUse={canUseLaserFence} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} />}
           {activeGame.pendingChopperLift && <ChopperLiftChoiceControls game={activeGame} canChoose={canChooseChopperLift} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} />}
           <div className="board-action-bar">
-            {activeGame.phase === "move" ? <ActionDock
+            {soloBotTurn ? <ActionDock
+              label={followBotTurns ? "Stop following" : "Follow bot"}
+              contextLabel="BOT TURN"
+              guidance={followBotTurns ? `Camera follows ${activePlayer.name} until your turn.` : `The board stays on your monster. Follow ${activePlayer.name} if you want.`}
+              onPrimary={() => setFollowBotTurns((following) => !following)}
+              canAct
+              pressed={followBotTurns}
+              onAction={runBoardAction}
+            /> : activeGame.phase === "move" ? <ActionDock
               label={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Confirm move" : actionDock.label}
               contextLabel={`Move · ${remainingMovementOrders} ${remainingMovementOrders === 1 ? "order" : "orders"} remaining`}
               guidance={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Route ready to confirm." : actionDock.label === "Next piece" ? "Select a military piece or continue." : actionDock.command?.type === "pass-move" ? "All movement orders are resolved." : "Choose a destination or hold."}
@@ -1569,6 +1616,10 @@ function App() {
         </>}
         <aside id="game-side-panel" className="game-side-panel" aria-label="Game controls and information">
           <div id="turn-hud-body" hidden={!gamePanelOpen}>
+          {setupComplete && <>
+            <TurnProgress game={activeGame} />
+            <MatchStatus game={activeGame} action={action} />
+          </>}
           <div className="card action-card">
             <TurnPrompt
               action={action}
@@ -1673,9 +1724,8 @@ function App() {
       {researchReveal && <ResolutionStage title="Research" eyebrow="MILITARY / RESEARCH DIVISION" variant="research" onClose={() => setResearchReveal(null)}><CardReveal key={researchReveal} cardId={researchReveal} kind="research" /></ResolutionStage>}
       <EncounterOverlay
         error={error}
-        open={encounterOverlayOpen}
+        open={encounterOverlayOpen && (!online || participant?.role === "player" && participant.playerIndex === encounterOverlayOwnerRef.current && decisionPlayer === encounterOverlayOwnerRef.current)}
         canAct={canAct}
-        autoPlay={soloMode && botEncounterPlayback}
         pendingChoice={activeGame.pendingDecision?.type === "encounter-choice"}
         monsterName={activePlayer.name}
         locationName={activeLocation?.name ?? activePlayer.location}
@@ -1689,7 +1739,17 @@ function App() {
         mutationCardId={encounterMutationDraws.some((draw) => draw.cardDrawn) ? encounterRevealCard : undefined}
         onReveal={() => void runCommand({ type: "resolve-encounter" })}
         onChoice={(choice) => void runCommand({ type: "resolve-encounter", choice })}
-        onClose={() => { setEncounterOverlayOpen(false); setBotEncounterPlayback(false); }}
+        onClose={() => { setEncounterOverlayOpen(false); encounterOverlayOwnerRef.current = undefined; }}
+      />
+      <BoardEventPlayback
+        matchId={activeGame.matchId}
+        events={activeGame.eventLog}
+        monsters={activeGame.monsters}
+        board={activeBoard}
+        enabled={online || soloMode}
+        spectator={online && participant?.role !== "player"}
+        viewerPlayerIndex={online ? participant?.playerIndex : soloMode ? 0 : undefined}
+        reducedMotion={manualReducedMotion}
       />
     </main>
   );

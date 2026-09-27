@@ -1,0 +1,32 @@
+.board-event-playback{position:fixed;z-index:86;display:grid;gap:6px;width:max-content;min-width:154px;max-width:min(286px,calc(100vw - 20px));padding:8px 10px;border:1px solid #d9bd7a;border-radius:8px;background:linear-gradient(145deg,#26372ff5,#12201ef7);box-shadow:0 8px 22px #07110f9c;color:#f2ecd7;pointer-events:none;transform:translate(-50%,0);animation:board-event-arrive .32s cubic-bezier(.18,.8,.25,1) both}
+.board-event-playback.is-above{transform:translate(-50%,-100%)}
+.board-event-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.board-event-heading>span{display:grid;gap:1px;min-width:0}
+.board-event-heading small{color:#e3cc8a;font-size:8px;font-weight:900;letter-spacing:.12em}
+.board-event-heading strong{overflow:hidden;color:#fff4d5;font:700 13px/1.2 Georgia,serif;text-overflow:ellipsis;white-space:nowrap}
+.board-event-heading .board-event-location{max-width:90px;overflow:hidden;color:#bbc5ad;text-align:right;text-overflow:ellipsis;white-space:nowrap}
+.board-event-dice{display:flex;justify-content:center;gap:4px;min-height:42px;padding:2px 4px}
+.board-event-die{display:inline-grid;place-items:center;width:40px;height:40px;animation:board-event-die-pop .35s cubic-bezier(.2,.8,.2,1) both}
+.board-event-die .combat-die[data-die]{width:36px;height:36px;margin:0}
+.board-event-outcome{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;border-top:1px solid #e1d49a36;padding-top:6px;animation:board-event-outcome-in .26s ease both}
+.board-event-reward{display:grid;grid-template-columns:auto auto;align-items:center;gap:0 4px;padding:4px 6px;border:1px solid #fff2;border-radius:7px;background:#111b1ad9;color:#eaf1dc}
+.board-event-reward>span{grid-row:1 / span 2;font-size:16px;line-height:1}
+.board-event-reward>strong{font-size:14px;font-weight:900;line-height:1}
+.board-event-reward>small{font-size:8px;line-height:1.2;text-transform:uppercase;letter-spacing:.06em}
+.board-event-reward.health-gain{border-color:#71c9808c;color:#a6efab}
+.board-event-reward.health-loss{border-color:#eb676a9c;color:#ff9191;background:#391d22e8}
+.board-event-reward.infamy{border-color:#e3984b8c;color:#f4ad62}
+.board-event-reward.stomp{border-color:#dfca7c8c;color:#f0dc8d}
+.board-event-card{position:relative;display:grid;place-content:center;gap:2px;width:55px;height:70px;overflow:hidden;border:1px solid #e5d18a;border-radius:6px;outline:1px solid #e5d18a55;outline-offset:-4px;background:repeating-linear-gradient(45deg,#f3e2a012 0 2px,transparent 2px 8px),linear-gradient(145deg,#284b3f,#142522);color:#f1dfa8;text-align:center;box-shadow:0 2px 5px #0007;animation:board-event-card-in .48s cubic-bezier(.2,.8,.2,1) both}
+.board-event-card::before{position:absolute;inset:5px;border:1px solid #e2cf8b55;border-radius:3px;content:""}
+.board-event-card>span{z-index:1;color:#f5d779;font-size:23px;font-weight:900;line-height:1}
+.board-event-card>small{z-index:1;max-width:47px;font-size:6px;font-weight:900;line-height:1.2;letter-spacing:.06em}
+.board-event-card.research{background:repeating-linear-gradient(135deg,#dca65c12 0 2px,transparent 2px 8px),linear-gradient(145deg,#66502e,#22251e)}
+.board-event-note{color:#e8dfc4;font-size:10px;text-align:center}
+@keyframes board-event-arrive{from{opacity:0;translate:0 8px;scale:.94}to{opacity:1;translate:0 0;scale:1}}
+@keyframes board-event-die-pop{from{opacity:0;translate:0 -12px;rotate:-10deg}to{opacity:1;translate:0 0;rotate:0}}
+@keyframes board-event-outcome-in{from{opacity:0;translate:0 7px}to{opacity:1;translate:0 0}}
+@keyframes board-event-card-in{from{opacity:0;rotateY:85deg;translate:0 6px}to{opacity:1;rotateY:0;translate:0 0}}
+@media(max-width:700px){.board-event-playback{gap:5px;padding:7px 8px}.board-event-heading strong{font-size:12px}.board-event-dice{min-height:38px}.board-event-die{width:36px;height:36px}.board-event-die .combat-die[data-die]{width:32px;height:32px}}
+@media(prefers-reduced-motion:reduce){.board-event-playback,.board-event-die,.board-event-outcome,.board-event-card{animation:none}}
+.manual-reduced-motion .board-event-playback,.manual-reduced-motion .board-event-die,.manual-reduced-motion .board-event-outcome,.manual-reduced-motion .board-event-card{animation:none}

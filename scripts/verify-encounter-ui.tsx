@@ -26,7 +26,7 @@ assert.match(routine, /Encounter resolved/);
 assert.match(routine, /\+3/);
 assert.match(routine, /Return to board/);
 
-const choice = render({ choices: ["health", "infamy"], choiceSource: "iron-stomach", mutationDraws: [] });
+const choice = render({ pendingChoice: true, choices: ["health", "infamy"], choiceSource: "iron-stomach", mutationDraws: [] });
 assert.match(choice, /Choose your reward/i);
 assert.match(choice, /Take 3 Health/);
 assert.match(choice, /Take 1 Infamy/);

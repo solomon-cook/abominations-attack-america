@@ -3,12 +3,13 @@ import { MutationStrip } from "./MutationStrip";
 import { SheetCards } from "./SheetCards";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { getLocation, isHexKey, MONSTER_DEFINITIONS, UNIT_DEFINITIONS, type GameCommand, type GameState } from "@abominations/game-engine";
+import { getLocation, isHexKey, MONSTER_DEFINITIONS, UNIT_DEFINITIONS, type Branch, type GameCommand, type GameState } from "@abominations/game-engine";
 import { MilitarySheet, type DeploymentChoice } from "./MilitarySheet";
 import { monsterAssetSlug } from "../monster-assets";
 import { movementLabel, SheetStats } from "./SheetReference";
+import { branchForPlayer, BRANCH_MARK, playerControlBadges, trophyUnitsForPlayer } from "../player-visuals";
 
-type Props = { game: GameState; monster: GameState["monsters"][number]; branch: string; playerIndex: number; canAct: boolean; mobileCommandExpanded: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void; onSelectDeployment?: (choice: DeploymentChoice) => void };
+type Props = { game: GameState; monster: GameState["monsters"][number]; branch: Branch; playerIndex: number; canAct: boolean; mobileCommandExpanded: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void; onSelectDeployment?: (choice: DeploymentChoice) => void };
 
 function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose }: Pick<Props, "monster" | "game" | "playerIndex" | "canAct" | "runCommand"> & { onClose: () => void }) {
   const definition = MONSTER_DEFINITIONS.find((candidate) => candidate.name === monster.name);
@@ -72,6 +73,7 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
   const roster = UNIT_DEFINITIONS.filter(unit => unit.branch === branch);
   const available = game.units.filter(unit => unit.ownerPlayer === playerIndex && !game.removedUnitIds.includes(unit.id) && unit.location !== "permanently-removed");
   const healthPercent = Math.max(0, Math.min(100, Math.round(monster.health / monster.maxHealth * 100)));
+  const ownBranch = branchForPlayer(game, playerIndex);
   const playCard = (command: GameCommand) => { setOpen(null); return runCommand(command); };
   useEffect(() => {
     const media = window.matchMedia("(max-width: 700px)");
@@ -90,13 +92,14 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
         className="mobile-record-toggle"
         aria-expanded={recordExpanded}
         aria-controls="record-panel"
-        aria-label={recordExpanded ? "Minimize monster, military and map record" : "Open monster, military and map record"}
+        aria-label={recordExpanded ? "Minimize monster, military and map record" : `Open ${monster.name}, ${ownBranch}, health ${monster.health}, infamy ${monster.infamy}`}
         onClick={() => setMobileRecordOpen((current) => !current)}
       >
         {mobileRecordOpen ? <span aria-hidden="true">×</span> : <>
-          <span className="record-medallion" style={{ "--health-percent": `${healthPercent}%` } as CSSProperties}>
+          <span className="record-medallion" data-branch={ownBranch} style={{ "--health-percent": `${healthPercent}%` } as CSSProperties}>
             <img src={`/assets/monsters/portraits/${monsterAssetSlug(monster.name)}.webp`} alt="" />
             <b>{monster.health}</b>
+            <i className="record-branch-mark" aria-hidden="true" title={ownBranch}>{BRANCH_MARK[ownBranch]}</i>
           </span>
           <small>★ {monster.infamy}</small>
         </>}
@@ -128,19 +131,41 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
     </section>;
   return <>
     <nav className="opponent-portrait-rail" aria-label="Players">
-      {game.monsters.map((entry, index) => <button key={entry.id} type="button" className={`opponent-portrait ${index === game.currentPlayer ? "is-active" : ""} ${index === playerIndex ? "is-you" : ""}`} aria-label={`Player ${index + 1}: ${entry.name}, ${entry.health} health, ${entry.infamy} infamy${index === game.currentPlayer ? ", active turn" : ""}`} aria-expanded={inspectedPlayer === index} aria-controls="player-public-status" title={`Player ${index + 1} · ${entry.name} · ♥ ${entry.health} · ★ ${entry.infamy}`} onClick={() => setInspectedPlayer((current) => current === index ? null : index)}>
-        <img src={`/assets/monsters/portraits/${monsterAssetSlug(entry.name)}.webp`} alt="" />
-        <span>{index + 1}</span>
-        {index === game.currentPlayer && <i aria-hidden="true" />}
-      </button>)}
+      {game.monsters.map((entry, index) => {
+        const playerBranch = branchForPlayer(game, index);
+        const controls = playerControlBadges(game, index);
+        const trophies = trophyUnitsForPlayer(game, index);
+        const healthPercent = Math.max(0, Math.min(100, Math.round(entry.health / entry.maxHealth * 100)));
+        const controlSummary = controls.length ? `, controls ${controls.map(({ label }) => label).join(", ")}` : "";
+        const trophySummary = trophies.length ? `, ${trophies.length} trophy ${trophies.length === 1 ? "unit" : "units"}` : "";
+        return <button key={entry.id} type="button" data-branch={playerBranch} className={`opponent-player-card ${trophies.length ? "has-trophies" : ""} ${index === game.currentPlayer ? "is-active" : ""} ${index === playerIndex ? "is-you" : ""}`} aria-label={`Player ${index + 1}: ${entry.name}, ${playerBranch}, ${entry.health} of ${entry.maxHealth} health, ${entry.infamy} infamy${trophySummary}${controlSummary}${index === game.currentPlayer ? ", active turn" : ""}`} aria-expanded={inspectedPlayer === index} aria-controls="player-public-status" title={`Player ${index + 1} · ${entry.name} · ${playerBranch} · ♥ ${entry.health}/${entry.maxHealth} · ★ ${entry.infamy}${trophies.length ? ` · ${trophies.length} trophy ${trophies.length === 1 ? "unit" : "units"}` : ""}${controls.length ? ` · ${controls.map(({ label }) => label).join(" · ")}` : ""}`} onClick={() => setInspectedPlayer((current) => current === index ? null : index)}>
+          <span className="opponent-portrait" style={{ "--health-percent": `${healthPercent}%` } as CSSProperties}>
+            <img src={`/assets/monsters/portraits/${monsterAssetSlug(entry.name)}.webp`} alt="" />
+            <span className="opponent-health-badge" aria-hidden="true">♥{entry.health}</span>
+            <span className="opponent-player-number" aria-hidden="true">{index + 1}</span>
+            <span className="opponent-branch-mark" aria-hidden="true">{BRANCH_MARK[playerBranch]}</span>
+            {controls.length > 0 && <span className="opponent-control-badges" aria-hidden="true">{controls.map(({ id, mark }) => <i key={id} data-control={id}>{mark}</i>)}</span>}
+            {index === game.currentPlayer && <i className="opponent-active-ring" aria-hidden="true" />}
+          </span>
+          {trophies.length > 0 && <span className="opponent-trophy-badge" aria-hidden="true" title={`${trophies.length} captured ${trophies.length === 1 ? "unit" : "units"}`}>
+            <span className="opponent-trophy-icons">{trophies.slice(0, 3).map((unit, trophyIndex) => {
+              const assetId = UNIT_DEFINITIONS.find((definition) => definition.id === unit.unitTypeId)?.id ?? ({ Army: "army-tank", Navy: "navy-fighter", "Air Force": "air-force-fighter", Marines: "marines-fighter" } as const)[unit.branch as Branch] ?? "army-tank";
+              return <img key={`${unit.id}-${trophyIndex}`} src={`/assets/military/${assetId}.webp`} alt="" />;
+            })}</span>
+            <b>×{trophies.length}</b>
+          </span>}
+        </button>;
+      })}
       {inspectedPlayer !== null && (() => {
         const entry = game.monsters[inspectedPlayer];
         if (!entry) return null;
+        const playerBranch = branchForPlayer(game, inspectedPlayer);
+        const controls = playerControlBadges(game, inspectedPlayer);
         const position = isHexKey(entry.location) ? game.boardId ? getLocation(entry.location)?.name : undefined : undefined;
         return <section id="player-public-status" className="player-public-status" aria-label={`Player ${inspectedPlayer + 1} status`}>
           <button type="button" className="player-public-close" aria-label="Close player status" onClick={() => setInspectedPlayer(null)}>×</button>
           <img src={`/assets/monsters/portraits/${monsterAssetSlug(entry.name)}.webp`} alt="" />
-          <div><small>PLAYER {inspectedPlayer + 1}{inspectedPlayer === playerIndex ? " · YOU" : ""}</small><strong>{entry.name}</strong><span>♥ {entry.health}/{entry.maxHealth} · ★ {entry.infamy}</span><span>{position ?? entry.location}</span></div>
+          <div><small>PLAYER {inspectedPlayer + 1}{inspectedPlayer === playerIndex ? " · YOU" : ""}</small><strong>{entry.name}</strong><span className="player-public-branch" data-branch={playerBranch}><i aria-hidden="true">{BRANCH_MARK[playerBranch]}</i>{playerBranch}</span><span>♥ {entry.health}/{entry.maxHealth} · ★ {entry.infamy}</span><span>{position ?? entry.location}</span>{controls.length > 0 && <span className="player-public-controls">Controls: {controls.map(({ label }) => label).join(" · ")}</span>}</div>
         </section>;
       })()}
     </nav>

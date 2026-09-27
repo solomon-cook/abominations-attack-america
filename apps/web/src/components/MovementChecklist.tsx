@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { boardForState, isHexKey, type GameState } from "@abominations/game-engine";
 import { monsterAssetSlug } from "../monster-assets";
 
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function MovementChecklist({ game, canAct, selectedUnitId, movableUnitIds, monsterCanMove, onSelect, onEnd }: Props) {
+  const pieceListRef = useRef<HTMLDivElement>(null);
   const monster = game.monsters[game.currentPlayer];
   const board = boardForState(game);
   const controlsGuard = game.players[game.currentPlayer]?.researchCardIds.includes("Guard Commander");
@@ -25,9 +27,13 @@ export function MovementChecklist({ game, canAct, selectedUnitId, movableUnitIds
       selected: selectedUnitId === unit.id, movable: movableUnitIds.has(unit.id), unitId: unit.id })),
   ];
   const remaining = pieces.filter((piece) => piece.movable).length;
+  useEffect(() => {
+    const selected = pieceListRef.current?.querySelector<HTMLElement>(".movement-piece.selected");
+    selected?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+  }, [selectedUnitId, game.currentPlayer, game.movedPieceIds.length]);
   return <section className="movement-checklist" aria-label="Movement checklist">
     <div className="movement-checklist-heading"><strong>Orders</strong><span aria-live="polite">{remaining} remaining</span></div>
-    <div className="movement-piece-list">
+    <div ref={pieceListRef} className="movement-piece-list">
       {pieces.map((piece) => {
         const moved = game.movedPieceIds.includes(piece.id);
         return <button type="button" key={piece.id} className={`movement-piece ${piece.selected && (piece.unitId !== null || piece.movable) ? "selected" : ""} ${moved ? "completed" : ""}`}

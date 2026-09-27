@@ -3129,11 +3129,16 @@ test("military-base Encounter grants Infamy and requires a legal branch trophy",
   state.monsters[0].location = K("denver");
   const pending = applyCommand(state, { type: "resolve-encounter" });
   assert.equal(pending.eventType, "trophy.choice-required");
+  assert.equal(pending.eventPayload.playerIndex, 0);
+  assert.equal(pending.eventPayload.monsterId, state.monsters[0].id);
+  assert.equal(pending.state.eventLog.at(-1)?.detail.playerIndex, 0);
   assert.equal(pending.state.monsters[0].infamy, 1);
   assert.equal(pending.state.pendingDecision?.type, "trophy-choice");
   const trophyId = pending.state.pendingTrophyChoice!.unitIds[0];
   const chosen = applyCommand(pending.state, { type: "resolve-encounter", trophyUnitId: trophyId });
   assert.equal(chosen.eventType, "trophy.chosen");
+  assert.equal(chosen.eventPayload.takerPlayerIndex, 0);
+  assert.equal(chosen.state.eventLog.at(-1)?.detail.takerPlayerIndex, 0);
   assert.equal(chosen.state.units.find((unit) => unit.id === trophyId)?.location, "permanently-removed");
   assert.equal(chosen.state.removedUnitIds.includes(trophyId), true);
   assert.equal(chosen.state.phase, "deploy");

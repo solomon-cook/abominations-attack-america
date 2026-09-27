@@ -9,6 +9,7 @@ export interface RoomParticipant {
 }
 
 import type { GameState } from "@abominations/game-engine";
+import type { GameCommandEnvelope } from "@abominations/game-engine";
 
 export type RoomStatus = "waiting" | "active" | "completed" | "abandoned" | "expired";
 export type RoomPrivacy = "private" | "public";
@@ -43,6 +44,17 @@ export interface RoomView {
   participants: RoomParticipantView[];
   events: RoomEvent[];
 }
+
+export type RoomSocketClientMessage = {
+  type: "command.submit";
+  envelope: GameCommandEnvelope;
+};
+
+export type RoomSocketServerMessage =
+  | { type: "room.updated"; room: RoomView }
+  | { type: "command.accepted"; actionId: string; room: RoomView }
+  | { type: "command.rejected"; actionId: string; error: string }
+  | { type: "protocol.error"; error: string };
 
 export interface PublicRoomSummary {
   code: string;

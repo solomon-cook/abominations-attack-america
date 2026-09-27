@@ -27,6 +27,14 @@ let serverOutput = "";
 server?.stdout.on("data", (chunk) => { serverOutput += chunk.toString(); });
 server?.stderr.on("data", (chunk) => { serverOutput += chunk.toString(); });
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const contrastRatio = (first, second) => {
+  const luminance = (color) => color.match(/[\d.]+/g).slice(0, 3).map(Number).map((channel) => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+  const [lighter, darker] = [luminance(first), luminance(second)].sort((a, b) => b - a);
+  return (lighter + 0.05) / (darker + 0.05);
+};
 
 if (server) {
   for (let attempt = 0; attempt < 120; attempt += 1) {
@@ -45,6 +53,24 @@ const failures = [];
 const checkSetup = async (page) => {
   await page.getByRole("button", { name: /Start local game/ }).click();
   await page.locator(".setup-panel").waitFor({ state: "visible" });
+  const abilities = await page.locator(".monster-choice-ability span").evaluateAll((nodes) => nodes.map((node) => {
+    const text = node;
+    const ability = text.closest(".monster-choice-ability");
+    const card = text.closest(".monster-choice");
+    const style = getComputedStyle(text);
+    return {
+      text: text.textContent?.trim(),
+      visible: Boolean(text.getClientRects().length && card?.getClientRects().length),
+      lineClamp: style.webkitLineClamp,
+      textOverflow: style.overflow,
+      textClipped: text.scrollHeight > text.clientHeight + 1,
+      abilityClipped: ability ? ability.scrollHeight > ability.clientHeight + 1 : true,
+    };
+  }));
+  assert.ok(abilities.length >= 6, "monster selection should show every monster ability");
+  assert.ok(abilities.every((ability) => ability.visible && (ability.lineClamp === "none" || ability.lineClamp === "0") && ability.textOverflow === "visible" && !ability.textClipped && !ability.abilityClipped), `all monster ability text should remain readable without hover: ${JSON.stringify(abilities)}`);
+  const { width, height } = page.viewportSize();
+  await page.screenshot({ path: `output/board-art/setup-monsters-${width}x${height}.png` });
   for (let attempt = 0; attempt < 16 && await page.locator(".setup-panel").count(); attempt += 1) {
     const list = page.locator(".lair-selection-prompt details");
     if (await list.count() && !(await list.evaluate((node) => node.open))) await list.locator("summary").click();
@@ -94,6 +120,26 @@ const inspectLayout = async (page, width, height) => page.evaluate(({ width, hei
   };
 }, { width, height });
 
+const inspectTrophyBadge = async (page) => page.evaluate(() => {
+  const card = document.querySelector(".opponent-player-card");
+  if (!(card instanceof HTMLButtonElement)) throw new Error("The player portrait rail should be visible during a local game.");
+  card.classList.add("has-trophies");
+  const badge = document.createElement("span");
+  badge.className = "opponent-trophy-badge";
+  badge.innerHTML = '<span class="opponent-trophy-icons"><img src="/assets/military/army-tank.webp" alt=""><img src="/assets/military/army-tank.webp" alt=""></span><b>×2</b>';
+  card.append(badge);
+  const rect = (element) => {
+    const { x, y, width, height, bottom } = element.getBoundingClientRect();
+    return { x, y, width, height, bottom };
+  };
+  return {
+    display: getComputedStyle(badge).display,
+    badge: rect(badge),
+    card: rect(card),
+    reservedIdentityBottom: Math.max(...[...card.querySelectorAll(".opponent-health-badge, .opponent-player-number")].map((element) => rect(element).bottom)),
+  };
+});
+
 try {
   for (const [width, height] of [[1280, 720], [390, 844], [320, 740]]) {
     const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, isMobile: width <= 600, hasTouch: width <= 600 });
@@ -101,13 +147,41 @@ try {
     page.on("pageerror", (error) => failures.push(`${width}x${height}: ${error.message}`));
     await page.goto(url, { waitUntil: "domcontentloaded" });
     await checkSetup(page);
+    if (width > 700) {
+      for (const [testWidth, testHeight] of width === 1280 ? [[1280, 720], [768, 1024]] : [[width, height]]) {
+        if (testWidth !== width || testHeight !== height) await page.setViewportSize({ width: testWidth, height: testHeight });
+        const badge = await inspectTrophyBadge(page);
+        assert.equal(badge.display, "flex", `${testWidth}px portrait rails should show the compact trophy count`);
+        assert.ok(badge.badge.width >= 37 && badge.badge.height >= 15, `${testWidth}px trophy count should remain legible: ${JSON.stringify(badge)}`);
+        assert.ok(badge.badge.y >= badge.reservedIdentityBottom, `${testWidth}px trophy marker should clear portrait health and player-number badges: ${JSON.stringify(badge)}`);
+        assert.ok(badge.badge.bottom <= badge.card.bottom + 7, `${testWidth}px trophy marker should stay within its small reserved rail gap: ${JSON.stringify(badge)}`);
+        await page.locator(".opponent-trophy-badge").evaluate((node) => node.remove());
+        await page.locator(".opponent-player-card").first().evaluate((node) => node.classList.remove("has-trophies"));
+      }
+      if (width === 1280) await page.setViewportSize({ width, height });
+    } else {
+      const badge = await inspectTrophyBadge(page);
+      assert.equal(badge.display, "none", `${width}px phones should hide the trophy strip`);
+      assert.ok(badge.card.height <= (width <= 360 ? 60 : 64) + 1, `${width}px trophy state should not enlarge the phone rail: ${JSON.stringify(badge)}`);
+      await page.locator(".opponent-trophy-badge").evaluate((node) => node.remove());
+      await page.locator(".opponent-player-card").first().evaluate((node) => node.classList.remove("has-trophies"));
+    }
+    const mapControls = page.locator(".board-map-controls");
+    assert.equal(await mapControls.evaluate((node) => node.open), false, "map controls should start collapsed into a board-edge button");
+    await mapControls.locator("summary").click();
     let layout = await inspectLayout(page, width, height);
     assert.equal(layout.documentOverflow, false, `${width}x${height} should fit the viewport`);
     assert.ok(layout.controls.length >= (width <= 360 ? 2 : 3), `${width}x${height} should expose the expected map controls`);
+    if (width > 700) {
+      assert.ok(await page.locator(".movement-piece").first().isVisible(), "desktop order cards should be visible");
+      const queue = await page.locator(".movement-checklist").boundingBox();
+      assert.ok(queue && Math.abs(queue.x + queue.width / 2 - width / 2) <= 2, `desktop orders should be horizontally centered: ${JSON.stringify(queue)}`);
+      assert.ok(queue.width < 360, `short rosters should not leave a wide empty order panel: ${JSON.stringify(queue)}`);
+    }
 
     if (width > 700) {
       assert.equal(layout.minimap?.visible, false, "the overview minimap is opt-in");
-      await page.getByRole("button", { name: "Open monster, military and map record" }).click();
+      await page.locator(".persistent-record .mobile-record-toggle").click();
       await page.getByRole("tab", { name: "Monster" }).click();
       const monsterRecord = await page.locator("#record-panel").innerText();
       assert.match(monsterRecord, /♥\s*\d+\/\d+/);
@@ -154,6 +228,15 @@ try {
       await page.waitForFunction(() => document.querySelector(".mobile-command-toggle")?.getAttribute("aria-expanded") === "true");
       const tabs = page.getByRole("tablist", { name: "Record view" });
       await tabs.waitFor({ state: "visible" });
+      const mobileOrder = page.locator(".movement-piece").first();
+      assert.ok(await mobileOrder.isVisible(), "expanded mobile command sheet should show its order cards");
+      const mobileOrderBounds = await mobileOrder.evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        const list = node.parentElement.getBoundingClientRect();
+        const style = getComputedStyle(node);
+        return { item: { x: box.x, y: box.y, width: box.width, height: box.height }, list: { x: list.x, y: list.y, width: list.width, height: list.height }, text: node.innerText, display: style.display, visibility: style.visibility, opacity: style.opacity, color: style.color, background: style.backgroundColor };
+      });
+      assert.ok(mobileOrderBounds.item.x >= Math.max(0, mobileOrderBounds.list.x) - 1 && mobileOrderBounds.item.x + mobileOrderBounds.item.width <= Math.min(width, mobileOrderBounds.list.x + mobileOrderBounds.list.width) + 1 && mobileOrderBounds.item.y >= mobileOrderBounds.list.y - 1 && mobileOrderBounds.item.y + mobileOrderBounds.item.height <= mobileOrderBounds.list.y + mobileOrderBounds.list.height + 1, `mobile order card should be fully inside the visible horizontal list: ${JSON.stringify(mobileOrderBounds)}`);
       await page.getByRole("tab", { name: "Monster" }).click();
       const monsterRecord = await page.locator("#record-panel").innerText();
       assert.match(monsterRecord, /♥\s*\d+\/\d+/);
@@ -163,7 +246,7 @@ try {
       assert.match(await page.locator("#record-panel").innerText(), /Military Record|Research cards/i);
       for (const tab of await page.getByRole("tab").all()) {
         const box = await tab.boundingBox();
-        assert.ok(box && box.height >= 44 && box.width >= 44, `${width}x${height} record tab needs a 44px target; got ${JSON.stringify(box)}`);
+        assert.ok(box && box.height >= 43.5 && box.width >= 43.5, `${width}x${height} record tab needs a 44px target within subpixel layout tolerance; got ${JSON.stringify(box)}`);
       }
       await page.getByRole("tab", { name: "Map" }).click();
       await page.getByRole("button", { name: "Board overview. Click to move camera; arrow keys pan." }).waitFor({ state: "visible" });
@@ -190,6 +273,98 @@ try {
     console.log(JSON.stringify({ ok: true, viewport: `${width}x${height}`, board: "human-audited-north-america", cells: 336, mapControls: layout.controls.length, minimap: "hidden-by-default" }));
     await context.close();
   }
+
+  const soloContext = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  const soloPage = await soloContext.newPage();
+  soloPage.setDefaultTimeout(10000);
+  soloPage.on("pageerror", (error) => failures.push(`solo: ${error.message}`));
+  await soloPage.addInitScript(() => {
+    const nativeGetRandomValues = crypto.getRandomValues.bind(crypto);
+    Object.defineProperty(crypto, "getRandomValues", { configurable: true, value: (array) => {
+      if (array instanceof Uint32Array && array.length === 1) { array[0] = 1; return array; }
+      return nativeGetRandomValues(array);
+    } });
+  });
+  await soloPage.goto(url, { waitUntil: "domcontentloaded" });
+  await soloPage.getByRole("button", { name: "Play solo vs bots", exact: true }).click();
+  await soloPage.locator(".setup-panel").waitFor({ state: "visible" });
+  for (let attempt = 0; attempt < 16 && await soloPage.locator(".setup-panel").count(); attempt += 1) {
+    const list = soloPage.locator(".lair-selection-prompt details");
+    if (await list.count() && !(await list.evaluate((node) => node.open))) await list.locator("summary").click();
+    const choices = soloPage.locator(".setup-panel .setup-options button:visible:not(:disabled)");
+    await choices.first().waitFor({ state: "visible" });
+    await choices.first().click();
+    await soloPage.waitForTimeout(80);
+  }
+  await soloPage.locator(".setup-panel").waitFor({ state: "detached" });
+  await soloPage.waitForFunction(() => document.querySelector(".action-card h2")?.textContent?.includes("Move"));
+
+  const playerOneName = (await soloPage.locator(".persistent-record .record-preview strong").textContent())?.trim();
+  assert.ok(playerOneName, "the solo player's monster record should be present before the first turn");
+  const humanCamera = await soloPage.locator(".map-canvas").getAttribute("style");
+  await soloPage.locator(".movement-checklist .end-movement").evaluate((node) => (node instanceof HTMLButtonElement) && node.click());
+  const resolveEncounter = soloPage.locator(".board-action-bar .action-dock > button");
+  await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("Encounter"));
+  await resolveEncounter.click();
+  await soloPage.getByRole("button", { name: "Reveal encounter", exact: true }).click();
+  for (let step = 0; step < 12; step += 1) {
+    const revealRolls = soloPage.getByRole("button", { name: "Reveal remaining rolls", exact: true });
+    if (await revealRolls.isVisible().catch(() => false)) { await revealRolls.click(); continue; }
+    const revealCard = soloPage.getByRole("button", { name: "Reveal card", exact: true });
+    if (await revealCard.isVisible().catch(() => false)) { await revealCard.click(); continue; }
+    const reward = soloPage.locator(".resolution-encounter .cinema-choice button:visible").first();
+    if (await reward.isVisible().catch(() => false)) { await reward.click(); continue; }
+    const returnToBoard = soloPage.locator(".resolution-encounter .cinema-primary").filter({ hasText: "Return to board" }).last();
+    if (await returnToBoard.isVisible().catch(() => false)) { await returnToBoard.click(); break; }
+    await soloPage.waitForTimeout(100);
+  }
+  await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("Deploy"));
+  await soloPage.locator(".board-action-bar .action-dock > button").click();
+  await soloPage.getByRole("button", { name: /Military research/ }).last().click();
+  await soloPage.getByRole("button", { name: "Draw a Military Research card instead of deploying a unit" }).click();
+  await soloPage.locator("dialog.resolution-research").waitFor({ state: "visible" });
+  await soloPage.locator("dialog.resolution-research .resolution-close").click();
+  const militaryClose = soloPage.locator(".military-drawer .military-sheet-close").last();
+  if (await militaryClose.isVisible().catch(() => false)) await militaryClose.click();
+
+  await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("BOT TURN"));
+  const botCamera = await soloPage.locator(".map-canvas").getAttribute("style");
+  assert.equal(botCamera, humanCamera, "a solo bot turn should leave the camera on the player's board view");
+  const followBot = soloPage.getByRole("button", { name: "Follow bot", exact: true });
+  await followBot.waitFor({ state: "visible" });
+  const ownRecordToggle = soloPage.locator(".persistent-record .mobile-record-toggle");
+  await ownRecordToggle.click();
+  await soloPage.getByRole("tab", { name: "Monster", exact: true }).waitFor({ state: "visible" });
+  const ownRecord = await soloPage.locator("#record-panel").innerText();
+  assert.match(ownRecord, /PLAYER 1/i, "the solo record should remain assigned to Player 1 during a bot turn");
+  assert.ok(ownRecord.toLocaleLowerCase().includes(playerOneName.toLocaleLowerCase()), `the persistent record should still show ${playerOneName} while bots act`);
+  await ownRecordToggle.click();
+  await soloPage.setViewportSize({ width: 390, height: 844 });
+  const mobileRecordToggle = soloPage.locator(".mobile-command-toggle");
+  await mobileRecordToggle.waitFor({ state: "visible" });
+  assert.ok((await mobileRecordToggle.getAttribute("aria-label"))?.toLocaleLowerCase().includes(playerOneName.toLocaleLowerCase()), "the phone medallion should still identify the solo player's monster during a bot turn");
+  await mobileRecordToggle.click();
+  await soloPage.waitForFunction(() => document.querySelector(".mobile-command-toggle")?.getAttribute("aria-expanded") === "true");
+  const mobileOwnRecord = await soloPage.locator("#record-panel").innerText();
+  assert.match(mobileOwnRecord, /PLAYER 1/i);
+  assert.ok(mobileOwnRecord.toLocaleLowerCase().includes(playerOneName.toLocaleLowerCase()), "the phone record should stay interactive during a bot turn");
+  await mobileRecordToggle.click();
+  const cameraBeforeFollowing = await soloPage.locator(".map-canvas").getAttribute("style");
+  await followBot.click();
+  assert.equal(await soloPage.locator(".board-action-bar .action-dock > button").getAttribute("aria-pressed"), "true", "following a bot should expose a pressed toggle state");
+  await soloPage.waitForFunction((before) => document.querySelector(".map-canvas")?.getAttribute("style") !== before, cameraBeforeFollowing);
+  await soloPage.waitForFunction(() => {
+    const button = document.querySelector(".board-action-bar .action-dock > button");
+    return button && getComputedStyle(button).backgroundColor === "rgb(150, 80, 34)";
+  });
+  const followColors = await soloPage.locator(".board-action-bar .action-dock > button").evaluate((node) => {
+    const style = getComputedStyle(node);
+    return { foreground: style.color, background: style.backgroundColor };
+  });
+  assert.ok(contrastRatio(followColors.foreground, followColors.background) >= 4.5, `the selected follow control should retain AA text contrast: ${JSON.stringify(followColors)}`);
+  assert.deepEqual(failures.splice(0), [], "the solo browser flow should not report runtime errors");
+  console.log(JSON.stringify({ ok: true, mode: "solo", check: "player record stays interactive; camera follow is opt-in" }));
+  await soloContext.close();
 } finally {
   await browser.close();
   if (server && server.exitCode === null) {

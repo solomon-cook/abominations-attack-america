@@ -71,5 +71,14 @@ const duringAttack = renderToStaticMarkup(React.createElement(RevealedCardsPanel
   runCommand: () => undefined,
 }));
 assert.match(duringAttack, /Play Defense Satellites/);
-assert.match(duringAttack, /<button[^>]*disabled=""[^>]*>Play Defense Satellites/);
-console.log("Defense Satellites is playable from the hand and Fight controls before a battle roll, reports each monster's damage, and is disabled once target resolution is underway.");
+assert.doesNotMatch(duringAttack, /<button[^>]*disabled=""[^>]*>Play Defense Satellites/);
+rolling.pendingRetreat = { battleId: battle.id, monsterId: "monster-1", unitIds: [game.pendingBattles[0]!.militaryUnitIds[0]!], options: {} };
+rolling.pendingDecision = { type: "retreat", playerIndex: 0, battleId: battle.id, unitIds: rolling.pendingRetreat.unitIds };
+const duringRetreat = renderToStaticMarkup(React.createElement(RevealedCardsPanel, {
+  game: projectState(rolling, "player", 0),
+  playerIndex: 0,
+  canAct: true,
+  runCommand: () => undefined,
+}));
+assert.doesNotMatch(duringRetreat, /<button[^>]*disabled=""[^>]*>Play Defense Satellites/);
+console.log("Defense Satellites is playable across the active turn, including Fight and retreat, reports each monster's damage, and stays available between target decisions.");

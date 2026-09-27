@@ -33,7 +33,7 @@ function effectIcon(type: string) {
 export function EncounterResultPanel({ eventId, effects, rolls, choices, stomped, remainingStompMarkers, challenge, mutationDraws, nextPhase }: Props) {
   if (!eventId) return null;
   return (
-    <section className="encounter-result" key={eventId} aria-live="polite" aria-label="Recorded encounter result">
+    <section className="encounter-result" key={eventId} data-event-id={eventId} aria-live="polite" aria-label="Recorded encounter result">
       <span className="label">LAST ENCOUNTER</span>
       {choices.length > 0 && <p className="encounter-choice-note">Choose: {choices.join(" or ")}.</p>}
       {rolls.length > 0 && <div className="combat-roll-list encounter-roll-list" aria-label="Recorded encounter dice rolls">

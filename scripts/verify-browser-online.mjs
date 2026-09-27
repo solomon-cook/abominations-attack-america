@@ -231,7 +231,7 @@ try {
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second Move phase");
   await spectator.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "spectator Move projection");
   for (const [browser, targetPlayer, label] of [[first, "Player 2", "online opponent"], [spectator, "Player 1", "spectator player"]]) {
-    const clickedPortrait = await browser.evaluate(`(() => { const button = [...document.querySelectorAll(".opponent-portrait")].find((candidate) => candidate.getAttribute("aria-label")?.startsWith(${JSON.stringify(targetPlayer)})); if (!button) return false; button.click(); return true; })()`);
+    const clickedPortrait = await browser.evaluate(`(() => { const button = [...document.querySelectorAll(".opponent-player-card")].find((candidate) => candidate.getAttribute("aria-label")?.startsWith(${JSON.stringify(targetPlayer)})); if (!button) return false; button.click(); return true; })()`);
     if (!clickedPortrait) throw new Error(`${label} portrait was missing.`);
     await browser.waitFor(`!!document.querySelector("#player-public-status")`, `${label} public status`);
     const opened = await browser.evaluate(`document.querySelector("#player-public-status")?.textContent ?? ""`);
@@ -285,7 +285,7 @@ try {
   await second.evaluate("location.reload()");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
   await first.waitFor(`document.querySelectorAll(".hex-tile.legal:not(:disabled)").length > 0`, "online legal movement destination");
-  if (!await first.evaluate(`(() => { const tiles = [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")]; const tile = tiles.find((candidate) => candidate.querySelector('img[alt^="Navy "]')) ?? tiles.find((candidate) => candidate.getAttribute("data-location-name") === "Denver") ?? tiles[0]; tile?.click(); return Boolean(tile); })()`)) throw new Error("First browser could not select an online legal destination.");
+  if (!await first.evaluate(`(() => { const tiles = [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")]; const diceCities = new Set(["1,5", "2,7", "3,-1", "5,6", "12,3", "12,5", "13,-3", "15,-3", "15,-1", "17,-4", "17,0", "18,-5", "18,-4", "18,2", "19,-4", "20,2", "21,-8", "21,-6", "21,-5"]); const tile = tiles.find((candidate) => diceCities.has(candidate.dataset.hexKey)) ?? tiles.find((candidate) => candidate.getAttribute("aria-label")?.includes("infamy-site")) ?? tiles.find((candidate) => !candidate.getAttribute("aria-label")?.includes("military-base")) ?? tiles.find((candidate) => candidate.querySelector('img[alt^="Navy "]')) ?? tiles[0]; tile?.click(); return Boolean(tile); })()`)) throw new Error("First browser could not select an online legal destination.");
   await first.waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm move")`, "online path confirmation");
   if (!await first.click("Confirm move")) throw new Error("First browser could not confirm the online path.");
   await first.waitFor(`!!document.querySelector(".end-movement:not(:disabled)")`, "online movement completion control");
@@ -317,15 +317,62 @@ try {
   }
   const postFightPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(postFightPhase)}`, "second synchronized post-Fight phase");
+  for (const browser of [first, second, spectator]) {
+    await browser.evaluate(`(() => {
+      window.__boardPlaybackEvents = [];
+      window.__boardPlaybackSnapshots = [];
+      new MutationObserver(() => {
+        const playback = document.querySelector(".board-event-playback");
+        const eventId = playback?.getAttribute("data-event-id");
+        if (eventId && !window.__boardPlaybackEvents.includes(eventId)) window.__boardPlaybackEvents.push(eventId);
+        if (eventId && playback?.dataset.outcomeVisible === "true") {
+          window.__boardPlaybackSnapshots.push({
+            eventId,
+            action: playback.dataset.eventAction,
+            rollCount: Number(playback.dataset.rollCount),
+            cards: [...playback.querySelectorAll(".board-event-card")].map((card) => ({ className: card.className, label: card.getAttribute("aria-label"), text: card.textContent?.trim() ?? "" })),
+          });
+        }
+      }).observe(document.body, { attributes: true, attributeFilter: ["data-event-action", "data-outcome-visible", "data-roll-count"], childList: true, subtree: true });
+    })()`);
+  }
+  const [firstIdentity, secondIdentity] = await Promise.all([first, second].map((browser) => browser.evaluate(`(async () => {
+    const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+    const endpoint = ${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "");
+    const room = await (await fetch(endpoint)).json();
+    return room.participants.find((participant) => participant.id === session.participantId)?.playerIndex;
+  })()`)));
+  const encounterActorIndex = await first.evaluate(`(async () => {
+    const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+    const endpoint = ${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "");
+    const room = await (await fetch(endpoint)).json();
+    return room.state.pendingDecision?.playerIndex ?? room.state.currentPlayer;
+  })()`);
+  const opponentBrowser = encounterActorIndex === firstIdentity ? second : first;
+  const opponentEncounterDicePromise = opponentBrowser.waitFor(`(() => { const playback = document.querySelector(".board-event-playback"); return playback?.dataset.outcomeVisible === "true" && Number(playback.dataset.rollCount) > 0; })()`, "opponent Encounter dice playback").then(() => true, () => false);
   const clickEncounterDecision = async () => {
     for (const [browser, label] of [[first, "first"], [second, "second"]]) {
-      const clicked = await browser.evaluate(`(() => { const button = [...document.querySelectorAll(".action-card button")].find((candidate) => !candidate.disabled); if (!button) return false; button.click(); return true; })()`);
+      const clicked = await browser.evaluate(`(() => {
+        const trophy = [...document.querySelectorAll('button[aria-label*="as trophy"]')].find((candidate) => !candidate.disabled);
+        if (trophy) { trophy.click(); return true; }
+        const trophyTile = document.querySelector(".hex-tile.trophy-legal:not(:disabled)");
+        if (trophyTile) { trophyTile.click(); return true; }
+        const stageAction = [...document.querySelectorAll(".resolution-stage button")].find((candidate) => !candidate.disabled && /Reveal encounter|Take .* Health|Take .* Infamy|Return to board|Roll die|Reveal remaining rolls/.test(candidate.textContent.trim()));
+        if (stageAction) { stageAction.click(); return true; }
+        const details = document.querySelector("#phase-command-context");
+        if (details) details.open = true;
+        const button = [...document.querySelectorAll(".path-controls button")].find((candidate) => !candidate.disabled && /^(Resolve encounter|Take .* Health|Take .* Infamy instead)$/.test(candidate.textContent.trim()));
+        if (!button) return false;
+        button.click();
+        return true;
+      })()`);
       if (clicked) {
         await browser.waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${label} Encounter response`);
         return true;
       }
     }
-    return false;
+    const diagnostic = await Promise.all([first, second].map((browser) => browser.evaluate(`({ phase: document.querySelector(".action-card h2")?.textContent?.trim(), stage: document.querySelector(".resolution-stage[open]")?.innerText, controls: [...document.querySelectorAll(".path-controls button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), pending: document.querySelector(".deployment-prompt")?.textContent?.trim() })`)));
+    throw new Error(`Encounter remained active without an enabled legal decision control in either player session: ${JSON.stringify(diagnostic)}`);
   };
   const encounterAction = await clickEncounterDecision();
   if (!encounterAction) throw new Error("First browser exposed no legal Encounter action.");
@@ -338,9 +385,64 @@ try {
   }
   let postEncounterPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(postEncounterPhase)}`, "second synchronized post-encounter phase");
+  const encounterPlayback = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`({
+    events: window.__boardPlaybackEvents ?? [],
+    modalOpen: Boolean(document.querySelector(".resolution-stage[open]")),
+    playbackLabel: document.querySelector(".board-event-playback")?.getAttribute("aria-label") ?? "",
+    recordedEncounter: document.querySelector(".encounter-result")?.getAttribute("data-event-id") ?? "",
+    playbackSnapshots: window.__boardPlaybackSnapshots ?? [],
+    phase: document.querySelector(".action-card h2")?.textContent?.trim() ?? ""
+  })`)));
+  if (!encounterPlayback.some((view) => view?.events?.length)) {
+    const eventTrace = await first.evaluate(`(async () => {
+      const token = JSON.parse(localStorage.getItem("abominations-session") ?? "{}").token ?? "";
+      const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(token));
+      const state = (await response.json()).state;
+      return state.eventLog.map((event) => ({ action: event.action, playerIndex: event.detail.playerIndex, location: event.detail.location }));
+    })()`);
+    throw new Error(`No opponent or spectator received the board encounter playback: ${JSON.stringify({ encounterPlayback, eventTrace })}`);
+  }
+  const encounterPresentationEvents = await first.evaluate(`(async () => {
+    const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+    const endpoint = ${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "");
+    const room = await (await fetch(endpoint)).json();
+    return room.state.eventLog.filter((event) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required"].includes(event.action))
+      .map((event) => ({ id: event.id, action: event.action, playerIndex: event.detail.playerIndex }));
+  })()`);
+  const opponentObservedEncounter = encounterPresentationEvents.some((event) =>
+    (event.playerIndex === firstIdentity && encounterPlayback[1]?.events?.includes(event.id))
+    || (event.playerIndex === secondIdentity && encounterPlayback[0]?.events?.includes(event.id)));
+  if (!opponentObservedEncounter) throw new Error(`The non-acting player did not receive board playback for the other player's Encounter: ${JSON.stringify({ encounterPresentationEvents, firstIdentity, secondIdentity, encounterPlayback })}`);
+  const opponentEncounterRolls = await opponentEncounterDicePromise;
+  if (!opponentEncounterRolls) throw new Error(`The opponent did not see the Encounter dice on the board: ${JSON.stringify(encounterPlayback)}`);
+  if (encounterPlayback[2]?.modalOpen) throw new Error("The spectator saw a modal encounter screen instead of following the board playback.");
+  if (encounterPlayback.filter((view) => view?.modalOpen).length > 1) throw new Error("The encounter screen opened on more than one online client.");
+  if (encounterPlayback.some((view) => /cardId/i.test(view?.playbackLabel ?? ""))) throw new Error("A private card identifier leaked into board playback.");
   let concessionActor;
+  let onlineResearchDraw = "not-reached";
   if (postEncounterPhase === "Deploy") {
-    if (!await first.click("Pass deployment")) throw new Error("First browser could not pass Deploy.");
+    let researchDraw;
+    for (const [browser, browserName] of [[first, "first"], [second, "second"]]) {
+      researchDraw = await browser.evaluate(`(async () => {
+        const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+        const endpoint = ${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "");
+        const room = await (await fetch(endpoint)).json();
+        const participant = room.participants?.find((candidate) => candidate.id === session.participantId);
+        if (participant?.role !== "player" || participant.playerIndex !== room.state.pendingDecision?.playerIndex || room.state.phase !== "deploy") return undefined;
+        if (room.state.decks.research.exhausted) return { skipped: "research-deck-exhausted" };
+        const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/actions`)}, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-room-token": session.token ?? "" },
+          body: JSON.stringify({ envelope: { actionId: crypto.randomUUID(), actorId: session.participantId, expectedRevision: room.version, protocolVersion: 1, command: { type: "draw-research" } } }),
+        });
+        return { status: response.status, body: await response.json(), actorBrowser: ${JSON.stringify(browserName)}, actorPlayerIndex: participant.playerIndex };
+      })()`);
+      if (researchDraw) break;
+    }
+    if (!researchDraw || researchDraw.status !== 200) throw new Error(`No active player could draw Military Research during Deploy: ${JSON.stringify(researchDraw)}`);
+    onlineResearchDraw = "verified";
+    const researchObservers = researchDraw.actorBrowser === "first" ? [second, spectator] : [first, spectator];
+    await Promise.all(researchObservers.map((browser) => browser.waitFor(`(window.__boardPlaybackSnapshots ?? []).some((snapshot) => snapshot.action === "research.drawn" && snapshot.cards.some((card) => card.className.includes("research") && /MILITARY RESEARCH card drawn/.test(card.label ?? "")))`, "generic Military Research observer card")));
     await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first next Move phase");
     await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
     concessionActor = await first.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled); if (!button) return false; button.click(); return true; })()`) ? "first" : await second.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled); if (!button) return false; button.click(); return true; })()`) ? "second" : undefined;
@@ -357,7 +459,7 @@ try {
   await second.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "reloaded second terminal");
   const reloadedTerminal = await second.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
   if (!reloadedTerminal) throw new Error("Reloaded second browser lost the terminal result.");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineConcession: concessionActor ? "verified" : "skipped-after-victory", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineResearchDraw, onlineConcession: concessionActor ? "verified" : "skipped-after-victory", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
 } finally {
   await Promise.all([first?.close(), second?.close(), spectator?.close()]);
   await Promise.all([stopServer(apiServer), stopServer(webServer)]);

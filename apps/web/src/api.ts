@@ -1,5 +1,5 @@
-import { COMMAND_PROTOCOL_VERSION, type GameCommand, type SetupAction } from "@abominations/game-engine";
-import type { PublicRoomSummary, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
+import { COMMAND_PROTOCOL_VERSION, type GameCommand, type GameCommandEnvelope, type SetupAction } from "@abominations/game-engine";
+import type { PublicRoomSummary, RoomPrivacy, RoomSocketServerMessage, RoomView, SessionResponse } from "@abominations/shared";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8787";
 const connectionId = () => {
@@ -28,5 +28,104 @@ export const rotateSession = (code: string, token: string) => request<SessionRes
 export const setReady = (code: string, token: string, ready: boolean) => request<RoomView>(`/rooms/${code.toUpperCase()}/ready`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ ready }) });
 export const sendSetupAction = (code: string, token: string, expectedRevision: number, action: SetupAction) => request<RoomView>(`/rooms/${code.toUpperCase()}/setup`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ expectedRevision, action }) });
 export const readRoom = (code: string, token: string, afterVersion = 0) => request<RoomView>(`/rooms/${code}/state?token=${encodeURIComponent(token)}&afterVersion=${afterVersion}`);
-export const sendCommand = (code: string, token: string, actorId: string, expectedRevision: number, command: GameCommand) => request<RoomView>(`/rooms/${code}/actions`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ envelope: { actionId: crypto.randomUUID(), actorId, expectedRevision, protocolVersion: COMMAND_PROTOCOL_VERSION, command } }) });
+export class SocketUnavailableError extends Error {}
+
+export class RoomCommandChannel {
+  private pending = new Map<string, { resolve: (room: RoomView) => void; reject: (error: Error) => void; timeout: number }>();
+  private disposed = false;
+
+  constructor(private readonly socket: WebSocket) {
+    socket.addEventListener("message", this.onMessage);
+    socket.addEventListener("close", this.onClose);
+    socket.addEventListener("error", this.onClose);
+  }
+
+  submit(envelope: GameCommandEnvelope): Promise<RoomView> {
+    if (this.disposed || this.socket.readyState !== WebSocket.OPEN) {
+      return Promise.reject(new SocketUnavailableError("The room connection is unavailable."));
+    }
+    return new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        this.rejectPending(envelope.actionId, new SocketUnavailableError("The room connection did not confirm the action."));
+      }, 8000);
+      this.pending.set(envelope.actionId, { resolve, reject, timeout });
+      try {
+        this.socket.send(JSON.stringify({ type: "command.submit", envelope }));
+      } catch {
+        this.rejectPending(envelope.actionId, new SocketUnavailableError("The room connection could not send the action."));
+      }
+    });
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.socket.removeEventListener("message", this.onMessage);
+    this.socket.removeEventListener("close", this.onClose);
+    this.socket.removeEventListener("error", this.onClose);
+    for (const actionId of this.pending.keys()) this.rejectPending(actionId, new SocketUnavailableError("The room connection closed."));
+  }
+
+  private onMessage = (event: MessageEvent) => {
+    let message: RoomSocketServerMessage;
+    try {
+      message = JSON.parse(String(event.data)) as RoomSocketServerMessage;
+    } catch {
+      return;
+    }
+    if (message.type === "command.accepted") {
+      this.resolvePending(message.actionId, message.room);
+    } else if (message.type === "command.rejected") {
+      this.rejectPending(message.actionId, new Error(message.error));
+    } else if (message.type === "protocol.error") {
+      for (const actionId of this.pending.keys()) this.rejectPending(actionId, new Error(message.error));
+    }
+  };
+
+  private onClose = () => {
+    for (const actionId of this.pending.keys()) this.rejectPending(actionId, new SocketUnavailableError("The room connection closed."));
+  };
+
+  private resolvePending(actionId: string, room: RoomView): void {
+    const pending = this.pending.get(actionId);
+    if (!pending) return;
+    window.clearTimeout(pending.timeout);
+    this.pending.delete(actionId);
+    pending.resolve(room);
+  }
+
+  private rejectPending(actionId: string, error: Error): void {
+    const pending = this.pending.get(actionId);
+    if (!pending) return;
+    window.clearTimeout(pending.timeout);
+    this.pending.delete(actionId);
+    pending.reject(error);
+  }
+}
+
+export const sendCommand = async (
+  code: string,
+  token: string,
+  actorId: string,
+  expectedRevision: number,
+  command: GameCommand,
+  channel?: RoomCommandChannel | null,
+) => {
+  const envelope: GameCommandEnvelope = {
+    actionId: crypto.randomUUID(),
+    actorId,
+    expectedRevision,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command,
+  };
+  if (channel) {
+    try {
+      return await channel.submit(envelope);
+    } catch (error) {
+      if (!(error instanceof SocketUnavailableError)) throw error;
+      // Reuse the action ID so a command accepted just before a disconnect is idempotent.
+    }
+  }
+  return request<RoomView>(`/rooms/${code}/actions`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ envelope }) });
+};
 export const websocketUrl = (code: string, token: string) => `${API_URL.replace(/^http/, "ws")}/ws?code=${encodeURIComponent(code)}&token=${encodeURIComponent(token)}`;
