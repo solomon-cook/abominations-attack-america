@@ -96,7 +96,9 @@ function featureValue(state: GameState, location: HexKey): number {
 
 function highRollCityRegionBonus(state: GameState, destination: HexKey, monster: GameState["monsters"][number] | undefined): number {
   if (!monster) return 0;
-  const cityPreference = monster.name === "Megaclaw" ? 0.25 : monster.name === "Toxicor" && monster.health >= 20 ? 0.2 : 1;
+  const healthNeed = Math.max(0, Math.min(1, (monster.maxHealth - monster.health) / Math.max(1, monster.maxHealth)));
+  const cityPreference = monster.name === "Megaclaw" ? 0.25 : monster.name === "Toxicor" && monster.health >= 20 ? 0.2 : monster.name === "Zorb" && monster.infamy < 6 ? 1 : healthNeed;
+  if (cityPreference <= 0) return 0;
   const board = boardForState(state);
   const nearbyHighRollCities = Object.values(board.hexes).flatMap((hex) => {
     if (state.stompedLocations.includes(hex.key) || hexDistance(state, destination, hex.key) > 6) return [];
@@ -106,6 +108,14 @@ function highRollCityRegionBonus(state: GameState, destination: HexKey, monster:
       : [];
   });
   return Math.min(8, nearbyHighRollCities.reduce((sum, value) => sum + value, 0) * 0.8 * cityPreference);
+}
+
+function monsterHealthNeed(monster: GameState["monsters"][number]): number {
+  return Math.max(0, Math.min(1, (monster.maxHealth - monster.health) / Math.max(1, monster.maxHealth)));
+}
+
+function monsterInfamyNeed(monster: GameState["monsters"][number]): number {
+  return Math.max(0, Math.min(1, (10 - monster.infamy) / 10));
 }
 
 const challengeMutationPriority: Readonly<Record<string, number>> = {
@@ -215,22 +225,40 @@ function tileScore(state: GameState, destination: HexKey, playerIndex: number, b
       const healing = city.benefit.kind === "health" ? city.benefit.amount : city.benefit.dice * 3.5;
       score += monster.health < 20 ? 15 + healing : 5;
     } else {
-      score += monsterTurn ? monster?.name === "Zorb" && monster.infamy < 3 ? 15 : 8 : 1;
+      const healthNeed = monster ? monsterHealthNeed(monster) : 0;
+      score += monsterTurn
+        ? monster?.name === "Zorb" && monster.infamy < 6 ? 9 + Math.max(0, 3 - monster.infamy) * 2 + healthNeed * 4 : 2 + healthNeed * 11
+        : 1;
     }
     if (monsterTurn && city.benefit.kind === "health-roll" && city.benefit.dice >= 2) {
-      const cityPreference = monster?.name === "Megaclaw" ? 0.25 : monster?.name === "Toxicor" && monster.health >= 20 ? 0.2 : 1;
+      const cityPreference = monster ? monster.name === "Megaclaw" ? 0.25 : monster.name === "Toxicor" && monster.health >= 20 ? 0.2 : monster.name === "Zorb" && monster.infamy < 6 ? 1 : monsterHealthNeed(monster) : 0;
       score += city.benefit.dice * 2 * cityPreference;
     }
   }
   if (objectiveAvailable && features.some((feature) => feature.kind === "infamy-site")) {
-    score += monsterTurn ? monster?.name === "Megaclaw" && monster.infamy < 4 ? 14 : 7 : 0;
+    const infamyNeed = monster ? monsterInfamyNeed(monster) : 0;
+    score += monsterTurn ? 4 + infamyNeed * 8 + (monster?.name === "Megaclaw" ? 5 : 0) : 0;
   }
-  if (features.some((feature) => feature.kind === "military-base")) score += monsterTurn ? 2 : 4;
+  if (monsterTurn && monster && objectiveAvailable) {
+    const infamyNeed = monsterInfamyNeed(monster);
+    for (const feature of features) {
+      if (feature.kind !== "military-base") continue;
+      const baseOwner = state.setupAssignments?.findIndex((seat) => seat.branch === feature.branch) ?? -1;
+      const rivalBase = baseOwner >= 0 && baseOwner !== playerIndex;
+      score += rivalBase ? 7 + infamyNeed * 7 : 2 + infamyNeed * 2;
+    }
+  } else if (features.some((feature) => feature.kind === "military-base")) {
+    score += monsterTurn ? 0 : 4;
+  }
   if (features.some((feature) => feature.kind === "lair")) score += monsterTurn ? 0 : 2;
   if (location?.name === "Hollywood") score += monsterTurn ? 3 : 1;
   if (monsterTurn && monster?.name === "Toxicor") {
     const unusedMutationSites = features.filter((feature) => feature.kind === "mutation-site" && !(state.mutationSiteUses[monster.id] ?? []).includes(feature.siteId)).length;
     score += unusedMutationSites * (monster.health >= 20 ? 20 : 4);
+  } else if (monsterTurn && monster && !state.decks.mutation.exhausted && state.round <= 3 && monsterHealthNeed(monster) <= 0.25) {
+    const unusedMutationSites = features.filter((feature) => feature.kind === "mutation-site" && !(state.mutationSiteUses[monster.id] ?? []).includes(feature.siteId)).length;
+    const mutationsHeld = state.players[playerIndex]?.mutationCardIds.length ?? 0;
+    score += unusedMutationSites * Math.max(0, 11 - mutationsHeld * 3);
   }
   if (monsterTurn) score += highRollCityRegionBonus(state, destination, monster);
 
@@ -238,9 +266,15 @@ function tileScore(state: GameState, destination: HexKey, playerIndex: number, b
   const friendlyUnits = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location === destination);
   const hostileUnits = state.units.filter((unit) => unit.ownerPlayer !== undefined && unit.ownerPlayer !== playerIndex && unit.location === destination);
   if (monsterTurn) {
+    const prioritizesHealth = Boolean(monster && (monsterHealthNeed(monster) > 0.25
+      || monster.name === "Toxicor" && monster.health < 20
+      || monster.name === "Zorb" && monster.infamy < 6));
+    const unusedMutationSites = Boolean(monster && !state.decks.mutation.exhausted && state.round <= 3 && monsterHealthNeed(monster) <= 0.25)
+      || Boolean(monster?.name === "Toxicor" && monster.health >= 20);
     const nextObjectiveDistance = Object.values(board.hexes)
-      .filter((candidate) => !state.stompedLocations.includes(candidate.key) && candidate.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site"
-        || monster?.name === "Toxicor" && monster.health >= 20 && feature.kind === "mutation-site" && !(state.mutationSiteUses[monster.id] ?? []).includes(feature.siteId)))
+      .filter((candidate) => !state.stompedLocations.includes(candidate.key) && candidate.features.some((feature) => feature.kind === "infamy-site" || feature.kind === "military-base"
+        || prioritizesHealth && feature.kind === "city"
+        || unusedMutationSites && feature.kind === "mutation-site" && monster && !(state.mutationSiteUses[monster.id] ?? []).includes(feature.siteId)))
       .reduce((nearest, candidate) => Math.min(nearest, hexDistance(state, destination, candidate.key)), 99);
     score += Math.max(0, 5 - nextObjectiveDistance) * 2;
     const danger = hostileUnits.reduce((sum, unit) => sum + unit.damage + (unit.unitTypeId?.includes("missile") ? 2 : 0), 0);
