@@ -51,10 +51,10 @@ const monsterPlans: Record<string, string> = {
 };
 
 const branchPlans: Record<BotBranch, string> = {
-  Army: "Block the next city or lair with tanks; stack missile launchers behind the screen.",
-  Navy: "Use fighters to close distance and hold submarines in launch range; concentrate only when the target is vulnerable.",
-  "Air Force": "Mass fighters, save cruise missiles for a high value strike, and draw Research when a counter can swing the matchup.",
-  Marines: "Bring rocket launchers together for a decisive volley; use fighters to reach the engagement.",
+  Army: "Use tanks to screen threatened cities and Army bases, with missile launchers one step behind the line.",
+  Navy: "Cover coastal cities and Navy bases with fighters; keep submarines near the coast for supported strikes.",
+  "Air Force": "Spread fighters across threatened cities and bases; save cruise missiles for a decisive strike.",
+  Marines: "Guard the most threatened city approaches with rocket launchers and use fighters as a rapid reserve.",
 };
 
 const counterPicks: Record<string, readonly string[]> = {
@@ -243,20 +243,23 @@ function bestPath(paths: HexKey[][], score: (destination: HexKey) => number): He
   return [...paths].sort((a, b) => score(b.at(-1)!) - score(a.at(-1)!) || a.length - b.length)[0];
 }
 
-function nearestTargetScore(state: GameState, destination: HexKey, playerIndex: number, branch: BotBranch, routeScores?: ReadonlyMap<HexKey, number>): number {
+function nearestTargetScore(state: GameState, destination: HexKey, playerIndex: number, branch: BotBranch, routeScores?: ReadonlyMap<HexKey, number>, unitTypeId = ""): number {
   const board = boardForState(state);
   const location = board.hexes[destination];
   const threats = state.monsters.filter((monster, index) => index !== playerIndex && monster.health > 0 && typeof monster.location === "string");
-  if (!location || !threats.length) return tileScore(state, destination, playerIndex, branch, false);
+  if (!location) return 0;
+  const protectionScores = routeScores ?? routeBlockScores(state, playerIndex, branch);
+  const routeBlocking = protectionScores.get(destination) ?? 0;
+  const roleBonus = militaryRoleBonus(state, destination, branch, unitTypeId, routeBlocking);
+  if (!threats.length) return tileScore(state, destination, playerIndex, branch, false) + routeBlocking + roleBonus;
   const focus = focusTarget(state, playerIndex, branch);
-  if (!focus) return tileScore(state, destination, playerIndex, branch, false);
+  if (!focus) return tileScore(state, destination, playerIndex, branch, false) + routeBlocking + roleBonus;
   const distance = hexDistance(state, destination, focus.location);
   const pressure = (branch === "Army" || branch === "Marines" ? 3.2 : 2.6) * Math.max(0, 9 - distance);
   const blocker = distance <= 2 && focus.infamy >= 2 ? 6 : 0;
   const focusWounded = focus.health < 8 ? 5 : 0;
   const nearbyForce = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location !== "record-tile" && unit.location !== "permanently-removed" && hexDistance(state, unit.location, focus.location) <= 2).length;
   const massing = Math.max(0, 3 - nearbyForce) * (distance <= 2 ? 3 : 1.2);
-  const routeBlocking = (routeScores ?? routeBlockScores(state, playerIndex)).get(destination) ?? 0;
   const attackedMonster = threats.find((monster) => monster.location === destination);
   const forceAtEngagement = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location === destination).length + 1;
   const prematureAttack = attackedMonster && !(attackedMonster.health <= 5 && forceAtEngagement >= 3) ? -35 : 0;
@@ -281,13 +284,13 @@ function focusTarget(state: GameState, playerIndex: number, branch: BotBranch) {
     .sort((a, b) => b.score - a.score)[0]?.monster;
 }
 
-/** Military positions on a monster's legal route to an unclaimed city or Infamy site gain blocking value. */
-export function routeBlockScores(state: GameState, actor = state.currentPlayer): Map<HexKey, number> {
+/** Military positions along threatened city, branch-base, and Infamy routes gain defensive value. */
+export function routeBlockScores(state: GameState, actor = state.currentPlayer, branch = (state.setupAssignments?.[actor]?.branch ?? "Army") as BotBranch): Map<HexKey, number> {
   const scores = new Map<HexKey, number>();
   const board = boardForState(state);
   const forceFirst = botTacticForPlayer(state, actor) === "force-first";
   const goals = Object.values(board.hexes).filter((hex) => !state.stompedLocations.includes(hex.key)
-    && hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site"));
+    && hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site" || feature.kind === "military-base"));
   for (const monster of state.monsters) {
     const start = monster.location as HexKey;
     if (monster.health <= 0 || !board.hexes[start]) continue;
@@ -305,12 +308,17 @@ export function routeBlockScores(state: GameState, actor = state.currentPlayer):
         const steps = path.length - 1;
         if (current === goal.key) {
           shortest = steps;
-          const value = featureValue(state, goal.key);
-          path.slice(1, -1).forEach((key, index) => {
+          const city = goal.features.some((feature) => feature.kind === "city");
+          const ownBase = goal.features.some((feature) => feature.kind === "military-base" && feature.branch === branch);
+          const value = (city ? 13 : 0) + (ownBase ? 10 : goal.features.some((feature) => feature.kind === "military-base") ? 7 : 4);
+          const defenders = state.units.filter((unit) => unit.ownerPlayer === actor && unit.location !== "record-tile" && unit.location !== "permanently-removed" && hexDistance(state, unit.location, goal.key) <= 1).length;
+          const coverage = defenders === 0 ? 1 : defenders === 1 ? 0.7 : 0.5;
+          const turnsAway = Math.ceil(steps / Math.max(1, monster.move));
+          const urgency = turnsAway <= 1 ? 1 : turnsAway === 2 ? 0.75 : 0.5;
+          path.slice(1).forEach((key, index) => {
             const toGoal = steps - index - 1;
-            const pressure = forceFirst
-              ? value * 2 + 4 + Math.max(0, 5 - toGoal) * 3
-              : value * 1.5 + 2 + Math.max(0, 4 - toGoal) * 2;
+            const approach = Math.max(0, 4 - toGoal) * 2;
+            const pressure = (value * urgency + approach) * coverage * (forceFirst ? 1.15 : 0.9);
             scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
           });
           continue;
@@ -327,6 +335,18 @@ export function routeBlockScores(state: GameState, actor = state.currentPlayer):
     }
   }
   return scores;
+}
+
+function militaryRoleBonus(state: GameState, destination: HexKey, branch: BotBranch, unitTypeId: string, routeScore: number): number {
+  if (routeScore < 8) return 0;
+  const hex = boardForState(state).hexes[destination];
+  const threatenedBase = hex?.features.some((feature) => feature.kind === "military-base" && feature.branch === branch) ?? false;
+  const threatenedCity = hex?.features.some((feature) => feature.kind === "city") ?? false;
+  const threatenedCoast = hex?.waterClass === "sea" || hex?.waterClass === "seacoast";
+  if (branch === "Army") return unitTypeId === "army-tank" ? 3 : unitTypeId === "army-missile-launcher" ? 1 : 0;
+  if (branch === "Navy") return unitTypeId === "navy-fighter" && threatenedCoast ? 4 : unitTypeId === "navy-nuclear-submarine" && threatenedCoast ? 3 : 0;
+  if (branch === "Air Force") return unitTypeId === "air-force-fighter" ? 3 : unitTypeId === "air-force-cruise-missile" && (threatenedCity || threatenedBase) ? -4 : 0;
+  return unitTypeId === "marines-rocket-launcher" ? 4 : unitTypeId === "marines-fighter" ? 2 : 0;
 }
 
 function retreatCommand(state: GameState): GameCommand {
@@ -495,7 +515,7 @@ export function chooseBotCommand(state: GameState): GameCommand | undefined {
     }
     const options = deploymentChoices(state);
     if (!options.length) return state.deploymentsThisTurn > 0 || state.decks.research.exhausted ? { type: "pass-deploy" } : { type: "draw-research" };
-    const routeScores = routeBlockScores(state, actor);
+    const routeScores = routeBlockScores(state, actor, branch);
     if (shouldDrawResearch(state, actor, branch, options, routeScores)) return { type: "draw-research" };
     const focus = focusTarget(state, actor, branch);
     const deploymentScore = (option: typeof options[number]) => Math.max(...option.destinations.map((destination) => {
@@ -504,10 +524,10 @@ export function chooseBotCommand(state: GameState): GameCommand | undefined {
       const immediateAttack = target && target.health <= 5 && attackersAtTarget >= 3 ? 12 : 0;
       const toxicorAmmoPenalty = option.typeId === "air-force-cruise-missile" && focus?.name === "Toxicor" && focus.health > 5 ? 30 : 0;
       const unitPriority = branch === "Marines" && option.typeId === "marines-rocket-launcher" ? 3 : 0;
-      return nearestTargetScore(state, destination, actor, branch, routeScores) + immediateAttack + unitPriority - toxicorAmmoPenalty;
+      return nearestTargetScore(state, destination, actor, branch, routeScores, option.typeId) + immediateAttack + unitPriority - toxicorAmmoPenalty;
     }));
     const choice = [...options].sort((a, b) => deploymentScore(b) - deploymentScore(a))[0]!;
-    const destination = [...choice.destinations].sort((a, b) => nearestTargetScore(state, b, actor, branch, routeScores) - nearestTargetScore(state, a, actor, branch, routeScores))[0]!;
+    const destination = [...choice.destinations].sort((a, b) => nearestTargetScore(state, b, actor, branch, routeScores, choice.typeId) - nearestTargetScore(state, a, actor, branch, routeScores, choice.typeId))[0]!;
     return { type: choice.kind, unitId: choice.id, destination };
   }
   if (decision?.type === "monster-movement") {
@@ -530,9 +550,9 @@ export function chooseBotCommand(state: GameState): GameCommand | undefined {
         if (targets[0]) return { type: "launch-submarine-at-monster", unitId: unit.id, monsterId: targets[0].id };
       }
       const paths = shortestLegalUnitPaths(state, unit.id);
-      const routeScores = routeBlockScores(state, actor);
+      const routeScores = routeBlockScores(state, actor, branch);
       const choice = bestPath(paths, (destination) => {
-        const score = nearestTargetScore(state, destination, actor, branch, routeScores);
+        const score = nearestTargetScore(state, destination, actor, branch, routeScores, unit.unitTypeId);
         const focus = focusTarget(state, actor, branch);
         return unit.unitTypeId === "air-force-cruise-missile" && focus?.name === "Toxicor" && focus.health > 5 && destination === focus.location ? score - 100 : score;
       });
@@ -570,7 +590,7 @@ function explainBotCommand(state: GameState, command: GameCommand, actor: number
     const unit = state.units.find((candidate) => candidate.id === command.unitId);
     const destination = command.type === "move-unit" ? command.path.at(-1) : command.destination;
     if (!destination) return undefined;
-    const routeScore = routeBlockScores(state, actor).get(destination as HexKey) ?? 0;
+    const routeScore = routeBlockScores(state, actor, branch).get(destination as HexKey) ?? 0;
     if (routeScore >= 8 && focus) return `Positioned ${unit?.unitTypeId?.replaceAll("-", " ") ?? branch} on a monster route to block ${focus.name} from the next objective.`;
     if (focus) return `Concentrated ${branch} forces toward ${focus.name}${focus.health < 8 ? " to finish the wounded target" : " for a coordinated attack"}.`;
     return `Deployed ${branch} forces to protect objectives and build an attack group.`;

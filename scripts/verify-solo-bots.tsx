@@ -84,10 +84,10 @@ const monsterTactics: Record<string, string> = {
   Tomanagi: "Contest central objectives",
 };
 const branchTactics: Record<string, string> = {
-  Army: "Block the next city or lair with tanks",
-  Navy: "Use fighters to close distance",
-  "Air Force": "Mass fighters",
-  Marines: "Bring rocket launchers together",
+  Army: "screen threatened cities and Army bases",
+  Navy: "Cover coastal cities and Navy bases",
+  "Air Force": "Spread fighters across threatened cities and bases",
+  Marines: "Guard the most threatened city approaches",
 };
 for (const [monster, tactic] of Object.entries(monsterTactics)) {
   for (const [branch, branchTactic] of Object.entries(branchTactics)) {
@@ -298,6 +298,9 @@ const routes = legalMonsterPaths(routeState, konkMatch.monsters[0]!.id);
 assert.ok(routes.length > 0, "the enemy monster should have legal routes for blocker evaluation");
 for (const branch of ["Army", "Navy", "Air Force", "Marines"] as const) {
   routeState.setupAssignments![1]!.branch = branch;
-  assert.ok(routeBlockScores(routeState).size > 0, `${branch} route scoring should identify spaces where a blocker can intercept objective routes`);
+  const defenseScores = routeBlockScores(routeState, 1, branch);
+  assert.ok(defenseScores.size > 0, `${branch} route scoring should identify spaces where a blocker can intercept objective routes`);
+  assert.ok([...defenseScores.keys()].some((key) => boardForState(routeState).hexes[key]?.features.some((feature) => feature.kind === "city")), `${branch} should cover 3D city spaces`);
+  assert.ok([...defenseScores.keys()].some((key) => boardForState(routeState).hexes[key]?.features.some((feature) => feature.kind === "military-base")), `${branch} should cover military base spaces`);
 }
-console.log("Solo bots keep a seeded force-first or research-first tactic, build attack groups, block monster routes, react with Research at battle timing, and finish a turn with an explanation.");
+console.log("Solo bots vary their tactics, protect city and base routes, coordinate attacks, and use monster-specific challenge plans.");
