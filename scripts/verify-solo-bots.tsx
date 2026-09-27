@@ -155,6 +155,37 @@ assert.equal(mutationRoute?.type, "move");
 if (mutationRoute?.type !== "move") throw new Error("Expected Toxicor to move toward a Mutation site once it reaches 20 Health.");
 assert.ok(movementBoard.hexes[mutationRoute.path.at(-1)!]?.features.some((feature) => feature.kind === "mutation-site"), "Toxicor should pivot to Mutation sites at 20 Health");
 
+const highCityState = beginBotMove(konkMatch);
+const highCityMonster = highCityState.monsters[1]!;
+highCityMonster.name = "Konk";
+highCityMonster.movement = "land-only";
+highCityMonster.move = 4;
+highCityState.monsters[0]!.health = 0;
+highCityState.monsters[0]!.location = "defeated";
+highCityState.units.forEach((unit) => { unit.location = "record-tile"; });
+const highCityBoard = boardForState(highCityState);
+const rollCities = Object.values(highCityBoard.hexes).flatMap((hex) => {
+  const city = hex.features.find((feature) => feature.kind === "city");
+  return city?.benefit.kind === "health-roll" && city.benefit.dice >= 2 ? [{ key: hex.key, dice: city.benefit.dice }] : [];
+}).sort((a, b) => b.dice - a.dice);
+assert.ok(rollCities.length >= 1, "the board should contain a high-roll city");
+let bestRollCity: typeof rollCities[number] | undefined;
+let highCityScenario = false;
+for (const start of Object.keys(highCityBoard.hexes) as Array<keyof typeof highCityBoard.hexes>) {
+  highCityMonster.location = start;
+  const destinations = new Set(legalMonsterPaths(highCityState, highCityMonster.id).map((path) => path.at(-1)!));
+  bestRollCity = rollCities.find((city) => destinations.has(city.key));
+  if (!bestRollCity) continue;
+  highCityState.stompedLocations = Object.keys(highCityBoard.hexes).filter((key) => key !== start && key !== bestRollCity!.key) as typeof highCityState.stompedLocations;
+  highCityScenario = true;
+  break;
+}
+assert.ok(highCityScenario && bestRollCity, "Konk should be able to reach a high-roll city in the movement fixture");
+const highCityMove = chooseBotCommand(highCityState);
+assert.equal(highCityMove?.type, "move");
+if (highCityMove?.type !== "move") throw new Error("Expected Konk to choose a high-roll city route.");
+assert.equal(highCityMove.path.at(-1), bestRollCity.key, "a monster without a conflicting objective plan should prefer a high-roll city");
+
 // Bots randomly commit to a force-first or research-first policy for the full match.
 const researchMatch = createSoloMatch("monster-4");
 const researchState = structuredClone(researchMatch);

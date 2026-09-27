@@ -94,6 +94,20 @@ function featureValue(state: GameState, location: HexKey): number {
   return features.reduce((value, feature) => value + (feature.kind === "city" ? 4 : feature.kind === "infamy-site" ? 5 : feature.kind === "military-base" ? 2 : 0), 0);
 }
 
+function highRollCityRegionBonus(state: GameState, destination: HexKey, monster: GameState["monsters"][number] | undefined): number {
+  if (!monster) return 0;
+  const cityPreference = monster.name === "Megaclaw" ? 0.25 : monster.name === "Toxicor" && monster.health >= 20 ? 0.2 : 1;
+  const board = boardForState(state);
+  const nearbyHighRollCities = Object.values(board.hexes).flatMap((hex) => {
+    if (state.stompedLocations.includes(hex.key) || hexDistance(state, destination, hex.key) > 6) return [];
+    const city = hex.features.find((feature) => feature.kind === "city");
+    return city?.benefit.kind === "health-roll" && city.benefit.dice >= 2
+      ? [city.benefit.dice * Math.max(0, 6 - hexDistance(state, destination, hex.key)) / 5]
+      : [];
+  });
+  return Math.min(8, nearbyHighRollCities.reduce((sum, value) => sum + value, 0) * 0.8 * cityPreference);
+}
+
 const challengeMutationPriority: Readonly<Record<string, number>> = {
   "High-Octane Blood": 100,
   Berserk: 95,
@@ -203,6 +217,10 @@ function tileScore(state: GameState, destination: HexKey, playerIndex: number, b
     } else {
       score += monsterTurn ? monster?.name === "Zorb" && monster.infamy < 3 ? 15 : 8 : 1;
     }
+    if (monsterTurn && city.benefit.kind === "health-roll" && city.benefit.dice >= 2) {
+      const cityPreference = monster?.name === "Megaclaw" ? 0.25 : monster?.name === "Toxicor" && monster.health >= 20 ? 0.2 : 1;
+      score += city.benefit.dice * 2 * cityPreference;
+    }
   }
   if (objectiveAvailable && features.some((feature) => feature.kind === "infamy-site")) {
     score += monsterTurn ? monster?.name === "Megaclaw" && monster.infamy < 4 ? 14 : 7 : 0;
@@ -214,6 +232,7 @@ function tileScore(state: GameState, destination: HexKey, playerIndex: number, b
     const unusedMutationSites = features.filter((feature) => feature.kind === "mutation-site" && !(state.mutationSiteUses[monster.id] ?? []).includes(feature.siteId)).length;
     score += unusedMutationSites * (monster.health >= 20 ? 20 : 4);
   }
+  if (monsterTurn) score += highRollCityRegionBonus(state, destination, monster);
 
   const enemies = state.monsters.filter((candidate, index) => index !== playerIndex && candidate.health > 0 && candidate.location === destination);
   const friendlyUnits = state.units.filter((unit) => unit.ownerPlayer === playerIndex && unit.location === destination);
@@ -583,6 +602,10 @@ function explainBotCommand(state: GameState, command: GameCommand, actor: number
     if (monster?.name === "Megaclaw" && tile?.features.some((feature) => feature.kind === "infamy-site")) return `Moved Megaclaw to ${locationName(state, destination)} to collect its extra Infamy.`;
     if (monster?.name === "Konk" && state.units.some((unit) => unit.location === destination && unit.unitTypeId?.includes("fighter"))) return `Sent Konk after a fighter, where its attack bonus applies.`;
     if (monster?.name === "Gargantis" && monster.health <= monster.maxHealth * 0.55) return `Moved Gargantis cautiously while saving Mutation cards for healing.`;
+    if (monster && monster.name !== "Megaclaw" && !(monster.name === "Toxicor" && monster.health >= 20)
+      && tile?.features.some((feature) => feature.kind === "city" && feature.benefit.kind === "health-roll" && feature.benefit.dice >= 2)) {
+      return `Moved ${monster.name} toward ${locationName(state, destination)} for its high-roll city reward and nearby city cluster.`;
+    }
     const feature = tile?.features.find((candidate) => candidate.kind === "city" || candidate.kind === "infamy-site");
     return feature ? `Moved ${monster?.name ?? "the monster"} toward ${locationName(state, destination)} to pressure an objective.` : `Moved ${monster?.name ?? "the monster"} to avoid the nearest military concentration.`;
   }
