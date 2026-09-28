@@ -7,7 +7,7 @@ import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOAR
 import { applyCommand, applyCompletedSetup, auditedSetupDefinition, boardForState, createMvpRoomGame, createProvisionalPlaytestGame, migrateGameState, monsters, movementPathAllowed } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice } from "./setup.js";
 
-test("audited board matches all source cells and survives strict production validation", () => {
+test("board candidate matches its checked-in transcription and passes structural validation", () => {
   const source = readFileSync(new URL("../../../docs/authoritative-board-human-audit.md", import.meta.url), "utf8");
   assert.equal(createHash("sha256").update(source).digest("hex"), AUDIT_SOURCE_SHA256);
   assert.equal(AUDITED_CELLS.length, 336);
@@ -62,7 +62,7 @@ test("Chicago remains land-accessible while lake crossings and naval eligibility
   assert.equal(movementPathAllowed(AUDITED_BOARD, [key(3, 15)], "land-only"), true);
 });
 
-test("all six source monsters receive three audited lairs, including confirmed Tomanagi", () => {
+test("current monster candidates receive three configured lairs, including the unresolved 10/2 name", () => {
   const setup = auditedSetupDefinition(2);
   assert.equal(setup.monsterIds.length, 6);
   for (const monster of monsters) {
@@ -74,7 +74,7 @@ test("all six source monsters receive three audited lairs, including confirmed T
   assert.ok(setup.lairsByMonster["monster-2"].includes(key(10, 2)));
 });
 
-test("new rooms use audited pins and materialize selected monsters on their actual lairs", () => {
+test("new rooms pin the current board candidate and place selected monsters at configured lairs", () => {
   const state = createMvpRoomGame(2, 77);
   assert.equal(boardForState(state), AUDITED_BOARD);
   let setup = state.setupState!;

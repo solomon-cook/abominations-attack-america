@@ -1,0 +1,109 @@
+{
+  "ok": true,
+  "date": "2026-09-28",
+  "scenario": "Move-step TurnPrompt disclosure in the local Victory test fixture",
+  "assertions": {
+    "desktop1280x720": {
+      "startsCollapsed": true,
+      "summaryKeyboardFocusable": true,
+      "enterOpens": true,
+      "focusRemainsOnSummaryAfterOpen": true,
+      "renderedTitle": "Move",
+      "renderedGuidance": "Select a highlighted monster or an owned or authorised unit, choose a connected legal destination, then confirm the previewed path. Pass Move when no further movement is required.",
+      "spaceCloses": true,
+      "focusRemainsOnSummaryAfterClose": true,
+      "summaryHorizontalBounds": {
+        "x": 944,
+        "y": 603.78125,
+        "width": 297,
+        "height": 25
+      }
+    },
+    "phone390x844": {
+      "startsCollapsed": true,
+      "touchOpens": true,
+      "renderedTitle": "Move",
+      "expandedGuidanceVisibleAfterScroll": true,
+      "expandedGuidanceHorizontalBounds": {
+        "x": 100,
+        "y": 446.78125,
+        "width": 257,
+        "height": 83.4375
+      },
+      "widths": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      },
+      "touchCloses": true
+    },
+    "runtimeErrors": [],
+    "unexpectedApiRequests": [],
+    "apiRequests": [
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      }
+    ]
+  }
+}

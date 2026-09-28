@@ -1,6 +1,7 @@
 export type Platform = "web" | "ios" | "tvos" | "desktop";
 export type PlayerId = string;
 
+/** @deprecated Use RoomParticipantView for public room projections. */
 export interface RoomParticipant {
   id: string;
   displayName: string;
@@ -101,7 +102,7 @@ export type RoomSocketClientMessage = {
 
 export type RoomSocketServerMessage =
   | { type: "room.updated"; room: RoomView }
-  | { type: "command.accepted"; actionId: string; room: RoomView }
+  | { type: "command.accepted"; actionId: string; version: number }
   | { type: "command.rejected"; actionId: string; error: string }
   | { type: "protocol.error"; error: string };
 
@@ -113,24 +114,7 @@ export interface PublicRoomSummary {
   spectatorCount: number;
 }
 
-export type GameCommand =
-  | { type: "move"; path: string[] }
-  | { type: "move-unit"; unitId: string; path: string[] }
-  | { type: "disappear-monster" }
-  | { type: "pass-move" }
-  | { type: "stay-piece"; pieceId: string }
-  | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
-  | { type: "launch-submarine"; battleId: string; unitId: string }
-  | { type: "launch-submarine-at-monster"; unitId: string; monsterId: string }
-  | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
-  | { type: "use-monster-ability"; ability: "gargantis-heal"; mutationCardIds: string[] }
-  | { type: "use-research"; cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence"; battleId?: string; mutationCardId?: string; choice?: "infamy" | "retreat"; destination?: string }
-  | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
-  | { type: "deploy" }
-  | { type: "draw-research" }
-  | { type: "pass-deploy" }
-  | { type: "concede" }
-  | { type: "advance" };
+export type { GameCommand } from "@abominations/game-engine";
 
 export interface SessionResponse {
   room: RoomView;

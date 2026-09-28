@@ -52,17 +52,51 @@ test("WebSocket tickets are one-use and tied to the room session that issued the
   const store = new MemoryRoomStore();
   const host = await store.createRoom(2);
   const ticket = await store.createSocketTicket(host.room.code, host.token);
-  const principal = await store.consumeSocketTicket(host.room.code, ticket);
+  const principal = await store.consumeSocketTicket(host.room.code, ticket.ticket);
   assert.equal(principal.participantId, host.participantId);
-  await assert.rejects(() => store.consumeSocketTicket(host.room.code, ticket), /invalid or expired/);
+  await assert.rejects(() => store.consumeSocketTicket(host.room.code, ticket.ticket), /invalid or expired/);
 
   const replacement = await store.rotateSession(host.room.code, host.token);
   const staleTicket = await store.createSocketTicket(host.room.code, replacement.token);
-  const stalePrincipal = await store.consumeSocketTicket(host.room.code, staleTicket);
+  const stalePrincipal = await store.consumeSocketTicket(host.room.code, staleTicket.ticket);
   const rotatedAgain = await store.rotateSession(host.room.code, replacement.token);
   await assert.rejects(() => store.connectParticipant(host.room.code, host.participantId, "old-socket", stalePrincipal.sessionHash), /replaced/);
-  await store.connectParticipant(host.room.code, host.participantId, "new-socket", (await store.createSocketTicket(host.room.code, rotatedAgain.token).then((value) => store.consumeSocketTicket(host.room.code, value))).sessionHash);
+  const newSocketTicket = await store.createSocketTicket(host.room.code, rotatedAgain.token);
+  const newSocketPrincipal = await store.consumeSocketTicket(host.room.code, newSocketTicket.ticket);
+  await store.connectParticipant(host.room.code, host.participantId, newSocketPrincipal.connectionId, newSocketPrincipal.sessionHash);
   await assert.rejects(() => store.submitActionForParticipant(host.room.code, host.participantId, "old-socket", stalePrincipal.sessionHash, {
     actionId: "old-socket-action", actorId: host.participantId, expectedRevision: 0, protocolVersion: 1, command: { type: "pass-move" },
   }), /replaced/);
+});
+
+test("socket projections follow only the newest connected lease and revoked session", async () => {
+  const store = new MemoryRoomStore();
+  const host = await store.createRoom(2);
+  const delayedTicket = await store.createSocketTicket(host.room.code, host.token);
+  const delayed = await store.consumeSocketTicket(host.room.code, delayedTicket.ticket);
+  await store.connectParticipant(host.room.code, delayed.participantId, delayed.connectionId, delayed.sessionHash);
+  assert.ok(await store.getRoomForConnection(host.room.code, delayed.participantId, delayed.connectionId, delayed.sessionHash));
+
+  const currentTicket = await store.createSocketTicket(host.room.code, host.token, delayedTicket.connectionId);
+  await assert.rejects(() => store.createSocketTicket(host.room.code, host.token, delayedTicket.connectionId), /connection was replaced/);
+  assert.equal(await store.getRoomForConnection(host.room.code, delayed.participantId, delayed.connectionId, delayed.sessionHash), undefined);
+  await assert.rejects(() => store.connectParticipant(host.room.code, delayed.participantId, delayed.connectionId, delayed.sessionHash), /replaced/);
+  await assert.rejects(() => store.submitActionForParticipant(host.room.code, delayed.participantId, delayed.connectionId, delayed.sessionHash, {
+    actionId: "delayed-socket-action", actorId: host.participantId, expectedRevision: 0, protocolVersion: 1, command: { type: "pass-move" },
+  }), /replaced/);
+  await store.disconnectParticipant(host.room.code, delayed.participantId, delayed.connectionId);
+  assert.equal((await store.getRoom(host.room.code, host.token)).participants.find((participant) => participant.id === host.participantId)?.connected, false);
+
+  const current = await store.consumeSocketTicket(host.room.code, currentTicket.ticket);
+  assert.equal(current.connectionId, currentTicket.connectionId);
+  await store.connectParticipant(host.room.code, current.participantId, current.connectionId, current.sessionHash);
+  assert.ok(await store.getRoomForConnection(host.room.code, current.participantId, current.connectionId, current.sessionHash));
+
+  await store.reconnect(host.room.code, host.token, current.connectionId, "polling-lease");
+  assert.equal(await store.getRoomForConnection(host.room.code, current.participantId, current.connectionId, current.sessionHash), undefined);
+  assert.ok(await store.getRoomForConnection(host.room.code, current.participantId, "polling-lease", current.sessionHash));
+
+  const rotated = await store.rotateSession(host.room.code, host.token);
+  assert.equal(await store.getRoomForConnection(host.room.code, current.participantId, "polling-lease", current.sessionHash), undefined);
+  assert.ok(rotated.token);
 });

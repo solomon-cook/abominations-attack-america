@@ -80,7 +80,18 @@
 .record-medallion b { position: absolute; right: -6px; bottom: -2px; min-width: 22px; padding: 1px 3px; border: 1px solid #d7c486; border-radius: 8px; background: #172624; font-size: 10px; }
 .persistent-record.mobile-record-closed .mobile-record-toggle small { font-size: 10px; }
 .persistent-record.mobile-record-closed .mobile-record-toggle > span:not(.record-medallion) { display: none; }
-.persistent-record.mobile-record-open { left: 14px; bottom: 84px; width: min(350px, calc(100vw - 28px)); max-height: 45dvh; overflow: auto; background: #172625; border-color: var(--hud-border); }
+.deployment-tray-shortcut { position:fixed; z-index:35; left:102px; bottom:max(22px,calc(10px + env(safe-area-inset-bottom))); display:flex; width:174px; min-height:54px; align-items:center; gap:8px; padding:6px 9px; border:1px solid var(--hud-border); border-left:3px solid var(--branch-color,#526e24); border-radius:6px; background:linear-gradient(110deg,#243630f5,#172522f5),url('/assets/reference-sheets/camouflage.svg') center/190px; box-shadow:0 4px 14px #06131190; color:var(--civ-ivory); text-align:left; cursor:pointer; }
+.deployment-tray-shortcut[data-branch="Army"] { --branch-color:#a65d3a; }
+.deployment-tray-shortcut[data-branch="Navy"] { --branch-color:#397b9b; }
+.deployment-tray-shortcut[data-branch="Air Force"] { --branch-color:#8497a9; }
+.deployment-tray-shortcut[data-branch="Marines"] { --branch-color:#a13c32; }
+.deployment-tray-shortcut:hover,.deployment-tray-shortcut:focus-visible { border-color:var(--civ-brass); outline:2px solid #e8dca7; outline-offset:2px; }
+.deployment-tray-mark { display:grid; width:28px; height:28px; flex:0 0 28px; place-items:center; border:1px solid #e5d599; border-radius:50%; background:var(--branch-color,#526e24); color:#fffde3; font-size:.66rem; font-weight:900; }
+.deployment-tray-summary { display:grid; min-width:0; flex:1; gap:3px; }
+.deployment-tray-summary b { overflow:hidden; font:700 .75rem Georgia,serif; text-overflow:ellipsis; white-space:nowrap; }
+.deployment-tray-summary small { color:#d2d5c5; font-size:.58rem; white-space:nowrap; }
+.deployment-tray-open { color:var(--civ-brass); font-size:.8rem; }
+.persistent-record.mobile-record-open { z-index: 36; left: 14px; bottom: 84px; width: min(350px, calc(100vw - 28px)); max-height: 45dvh; overflow: auto; background: #172625; border-color: var(--hud-border); }
 .persistent-record.mobile-record-open > .mobile-record-toggle { display: flex; position: absolute; z-index: 3; top: 2px; right: 2px; width: 36px; height: 36px; align-items: center; justify-content: center; border: 0; background: transparent; color: var(--civ-ivory); box-shadow: none; }
 .persistent-record.mobile-record-open > .mobile-record-toggle span { font-size: 1.2rem; line-height: 1; }
 .game-screen:has(.persistent-record.mobile-record-closed) .layout > .bottom-context-dock { left: 110px; }
@@ -240,6 +251,14 @@
   .top-turn-summary .turn-progress { display: none; }
   .game-screen > .status { top: 62px; }
 }
+@media (min-width: 701px) and (max-width: 900px) {
+  .deployment-tray-shortcut { left: auto; right: 12px; bottom: calc(258px + env(safe-area-inset-bottom)); }
+  .game-screen:has(.bottom-context-dock .trophy-record-piece) .deployment-tray-shortcut { left: 12px; right: auto; }
+  .game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .board-minimap {
+    display: block; left: auto; right: 12px; top: 190px; bottom: auto; width: min(260px,calc(100vw - 40px)); height: auto; max-height: 140px;
+  }
+  .game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .deployment-tray-shortcut { bottom: calc(150px + env(safe-area-inset-bottom)); }
+}
 @media (max-width: 700px) {
   .game-screen > header { top: max(5px,env(safe-area-inset-top)); left: 5px; right: 5px; padding: 4px 6px; gap: 3px 4px; }
   .top-turn-summary { min-width: 0; flex: 1 1 100%; }
@@ -259,6 +278,10 @@
   .player-public-status { top: 44px; right: 0; width: 200px; }
   .persistent-record.mobile-record-closed { left: 7px; bottom: calc(86px + env(safe-area-inset-bottom)); width: 66px; height: 66px; }
   .persistent-record.mobile-record-closed .mobile-record-toggle { width: 64px; height: 64px; }
+  .deployment-tray-shortcut { left:78px; bottom:calc(92px + env(safe-area-inset-bottom)); width:min(174px,calc(100vw - 90px)); min-height:52px; gap:6px; padding:5px 7px; }
+  .deployment-tray-mark { width:25px; height:25px; flex-basis:25px; }
+  .deployment-tray-summary b { font-size:.68rem; }
+  .deployment-tray-summary small { font-size:.53rem; }
   .record-medallion { width: 46px; height: 46px; }
   .record-medallion img { width: 35px; height: 35px; }
   .persistent-record.mobile-record-open { left: 6px; right: 6px; bottom: calc(82px + env(safe-area-inset-bottom)); width: auto; max-height: 48dvh; }
@@ -331,6 +354,17 @@
   .game-screen .command-station.mobile-command-expanded > .board-action-bar { left: 0; right: 0; bottom: 0; width: 100%; }
   .game-screen .command-station.mobile-command-expanded > .board-action-bar .action-dock { border-radius: 0 0 7px 7px; }
   .game-screen .player-sheet-peeks { display: none; }
+}
+@media (max-width: 700px) {
+  /* Keep the persistent branch shortcut in the free lane above the expanded
+     command sheet instead of letting its opaque background cover the tray. */
+  .game-screen:has(.command-station.mobile-command-expanded) .deployment-tray-shortcut {
+    bottom: calc(min(72dvh, 560px) + 14px + env(safe-area-inset-bottom));
+  }
+  .game-screen:has(.command-station.mobile-command-expanded):has(.persistent-record[data-record-tab="map"]) .deployment-tray-shortcut {
+    top: calc(max(58px, env(safe-area-inset-top) + 48px));
+    bottom: auto;
+  }
 }
 @media(max-height:540px) and (min-width:601px) {
   .game-screen .map-controls { top: 92px; bottom: auto; left: 12px; right: auto; }

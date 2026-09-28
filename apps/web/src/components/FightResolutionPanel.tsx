@@ -8,6 +8,8 @@ import "../combat-stage.css";
 
 type Props = {
   open: boolean;
+  returnFocusTo?: HTMLElement | null;
+  returnFocusFallbackTo?: HTMLElement | null;
   onClose: () => void;
   controls: ReactNode;
   event?: GameState["eventLog"][number];
@@ -53,7 +55,7 @@ export function FightResolutionPanel(props: Props) {
   return props.open ? <FightSession {...props} /> : null;
 }
 
-function FightSession({ onClose, controls, event, game, canAct, autoPlay = false, pendingBattle, pendingAttackTarget, onChooseTarget }: Props) {
+function FightSession({ onClose, returnFocusTo, returnFocusFallbackTo, controls, event, game, canAct, autoPlay = false, pendingBattle, pendingAttackTarget, onChooseTarget }: Props) {
   const [selectedBattleId, setSelectedBattleId] = useState<string>();
   const [roster, setRoster] = useState(game.pendingBattles);
   useEffect(() => {
@@ -131,7 +133,7 @@ function FightSession({ onClose, controls, event, game, canAct, autoPlay = false
   const title = attack ? complete ? "The dust settles." : "Every strike counts." : "Clash of titans.";
 
 
-  return <ResolutionStage variant="fight" title={title} eyebrow={`BATTLE / ${monster?.name ?? "MONSTER"} VS MILITARY`} onClose={onClose}>
+  return <ResolutionStage variant="fight" title={title} eyebrow={`BATTLE / ${monster?.name ?? "MONSTER"} VS MILITARY`} returnFocusTo={returnFocusTo} returnFocusFallbackTo={returnFocusFallbackTo} onClose={onClose}>
     <details className="battle-order"><summary>Combat order · two rounds, then aftermath</summary><nav className="battle-rounds" aria-label="Combat order">{[1, 2].map(value => <div key={value} className={round === value ? "is-current" : ""}><b>ROUND {value}</b><span>Monster <i>→</i> surviving military</span></div>)}<div><b>AFTERMATH</b><span>Resolve survivors</span></div></nav></details>
     {!game.pendingCombat && !pendingAttackTarget && game.pendingBattles.length > 1 && atEnd && <nav className="battle-selection" aria-label="Choose battle">{game.pendingBattles.map(candidate => <button key={candidate.id} aria-pressed={candidate.id === liveBattle?.id} onClick={() => { setSelectedBattleId(candidate.id); setDismissedEvent(event?.id); }}>{game.monsters.find(item => item.id === candidate.monsterId)?.name ?? "Monster"} · battle {game.pendingBattles.indexOf(candidate) + 1}</button>)}</nav>}
     <div className="battle-turn"><span>{round ? `ROUND ${round} · ` : ""}{currentPhase}</span><small>{attack ? `Attack ${index + 1} / ${attacks.length}${game.pendingCombat ? " recorded" : ""}` : "One die per attack"}</small></div>

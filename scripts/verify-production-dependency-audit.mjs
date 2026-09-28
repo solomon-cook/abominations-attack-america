@@ -25,7 +25,7 @@ const vulnerabilities = Object.values(report.vulnerabilities ?? {}).map((advisor
   range: advisory.range,
   via: advisory.via?.filter((entry) => typeof entry === "string" || entry.title).map((entry) => typeof entry === "string" ? entry : entry.title) ?? [],
 }));
-const expected = baseline.knownProductionAdvisories.map((advisory) => ({ ...advisory, via: [advisory.via] }));
+const expected = baseline.knownProductionAdvisories.map((advisory) => ({ ...advisory, via: Array.isArray(advisory.via) ? advisory.via : [advisory.via] }));
 const same = (left, right) => left.name === right.name && left.severity === right.severity && left.range === right.range && left.via.length === right.via.length && left.via.every((entry) => right.via.includes(entry));
 const unexpected = vulnerabilities.filter((advisory) => !expected.some((known) => same(advisory, known)));
 const missing = expected.filter((known) => !vulnerabilities.some((advisory) => same(known, advisory)));

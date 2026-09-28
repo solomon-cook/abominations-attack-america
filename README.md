@@ -9,15 +9,18 @@ A cross-device digital board-game project inspired by *Monsters Menace America*.
 - `apps/tvos` — reserved Apple TV client
 - `apps/desktop` — reserved desktop client
 - `packages/game-engine` — platform-independent game state and rules
-- `packages/shared` — shared domain types and future protocol contracts
+- `packages/shared` — shared room projections, account/stat shapes, and WebSocket protocol contracts
 - `docs` — source notes and product planning
+
+For the runtime map, local development workflow, and validation commands, see
+the [developer guide](docs/development.md).
 
 The web prototype supports local play, guest online rooms, account-linked online matches, public profiles, and a no-login spectator mode. Account emails and password hashes stay server-side; rooms and public rankings expose generated usernames only. The API uses the same game engine and exposes short-ticket WebSockets with polling fallback.
 
 ## Run the web prototype
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -44,4 +47,4 @@ Profiles and category leaderboards include completed online matches only. Test-f
 
 ## Source material
 
-The attached rulebook is treated as reference material for the rules model. This project is an original digital implementation and does not include the original board, illustrations, or card assets.
+The physical edition of *Monsters Menace America* is authoritative for the rules model. Source-dependent transcriptions and rules behavior remain provisional pending review against that edition; a third-party scan is reference material only. Physical-source review and sign-off are manual release gates. See the [rules source status](docs/rules-source.md). This project is an original digital implementation and does not include the original board, illustrations, or card assets.

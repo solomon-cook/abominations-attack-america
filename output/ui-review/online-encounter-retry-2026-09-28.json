@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "date": "2026-09-28",
+  "roomCode": "F81E7C",
+  "environment": "full web route + local memory API + audited-board game state",
+  "scenario": "Zorb at 13,4 moves to adjacent city/base 12,4 with an opponent Army unit; actual Fight resolution precedes the Zorb city reward decision",
+  "failure": "one choice POST sent to the real memory API with an injected stale expectedRevision; API returned 400 without changing authoritative state",
+  "focusRecovery": "same Infamy reward button remains enabled and receives focus after the API rejection",
+  "retry": "same UI reward button submitted through HTTP fallback to the actual memory API; API returned 200",
+  "authoritativeResult": {
+    "phase": "encounter",
+    "infamyBefore": 0,
+    "infamyAfter": 3,
+    "infamyDelta": 3,
+    "selectedCityReward": 2,
+    "adjacentArmyBaseReward": 1,
+    "eventDelta": 1,
+    "revisionDelta": 1
+  },
+  "choicePostResponses": [
+    400,
+    200
+  ],
+  "limits": [
+    "Board/source and rule parity remain separately gated; this verifies only the configured audited-board route behavior.",
+    "Failure injection modifies one browser request's expectedRevision; it does not simulate an unavailable database or arbitrary server crash."
+  ],
+  "runtimeErrors": []
+}

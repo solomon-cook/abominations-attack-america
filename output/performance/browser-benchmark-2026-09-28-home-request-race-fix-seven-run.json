@@ -1,0 +1,2605 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-09-28T10:46:38.208Z",
+  "updatedAt": "2026-09-28T10:48:32.008Z",
+  "url": "http://127.0.0.1:51121/",
+  "environment": {
+    "node": "v24.9.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "playwright": "1.63.0",
+    "browser": "140.0.7339.186",
+    "build": {
+      "sha256": "93a66846a57814827091fbcf66bdfc667e117ef4cf4a790f01685e32a2f205b0",
+      "fileCount": 1456,
+      "totalBytes": 143502918,
+      "mainAssets": [
+        {
+          "path": "assets/BoardReview-tNwpeFrb.js",
+          "bytes": 5241
+        },
+        {
+          "path": "assets/index-CC-DyazW.css",
+          "bytes": 262560
+        },
+        {
+          "path": "assets/index-CHyFpp1r.js",
+          "bytes": 742929
+        },
+        {
+          "path": "index.html",
+          "bytes": 704
+        }
+      ]
+    }
+  },
+  "protocol": {
+    "preview": "Vite production preview from apps/web/dist on loopback and an ephemeral strict port",
+    "freshContextPerSample": true,
+    "cacheDisabled": "CDP Network.setCacheDisabled(true)",
+    "serviceWorkers": "blocked",
+    "cpuThrottle": "4x",
+    "network": {
+      "rttMs": 150,
+      "downloadBytesPerSecond": 200000,
+      "uploadBytesPerSecond": 93750
+    },
+    "homeWait": "load, #home-title, hero image decode, document.fonts.ready, then 250 ms",
+    "viewports": [
+      {
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "width": 390,
+        "height": 844
+      }
+    ],
+    "runs": 7,
+    "firstSelection": "2-player local setup through visible UI choices; nearest visible legal hex passing center-point hit test; stop when Confirm move appears; command not committed",
+    "resourceAccounting": "same-origin Resource Timing entries started during setup/selection and completed by confirmation, using transferSize; navigation document excluded; requests still in flight when Confirm appears are not counted",
+    "selectionInput": "mouse at desktop viewport; touchscreen tap at phone viewport",
+    "lcp": "latest Largest Contentful Paint candidate observed after the documented readiness wait, not a formally frozen page-final value",
+    "graphics": "existing production assets served unchanged; no images or rendering resources intercepted"
+  },
+  "samples": [
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 1,
+      "fcpMs": 1964,
+      "lcpMs": 2064,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 365,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1536.4000000953674,
+          "duration": 162,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "self",
+          "startTime": 1700.3000000715256,
+          "duration": 60,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "unknown",
+          "startTime": 1778.2000000476837,
+          "duration": 143,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 2,
+      "fcpMs": 1788,
+      "lcpMs": 1968,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 123,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1515.1000000238419,
+          "duration": 123,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 3,
+      "fcpMs": 1764,
+      "lcpMs": 1948,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 105,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1522,
+          "duration": 105,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 4,
+      "fcpMs": 1780,
+      "lcpMs": 1964,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 110,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1527.1000000238419,
+          "duration": 110,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 5,
+      "fcpMs": 1752,
+      "lcpMs": 1936,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 101,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1522.3999999761581,
+          "duration": 101,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 6,
+      "fcpMs": 1764,
+      "lcpMs": 1948,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 104,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1521.7000000476837,
+          "duration": 104,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 7,
+      "fcpMs": 1796,
+      "lcpMs": 1980,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 171,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1525,
+          "duration": 120,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "unknown",
+          "startTime": 1701.7999999523163,
+          "duration": 51,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 1,
+      "setupStartedAtMs": 2286.4000000953674,
+      "selectionStartedAtMs": 5278.300000071526,
+      "selectedHex": "7,5",
+      "inputMethod": "mouse",
+      "clickToConfirmMs": 185.10000002384186,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2732.2000000476837,
+          "duration": 1649.8999999761581
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2733.5,
+          "duration": 2428.9000000953674
+        },
+        {
+          "name": "/assets/board/overlays/lair-tomanagi.svg",
+          "initiatorType": "img",
+          "transferSize": 924,
+          "startTime": 2734.600000023842,
+          "duration": 2622.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2735.5,
+          "duration": 2231.3000000715256
+        },
+        {
+          "name": "/assets/board/overlays/base-air-force.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 2737,
+          "duration": 1838.6000000238419
+        },
+        {
+          "name": "/assets/board/overlays/lair-zorb.svg",
+          "initiatorType": "img",
+          "transferSize": 851,
+          "startTime": 2737.600000023842,
+          "duration": 2032.8000000715256
+        }
+      ],
+      "transferBytes": 52231,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 5278.600000023842,
+          "duration": 160,
+          "inputDelayMs": 6,
+          "processingMs": 0.8999999761581421
+        },
+        {
+          "name": "click",
+          "startTime": 5278.600000023842,
+          "duration": 160,
+          "inputDelayMs": 83.5,
+          "processingMs": 21.300000071525574
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 2,
+      "setupStartedAtMs": 2298.2999999523163,
+      "selectionStartedAtMs": 4806.600000023842,
+      "selectedHex": "7,5",
+      "inputMethod": "mouse",
+      "clickToConfirmMs": 185,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2592.100000023842,
+          "duration": 1639.7999999523163
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 2595.2000000476837,
+          "duration": 1831.1999999284744
+        },
+        {
+          "name": "/assets/board/overlays/mutation-site.svg",
+          "initiatorType": "img",
+          "transferSize": 779,
+          "startTime": 2596,
+          "duration": 2407.600000023842
+        },
+        {
+          "name": "/assets/board/overlays/challenge-site.svg",
+          "initiatorType": "img",
+          "transferSize": 922,
+          "startTime": 2597.5,
+          "duration": 2211.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/lair-megaclaw.svg",
+          "initiatorType": "img",
+          "transferSize": 961,
+          "startTime": 2600.7999999523163,
+          "duration": 2018.5
+        }
+      ],
+      "transferBytes": 51713,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 4806.799999952316,
+          "duration": 168,
+          "inputDelayMs": 7.100000023841858,
+          "processingMs": 0.5
+        },
+        {
+          "name": "click",
+          "startTime": 4806.799999952316,
+          "duration": 168,
+          "inputDelayMs": 80,
+          "processingMs": 17.700000047683716
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 3,
+      "setupStartedAtMs": 2304.399999976158,
+      "selectionStartedAtMs": 4782.5,
+      "selectedHex": "7,5",
+      "inputMethod": "mouse",
+      "clickToConfirmMs": 185.20000004768372,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2599.399999976158,
+          "duration": 1641.8000000715256
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2601.399999976158,
+          "duration": 2224.100000023842
+        },
+        {
+          "name": "/assets/board/overlays/base-marines.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 2603.100000023842,
+          "duration": 2027.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/lair-megaclaw.svg",
+          "initiatorType": "img",
+          "transferSize": 961,
+          "startTime": 2609.5,
+          "duration": 1827.3000000715256
+        }
+      ],
+      "transferBytes": 50589,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 4782.700000047684,
+          "duration": 168,
+          "inputDelayMs": 5.199999928474426,
+          "processingMs": 1
+        },
+        {
+          "name": "click",
+          "startTime": 4782.800000071526,
+          "duration": 168,
+          "inputDelayMs": 81,
+          "processingMs": 18.5
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 4,
+      "setupStartedAtMs": 2292.5,
+      "selectionStartedAtMs": 4799.299999952316,
+      "selectedHex": "7,5",
+      "inputMethod": "mouse",
+      "clickToConfirmMs": 165,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2591.5,
+          "duration": 1633.1999999284744
+        }
+      ],
+      "transferBytes": 48168,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 4799.600000023842,
+          "duration": 144,
+          "inputDelayMs": 6.599999904632568,
+          "processingMs": 0.30000007152557373
+        },
+        {
+          "name": "click",
+          "startTime": 4799.600000023842,
+          "duration": 144,
+          "inputDelayMs": 75.5,
+          "processingMs": 16.899999976158142
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 5,
+      "setupStartedAtMs": 2290.3000000715256,
+      "selectionStartedAtMs": 4749.900000095367,
+      "selectedHex": "7,5",
+      "inputMethod": "mouse",
+      "clickToConfirmMs": 181.19999992847443,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2572.7000000476837,
+          "duration": 1635.1000000238419
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2574.9000000953674,
+          "duration": 2023.3999999761581
+        },
+        {
+          "name": "/assets/board/overlays/infamy-site.svg",
+          "initiatorType": "img",
+          "transferSize": 739,
+          "startTime": 2577,
+          "duration": 2216.5
+        },
+        {
+          "name": "/assets/board/overlays/mutation-site.svg",
+          "initiatorType": "img",
+          "transferSize": 779,
+          "startTime": 2577.100000023842,
+          "duration": 1828.8000000715256
+        }
+      ],
+      "transferBytes": 50514,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 4750.200000047684,
+          "duration": 168,
+          "inputDelayMs": 6.299999952316284,
+          "processingMs": 0.5
+        },
+        {
+          "name": "click",
+          "startTime": 4750.200000047684,
+          "duration": 168,
+          "inputDelayMs": 78.29999995231628,
+          "processingMs": 18.100000023841858
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 6,
+      "setupStartedAtMs": 2294.399999976158,
+      "selectionStartedAtMs": 4928.5,
+      "selectedHex": "7,5",
+      "inputMethod": "mouse",
+      "clickToConfirmMs": 193.60000002384186,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2587,
+          "duration": 1640
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2589,
+          "duration": 2416.6999999284744
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2590.1999999284744,
+          "duration": 2220.100000023842
+        },
+        {
+          "name": "/assets/board/overlays/base-air-force.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 2591.399999976158,
+          "duration": 1829.5
+        },
+        {
+          "name": "/assets/board/overlays/lair-zorb.svg",
+          "initiatorType": "img",
+          "transferSize": 851,
+          "startTime": 2591.899999976158,
+          "duration": 2025.7000000476837
+        }
+      ],
+      "transferBytes": 51307,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 4929.299999952316,
+          "duration": 160,
+          "inputDelayMs": 10,
+          "processingMs": 1.100000023841858
+        },
+        {
+          "name": "click",
+          "startTime": 4929.299999952316,
+          "duration": 160,
+          "inputDelayMs": 85,
+          "processingMs": 18.700000047683716
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 7,
+      "setupStartedAtMs": 2296.399999976158,
+      "selectionStartedAtMs": 4790,
+      "selectedHex": "7,5",
+      "inputMethod": "mouse",
+      "clickToConfirmMs": 201.69999992847443,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2602.899999976158,
+          "duration": 1633.6999999284744
+        }
+      ],
+      "transferBytes": 48168,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 4790.299999952316,
+          "duration": 176,
+          "inputDelayMs": 9.799999952316284,
+          "processingMs": 1.4000000953674316
+        },
+        {
+          "name": "click",
+          "startTime": 4790.299999952316,
+          "duration": 176,
+          "inputDelayMs": 94.60000002384186,
+          "processingMs": 21.299999952316284
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 1,
+      "fcpMs": 1780,
+      "lcpMs": 1964,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 109,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1524.2000000476837,
+          "duration": 109,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 2,
+      "fcpMs": 1764,
+      "lcpMs": 1948,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 106,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1521.3999999761581,
+          "duration": 106,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 3,
+      "fcpMs": 1776,
+      "lcpMs": 1960,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 106,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1521.8999999761581,
+          "duration": 106,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 4,
+      "fcpMs": 1764,
+      "lcpMs": 1948,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 102,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1523.6000000238419,
+          "duration": 102,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 5,
+      "fcpMs": 1796,
+      "lcpMs": 1964,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 166,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1524.5,
+          "duration": 113,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "unknown",
+          "startTime": 1700.8000000715256,
+          "duration": 53,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 6,
+      "fcpMs": 1756,
+      "lcpMs": 1940,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 100,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1518.2000000476837,
+          "duration": 100,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 7,
+      "fcpMs": 1784,
+      "lcpMs": 1968,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:51121/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 110,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1523.7000000476837,
+          "duration": 110,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-CHyFpp1r.js",
+          "type": "js",
+          "transferSize": 186482,
+          "encodedBodySize": 186182,
+          "decodedBodySize": 742929
+        },
+        {
+          "name": "/assets/index-CC-DyazW.css",
+          "type": "css",
+          "transferSize": 49415,
+          "encodedBodySize": 49115,
+          "decodedBodySize": 262560
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 186482,
+        "css": 49415,
+        "images": 19075,
+        "other": 0,
+        "total": 254972
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 1,
+      "setupStartedAtMs": 2308.5,
+      "selectionStartedAtMs": 5123.700000047684,
+      "selectedHex": "6,2",
+      "inputMethod": "touch",
+      "clickToConfirmMs": 262.39999997615814,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2726.2999999523163,
+          "duration": 1657.8000000715256
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2728.7999999523163,
+          "duration": 1849.4000000953674
+        },
+        {
+          "name": "/assets/board/overlays/base-navy.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 2728.7999999523163,
+          "duration": 2232.5
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 2729.100000023842,
+          "duration": 2622.6999999284744
+        },
+        {
+          "name": "/assets/board/overlays/lair-konk.svg",
+          "initiatorType": "img",
+          "transferSize": 877,
+          "startTime": 2729.2000000476837,
+          "duration": 2042.8999999761581
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 2730.2999999523163,
+          "duration": 2426.4000000953674
+        }
+      ],
+      "transferBytes": 52300,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 5126.799999952316,
+          "duration": 32,
+          "inputDelayMs": 27.200000047683716,
+          "processingMs": 0.5
+        },
+        {
+          "name": "click",
+          "startTime": 5126.899999976158,
+          "duration": 216,
+          "inputDelayMs": 122.10000002384186,
+          "processingMs": 18.899999976158142
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 2,
+      "setupStartedAtMs": 2284.100000023842,
+      "selectionStartedAtMs": 4914.100000023842,
+      "selectedHex": "6,2",
+      "inputMethod": "touch",
+      "clickToConfirmMs": 224.39999997615814,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2577,
+          "duration": 1631.8000000715256
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2579,
+          "duration": 1825.5
+        },
+        {
+          "name": "/assets/board/overlays/base-navy.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 2579,
+          "duration": 2022.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/lair-konk.svg",
+          "initiatorType": "img",
+          "transferSize": 877,
+          "startTime": 2579.3000000715256,
+          "duration": 2214
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 2580.2000000476837,
+          "duration": 2403.7999999523163
+        },
+        {
+          "name": "/assets/board/overlays/base-marines.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 2580.2000000476837,
+          "duration": 2595.5
+        }
+      ],
+      "transferBytes": 52020,
+      "eventTimings": [
+        {
+          "name": "click",
+          "startTime": 4914.300000071526,
+          "duration": 184,
+          "inputDelayMs": 92.89999997615814,
+          "processingMs": 19.899999976158142
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 3,
+      "setupStartedAtMs": 2283.899999976158,
+      "selectionStartedAtMs": 4942.700000047684,
+      "selectedHex": "6,2",
+      "inputMethod": "touch",
+      "clickToConfirmMs": 221.79999995231628,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2580.5,
+          "duration": 1633.7999999523163
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 2582.2999999523163,
+          "duration": 2599.2000000476837
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2583.2999999523163,
+          "duration": 2209.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 2584.100000023842,
+          "duration": 2012.8999999761581
+        },
+        {
+          "name": "/assets/board/overlays/base-air-force.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 2585.100000023842,
+          "duration": 1822.5
+        },
+        {
+          "name": "/assets/board/overlays/lair-zorb.svg",
+          "initiatorType": "img",
+          "transferSize": 851,
+          "startTime": 2586.2000000476837,
+          "duration": 2401.2999999523163
+        }
+      ],
+      "transferBytes": 52274,
+      "eventTimings": [
+        {
+          "name": "click",
+          "startTime": 4942.899999976158,
+          "duration": 176,
+          "inputDelayMs": 88.70000004768372,
+          "processingMs": 18.600000023841858
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 4,
+      "setupStartedAtMs": 2283.1999999284744,
+      "selectionStartedAtMs": 5103.199999928474,
+      "selectedHex": "6,2",
+      "inputMethod": "touch",
+      "clickToConfirmMs": 238.70000004768372,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2578.1999999284744,
+          "duration": 1631.5
+        },
+        {
+          "name": "/assets/board/overlays/base-navy.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 2579.7999999523163,
+          "duration": 2396.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2579.899999976158,
+          "duration": 2589.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 2579.899999976158,
+          "duration": 2784.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2581.100000023842,
+          "duration": 2006.2999999523163
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 2581.1999999284744,
+          "duration": 2200
+        },
+        {
+          "name": "/assets/board/overlays/base-air-force.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 2582.6999999284744,
+          "duration": 1814.6000000238419
+        }
+      ],
+      "transferBytes": 52883,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 5103.5,
+          "duration": 16,
+          "inputDelayMs": 17,
+          "processingMs": 0.10000002384185791
+        },
+        {
+          "name": "click",
+          "startTime": 5103.5,
+          "duration": 192,
+          "inputDelayMs": 103.60000002384186,
+          "processingMs": 19.199999928474426
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 5,
+      "setupStartedAtMs": 2294,
+      "selectionStartedAtMs": 5100.599999904633,
+      "selectedHex": "6,2",
+      "inputMethod": "touch",
+      "clickToConfirmMs": 331.3000000715256,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 2588.899999976158,
+          "duration": 1635.5
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 2590.899999976158,
+          "duration": 1829.6999999284744
+        },
+        {
+          "name": "/assets/board/overlays/lair-tomanagi.svg",
+          "initiatorType": "img",
+          "transferSize": 924,
+          "startTime": 2591.6999999284744,
+          "duration": 2408.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 2592.399999976158,
+          "duration": 2022.1999999284744
+        },
+        {
+          "name": "/assets/board/overlays/infamy-site.svg",
+          "initiatorType": "img",
+          "transferSize": 739,
+          "startTime": 2593.6999999284744,
+          "duration": 2216.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/mutation-site.svg",
+          "initiatorType": "img",
+          "transferSize": 779,
+          "startTime": 2593.7999999523163,
+          "duration": 2599.2000000476837
+        },
+        {
+          "name": "/assets/board/overlays/lair-zorb.svg",
+          "initiatorType": "img",
+          "transferSize": 851,
+          "startTime": 2594.6999999284744,
+          "duration": 2792.600000023842
+        }
+      ],
+      "transferBytes": 53201,
+      "eventTimings": [
+        {
+          "name": "click",
+          "startTime": 5101.199999928474,
+          "duration": 264,
+          "inputDelayMs": 140.20000004768372,
+          "processingMs": 24.600000023841858
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 6,
+      "setupStartedAtMs": 2734.7000000476837,
+      "selectionStartedAtMs": 6106,
+      "selectedHex": "6,2",
+      "inputMethod": "touch",
+      "clickToConfirmMs": 327.60000002384186,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 3163.399999976158,
+          "duration": 1643.7000000476837
+        },
+        {
+          "name": "/assets/monsters/portraits/tomanagi-dark.webp",
+          "initiatorType": "img",
+          "transferSize": 104038,
+          "startTime": 3163.5,
+          "duration": 3089.5
+        },
+        {
+          "name": "/assets/monsters/portraits/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 106320,
+          "startTime": 3163.600000023842,
+          "duration": 3126.899999976158
+        },
+        {
+          "name": "/assets/monsters/portraits/toxicor.webp",
+          "initiatorType": "img",
+          "transferSize": 102310,
+          "startTime": 3164.100000023842,
+          "duration": 3076.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/city-2d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3165,
+          "duration": 2608.7999999523163
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3165.100000023842,
+          "duration": 2421.899999976158
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 3165.7000000476837,
+          "duration": 3269.1999999284744
+        },
+        {
+          "name": "/assets/board/overlays/lair-konk.svg",
+          "initiatorType": "img",
+          "transferSize": 877,
+          "startTime": 3165.7999999523163,
+          "duration": 3299.8000000715256
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3166,
+          "duration": 3169.899999976158
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 3167,
+          "duration": 1834.2000000476837
+        },
+        {
+          "name": "/assets/board/overlays/base-marines.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3167.100000023842,
+          "duration": 2223.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/base-air-force.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3167.2000000476837,
+          "duration": 2801.899999976158
+        },
+        {
+          "name": "/assets/board/overlays/infamy-site.svg",
+          "initiatorType": "img",
+          "transferSize": 739,
+          "startTime": 3167.2000000476837,
+          "duration": 2998.1999999284744
+        },
+        {
+          "name": "/assets/board/overlays/mutation-site.svg",
+          "initiatorType": "img",
+          "transferSize": 779,
+          "startTime": 3167.2000000476837,
+          "duration": 3243.2999999523163
+        },
+        {
+          "name": "/assets/board/overlays/challenge-site.svg",
+          "initiatorType": "img",
+          "transferSize": 922,
+          "startTime": 3169,
+          "duration": 2029.8999999761581
+        }
+      ],
+      "transferBytes": 369696,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 6106.5,
+          "duration": 16,
+          "inputDelayMs": 18.299999952316284,
+          "processingMs": 0.40000009536743164
+        },
+        {
+          "name": "click",
+          "startTime": 6106.700000047684,
+          "duration": 248,
+          "inputDelayMs": 144.79999995231628,
+          "processingMs": 20.299999952316284
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 7,
+      "setupStartedAtMs": 2839.3000000715256,
+      "selectionStartedAtMs": 5874.200000047684,
+      "selectedHex": "6,2",
+      "inputMethod": "touch",
+      "clickToConfirmMs": 263.39999997615814,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 3346.600000023842,
+          "duration": 1772.6000000238419
+        },
+        {
+          "name": "/assets/board/overlays/city-2d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3348.100000023842,
+          "duration": 2160.600000023842
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3348.5,
+          "duration": 1964.4000000953674
+        },
+        {
+          "name": "/assets/board/overlays/base-navy.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3348.5,
+          "duration": 2354
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 3348.5,
+          "duration": 2549.5
+        },
+        {
+          "name": "/assets/board/overlays/lair-konk.svg",
+          "initiatorType": "img",
+          "transferSize": 877,
+          "startTime": 3348.600000023842,
+          "duration": 2745.2000000476837
+        }
+      ],
+      "transferBytes": 52245,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 5875.100000023842,
+          "duration": 16,
+          "inputDelayMs": 8.800000071525574,
+          "processingMs": 1.0999999046325684
+        },
+        {
+          "name": "click",
+          "startTime": 5875.400000095367,
+          "duration": 208,
+          "inputDelayMs": 111.39999997615814,
+          "processingMs": 20.199999928474426
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    }
+  ],
+  "summary": {
+    "home 1280x720": {
+      "fcpMs": {
+        "median": 1780,
+        "min": 1752,
+        "max": 1964,
+        "samples": 7
+      },
+      "lcpMs": {
+        "median": 1964,
+        "min": 1936,
+        "max": 2064,
+        "samples": 7
+      },
+      "longTaskTotalMs": {
+        "median": 110,
+        "min": 101,
+        "max": 365,
+        "samples": 7
+      }
+    },
+    "first-selection 1280x720": {
+      "clickToConfirmMs": {
+        "median": 185.10000002384186,
+        "min": 165,
+        "max": 201.69999992847443,
+        "samples": 7
+      }
+    },
+    "home 390x844": {
+      "fcpMs": {
+        "median": 1776,
+        "min": 1756,
+        "max": 1796,
+        "samples": 7
+      },
+      "lcpMs": {
+        "median": 1960,
+        "min": 1940,
+        "max": 1968,
+        "samples": 7
+      },
+      "longTaskTotalMs": {
+        "median": 106,
+        "min": 100,
+        "max": 166,
+        "samples": 7
+      }
+    },
+    "first-selection 390x844": {
+      "clickToConfirmMs": {
+        "median": 262.39999997615814,
+        "min": 221.79999995231628,
+        "max": 331.3000000715256,
+        "samples": 7
+      }
+    }
+  }
+}

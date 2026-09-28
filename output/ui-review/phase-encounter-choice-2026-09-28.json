@@ -1,0 +1,656 @@
+{
+  "started": "2026-09-28T16:17:24.822Z",
+  "scope": "Fixture-level browser acceptance of the production phase-context disclosure and PhaseActions encounter resolution/reward choices using real applyCommand. Active fixtures start with the Encounter options disclosure open and no command applied; waiting fixtures start with a separately seeded pending choice. The waiting projection is canAct=false without a live room/service. The command-handler failure is injected locally before applyCommand and does not test a service failure. The full main route is not mounted.",
+  "disclosureHitArea": {
+    "mobileMinimumTargetCssPx": 44,
+    "stylingChange": "min-height only, scoped to the existing max-width:700px media rule",
+    "preAdjustmentMeasurement": {
+      "browserVersion": "140.0.7339.186",
+      "activePhone390x844": {
+        "width": 358,
+        "height": 38,
+        "computedMinHeight": "38px"
+      },
+      "waiting320x740": {
+        "width": 288,
+        "height": 38,
+        "computedMinHeight": "38px"
+      }
+    }
+  },
+  "browser": "Chromium via Playwright",
+  "scenarios": {
+    "tablet-zorb-health-failure-retry-repeat": {
+      "status": "passed",
+      "viewport": {
+        "width": 834,
+        "height": 1112
+      },
+      "scenario": "zorb-city",
+      "role": "active chooser fixture",
+      "input": "keyboard Enter",
+      "failureHandling": {
+        "harnessInjectedCommandHandlerFailureBeforeApplyCommand": true,
+        "choiceRemainedAvailable": true,
+        "retryAccepted": true,
+        "serviceFailureNotTested": true,
+        "focusAfterFailure": "Take 7 Health",
+        "retryNeededNoTabRecovery": true
+      },
+      "repeatHandling": {
+        "staleAcceptedCommandRejected": true,
+        "extraEvents": 0,
+        "extraAppliedCommands": 0
+      },
+      "focusAfterResolution": "persistent phase heading",
+      "phaseContextDisclosure": {
+        "input": "keyboard",
+        "role": "active",
+        "startsExpanded": true,
+        "summaryKeyboardFocusable": true,
+        "collapses": true,
+        "reopens": true,
+        "controlsHiddenWhenCollapsed": true,
+        "controlsShownWhenExpanded": true,
+        "focusRemainsOnSummary": {
+          "afterCollapse": true,
+          "afterReopen": true
+        },
+        "summaryBounds": {
+          "x": 309,
+          "y": 1047,
+          "right": 807,
+          "bottom": 1085,
+          "width": 498,
+          "height": 38,
+          "viewportWidth": 834,
+          "viewportHeight": 1112,
+          "computedMinHeight": "38px"
+        },
+        "commandsSubmitted": 0,
+        "appliedCommands": 0,
+        "eventCountBefore": 0,
+        "eventCountAfterToggleCycle": 0,
+        "eventCountUnchanged": true
+      },
+      "resolutionTraversal": [
+        "Encounter options",
+        "Resolve encounter"
+      ],
+      "keyboardTraversal": [
+        "Take 7 Health"
+      ],
+      "resolutionControlBounds": {
+        "x": 310,
+        "y": 994,
+        "right": 806,
+        "bottom": 1047,
+        "width": 496,
+        "height": 53,
+        "viewportWidth": 834,
+        "viewportHeight": 1112
+      },
+      "choiceBounds": {
+        "x": 310,
+        "y": 925,
+        "right": 806,
+        "bottom": 1047,
+        "width": 496,
+        "height": 122,
+        "viewportWidth": 834,
+        "viewportHeight": 1112
+      },
+      "touchTargetBounds": {
+        "width": 496,
+        "height": 44
+      },
+      "finalHealth": 8,
+      "finalInfamy": 0,
+      "eventAction": "encounter.resolved"
+    },
+    "zorb-city-infamy-keyboard-834x1112": {
+      "status": "passed",
+      "viewport": {
+        "width": 834,
+        "height": 1112
+      },
+      "scenario": "zorb-city",
+      "role": "active chooser fixture",
+      "input": "keyboard",
+      "appliedCommands": [
+        {
+          "type": "resolve-encounter"
+        },
+        {
+          "type": "resolve-encounter",
+          "choice": "infamy"
+        }
+      ],
+      "finalHealth": 1,
+      "finalInfamy": 2,
+      "eventAction": "encounter.resolved",
+      "eventCountDelta": 2,
+      "choiceBounds": {
+        "x": 310,
+        "y": 925,
+        "right": 806,
+        "bottom": 1047,
+        "width": 496,
+        "height": 122,
+        "viewportWidth": 834,
+        "viewportHeight": 1112
+      },
+      "resolutionControlBounds": {
+        "x": 310,
+        "y": 994,
+        "right": 806,
+        "bottom": 1047,
+        "width": 496,
+        "height": 53,
+        "viewportWidth": 834,
+        "viewportHeight": 1112
+      },
+      "focusAfterResolution": "phase-choice-action-heading",
+      "phaseContextDisclosure": {
+        "input": "keyboard",
+        "role": "active",
+        "startsExpanded": true,
+        "summaryKeyboardFocusable": true,
+        "collapses": true,
+        "reopens": true,
+        "controlsHiddenWhenCollapsed": true,
+        "controlsShownWhenExpanded": true,
+        "focusRemainsOnSummary": {
+          "afterCollapse": true,
+          "afterReopen": true
+        },
+        "summaryBounds": {
+          "x": 309,
+          "y": 1047,
+          "right": 807,
+          "bottom": 1085,
+          "width": 498,
+          "height": 38,
+          "viewportWidth": 834,
+          "viewportHeight": 1112,
+          "computedMinHeight": "38px"
+        },
+        "commandsSubmitted": 0,
+        "appliedCommands": 0,
+        "eventCountBefore": 0,
+        "eventCountAfterToggleCycle": 0,
+        "eventCountUnchanged": true
+      },
+      "resolutionTraversal": [
+        "Encounter options",
+        "Resolve encounter"
+      ],
+      "keyboardTraversal": [
+        "Take 7 Health",
+        "Take 2 Infamy instead"
+      ],
+      "repeatHandling": {
+        "staleAcceptedCommandRejected": true,
+        "extraEvents": 0,
+        "extraAppliedCommands": 0
+      }
+    },
+    "iron-stomach-health-keyboard-834x1112": {
+      "status": "passed",
+      "viewport": {
+        "width": 834,
+        "height": 1112
+      },
+      "scenario": "iron-stomach",
+      "role": "active chooser fixture",
+      "input": "keyboard",
+      "appliedCommands": [
+        {
+          "type": "resolve-encounter"
+        },
+        {
+          "type": "resolve-encounter",
+          "choice": "health"
+        }
+      ],
+      "finalHealth": 8,
+      "finalInfamy": 0,
+      "eventAction": "encounter.resolved",
+      "eventCountDelta": 2,
+      "choiceBounds": {
+        "x": 310,
+        "y": 925,
+        "right": 806,
+        "bottom": 1047,
+        "width": 496,
+        "height": 122,
+        "viewportWidth": 834,
+        "viewportHeight": 1112
+      },
+      "resolutionControlBounds": {
+        "x": 310,
+        "y": 994,
+        "right": 806,
+        "bottom": 1047,
+        "width": 496,
+        "height": 53,
+        "viewportWidth": 834,
+        "viewportHeight": 1112
+      },
+      "focusAfterResolution": "phase-choice-action-heading",
+      "phaseContextDisclosure": {
+        "input": "keyboard",
+        "role": "active",
+        "startsExpanded": true,
+        "summaryKeyboardFocusable": true,
+        "collapses": true,
+        "reopens": true,
+        "controlsHiddenWhenCollapsed": true,
+        "controlsShownWhenExpanded": true,
+        "focusRemainsOnSummary": {
+          "afterCollapse": true,
+          "afterReopen": true
+        },
+        "summaryBounds": {
+          "x": 309,
+          "y": 1047,
+          "right": 807,
+          "bottom": 1085,
+          "width": 498,
+          "height": 38,
+          "viewportWidth": 834,
+          "viewportHeight": 1112,
+          "computedMinHeight": "38px"
+        },
+        "commandsSubmitted": 0,
+        "appliedCommands": 0,
+        "eventCountBefore": 0,
+        "eventCountAfterToggleCycle": 0,
+        "eventCountUnchanged": true
+      },
+      "resolutionTraversal": [
+        "Encounter options",
+        "Resolve encounter"
+      ],
+      "keyboardTraversal": [
+        "Take 3 Health"
+      ]
+    },
+    "iron-stomach-infamy-keyboard-834x1112": {
+      "status": "passed",
+      "viewport": {
+        "width": 834,
+        "height": 1112
+      },
+      "scenario": "iron-stomach",
+      "role": "active chooser fixture",
+      "input": "keyboard",
+      "appliedCommands": [
+        {
+          "type": "resolve-encounter"
+        },
+        {
+          "type": "resolve-encounter",
+          "choice": "infamy"
+        }
+      ],
+      "finalHealth": 5,
+      "finalInfamy": 1,
+      "eventAction": "encounter.resolved",
+      "eventCountDelta": 2,
+      "choiceBounds": {
+        "x": 310,
+        "y": 925,
+        "right": 806,
+        "bottom": 1047,
+        "width": 496,
+        "height": 122,
+        "viewportWidth": 834,
+        "viewportHeight": 1112
+      },
+      "resolutionControlBounds": {
+        "x": 310,
+        "y": 994,
+        "right": 806,
+        "bottom": 1047,
+        "width": 496,
+        "height": 53,
+        "viewportWidth": 834,
+        "viewportHeight": 1112
+      },
+      "focusAfterResolution": "phase-choice-action-heading",
+      "phaseContextDisclosure": {
+        "input": "keyboard",
+        "role": "active",
+        "startsExpanded": true,
+        "summaryKeyboardFocusable": true,
+        "collapses": true,
+        "reopens": true,
+        "controlsHiddenWhenCollapsed": true,
+        "controlsShownWhenExpanded": true,
+        "focusRemainsOnSummary": {
+          "afterCollapse": true,
+          "afterReopen": true
+        },
+        "summaryBounds": {
+          "x": 309,
+          "y": 1047,
+          "right": 807,
+          "bottom": 1085,
+          "width": 498,
+          "height": 38,
+          "viewportWidth": 834,
+          "viewportHeight": 1112,
+          "computedMinHeight": "38px"
+        },
+        "commandsSubmitted": 0,
+        "appliedCommands": 0,
+        "eventCountBefore": 0,
+        "eventCountAfterToggleCycle": 0,
+        "eventCountUnchanged": true
+      },
+      "resolutionTraversal": [
+        "Encounter options",
+        "Resolve encounter"
+      ],
+      "keyboardTraversal": [
+        "Take 3 Health",
+        "Take 1 Infamy instead"
+      ]
+    },
+    "zorb-city-infamy-touch-390x844": {
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scenario": "zorb-city",
+      "role": "active chooser fixture",
+      "input": "touch",
+      "appliedCommands": [
+        {
+          "type": "resolve-encounter"
+        },
+        {
+          "type": "resolve-encounter",
+          "choice": "infamy"
+        }
+      ],
+      "finalHealth": 1,
+      "finalInfamy": 2,
+      "eventAction": "encounter.resolved",
+      "eventCountDelta": 2,
+      "choiceBounds": {
+        "x": 17,
+        "y": 592,
+        "right": 373,
+        "bottom": 714,
+        "width": 356,
+        "height": 122,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "resolutionControlBounds": {
+        "x": 17,
+        "y": 661,
+        "right": 373,
+        "bottom": 714,
+        "width": 356,
+        "height": 53,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "touchTargetBounds": {
+        "width": 356,
+        "height": 44
+      },
+      "focusAfterResolution": "phase-choice-action-heading",
+      "phaseContextDisclosure": {
+        "input": "touch",
+        "role": "active",
+        "startsExpanded": true,
+        "summaryKeyboardFocusable": true,
+        "collapses": true,
+        "reopens": true,
+        "controlsHiddenWhenCollapsed": true,
+        "controlsShownWhenExpanded": true,
+        "focusRemainsOnSummary": {
+          "afterCollapse": true,
+          "afterReopen": true
+        },
+        "summaryBounds": {
+          "x": 16,
+          "y": 714,
+          "right": 374,
+          "bottom": 758,
+          "width": 358,
+          "height": 44,
+          "viewportWidth": 390,
+          "viewportHeight": 844,
+          "computedMinHeight": "44px"
+        },
+        "commandsSubmitted": 0,
+        "appliedCommands": 0,
+        "eventCountBefore": 0,
+        "eventCountAfterToggleCycle": 0,
+        "eventCountUnchanged": true
+      },
+      "resolutionTraversal": [
+        "Touch: Resolve encounter"
+      ]
+    },
+    "iron-stomach-health-touch-390x844": {
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scenario": "iron-stomach",
+      "role": "active chooser fixture",
+      "input": "touch",
+      "appliedCommands": [
+        {
+          "type": "resolve-encounter"
+        },
+        {
+          "type": "resolve-encounter",
+          "choice": "health"
+        }
+      ],
+      "finalHealth": 8,
+      "finalInfamy": 0,
+      "eventAction": "encounter.resolved",
+      "eventCountDelta": 2,
+      "choiceBounds": {
+        "x": 17,
+        "y": 574,
+        "right": 373,
+        "bottom": 714,
+        "width": 356,
+        "height": 140,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "resolutionControlBounds": {
+        "x": 17,
+        "y": 661,
+        "right": 373,
+        "bottom": 714,
+        "width": 356,
+        "height": 53,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "touchTargetBounds": {
+        "width": 356,
+        "height": 44
+      },
+      "focusAfterResolution": "phase-choice-action-heading",
+      "phaseContextDisclosure": {
+        "input": "touch",
+        "role": "active",
+        "startsExpanded": true,
+        "summaryKeyboardFocusable": true,
+        "collapses": true,
+        "reopens": true,
+        "controlsHiddenWhenCollapsed": true,
+        "controlsShownWhenExpanded": true,
+        "focusRemainsOnSummary": {
+          "afterCollapse": true,
+          "afterReopen": true
+        },
+        "summaryBounds": {
+          "x": 16,
+          "y": 714,
+          "right": 374,
+          "bottom": 758,
+          "width": 358,
+          "height": 44,
+          "viewportWidth": 390,
+          "viewportHeight": 844,
+          "computedMinHeight": "44px"
+        },
+        "commandsSubmitted": 0,
+        "appliedCommands": 0,
+        "eventCountBefore": 0,
+        "eventCountAfterToggleCycle": 0,
+        "eventCountUnchanged": true
+      },
+      "resolutionTraversal": [
+        "Touch: Resolve encounter"
+      ]
+    },
+    "zorb-city-waiting-320x740": {
+      "status": "passed",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "scenario": "zorb-city",
+      "role": "canAct=false waiting-player fixture; no live room/service role mounted",
+      "choiceControls": [
+        {
+          "name": "Take 7 Health",
+          "disabled": true
+        },
+        {
+          "name": "Take 2 Infamy instead",
+          "disabled": true
+        }
+      ],
+      "commandsSubmitted": 0,
+      "eventCountUnchanged": true,
+      "phaseContextDisclosure": {
+        "input": "touch",
+        "role": "waiting",
+        "startsExpanded": true,
+        "summaryKeyboardFocusable": true,
+        "collapses": true,
+        "reopens": true,
+        "controlsHiddenWhenCollapsed": true,
+        "controlsShownWhenExpanded": true,
+        "controlsStayDisabled": true,
+        "summaryAvailableToWaitingRole": true,
+        "focusRemainsOnSummary": {
+          "afterCollapse": true,
+          "afterReopen": true
+        },
+        "summaryBounds": {
+          "x": 16,
+          "y": 610,
+          "right": 304,
+          "bottom": 654,
+          "width": 288,
+          "height": 44,
+          "viewportWidth": 320,
+          "viewportHeight": 740,
+          "computedMinHeight": "44px"
+        },
+        "commandsSubmitted": 0,
+        "appliedCommands": 0,
+        "eventCountBefore": 1,
+        "eventCountAfterToggleCycle": 1,
+        "eventCountUnchanged": true
+      },
+      "noHorizontalOverflow": true,
+      "choiceBounds": {
+        "x": 17,
+        "y": 488,
+        "right": 303,
+        "bottom": 610,
+        "width": 286,
+        "height": 122,
+        "viewportWidth": 320,
+        "viewportHeight": 740
+      }
+    },
+    "iron-stomach-waiting-320x740": {
+      "status": "passed",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "scenario": "iron-stomach",
+      "role": "canAct=false waiting-player fixture; no live room/service role mounted",
+      "choiceControls": [
+        {
+          "name": "Take 3 Health",
+          "disabled": true
+        },
+        {
+          "name": "Take 1 Infamy instead",
+          "disabled": true
+        }
+      ],
+      "commandsSubmitted": 0,
+      "eventCountUnchanged": true,
+      "phaseContextDisclosure": {
+        "input": "touch",
+        "role": "waiting",
+        "startsExpanded": true,
+        "summaryKeyboardFocusable": true,
+        "collapses": true,
+        "reopens": true,
+        "controlsHiddenWhenCollapsed": true,
+        "controlsShownWhenExpanded": true,
+        "controlsStayDisabled": true,
+        "summaryAvailableToWaitingRole": true,
+        "focusRemainsOnSummary": {
+          "afterCollapse": true,
+          "afterReopen": true
+        },
+        "summaryBounds": {
+          "x": 16,
+          "y": 610,
+          "right": 304,
+          "bottom": 654,
+          "width": 288,
+          "height": 44,
+          "viewportWidth": 320,
+          "viewportHeight": 740,
+          "computedMinHeight": "44px"
+        },
+        "commandsSubmitted": 0,
+        "appliedCommands": 0,
+        "eventCountBefore": 1,
+        "eventCountAfterToggleCycle": 1,
+        "eventCountUnchanged": true
+      },
+      "noHorizontalOverflow": true,
+      "choiceBounds": {
+        "x": 17,
+        "y": 470,
+        "right": 303,
+        "bottom": 610,
+        "width": 286,
+        "height": 140,
+        "viewportWidth": 320,
+        "viewportHeight": 740
+      }
+    }
+  },
+  "runtimeErrors": [],
+  "browserVersion": "140.0.7339.186",
+  "completed": "2026-09-28T16:17:36.250Z",
+  "status": "passed"
+}

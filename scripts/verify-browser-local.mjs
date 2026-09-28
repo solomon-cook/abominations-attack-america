@@ -20,6 +20,13 @@ const freePort = () => new Promise((resolve, reject) => {
 const port = Number(process.env.BROWSER_LOCAL_PORT ?? await freePort());
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${port}/`;
 const ownsServer = !process.env.BROWSER_TEST_URL;
+const requestedWidth = Number(process.env.BROWSER_TEST_WIDTH);
+const requestedHeight = Number(process.env.BROWSER_TEST_HEIGHT);
+assert.equal(Number.isFinite(requestedWidth), Number.isFinite(requestedHeight), "BROWSER_TEST_WIDTH and BROWSER_TEST_HEIGHT must be provided together");
+assert.ok(!Number.isFinite(requestedWidth) || (requestedWidth > 0 && requestedHeight > 0), "requested browser viewport dimensions must be positive");
+const viewportCases = Number.isFinite(requestedWidth)
+  ? [[requestedWidth, requestedHeight]]
+  : [[1280, 720], [390, 844], [320, 740]];
 const server = ownsServer
   ? spawn(process.execPath, [join(process.cwd(), "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(port)], { cwd: join(process.cwd(), "apps/web"), stdio: ["ignore", "pipe", "pipe"] })
   : undefined;
@@ -96,6 +103,16 @@ const checkSetup = async (page) => {
     cells: 336,
   });
   assert.ok(identity.hash, "the current local match must expose its board content hash");
+  const occupiedMonsterTile = page.locator(".hex-tile:has(.tile-monster)").first();
+  if (await occupiedMonsterTile.count()) {
+    const monsterName = await occupiedMonsterTile.locator(".tile-monster").first().getAttribute("alt");
+    await occupiedMonsterTile.focus();
+    const peek = page.locator(".board-monster-peek");
+    await peek.waitFor({ state: "visible" });
+    assert.ok((await peek.innerText()).includes(monsterName ?? ""), "keyboard focus on an occupied monster tile should expose its public detail preview");
+    await page.locator(".game-screen > header .turn-hud-heading button").focus();
+    await peek.waitFor({ state: "detached" });
+  }
 };
 
 const inspectLayout = async (page, width, height) => page.evaluate(({ width, height }) => {
@@ -113,6 +130,7 @@ const inspectLayout = async (page, width, height) => page.evaluate(({ width, hei
     command: visible(".command-station"),
     queue: visible(".movement-checklist"),
     minimap: visible(".board-minimap"),
+    tray: visible(".deployment-tray-shortcut"),
     controls: [...document.querySelectorAll(".map-controls button")].filter((button) => getComputedStyle(button).display !== "none").map((button) => {
       const rect = button.getBoundingClientRect();
       return { name: button.getAttribute("aria-label"), x: Math.round(rect.left), y: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) };
@@ -141,20 +159,28 @@ const inspectTrophyBadge = async (page) => page.evaluate(() => {
 });
 
 try {
-  for (const [width, height] of [[1280, 720], [390, 844], [320, 740]]) {
+  for (const [width, height] of viewportCases) {
     const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, isMobile: width <= 600, hasTouch: width <= 600 });
     const page = await context.newPage();
     page.on("pageerror", (error) => failures.push(`${width}x${height}: ${error.message}`));
     await page.goto(url, { waitUntil: "domcontentloaded" });
     await checkSetup(page);
+    const firstMatchGuide = page.getByRole("button", { name: "Got it · hide guide" });
+    if (await firstMatchGuide.isVisible()) await firstMatchGuide.click();
     if (width > 700) {
-      for (const [testWidth, testHeight] of width === 1280 ? [[1280, 720], [768, 1024]] : [[width, height]]) {
+      for (const [testWidth, testHeight] of width === 1280 ? [[1280, 720], [768, 1024], [768, 600], [900, 700]] : [[width, height]]) {
         if (testWidth !== width || testHeight !== height) await page.setViewportSize({ width: testWidth, height: testHeight });
         const badge = await inspectTrophyBadge(page);
         assert.equal(badge.display, "flex", `${testWidth}px portrait rails should show the compact trophy count`);
         assert.ok(badge.badge.width >= 37 && badge.badge.height >= 15, `${testWidth}px trophy count should remain legible: ${JSON.stringify(badge)}`);
         assert.ok(badge.badge.y >= badge.reservedIdentityBottom, `${testWidth}px trophy marker should clear portrait health and player-number badges: ${JSON.stringify(badge)}`);
         assert.ok(badge.badge.bottom <= badge.card.bottom + 7, `${testWidth}px trophy marker should stay within its small reserved rail gap: ${JSON.stringify(badge)}`);
+        if (testWidth === 768 || testWidth === 900) {
+          const tray = await page.locator(".deployment-tray-shortcut").boundingBox();
+          const orders = await page.locator(".movement-checklist").boundingBox();
+          const overlaps = tray && orders && tray.x < orders.x + orders.width && tray.x + tray.width > orders.x && tray.y < orders.y + orders.height && tray.y + tray.height > orders.y;
+          assert.ok(tray && orders && !overlaps, `${testWidth}x${testHeight} deployment tray must remain clear of movement orders: tray=${JSON.stringify(tray)} orders=${JSON.stringify(orders)}`);
+        }
         await page.locator(".opponent-trophy-badge").evaluate((node) => node.remove());
         await page.locator(".opponent-player-card").first().evaluate((node) => node.classList.remove("has-trophies"));
       }
@@ -195,9 +221,16 @@ try {
       assert.match(monsterRecord, /♥\s*\d+\/\d+/);
       assert.match(monsterRecord, /★\s*\d+/);
       assert.match(await page.locator(".record-medallion").first().evaluate((node) => getComputedStyle(node).backgroundImage), /conic-gradient/);
-      await page.getByRole("tab", { name: "Military" }).click();
+      const militaryTab = page.getByRole("tab", { name: "Military" });
+      const [tabBounds, trayBounds] = await Promise.all([militaryTab.boundingBox(), page.locator(".deployment-tray-shortcut").boundingBox()]);
+      const trayOverlapsRecordTab = tabBounds && trayBounds && tabBounds.x < trayBounds.x + trayBounds.width && tabBounds.x + tabBounds.width > trayBounds.x && tabBounds.y < trayBounds.y + trayBounds.height && tabBounds.y + tabBounds.height > trayBounds.y;
+      assert.ok(tabBounds && trayBounds && !trayOverlapsRecordTab, `${width}x${height} deployment shortcut overlaps the Military record tab: tab=${JSON.stringify(tabBounds)} tray=${JSON.stringify(trayBounds)}`);
+      await militaryTab.click();
       assert.match(await page.locator("#record-panel").innerText(), /Military Record|Research cards/i);
-      await page.getByRole("button", { name: /Open .* military sheet/i }).click();
+      const deploymentTray = page.locator(".deployment-tray-shortcut");
+      assert.match(await deploymentTray.getAttribute("aria-label"), /Open .* military sheet, \d+ deployed, \d+ in reserve/);
+      await deploymentTray.focus();
+      await page.keyboard.press("Enter");
       const militaryDialog = page.locator(".military-drawer[role=dialog]");
       await militaryDialog.waitFor({ state: "visible" });
       await page.waitForFunction(() => {
@@ -209,31 +242,87 @@ try {
       const dialogBounds = await militaryDialog.boundingBox();
       assert.ok(dialogBounds && dialogBounds.x >= 0 && dialogBounds.y >= 0 && dialogBounds.x + dialogBounds.width <= width + 1 && dialogBounds.y + dialogBounds.height <= height + 1, `${width}x${height} military inspector ${JSON.stringify(dialogBounds)} should stay within the viewport`);
       assert.ok(await page.locator(".persistent-record").isVisible(), "opening a military inspector must leave the quick-access record mounted beneath it");
-      if (width <= 360) {
-        const rosterScroll = page.locator(".military-drawer .physical-military-sheet");
-        const beforeScroll = await rosterScroll.evaluate((node) => ({ scrollHeight: node.scrollHeight, clientHeight: node.clientHeight, overflowY: getComputedStyle(node).overflowY }));
-        assert.equal(beforeScroll.overflowY, "auto", "narrow military roster should expose an internal scroll region");
-        assert.ok(beforeScroll.scrollHeight > beforeScroll.clientHeight, `narrow military roster should exercise long-content scrolling: ${JSON.stringify(beforeScroll)}`);
-        await rosterScroll.evaluate((node) => { node.scrollTop = node.scrollHeight; });
-        assert.ok(await rosterScroll.evaluate((node) => node.scrollTop > 0), "narrow military roster should scroll internally");
-        await rosterScroll.evaluate((node) => { node.scrollTop = 0; });
-      }
+      await deploymentTray.focus();
       await page.keyboard.press("Escape");
       await militaryDialog.waitFor({ state: "detached" });
+      assert.equal(await deploymentTray.evaluate((node) => document.activeElement === node), true, "Escape from outside the military drawer should close it and restore focus to its opener");
+      await page.keyboard.press("Enter");
+      await militaryDialog.waitFor({ state: "visible" });
+      await militaryDialog.getByRole("button", { name: "Close military sheets" }).click();
+      await militaryDialog.waitFor({ state: "detached" });
+      assert.equal(await deploymentTray.evaluate((node) => document.activeElement === node), true, "the explicit drawer close button should restore focus to the deployment tray");
       await page.getByRole("tab", { name: "Map" }).click();
+      const mapDebug = await page.locator(".board-minimap").evaluate((node) => ({ display: getComputedStyle(node).display, rect: (() => { const { x, y, width, height } = node.getBoundingClientRect(); return { x, y, width, height }; })(), recordClass: document.querySelector(".persistent-record")?.className, tab: document.querySelector(".persistent-record")?.getAttribute("data-record-tab") }));
+      assert.equal(mapDebug.display, "block", `${width}x${height} map tab should show its overview: ${JSON.stringify(mapDebug)}`);
       await page.getByRole("button", { name: "Board overview. Click to move camera; arrow keys pan." }).waitFor({ state: "visible" });
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.minimap?.visible, true);
       const overlaps = (a, b) => a && b && a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
       assert.equal(overlaps(layout.minimap, layout.queue), false, `${width}x${height} minimap overlaps movement queue`);
       assert.equal(overlaps(layout.minimap, layout.command), false, `${width}x${height} minimap overlaps command sheet`);
+      assert.equal(overlaps(layout.minimap, layout.tray), false, `${width}x${height} minimap overlaps deployment tray`);
+      const trayHitTest = await page.locator(".deployment-tray-shortcut").evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+        return Boolean(hit?.closest(".deployment-tray-shortcut"));
+      });
+      assert.equal(trayHitTest, true, `${width}x${height} open-map tray center should remain pointer-accessible`);
       await page.screenshot({ path: `output/board-art/ui-minimap-${width}x${height}.png` });
+      const closeButtonDebug = await page.evaluate(() => {
+        const button = document.querySelector(".persistent-record.mobile-record-open > .mobile-record-toggle");
+        if (!button) return null;
+        const rect = button.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const top = document.elementFromPoint(x, y);
+        const ancestry = (element) => {
+          const rows = [];
+          let current = element;
+          for (let depth = 0; current && depth < 6; depth += 1, current = current.parentElement) {
+            const style = getComputedStyle(current);
+            rows.push({ tag: current.tagName, className: String(current.className ?? ""), position: style.position, zIndex: style.zIndex, isolation: style.isolation, transform: style.transform });
+          }
+          return rows;
+        };
+        return { hitTestSucceeds: Boolean(top && button.contains(top)), rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, target: { tag: top?.tagName, className: String(top?.className ?? ""), text: top?.textContent?.trim().slice(0, 50) }, button: ancestry(button), hit: ancestry(top) };
+      });
+      assert.equal(closeButtonDebug?.hitTestSucceeds, true, `${width}x${height} record close control is unobstructed: ${JSON.stringify(closeButtonDebug)}`);
       await page.getByRole("button", { name: "Minimize monster, military and map record" }).click();
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.minimap?.visible, false, "closing the record hides the minimap");
     } else {
       await page.locator(".mobile-command-toggle").click();
       await page.waitForFunction(() => document.querySelector(".mobile-command-toggle")?.getAttribute("aria-expanded") === "true");
+      const expandedTray = page.locator(".deployment-tray-shortcut");
+      const expandedTrayBounds = await expandedTray.boundingBox();
+      assert.ok(expandedTrayBounds && expandedTrayBounds.x >= 0 && expandedTrayBounds.y >= 0 && expandedTrayBounds.x + expandedTrayBounds.width <= width + 1 && expandedTrayBounds.y + expandedTrayBounds.height <= height + 1, `${width}x${height} expanded-sheet tray should remain inside the viewport: ${JSON.stringify(expandedTrayBounds)}`);
+      const expandedTrayHit = await expandedTray.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        const x = rect.x + rect.width / 2;
+        const y = rect.y + rect.height / 2;
+        const hit = document.elementFromPoint(x, y);
+        const command = document.querySelector(".command-station.mobile-command-expanded");
+        const commandRect = command?.getBoundingClientRect();
+        const overlapsCommand = Boolean(commandRect && rect.x < commandRect.right && rect.right > commandRect.left && rect.y < commandRect.bottom && rect.bottom > commandRect.top);
+        const ancestry = (element) => {
+          const rows = [];
+          let current = element;
+          for (let depth = 0; current && depth < 7; depth += 1, current = current.parentElement) {
+            const style = getComputedStyle(current);
+            rows.push({ tag: current.tagName, className: String(current.className ?? ""), position: style.position, zIndex: style.zIndex, pointerEvents: style.pointerEvents });
+          }
+          return rows;
+        };
+        return { reachesTray: Boolean(hit?.closest(".deployment-tray-shortcut")), overlapsCommand, point: { x, y }, target: { tag: hit?.tagName, className: String(hit?.className ?? ""), text: hit?.textContent?.trim().slice(0, 70) }, hit: ancestry(hit), tray: { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom }, command: commandRect && { x: commandRect.x, y: commandRect.y, right: commandRect.right, bottom: commandRect.bottom } };
+      });
+      assert.equal(expandedTrayHit.reachesTray, true, `${width}x${height} expanded-sheet tray center should remain pointer-accessible: ${JSON.stringify(expandedTrayHit)}`);
+      assert.equal(expandedTrayHit.overlapsCommand, false, `${width}x${height} expanded command sheet should leave a clear tray lane: ${JSON.stringify(expandedTrayHit)}`);
+      await expandedTray.tap();
+      const expandedSheetDrawer = page.locator(".military-drawer[role=dialog]");
+      await expandedSheetDrawer.waitFor({ state: "visible" });
+      await page.keyboard.press("Escape");
+      await expandedSheetDrawer.waitFor({ state: "detached" });
+      assert.equal(await page.locator(".mobile-command-toggle").getAttribute("aria-expanded"), "true", `${width}px opening the tray should leave the expanded command sheet open`);
       const tabs = page.getByRole("tablist", { name: "Record view" });
       await tabs.waitFor({ state: "visible" });
       const mobileOrder = page.locator(".movement-piece").first();
@@ -265,6 +354,23 @@ try {
       assert.equal(layout.minimap?.visible, true);
       assert.ok(layout.minimap.y + layout.minimap.height < command.y + 1, `${width}x${height} minimap ${JSON.stringify(layout.minimap)} must clear command sheet ${JSON.stringify(command)}`);
       const overlaps = (a, b) => a && b && a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+      assert.equal(overlaps(layout.tray, layout.minimap), false, `${width}x${height} open Map record must leave the entire deployment tray clear of the minimap: tray=${JSON.stringify(layout.tray)} minimap=${JSON.stringify(layout.minimap)}`);
+      const mapTrayHitGrid = await expandedTray.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        const points = [0.2, 0.5, 0.8].flatMap((x) => [0.2, 0.5, 0.8].map((y) => ({ x: rect.left + rect.width * x, y: rect.top + rect.height * y })));
+        return points.map(({ x, y }) => {
+          const hit = document.elementFromPoint(x, y);
+          return Boolean(hit?.closest(".deployment-tray-shortcut"));
+        });
+      });
+      assert.ok(mapTrayHitGrid.every(Boolean), `${width}x${height} open Map record tray should be hit-testable across its face: ${JSON.stringify(mapTrayHitGrid)}`);
+      await expandedTray.tap();
+      const mapOpenTrayDrawer = page.locator(".military-drawer[role=dialog]");
+      await mapOpenTrayDrawer.waitFor({ state: "visible" });
+      await page.keyboard.press("Escape");
+      await mapOpenTrayDrawer.waitFor({ state: "detached" });
+      assert.equal(await page.locator(".mobile-command-toggle").getAttribute("aria-expanded"), "true", `${width}px using the tray with Map selected should keep the command sheet expanded`);
+      await page.getByRole("button", { name: "Board overview. Click to move camera; arrow keys pan." }).waitFor({ state: "visible" });
       assert.equal(overlaps(layout.minimap, layout.portraitRail), false, `${width}x${height} minimap overlaps player portraits`);
       for (const control of layout.controls) assert.equal(overlaps(layout.minimap, control), false, `${width}x${height} minimap overlaps ${control.name}`);
       await page.screenshot({ path: `output/board-art/ui-minimap-${width}x${height}.png` });
@@ -272,6 +378,82 @@ try {
       await page.waitForFunction(() => document.querySelector(".mobile-command-toggle")?.getAttribute("aria-expanded") === "false");
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.minimap?.visible, false, "collapsing the sheet hides the minimap");
+      const deploymentTray = page.locator(".deployment-tray-shortcut");
+      const trayBounds = await deploymentTray.boundingBox();
+      assert.ok(trayBounds && trayBounds.x >= 0 && trayBounds.y >= 0 && trayBounds.x + trayBounds.width <= width + 1 && trayBounds.y + trayBounds.height <= height + 1, `${width}x${height} deployment shortcut should stay visible in the viewport: ${JSON.stringify(trayBounds)}`);
+      const trayHitTest = await deploymentTray.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+        const panel = document.querySelector(".game-side-panel");
+        const panelRect = panel?.getBoundingClientRect();
+        return { reachesTray: Boolean(hit?.closest(".deployment-tray-shortcut")), hit: hit?.outerHTML.slice(0, 220), trayZ: getComputedStyle(node).zIndex, panelDisplay: panel ? getComputedStyle(panel).display : undefined, panelPosition: panel ? getComputedStyle(panel).position : undefined, panelZ: panel ? getComputedStyle(panel).zIndex : undefined, panelRect: panelRect && { x: panelRect.x, y: panelRect.y, width: panelRect.width, height: panelRect.height } };
+      });
+      assert.equal(trayHitTest.reachesTray, true, `${width}px tray center hit-test should reach the tray: ${JSON.stringify(trayHitTest)}`);
+      await deploymentTray.tap();
+      const militaryDialog = page.locator(".military-drawer[role=dialog]");
+      await militaryDialog.waitFor({ state: "visible" });
+      await page.waitForFunction(() => {
+        const drawer = document.querySelector(".military-drawer[role=dialog]");
+        if (!drawer) return false;
+        const rect = drawer.getBoundingClientRect();
+        return rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1;
+      });
+      const drawerBounds = await militaryDialog.boundingBox();
+      assert.ok(drawerBounds && drawerBounds.x >= 0 && drawerBounds.y >= 0 && drawerBounds.x + drawerBounds.width <= width + 1 && drawerBounds.y + drawerBounds.height <= height + 1, `${width}x${height} military drawer ${JSON.stringify(drawerBounds)} should stay within the viewport`);
+      const selectedSheetTab = page.locator(".military-sheet-tabs button[aria-pressed='true']").first();
+      if (await page.locator(".military-sheet-tabs button").count() > 1) {
+        const originalSheet = (await selectedSheetTab.innerText()).trim();
+        await selectedSheetTab.focus();
+        await page.keyboard.press("ArrowRight");
+        await page.waitForFunction(() => {
+          const selected = document.querySelector(".military-sheet-tabs button[aria-pressed='true']");
+          return Boolean(selected && document.activeElement === selected);
+        });
+        const nextSheet = (await page.locator(".military-sheet-tabs button[aria-pressed='true']").innerText()).trim();
+        assert.notEqual(nextSheet, originalSheet, `${width}px ArrowRight on branch navigation should select and focus the next sheet`);
+        await page.keyboard.press("ArrowLeft");
+        await page.waitForFunction((expected) => {
+          const selected = document.querySelector(".military-sheet-tabs button[aria-pressed='true']");
+          return selected?.textContent?.trim() === expected && document.activeElement === selected;
+        }, originalSheet);
+      }
+      const rosterScroll = page.locator(".military-drawer .physical-military-sheet");
+      const scrollMetrics = await rosterScroll.evaluate((node) => ({ scrollHeight: node.scrollHeight, clientHeight: node.clientHeight, overflowY: getComputedStyle(node).overflowY }));
+      assert.equal(scrollMetrics.overflowY, "auto", `${width}px military roster should expose an internal scroll region`);
+      assert.ok(scrollMetrics.scrollHeight > scrollMetrics.clientHeight, `${width}px military roster should exercise long-content scrolling: ${JSON.stringify(scrollMetrics)}`);
+      await rosterScroll.evaluate((node) => { node.scrollTop = node.scrollHeight; });
+      assert.ok(await rosterScroll.evaluate((node) => node.scrollTop > 0), `${width}px military roster should scroll internally`);
+      if (width <= 600) {
+        const grabHandle = page.locator(".military-drawer-grab");
+        await grabHandle.focus();
+        await page.keyboard.press("End");
+        const expandedBounds = await militaryDialog.boundingBox();
+        assert.ok(expandedBounds && expandedBounds.height <= height - 54 + 1, `${width}x${height} keyboard resize should respect its available height: ${JSON.stringify(expandedBounds)}`);
+        const shorterHeight = Math.min(height, 480);
+        await page.setViewportSize({ width, height: shorterHeight });
+        await page.waitForFunction(() => {
+          const drawer = document.querySelector(".military-drawer[role=dialog]");
+          if (!drawer) return false;
+          const rect = drawer.getBoundingClientRect();
+          return rect.top >= 0 && rect.bottom <= innerHeight + 1 && rect.height <= Math.max(96, innerHeight - 54) + 1;
+        });
+        const reclampedBounds = await militaryDialog.boundingBox();
+        assert.ok(reclampedBounds && reclampedBounds.height <= shorterHeight - 54 + 1, `${width}x${shorterHeight} resized drawer should reclamp to the shorter viewport: ${JSON.stringify(reclampedBounds)}`);
+        await page.setViewportSize({ width, height });
+        await page.waitForFunction(() => {
+          const drawer = document.querySelector(".military-drawer[role=dialog]");
+          const rect = drawer?.getBoundingClientRect();
+          return Boolean(rect && rect.top >= 0 && rect.bottom <= innerHeight + 1);
+        });
+      }
+      await page.keyboard.press("Escape");
+      await militaryDialog.waitFor({ state: "detached" });
+      assert.equal(await deploymentTray.evaluate((node) => document.activeElement === node), true, `${width}px Escape should dismiss the military drawer and restore focus to its touch opener`);
+      await deploymentTray.tap();
+      await militaryDialog.waitFor({ state: "visible" });
+      await militaryDialog.getByRole("button", { name: "Close military sheets" }).click();
+      await militaryDialog.waitFor({ state: "detached" });
+      assert.equal(await deploymentTray.evaluate((node) => document.activeElement === node), true, `${width}px the explicit drawer close button should restore focus to its tray opener`);
     }
 
     const activeAction = page.locator(".action-dock > button").filter({ visible: true }).first();
@@ -350,8 +532,30 @@ try {
   await soloPage.locator(".board-action-bar .action-dock > button").click();
   await soloPage.getByRole("button", { name: /Military research/ }).last().click();
   await soloPage.getByRole("button", { name: "Draw a Military Research card instead of deploying a unit" }).click();
-  await soloPage.locator("dialog.resolution-research").waitFor({ state: "visible" });
-  await soloPage.locator("dialog.resolution-research .resolution-close").click();
+  const researchDialog = soloPage.locator("dialog.resolution-research[open]");
+  await researchDialog.waitFor({ state: "visible" });
+  // Exercise the real drawer entry without resizing this solo match mid-turn;
+  // compact bounds are covered by the direct PhaseActions browser harness.
+  const researchBounds = await researchDialog.boundingBox();
+  assert.ok(researchBounds && researchBounds.x >= 0 && researchBounds.y >= 0 && researchBounds.x + researchBounds.width <= 1281 && researchBounds.y + researchBounds.height <= 721,
+    `1280x720 drawer Research dialog should remain within the viewport: ${JSON.stringify(researchBounds)}`);
+  const researchClose = researchDialog.getByRole("button", { name: "Return to board" });
+  assert.equal(await researchClose.evaluate(node => node === document.activeElement), true, "Research dialog initially focuses its named close control");
+  const cardBack = researchDialog.getByRole("button", { name: /Reveal card/ });
+  await cardBack.focus();
+  await soloPage.keyboard.press("Enter");
+  const revealedCard = researchDialog.locator(".digital-card-research");
+  await revealedCard.waitFor({ state: "visible" });
+  assert.match(await revealedCard.getAttribute("aria-label"), /.+ Military Research card$/, "keyboard reveal should expose the drawn Research card identity");
+  assert.ok((await revealedCard.innerText()).trim().length > 0, "revealed Research card should include its rule text");
+  await soloPage.keyboard.press("Escape");
+  await researchDialog.waitFor({ state: "detached" });
+  const postCloseFocus = await soloPage.evaluate(() => ({ tag: document.activeElement?.tagName, role: document.activeElement?.getAttribute("role"), label: document.activeElement?.getAttribute("aria-label"), className: typeof document.activeElement?.className === "string" ? document.activeElement.className : "" }));
+  assert.equal(await soloPage.locator("dialog[open]").count(), 0, "Escape should close the Research native dialog");
+  assert.ok(await soloPage.locator(".board-viewport").isVisible(), "closing Research should return to the board context");
+  assert.notEqual(postCloseFocus.tag, "BODY", `closing Research should not strand focus on the document body: ${JSON.stringify(postCloseFocus)}`);
+  assert.equal(await soloPage.locator(".top-turn-summary h2").evaluate(node => node === document.activeElement), true, "Escape should restore focus to the turn heading when the spent Research trigger was removed with the Military drawer");
+  await soloPage.setViewportSize({ width: 1280, height: 720 });
   const humanCamera = await soloPage.locator(".map-canvas").getAttribute("style");
   const militaryClose = soloPage.locator(".military-drawer .military-sheet-close").last();
   if (await militaryClose.isVisible().catch(() => false)) await militaryClose.click();
@@ -392,8 +596,36 @@ try {
   });
   assert.ok(contrastRatio(followColors.foreground, followColors.background) >= 4.5, `the selected follow control should retain AA text contrast: ${JSON.stringify(followColors)}`);
   assert.deepEqual(failures.splice(0), [], "the solo browser flow should not report runtime errors");
-  console.log(JSON.stringify({ ok: true, mode: "solo", check: "routine city dice play inline; player record stays interactive; camera follow is opt-in" }));
+  console.log(JSON.stringify({ ok: true, mode: "solo", check: "routine city dice play inline; Military-drawer Research dialog reveals by keyboard and Escape restores focus; player record stays interactive; camera follow is opt-in" }));
   await soloContext.close();
+
+  const phaseActionsPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  phaseActionsPage.on("pageerror", (error) => failures.push(`PhaseActions Research harness: ${error.message}`));
+  await phaseActionsPage.goto(new URL("research-phase-actions-harness.html", url).toString(), { waitUntil: "domcontentloaded" });
+  const directResearch = phaseActionsPage.getByRole("button", { name: "Draw Military Research instead", exact: true });
+  await directResearch.waitFor({ state: "visible" });
+  assert.equal(await directResearch.isEnabled(), true, "direct PhaseActions Research entry is enabled in the deployment fixture");
+  await directResearch.click();
+  const directDialog = phaseActionsPage.locator("dialog.resolution-research[open]");
+  await directDialog.waitFor({ state: "visible" });
+  assert.equal(await phaseActionsPage.getByTestId("captured-research-trigger").innerText(), "Draw Military Research instead", "the shared command boundary captures the direct PhaseActions trigger before state changes");
+  const directDialogBounds = await directDialog.boundingBox();
+  assert.ok(directDialogBounds && directDialogBounds.x >= 0 && directDialogBounds.y >= 0 && directDialogBounds.x + directDialogBounds.width <= 391 && directDialogBounds.y + directDialogBounds.height <= 845,
+    `390x844 direct Research dialog should remain within the compact viewport: ${JSON.stringify(directDialogBounds)}`);
+  const directClose = directDialog.getByRole("button", { name: "Return to board" });
+  assert.equal(await directClose.evaluate((node) => node === document.activeElement), true, "direct PhaseActions dialog initially focuses its close control");
+  const directCardBack = directDialog.getByRole("button", { name: /Reveal card/ });
+  await directCardBack.focus();
+  await phaseActionsPage.keyboard.press("Enter");
+  const directRevealedCard = directDialog.locator(".digital-card-research");
+  await directRevealedCard.waitFor({ state: "visible" });
+  assert.match(await directRevealedCard.getAttribute("aria-label"), /.+ Military Research card$/, "direct PhaseActions path reveals the drawn card by keyboard");
+  await phaseActionsPage.keyboard.press("Escape");
+  await directDialog.waitFor({ state: "detached" });
+  assert.equal(await phaseActionsPage.locator("h1").evaluate((node) => node === document.activeElement), true, "when the direct trigger is removed by the phase change, Escape restores focus to its persistent context heading");
+  assert.deepEqual(failures.splice(0), [], "Research dialog paths should not report runtime errors");
+  console.log(JSON.stringify({ ok: true, mode: "PhaseActions-harness", viewport: "390x844", check: "direct Draw Military Research trigger captured before phase update; card revealed by Enter; Escape closes dialog and restores focus to persistent heading" }));
+  await phaseActionsPage.close();
 } finally {
   await browser.close();
   if (server && server.exitCode === null) {

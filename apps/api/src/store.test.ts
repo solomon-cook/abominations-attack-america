@@ -16,6 +16,50 @@ async function completeDevelopmentSetup(store: MemoryRoomStore, sessions: Array<
   for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) revision = (await store.setupAction(code, sessions[playerIndex].token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, revision)).version;
 }
 
+test("Memory room reads migrate schema-1 snapshots before redaction and later commands", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  const room = rooms.get(host.room.code)!;
+  const legacy = room.state as any;
+  legacy.schemaVersion = 1;
+  legacy.monsters[legacy.currentPlayer].location = "los-angeles";
+  legacy.players[0].mutationCardIds = ["War Spikes"];
+  legacy.players[1].researchCardIds = ["Laser Fence"];
+  delete legacy.eventLog;
+
+  const hostView = await store.getRoom(host.room.code, host.token);
+  assert.equal(hostView.state.schemaVersion, 2);
+  assert.deepEqual(hostView.state.eventLog, []);
+  assert.equal(hostView.state.monsters[hostView.state.currentPlayer]!.location, locationIdToHexKey("los-angeles"));
+  assert.deepEqual(hostView.state.players[0]!.mutationCardIds, ["War Spikes"]);
+  assert.deepEqual(hostView.state.players[1]!.researchCardIds, []);
+  assert.deepEqual(hostView.state.players[1]!.visibleResearchCardIds, ["Laser Fence"]);
+  assert.equal(legacy.schemaVersion, 1, "projection migrates a clone and leaves the persisted snapshot intact");
+  assert.equal(legacy.eventLog, undefined);
+
+  const activePlayer = hostView.state.currentPlayer;
+  const session = activePlayer === 0 ? host : guest;
+  const actor = hostView.participants.find((participant) => participant.playerIndex === activePlayer)!;
+  const path = legalMonsterPaths(hostView.state, hostView.state.monsters[activePlayer]!.id).find((candidate) => candidate.length > 1);
+  assert.ok(path, "the active monster has a legal development-board move after migration");
+  const moved = await store.submitAction(host.room.code, session.token, {
+    actionId: "schema-one-room-first-post-upgrade-command",
+    actorId: actor.id,
+    expectedRevision: hostView.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "move", path },
+  });
+  assert.equal(moved.state.schemaVersion, 2);
+  assert.equal(moved.state.eventLog.length, 1);
+  assert.equal(room.state.schemaVersion, 2, "the first successful command self-heals the stored snapshot");
+});
+
 test("authenticated room projections retain Fins and Gills' conditional Defense across refresh", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2, "Host");
@@ -1503,6 +1547,7 @@ test("authenticated off-turn Laser Fence holder can resolve a post-move reaction
   const game = rooms.get(host.room.code)!.state;
   game.currentPlayer = 0;
   game.phase = "move";
+  game.players[0]!.researchCardIds = [];
   game.players[1]!.researchCardIds = ["Laser Fence"];
   game.monsters[0]!.infamy = 3;
   game.laserFenceWindowMonsterIds = [game.monsters[0]!.id];
@@ -1628,7 +1673,7 @@ test("memory store health reports its persistence boundary", async () => {
   assert.deepEqual(await new MemoryRoomStore(true).health(), { persistence: "memory" });
 });
 
-test("MVP room creation uses the full human-audited board", async () => {
+test("MVP room creation uses the full board candidate", async () => {
   const created = await new MemoryRoomStore().createRoom(2);
   assert.equal(created.room?.state.boardId, "human-audited-north-america");
   assert.equal(created.room?.state.setupState?.phase, "monster-selection");
@@ -1679,18 +1724,55 @@ test("disconnect and reconnect preserve setup state while the room awaits takeov
   await assert.rejects(() => store.setReady(host.room.code, host.token, true), /Reconnect/);
   const reconnectedSetup = await store.reconnect(host.room.code, host.token);
   assert.equal(reconnectedSetup.participants.find((participant) => participant.id === host.participantId)?.connected, true);
-  await store.reconnect(host.room.code, host.token, "tab-a");
+  await assert.rejects(() => store.reconnect(host.room.code, host.token, "tab-a"), /connection was replaced/);
+  await store.reconnect(host.room.code, host.token, "legacy", "tab-a");
   const staleClose = await store.disconnect(host.room.code, host.token, "tab-b");
   assert.equal(staleClose.participants.find((participant) => participant.id === host.participantId)?.connected, true);
+  await assert.rejects(() => store.reconnect(host.room.code, host.token, "legacy", "stale-tab"), /connection was replaced/);
   await store.disconnect(host.room.code, host.token, "tab-a");
   await store.reconnect(host.room.code, host.token, "tab-a");
   await completeDevelopmentSetup(store, [host, guest]);
   await store.setReady(host.room.code, host.token, true);
   await store.setReady(host.room.code, guest.token, true);
   assert.equal((await store.disconnect(host.room.code, host.token, "tab-a")).status, "active");
-  assert.equal((await store.disconnect(host.room.code, guest.token)).status, "active");
+  assert.equal((await store.disconnect(host.room.code, guest.token)).status, "abandoned");
+  assert.equal((await store.reconnect(host.room.code, guest.token)).status, "abandoned");
+  assert.equal((await store.reconnect(host.room.code, host.token, "tab-a")).status, "active");
+});
+
+test("leaving atomically cancels a pending reconnect lease in either race order", async () => {
+  const disconnectedFirstStore = new MemoryRoomStore();
+  const disconnectedFirst = await disconnectedFirstStore.createRoom(2, "Player 1");
+  const oldLease = "old-lease";
+  const pendingLease = "pending-lease";
+  await disconnectedFirstStore.reconnect(disconnectedFirst.room.code, disconnectedFirst.token, "legacy", oldLease);
+  const leftFirst = await disconnectedFirstStore.disconnect(disconnectedFirst.room.code, disconnectedFirst.token, oldLease, pendingLease);
+  assert.equal(leftFirst.participants.find((participant) => participant.id === disconnectedFirst.participantId)?.connected, false);
+  await assert.rejects(() => disconnectedFirstStore.reconnect(disconnectedFirst.room.code, disconnectedFirst.token, oldLease, pendingLease), /connection was replaced/);
+  await assert.rejects(() => disconnectedFirstStore.reconnect(disconnectedFirst.room.code, disconnectedFirst.token, "legacy", "fresh-lease"), /connection was replaced/);
+
+  const reconnectFirstStore = new MemoryRoomStore();
+  const reconnectFirst = await reconnectFirstStore.createRoom(2, "Player 1");
+  await reconnectFirstStore.reconnect(reconnectFirst.room.code, reconnectFirst.token, "legacy", oldLease);
+  await reconnectFirstStore.reconnect(reconnectFirst.room.code, reconnectFirst.token, oldLease, pendingLease);
+  const leftAfterReconnect = await reconnectFirstStore.disconnect(reconnectFirst.room.code, reconnectFirst.token, oldLease, pendingLease);
+  assert.equal(leftAfterReconnect.participants.find((participant) => participant.id === reconnectFirst.participantId)?.connected, false);
+  await assert.rejects(() => reconnectFirstStore.reconnect(reconnectFirst.room.code, reconnectFirst.token, oldLease, pendingLease), /connection was replaced/);
+  await assert.rejects(() => reconnectFirstStore.reconnect(reconnectFirst.room.code, reconnectFirst.token, "legacy", "fresh-lease"), /connection was replaced/);
+});
+
+test("an active room becomes abandoned when all players disconnect and recovers when they reconnect", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Player 1");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  await store.setReady(host.room.code, guest.token, true);
+
+  assert.equal((await store.disconnect(host.room.code, host.token)).status, "active");
+  assert.equal((await store.disconnect(host.room.code, guest.token)).status, "abandoned");
+  assert.equal((await store.reconnect(host.room.code, host.token)).status, "abandoned");
   assert.equal((await store.reconnect(host.room.code, guest.token)).status, "active");
-  assert.equal((await store.reconnect(host.room.code, host.token)).status, "active");
 });
 
 test("session rotation preserves the participant while revoking the old token", async () => {
@@ -1718,14 +1800,81 @@ test("expired memory sessions cannot be used and rotation refreshes the expiry",
   assert.ok(rotated.token);
 });
 
+test("Memory socket leases stop consuming, connecting, projecting, and acting after session expiry", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2);
+  const rooms = (store as unknown as { rooms: Map<string, { participants: Array<{ id: string; sessionExpiresAt: number }> }> }).rooms;
+  const participant = [...rooms.values()][0]!.participants.find((candidate) => candidate.id === host.participantId)!;
+
+  const expiredBeforeConsume = await store.createSocketTicket(host.room.code, host.token);
+  participant.sessionExpiresAt = Date.now() - 1;
+  await assert.rejects(() => store.consumeSocketTicket(host.room.code, expiredBeforeConsume.ticket), /Session token has expired/);
+
+  participant.sessionExpiresAt = Date.now() + 60_000;
+  const expiredBeforeConnect = await store.createSocketTicket(host.room.code, host.token, expiredBeforeConsume.connectionId);
+  const pending = await store.consumeSocketTicket(host.room.code, expiredBeforeConnect.ticket);
+  participant.sessionExpiresAt = Date.now() - 1;
+  await assert.rejects(() => store.connectParticipant(host.room.code, host.participantId, pending.connectionId, pending.sessionHash), /Session token has expired/);
+
+  participant.sessionExpiresAt = Date.now() + 60_000;
+  const openTicket = await store.createSocketTicket(host.room.code, host.token, expiredBeforeConnect.connectionId);
+  const openPrincipal = await store.consumeSocketTicket(host.room.code, openTicket.ticket);
+  await store.connectParticipant(host.room.code, host.participantId, openPrincipal.connectionId, openPrincipal.sessionHash);
+  participant.sessionExpiresAt = Date.now() - 1;
+  assert.equal(await store.getRoomForConnection(host.room.code, host.participantId, openPrincipal.connectionId, openPrincipal.sessionHash), undefined);
+  await assert.rejects(() => store.submitActionForParticipant(host.room.code, host.participantId, openPrincipal.connectionId, openPrincipal.sessionHash, {
+    actionId: "expired-session-socket-action", actorId: host.participantId, expectedRevision: 0, protocolVersion: 1, command: { type: "pass-move" },
+  }), /Session token has expired/);
+});
+
 test("idle development rooms expire without changing a completed result", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2);
-  const rooms = (store as unknown as { rooms: Map<string, { lastActivityAt: number }> }).rooms;
-  [...rooms.values()][0]!.lastActivityAt = 0;
-  const expired = await store.getRoom(host.room.code, host.token);
-  assert.equal(expired.status, "expired");
-  await assert.rejects(() => store.setupAction(host.room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, expired.version), /expired/);
+  const rooms = (store as unknown as { rooms: Map<string, { lastActivityAt: number; status: string }> }).rooms;
+  const record = [...rooms.values()][0]!;
+  record.lastActivityAt = 0;
+  await assert.rejects(() => store.getRoom(host.room.code, host.token), /room has expired/);
+  assert.equal(record.status, "expired");
+  await assert.rejects(() => store.createSocketTicket(host.room.code, host.token), /room has expired/);
+});
+
+test("expired memory rooms cannot be rejoined, spectated, or resumed", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Player 1", "public");
+  const rooms = (store as unknown as { rooms: Map<string, { lastActivityAt: number; status: string }> }).rooms;
+  const record = [...rooms.values()][0]!;
+  record.lastActivityAt = 0;
+
+  await assert.rejects(() => store.joinRoom(host.room.code, "Late Player"), /room has expired/);
+  assert.equal(record.status, "expired");
+  await assert.rejects(() => store.spectateRoom(host.room.code, "Late Spectator"), /room has expired/);
+  await assert.rejects(() => store.reconnect(host.room.code, host.token), /room has expired/);
+
+  // Expiry is terminal for non-completed rooms even if stale metadata is later refreshed.
+  record.lastActivityAt = Date.now();
+  await assert.rejects(() => store.getRoom(host.room.code, host.token), /room has expired/);
+  assert.equal(record.status, "expired");
+});
+
+test("memory ticket and reconnect retries reuse their requested lease without letting an older tab reclaim it", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2);
+  const ticketLease = "11111111-1111-4111-8111-111111111111";
+  const reconnectLease = "33333333-3333-4333-8333-333333333333";
+  const staleLease = "22222222-2222-4222-8222-222222222222";
+  const first = await store.createSocketTicket(host.room.code, host.token, null, ticketLease);
+  const recovered = await store.createSocketTicket(host.room.code, host.token, null, ticketLease);
+  assert.equal(recovered.connectionId, first.connectionId);
+  const principal = await store.consumeSocketTicket(host.room.code, recovered.ticket);
+  await store.connectParticipant(host.room.code, host.participantId, principal.connectionId, principal.sessionHash);
+  await assert.rejects(() => store.createSocketTicket(host.room.code, host.token, null, staleLease), /connection was replaced/);
+  await assert.rejects(() => store.connectParticipant(host.room.code, host.participantId, principal.connectionId, principal.sessionHash), /already connected/);
+
+  const reconnected = await store.reconnect(host.room.code, host.token, principal.connectionId, reconnectLease);
+  const retry = await store.reconnect(host.room.code, host.token, principal.connectionId, reconnectLease);
+  assert.equal(retry.participants.find((participant) => participant.id === host.participantId)?.connected, true);
+  assert.equal(reconnected.participants.find((participant) => participant.id === host.participantId)?.connected, true);
+  await assert.rejects(() => store.reconnect(host.room.code, host.token, principal.connectionId, staleLease), /connection was replaced/);
 });
 
 test("spectators can read but cannot act", async () => {
@@ -1934,9 +2083,10 @@ test("deterministic reconnect and retry sequence preserves the same snapshot", a
   // Compare the same audience on every reconnect; the active response above
   // is the guest projection and intentionally redacts Player 1's hand.
   const baseline = JSON.stringify((await store.getRoom(host.room.code, host.token)).state);
+  let currentConnectionId = "legacy";
   for (let cycle = 0; cycle < 24; cycle += 1) {
     const connectionId = `fuzz-tab-${cycle % 3}`;
-    const reconnected = await store.reconnect(host.room.code, host.token, connectionId);
+    const reconnected = await store.reconnect(host.room.code, host.token, currentConnectionId, connectionId);
     assert.equal(JSON.stringify(reconnected.state), baseline);
     assert.equal(reconnected.version, active.version);
     await assert.rejects(() => store.submitAction(host.room.code, host.token, {
@@ -1947,8 +2097,9 @@ test("deterministic reconnect and retry sequence preserves the same snapshot", a
       command: { type: "pass-move" },
     }), /Expected revision/);
     await store.disconnect(host.room.code, host.token, connectionId);
+    currentConnectionId = connectionId;
   }
-  await store.reconnect(host.room.code, host.token, "final-tab");
+  await store.reconnect(host.room.code, host.token, currentConnectionId, "final-tab");
   const command = { actionId: "reconnect-idempotent", actorId: host.participantId, expectedRevision: active.version, protocolVersion: 1 as const, command: { type: "pass-move" as const } };
   const first = await store.submitAction(host.room.code, host.token, command);
   const retry = await store.submitAction(host.room.code, host.token, command);
@@ -2009,7 +2160,7 @@ test("setup rejects illegal starting placements without locking in the choice", 
   revision = (await store.setupAction(code, host.token, { type: "choose-branch", branch: "Army" }, revision)).version;
   revision = (await store.setupAction(code, host.token, { type: "choose-lair", lair: "los-angeles" }, revision)).version;
   revision = (await store.setupAction(code, guest.token, { type: "choose-lair", lair: "chicago" }, revision)).version;
-  await assert.rejects(() => store.setupAction(code, host.token, { type: "choose-starting-choice", startingChoice: { kind: "deploy", placements: [{ unitId: "missing-unit", destination: "denver" }] } }, revision), /verified base/);
+  await assert.rejects(() => store.setupAction(code, host.token, { type: "choose-starting-choice", startingChoice: { kind: "deploy", placements: [{ unitId: "missing-unit", destination: "denver" }] } }, revision), /configured .* base/);
   const unchanged = await store.getRoom(code, host.token);
   assert.equal(unchanged.version, revision);
   assert.equal(unchanged.state.setupState?.seats[0]?.startingChoice, undefined);

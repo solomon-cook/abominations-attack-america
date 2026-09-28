@@ -105,7 +105,7 @@ test("provisional authority passes the explicit provisional release gate but fai
     id: "hollywood",
     anchor: "-5,10",
     sourceRefs: ["references/monsters-menace-america/components/source-photos-2026-08-26/full-board-setup.JPG#provisional-feature-pass", "references/monsters-menace-america/components/source-photos-2026-08-26/full-board-setup.JPG#full-honeycomb-grid"],
-    notes: "Printed Hollywood area/title overlay; do not expose the anchor as a visitable hex feature.",
+    notes: "Printed Hollywood area/title overlay; the anchor is illustration metadata, not a Hollywood feature or special movement destination.",
   }]);
   assert.ok(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["2,0"]);
   assert.ok(PROVISIONAL_AUTHORITATIVE_BOARD.hexes["1,2"]);

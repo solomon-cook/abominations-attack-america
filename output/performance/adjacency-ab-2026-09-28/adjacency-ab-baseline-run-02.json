@@ -1,0 +1,1330 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-09-28T18:15:06.253Z",
+  "updatedAt": "2026-09-28T18:15:31.726Z",
+  "url": "http://127.0.0.1:59975/",
+  "environment": {
+    "node": "v24.9.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "playwright": "1.63.0",
+    "browser": "140.0.7339.186",
+    "build": {
+      "sha256": "012644a37d6751d46c4ba0d535a481a49fb265a632df02ae1c5300504bdb1ab2",
+      "fileCount": 1456,
+      "totalBytes": 143508012,
+      "mainAssets": [
+        {
+          "path": "assets/BoardReview-Ckctd3cD.js",
+          "bytes": 5241
+        },
+        {
+          "path": "assets/index-Ce5D7sPS.css",
+          "bytes": 263117
+        },
+        {
+          "path": "assets/index-ZulhHg-j.js",
+          "bytes": 747466
+        },
+        {
+          "path": "index.html",
+          "bytes": 704
+        }
+      ]
+    }
+  },
+  "protocol": {
+    "preview": "Vite production preview from apps/web/dist on loopback and an ephemeral strict port",
+    "freshContextPerSample": true,
+    "cacheDisabled": "CDP Network.setCacheDisabled(true)",
+    "serviceWorkers": "blocked",
+    "cpuThrottle": "4x",
+    "network": {
+      "rttMs": 150,
+      "downloadBytesPerSecond": 200000,
+      "uploadBytesPerSecond": 93750
+    },
+    "homeWait": "load, #home-title, hero image decode, document.fonts.ready, then 250 ms",
+    "viewports": [
+      {
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "width": 390,
+        "height": 844
+      }
+    ],
+    "runs": 1,
+    "firstSelection": "2-player local setup through visible UI choices; nearest visible legal hex passing center-point hit test; stop when Confirm move appears; command not committed",
+    "resourceAccounting": "same-origin Resource Timing entries started during setup/selection and completed by confirmation, using transferSize; navigation document excluded; requests still in flight when Confirm appears are not counted",
+    "selectionInput": "mouse at desktop viewport; touchscreen tap at phone viewport",
+    "lcp": "latest Largest Contentful Paint candidate observed after the documented readiness wait, not a formally frozen page-final value",
+    "graphics": "existing production assets served unchanged; no images or rendering resources intercepted"
+  },
+  "samples": [
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 1,
+      "fcpMs": 1972,
+      "lcpMs": 2088,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:59975/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 329,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1556,
+          "duration": 186,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "self",
+          "startTime": 1744.8999999761581,
+          "duration": 55,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "unknown",
+          "startTime": 1830.5,
+          "duration": 88,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-ZulhHg-j.js",
+          "type": "js",
+          "transferSize": 187815,
+          "encodedBodySize": 187515,
+          "decodedBodySize": 747466
+        },
+        {
+          "name": "/assets/index-Ce5D7sPS.css",
+          "type": "css",
+          "transferSize": 49515,
+          "encodedBodySize": 49215,
+          "decodedBodySize": 263117
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 187815,
+        "css": 49515,
+        "images": 19075,
+        "other": 0,
+        "total": 256405
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 1,
+      "setupStartedAtMs": 2654.2999999523163,
+      "selectionStartedAtMs": 9521.899999976158,
+      "selectedHex": "7,5",
+      "inputMethod": "mouse",
+      "clickToConfirmMs": 341.60000002384186,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/board/audited/overview.webp",
+          "initiatorType": "css",
+          "transferSize": 193554,
+          "startTime": 3019.5,
+          "duration": 4848.399999976158
+        },
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 3230.100000023842,
+          "duration": 1661.5
+        },
+        {
+          "name": "/assets/monsters/portraits/tomanagi-dark.webp",
+          "initiatorType": "img",
+          "transferSize": 104038,
+          "startTime": 3230.1999999284744,
+          "duration": 3106.7000000476837
+        },
+        {
+          "name": "/assets/monsters/portraits/konk.webp",
+          "initiatorType": "img",
+          "transferSize": 147830,
+          "startTime": 3230.1999999284744,
+          "duration": 3783
+        },
+        {
+          "name": "/assets/monsters/portraits/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 106320,
+          "startTime": 3230.2999999523163,
+          "duration": 3144.8000000715256
+        },
+        {
+          "name": "/assets/monsters/portraits/toxicor.webp",
+          "initiatorType": "img",
+          "transferSize": 102310,
+          "startTime": 3231.1999999284744,
+          "duration": 3093.3000000715256
+        },
+        {
+          "name": "/assets/monsters/portraits/gargantis-light.webp",
+          "initiatorType": "img",
+          "transferSize": 90948,
+          "startTime": 3231.1999999284744,
+          "duration": 4785
+        },
+        {
+          "name": "/assets/board/overlays/city-2d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3232.6999999284744,
+          "duration": 3446.9000000953674
+        },
+        {
+          "name": "/assets/board/overlays/base-navy.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3233.2999999523163,
+          "duration": 3263.600000023842
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3233.2999999523163,
+          "duration": 3286.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 3233.399999976158,
+          "duration": 2047
+        },
+        {
+          "name": "/assets/board/overlays/lair-konk.svg",
+          "initiatorType": "img",
+          "transferSize": 877,
+          "startTime": 3234,
+          "duration": 3367
+        },
+        {
+          "name": "/assets/board/overlays/lair-tomanagi.svg",
+          "initiatorType": "img",
+          "transferSize": 924,
+          "startTime": 3234.399999976158,
+          "duration": 1851.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/city-3d.svg",
+          "initiatorType": "img",
+          "transferSize": 824,
+          "startTime": 3234.399999976158,
+          "duration": 3546.100000023842
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3234.600000023842,
+          "duration": 3470.0999999046326
+        },
+        {
+          "name": "/assets/board/overlays/base-army.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3234.600000023842,
+          "duration": 3650.5999999046326
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 3235.6999999284744,
+          "duration": 3019.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/base-marines.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3235.7999999523163,
+          "duration": 2632.100000023842
+        },
+        {
+          "name": "/assets/board/overlays/infamy-site.svg",
+          "initiatorType": "img",
+          "transferSize": 739,
+          "startTime": 3235.899999976158,
+          "duration": 3715.899999976158
+        },
+        {
+          "name": "/assets/board/overlays/mutation-site.svg",
+          "initiatorType": "img",
+          "transferSize": 779,
+          "startTime": 3237,
+          "duration": 2240.100000023842
+        },
+        {
+          "name": "/assets/board/overlays/base-air-force.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3237.100000023842,
+          "duration": 3627.0999999046326
+        },
+        {
+          "name": "/assets/board/overlays/lair-zorb.svg",
+          "initiatorType": "img",
+          "transferSize": 851,
+          "startTime": 3238,
+          "duration": 2825.899999976158
+        },
+        {
+          "name": "/assets/board/overlays/challenge-site.svg",
+          "initiatorType": "img",
+          "transferSize": 922,
+          "startTime": 3239.2999999523163,
+          "duration": 2432.5
+        },
+        {
+          "name": "/assets/board/overlays/lair-megaclaw.svg",
+          "initiatorType": "img",
+          "transferSize": 961,
+          "startTime": 3245.6999999284744,
+          "duration": 3173.7000000476837
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r0-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 3710,
+          "startTime": 3376.6999999284744,
+          "duration": 4401.300000071526
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r1-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1862,
+          "startTime": 3376.899999976158,
+          "duration": 4388.700000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r2-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1922,
+          "startTime": 3376.899999976158,
+          "duration": 4463.399999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r3-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1906,
+          "startTime": 3377,
+          "duration": 4565
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r4-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1986,
+          "startTime": 3377,
+          "duration": 4589.199999928474
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r5-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1950,
+          "startTime": 3380.399999976158,
+          "duration": 4643.700000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r6-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 2076,
+          "startTime": 3380.5,
+          "duration": 4661.299999952316
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r7-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1932,
+          "startTime": 3380.5,
+          "duration": 4673.899999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r8-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1970,
+          "startTime": 3380.5,
+          "duration": 4736.299999952316
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r9-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1914,
+          "startTime": 3380.5,
+          "duration": 4749
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r10-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 2022,
+          "startTime": 3380.600000023842,
+          "duration": 4817.399999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r11-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1950,
+          "startTime": 3381.6999999284744,
+          "duration": 4822.400000095367
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r12-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 2060,
+          "startTime": 3381.7999999523163,
+          "duration": 4845.200000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r13-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1984,
+          "startTime": 3381.7999999523163,
+          "duration": 4854.100000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r0-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 3062,
+          "startTime": 3381.899999976158,
+          "duration": 4920.700000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r1-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 2278,
+          "startTime": 3382.6999999284744,
+          "duration": 4927.200000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r2-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 3780,
+          "startTime": 3382.7999999523163,
+          "duration": 5010
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r3-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 3346,
+          "startTime": 3382.7999999523163,
+          "duration": 5025.600000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r4-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 3610,
+          "startTime": 3383.1999999284744,
+          "duration": 5056.200000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r5-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 3482,
+          "startTime": 3383.1999999284744,
+          "duration": 5061.800000071526
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r6-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 3464,
+          "startTime": 3383.2999999523163,
+          "duration": 5101.600000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r7-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 2008,
+          "startTime": 3383.2999999523163,
+          "duration": 5105.700000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r8-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 1998,
+          "startTime": 3383.399999976158,
+          "duration": 5180.5
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r9-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 1860,
+          "startTime": 3383.5,
+          "duration": 5195.799999952316
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r10-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 1960,
+          "startTime": 3383.5,
+          "duration": 5219.899999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r11-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 1946,
+          "startTime": 3383.5,
+          "duration": 5233.100000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r12-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 2006,
+          "startTime": 3383.5,
+          "duration": 5278.5
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r13-c1.webp",
+          "initiatorType": "img",
+          "transferSize": 3858,
+          "startTime": 3383.600000023842,
+          "duration": 5295.199999928474
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r0-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 9312,
+          "startTime": 3383.600000023842,
+          "duration": 5474.799999952316
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r1-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 6258,
+          "startTime": 3385.100000023842,
+          "duration": 5456.5
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r2-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 3760,
+          "startTime": 3385.1999999284744,
+          "duration": 5449
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r3-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 2522,
+          "startTime": 3385.1999999284744,
+          "duration": 5436.600000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r4-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 2594,
+          "startTime": 3385.1999999284744,
+          "duration": 5490.100000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r5-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 2578,
+          "startTime": 3385.1999999284744,
+          "duration": 5493.800000071526
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r6-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 2582,
+          "startTime": 3385.2999999523163,
+          "duration": 5614.899999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r7-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 3896,
+          "startTime": 3385.2999999523163,
+          "duration": 5639.200000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r8-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 3658,
+          "startTime": 3385.399999976158,
+          "duration": 5682.600000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r9-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 1932,
+          "startTime": 3385.399999976158,
+          "duration": 5673.600000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r10-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 2068,
+          "startTime": 3385.5,
+          "duration": 5689.399999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r11-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 1976,
+          "startTime": 3385.5,
+          "duration": 5794.199999928474
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r12-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 2060,
+          "startTime": 3385.5,
+          "duration": 5826
+        },
+        {
+          "name": "/assets/monsters/gargantis-light.webp",
+          "initiatorType": "img",
+          "transferSize": 28580,
+          "startTime": 3385.5,
+          "duration": 5922.199999928474
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r13-c2.webp",
+          "initiatorType": "img",
+          "transferSize": 2056,
+          "startTime": 3385.600000023842,
+          "duration": 5861.399999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r0-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 4526,
+          "startTime": 3385.600000023842,
+          "duration": 5898.699999928474
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r1-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 3178,
+          "startTime": 3385.6999999284744,
+          "duration": 5914.900000095367
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r2-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 2424,
+          "startTime": 3385.6999999284744,
+          "duration": 5958.700000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r3-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 2578,
+          "startTime": 3385.6999999284744,
+          "duration": 5997.100000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r4-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 2490,
+          "startTime": 3385.7999999523163,
+          "duration": 6036.200000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r5-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 2634,
+          "startTime": 3385.899999976158,
+          "duration": 6066.5
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r6-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 2540,
+          "startTime": 3385.899999976158,
+          "duration": 6146.899999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r7-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 2478,
+          "startTime": 3385.899999976158,
+          "duration": 6191.700000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r8-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 3418,
+          "startTime": 3385.899999976158,
+          "duration": 6266.299999952316
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r9-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 4736,
+          "startTime": 3385.899999976158,
+          "duration": 6320.700000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r10-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 4148,
+          "startTime": 3386,
+          "duration": 6380.199999928474
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r11-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 2654,
+          "startTime": 3386.100000023842,
+          "duration": 6400.5
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r12-c3.webp",
+          "initiatorType": "img",
+          "transferSize": 2088,
+          "startTime": 3386.100000023842,
+          "duration": 6463.5
+        },
+        {
+          "name": "/assets/military/army-tank.webp",
+          "initiatorType": "img",
+          "transferSize": 8470,
+          "startTime": 4883.799999952316,
+          "duration": 2315.8000000715256
+        },
+        {
+          "name": "/assets/military/army-missile-launcher.webp",
+          "initiatorType": "img",
+          "transferSize": 8018,
+          "startTime": 4883.899999976158,
+          "duration": 2357.5
+        },
+        {
+          "name": "/assets/military/navy-fighter.webp",
+          "initiatorType": "img",
+          "transferSize": 9604,
+          "startTime": 4883.899999976158,
+          "duration": 2451.399999976158
+        },
+        {
+          "name": "/assets/military/navy-nuclear-submarine.webp",
+          "initiatorType": "img",
+          "transferSize": 4784,
+          "startTime": 4884,
+          "duration": 2420.399999976158
+        },
+        {
+          "name": "/assets/military/air-force-fighter.webp",
+          "initiatorType": "img",
+          "transferSize": 8678,
+          "startTime": 4884,
+          "duration": 2653.7999999523163
+        },
+        {
+          "name": "/assets/military/air-force-cruise-missile.webp",
+          "initiatorType": "img",
+          "transferSize": 4550,
+          "startTime": 4884.100000023842,
+          "duration": 2632.0999999046326
+        },
+        {
+          "name": "/assets/military/marines-fighter.webp",
+          "initiatorType": "img",
+          "transferSize": 8854,
+          "startTime": 4884.100000023842,
+          "duration": 2743.7999999523163
+        },
+        {
+          "name": "/assets/military/marines-rocket-launcher.webp",
+          "initiatorType": "img",
+          "transferSize": 11490,
+          "startTime": 4884.199999928474,
+          "duration": 3007.8000000715256
+        },
+        {
+          "name": "/assets/reference-sheets/camouflage.svg",
+          "initiatorType": "css",
+          "transferSize": 1160,
+          "startTime": 4887.100000023842,
+          "duration": 2642
+        }
+      ],
+      "transferBytes": 1056086,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 9522.299999952316,
+          "duration": 288,
+          "inputDelayMs": 9.399999976158142,
+          "processingMs": 0.40000009536743164
+        },
+        {
+          "name": "click",
+          "startTime": 9522.399999976158,
+          "duration": 288,
+          "inputDelayMs": 151.70000004768372,
+          "processingMs": 35.09999990463257
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 1,
+      "fcpMs": 1984,
+      "lcpMs": 2120,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:59975/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 341,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1563.8999999761581,
+          "duration": 197,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "self",
+          "startTime": 1764.6000000238419,
+          "duration": 62,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "unknown",
+          "startTime": 1856,
+          "duration": 82,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-ZulhHg-j.js",
+          "type": "js",
+          "transferSize": 187815,
+          "encodedBodySize": 187515,
+          "decodedBodySize": 747466
+        },
+        {
+          "name": "/assets/index-Ce5D7sPS.css",
+          "type": "css",
+          "transferSize": 49515,
+          "encodedBodySize": 49215,
+          "decodedBodySize": 263117
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 187815,
+        "css": 49515,
+        "images": 19075,
+        "other": 0,
+        "total": 256405
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 1,
+      "setupStartedAtMs": 2594.899999976158,
+      "selectionStartedAtMs": 7567.799999952316,
+      "selectedHex": "6,2",
+      "inputMethod": "touch",
+      "clickToConfirmMs": 440.89999997615814,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/board/audited/overview.webp",
+          "initiatorType": "css",
+          "transferSize": 193554,
+          "startTime": 2982.399999976158,
+          "duration": 4535.899999976158
+        },
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 3206.1999999284744,
+          "duration": 1662.2000000476837
+        },
+        {
+          "name": "/assets/monsters/portraits/tomanagi-dark.webp",
+          "initiatorType": "img",
+          "transferSize": 104038,
+          "startTime": 3206.6999999284744,
+          "duration": 3111.600000023842
+        },
+        {
+          "name": "/assets/monsters/portraits/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 106320,
+          "startTime": 3206.6999999284744,
+          "duration": 3148.5
+        },
+        {
+          "name": "/assets/monsters/portraits/konk.webp",
+          "initiatorType": "img",
+          "transferSize": 147830,
+          "startTime": 3206.6999999284744,
+          "duration": 3664.3000000715256
+        },
+        {
+          "name": "/assets/monsters/portraits/toxicor.webp",
+          "initiatorType": "img",
+          "transferSize": 102310,
+          "startTime": 3207.399999976158,
+          "duration": 3094.1999999284744
+        },
+        {
+          "name": "/assets/board/overlays/city-2d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3208.7999999523163,
+          "duration": 3318.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/base-navy.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3209,
+          "duration": 3432.0999999046326
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3209.6999999284744,
+          "duration": 2034.3000000715256
+        },
+        {
+          "name": "/assets/board/overlays/lair-konk.svg",
+          "initiatorType": "img",
+          "transferSize": 877,
+          "startTime": 3209.7999999523163,
+          "duration": 2229.2999999523163
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 3209.7999999523163,
+          "duration": 2425.7999999523163
+        },
+        {
+          "name": "/assets/board/overlays/city-3d.svg",
+          "initiatorType": "img",
+          "transferSize": 824,
+          "startTime": 3210.6999999284744,
+          "duration": 2618.8000000715256
+        },
+        {
+          "name": "/assets/board/overlays/lair-tomanagi.svg",
+          "initiatorType": "img",
+          "transferSize": 924,
+          "startTime": 3211.0999999046326,
+          "duration": 3174.2000000476837
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3212,
+          "duration": 3488.5
+        },
+        {
+          "name": "/assets/board/overlays/base-army.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3212.0999999046326,
+          "duration": 2812.4000000953674
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 3212.2999999523163,
+          "duration": 3516.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/base-marines.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3212.899999976158,
+          "duration": 1842.8999999761581
+        },
+        {
+          "name": "/assets/board/overlays/infamy-site.svg",
+          "initiatorType": "img",
+          "transferSize": 739,
+          "startTime": 3214,
+          "duration": 3004.5999999046326
+        },
+        {
+          "name": "/assets/board/overlays/mutation-site.svg",
+          "initiatorType": "img",
+          "transferSize": 779,
+          "startTime": 3214.5999999046326,
+          "duration": 3283.3000000715256
+        },
+        {
+          "name": "/assets/board/overlays/base-air-force.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3214.6999999284744,
+          "duration": 3453.600000023842
+        },
+        {
+          "name": "/assets/board/overlays/lair-zorb.svg",
+          "initiatorType": "img",
+          "transferSize": 851,
+          "startTime": 3215.899999976158,
+          "duration": 3342.100000023842
+        },
+        {
+          "name": "/assets/board/overlays/challenge-site.svg",
+          "initiatorType": "img",
+          "transferSize": 922,
+          "startTime": 3218,
+          "duration": 3255.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/lair-megaclaw.svg",
+          "initiatorType": "img",
+          "transferSize": 961,
+          "startTime": 3224.1999999284744,
+          "duration": 4001.399999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r0-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 3710,
+          "startTime": 3362.5999999046326,
+          "duration": 3953.2000000476837
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r1-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1862,
+          "startTime": 3362.6999999284744,
+          "duration": 4055.600000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r2-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1922,
+          "startTime": 3363.1999999284744,
+          "duration": 4167.899999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r3-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1906,
+          "startTime": 3363.2999999523163,
+          "duration": 4268.5
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r4-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1986,
+          "startTime": 3363.7999999523163,
+          "duration": 4371.600000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r5-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1950,
+          "startTime": 3363.899999976158,
+          "duration": 4392.100000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r6-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 2076,
+          "startTime": 3363.899999976158,
+          "duration": 4474.799999952316
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r7-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1932,
+          "startTime": 3364.2999999523163,
+          "duration": 4587.600000023842
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r8-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1970,
+          "startTime": 3364.399999976158,
+          "duration": 4610.5
+        },
+        {
+          "name": "/assets/military/army-tank.webp",
+          "initiatorType": "img",
+          "transferSize": 8470,
+          "startTime": 4368.599999904633,
+          "duration": 2608.600000023842
+        },
+        {
+          "name": "/assets/military/army-missile-launcher.webp",
+          "initiatorType": "img",
+          "transferSize": 8018,
+          "startTime": 4369.399999976158,
+          "duration": 2644.7999999523163
+        },
+        {
+          "name": "/assets/military/navy-fighter.webp",
+          "initiatorType": "img",
+          "transferSize": 9604,
+          "startTime": 4369.399999976158,
+          "duration": 2697.1999999284744
+        },
+        {
+          "name": "/assets/military/navy-nuclear-submarine.webp",
+          "initiatorType": "img",
+          "transferSize": 4784,
+          "startTime": 4369.399999976158,
+          "duration": 2653
+        },
+        {
+          "name": "/assets/military/air-force-fighter.webp",
+          "initiatorType": "img",
+          "transferSize": 8678,
+          "startTime": 4369.5,
+          "duration": 2898.899999976158
+        },
+        {
+          "name": "/assets/military/air-force-cruise-missile.webp",
+          "initiatorType": "img",
+          "transferSize": 4550,
+          "startTime": 4369.599999904633,
+          "duration": 2914.8000000715256
+        },
+        {
+          "name": "/assets/reference-sheets/camouflage.svg",
+          "initiatorType": "css",
+          "transferSize": 1160,
+          "startTime": 4373.799999952316,
+          "duration": 2670.100000023842
+        }
+      ],
+      "transferBytes": 780482,
+      "eventTimings": [
+        {
+          "name": "click",
+          "startTime": 7568.299999952316,
+          "duration": 312,
+          "inputDelayMs": 167.29999995231628,
+          "processingMs": 36.40000009536743
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    }
+  ],
+  "summary": {
+    "home 1280x720": {
+      "fcpMs": {
+        "median": 1972,
+        "min": 1972,
+        "max": 1972,
+        "samples": 1
+      },
+      "lcpMs": {
+        "median": 2088,
+        "min": 2088,
+        "max": 2088,
+        "samples": 1
+      },
+      "longTaskTotalMs": {
+        "median": 329,
+        "min": 329,
+        "max": 329,
+        "samples": 1
+      }
+    },
+    "first-selection 1280x720": {
+      "clickToConfirmMs": {
+        "median": 341.60000002384186,
+        "min": 341.60000002384186,
+        "max": 341.60000002384186,
+        "samples": 1
+      }
+    },
+    "home 390x844": {
+      "fcpMs": {
+        "median": 1984,
+        "min": 1984,
+        "max": 1984,
+        "samples": 1
+      },
+      "lcpMs": {
+        "median": 2120,
+        "min": 2120,
+        "max": 2120,
+        "samples": 1
+      },
+      "longTaskTotalMs": {
+        "median": 341,
+        "min": 341,
+        "max": 341,
+        "samples": 1
+      }
+    },
+    "first-selection 390x844": {
+      "clickToConfirmMs": {
+        "median": 440.89999997615814,
+        "min": 440.89999997615814,
+        "max": 440.89999997615814,
+        "samples": 1
+      }
+    }
+  }
+}

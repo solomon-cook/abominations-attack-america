@@ -1,0 +1,139 @@
+{
+  "started": "2026-09-28T18:38:49.750Z",
+  "fixture": "Two-player active Monster Challenge. The challenger holds Berserk and Son of a Monster; the opponent is selected by applyCommand before the UI mounts.",
+  "coveredSlice": "Challenge Mutation controls for the active owner and one waiting participant in a separate freshly initialized fixture; full-route/server transport behavior and other Challenge steps remain outside this slice.",
+  "scenarios": {
+    "activeOwner": {
+      "status": "passed",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "initialFocus": "Challenge dialog close control",
+      "mutationActionGroup": {
+        "role": "group",
+        "accessibleName": "Challenge Mutation cards",
+        "initialActionCount": 2,
+        "actionCountAfterBerserk": 1,
+        "actionGroupCountAfterBothActions": 0
+      },
+      "berserk": {
+        "activation": "Tab from dialog close control to Berserk; Enter",
+        "command": {
+          "type": "use-mutation",
+          "cardId": "Berserk"
+        },
+        "event": {
+          "id": "1:1",
+          "action": "mutation.used",
+          "detail": {
+            "challengeId": "monster-1:monster-2",
+            "monsterId": "monster-1",
+            "playerIndex": 0,
+            "mutationCardId": "Berserk",
+            "extraAttacks": 5,
+            "nextDecision": {
+              "type": "challenge-resolution",
+              "playerIndex": 0,
+              "challengerMonsterId": "monster-1",
+              "opponentMonsterId": "monster-2"
+            }
+          }
+        },
+        "remainingAttacks": {
+          "before": 1,
+          "after": 6
+        },
+        "health": {
+          "before": 10,
+          "after": 10
+        },
+        "heldMutationCardIds": {
+          "before": [
+            "Berserk",
+            "Son of a Monster"
+          ],
+          "after": [
+            "Son of a Monster"
+          ]
+        },
+        "discardedMutationCardIds": {
+          "before": [],
+          "after": [
+            "Berserk"
+          ]
+        }
+      },
+      "sonOfAMonster": {
+        "activation": "Focus persistent dialog close control; Tab to remaining Son of a Monster action; Enter",
+        "command": {
+          "type": "use-mutation",
+          "cardId": "Son of a Monster"
+        },
+        "event": {
+          "id": "1:2",
+          "action": "mutation.used",
+          "detail": {
+            "challengeId": "monster-1:monster-2",
+            "monsterId": "monster-1",
+            "playerIndex": 0,
+            "mutationCardId": "Son of a Monster",
+            "extraAttacks": 2,
+            "healthRoll": 6,
+            "nextDecision": {
+              "type": "challenge-resolution",
+              "playerIndex": 0,
+              "challengerMonsterId": "monster-1",
+              "opponentMonsterId": "monster-2"
+            }
+          }
+        },
+        "remainingAttacks": {
+          "before": 6,
+          "after": 8
+        },
+        "health": {
+          "before": 10,
+          "after": 16
+        },
+        "heldMutationCardIds": {
+          "before": [
+            "Son of a Monster"
+          ],
+          "after": []
+        },
+        "discardedMutationCardIds": {
+          "before": [
+            "Berserk"
+          ],
+          "after": [
+            "Berserk",
+            "Son of a Monster"
+          ]
+        }
+      },
+      "totalCommands": 2,
+      "totalNewEvents": 2
+    },
+    "waitingPlayer": {
+      "status": "passed",
+      "fixtureInitialization": "Separate browser page with a freshly initialized GameState; no active-owner commands are shared with this fixture.",
+      "viewerIndex": 1,
+      "activePlayerIndex": 0,
+      "mutationOwnerIndex": 0,
+      "challengerCardsRemainHeld": [
+        "Berserk",
+        "Son of a Monster"
+      ],
+      "mutationActionGroupCount": 0,
+      "submittedCommands": [],
+      "eventCount": {
+        "before": 1,
+        "after": 1
+      }
+    }
+  },
+  "runtimeErrors": [],
+  "finished": "2026-09-28T18:38:52.810Z",
+  "status": "passed"
+}

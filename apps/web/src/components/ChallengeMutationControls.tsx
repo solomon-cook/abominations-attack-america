@@ -22,7 +22,7 @@ export function ChallengeMutationControls({ game, canUseMutation, playerIndex, r
       .map((cardId) => ({ cardId, ownerIndex, monsterName }));
   });
   if (!actions.length) return null;
-  return <div className="battle-choice" aria-label="Challenge Mutation cards">
+  return <div className="battle-choice" role="group" aria-label="Challenge Mutation cards">
     <span>Use during this Challenge:</span>
     {actions.map(({ cardId, ownerIndex, monsterName }) => <button key={`${ownerIndex}:${cardId}`} disabled={!canUseMutation || disabled} onClick={() => void runCommand({ type: "use-mutation", cardId })}>{monsterName} · {cardId} · {cardId === "Berserk" ? "+5 attacks" : "+2 attacks and d6 Health"}</button>)}
   </div>;

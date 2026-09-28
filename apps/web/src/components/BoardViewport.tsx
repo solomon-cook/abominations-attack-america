@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
-import type { BoardDefinition } from "@abominations/game-engine";
-import { AUDITED_BOARD_WORLD, buildDisplayHexLayout } from "../board-layout";
+import { AUDITED_BOARD, type BoardDefinition, type HexKey } from "@abominations/game-engine";
+import { AUDITED_BOARD_WORLD, AUDITED_TILE_WIDTH_PERCENT, DISPLAY_TILE_ASPECT_RATIO, DISPLAY_TILE_WIDTH_PERCENT, renderedHexLayout } from "../board-layout";
 import { BOARD_EDGE_PADDING, cameraScale, cameraView, clampCamera, panCamera, resetCamera, zoomCamera, type BoardCamera, type Point, type Size } from "../board-camera";
 
-type Props = { board?: BoardDefinition; boardId: string; boardContentHash: string; children: ReactNode; overviewImage?: string; focusHexKey?: string | null };
+type Props = { board?: BoardDefinition; boardId: string; boardContentHash: string; children: ReactNode; overviewImage?: string; focusHexKey?: string | null; focusHexKeys?: readonly HexKey[] };
 const INITIAL_VIEWPORT = { width: 1000, height: 700 };
 
 /** One camera owns terrain, pieces, paths and hit targets. HUD stays outside it. */
-export function BoardViewport({ board, boardId, boardContentHash, children, overviewImage, focusHexKey }: Props) {
+export function BoardViewport({ board, boardId, boardContentHash, children, overviewImage, focusHexKey, focusHexKeys }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState<Size>(INITIAL_VIEWPORT);
   const world = AUDITED_BOARD_WORLD;
@@ -18,7 +18,7 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
   const suppressClick = useRef(false);
   const [dragging, setDragging] = useState(false);
   const [controlsHost, setControlsHost] = useState<HTMLElement | null>(null);
-  const cells = useMemo(() => board ? buildDisplayHexLayout(board) : [], [board]);
+  const cells = useMemo(() => renderedHexLayout(board), [board]);
   const view = cameraView(camera, viewport, world);
   const scale = cameraScale(camera, viewport, world);
 
@@ -27,6 +27,39 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
   }, [scale, world]);
 
   useEffect(() => {
+    const targets = new Set(focusHexKeys ?? []);
+    const choiceCells = targets.size ? cells.filter(({ hex }) => targets.has(hex.key)) : [];
+    if (choiceCells.length) {
+      setCamera((current) => {
+        const targetCenters = choiceCells.map(({ left, top }) => ({ x: left / 100 * world.width, y: top / 100 * world.height }));
+        const tileWidthPercent = board?.id === AUDITED_BOARD.id
+          ? AUDITED_TILE_WIDTH_PERCENT
+          : choiceCells.some((cell) => cell.developmentFixture) ? 3.2 : DISPLAY_TILE_WIDTH_PERCENT;
+        const tileWidth = world.width * tileWidthPercent / 100;
+        const tileHeight = tileWidth / DISPLAY_TILE_ASPECT_RATIO;
+        const bounds = {
+          left: Math.min(...targetCenters.map(({ x }) => x)) - tileWidth / 2,
+          right: Math.max(...targetCenters.map(({ x }) => x)) + tileWidth / 2,
+          top: Math.min(...targetCenters.map(({ y }) => y)) - tileHeight / 2,
+          bottom: Math.max(...targetCenters.map(({ y }) => y)) + tileHeight / 2,
+        };
+        const boundsWidth = Math.max(1, bounds.right - bounds.left);
+        const boundsHeight = Math.max(1, bounds.bottom - bounds.top);
+        const baseScale = cameraScale({ ...current, zoom: 1 }, viewport, world);
+        const fitZoom = Math.min(
+          (viewport.width - 24) / (baseScale * boundsWidth),
+          (viewport.height - 24) / (baseScale * boundsHeight),
+        );
+        const zoom = Math.max(1, Math.min(Math.max(current.zoom, 1.55), fitZoom, 4));
+        const scaleAtZoom = cameraScale({ ...current, zoom }, viewport, world);
+        const safeY = viewport.width <= 700 ? .08 * viewport.height / scaleAtZoom : 0;
+        return clampCamera({ ...current, zoom, center: {
+          x: (bounds.left + bounds.right) / 2,
+          y: (bounds.top + bounds.bottom) / 2 + safeY,
+        } }, viewport, world);
+      });
+      return;
+    }
     if (!focusHexKey || !board) return;
     const target = cells.find(({ hex }) => hex.key === focusHexKey);
     if (!target) return;
@@ -41,7 +74,7 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
       y: target.top / 100 * world.height + safeY,
       } }, viewport, world);
     });
-  }, [board, cells, focusHexKey, viewport, world]);
+  }, [board, cells, focusHexKey, focusHexKeys, viewport, world]);
 
   useEffect(() => {
     const map = mapRef.current;

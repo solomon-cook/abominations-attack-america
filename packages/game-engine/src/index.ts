@@ -53,9 +53,9 @@ export interface Monster {
 export interface MilitaryUnit {
   id: string;
   branch: MilitaryUnitBranch;
-  /** Source-backed unit record ID when this unit comes from the typed catalogue. */
+  /** Unit record ID from the current typed catalogue; physical-edition review remains separate. */
   unitTypeId?: string;
-  /** Development-fixture movement value; production values must come from verified unit records. */
+  /** Development-fixture movement value; production values require physical-source review. */
   move: number;
   movement: UnitMovement;
   /** Development-fixture combat values; production values remain source-gated. */
@@ -70,8 +70,8 @@ export interface MilitaryUnit {
 
 /**
  * Neutral National Guard record inventory is explicit; statistics, placement,
- * and redeployment remain source-gated. Guard Commander control is the one
- * source-backed card exception implemented at the command boundary.
+ * and redeployment remain source-gated. Guard Commander control is a
+ * development implementation pending physical-edition review.
  */
 export interface NationalGuardInventory {
   readonly branch: "National Guard";
@@ -84,7 +84,7 @@ export interface NationalGuardInventory {
   readonly deploymentPlayerIndices?: readonly number[];
 }
 
-/** Everyone may deploy neutral Guard unless another player holds Guard Commander. */
+/** Development rule: everyone may deploy neutral Guard unless another player holds Guard Commander. */
 export function canDeployNationalGuard(state: Pick<GameState, "players"> & Partial<Pick<GameState, "nationalGuard">>, playerIndex: number): boolean {
   if (state.nationalGuard?.deploymentPlayerIndices) return state.nationalGuard.deploymentPlayerIndices.includes(playerIndex);
   return Boolean(state.players[playerIndex]) && !state.players.some((player, index) => index !== playerIndex && player.researchCardIds.includes("Guard Commander"));
@@ -94,7 +94,7 @@ function expectedNationalGuardUnitIds(): string[] {
   return NATIONAL_GUARD_DEFINITIONS.flatMap((definition) => Array.from({ length: definition.quantity }, (_, index) => `${definition.id}-${index + 1}`));
 }
 
-/** Validate the source-backed neutral Guard record inventory without enabling its rules effects. */
+/** Validate the transcribed neutral Guard record inventory without enabling its source-gated rules effects. */
 export function sourceNationalGuardInventoryErrors(inventory: Pick<NationalGuardInventory, "quantity" | "unitIds">): string[] {
   const expected = expectedNationalGuardUnitIds();
   const actual = [...inventory.unitIds];
@@ -170,7 +170,7 @@ export interface GameState {
   /** Chopper Lift's die has been rolled; the active player must now choose its monster and destination. */
   pendingChopperLift?: PendingChopperLift;
   pendingTrophyChoice?: PendingTrophyChoice;
-  /** Source-backed Monster Challenge declaration, duel, and giant-last state. */
+  /** Development Monster Challenge declaration, duel, and giant-last state; physical rule review remains open. */
   challenge?: MonsterChallengeState;
   /** Monster/site keys that have already consumed their one Mutation-site use. */
   mutationSiteUses: Record<string, string[]>;
@@ -191,7 +191,7 @@ export interface GameState {
   movedPieceIds: string[];
   /** Monsters whose just-completed Move still has a pre-battle Laser Fence window. */
   laserFenceWindowMonsterIds?: string[];
-  /** Source-backed deployment allowance bookkeeping for the current Deploy step. */
+  /** Candidate deployment allowance bookkeeping for the current Deploy step. */
   deploymentsThisTurn: number;
   deploymentDestinations: HexKey[];
   /** Development/setup metadata only; production component definitions remain source-gated. */
@@ -426,7 +426,7 @@ export function validateInventoryAccounting(state: Pick<GameState, "boardId" | "
 
 function assertInventoryAccounting(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "monsters" | "units" | "nationalGuard" | "removedUnitIds" | "pendingBattles" | "movedPieceIds" | "laserFenceWindowMonsterIds" | "pendingAttackTarget" | "pendingCombat">): void {
   const errors = validateInventoryAccounting(state);
-  if (errors.length > 0) throw new GameDomainError("ILLEGAL_COMMAND", `Inventory invariant failed: ${errors.join("; ")}`);
+  if (errors.length > 0) throw new GameDomainError("INTERNAL_INVARIANT", `Inventory invariant failed: ${errors.join("; ")}`);
 }
 
 /** Occupancy is always derived from current piece positions; it is never persisted separately. */
@@ -475,16 +475,26 @@ export function redactCardIdentifiers(value: unknown): unknown {
 
 /** Client projections never expose authoritative deck order or another player's hand. */
 export function projectState(state: GameState, audience: StateAudience, viewerPlayerIndex?: number): GameState {
-  if (audience === "internal") return structuredClone(state);
-  const projected = structuredClone(state);
-  const setupPlayer = state.setupState?.phase === "starting-choice" ? state.setupState.seats.find((seat) => !seat.startingChoice)?.playerIndex : undefined;
-  const permissionState = setupPlayer === undefined ? state : setupDeploymentState(state, setupPlayer);
-  projected.nationalGuard = { ...projected.nationalGuard, deploymentPlayerIndices: state.players.flatMap((_, index) => canDeployNationalGuard(permissionState, index) ? [index] : []) };
+  // Persisted schema-1 rooms can be read before their first post-upgrade
+  // command. Normalize a clone at the projection boundary so reconnect and
+  // spectator reads get the same migration path as command submissions.
+  const sourceState = (state.schemaVersion as number) === 1 ? migrateGameState(state) : state;
+  if (audience === "internal") return structuredClone(sourceState);
+  const projected = structuredClone(sourceState);
+  const setupPlayer = sourceState.setupState?.phase === "starting-choice" ? sourceState.setupState.seats.find((seat) => !seat.startingChoice)?.playerIndex : undefined;
+  const permissionState = setupPlayer === undefined ? sourceState : setupDeploymentState(sourceState, setupPlayer);
+  projected.nationalGuard = { ...projected.nationalGuard, deploymentPlayerIndices: sourceState.players.flatMap((_, index) => canDeployNationalGuard(permissionState, index) ? [index] : []) };
   projected.decks.mutation = { ...projected.decks.mutation, order: [], discard: [] };
   projected.decks.research = { ...projected.decks.research, order: [], discard: [] };
   projected.players = projected.players.map((player, index) => audience === "player" && index === viewerPlayerIndex
     ? player
-    : { ...player, visibleMutationCardIds: [...player.mutationCardIds], visibleResearchCardIds: [...player.researchCardIds], mutationCardIds: [], researchCardIds: [] });
+    : {
+      ...player,
+      visibleMutationCardIds: [...player.mutationCardIds],
+      visibleResearchCardIds: [...(player.visibleResearchCardIds ?? player.researchCardIds)],
+      mutationCardIds: [],
+      researchCardIds: [],
+    });
   if (projected.pendingMutationChoice && viewerPlayerIndex !== projected.pendingMutationChoice.playerIndex) {
     projected.pendingMutationChoice = { ...projected.pendingMutationChoice, cardIds: [] };
     if (projected.pendingDecision?.type === "mutation-choice") projected.pendingDecision = { ...projected.pendingDecision, cardIds: [] };
@@ -551,7 +561,7 @@ export interface GameCommandEnvelope {
   command: GameCommand;
 }
 
-export type DomainErrorCode = "INVALID_COMMAND_ENVELOPE" | "UNSUPPORTED_PROTOCOL" | "STALE_REVISION" | "ILLEGAL_COMMAND";
+export type DomainErrorCode = "INVALID_COMMAND_ENVELOPE" | "UNSUPPORTED_PROTOCOL" | "STALE_REVISION" | "ILLEGAL_COMMAND" | "INTERNAL_INVARIANT";
 
 export class GameDomainError extends Error {
   constructor(public readonly code: DomainErrorCode, message: string) {
@@ -560,9 +570,46 @@ export class GameDomainError extends Error {
   }
 }
 
+/** Event names emitted by the current engine command boundary. Persisted event readers stay open for legacy names. */
+type EngineEventType =
+  | "match.conceded"
+  | "research.chopper-lift.resolved"
+  | "challenge.opponent.selected"
+  | "challenge.giant.selected"
+  | "piece.stayed"
+  | "monster.ability.used"
+  | "mutation.choice"
+  | "mutation.discarded"
+  | "challenge.turn.passed"
+  | "challenge.attack.rolled"
+  | "challenge.resolved"
+  | "challenge.giant.resolved"
+  | "monster.stayed"
+  | "monster.disappeared"
+  | "monster.moved"
+  | "unit.transformed"
+  | "unit.moved"
+  | "retreat.resolved"
+  | "mutation.used"
+  | "research.used"
+  | "battle.target-required"
+  | "fight.resolved"
+  | "trophy.chosen"
+  | "encounter.choice-required"
+  | "trophy.choice-required"
+  | "encounter.resolved"
+  | "research.drawn"
+  | "unit.redeployed"
+  | "unit.deployed"
+  | "turn.passed";
+
+type Assert<T extends true> = T;
+// Keep the emitted-event type closed: a typo or unreviewed producer name must fail typechecking.
+type UnknownEngineEventIsRejected = Assert<"unknown.engine.event" extends EngineEventType ? false : true>;
+
 export interface GameEventResult {
   state: GameState;
-  eventType: string;
+  eventType: EngineEventType;
   eventPayload: Record<string, unknown>;
 }
 
@@ -570,7 +617,7 @@ export interface CommandReceipt {
   actionId: string;
   actorId: string;
   revision: number;
-  eventType: string;
+  eventType: EngineEventType;
 }
 
 export interface CommandResult extends GameEventResult {
@@ -584,6 +631,7 @@ export function migrateGameState(input: GameState): GameState {
   if (!Array.isArray(state.dieRollHistory)) state.dieRollHistory = [];
   if (!state.players) state.players = state.monsters.map((_, seat) => ({ id: `player-${seat + 1}`, seat, mutationCardIds: [], researchCardIds: [] }));
   state.players = state.players.map((player) => ({ ...player, mutationCardIds: Array.isArray(player.mutationCardIds) ? player.mutationCardIds : [], researchCardIds: Array.isArray(player.researchCardIds) ? player.researchCardIds : [] }));
+  if (!Array.isArray(state.eventLog)) state.eventLog = [];
   if (!Array.isArray(state.removedResearchCardIds)) state.removedResearchCardIds = [];
   if (!state.nationalGuard || typeof state.nationalGuard.quantity !== "number" || state.nationalGuard.unitIds.length !== state.nationalGuard.quantity) {
     state.nationalGuard = createNationalGuardInventory();
@@ -611,10 +659,10 @@ export function migrateGameState(input: GameState): GameState {
   // or current occupancy.
   state.pendingDecision = pendingDecisionForState(state);
   if (state.schemaVersion === MATCH_STATE_SCHEMA_VERSION) return state;
-  if (state.schemaVersion !== 1) throw new GameDomainError("INVALID_COMMAND_ENVELOPE", `Unsupported match-state schema: ${String(state.schemaVersion)}.`);
+  if (state.schemaVersion !== 1) throw new GameDomainError("INTERNAL_INVARIANT", `Unsupported match-state schema: ${String(state.schemaVersion)}.`);
   const normalize = (value: string): SpaceKey => {
     const normalized = toDevelopmentSpaceKey(value);
-    if (!normalized) throw new GameDomainError("INVALID_COMMAND_ENVELOPE", `Cannot migrate unknown development space: ${value}.`);
+    if (!normalized) throw new GameDomainError("INTERNAL_INVARIANT", `Cannot migrate unknown development space: ${value}.`);
     return normalized;
   };
   state.monsters = state.monsters.map((monster) => ({ ...monster, defense: monster.defense ?? 4, damage: monster.damage ?? 1, location: normalize(monster.location) }));
@@ -702,7 +750,7 @@ export function boardForState(state: Pick<GameState, "boardId" | "boardVersion" 
   const board = candidates.find((candidate) => candidate.id === state.boardId
     && candidate.version === state.boardVersion
     && candidate.contentHash === state.boardContentHash);
-  if (!board) throw new GameDomainError("ILLEGAL_COMMAND", `Board ${state.boardId}@${state.boardVersion} with content hash ${state.boardContentHash} is unavailable.`);
+  if (!board) throw new GameDomainError("INTERNAL_INVARIANT", `Board ${state.boardId}@${state.boardVersion} with content hash ${state.boardContentHash} is unavailable.`);
   return board;
 }
 
@@ -746,7 +794,7 @@ const developmentUnitRosterSeed: readonly { branch: Branch; definition: UnitDefi
 
 /** Complete source-counted regular-unit inventory for the development fixture.
  * Additional copies remain on their record tiles because the nine-location
- * board does not yet contain verified bases for every branch. */
+ * development board candidate does not contain bases for every branch. */
 const developmentUnitRoster: readonly { branch: Branch; definition: UnitDefinition; location: string }[] = [
   ...developmentUnitRosterSeed,
   ...UNIT_DEFINITIONS.flatMap((definition) => {
@@ -799,7 +847,7 @@ export function createGame(playerCount = 2, seed = 0, matchId = `development-mat
 /**
  * Local/test-only match initializer for the separately pinned provisional
  * honeycomb board. The board content is deliberately provisional; production
- * room creation must continue through createMvpRoomGame and its verified gate.
+ * room creation must continue through createMvpRoomGame and its structural candidate gate.
  */
 export function createProvisionalPlaytestGame(playerCount = 2, seed = 0, matchId = `provisional-playtest-${playerCount}-${seed >>> 0}`): GameState {
   const state = createGame(playerCount, seed, matchId);
@@ -855,10 +903,10 @@ export function createRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `deve
   return state;
 }
 
-/** The completed human audit is the default for newly created matches. */
+/** Check structural readiness of the current playtest-board candidate; this does not imply physical-source approval. */
 export function assertMvpBoardReady(): void {
   const errors = validateBoardDefinition(AUDITED_BOARD, { production: true });
-  if (errors.length > 0) throw new GameDomainError("ILLEGAL_COMMAND", `Audited board is not playable: ${errors.join("; ")}`);
+  if (errors.length > 0) throw new GameDomainError("INTERNAL_INVARIANT", `Board candidate failed structural readiness checks: ${errors.join("; ")}`);
 }
 
 export function auditedSetupDefinition(playerCount: 2 | 3 | 4): SetupDefinition {
@@ -882,7 +930,7 @@ export function createMvpRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `m
   state.setupState = createSetup(auditedSetupDefinition(playerCount));
   state.monsters = state.monsters.map((monster) => ({ ...monster, location: state.setupState!.definition.lairsByMonster[monster.id][0] as HexKey }));
   state.units = state.units.map((unit) => ({ ...unit, location: "record-tile" }));
-  state.log = ["Human-audited North America board. Choose monsters, branches and their printed lairs to begin."];
+  state.log = ["The 336-cell transcribed board is active for playtesting; physical-source review and release sign-off remain open. Choose a monster to begin setup."];
   assertInventoryAccounting(state);
   return state;
 }
@@ -1057,29 +1105,56 @@ export function movementPathAllowed(board: BoardDefinition, path: readonly HexKe
   return path.every((space, index) => {
     if (index === 0) return Boolean(board.hexes[space]) && waterClassAllowed(movement, board.hexes[space].waterClass);
     const previous = path[index - 1];
-    const edge = board.edges.find((candidate) => candidate.from === previous && candidate.to === space && candidate.enabled);
-    return Boolean(edge && waterBarrierAllowed(movement, edge.barrier) && board.hexes[space] && waterClassAllowed(movement, board.hexes[space].waterClass));
+    return legalMovementNeighbors(board, movement, previous).includes(space);
   });
+}
+
+const legalMovementAdjacencyCache = new WeakMap<BoardDefinition, Map<string, ReadonlyMap<HexKey, readonly HexKey[]>>>();
+const noLegalMovementNeighbors: readonly HexKey[] = Object.freeze([]);
+
+/** Return movement-legal outgoing neighbors in board edge order for repeated graph searches. */
+export function legalMovementNeighbors(board: BoardDefinition, movement: MonsterMovement | UnitMovement, from: HexKey, crossesWaterBarriers = false): readonly HexKey[] {
+  let movementModes = legalMovementAdjacencyCache.get(board);
+  if (!movementModes) {
+    movementModes = new Map();
+    legalMovementAdjacencyCache.set(board, movementModes);
+  }
+  const cacheKey = `${movement}:${crossesWaterBarriers ? "crosses-barriers" : "barriers-restricted"}`;
+  let adjacency = movementModes.get(cacheKey);
+  if (!adjacency) {
+    const allowedHexes = new Set(Object.values(board.hexes)
+      .filter((hex) => waterClassAllowed(movement, hex.waterClass))
+      .map((hex) => hex.key));
+    const mutableAdjacency = new Map<HexKey, HexKey[]>();
+    for (const key of Object.keys(board.hexes) as HexKey[]) mutableAdjacency.set(key, []);
+    for (const edge of board.edges) {
+      if (!edge.enabled || !allowedHexes.has(edge.from) || !allowedHexes.has(edge.to)
+        || !crossesWaterBarriers && !waterBarrierAllowed(movement, edge.barrier)) continue;
+      mutableAdjacency.get(edge.from)?.push(edge.to);
+    }
+    adjacency = new Map([...mutableAdjacency].map(([key, neighbors]) => [key, Object.freeze(neighbors)]));
+    movementModes.set(cacheKey, adjacency);
+  }
+  return adjacency.get(from) ?? noLegalMovementNeighbors;
 }
 
 function legalMonsterPathsWithoutLure(state: GameState, monsterId = state.monsters[state.currentPlayer]?.id): HexKey[][] {
   if (state.phase !== "move" || (monsterId && (state.movedPieceIds ?? []).includes(monsterId))) return [];
   const board = boardForState(state);
-  const boardIndex = buildBoardIndex(board);
   const monster = state.monsters.find((candidate) => candidate.id === monsterId);
   if (!monster || !isHexKey(monster.location)) return [];
-  const movement = effectiveMonsterMovement(state, monster);
+  const effects = monsterContinuousEffects(state, monster);
+  const movement = effects.movement;
   const move = effectiveMonsterMove(state, monster);
   const paths: HexKey[][] = [];
   const visit = (path: HexKey[], record = true) => {
     if (record && path.length > 1) paths.push(path);
     if (path.length - 1 >= move) return;
-    for (const next of boardIndex.neighbours[path.at(-1)!] ?? []) {
+    for (const next of legalMovementNeighbors(board, movement, path.at(-1)!, effects.crossesWaterBarriers)) {
       if (path.includes(next)) continue;
       const otherMonster = state.monsters.some((candidate) => candidate.id !== monster.id && candidate.location === next);
       if (otherMonster && movement !== "fly") continue;
       const nextPath = [...path, next];
-      if (!monsterMovementPathAllowed(state, monster, board, nextPath)) continue;
       const occupiedUnits = state.units.filter((unit) => unit.location === next);
       const occupiedByMilitary = occupiedUnits.length > 0;
       const friendlyGuardPassage = monsterHasMutation(state, monster, "Kinda Friendly") && occupiedUnits.every((unit) => unit.branch === "National Guard");
@@ -1111,15 +1186,14 @@ export function legalSubmarineTargets(state: GameState, unitId: string): GameSta
   const unit = state.units.find((candidate) => candidate.id === unitId);
   if (state.phase !== "move" || !unit || unit.unitTypeId !== "navy-nuclear-submarine" || unit.ownerPlayer !== state.currentPlayer || state.movedPieceIds.includes(unitId) || state.removedUnitIds.includes(unitId) || !isHexKey(unit.location)) return [];
   const board = boardForState(state);
-  const index = buildBoardIndex(board);
   const distances = new Map<string, number>([[unit.location, 0]]);
   const queue = [unit.location];
   for (let i = 0; i < queue.length; i++) {
     const key = queue[i];
     const distance = distances.get(key)!;
     if (distance >= 8) continue;
-    for (const neighbour of index.neighbours[key] ?? []) {
-      if (distances.has(neighbour) || !movementPathAllowed(board, [key, neighbour], "fly")) continue;
+    for (const neighbour of legalMovementNeighbors(board, "fly", key)) {
+      if (distances.has(neighbour)) continue;
       distances.set(neighbour, distance + 1);
       queue.push(neighbour);
     }
@@ -1139,7 +1213,6 @@ export function shortestLegalUnitPaths(state: GameState, unitId: string): HexKey
 function unitMovementPaths(state: GameState, unitId: string, shortestOnly: boolean): HexKey[][] {
   if (state.phase !== "move") return [];
   const board = boardForState(state);
-  const boardIndex = buildBoardIndex(board);
   const unit = state.units.find((candidate) => candidate.id === unitId);
   const movedPieceIds = state.movedPieceIds ?? [];
   const guardControlled = unit?.branch === "National Guard" && researchContinuousEffects(state, state.currentPlayer).canControlNationalGuard;
@@ -1155,8 +1228,8 @@ function unitMovementPaths(state: GameState, unitId: string, shortestOnly: boole
     for (let index = 0; index < queue.length; index++) {
       const path = queue[index];
       if (path.length - 1 >= move) continue;
-      for (const next of boardIndex.neighbours[path.at(-1)!] ?? []) {
-        if (visited.has(next) || !movementPathAllowed(board, [path.at(-1)!, next], unit.movement)) continue;
+      for (const next of legalMovementNeighbors(board, unit.movement, path.at(-1)!)) {
+        if (visited.has(next)) continue;
         visited.add(next);
         const nextPath = [...path, next];
         paths.push(nextPath);
@@ -1168,10 +1241,9 @@ function unitMovementPaths(state: GameState, unitId: string, shortestOnly: boole
   const visit = (path: HexKey[]) => {
     if (path.length > 1) paths.push(path);
     if (path.length - 1 >= effectiveUnitMove(state, unit)) return;
-    for (const next of boardIndex.neighbours[path.at(-1)!] ?? []) {
+    for (const next of legalMovementNeighbors(board, unit.movement, path.at(-1)!)) {
       if (path.includes(next)) continue;
       const nextPath = [...path, next];
-      if (!movementPathAllowed(board, nextPath, unit.movement)) continue;
       const occupiedByMonster = state.monsters.some((monster) => monster.location === next);
       if (occupiedByMonster && unit.movement !== "fly") { paths.push(nextPath); continue; }
       visit(nextPath);
@@ -1182,7 +1254,7 @@ function unitMovementPaths(state: GameState, unitId: string, shortestOnly: boole
 }
 
 /**
- * Source-backed destination classes for neutral National Guard deployment.
+ * Candidate destination classes for neutral National Guard deployment.
  * Allowance, control overrides, and physical Guard-piece lifecycle remain
  * separate rules-gated concerns.
  */
@@ -1196,7 +1268,7 @@ export function legalNationalGuardDeploymentDestinations(state: Pick<GameState, 
     .sort();
 }
 
-/** Return verified, unstomped, unused destinations for the active owned branch. */
+/** Return configured, unstomped, unused destinations for the active owned branch. */
 export function legalOwnedDeploymentDestinations(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer">): HexKey[] {
   const board = boardForState(state);
   const branch = state.setupAssignments?.[state.currentPlayer]?.branch
@@ -1239,14 +1311,13 @@ export function legalOwnedRedeploymentDestinations(state: Pick<GameState, "board
 
 export function moveUnit(state: GameState, unitId: string, path: string[]): GameState {
   const board = boardForState(state);
-  const boardIndex = buildBoardIndex(board);
   const unit = state.units.find((candidate) => candidate.id === unitId);
   const canonical = canonicalPath(path, board);
   const destination = canonical?.at(-1);
   const movedPieceIds = state.movedPieceIds ?? [];
   const guardControlled = unit?.branch === "National Guard" && researchContinuousEffects(state, state.currentPlayer).canControlNationalGuard;
   const controlsUnit = unit && (unit.ownerPlayer === state.currentPlayer || guardControlled);
-  const legalPath = Boolean(unit && canonical && controlsUnit && destination && canonical.length >= 2 && canonical[0] === unit.location && !movedPieceIds.includes(unitId) && canonical.length - 1 <= effectiveUnitMove(state, unit) && canonical.every((space, index) => index === 0 || boardIndex.neighbours[canonical[index - 1]]?.includes(space)) && movementPathAllowed(board, canonical, unit.movement));
+  const legalPath = Boolean(unit && canonical && controlsUnit && destination && canonical.length >= 2 && canonical[0] === unit.location && !movedPieceIds.includes(unitId) && canonical.length - 1 <= effectiveUnitMove(state, unit) && movementPathAllowed(board, canonical, unit.movement));
   const blockedByMonster = unit?.movement !== "fly" && (canonical ?? []).slice(1, -1).some((space) => occupantsAt(state, space).monsters.length > 0);
   if (!legalPath || blockedByMonster || state.phase !== "move" || !unit || !destination) return state;
   const next = structuredClone(state);
@@ -1275,14 +1346,13 @@ function refreshMovementBattles(state: GameState): void {
 
 export function moveMonster(state: GameState, monsterId: string, path: string[]): GameState {
   const board = boardForState(state);
-  const boardIndex = buildBoardIndex(board);
   const monster = state.monsters[state.currentPlayer];
   const movement = effectiveMonsterMovement(state, monster);
   const move = effectiveMonsterMove(state, monster);
   const canonical = canonicalPath(path, board);
   const destination = canonical?.at(-1);
   const movedPieceIds = state.movedPieceIds ?? [];
-  const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= move && canonical.every((space, index) => index === 0 || boardIndex.neighbours[canonical[index - 1]]?.includes(space)) && monsterMovementPathAllowed(state, monster, board, canonical));
+  const legalPath = Boolean(canonical && canonical.length >= 2 && canonical[0] === monster.location && canonical.length - 1 <= move && monsterMovementPathAllowed(state, monster, board, canonical));
   const intermediate = (canonical ?? []).slice(1, -1);
   const friendlyGuardPassage = monsterHasMutation(state, monster, "Kinda Friendly");
   const blockedByMilitary = movement !== "fly" && intermediate.some((space) => {
@@ -1438,8 +1508,7 @@ function discardExhaustedXFighterCard(state: GameState, ownerPlayer: number | un
   if (remaining) return;
   const player = state.players[ownerPlayer];
   if (!player?.researchCardIds.includes("X-Fighters")) return;
-  player.researchCardIds = player.researchCardIds.filter((cardId) => cardId !== "X-Fighters");
-  if (!state.decks.research.discard.includes("X-Fighters")) state.decks.research = { ...state.decks.research, discard: [...state.decks.research.discard, "X-Fighters"] };
+  discardResearchFromHand(state, ownerPlayer, "X-Fighters");
   state.log.push(`Both X-Fighters were destroyed; the X-Fighters Research card was discarded.`);
 }
 
@@ -1577,8 +1646,7 @@ function monsterMovementPathAllowed(state: Pick<GameState, "monsters" | "players
   return path.every((space, index) => {
     if (index === 0) return Boolean(board.hexes[space]) && waterClassAllowed(movement, board.hexes[space].waterClass);
     const previous = path[index - 1];
-    const edge = board.edges.find((candidate) => candidate.from === previous && candidate.to === space && candidate.enabled);
-    return Boolean(edge && (crossesWaterBarriers || waterBarrierAllowed(movement, edge.barrier)) && board.hexes[space] && waterClassAllowed(movement, board.hexes[space].waterClass));
+    return legalMovementNeighbors(board, movement, previous, crossesWaterBarriers).includes(space);
   });
 }
 
@@ -2027,10 +2095,48 @@ interface ResearchUseResolution {
   readonly destination?: HexKey;
 }
 
+/** Internal arguments for resolving a Research card, keyed by card identity. */
+type ResearchUseRequest =
+  | { readonly cardId: "Defense Satellites" | "Chopper Lift" }
+  | { readonly cardId: "Antimatter" | "Stabilizer Ray"; readonly battleId?: string }
+  | { readonly cardId: "Laser Fence"; readonly battleId?: string; readonly choice?: "infamy" | "retreat"; readonly destination?: HexKey; readonly targetMonsterId?: string }
+  | { readonly cardId: "Mecha-Monster" | "Captain Colossal"; readonly destination?: HexKey }
+  | { readonly cardId: "Blonde Lure"; readonly destination?: HexKey; readonly targetMonsterId?: string }
+  | { readonly cardId: "Cutbacks"; readonly researchCardId?: string; readonly researchPlayerIndex?: number }
+  | { readonly cardId: "Molecular Cannon"; readonly battleId?: string; readonly destination?: HexKey; readonly targetMonsterId?: string };
+
+type UseResearchCommand = Extract<GameCommand, { type: "use-research" }>;
+
+/** Keep the public command shape stable while passing only resolver-specific inputs internally. */
+function researchUseRequestFromCommand(command: UseResearchCommand): ResearchUseRequest {
+  switch (command.cardId) {
+    case "Defense Satellites":
+    case "Chopper Lift":
+      return { cardId: command.cardId };
+    case "Antimatter":
+    case "Stabilizer Ray":
+      return { cardId: command.cardId, battleId: command.battleId };
+    case "Laser Fence":
+      return { cardId: command.cardId, battleId: command.battleId, choice: command.choice, destination: command.destination, targetMonsterId: command.targetMonsterId };
+    case "Mecha-Monster":
+    case "Captain Colossal":
+      return { cardId: command.cardId, destination: command.destination };
+    case "Blonde Lure":
+      return { cardId: command.cardId, destination: command.destination, targetMonsterId: command.targetMonsterId };
+    case "Cutbacks":
+      return { cardId: command.cardId, researchCardId: command.researchCardId, researchPlayerIndex: command.researchPlayerIndex };
+    case "Molecular Cannon":
+      return { cardId: command.cardId, battleId: command.battleId, destination: command.destination, targetMonsterId: command.targetMonsterId };
+    default:
+      throw new GameDomainError("ILLEGAL_COMMAND", `${String(command.cardId)} is source-gated and unavailable in this ruleset.`);
+  }
+}
+
 function discardResearchFromHand(state: GameState, playerIndex: number, cardId: string): void {
   const player = state.players[playerIndex];
   if (!player || !player.researchCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `Player ${playerIndex + 1} does not have ${cardId}.`);
   player.researchCardIds = player.researchCardIds.filter((candidate) => candidate !== cardId);
+  if (player.visibleResearchCardIds) player.visibleResearchCardIds = player.visibleResearchCardIds.filter((candidate) => candidate !== cardId);
   if (!state.decks.research.discard.includes(cardId)) state.decks.research = { ...state.decks.research, discard: [...state.decks.research.discard, cardId] };
 }
 
@@ -2038,6 +2144,7 @@ function removeResearchFromPlay(state: GameState, playerIndex: number, cardId: s
   const player = state.players[playerIndex];
   if (!player?.researchCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `Player ${playerIndex + 1} does not have ${cardId}.`);
   player.researchCardIds = player.researchCardIds.filter((candidate) => candidate !== cardId);
+  if (player.visibleResearchCardIds) player.visibleResearchCardIds = player.visibleResearchCardIds.filter((candidate) => candidate !== cardId);
   state.removedResearchCardIds = [...(state.removedResearchCardIds ?? []), cardId];
 }
 
@@ -2166,7 +2273,14 @@ export function canUseAntimatter(state: GameState, playerIndex = state.currentPl
 }
 
 /** Resolve the currently implemented immediate Research windows. */
-function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antimatter" | "Stabilizer Ray" | "Laser Fence" | "Mecha-Monster" | "Captain Colossal" | "Blonde Lure" | "Cutbacks" | "Molecular Cannon" | "Chopper Lift", requestedBattleId?: string, mutationCardId?: string, choice?: "infamy" | "retreat", destination?: HexKey, targetMonsterId?: string, researchCardId?: string, researchPlayerIndex?: number): ResearchUseResolution {
+function useResearchCard(state: GameState, request: ResearchUseRequest): ResearchUseResolution {
+  const { cardId } = request;
+  const requestedBattleId = "battleId" in request ? request.battleId : undefined;
+  const choice = "choice" in request ? request.choice : undefined;
+  const destination = "destination" in request ? request.destination : undefined;
+  const targetMonsterId = "targetMonsterId" in request ? request.targetMonsterId : undefined;
+  const researchCardId = "researchCardId" in request ? request.researchCardId : undefined;
+  const researchPlayerIndex = "researchPlayerIndex" in request ? request.researchPlayerIndex : undefined;
   if (!new Set(["Defense Satellites", "Antimatter", "Stabilizer Ray", "Laser Fence", "Mecha-Monster", "Captain Colossal", "Blonde Lure", "Cutbacks", "Molecular Cannon", "Chopper Lift"]).has(cardId as string)) {
     throw new GameDomainError("ILLEGAL_COMMAND", `${String(cardId)} is source-gated and unavailable in this ruleset.`);
   }
@@ -2174,7 +2288,9 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
   if (cardId === "Cutbacks") {
     if (!new Set(["move", "fight", "encounter", "deploy"]).has(state.phase)) throw new GameDomainError("ILLEGAL_COMMAND", "Cutbacks can only be used during your turn.");
     const targetPlayer = researchPlayerIndex ?? state.currentPlayer;
-    if (!researchCardId || researchCardId === cardId || !state.players[targetPlayer]?.researchCardIds.includes(researchCardId)) throw new GameDomainError("ILLEGAL_COMMAND", "Cutbacks requires choosing another face-up Research card in play.");
+    const target = state.players[targetPlayer];
+    const faceUpResearchCardIds = target?.visibleResearchCardIds ?? target?.researchCardIds;
+    if (!researchCardId || researchCardId === cardId || !target?.researchCardIds.includes(researchCardId) || !faceUpResearchCardIds?.includes(researchCardId)) throw new GameDomainError("ILLEGAL_COMMAND", "Cutbacks requires choosing another face-up Research card in play.");
     const next = structuredClone(state);
     discardResearchFromHand(next, next.currentPlayer, cardId);
     removeResearchFromPlay(next, targetPlayer, researchCardId);
@@ -2238,13 +2354,13 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
   if (cardId === "Mecha-Monster" || cardId === "Captain Colossal") {
     if (state.phase !== "deploy" || state.pendingDecision?.type !== "deployment") throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} must be placed during the active Deploy step.`);
     const definition = GIANT_UNIT_DEFINITIONS.find((candidate) => candidate.id === (cardId === "Mecha-Monster" ? "mecha-monster" : "captain-colossal"));
-    if (!definition) throw new GameDomainError("ILLEGAL_COMMAND", `No verified definition exists for ${cardId}.`);
+    if (!definition) throw new GameDomainError("ILLEGAL_COMMAND", `No configured definition exists for ${cardId}.`);
     const activePlayer = state.players[state.currentPlayer];
     if (!activePlayer?.researchCardIds.includes(cardId)) throw new GameDomainError("ILLEGAL_COMMAND", `Player ${state.currentPlayer + 1} does not have ${cardId}.`);
     if (state.units.some((unit) => unit.unitTypeId === definition.id && unit.location !== "permanently-removed")) throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} is already in play.`);
     const legalBases = legalGiantPlacementDestinations(state);
     const placement = destination ?? legalBases[0];
-    if (!placement || !legalBases.includes(placement)) throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} must be placed on one of the active player's verified bases.`);
+    if (!placement || !legalBases.includes(placement)) throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} must be placed on one of the active player's configured bases.`);
     const next = structuredClone(state);
     discardResearchFromHand(next, next.currentPlayer, cardId);
     const unitId = `${definition.id}-${next.currentPlayer + 1}`;
@@ -2662,12 +2778,12 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   const destination = guardDeployment
     ? requested?.destination ?? legalNationalGuardDeploymentDestinations(next)[0]
     : requested?.destination ?? legalOwnedDeploymentDestinations(next)[0] ?? baseHex?.key;
-  if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", `No verified ${guardDeployment ? "National Guard destination" : `${branch} base`} exists in the development board; deployment remains source-gated.`);
+  if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", `No eligible ${guardDeployment ? "National Guard destination" : `${branch} base`} exists in the development board candidate; deployment remains source-gated.`);
   if (guardDeployment) {
     if (!legalNationalGuardDeploymentDestinations(next).includes(destination)) throw new GameDomainError("ILLEGAL_COMMAND", "National Guard may deploy only to an unstomped city, military base, or Infamy site.");
   } else {
     const baseHex = board.hexes[destination];
-    if (!baseHex?.features.some((feature) => feature.kind === "military-base" && feature.branch === branch)) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} units may deploy only to their verified base.`);
+    if (!baseHex?.features.some((feature) => feature.kind === "military-base" && feature.branch === branch)) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} units may deploy only to a configured ${branch} base.`);
     if ((next.stompedLocations ?? []).includes(destination)) throw new GameDomainError("ILLEGAL_COMMAND", `${branch} base is stomped and cannot receive a deployment.`);
   }
   if (next.deploymentDestinations.includes(destination)) throw new GameDomainError("ILLEGAL_COMMAND", "Only one newly deployed unit may occupy a destination space during this Deploy step.");
@@ -2880,7 +2996,7 @@ function resolveChallengeStep(state: GameState, command: Extract<GameCommand, { 
   const attacker = turn.attackerId === challenger.id ? challenger : rival;
   const defender = attacker.id === challenger.id ? rival : challenger;
   const controller = (unit: Monster | MilitaryUnit) => isMonster(unit) ? challengePlayerIndex(next, unit.id) : unit.ownerPlayer ?? challengePlayerIndex(next, challenger.id);
-  const finish = (eventType: string, detail: Record<string, unknown> = {}): GameEventResult => {
+  const finish = (eventType: EngineEventType, detail: Record<string, unknown> = {}): GameEventResult => {
     const eventPayload = { challengerMonsterId: challenger.id, opponentMonsterId: opponent?.id, giantUnitId: giant?.id, rolls: [], attacks: [], ...detail, nextPhase: next.phase, victoryType: next.victoryType, winnerPlayer: next.winnerPlayer };
     return { state: appendEvent(next, eventType, eventPayload), eventType, eventPayload };
   };
@@ -3024,7 +3140,7 @@ export function drawResearchForDeployment(state: GameState): ResearchDrawResolut
     return { state: next, cardId: result.cardId, ...recovery };
   }
   if (result.cardId === "Mecha-Monster" || result.cardId === "Captain Colossal") {
-    const placed = useResearchCard(next, result.cardId);
+    const placed = useResearchCard(next, { cardId: result.cardId });
     return { state: placed.state, cardId: result.cardId, unitId: placed.unitId, destination: placed.destination };
   }
   next.log.push(`Player ${next.currentPlayer + 1} drew a Military Research card instead of deploying.`);
@@ -3060,14 +3176,14 @@ function prepareMonsterForTurn(state: GameState): { monsterId: string; recoveryR
       const destination = state.monsters.some((candidate) => candidate.id !== monster.id && candidate.location === losAngeles)
         ? assignment?.lair ? canonicalPath([assignment.lair], boardForState(state))?.[0] : undefined
         : losAngeles;
-      if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", "A Hollywood monster needs a verified lair when Los Angeles is occupied.");
+      if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", "A Hollywood monster needs a configured setup lair when Los Angeles is occupied.");
       monster.location = destination;
       recoveryReleased = true;
       state.log.push(`${monster.name} broke free from Hollywood after recovering ${roll} Health.`);
     }
   } else if (monster.location === "disappeared") {
     const assignment = state.setupAssignments?.find((seat) => seat.monsterId === monster.id);
-    if (!assignment?.lair) throw new GameDomainError("ILLEGAL_COMMAND", "A disappeared monster cannot return without a verified setup lair.");
+    if (!assignment?.lair) throw new GameDomainError("ILLEGAL_COMMAND", "A disappeared monster cannot return without a configured setup lair.");
     const lair = canonicalPath([assignment.lair], boardForState(state))?.[0];
     if (!lair) throw new GameDomainError("ILLEGAL_COMMAND", "Assigned lair is not on the active board.");
     monster.location = lair;
@@ -3270,7 +3386,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const monster = state.monsters[state.currentPlayer];
     if (!monster || monster.location === "hollywood") throw new Error("A Hollywood monster cannot disappear.");
     if ((state.movedPieceIds ?? []).includes(monster.id)) throw new Error("The monster movement decision has already been resolved.");
-    if (!state.setupAssignments?.some((seat) => seat.monsterId === monster.id && seat.lair)) throw new Error("Monster disappearance requires a verified setup lair.");
+    if (!state.setupAssignments?.some((seat) => seat.monsterId === monster.id && seat.lair)) throw new Error("Monster disappearance requires a configured setup lair.");
     const next = structuredClone(state);
     next.monsters[next.currentPlayer].location = "disappeared";
     clearPendingChallengerIfLost(next, next.monsters[next.currentPlayer].id);
@@ -3366,7 +3482,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     return { state: appendEvent(result.state, "mutation.used", eventPayload), eventType: "mutation.used", eventPayload };
   }
   if (command.type === "use-research") {
-    const result = useResearchCard(state, command.cardId, command.battleId, command.mutationCardId, command.choice, command.destination, command.targetMonsterId, command.researchCardId, command.researchPlayerIndex);
+    const result = useResearchCard(state, researchUseRequestFromCommand(command));
     const eventPayload = { researchCardId: result.cardId, removedResearchCardId: command.researchCardId, removedResearchPlayerIndex: command.researchPlayerIndex, battleId: result.battleId, mutationCardId: command.mutationCardId, targetMonsterId: command.targetMonsterId, choice: command.choice, destination: command.destination, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextDecision: result.state.pendingDecision, nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "research.used", eventPayload), eventType: "research.used", eventPayload };
   }
@@ -3497,7 +3613,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
   throw new Error("There is no advance action available in the current phase.");
 }
 
-function appendEvent(state: GameState, eventType: string, detail: Record<string, unknown>, actorId?: string): GameState {
+function appendEvent(state: GameState, eventType: EngineEventType, detail: Record<string, unknown>, actorId?: string): GameState {
   const next = structuredClone(state);
   for (const unit of next.units) {
     if (unit.unitTypeId === "navy-nuclear-submarine-missile" && unit.location === "record-tile") {
@@ -3515,7 +3631,7 @@ function appendEvent(state: GameState, eventType: string, detail: Record<string,
 
 export function assertSupportedStateVersion(state: Pick<GameState, "schemaVersion">): void {
   if (state.schemaVersion !== MATCH_STATE_SCHEMA_VERSION) {
-    throw new GameDomainError("INVALID_COMMAND_ENVELOPE", `Unsupported match-state schema: ${String(state.schemaVersion)}.`);
+    throw new GameDomainError("INTERNAL_INVARIANT", `Unsupported match-state schema: ${String(state.schemaVersion)}.`);
   }
 }
 
@@ -3534,6 +3650,7 @@ export function applyCommandEnvelope(state: GameState, envelope: GameCommandEnve
   try {
     result = applyCommand(state, envelope.command);
   } catch (error) {
+    if (error instanceof GameDomainError) throw error;
     throw new GameDomainError("ILLEGAL_COMMAND", error instanceof Error ? error.message : "Command is not legal.");
   }
   const next = structuredClone(result.state);

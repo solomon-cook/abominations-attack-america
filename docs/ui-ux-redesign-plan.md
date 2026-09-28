@@ -1,5 +1,7 @@
 # CIV-Inspired UI/UX Redesign Plan
 
+Historical progress entries in this plan record browser/UI state at their run date. References to a “human-audited” board mean the internal photo-transcription candidate and its implementation fixture, not verification against the user's physical edition. The active board is currently labelled for playtesting; the [board provenance reconciliation](board-source-status-reconciliation.md) is authoritative for source status.
+
 This checklist tracks the approved board-first UI changes. Check an item only after its behavior is implemented and verified in the rendered desktop and mobile flows where applicable. Suggestion **#10 is intentionally deferred** and must stay out of this work.
 
 ## Approved changes
@@ -61,10 +63,10 @@ These follow-up changes are approved for implementation under the active UI goal
 
 ## Verification record
 
-- Confirmed the visual preview reports the human-audited 336-cell North America board.
+- Confirmed the visual preview reports the active 336-cell photo-transcribed North America board candidate.
 - `npm test` passed for both the game-engine and API suites; `npm run typecheck` passed for web and API; `npm run build` passed.
 - Accessibility, WCAG contrast, reduced-motion, responsive-layout, board-camera, and `git diff --check` verifications passed.
-- `browser:audited:verify` passed at 1280×720, 390×844, and 320×740 on the human-audited 336-cell board. The desktop and 390px flows resolve movement/encounter and draw Research; the 320px flow also selects and places a legal military unit. All reported no runtime errors or missing terrain images.
+- `browser:audited:verify` passed at 1280×720 and 320×740 on 2026-09-28 after extending the real Deploy/count transition to desktop as well as phone; each selected and placed a legal military unit, cleared the prompt, and asserted +1 deployed/−1 reserve. Earlier 390×844 evidence covers the Military Research alternative; the verifier keeps that path at 390px. These browser checks establish rendering and interaction only, not physical-board parity. All reported no runtime errors or missing terrain images.
 - Map controls were visually checked at 320×740 and 390×844; all three buttons stay together in the HUD row and avoid the player portrait rail. Keyboard testing confirmed the game menu opens, focus advances through its actions, Settings opens, and Escape closes it.
 - The map-control group was visually checked at desktop widths: it had been isolated near the center of the top bar, so it now aligns immediately before Menu at 1024px and wider. At 768px and narrower the existing left-aligned HUD placement is retained; 320px DOM bounds are x=12–148 with all three 44px targets visible.
 - `browser:local:verify` passed the current home-to-local-game flow at 1280×720, 390×844, and 320×740; it checked the audited 336-cell board, record access, 44px touch targets, in-bounds/scrollable Military inspector, no page overflow, and minimap separation from the command sheet, movement queue, map controls, and portrait rail.

@@ -1,0 +1,931 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-09-28T18:14:41.616Z",
+  "updatedAt": "2026-09-28T18:15:05.374Z",
+  "url": "http://127.0.0.1:59822/",
+  "environment": {
+    "node": "v24.9.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "playwright": "1.63.0",
+    "browser": "140.0.7339.186",
+    "build": {
+      "sha256": "012644a37d6751d46c4ba0d535a481a49fb265a632df02ae1c5300504bdb1ab2",
+      "fileCount": 1456,
+      "totalBytes": 143508012,
+      "mainAssets": [
+        {
+          "path": "assets/BoardReview-Ckctd3cD.js",
+          "bytes": 5241
+        },
+        {
+          "path": "assets/index-Ce5D7sPS.css",
+          "bytes": 263117
+        },
+        {
+          "path": "assets/index-ZulhHg-j.js",
+          "bytes": 747466
+        },
+        {
+          "path": "index.html",
+          "bytes": 704
+        }
+      ]
+    }
+  },
+  "protocol": {
+    "preview": "Vite production preview from apps/web/dist on loopback and an ephemeral strict port",
+    "freshContextPerSample": true,
+    "cacheDisabled": "CDP Network.setCacheDisabled(true)",
+    "serviceWorkers": "blocked",
+    "cpuThrottle": "4x",
+    "network": {
+      "rttMs": 150,
+      "downloadBytesPerSecond": 200000,
+      "uploadBytesPerSecond": 93750
+    },
+    "homeWait": "load, #home-title, hero image decode, document.fonts.ready, then 250 ms",
+    "viewports": [
+      {
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "width": 390,
+        "height": 844
+      }
+    ],
+    "runs": 1,
+    "firstSelection": "2-player local setup through visible UI choices; nearest visible legal hex passing center-point hit test; stop when Confirm move appears; command not committed",
+    "resourceAccounting": "same-origin Resource Timing entries started during setup/selection and completed by confirmation, using transferSize; navigation document excluded; requests still in flight when Confirm appears are not counted",
+    "selectionInput": "mouse at desktop viewport; touchscreen tap at phone viewport",
+    "lcp": "latest Largest Contentful Paint candidate observed after the documented readiness wait, not a formally frozen page-final value",
+    "graphics": "existing production assets served unchanged; no images or rendering resources intercepted"
+  },
+  "samples": [
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 1,
+      "fcpMs": 1976,
+      "lcpMs": 2092,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:59822/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 338,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1557.1000000238419,
+          "duration": 194,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "self",
+          "startTime": 1754,
+          "duration": 56,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "unknown",
+          "startTime": 1840.1000000238419,
+          "duration": 88,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-ZulhHg-j.js",
+          "type": "js",
+          "transferSize": 187815,
+          "encodedBodySize": 187515,
+          "decodedBodySize": 747466
+        },
+        {
+          "name": "/assets/index-Ce5D7sPS.css",
+          "type": "css",
+          "transferSize": 49515,
+          "encodedBodySize": 49215,
+          "decodedBodySize": 263117
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 187815,
+        "css": 49515,
+        "images": 19075,
+        "other": 0,
+        "total": 256405
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "sample": 1,
+      "setupStartedAtMs": 2530.399999976158,
+      "selectionStartedAtMs": 6973.200000047684,
+      "selectedHex": "7,5",
+      "inputMethod": "mouse",
+      "clickToConfirmMs": 428.89999997615814,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 3081.100000023842,
+          "duration": 1653.8999999761581
+        },
+        {
+          "name": "/assets/monsters/portraits/tomanagi-dark.webp",
+          "initiatorType": "img",
+          "transferSize": 104038,
+          "startTime": 3081.2000000476837,
+          "duration": 3098.6999999284744
+        },
+        {
+          "name": "/assets/monsters/portraits/konk.webp",
+          "initiatorType": "img",
+          "transferSize": 147830,
+          "startTime": 3081.2000000476837,
+          "duration": 3758.5
+        },
+        {
+          "name": "/assets/monsters/portraits/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 106320,
+          "startTime": 3081.7999999523163,
+          "duration": 3137.3000000715256
+        },
+        {
+          "name": "/assets/monsters/portraits/toxicor.webp",
+          "initiatorType": "img",
+          "transferSize": 102310,
+          "startTime": 3081.899999976158,
+          "duration": 3084.100000023842
+        },
+        {
+          "name": "/assets/board/overlays/city-2d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3083.2000000476837,
+          "duration": 3007.7999999523163
+        },
+        {
+          "name": "/assets/board/overlays/base-navy.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3084,
+          "duration": 3435.2999999523163
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3084.100000023842,
+          "duration": 2031.3999999761581
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 3084.100000023842,
+          "duration": 3306.5
+        },
+        {
+          "name": "/assets/board/overlays/lair-konk.svg",
+          "initiatorType": "img",
+          "transferSize": 877,
+          "startTime": 3084.2000000476837,
+          "duration": 3457.5999999046326
+        },
+        {
+          "name": "/assets/board/overlays/city-3d.svg",
+          "initiatorType": "img",
+          "transferSize": 824,
+          "startTime": 3085.100000023842,
+          "duration": 2228.5
+        },
+        {
+          "name": "/assets/board/overlays/lair-tomanagi.svg",
+          "initiatorType": "img",
+          "transferSize": 924,
+          "startTime": 3085.100000023842,
+          "duration": 3642.1999999284744
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3085.7000000476837,
+          "duration": 3169.899999976158
+        },
+        {
+          "name": "/assets/board/overlays/base-army.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3086,
+          "duration": 3486.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/base-marines.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3086.5,
+          "duration": 1841.2000000476837
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 3086.5,
+          "duration": 3269.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/infamy-site.svg",
+          "initiatorType": "img",
+          "transferSize": 739,
+          "startTime": 3087.2999999523163,
+          "duration": 3610.600000023842
+        },
+        {
+          "name": "/assets/board/overlays/mutation-site.svg",
+          "initiatorType": "img",
+          "transferSize": 779,
+          "startTime": 3087.399999976158,
+          "duration": 2418.2000000476837
+        },
+        {
+          "name": "/assets/board/overlays/base-air-force.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3087.5,
+          "duration": 2614.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/lair-zorb.svg",
+          "initiatorType": "img",
+          "transferSize": 851,
+          "startTime": 3088.7000000476837,
+          "duration": 3669
+        },
+        {
+          "name": "/assets/board/overlays/challenge-site.svg",
+          "initiatorType": "img",
+          "transferSize": 922,
+          "startTime": 3090.2999999523163,
+          "duration": 2806.4000000953674
+        },
+        {
+          "name": "/assets/board/overlays/lair-megaclaw.svg",
+          "initiatorType": "img",
+          "transferSize": 961,
+          "startTime": 3097,
+          "duration": 3242.399999976158
+        },
+        {
+          "name": "/assets/military/army-tank.webp",
+          "initiatorType": "img",
+          "transferSize": 8470,
+          "startTime": 4094.899999976158,
+          "duration": 2941.8000000715256
+        },
+        {
+          "name": "/assets/military/army-missile-launcher.webp",
+          "initiatorType": "img",
+          "transferSize": 8018,
+          "startTime": 4095,
+          "duration": 2993.7000000476837
+        },
+        {
+          "name": "/assets/military/navy-fighter.webp",
+          "initiatorType": "img",
+          "transferSize": 9604,
+          "startTime": 4095.5,
+          "duration": 3060.899999976158
+        },
+        {
+          "name": "/assets/military/navy-nuclear-submarine.webp",
+          "initiatorType": "img",
+          "transferSize": 4784,
+          "startTime": 4095.5,
+          "duration": 3046.899999976158
+        },
+        {
+          "name": "/assets/military/air-force-fighter.webp",
+          "initiatorType": "img",
+          "transferSize": 8678,
+          "startTime": 4095.600000023842,
+          "duration": 3249.100000023842
+        },
+        {
+          "name": "/assets/military/air-force-cruise-missile.webp",
+          "initiatorType": "img",
+          "transferSize": 4550,
+          "startTime": 4095.600000023842,
+          "duration": 3272.6999999284744
+        },
+        {
+          "name": "/assets/reference-sheets/camouflage.svg",
+          "initiatorType": "css",
+          "transferSize": 1160,
+          "startTime": 4098.899999976158,
+          "duration": 3252.7000000476837
+        }
+      ],
+      "transferBytes": 567614,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 6973.799999952316,
+          "duration": 312,
+          "inputDelayMs": 12.5,
+          "processingMs": 2.100000023841858
+        },
+        {
+          "name": "click",
+          "startTime": 6973.899999976158,
+          "duration": 312,
+          "inputDelayMs": 159.70000004768372,
+          "processingMs": 38.5
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 1,
+      "fcpMs": 2116,
+      "lcpMs": 2216,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:59822/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 462,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1575.8999999761581,
+          "duration": 247,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "self",
+          "startTime": 1828.2000000476837,
+          "duration": 74,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "unknown",
+          "startTime": 1904.1000000238419,
+          "duration": 141,
+          "renderTime": null,
+          "loadTime": null,
+          "processingStart": null,
+          "processingEnd": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-ZulhHg-j.js",
+          "type": "js",
+          "transferSize": 187815,
+          "encodedBodySize": 187515,
+          "decodedBodySize": 747466
+        },
+        {
+          "name": "/assets/index-Ce5D7sPS.css",
+          "type": "css",
+          "transferSize": 49515,
+          "encodedBodySize": 49215,
+          "decodedBodySize": 263117
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "type": "images",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "type": "images",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425
+        }
+      ],
+      "transferBytes": {
+        "js": 187815,
+        "css": 49515,
+        "images": 19075,
+        "other": 0,
+        "total": 256405
+      },
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    },
+    {
+      "scenario": "first-selection",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sample": 1,
+      "setupStartedAtMs": 2946.1999999284744,
+      "selectionStartedAtMs": 8043.299999952316,
+      "selectedHex": "6,2",
+      "inputMethod": "touch",
+      "clickToConfirmMs": 424.60000002384186,
+      "eventTimingSupported": true,
+      "resources": [
+        {
+          "name": "/assets/board/audited/overview.webp",
+          "initiatorType": "css",
+          "transferSize": 193554,
+          "startTime": 3333.1999999284744,
+          "duration": 4549.300000071526
+        },
+        {
+          "name": "/assets/monsters/portraits/zorb.webp",
+          "initiatorType": "img",
+          "transferSize": 48168,
+          "startTime": 3612.5,
+          "duration": 1662.5
+        },
+        {
+          "name": "/assets/monsters/portraits/tomanagi-dark.webp",
+          "initiatorType": "img",
+          "transferSize": 104038,
+          "startTime": 3613,
+          "duration": 3115.7999999523163
+        },
+        {
+          "name": "/assets/monsters/portraits/konk.webp",
+          "initiatorType": "img",
+          "transferSize": 147830,
+          "startTime": 3613.0999999046326,
+          "duration": 3670.2000000476837
+        },
+        {
+          "name": "/assets/monsters/portraits/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 106320,
+          "startTime": 3613.399999976158,
+          "duration": 3151.5
+        },
+        {
+          "name": "/assets/monsters/portraits/toxicor.webp",
+          "initiatorType": "img",
+          "transferSize": 102310,
+          "startTime": 3613.5,
+          "duration": 3101.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/city-2d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3615,
+          "duration": 2432.7999999523163
+        },
+        {
+          "name": "/assets/board/overlays/base-navy.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3616,
+          "duration": 3465.5999999046326
+        },
+        {
+          "name": "/assets/board/overlays/city-health.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3616.0999999046326,
+          "duration": 2040.1000000238419
+        },
+        {
+          "name": "/assets/board/overlays/lair-toxicor.svg",
+          "initiatorType": "img",
+          "transferSize": 912,
+          "startTime": 3616.1999999284744,
+          "duration": 1852.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/lair-konk.svg",
+          "initiatorType": "img",
+          "transferSize": 877,
+          "startTime": 3616.2999999523163,
+          "duration": 3323.2000000476837
+        },
+        {
+          "name": "/assets/board/overlays/city-3d.svg",
+          "initiatorType": "img",
+          "transferSize": 824,
+          "startTime": 3617.1999999284744,
+          "duration": 3433.600000023842
+        },
+        {
+          "name": "/assets/board/overlays/lair-tomanagi.svg",
+          "initiatorType": "img",
+          "transferSize": 924,
+          "startTime": 3617.5,
+          "duration": 3293.6999999284744
+        },
+        {
+          "name": "/assets/board/overlays/city-1d.svg",
+          "initiatorType": "img",
+          "transferSize": 828,
+          "startTime": 3617.5999999046326,
+          "duration": 3494.600000023842
+        },
+        {
+          "name": "/assets/board/overlays/lair-gargantis.svg",
+          "initiatorType": "img",
+          "transferSize": 883,
+          "startTime": 3618.399999976158,
+          "duration": 2819.399999976158
+        },
+        {
+          "name": "/assets/board/overlays/base-army.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3618.399999976158,
+          "duration": 3186.1999999284744
+        },
+        {
+          "name": "/assets/board/overlays/base-marines.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3619.0999999046326,
+          "duration": 2234
+        },
+        {
+          "name": "/assets/board/overlays/infamy-site.svg",
+          "initiatorType": "img",
+          "transferSize": 739,
+          "startTime": 3619.399999976158,
+          "duration": 3267.2999999523163
+        },
+        {
+          "name": "/assets/board/overlays/mutation-site.svg",
+          "initiatorType": "img",
+          "transferSize": 779,
+          "startTime": 3620.2999999523163,
+          "duration": 3356.7000000476837
+        },
+        {
+          "name": "/assets/board/overlays/base-air-force.svg",
+          "initiatorType": "img",
+          "transferSize": 632,
+          "startTime": 3620.899999976158,
+          "duration": 2620.899999976158
+        },
+        {
+          "name": "/assets/board/overlays/lair-zorb.svg",
+          "initiatorType": "img",
+          "transferSize": 851,
+          "startTime": 3622.2999999523163,
+          "duration": 3526.100000023842
+        },
+        {
+          "name": "/assets/board/overlays/challenge-site.svg",
+          "initiatorType": "img",
+          "transferSize": 922,
+          "startTime": 3623.2999999523163,
+          "duration": 3008.5
+        },
+        {
+          "name": "/assets/board/overlays/lair-megaclaw.svg",
+          "initiatorType": "img",
+          "transferSize": 961,
+          "startTime": 3630.5,
+          "duration": 4013.899999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r0-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 3710,
+          "startTime": 3792.1999999284744,
+          "duration": 3927
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r1-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1862,
+          "startTime": 3792.1999999284744,
+          "duration": 4003.7000000476837
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r2-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1922,
+          "startTime": 3792.2999999523163,
+          "duration": 4047
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r3-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1906,
+          "startTime": 3792.899999976158,
+          "duration": 4209.399999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r4-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1986,
+          "startTime": 3793,
+          "duration": 4262.899999976158
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r5-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1950,
+          "startTime": 3793.0999999046326,
+          "duration": 4301.400000095367
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r6-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 2076,
+          "startTime": 3793.5999999046326,
+          "duration": 4412.5
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r7-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1932,
+          "startTime": 3793.5999999046326,
+          "duration": 4471.300000071526
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r8-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1970,
+          "startTime": 3793.6999999284744,
+          "duration": 4518.300000071526
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r9-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 1914,
+          "startTime": 3793.6999999284744,
+          "duration": 4621.200000047684
+        },
+        {
+          "name": "/assets/board/audited/256/continuous-r10-c0.webp",
+          "initiatorType": "img",
+          "transferSize": 2022,
+          "startTime": 3793.7999999523163,
+          "duration": 4682.799999952316
+        },
+        {
+          "name": "/assets/military/army-tank.webp",
+          "initiatorType": "img",
+          "transferSize": 8470,
+          "startTime": 4823,
+          "duration": 2566.2999999523163
+        },
+        {
+          "name": "/assets/military/army-missile-launcher.webp",
+          "initiatorType": "img",
+          "transferSize": 8018,
+          "startTime": 4823,
+          "duration": 2611.7999999523163
+        },
+        {
+          "name": "/assets/military/navy-fighter.webp",
+          "initiatorType": "img",
+          "transferSize": 9604,
+          "startTime": 4823.099999904633,
+          "duration": 2654.600000023842
+        },
+        {
+          "name": "/assets/military/navy-nuclear-submarine.webp",
+          "initiatorType": "img",
+          "transferSize": 4784,
+          "startTime": 4823.799999952316,
+          "duration": 2617.5
+        },
+        {
+          "name": "/assets/military/air-force-fighter.webp",
+          "initiatorType": "img",
+          "transferSize": 8678,
+          "startTime": 4824,
+          "duration": 2924.1999999284744
+        },
+        {
+          "name": "/assets/military/air-force-cruise-missile.webp",
+          "initiatorType": "img",
+          "transferSize": 4550,
+          "startTime": 4824.099999904633,
+          "duration": 2774.100000023842
+        },
+        {
+          "name": "/assets/reference-sheets/camouflage.svg",
+          "initiatorType": "css",
+          "transferSize": 1160,
+          "startTime": 4827.299999952316,
+          "duration": 2637.7000000476837
+        }
+      ],
+      "transferBytes": 784418,
+      "eventTimings": [
+        {
+          "name": "pointerdown",
+          "startTime": 8043.899999976158,
+          "duration": 16,
+          "inputDelayMs": 15.699999928474426,
+          "processingMs": 0.5
+        },
+        {
+          "name": "click",
+          "startTime": 8044.199999928474,
+          "duration": 320,
+          "inputDelayMs": 178.39999997615814,
+          "processingMs": 36
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true
+    }
+  ],
+  "summary": {
+    "home 1280x720": {
+      "fcpMs": {
+        "median": 1976,
+        "min": 1976,
+        "max": 1976,
+        "samples": 1
+      },
+      "lcpMs": {
+        "median": 2092,
+        "min": 2092,
+        "max": 2092,
+        "samples": 1
+      },
+      "longTaskTotalMs": {
+        "median": 338,
+        "min": 338,
+        "max": 338,
+        "samples": 1
+      }
+    },
+    "first-selection 1280x720": {
+      "clickToConfirmMs": {
+        "median": 428.89999997615814,
+        "min": 428.89999997615814,
+        "max": 428.89999997615814,
+        "samples": 1
+      }
+    },
+    "home 390x844": {
+      "fcpMs": {
+        "median": 2116,
+        "min": 2116,
+        "max": 2116,
+        "samples": 1
+      },
+      "lcpMs": {
+        "median": 2216,
+        "min": 2216,
+        "max": 2216,
+        "samples": 1
+      },
+      "longTaskTotalMs": {
+        "median": 462,
+        "min": 462,
+        "max": 462,
+        "samples": 1
+      }
+    },
+    "first-selection 390x844": {
+      "clickToConfirmMs": {
+        "median": 424.60000002384186,
+        "min": 424.60000002384186,
+        "max": 424.60000002384186,
+        "samples": 1
+      }
+    }
+  }
+}

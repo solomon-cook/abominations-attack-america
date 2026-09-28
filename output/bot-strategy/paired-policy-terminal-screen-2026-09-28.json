@@ -1,0 +1,4426 @@
+{
+  "schemaVersion": 2,
+  "researchDrawDiagnosticsVersion": 1,
+  "runMetadata": {
+    "generatedAt": "2026-09-28T17:35:13.803Z",
+    "gitHead": "6ec09a93a5caf3d5bbd9217c46f36c55fe698b06",
+    "worktreeDirty": true,
+    "dirtyPathCount": 219,
+    "sourceSha256": {
+      "botSelector": "47d990c8d099af9d3e0e7d0ad83c248d6d9537068c6181d5a55ee8d7d1a984d7",
+      "harness": "0b880e078a97564f40c86f05a388bd6a64d4e51e2291ff6e0b001d16a5fe922d"
+    }
+  },
+  "screening": false,
+  "interpretation": "Policy outcome comparison only; interpret any differences with the recorded setup and stochastic-path caveats.",
+  "config": {
+    "pairCount": 7,
+    "seedStart": 3100,
+    "maximumRoundsPerMatch": 12,
+    "actionSafetyCapPerMatch": 2000,
+    "playerCounts": [
+      3,
+      4
+    ],
+    "treatmentPolicies": [
+      "force-first",
+      "research-first"
+    ],
+    "focalSeatPlan": [
+      [
+        3,
+        0
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        4,
+        3
+      ]
+    ],
+    "comparison": "Each pair clones the same completed legal setup into force-first and research-first treatments. Other seats retain their match-default policy and are the fixed baseline roster for that pair.",
+    "researchDrawDiagnostics": "Deploy windows are counted per selector invocation while state.phase is deploy; legal Research draws mirror drawResearchForDeployment/applyCommand guards; legal deployment choices are counted by deploymentChoices; optional gates are emitted only when the selector reaches shouldDrawResearch and are checked against its decision; accepted draws require the research.drawn event.",
+    "randomGenerator": "32-bit xorshift for setup assignment; engine command randomness begins from the same cloned state in both treatments and may diverge after policies take different actions.",
+    "setupRotation": "The seeded distinct monster and branch permutations are cyclically rotated by pair index; legal lairs rotate through each monster's unclaimed options. Focal seats cover every seat in both 3- and 4-seat games for the default seven-pair sample."
+  },
+  "summary": {
+    "forceFirstOutcomes": {
+      "win": 5,
+      "draw": 0,
+      "loss": 2,
+      "incomplete": 0,
+      "invalid": 0
+    },
+    "researchFirstOutcomes": {
+      "win": 4,
+      "draw": 0,
+      "loss": 3,
+      "incomplete": 0,
+      "invalid": 0
+    },
+    "pairedContrasts": {
+      "force-first-win/research-first-loss": 1,
+      "force-first-loss/research-first-win": 0,
+      "same-terminal-outcome": 6,
+      "incomplete-or-invalid": 0
+    },
+    "allInvalidActions": 0,
+    "safetyCappedMatches": 0,
+    "researchDrawDiagnosticsByTactic": {
+      "force-first": {
+        "seatMatchSamples": 29,
+        "deployWindows": 618,
+        "windowsWithLegalResearchDrawOption": 188,
+        "legalDeploymentChoiceCount": 2644,
+        "deploymentChoicesByCount": {
+          "0": 188,
+          "1": 6,
+          "2": 1,
+          "3": 21,
+          "4": 78,
+          "5": 88,
+          "6": 106,
+          "7": 52,
+          "8": 32,
+          "9": 11,
+          "10": 2,
+          "11": 4,
+          "12": 10,
+          "13": 4,
+          "14": 3,
+          "15": 4,
+          "16": 8
+        },
+        "optionalGateEvaluationWindows": 430,
+        "gatePassCounts": {
+          "researchDeckAvailable": 430,
+          "deploymentNotStarted": 188,
+          "researchHandBelowTwo": 430,
+          "researchFirstPolicy": 0,
+          "activeMilitaryScreen": 383,
+          "objectiveThreatAbsent": 0,
+          "blockerOpportunityAbsent": 2
+        },
+        "gateFailCounts": {
+          "researchDeckAvailable": 0,
+          "deploymentNotStarted": 242,
+          "researchHandBelowTwo": 0,
+          "researchFirstPolicy": 430,
+          "activeMilitaryScreen": 47,
+          "objectiveThreatAbsent": 430,
+          "blockerOpportunityAbsent": 428
+        },
+        "eligibleOptionalDrawWindows": 0,
+        "drawSelected": 0,
+        "optionalDrawSelections": 0,
+        "noDeploymentChoiceDrawSelections": 0,
+        "drawAccepted": 0,
+        "drawRejected": 0,
+        "gateSkippedByPath": {
+          "no-deployment-choices": 188
+        },
+        "deployWindowsWithoutSelectorTrace": 0
+      },
+      "research-first": {
+        "seatMatchSamples": 21,
+        "deployWindows": 486,
+        "windowsWithLegalResearchDrawOption": 142,
+        "legalDeploymentChoiceCount": 2337,
+        "deploymentChoicesByCount": {
+          "0": 142,
+          "2": 2,
+          "3": 17,
+          "4": 46,
+          "5": 55,
+          "6": 64,
+          "7": 82,
+          "8": 38,
+          "9": 3,
+          "12": 4,
+          "13": 6,
+          "14": 7,
+          "15": 10,
+          "16": 10
+        },
+        "optionalGateEvaluationWindows": 344,
+        "gatePassCounts": {
+          "researchDeckAvailable": 344,
+          "deploymentNotStarted": 142,
+          "researchHandBelowTwo": 344,
+          "researchFirstPolicy": 344,
+          "activeMilitaryScreen": 322,
+          "objectiveThreatAbsent": 0,
+          "blockerOpportunityAbsent": 3
+        },
+        "gateFailCounts": {
+          "researchDeckAvailable": 0,
+          "deploymentNotStarted": 202,
+          "researchHandBelowTwo": 0,
+          "researchFirstPolicy": 0,
+          "activeMilitaryScreen": 22,
+          "objectiveThreatAbsent": 344,
+          "blockerOpportunityAbsent": 341
+        },
+        "eligibleOptionalDrawWindows": 0,
+        "drawSelected": 0,
+        "optionalDrawSelections": 0,
+        "noDeploymentChoiceDrawSelections": 0,
+        "drawAccepted": 0,
+        "drawRejected": 0,
+        "gateSkippedByPath": {
+          "no-deployment-choices": 142
+        },
+        "deployWindowsWithoutSelectorTrace": 0
+      }
+    }
+  },
+  "pairs": [
+    {
+      "pairIndex": 0,
+      "playerCount": 3,
+      "seed": 3100,
+      "setupRotation": 0,
+      "focalPlayerIndex": 0,
+      "initialStateSha256": "5d9c6e9a2261b956f663147debe73cf37231e561c4ab24c77dac33cea0929106",
+      "setupAssignments": [
+        {
+          "playerIndex": 0,
+          "monster": "Tomanagi",
+          "branch": "Marines",
+          "lair": "2,9"
+        },
+        {
+          "playerIndex": 1,
+          "monster": "Toxicor",
+          "branch": "Navy",
+          "lair": "14,-4"
+        },
+        {
+          "playerIndex": 2,
+          "monster": "Gargantis",
+          "branch": "Army",
+          "lair": "10,-1"
+        }
+      ],
+      "defaultTacticsBySeat": [
+        "research-first",
+        "force-first",
+        "research-first"
+      ],
+      "forceFirst": {
+        "treatment": "force-first",
+        "focalPlayerIndex": 0,
+        "focalMonster": "Tomanagi",
+        "focalBranch": "Marines",
+        "focalLair": "2,9",
+        "inferredDefaultTactic": "research-first",
+        "outcome": "win",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 0,
+          "monster": "Tomanagi",
+          "branch": "Marines",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 7,
+        "finalRound": 8,
+        "actions": 254,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Tomanagi",
+            "branch": "Marines",
+            "lair": "2,9",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 16,
+                "pass-move": 7,
+                "resolve-encounter": 11,
+                "deploy": 3,
+                "pass-deploy": 7,
+                "resolve-fight": 3,
+                "redeploy": 18,
+                "challenge-opponent": 2,
+                "resolve-challenge": 37
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "city": 2,
+                "los-angeles": 1,
+                "military-base": 2,
+                "infamy-site": 2
+              },
+              "infamyGainedFromEncounters": 6,
+              "healthGainedFromEncounters": 20,
+              "finalHealth": 27,
+              "finalInfamy": 10,
+              "actions": 111,
+              "researchDraw": {
+                "deployWindows": 28,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 162,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "5": 6,
+                  "7": 9,
+                  "8": 3,
+                  "14": 1,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 21,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 21,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 21,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 21,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 2
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 14,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 21,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 21,
+                  "blockerOpportunityAbsent": 19
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Toxicor",
+            "branch": "Navy",
+            "lair": "14,-4",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 12,
+                "move": 7,
+                "move-unit": 6,
+                "pass-move": 7,
+                "deploy": 6,
+                "pass-deploy": 7,
+                "resolve-fight": 1,
+                "redeploy": 9,
+                "choose-mutation-card": 1,
+                "resolve-challenge": 16
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 1,
+                "mutation-site": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 5,
+              "finalHealth": 0,
+              "finalInfamy": 7,
+              "actions": 72,
+              "researchDraw": {
+                "deployWindows": 22,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 92,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "3": 1,
+                  "4": 2,
+                  "5": 4,
+                  "6": 4,
+                  "7": 2,
+                  "11": 1,
+                  "12": 1
+                },
+                "optionalGateEvaluationWindows": 15,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 15,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 15,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 13,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 15,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 15,
+                  "blockerOpportunityAbsent": 15
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Gargantis",
+            "branch": "Army",
+            "lair": "10,-1",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 8,
+                "pass-move": 7,
+                "resolve-fight": 1,
+                "resolve-encounter": 11,
+                "deploy": 5,
+                "pass-deploy": 7,
+                "redeploy": 9,
+                "resolve-challenge": 16
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "infamy-site": 1,
+                "city": 1,
+                "military-base": 1
+              },
+              "infamyGainedFromEncounters": 3,
+              "healthGainedFromEncounters": 1,
+              "finalHealth": 0,
+              "finalInfamy": 9,
+              "actions": 71,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 81,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "4": 4,
+                  "5": 4,
+                  "7": 4,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "researchFirst": {
+        "treatment": "research-first",
+        "focalPlayerIndex": 0,
+        "focalMonster": "Tomanagi",
+        "focalBranch": "Marines",
+        "focalLair": "2,9",
+        "inferredDefaultTactic": "research-first",
+        "outcome": "loss",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 1,
+          "monster": "Toxicor",
+          "branch": "Navy",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 7,
+        "finalRound": 8,
+        "actions": 252,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Tomanagi",
+            "branch": "Marines",
+            "lair": "2,9",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 10,
+                "pass-move": 7,
+                "resolve-encounter": 11,
+                "deploy": 3,
+                "pass-deploy": 7,
+                "resolve-fight": 3,
+                "redeploy": 18,
+                "challenge-opponent": 1,
+                "resolve-challenge": 20
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "city": 2,
+                "los-angeles": 1,
+                "military-base": 2,
+                "infamy-site": 2
+              },
+              "infamyGainedFromEncounters": 6,
+              "healthGainedFromEncounters": 18,
+              "finalHealth": 0,
+              "finalInfamy": 10,
+              "actions": 87,
+              "researchDraw": {
+                "deployWindows": 28,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 162,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "5": 6,
+                  "7": 9,
+                  "8": 3,
+                  "14": 1,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 21,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 21,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 21,
+                  "researchFirstPolicy": 21,
+                  "activeMilitaryScreen": 21,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 2
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 14,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 21,
+                  "blockerOpportunityAbsent": 19
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Toxicor",
+            "branch": "Navy",
+            "lair": "14,-4",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 12,
+                "move": 7,
+                "move-unit": 6,
+                "pass-move": 7,
+                "resolve-fight": 2,
+                "deploy": 6,
+                "pass-deploy": 7,
+                "redeploy": 9,
+                "choose-mutation-card": 1,
+                "resolve-challenge": 36,
+                "challenge-opponent": 1
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 1,
+                "mutation-site": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 8,
+              "finalHealth": 40,
+              "finalInfamy": 7,
+              "actions": 94,
+              "researchDraw": {
+                "deployWindows": 22,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 92,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "3": 1,
+                  "4": 2,
+                  "5": 4,
+                  "6": 4,
+                  "7": 2,
+                  "11": 1,
+                  "12": 1
+                },
+                "optionalGateEvaluationWindows": 15,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 15,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 15,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 13,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 15,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 15,
+                  "blockerOpportunityAbsent": 15
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Gargantis",
+            "branch": "Army",
+            "lair": "10,-1",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 8,
+                "pass-move": 7,
+                "resolve-fight": 1,
+                "resolve-encounter": 11,
+                "deploy": 5,
+                "pass-deploy": 7,
+                "redeploy": 9,
+                "resolve-challenge": 16
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "infamy-site": 1,
+                "city": 1,
+                "military-base": 1
+              },
+              "infamyGainedFromEncounters": 3,
+              "healthGainedFromEncounters": 1,
+              "finalHealth": 0,
+              "finalInfamy": 9,
+              "actions": 71,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 81,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "4": 4,
+                  "5": 4,
+                  "7": 4,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "contrast": "force-first-win/research-first-loss"
+    },
+    {
+      "pairIndex": 1,
+      "playerCount": 3,
+      "seed": 3101,
+      "setupRotation": 1,
+      "focalPlayerIndex": 1,
+      "initialStateSha256": "c9741f71b18f96796af3ba8f2482fe5652bc2bf2ae94c581066b8630f2bc4fe7",
+      "setupAssignments": [
+        {
+          "playerIndex": 0,
+          "monster": "Tomanagi",
+          "branch": "Marines",
+          "lair": "15,4"
+        },
+        {
+          "playerIndex": 1,
+          "monster": "Konk",
+          "branch": "Army",
+          "lair": "17,-1"
+        },
+        {
+          "playerIndex": 2,
+          "monster": "Toxicor",
+          "branch": "Navy",
+          "lair": "2,2"
+        }
+      ],
+      "defaultTacticsBySeat": [
+        "research-first",
+        "research-first",
+        "force-first"
+      ],
+      "forceFirst": {
+        "treatment": "force-first",
+        "focalPlayerIndex": 1,
+        "focalMonster": "Konk",
+        "focalBranch": "Army",
+        "focalLair": "17,-1",
+        "inferredDefaultTactic": "research-first",
+        "outcome": "win",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 1,
+          "monster": "Konk",
+          "branch": "Army",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 6,
+        "finalRound": 7,
+        "actions": 239,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Tomanagi",
+            "branch": "Marines",
+            "lair": "15,4",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 14,
+                "pass-move": 7,
+                "resolve-encounter": 11,
+                "redeploy": 17,
+                "deploy": 4,
+                "pass-deploy": 7,
+                "resolve-fight": 7,
+                "resolve-challenge": 8
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 1,
+              "objectiveKinds": {
+                "city": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 10,
+              "finalHealth": 0,
+              "finalInfamy": 9,
+              "actions": 82,
+              "researchDraw": {
+                "deployWindows": 28,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 152,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "4": 6,
+                  "6": 3,
+                  "7": 9,
+                  "15": 1,
+                  "16": 2
+                },
+                "optionalGateEvaluationWindows": 21,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 21,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 21,
+                  "researchFirstPolicy": 21,
+                  "activeMilitaryScreen": 21,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 14,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 21,
+                  "blockerOpportunityAbsent": 21
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Konk",
+            "branch": "Army",
+            "lair": "17,-1",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 7,
+                "pass-move": 6,
+                "resolve-fight": 1,
+                "resolve-encounter": 9,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 9,
+                "challenge-opponent": 2,
+                "resolve-challenge": 35
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 1,
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 2,
+              "healthGainedFromEncounters": 10,
+              "finalHealth": 32,
+              "finalInfamy": 6,
+              "actions": 85,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 85,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "4": 1,
+                  "5": 6,
+                  "6": 4,
+                  "13": 1,
+                  "14": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Toxicor",
+            "branch": "Navy",
+            "lair": "2,2",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 11,
+                "move": 6,
+                "move-unit": 5,
+                "pass-move": 6,
+                "deploy": 5,
+                "pass-deploy": 6,
+                "redeploy": 8,
+                "choose-mutation-card": 1,
+                "resolve-challenge": 24
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "city": 3,
+                "mutation-site": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 9,
+              "finalHealth": 0,
+              "finalInfamy": 3,
+              "actions": 72,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 70,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "1": 1,
+                  "4": 4,
+                  "5": 2,
+                  "6": 4,
+                  "9": 1,
+                  "10": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 11,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "researchFirst": {
+        "treatment": "research-first",
+        "focalPlayerIndex": 1,
+        "focalMonster": "Konk",
+        "focalBranch": "Army",
+        "focalLair": "17,-1",
+        "inferredDefaultTactic": "research-first",
+        "outcome": "win",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 1,
+          "monster": "Konk",
+          "branch": "Army",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 6,
+        "finalRound": 7,
+        "actions": 239,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Tomanagi",
+            "branch": "Marines",
+            "lair": "15,4",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 14,
+                "pass-move": 7,
+                "resolve-encounter": 11,
+                "redeploy": 17,
+                "deploy": 4,
+                "pass-deploy": 7,
+                "resolve-fight": 7,
+                "resolve-challenge": 8
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 1,
+              "objectiveKinds": {
+                "city": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 10,
+              "finalHealth": 0,
+              "finalInfamy": 9,
+              "actions": 82,
+              "researchDraw": {
+                "deployWindows": 28,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 152,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "4": 6,
+                  "6": 3,
+                  "7": 9,
+                  "15": 1,
+                  "16": 2
+                },
+                "optionalGateEvaluationWindows": 21,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 21,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 21,
+                  "researchFirstPolicy": 21,
+                  "activeMilitaryScreen": 21,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 14,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 21,
+                  "blockerOpportunityAbsent": 21
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Konk",
+            "branch": "Army",
+            "lair": "17,-1",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 7,
+                "pass-move": 6,
+                "resolve-fight": 1,
+                "resolve-encounter": 9,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 9,
+                "challenge-opponent": 2,
+                "resolve-challenge": 35
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 1,
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 2,
+              "healthGainedFromEncounters": 10,
+              "finalHealth": 32,
+              "finalInfamy": 6,
+              "actions": 85,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 85,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "4": 1,
+                  "5": 6,
+                  "6": 4,
+                  "13": 1,
+                  "14": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Toxicor",
+            "branch": "Navy",
+            "lair": "2,2",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 11,
+                "move": 6,
+                "move-unit": 5,
+                "pass-move": 6,
+                "deploy": 5,
+                "pass-deploy": 6,
+                "redeploy": 8,
+                "choose-mutation-card": 1,
+                "resolve-challenge": 24
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "city": 3,
+                "mutation-site": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 9,
+              "finalHealth": 0,
+              "finalInfamy": 3,
+              "actions": 72,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 70,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "1": 1,
+                  "4": 4,
+                  "5": 2,
+                  "6": 4,
+                  "9": 1,
+                  "10": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 11,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "contrast": "same-terminal-outcome"
+    },
+    {
+      "pairIndex": 2,
+      "playerCount": 3,
+      "seed": 3102,
+      "setupRotation": 2,
+      "focalPlayerIndex": 2,
+      "initialStateSha256": "f82408a594fbca26bdc01fb9cff2447f0d3cb9946fdd87c59f8ccbdc08f28cc4",
+      "setupAssignments": [
+        {
+          "playerIndex": 0,
+          "monster": "Tomanagi",
+          "branch": "Army",
+          "lair": "21,0"
+        },
+        {
+          "playerIndex": 1,
+          "monster": "Konk",
+          "branch": "Air Force",
+          "lair": "2,3"
+        },
+        {
+          "playerIndex": 2,
+          "monster": "Zorb",
+          "branch": "Marines",
+          "lair": "13,4"
+        }
+      ],
+      "defaultTacticsBySeat": [
+        "force-first",
+        "research-first",
+        "force-first"
+      ],
+      "forceFirst": {
+        "treatment": "force-first",
+        "focalPlayerIndex": 2,
+        "focalMonster": "Zorb",
+        "focalBranch": "Marines",
+        "focalLair": "13,4",
+        "inferredDefaultTactic": "force-first",
+        "outcome": "loss",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 1,
+          "monster": "Konk",
+          "branch": "Air Force",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 7,
+        "finalRound": 8,
+        "actions": 247,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Tomanagi",
+            "branch": "Army",
+            "lair": "21,0",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 8,
+                "move-unit": 6,
+                "pass-move": 8,
+                "resolve-encounter": 14,
+                "redeploy": 11,
+                "deploy": 7,
+                "pass-deploy": 8,
+                "resolve-fight": 1,
+                "resolve-challenge": 23,
+                "challenge-opponent": 1
+              },
+              "turnsPassed": 8,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "military-base": 4,
+                "city": 2,
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 6,
+              "healthGainedFromEncounters": 12,
+              "finalHealth": 0,
+              "finalInfamy": 10,
+              "actions": 87,
+              "researchDraw": {
+                "deployWindows": 26,
+                "windowsWithLegalResearchDrawOption": 8,
+                "legalDeploymentChoiceCount": 112,
+                "deploymentChoicesByCount": {
+                  "0": 8,
+                  "1": 1,
+                  "3": 2,
+                  "4": 2,
+                  "5": 8,
+                  "8": 2,
+                  "9": 1,
+                  "16": 2
+                },
+                "optionalGateEvaluationWindows": 18,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 18,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 18,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 15,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 10,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 18,
+                  "activeMilitaryScreen": 3,
+                  "objectiveThreatAbsent": 18,
+                  "blockerOpportunityAbsent": 18
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 8
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Konk",
+            "branch": "Air Force",
+            "lair": "2,3",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 8,
+                "move-unit": 9,
+                "pass-move": 8,
+                "resolve-encounter": 11,
+                "deploy": 4,
+                "pass-deploy": 8,
+                "redeploy": 13,
+                "resolve-challenge": 7
+              },
+              "turnsPassed": 8,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 3,
+                "military-base": 2,
+                "los-angeles": 1
+              },
+              "infamyGainedFromEncounters": 2,
+              "healthGainedFromEncounters": 19,
+              "finalHealth": 40,
+              "finalInfamy": 11,
+              "actions": 68,
+              "researchDraw": {
+                "deployWindows": 25,
+                "windowsWithLegalResearchDrawOption": 8,
+                "legalDeploymentChoiceCount": 126,
+                "deploymentChoicesByCount": {
+                  "0": 8,
+                  "5": 7,
+                  "7": 2,
+                  "8": 6,
+                  "14": 1,
+                  "15": 1
+                },
+                "optionalGateEvaluationWindows": 17,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 17,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 17,
+                  "researchFirstPolicy": 17,
+                  "activeMilitaryScreen": 16,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 9,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 17,
+                  "blockerOpportunityAbsent": 17
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 8
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Zorb",
+            "branch": "Marines",
+            "lair": "13,4",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 16,
+                "pass-move": 7,
+                "resolve-fight": 6,
+                "resolve-encounter": 11,
+                "redeploy": 20,
+                "deploy": 1,
+                "pass-deploy": 7,
+                "challenge-opponent": 1,
+                "resolve-challenge": 16
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 3
+              },
+              "infamyGainedFromEncounters": 4,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 15,
+              "actions": 92,
+              "researchDraw": {
+                "deployWindows": 28,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 141,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "4": 3,
+                  "5": 3,
+                  "6": 6,
+                  "7": 6,
+                  "12": 3
+                },
+                "optionalGateEvaluationWindows": 21,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 21,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 21,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 21,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 14,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 21,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 21,
+                  "blockerOpportunityAbsent": 21
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "researchFirst": {
+        "treatment": "research-first",
+        "focalPlayerIndex": 2,
+        "focalMonster": "Zorb",
+        "focalBranch": "Marines",
+        "focalLair": "13,4",
+        "inferredDefaultTactic": "force-first",
+        "outcome": "loss",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 1,
+          "monster": "Konk",
+          "branch": "Air Force",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 7,
+        "finalRound": 8,
+        "actions": 257,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Tomanagi",
+            "branch": "Army",
+            "lair": "21,0",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 8,
+                "move-unit": 7,
+                "pass-move": 8,
+                "resolve-encounter": 12,
+                "redeploy": 12,
+                "deploy": 6,
+                "pass-deploy": 8,
+                "resolve-fight": 1,
+                "resolve-challenge": 16
+              },
+              "turnsPassed": 8,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "military-base": 4,
+                "city": 2,
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 6,
+              "healthGainedFromEncounters": 15,
+              "finalHealth": 0,
+              "finalInfamy": 10,
+              "actions": 78,
+              "researchDraw": {
+                "deployWindows": 26,
+                "windowsWithLegalResearchDrawOption": 8,
+                "legalDeploymentChoiceCount": 114,
+                "deploymentChoicesByCount": {
+                  "0": 8,
+                  "1": 1,
+                  "4": 4,
+                  "5": 8,
+                  "8": 2,
+                  "9": 1,
+                  "16": 2
+                },
+                "optionalGateEvaluationWindows": 18,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 18,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 18,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 16,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 10,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 18,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 18,
+                  "blockerOpportunityAbsent": 18
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 8
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Konk",
+            "branch": "Air Force",
+            "lair": "2,3",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 8,
+                "move-unit": 9,
+                "pass-move": 8,
+                "resolve-encounter": 11,
+                "deploy": 4,
+                "pass-deploy": 8,
+                "redeploy": 13,
+                "resolve-challenge": 29,
+                "challenge-opponent": 1
+              },
+              "turnsPassed": 8,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 3,
+                "military-base": 2,
+                "los-angeles": 1
+              },
+              "infamyGainedFromEncounters": 2,
+              "healthGainedFromEncounters": 19,
+              "finalHealth": 40,
+              "finalInfamy": 11,
+              "actions": 91,
+              "researchDraw": {
+                "deployWindows": 25,
+                "windowsWithLegalResearchDrawOption": 8,
+                "legalDeploymentChoiceCount": 128,
+                "deploymentChoicesByCount": {
+                  "0": 8,
+                  "5": 3,
+                  "6": 4,
+                  "7": 4,
+                  "8": 4,
+                  "14": 1,
+                  "15": 1
+                },
+                "optionalGateEvaluationWindows": 17,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 17,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 17,
+                  "researchFirstPolicy": 17,
+                  "activeMilitaryScreen": 16,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 9,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 17,
+                  "blockerOpportunityAbsent": 17
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 8
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Zorb",
+            "branch": "Marines",
+            "lair": "13,4",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 15,
+                "pass-move": 7,
+                "resolve-fight": 7,
+                "resolve-encounter": 13,
+                "redeploy": 18,
+                "deploy": 1,
+                "pass-deploy": 7,
+                "challenge-opponent": 1,
+                "resolve-challenge": 12
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 3
+              },
+              "infamyGainedFromEncounters": 4,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 15,
+              "actions": 88,
+              "researchDraw": {
+                "deployWindows": 26,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 128,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "2": 1,
+                  "4": 3,
+                  "6": 6,
+                  "7": 6,
+                  "12": 3
+                },
+                "optionalGateEvaluationWindows": 19,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 19,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 19,
+                  "researchFirstPolicy": 19,
+                  "activeMilitaryScreen": 19,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 12,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 19,
+                  "blockerOpportunityAbsent": 19
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "contrast": "same-terminal-outcome"
+    },
+    {
+      "pairIndex": 3,
+      "playerCount": 4,
+      "seed": 3103,
+      "setupRotation": 3,
+      "focalPlayerIndex": 0,
+      "initialStateSha256": "044662eea0b881995993ea09bd27bdbf1e5ff99d98d822bc2c5eedcc4021b07a",
+      "setupAssignments": [
+        {
+          "playerIndex": 0,
+          "monster": "Toxicor",
+          "branch": "Marines",
+          "lair": "2,2"
+        },
+        {
+          "playerIndex": 1,
+          "monster": "Gargantis",
+          "branch": "Air Force",
+          "lair": "8,7"
+        },
+        {
+          "playerIndex": 2,
+          "monster": "Megaclaw",
+          "branch": "Army",
+          "lair": "18,1"
+        },
+        {
+          "playerIndex": 3,
+          "monster": "Tomanagi",
+          "branch": "Navy",
+          "lair": "2,9"
+        }
+      ],
+      "defaultTacticsBySeat": [
+        "research-first",
+        "force-first",
+        "force-first",
+        "research-first"
+      ],
+      "forceFirst": {
+        "treatment": "force-first",
+        "focalPlayerIndex": 0,
+        "focalMonster": "Toxicor",
+        "focalBranch": "Marines",
+        "focalLair": "2,2",
+        "inferredDefaultTactic": "research-first",
+        "outcome": "win",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 0,
+          "monster": "Toxicor",
+          "branch": "Marines",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 7,
+        "finalRound": 8,
+        "actions": 338,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Toxicor",
+            "branch": "Marines",
+            "lair": "2,2",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 8,
+                "move-unit": 22,
+                "pass-move": 8,
+                "resolve-encounter": 12,
+                "deploy": 5,
+                "pass-deploy": 8,
+                "redeploy": 19,
+                "choose-mutation-card": 3,
+                "use-mutation": 1,
+                "resolve-fight": 2,
+                "resolve-challenge": 40,
+                "challenge-opponent": 2
+              },
+              "turnsPassed": 8,
+              "objectiveStomps": 5,
+              "objectiveKinds": {
+                "city": 2,
+                "mutation-site": 3
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 7,
+              "finalHealth": 40,
+              "finalInfamy": 5,
+              "actions": 130,
+              "researchDraw": {
+                "deployWindows": 32,
+                "windowsWithLegalResearchDrawOption": 8,
+                "legalDeploymentChoiceCount": 168,
+                "deploymentChoicesByCount": {
+                  "0": 8,
+                  "4": 6,
+                  "5": 6,
+                  "7": 3,
+                  "8": 6,
+                  "14": 1,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 24,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 24,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 24,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 24,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 16,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 24,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 24,
+                  "blockerOpportunityAbsent": 24
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 8
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Gargantis",
+            "branch": "Air Force",
+            "lair": "8,7",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 7,
+                "pass-move": 7,
+                "resolve-encounter": 11,
+                "deploy": 5,
+                "pass-deploy": 7,
+                "redeploy": 10,
+                "challenge-opponent": 1,
+                "resolve-challenge": 8
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 3
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 10,
+              "finalHealth": 0,
+              "finalInfamy": 8,
+              "actions": 63,
+              "researchDraw": {
+                "deployWindows": 22,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 96,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "3": 1,
+                  "5": 2,
+                  "6": 10,
+                  "11": 1,
+                  "12": 1
+                },
+                "optionalGateEvaluationWindows": 15,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 15,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 15,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 13,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 15,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 15,
+                  "blockerOpportunityAbsent": 15
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Megaclaw",
+            "branch": "Army",
+            "lair": "18,1",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 10,
+                "move": 7,
+                "move-unit": 7,
+                "pass-move": 7,
+                "resolve-fight": 15,
+                "retreat": 1,
+                "deploy": 4,
+                "pass-deploy": 7,
+                "redeploy": 10,
+                "resolve-challenge": 12
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 1,
+              "objectiveKinds": {
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 3,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 12,
+              "actions": 80,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 89,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "5": 2,
+                  "6": 8,
+                  "7": 2,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 13,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 3,
+            "monster": "Tomanagi",
+            "branch": "Navy",
+            "lair": "2,9",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 6,
+                "pass-move": 7,
+                "resolve-encounter": 12,
+                "deploy": 3,
+                "redeploy": 11,
+                "pass-deploy": 7,
+                "resolve-challenge": 12
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 1,
+                "los-angeles": 1,
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 2,
+              "healthGainedFromEncounters": 13,
+              "finalHealth": 0,
+              "finalInfamy": 8,
+              "actions": 65,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 66,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "3": 6,
+                  "5": 2,
+                  "6": 4,
+                  "7": 2
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "researchFirst": {
+        "treatment": "research-first",
+        "focalPlayerIndex": 0,
+        "focalMonster": "Toxicor",
+        "focalBranch": "Marines",
+        "focalLair": "2,2",
+        "inferredDefaultTactic": "research-first",
+        "outcome": "win",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 0,
+          "monster": "Toxicor",
+          "branch": "Marines",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 7,
+        "finalRound": 8,
+        "actions": 338,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Toxicor",
+            "branch": "Marines",
+            "lair": "2,2",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 8,
+                "move-unit": 22,
+                "pass-move": 8,
+                "resolve-encounter": 12,
+                "deploy": 4,
+                "pass-deploy": 8,
+                "redeploy": 20,
+                "choose-mutation-card": 3,
+                "use-mutation": 1,
+                "resolve-fight": 2,
+                "resolve-challenge": 40,
+                "challenge-opponent": 2
+              },
+              "turnsPassed": 8,
+              "objectiveStomps": 5,
+              "objectiveKinds": {
+                "city": 2,
+                "mutation-site": 3
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 7,
+              "finalHealth": 40,
+              "finalInfamy": 5,
+              "actions": 130,
+              "researchDraw": {
+                "deployWindows": 32,
+                "windowsWithLegalResearchDrawOption": 8,
+                "legalDeploymentChoiceCount": 168,
+                "deploymentChoicesByCount": {
+                  "0": 8,
+                  "4": 6,
+                  "5": 6,
+                  "7": 3,
+                  "8": 6,
+                  "14": 1,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 24,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 24,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 24,
+                  "researchFirstPolicy": 24,
+                  "activeMilitaryScreen": 24,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 1
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 16,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 24,
+                  "blockerOpportunityAbsent": 23
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 8
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Gargantis",
+            "branch": "Air Force",
+            "lair": "8,7",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 7,
+                "pass-move": 7,
+                "resolve-encounter": 11,
+                "deploy": 5,
+                "pass-deploy": 7,
+                "redeploy": 10,
+                "challenge-opponent": 1,
+                "resolve-challenge": 8
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 3
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 10,
+              "finalHealth": 0,
+              "finalInfamy": 8,
+              "actions": 63,
+              "researchDraw": {
+                "deployWindows": 22,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 96,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "3": 1,
+                  "5": 2,
+                  "6": 10,
+                  "11": 1,
+                  "12": 1
+                },
+                "optionalGateEvaluationWindows": 15,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 15,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 15,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 13,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 8,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 15,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 15,
+                  "blockerOpportunityAbsent": 15
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Megaclaw",
+            "branch": "Army",
+            "lair": "18,1",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 10,
+                "move": 7,
+                "move-unit": 7,
+                "pass-move": 7,
+                "resolve-fight": 15,
+                "retreat": 1,
+                "deploy": 4,
+                "pass-deploy": 7,
+                "redeploy": 10,
+                "resolve-challenge": 12
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 1,
+              "objectiveKinds": {
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 3,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 12,
+              "actions": 80,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 89,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "5": 2,
+                  "6": 8,
+                  "7": 2,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 13,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 3,
+            "monster": "Tomanagi",
+            "branch": "Navy",
+            "lair": "2,9",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 6,
+                "pass-move": 7,
+                "resolve-encounter": 12,
+                "deploy": 3,
+                "redeploy": 11,
+                "pass-deploy": 7,
+                "resolve-challenge": 12
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 1,
+                "los-angeles": 1,
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 2,
+              "healthGainedFromEncounters": 13,
+              "finalHealth": 0,
+              "finalInfamy": 8,
+              "actions": 65,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 66,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "3": 6,
+                  "5": 2,
+                  "6": 4,
+                  "7": 2
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "contrast": "same-terminal-outcome"
+    },
+    {
+      "pairIndex": 4,
+      "playerCount": 4,
+      "seed": 3104,
+      "setupRotation": 4,
+      "focalPlayerIndex": 1,
+      "initialStateSha256": "1fbffa29f73d1a4dcbf1f6da7bf52179f4e00feb77dfdea6f74abf0d7d23b2df",
+      "setupAssignments": [
+        {
+          "playerIndex": 0,
+          "monster": "Tomanagi",
+          "branch": "Marines",
+          "lair": "15,4"
+        },
+        {
+          "playerIndex": 1,
+          "monster": "Megaclaw",
+          "branch": "Air Force",
+          "lair": "18,1"
+        },
+        {
+          "playerIndex": 2,
+          "monster": "Toxicor",
+          "branch": "Army",
+          "lair": "2,2"
+        },
+        {
+          "playerIndex": 3,
+          "monster": "Konk",
+          "branch": "Navy",
+          "lair": "13,1"
+        }
+      ],
+      "defaultTacticsBySeat": [
+        "research-first",
+        "force-first",
+        "force-first",
+        "force-first"
+      ],
+      "forceFirst": {
+        "treatment": "force-first",
+        "focalPlayerIndex": 1,
+        "focalMonster": "Megaclaw",
+        "focalBranch": "Air Force",
+        "focalLair": "18,1",
+        "inferredDefaultTactic": "force-first",
+        "outcome": "loss",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 2,
+          "monster": "Toxicor",
+          "branch": "Army",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 6,
+        "finalRound": 7,
+        "actions": 332,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Tomanagi",
+            "branch": "Marines",
+            "lair": "15,4",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 15,
+                "pass-move": 7,
+                "resolve-encounter": 11,
+                "deploy": 3,
+                "pass-deploy": 7,
+                "resolve-fight": 14,
+                "redeploy": 18,
+                "resolve-challenge": 12
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 3,
+              "finalHealth": 0,
+              "finalInfamy": 7,
+              "actions": 94,
+              "researchDraw": {
+                "deployWindows": 28,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 168,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "5": 3,
+                  "7": 12,
+                  "8": 3,
+                  "14": 1,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 21,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 21,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 21,
+                  "researchFirstPolicy": 21,
+                  "activeMilitaryScreen": 21,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 14,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 21,
+                  "blockerOpportunityAbsent": 21
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Megaclaw",
+            "branch": "Air Force",
+            "lair": "18,1",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 8,
+                "pass-move": 7,
+                "resolve-fight": 3,
+                "resolve-encounter": 13,
+                "deploy": 5,
+                "pass-deploy": 7,
+                "redeploy": 9,
+                "resolve-challenge": 16
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 0,
+              "objectiveKinds": {},
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 8,
+              "actions": 75,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 78,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "2": 1,
+                  "3": 5,
+                  "4": 2,
+                  "7": 4,
+                  "12": 1,
+                  "13": 1
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 13,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Toxicor",
+            "branch": "Army",
+            "lair": "2,2",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 11,
+                "move": 7,
+                "move-unit": 4,
+                "pass-move": 7,
+                "deploy": 5,
+                "pass-deploy": 7,
+                "redeploy": 9,
+                "choose-mutation-card": 3,
+                "resolve-fight": 1,
+                "resolve-challenge": 30,
+                "challenge-opponent": 1
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "city": 1,
+                "mutation-site": 3
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 7,
+              "finalHealth": 39,
+              "finalInfamy": 8,
+              "actions": 85,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 71,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "4": 8,
+                  "5": 2,
+                  "6": 2,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 11,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 3,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 3,
+            "monster": "Konk",
+            "branch": "Navy",
+            "lair": "13,1",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 11,
+                "move": 6,
+                "move-unit": 4,
+                "pass-move": 6,
+                "resolve-fight": 1,
+                "deploy": 3,
+                "redeploy": 9,
+                "pass-deploy": 6,
+                "challenge-opponent": 2,
+                "resolve-challenge": 30
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 15,
+              "finalHealth": 0,
+              "finalInfamy": 6,
+              "actions": 78,
+              "researchDraw": {
+                "deployWindows": 18,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 54,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "3": 4,
+                  "4": 4,
+                  "6": 2,
+                  "7": 2
+                },
+                "optionalGateEvaluationWindows": 12,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 12,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 12,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 10,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 12,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 12,
+                  "blockerOpportunityAbsent": 12
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "researchFirst": {
+        "treatment": "research-first",
+        "focalPlayerIndex": 1,
+        "focalMonster": "Megaclaw",
+        "focalBranch": "Air Force",
+        "focalLair": "18,1",
+        "inferredDefaultTactic": "force-first",
+        "outcome": "loss",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 2,
+          "monster": "Toxicor",
+          "branch": "Army",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 6,
+        "finalRound": 7,
+        "actions": 332,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Tomanagi",
+            "branch": "Marines",
+            "lair": "15,4",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 15,
+                "pass-move": 7,
+                "resolve-encounter": 11,
+                "deploy": 3,
+                "pass-deploy": 7,
+                "resolve-fight": 14,
+                "redeploy": 18,
+                "resolve-challenge": 12
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 3,
+              "finalHealth": 0,
+              "finalInfamy": 7,
+              "actions": 94,
+              "researchDraw": {
+                "deployWindows": 28,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 168,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "5": 3,
+                  "7": 12,
+                  "8": 3,
+                  "14": 1,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 21,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 21,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 21,
+                  "researchFirstPolicy": 21,
+                  "activeMilitaryScreen": 21,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 14,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 21,
+                  "blockerOpportunityAbsent": 21
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Megaclaw",
+            "branch": "Air Force",
+            "lair": "18,1",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 7,
+                "move-unit": 8,
+                "pass-move": 7,
+                "resolve-fight": 3,
+                "resolve-encounter": 13,
+                "deploy": 5,
+                "pass-deploy": 7,
+                "redeploy": 9,
+                "resolve-challenge": 16
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 0,
+              "objectiveKinds": {},
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 8,
+              "actions": 75,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 78,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "2": 1,
+                  "3": 5,
+                  "4": 2,
+                  "7": 4,
+                  "12": 1,
+                  "13": 1
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 13,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Toxicor",
+            "branch": "Army",
+            "lair": "2,2",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 11,
+                "move": 7,
+                "move-unit": 4,
+                "pass-move": 7,
+                "deploy": 5,
+                "pass-deploy": 7,
+                "redeploy": 9,
+                "choose-mutation-card": 3,
+                "resolve-fight": 1,
+                "resolve-challenge": 30,
+                "challenge-opponent": 1
+              },
+              "turnsPassed": 7,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "city": 1,
+                "mutation-site": 3
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 7,
+              "finalHealth": 39,
+              "finalInfamy": 8,
+              "actions": 85,
+              "researchDraw": {
+                "deployWindows": 21,
+                "windowsWithLegalResearchDrawOption": 7,
+                "legalDeploymentChoiceCount": 71,
+                "deploymentChoicesByCount": {
+                  "0": 7,
+                  "4": 8,
+                  "5": 2,
+                  "6": 2,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 14,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 14,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 14,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 11,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 14,
+                  "activeMilitaryScreen": 3,
+                  "objectiveThreatAbsent": 14,
+                  "blockerOpportunityAbsent": 14
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 7
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 3,
+            "monster": "Konk",
+            "branch": "Navy",
+            "lair": "13,1",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 11,
+                "move": 6,
+                "move-unit": 4,
+                "pass-move": 6,
+                "resolve-fight": 1,
+                "deploy": 3,
+                "redeploy": 9,
+                "pass-deploy": 6,
+                "challenge-opponent": 2,
+                "resolve-challenge": 30
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 15,
+              "finalHealth": 0,
+              "finalInfamy": 6,
+              "actions": 78,
+              "researchDraw": {
+                "deployWindows": 18,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 54,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "3": 4,
+                  "4": 4,
+                  "6": 2,
+                  "7": 2
+                },
+                "optionalGateEvaluationWindows": 12,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 12,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 12,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 10,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 12,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 12,
+                  "blockerOpportunityAbsent": 12
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "contrast": "same-terminal-outcome"
+    },
+    {
+      "pairIndex": 5,
+      "playerCount": 4,
+      "seed": 3105,
+      "setupRotation": 5,
+      "focalPlayerIndex": 2,
+      "initialStateSha256": "19abf0433997689efa33ccabd98336c5f12700848934338a3ee8fba34192ab25",
+      "setupAssignments": [
+        {
+          "playerIndex": 0,
+          "monster": "Megaclaw",
+          "branch": "Air Force",
+          "lair": "18,1"
+        },
+        {
+          "playerIndex": 1,
+          "monster": "Konk",
+          "branch": "Army",
+          "lair": "2,3"
+        },
+        {
+          "playerIndex": 2,
+          "monster": "Gargantis",
+          "branch": "Navy",
+          "lair": "8,7"
+        },
+        {
+          "playerIndex": 3,
+          "monster": "Zorb",
+          "branch": "Marines",
+          "lair": "19,2"
+        }
+      ],
+      "defaultTacticsBySeat": [
+        "force-first",
+        "force-first",
+        "force-first",
+        "force-first"
+      ],
+      "forceFirst": {
+        "treatment": "force-first",
+        "focalPlayerIndex": 2,
+        "focalMonster": "Gargantis",
+        "focalBranch": "Navy",
+        "focalLair": "8,7",
+        "inferredDefaultTactic": "force-first",
+        "outcome": "win",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 2,
+          "monster": "Gargantis",
+          "branch": "Navy",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 5,
+        "finalRound": 6,
+        "actions": 303,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Megaclaw",
+            "branch": "Air Force",
+            "lair": "18,1",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 6,
+                "pass-move": 6,
+                "resolve-encounter": 8,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 9,
+                "resolve-fight": 3,
+                "resolve-challenge": 24
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 0,
+              "objectiveKinds": {},
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 9,
+              "actions": 72,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 97,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "6": 11,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Konk",
+            "branch": "Army",
+            "lair": "2,3",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 6,
+                "pass-move": 6,
+                "resolve-encounter": 9,
+                "deploy": 6,
+                "pass-deploy": 6,
+                "redeploy": 7,
+                "resolve-fight": 2,
+                "resolve-challenge": 20
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 9,
+              "finalHealth": 0,
+              "finalInfamy": 7,
+              "actions": 68,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 92,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "3": 1,
+                  "5": 2,
+                  "6": 2,
+                  "7": 6,
+                  "12": 1,
+                  "13": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 11,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Gargantis",
+            "branch": "Navy",
+            "lair": "8,7",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 10,
+                "move": 6,
+                "move-unit": 4,
+                "pass-move": 6,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 8,
+                "resolve-challenge": 53,
+                "challenge-opponent": 2
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 2,
+                "los-angeles": 1,
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 2,
+              "healthGainedFromEncounters": 10,
+              "finalHealth": 30,
+              "finalInfamy": 7,
+              "actions": 99,
+              "researchDraw": {
+                "deployWindows": 18,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 67,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "4": 4,
+                  "5": 2,
+                  "6": 4,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 12,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 12,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 12,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 10,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 12,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 12,
+                  "blockerOpportunityAbsent": 12
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 3,
+            "monster": "Zorb",
+            "branch": "Marines",
+            "lair": "19,2",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 5,
+                "move-unit": 12,
+                "pass-move": 5,
+                "resolve-fight": 3,
+                "resolve-encounter": 10,
+                "redeploy": 15,
+                "pass-deploy": 5,
+                "challenge-opponent": 1,
+                "resolve-challenge": 8
+              },
+              "turnsPassed": 5,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "city": 4
+              },
+              "infamyGainedFromEncounters": 8,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 10,
+              "actions": 64,
+              "researchDraw": {
+                "deployWindows": 20,
+                "windowsWithLegalResearchDrawOption": 5,
+                "legalDeploymentChoiceCount": 84,
+                "deploymentChoicesByCount": {
+                  "0": 5,
+                  "4": 6,
+                  "5": 3,
+                  "7": 3,
+                  "8": 3
+                },
+                "optionalGateEvaluationWindows": 15,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 15,
+                  "deploymentNotStarted": 5,
+                  "researchHandBelowTwo": 15,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 15,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 10,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 15,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 15,
+                  "blockerOpportunityAbsent": 15
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 5
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "researchFirst": {
+        "treatment": "research-first",
+        "focalPlayerIndex": 2,
+        "focalMonster": "Gargantis",
+        "focalBranch": "Navy",
+        "focalLair": "8,7",
+        "inferredDefaultTactic": "force-first",
+        "outcome": "win",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 2,
+          "monster": "Gargantis",
+          "branch": "Navy",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 5,
+        "finalRound": 6,
+        "actions": 303,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Megaclaw",
+            "branch": "Air Force",
+            "lair": "18,1",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 6,
+                "pass-move": 6,
+                "resolve-encounter": 8,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 9,
+                "resolve-fight": 3,
+                "resolve-challenge": 24
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 0,
+              "objectiveKinds": {},
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 9,
+              "actions": 72,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 97,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "6": 11,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Konk",
+            "branch": "Army",
+            "lair": "2,3",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 6,
+                "pass-move": 6,
+                "resolve-encounter": 9,
+                "deploy": 6,
+                "pass-deploy": 6,
+                "redeploy": 7,
+                "resolve-fight": 2,
+                "resolve-challenge": 20
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 9,
+              "finalHealth": 0,
+              "finalInfamy": 7,
+              "actions": 68,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 92,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "3": 1,
+                  "5": 2,
+                  "6": 2,
+                  "7": 6,
+                  "12": 1,
+                  "13": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 11,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Gargantis",
+            "branch": "Navy",
+            "lair": "8,7",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 10,
+                "move": 6,
+                "move-unit": 4,
+                "pass-move": 6,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 8,
+                "resolve-challenge": 53,
+                "challenge-opponent": 2
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 2,
+                "los-angeles": 1,
+                "infamy-site": 1
+              },
+              "infamyGainedFromEncounters": 2,
+              "healthGainedFromEncounters": 10,
+              "finalHealth": 30,
+              "finalInfamy": 7,
+              "actions": 99,
+              "researchDraw": {
+                "deployWindows": 18,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 67,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "4": 4,
+                  "5": 2,
+                  "6": 4,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 12,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 12,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 12,
+                  "researchFirstPolicy": 12,
+                  "activeMilitaryScreen": 10,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 2,
+                  "objectiveThreatAbsent": 12,
+                  "blockerOpportunityAbsent": 12
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 3,
+            "monster": "Zorb",
+            "branch": "Marines",
+            "lair": "19,2",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 5,
+                "move-unit": 12,
+                "pass-move": 5,
+                "resolve-fight": 3,
+                "resolve-encounter": 10,
+                "redeploy": 15,
+                "pass-deploy": 5,
+                "challenge-opponent": 1,
+                "resolve-challenge": 8
+              },
+              "turnsPassed": 5,
+              "objectiveStomps": 4,
+              "objectiveKinds": {
+                "city": 4
+              },
+              "infamyGainedFromEncounters": 8,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 10,
+              "actions": 64,
+              "researchDraw": {
+                "deployWindows": 20,
+                "windowsWithLegalResearchDrawOption": 5,
+                "legalDeploymentChoiceCount": 84,
+                "deploymentChoicesByCount": {
+                  "0": 5,
+                  "4": 6,
+                  "5": 3,
+                  "7": 3,
+                  "8": 3
+                },
+                "optionalGateEvaluationWindows": 15,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 15,
+                  "deploymentNotStarted": 5,
+                  "researchHandBelowTwo": 15,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 15,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 10,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 15,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 15,
+                  "blockerOpportunityAbsent": 15
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 5
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "contrast": "same-terminal-outcome"
+    },
+    {
+      "pairIndex": 6,
+      "playerCount": 4,
+      "seed": 3106,
+      "setupRotation": 6,
+      "focalPlayerIndex": 3,
+      "initialStateSha256": "e2b28e16403f1f769d83152c8823d11b82868ac7c58f2c77b2914cfe04d53835",
+      "setupAssignments": [
+        {
+          "playerIndex": 0,
+          "monster": "Konk",
+          "branch": "Army",
+          "lair": "2,3"
+        },
+        {
+          "playerIndex": 1,
+          "monster": "Toxicor",
+          "branch": "Navy",
+          "lair": "14,-4"
+        },
+        {
+          "playerIndex": 2,
+          "monster": "Zorb",
+          "branch": "Air Force",
+          "lair": "19,2"
+        },
+        {
+          "playerIndex": 3,
+          "monster": "Gargantis",
+          "branch": "Marines",
+          "lair": "3,5"
+        }
+      ],
+      "defaultTacticsBySeat": [
+        "research-first",
+        "research-first",
+        "force-first",
+        "research-first"
+      ],
+      "forceFirst": {
+        "treatment": "force-first",
+        "focalPlayerIndex": 3,
+        "focalMonster": "Gargantis",
+        "focalBranch": "Marines",
+        "focalLair": "3,5",
+        "inferredDefaultTactic": "research-first",
+        "outcome": "win",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 3,
+          "monster": "Gargantis",
+          "branch": "Marines",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 5,
+        "finalRound": 6,
+        "actions": 275,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Konk",
+            "branch": "Army",
+            "lair": "2,3",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 6,
+                "pass-move": 6,
+                "resolve-encounter": 9,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 9,
+                "resolve-fight": 11,
+                "resolve-challenge": 12
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 1,
+              "objectiveKinds": {
+                "city": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 12,
+              "finalHealth": 0,
+              "finalInfamy": 9,
+              "actions": 69,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 101,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "6": 9,
+                  "8": 2,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Toxicor",
+            "branch": "Navy",
+            "lair": "14,-4",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 5,
+                "pass-move": 6,
+                "resolve-fight": 2,
+                "resolve-encounter": 10,
+                "redeploy": 8,
+                "deploy": 5,
+                "pass-deploy": 6,
+                "resolve-challenge": 16
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 4,
+              "finalHealth": 0,
+              "finalInfamy": 6,
+              "actions": 64,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 80,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "4": 5,
+                  "5": 2,
+                  "6": 4,
+                  "13": 2
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 10,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 3,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Zorb",
+            "branch": "Air Force",
+            "lair": "19,2",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 10,
+                "move": 6,
+                "pass-move": 6,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 9,
+                "move-unit": 4,
+                "resolve-fight": 2,
+                "resolve-challenge": 4
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 3,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 15,
+              "actions": 51,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 64,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "1": 1,
+                  "4": 4,
+                  "5": 6,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 9,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 4,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 3,
+            "monster": "Gargantis",
+            "branch": "Marines",
+            "lair": "3,5",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 5,
+                "move-unit": 12,
+                "pass-move": 5,
+                "resolve-fight": 1,
+                "resolve-encounter": 9,
+                "redeploy": 15,
+                "pass-deploy": 5,
+                "challenge-opponent": 3,
+                "resolve-challenge": 36
+              },
+              "turnsPassed": 5,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 3,
+                "los-angeles": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 11,
+              "finalHealth": 24,
+              "finalInfamy": 3,
+              "actions": 91,
+              "researchDraw": {
+                "deployWindows": 20,
+                "windowsWithLegalResearchDrawOption": 5,
+                "legalDeploymentChoiceCount": 99,
+                "deploymentChoicesByCount": {
+                  "0": 5,
+                  "5": 3,
+                  "6": 6,
+                  "8": 6
+                },
+                "optionalGateEvaluationWindows": 15,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 15,
+                  "deploymentNotStarted": 5,
+                  "researchHandBelowTwo": 15,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 15,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 10,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 15,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 15,
+                  "blockerOpportunityAbsent": 15
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 5
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "researchFirst": {
+        "treatment": "research-first",
+        "focalPlayerIndex": 3,
+        "focalMonster": "Gargantis",
+        "focalBranch": "Marines",
+        "focalLair": "3,5",
+        "inferredDefaultTactic": "research-first",
+        "outcome": "win",
+        "termination": "terminal",
+        "winner": {
+          "playerIndex": 3,
+          "monster": "Gargantis",
+          "branch": "Marines",
+          "victoryType": "monster-challenge"
+        },
+        "roundsCompleted": 5,
+        "finalRound": 6,
+        "actions": 275,
+        "invalidActionEvidence": null,
+        "seats": [
+          {
+            "playerIndex": 0,
+            "monster": "Konk",
+            "branch": "Army",
+            "lair": "2,3",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 6,
+                "pass-move": 6,
+                "resolve-encounter": 9,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 9,
+                "resolve-fight": 11,
+                "resolve-challenge": 12
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 1,
+              "objectiveKinds": {
+                "city": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 12,
+              "finalHealth": 0,
+              "finalInfamy": 9,
+              "actions": 69,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 101,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "6": 9,
+                  "8": 2,
+                  "15": 1,
+                  "16": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 12,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 1,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 1,
+            "monster": "Toxicor",
+            "branch": "Navy",
+            "lair": "14,-4",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 6,
+                "move-unit": 5,
+                "pass-move": 6,
+                "resolve-fight": 2,
+                "resolve-encounter": 10,
+                "redeploy": 8,
+                "deploy": 5,
+                "pass-deploy": 6,
+                "resolve-challenge": 16
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 4,
+              "finalHealth": 0,
+              "finalInfamy": 6,
+              "actions": 64,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 80,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "4": 5,
+                  "5": 2,
+                  "6": 4,
+                  "13": 2
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 10,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 3,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 2,
+            "monster": "Zorb",
+            "branch": "Air Force",
+            "lair": "19,2",
+            "tactic": "force-first",
+            "diagnostics": {
+              "commandCounts": {
+                "resolve-encounter": 10,
+                "move": 6,
+                "pass-move": 6,
+                "deploy": 4,
+                "pass-deploy": 6,
+                "redeploy": 9,
+                "move-unit": 4,
+                "resolve-fight": 2,
+                "resolve-challenge": 4
+              },
+              "turnsPassed": 6,
+              "objectiveStomps": 2,
+              "objectiveKinds": {
+                "city": 2
+              },
+              "infamyGainedFromEncounters": 3,
+              "healthGainedFromEncounters": 0,
+              "finalHealth": 0,
+              "finalInfamy": 15,
+              "actions": 51,
+              "researchDraw": {
+                "deployWindows": 19,
+                "windowsWithLegalResearchDrawOption": 6,
+                "legalDeploymentChoiceCount": 64,
+                "deploymentChoicesByCount": {
+                  "0": 6,
+                  "1": 1,
+                  "4": 4,
+                  "5": 6,
+                  "8": 1,
+                  "9": 1
+                },
+                "optionalGateEvaluationWindows": 13,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 13,
+                  "deploymentNotStarted": 6,
+                  "researchHandBelowTwo": 13,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 9,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 7,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 13,
+                  "activeMilitaryScreen": 4,
+                  "objectiveThreatAbsent": 13,
+                  "blockerOpportunityAbsent": 13
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 6
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          },
+          {
+            "playerIndex": 3,
+            "monster": "Gargantis",
+            "branch": "Marines",
+            "lair": "3,5",
+            "tactic": "research-first",
+            "diagnostics": {
+              "commandCounts": {
+                "move": 5,
+                "move-unit": 12,
+                "pass-move": 5,
+                "resolve-fight": 1,
+                "resolve-encounter": 9,
+                "redeploy": 15,
+                "pass-deploy": 5,
+                "challenge-opponent": 3,
+                "resolve-challenge": 36
+              },
+              "turnsPassed": 5,
+              "objectiveStomps": 3,
+              "objectiveKinds": {
+                "city": 3,
+                "los-angeles": 1
+              },
+              "infamyGainedFromEncounters": 0,
+              "healthGainedFromEncounters": 11,
+              "finalHealth": 24,
+              "finalInfamy": 3,
+              "actions": 91,
+              "researchDraw": {
+                "deployWindows": 20,
+                "windowsWithLegalResearchDrawOption": 5,
+                "legalDeploymentChoiceCount": 99,
+                "deploymentChoicesByCount": {
+                  "0": 5,
+                  "5": 3,
+                  "6": 6,
+                  "8": 6
+                },
+                "optionalGateEvaluationWindows": 15,
+                "gatePassCounts": {
+                  "researchDeckAvailable": 15,
+                  "deploymentNotStarted": 5,
+                  "researchHandBelowTwo": 15,
+                  "researchFirstPolicy": 15,
+                  "activeMilitaryScreen": 15,
+                  "objectiveThreatAbsent": 0,
+                  "blockerOpportunityAbsent": 0
+                },
+                "gateFailCounts": {
+                  "researchDeckAvailable": 0,
+                  "deploymentNotStarted": 10,
+                  "researchHandBelowTwo": 0,
+                  "researchFirstPolicy": 0,
+                  "activeMilitaryScreen": 0,
+                  "objectiveThreatAbsent": 15,
+                  "blockerOpportunityAbsent": 15
+                },
+                "eligibleOptionalDrawWindows": 0,
+                "drawSelected": 0,
+                "optionalDrawSelections": 0,
+                "noDeploymentChoiceDrawSelections": 0,
+                "drawAccepted": 0,
+                "drawRejected": 0,
+                "gateSkippedByPath": {
+                  "no-deployment-choices": 5
+                },
+                "deployWindowsWithoutSelectorTrace": 0
+              }
+            }
+          }
+        ]
+      },
+      "contrast": "same-terminal-outcome"
+    }
+  ]
+}

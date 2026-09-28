@@ -1,12 +1,14 @@
 # Mutation and Military Research Card Audit
 
+The board identifier and older “human-audited” wording in historical browser or engine evidence refer to the photo-transcribed runtime candidate and fixture. They do not establish that a card interaction or its board coordinates match the user's physical edition. See [board provenance reconciliation](board-source-status-reconciliation.md) and the [unresolved rule inventory](unresolved-rules-inventory.md).
+
 Audit started: 2026-09-26. Scope: all 32 cards (16 Mutation, 16 Military Research).
 
 ## Current verdict
 
-The previous 2026-09-20 blanket claim that every card works is superseded. All 32 are flagged implemented in the card definition catalogue, and implementation paths exist, but that does **not** prove correct rules, timing, ownership or frontend usability. All 32 cards now have passing backend and local frontend evidence, plus authenticated room-command or projection regressions for relevant online behavior. Toxicor's separate monster ability presents its two-card choice for both Mutation-site and combat-triggered draws. Authenticated browser click-through is recorded where it remains an additional integration check.
+The previous 2026-09-20 blanket claim that every card works is superseded. All 32 are flagged implemented in the card definition catalogue, and implementation paths exist, but that does **not** prove physical-rule parity or correct rules, timing, ownership, or frontend usability. All 32 cards now have passing backend regressions and local frontend component/render checks, plus authenticated room-command or projection regressions for relevant online behavior. These checks do not establish full authenticated browser click-through; selected click-through examples are recorded separately. Toxicor's separate monster ability presents its two-card choice for both Mutation-site and combat-triggered draws.
 
-Confirmed code restrictions/mismatches are marked GAP below; REVIEW marks a concern requiring a focused reproduction. The remaining unchecked item is a separate authenticated browser click-through, beyond the verified local UI plus authenticated room flow. Do not interpret an unchecked item as a missing implementation.
+Confirmed code restrictions/mismatches are marked GAP below; REVIEW marks a concern requiring a focused reproduction. Broader authenticated browser click-through and physical-source review remain open, beyond the verified local UI plus authenticated room flow. Do not interpret an unchecked item as a missing implementation.
 
 ## Verification log
 
@@ -375,5 +377,5 @@ For each card, complete backend verification first, then exercise the real front
 - [x] Verify Toxicor's Mutation-site and battle-triggered two-card choices, owner permissions, redaction and deck return; engine, Memory/Prisma room, and UI projection checks pass.
 - [x] Verify card acquisition, passive activation, removal of effects and deck/discard lifecycle across the per-card backend regressions.
 - [x] Complete the per-card backend/local frontend/authenticated room checks; retain authenticated browser click-through as an additional integration check.
-- [x] Run the engine/API regressions, typechecks, docs validation, production build and `git diff --check`; no audit-related blocker or failing check remains.
-- [x] Final tally: 32/32 backend PASS and 32/32 frontend PASS, including authenticated room flow/projection coverage where relevant. Browser-only click-through remains a documented additional integration check.
+- [x] Run the engine/API regressions, typechecks, docs validation, production build and `git diff --check`; the card-audit automated checks pass. Physical-source validation and broader authenticated browser click-through remain separate open gates.
+- [x] Final tally: 32/32 backend regressions PASS and 32/32 local frontend component/render checks PASS, with authenticated room flow/projection coverage where relevant. This tally is not an authenticated-browser or physical-rule parity sign-off.

@@ -13,7 +13,7 @@ This is the source-audit inventory for a 2–4 player match. Counts describe the
 | Giant military units | 2 (one each) | Mecha-Monster, Captain Colossal | The photographed record establishes one of each plus the numeric data; the two Research-card placement/lifecycle effects are implemented in the development ruleset; physical base coordinates remain source-gated |
 | Military branch record/reference tiles | 5 | Air Force, Army, Marines, Navy, National Guard | Source photographs captured; deployment formulas require implementation fixtures |
 | Monster Mutation cards | 16 unique cards | Complete named inventory and transcriptions in catalogue | Source-backed transcription captured; all 16 are represented in the development ruleset, with timing/effect coverage and private-hand lifecycle tests; production-wide stacking and physical-board interactions remain source-gated |
-| Military Research cards | 16 unique cards | Complete named inventory and transcriptions in catalogue | Source-backed transcription captured; 13 are represented in the development ruleset with timing/effect coverage and private-hand lifecycle tests; Cutbacks, Molecular Cannon, and Chopper Lift remain source-gated |
+| Military Research cards | 16 unique cards | Complete named inventory and transcriptions in catalogue | All 16 are represented in the development ruleset with implementation fixtures; Cutbacks, Molecular Cannon, and Chopper Lift have focused implementation/browser evidence. Their exact wording and behavior remain open for comparison with the user's physical edition, like the other cards. |
 | Plastic Health/record sliders | 15 | Physical component count | Visible in setup reference; no isolated complete inventory photograph |
 | Infamy tokens | 42 | Physical component count | Token reference photograph captured |
 | Stomp markers | 23 | Physical component count | Marker reference photograph captured |
@@ -41,7 +41,7 @@ The catalogue's `uncertainty` fields are the transcription-quality record for ea
 
 ## Production boundary
 
-No statistic, card effect, board coordinate, placement rule, or special-case interpretation is promoted to production solely because it appears in a photograph. Production promotion requires a source reference, a typed data record, an engine rule, and a focused test. The monster statistics now have the source-backed typed-data and catalogue-test portion; lairs and special-ability execution still fail that boundary. Missing or contradictory component evidence is listed in [the unresolved rules inventory](unresolved-rules-inventory.md).
+No statistic, card effect, board coordinate, placement rule, or special-case interpretation is promoted to production solely because it appears in a photograph. Production promotion requires a source reference, physical-edition comparison, a typed data record, an engine rule, a focused test, and human sign-off. The monster statistics now have the photo-transcribed typed-data and catalogue-test portion; physical comparison, lairs, and special-ability execution still fail that boundary. Missing or contradictory component evidence is listed in [the unresolved rules inventory](unresolved-rules-inventory.md).
 
 ## National Guard engine boundary
 

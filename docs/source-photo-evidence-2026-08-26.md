@@ -105,9 +105,11 @@ caught by that coarse mask are retained as coastal land until the thick blue
 boundary is reviewed at seam level. This is a consistency safeguard, not a
 claim that the coastline is fully verified.
 
-The full-board photograph is the authoritative physical-board reference for
-this transcription task. It is useful for orientation, coastline shape,
-printed city/base/site placement, and comparison against the honeycomb shell.
+The full-board photograph was the main visual reference for the prior photo
+transcription. It is useful for orientation, coastline shape, printed
+city/base/site placement, and comparison against the honeycomb shell, but the
+user's physical edition is authoritative for the current source review. The
+photograph alone does not settle source disputes or provide promotion sign-off.
 Where a label, icon, or edge is genuinely hidden by board copy, a playing
 piece, crop, glare, or insufficient resolution, the transcription records that
 fact explicitly instead of substituting a guess. The rulebook and player aid

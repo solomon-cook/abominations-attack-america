@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useMemo, useRef, useState } from "react";
+import { StrictMode, Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   applyCommand,
@@ -22,6 +22,7 @@ import {
   type GameCommand,
   type GameState,
   type HexKey,
+  type SetupAction,
   type SetupState,
 } from "@abominations/game-engine";
 import type { AccountSummary, RoomView, SessionResponse } from "@abominations/shared";
@@ -35,6 +36,7 @@ import {
   markReconnected,
   RoomCommandChannel,
   readRoom,
+  rotateSession,
   sendCommand,
   sendSetupAction,
   setReady,
@@ -68,15 +70,16 @@ import { MilitarySheet, deploymentChoices, nextDeploymentSheet } from "./compone
 import { MovementChecklist } from "./components/MovementChecklist";
 import { UnitCard } from "./components/UnitCard";
 import { HexGrid } from "./components/HexGrid";
-import { MilitaryReference } from "./components/SheetReference";
+import { TrophyChoicePanel } from "./components/TrophyChoicePanel";
 import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
 import { AccountPanel } from "./components/AccountPanel";
 import { botActionDelayMs, botStrategyHint, botTacticForPlayer, chooseBotSetupAction, hasBotLaserFenceReaction, runBotActionWithExplanation } from "./solo-bots";
-import { BoardReview } from "./components/BoardReview";
+import { recoverBotActionStep } from "./bot-action-fallback";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { CardReveal, ResolutionStage } from "./components/ResolutionStage";
 import { EncounterOverlay } from "./components/EncounterOverlay";
+import { useEncounterOverlayState } from "./encounter-overlay-state";
 import { BoardEventPlayback } from "./components/BoardEventPlayback";
 import { isRoutineCityStompEvent, pendingRoutineCityStomp } from "./routine-stomp";
 import { ChallengeArena } from "./components/ChallengeArena";
@@ -105,6 +108,8 @@ import "./setup-command.css";
 import "./home-screen.css";
 import "./civ-hud.css";
 import "./account-panel.css";
+
+const BoardReview = lazy(() => import("./components/BoardReview").then(({ BoardReview }) => ({ default: BoardReview })));
 
 function supportsPlaytestBrowser(): boolean {
   return typeof window !== "undefined"
@@ -145,14 +150,23 @@ function safeStorageGet(key: string): string | null {
   }
 }
 
+function shouldShowFirstMatchGuide(): boolean {
+  return safeStorageGet("abominations-onboarding-seen") !== "1";
+}
+
 function safeStoredNumber(key: string, fallback: number): number {
-  const value = Number(safeStorageGet(key));
+  const stored = safeStorageGet(key);
+  if (stored === null || stored.trim() === "") return fallback;
+  const value = Number(stored);
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 }
 
 function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const commandChannelRef = useRef<RoomCommandChannel | null>(null);
+  const intentionalRoomLeaveRef = useRef<string | null>(null);
+  const completedRoomLeaveRef = useRef<string | null>(null);
+  const pendingRoomPollRef = useRef<{ connectionKey: string; promise: Promise<void>; reconnectRequestStarted: boolean } | null>(null);
   const [game, setGame] = useState<GameState>(() => createGame(2));
   const [localPlaytestStarted, setLocalPlaytestStarted] = useState(false);
   const [soloMode, setSoloMode] = useState(false);
@@ -160,8 +174,20 @@ function App() {
   const [botExplanation, setBotExplanation] = useState("");
   const botTurnRunning = useRef(false);
   const nextBotStepDelay = useRef(650);
-  const [session, setSession] = useState<SessionResponse | null>(null);
-  const [room, setRoom] = useState<RoomView | null>(null);
+  const [session, setSessionState] = useState<SessionResponse | null>(null);
+  const sessionRef = useRef(session);
+  const setSession: typeof setSessionState = (action) => {
+    const next = typeof action === "function" ? action(sessionRef.current) : action;
+    sessionRef.current = next;
+    setSessionState(next);
+  };
+  const [room, setRoomState] = useState<RoomView | null>(null);
+  const roomRef = useRef(room);
+  const setRoom: typeof setRoomState = (action) => {
+    const next = typeof action === "function" ? action(roomRef.current) : action;
+    roomRef.current = next;
+    setRoomState(next);
+  };
   const [account, setAccount] = useState<AccountSummary | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState(() => {
@@ -176,6 +202,13 @@ function App() {
   );
   const [error, setError] = useState("");
   const [pendingAction, setPendingAction] = useState(false);
+  const commandErrorOpenerRef = useRef<HTMLButtonElement | null>(null);
+  const [roomStartPending, setRoomStartPending] = useState(false);
+  const roomStartPendingRef = useRef(false);
+  const roomStartRequestIdRef = useRef(0);
+  const homeDestinationVersionRef = useRef(0);
+  const [setupActionPending, setSetupActionPending] = useState(false);
+  const setupActionInFlight = useRef(false);
   const [selectedPath, setSelectedPath] = useState<HexKey[]>([]);
   const [hoveredPath, setHoveredPath] = useState<HexKey[]>([]);
   const [militaryInitialSheet, setMilitaryInitialSheet] = useState<string | undefined>();
@@ -197,17 +230,20 @@ function App() {
   const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
   const [focusedHexKey, setFocusedHexKey] = useState<HexKey | null>(null);
   const [retreatChoices, setRetreatChoices] = useState<Record<string, HexKey | "disappeared">>({});
-  const [onboardingOpen, setOnboardingOpen] = useState(() => safeStorageGet("abominations-onboarding-seen") !== "1");
+  const [onboardingOpen, setOnboardingOpen] = useState(shouldShowFirstMatchGuide);
   const [homeRulesOpen, setHomeRulesOpen] = useState(false);
   const [boardReviewOpen, setBoardReviewOpen] = useState(false);
   const [challengeDuelOpen, setChallengeDuelOpen] = useState(false);
   const [researchReveal, setResearchReveal] = useState<string | null>(null);
   const [fightBaselineEventId, setFightBaselineEventId] = useState<string>();
   const [fightOverlayOpen, setFightOverlayOpen] = useState(false);
-  const [encounterOverlayOpen, setEncounterOverlayOpen] = useState(false);
+  const fightReturnFocusRef = useRef<HTMLElement | null>(null);
+  const researchReturnFocusRef = useRef<HTMLElement | null>(null);
+  const researchReturnFocusFallbackRef = useRef<HTMLElement | null>(null);
   const [encounterBaselineEventId, setEncounterBaselineEventId] = useState<string | undefined>();
-  const encounterOverlayOwnerRef = useRef<number | undefined>(undefined);
+  const encounterReturnFocusRef = useRef<HTMLElement | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsOpenerRef = useRef<HTMLButtonElement | null>(null);
   const [gamePanelOpen, setGamePanelOpen] = useState(false);
   const [mobileCommandExpanded, setMobileCommandExpanded] = useState(false);
   const [followBotTurns, setFollowBotTurns] = useState(false);
@@ -410,9 +446,19 @@ function App() {
   const activeSetup = online ? activeGame.setupState : localSetup;
   const localSetupComplete = localSetup.phase === "complete";
   const setupComplete = !activeSetup || activeSetup.phase === "complete";
+  const gameScreenActive = online || localPlaytestStarted;
+  const gameOverlayAvailable = gameScreenActive && !boardReviewOpen;
+  const onboardingVisible = gameOverlayAvailable && setupComplete && onboardingOpen;
+  const settingsVisible = gameOverlayAvailable && settingsOpen;
   const decisionPlayer = activeGame.pendingDecision?.type === "trophy-choice" || activeGame.pendingDecision?.type === "mutation-choice"
     ? activeGame.pendingDecision.playerIndex
     : activeGame.currentPlayer;
+  const encounterOverlay = useEncounterOverlayState({
+    online,
+    participantRole: participant?.role,
+    participantPlayerIndex: participant?.playerIndex,
+    decisionPlayer,
+  });
   const soloBotTurn = localSolo && activeGame.phase !== "game-over" && decisionPlayer !== 0;
   const soloOtherPlayerTurn = localSolo && activeGame.currentPlayer !== 0;
   const commandMedallionPlayer = localSolo ? playerRecordMonster : activePlayer;
@@ -518,22 +564,28 @@ function App() {
             : { label: "Deployment complete", command: undefined }
           : activeGame.phase === "challenge"
             ? { label: "Resolve Monster Challenge", command: undefined }
-            : { label: "Match complete", command: undefined };
+          : { label: "Match complete", command: undefined };
+  const readOnlyFightView = activeGame.phase === "fight" && !canAct;
 
   useEffect(() => {
     actionHeadingRef.current?.focus({ preventScroll: true });
   }, [activeGame.phase, activeGame.round, room?.version, localPlaytestStarted]);
   useEffect(() => {
-    if (!settingsOpen && !onboardingOpen) return;
+    const selector = settingsVisible ? ".settings-panel" : onboardingVisible ? ".onboarding" : undefined;
+    if (!selector) return;
     const previous = document.activeElement as HTMLElement | null;
-    const selector = settingsOpen ? ".settings-panel" : ".onboarding";
     document.querySelector<HTMLElement>(`${selector} button, ${selector} input`)?.focus({ preventScroll: true });
     const close = (event: KeyboardEvent) => {
       if (event.key === "Escape") { setSettingsOpen(false); setOnboardingOpen(false); }
     };
     window.addEventListener("keydown", close);
-    return () => { window.removeEventListener("keydown", close); previous?.focus({ preventScroll: true }); };
-  }, [settingsOpen, onboardingOpen]);
+    return () => {
+      window.removeEventListener("keydown", close);
+      if (settingsVisible && settingsOpenerRef.current?.isConnected) settingsOpenerRef.current.focus({ preventScroll: true });
+      else if (previous?.isConnected && previous !== document.body) previous.focus({ preventScroll: true });
+      else if (onboardingVisible) actionHeadingRef.current?.focus({ preventScroll: true });
+    };
+  }, [settingsVisible, onboardingVisible]);
   useEffect(() => {
     // Start with the map unobstructed; decisions remain in the bottom dock.
     if ((localPlaytestStarted || online) && setupComplete) {
@@ -560,10 +612,17 @@ function App() {
     [activeGame, activeSetup?.phase, setupSeat, setupPlacements, setupPlacementPlayer]);
   const setupChoices = useMemo(() => setupPreview ? deploymentChoices(setupPreview).filter((choice) => choice.kind === "deploy") : [], [setupPreview]);
   const retreatingMonsterId = activeGame.pendingRetreat?.monsterId;
+  const activeRetreatChoice = Boolean(canAct && retreatingMonsterId);
+  // The expanded turn panel overlays board cells. Temporarily render the map
+  // unobstructed while every retreat destination is an immediate choice; the
+  // saved preference returns as soon as the decision resolves.
+  const gamePanelVisible = gamePanelOpen && !activeRetreatChoice;
   const retreatDestinations = useMemo(() => {
     if (!activeGame.pendingRetreat || !retreatingMonsterId) return new Set<HexKey>();
     return new Set(activeGame.pendingRetreat.options[retreatingMonsterId] ?? []);
   }, [activeGame.pendingRetreat, retreatingMonsterId]);
+  const retreatCameraFocusKeys = useMemo(() => activeRetreatChoice ? [...retreatDestinations].sort() : undefined,
+    [activeRetreatChoice, retreatDestinations]);
   const setupPiece = setupChoices.find((choice) => choice.id === setupPieceId);
   const setupLocations = new Map<HexKey, string>();
   if (canSetup && activeSetup?.phase === "lair-selection" && setupSeat?.monsterId) {
@@ -627,15 +686,17 @@ function App() {
       const stored = JSON.parse(saved) as {
         token: string;
         participantId: string;
+        accountLinked?: boolean;
         room?: { code: string };
       };
       if (!stored.token || !stored.room?.code) return;
       void readRoom(stored.room.code, stored.token)
         .then((restoredRoom) => {
           setSession({
-            token: stored.token,
-            participantId: stored.participantId,
-            room: restoredRoom,
+          token: stored.token,
+          participantId: stored.participantId,
+          accountLinked: stored.accountLinked,
+          room: restoredRoom,
           });
           setRoom(restoredRoom);
           setRoomCode(restoredRoom.code);
@@ -653,34 +714,54 @@ function App() {
     let polling: ReturnType<typeof setInterval> | undefined;
     let disconnected = false;
     let cancelled = false;
+    const connectionKey = `${room.code.toUpperCase()}:${session.token}`;
+    const connectionIsCurrent = () => sessionRef.current?.token === session.token
+      && roomRef.current?.code.toUpperCase() === room.code.toUpperCase();
     const markOffline = () => {
-      if (disconnected) return;
+      if (disconnected || !connectionIsCurrent()) return;
+      if (intentionalRoomLeaveRef.current === connectionKey) return;
       disconnected = true;
       void markDisconnected(room.code, session.token).catch(() => undefined);
     };
     const startPolling = () => {
+      if (cancelled || !connectionIsCurrent() || intentionalRoomLeaveRef.current === connectionKey) return;
       if (polling) return;
       setConnectionState("reconnecting");
       polling = setInterval(() => {
-        readRoom(room.code, session.token, room.version)
-          .then((nextRoom) => markReconnected(room.code, session.token).then((reconnectedRoom) => {
+        if (cancelled || !connectionIsCurrent() || intentionalRoomLeaveRef.current === connectionKey || pendingRoomPollRef.current?.connectionKey === connectionKey) return;
+        const pollState = { connectionKey, promise: Promise.resolve(), reconnectRequestStarted: false };
+        const pollRequest = readRoom(room.code, session.token, room.version)
+          .then(async (nextRoom) => {
+            if (cancelled || !connectionIsCurrent() || intentionalRoomLeaveRef.current === connectionKey) return;
+            pollState.reconnectRequestStarted = true;
+            const reconnectedRoom = await markReconnected(room.code, session.token);
+            if (cancelled || !connectionIsCurrent() || intentionalRoomLeaveRef.current === connectionKey) return;
             setRoom(reconnectedRoom ?? nextRoom);
             disconnected = false;
             setConnectionState("online");
-          }))
-          .catch(() => setConnectionState("stale"));
+          })
+          .catch(() => {
+            if (!cancelled && connectionIsCurrent() && intentionalRoomLeaveRef.current !== connectionKey) setConnectionState("stale");
+          });
+        pollState.promise = pollRequest;
+        pendingRoomPollRef.current = pollState;
+        void pollRequest.finally(() => {
+          if (pendingRoomPollRef.current?.promise === pollRequest) pendingRoomPollRef.current = null;
+        });
       }, 2000);
     };
     void createWebSocketTicket(room.code, session.token).then(({ ticket }) => {
-      if (cancelled) return;
+      if (cancelled || !connectionIsCurrent()) return;
       socket = new WebSocket(websocketUrl(room.code, ticket));
       commandChannel = new RoomCommandChannel(socket);
       commandChannelRef.current = commandChannel;
       socket.onopen = () => {
+        if (cancelled || !connectionIsCurrent()) return;
         setConnectionState("online");
         if (polling) { clearInterval(polling); polling = undefined; }
       };
       socket.onmessage = (event) => {
+        if (cancelled || !connectionIsCurrent()) return;
         const message = JSON.parse(event.data) as { type: string; room: RoomView };
         if (message.type === "room.updated") { setRoom(message.room); setConnectionState("online"); }
       };
@@ -693,7 +774,15 @@ function App() {
     });
     return () => {
       cancelled = true;
-      markOffline();
+      if (intentionalRoomLeaveRef.current === connectionKey) {
+        if (completedRoomLeaveRef.current === connectionKey) {
+          intentionalRoomLeaveRef.current = null;
+          completedRoomLeaveRef.current = null;
+        }
+        disconnected = true;
+      } else {
+        markOffline();
+      }
       commandChannel?.dispose();
       if (commandChannelRef.current === commandChannel) commandChannelRef.current = null;
       socket?.close();
@@ -716,8 +805,15 @@ function App() {
     if (isHexKey(nextUnit.location)) setFocusedHexKey(nextUnit.location);
   };
 
-  const runCommand = async (command: GameCommand) => {
+  const captureResearchReturnFocus = () => {
+    researchReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    researchReturnFocusFallbackRef.current = actionHeadingRef.current;
+  };
+
+  const runCommand = async (command: GameCommand, opener?: HTMLButtonElement) => {
     if (pendingAction) return;
+    commandErrorOpenerRef.current = null;
+    if (command.type === "draw-research") captureResearchReturnFocus();
     setError("");
     setPendingAction(true);
     // Keep the pending-action surface observable for one render even when the
@@ -779,6 +875,7 @@ function App() {
         focusNextMovementUnit(nextGame);
       }
     } catch (caught) {
+      commandErrorOpenerRef.current = opener ?? null;
       setError(caught instanceof Error ? caught.message : "Action failed");
       if (online && session && room) {
         try {
@@ -793,6 +890,13 @@ function App() {
   };
 
   useEffect(() => {
+    if (pendingAction || !error) return;
+    const opener = commandErrorOpenerRef.current;
+    commandErrorOpenerRef.current = null;
+    if (opener?.isConnected && !opener.disabled) opener.focus({ preventScroll: true });
+  }, [error, pendingAction]);
+
+  useEffect(() => {
     if (activeGame.phase !== "deploy" || militaryChoices.length > 0) {
       autoFinishDeploymentRequested.current = false;
       return;
@@ -802,22 +906,21 @@ function App() {
     void runCommand({ type: "pass-deploy" });
   }, [activeGame.phase, canAct, militaryChoices.length, pendingAction]);
 
-  useEffect(() => {
-    if (!online || !encounterOverlayOpen || encounterOverlayOwnerRef.current === decisionPlayer) return;
-    encounterOverlayOwnerRef.current = undefined;
-    setEncounterOverlayOpen(false);
-  }, [decisionPlayer, encounterOverlayOpen, online]);
-
-  const runBoardAction = (command: GameCommand) => {
-    if (command.type === "resolve-fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; }
-    if (command.type === "resolve-encounter" && !command.choice && !command.trophyUnitId) {
-      if (routineStompPrompt) { void runCommand(command); return; }
-      setEncounterBaselineEventId(lastEncounterEvent?.id);
-      encounterOverlayOwnerRef.current = activeGame.currentPlayer;
-      setEncounterOverlayOpen(true);
+  const runBoardAction = (command: GameCommand, opener?: HTMLButtonElement) => {
+    if (command.type === "resolve-fight") {
+      fightReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setFightBaselineEventId(lastBattleEvent?.id);
+      setFightOverlayOpen(true);
       return;
     }
-    void runCommand(command);
+    if (command.type === "resolve-encounter" && !command.choice && !command.trophyUnitId) {
+      if (routineStompPrompt) { void runCommand(command); return; }
+      encounterReturnFocusRef.current = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+      setEncounterBaselineEventId(lastEncounterEvent?.id);
+      encounterOverlay.openForPlayer(activeGame.currentPlayer);
+      return;
+    }
+    void runCommand(command, opener);
   };
 
   const replaceOnlineSession = (next: SessionResponse | null) => {
@@ -827,15 +930,26 @@ function App() {
       localStorage.removeItem("abominations-session");
       return;
     }
-    setSession(next);
+    const accountLinked = next.accountLinked ?? (
+      session?.participantId === next.participantId && session.room.code === next.room.code
+        ? session.accountLinked
+        : undefined
+    );
+    const normalized = accountLinked === undefined ? next : { ...next, accountLinked };
+    setSession(normalized);
     setRoom(next.room);
     setRoomCode(next.room.code);
-    localStorage.setItem("abominations-session", JSON.stringify({ token: next.token, participantId: next.participantId, room: { code: next.room.code } }));
+    localStorage.setItem("abominations-session", JSON.stringify({ token: next.token, participantId: next.participantId, accountLinked, room: { code: next.room.code } }));
   };
   const startSession = async (kind: "create" | "join" | "spectate") => {
+    if (roomStartPendingRef.current) return;
+    roomStartPendingRef.current = true;
+    const requestId = ++roomStartRequestIdRef.current;
+    const destinationVersion = homeDestinationVersionRef.current;
+    setRoomStartPending(true);
     setError("");
     setLocalPlaytestStarted(false);
-    setOnboardingOpen(false);
+    setOnboardingOpen(shouldShowFirstMatchGuide());
     setGamePanelOpen(true);
     try {
       const created =
@@ -844,12 +958,19 @@ function App() {
           : kind === "join"
             ? await joinRoom(roomCode, displayName || "Player")
             : await spectateRoom(roomCode, displayName || "Spectator");
+      if (requestId !== roomStartRequestIdRef.current || destinationVersion !== homeDestinationVersionRef.current) return;
       const result = account && kind !== "spectate" ? await claimRoomSeat(created.room.code, created.token) : created;
+      if (requestId !== roomStartRequestIdRef.current || destinationVersion !== homeDestinationVersionRef.current) return;
       replaceOnlineSession(result);
     } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Could not join room",
-      );
+      if (requestId === roomStartRequestIdRef.current && destinationVersion === homeDestinationVersionRef.current) {
+        setError(caught instanceof Error ? caught.message : "Could not join room");
+      }
+    } finally {
+      if (requestId === roomStartRequestIdRef.current) {
+        roomStartPendingRef.current = false;
+        setRoomStartPending(false);
+      }
     }
   };
   const refreshPublicRooms = async () => {
@@ -887,6 +1008,19 @@ function App() {
       setError(
         caught instanceof Error ? caught.message : "Could not update readiness",
       );
+    }
+  };
+
+  const recoverRoomConnection = async () => {
+    if (!session || !room) return;
+    setError("");
+    setConnectionState("reconnecting");
+    try {
+      const replacement = await rotateSession(room.code, session.token);
+      replaceOnlineSession(replacement);
+    } catch (caught) {
+      setConnectionState("stale");
+      setError(caught instanceof Error ? caught.message : "Could not reset the room connection.");
     }
   };
 
@@ -935,12 +1069,15 @@ function App() {
       let nextState = result.state;
       let command = result.command;
       let explanation = result.explanation;
+      const recovery = recoverBotActionStep(currentGame, result);
+      if (recovery.type === "error") {
+        setError(recovery.message);
+        setBotThinking(false);
+        botTurnRunning.current = false;
+        return;
+      }
       if (!command || nextState === currentGame) {
-        const fallback: GameCommand | undefined = currentGame.phase === "deploy"
-          ? { type: "pass-deploy" }
-          : currentGame.phase === "move"
-            ? { type: "pass-move" }
-            : undefined;
+        const fallback = recovery.type === "fallback" ? recovery.command : undefined;
         if (fallback) {
           try {
             nextState = applyCommand(currentGame, fallback).state;
@@ -999,36 +1136,36 @@ function App() {
       botTurnRunning.current = false;
     };
   }, [activeGame, online, setupComplete, soloMode]);
+  const submitOnlineSetupAction = async (action: SetupAction) => {
+    if (!online || !session || !room || setupActionInFlight.current) return;
+    setupActionInFlight.current = true;
+    setSetupActionPending(true);
+    setError("");
+    try {
+      setRoom(await sendSetupAction(room.code, session.token, room.version, action));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not update setup");
+    } finally {
+      setupActionInFlight.current = false;
+      setSetupActionPending(false);
+    }
+  };
   const chooseSetupOption = async (value: string) => {
     if (
       !setupSeat ||
       !activeSetup ||
+      setupActionInFlight.current ||
       (online && participant?.playerIndex !== setupSeat.playerIndex) ||
       (soloMode && setupSeat.playerIndex !== 0)
     )
       return;
     if (online && session && room) {
-      try {
-        setRoom(
-          await sendSetupAction(
-            room.code,
-            session.token,
-            room.version,
-            activeSetup.phase === "monster-selection"
-              ? { type: "choose-monster", monsterId: value }
-              : activeSetup.phase === "branch-selection"
-                ? {
-                    type: "choose-branch",
-                    branch: value as "Army" | "Navy" | "Air Force" | "Marines",
-                  }
-                : { type: "choose-lair", lair: value },
-          ),
-        );
-      } catch (caught) {
-        setError(
-          caught instanceof Error ? caught.message : "Could not update setup",
-        );
-      }
+      const action: SetupAction = activeSetup.phase === "monster-selection"
+        ? { type: "choose-monster", monsterId: value }
+        : activeSetup.phase === "branch-selection"
+          ? { type: "choose-branch", branch: value as "Army" | "Navy" | "Air Force" | "Marines" }
+          : { type: "choose-lair", lair: value };
+      await submitOnlineSetupAction(action);
       return;
     }
     if (localSetup.phase === "monster-selection")
@@ -1048,24 +1185,14 @@ function App() {
     if (
       !setupSeat ||
       !activeSetup ||
+      setupActionInFlight.current ||
       (online && participant?.playerIndex !== setupSeat.playerIndex) ||
       (soloMode && setupSeat.playerIndex !== 0)
     )
       return;
     const startingChoice = kind === "research" ? { kind } as const : { kind, placements: setupPlacements } as const;
     if (online && session && room) {
-      try {
-        setRoom(
-          await sendSetupAction(room.code, session.token, room.version, {
-            type: "choose-starting-choice",
-            startingChoice,
-          }),
-        );
-      } catch (caught) {
-        setError(
-          caught instanceof Error ? caught.message : "Could not update setup",
-        );
-      }
+      await submitOnlineSetupAction({ type: "choose-starting-choice", startingChoice });
       return;
     }
     applyLocalSetup(
@@ -1073,17 +1200,20 @@ function App() {
     );
   };
   const changePlayerCount = (value: 2 | 3 | 4) => {
+    if (roomStartPendingRef.current) return;
     setPlayerCount(value);
     const next = createMvpRoomGame(value);
     setLocalSetup(next.setupState!);
     setGame(next);
   };
   const resetLocal = () => {
+    if (roomStartPendingRef.current) return;
+    homeDestinationVersionRef.current += 1;
     setSoloMode(false);
     setBotThinking(false);
     setBotExplanation("");
     setLocalPlaytestStarted(true);
-    setOnboardingOpen(false);
+    setOnboardingOpen(shouldShowFirstMatchGuide());
     // Start with turn instructions expanded.
     setGamePanelOpen(true);
     setSession(null);
@@ -1095,13 +1225,15 @@ function App() {
     localStorage.removeItem("abominations-session");
   };
   const startSolo = () => {
+    if (roomStartPendingRef.current) return;
+    homeDestinationVersionRef.current += 1;
     setSoloMode(true);
     setBotThinking(false);
     setBotExplanation("");
     botTurnRunning.current = false;
     nextBotStepDelay.current = 650;
     setLocalPlaytestStarted(true);
-    setOnboardingOpen(false);
+    setOnboardingOpen(shouldShowFirstMatchGuide());
     setGamePanelOpen(true);
     setSession(null);
     setRoom(null);
@@ -1112,25 +1244,47 @@ function App() {
     localStorage.removeItem("abominations-session");
   };
   const startTemporaryVictoryScenario = () => {
+    if (roomStartPendingRef.current) return;
+    homeDestinationVersionRef.current += 1;
     setLocalPlaytestStarted(true);
-    setOnboardingOpen(false);
+    setOnboardingOpen(shouldShowFirstMatchGuide());
     setGamePanelOpen(true);
     setSession(null);
     setRoom(null);
     setError("");
     setPlayerCount(2);
     setLocalSetup(createCompletedDevelopmentSetup());
-    setGame(createDevelopmentVictoryGame());
+    // Seed the setup-less browser fixture with a Research order that avoids
+    // immediate giant placement cards requiring setup-assigned bases.
+    setGame(createDevelopmentVictoryGame(4));
     localStorage.removeItem("abominations-session");
   };
   const startProvisionalPlaytest = resetLocal;
   const leaveRoom = async () => {
     if (session && room) {
+      const leavingSession = session;
+      const leavingRoom = room;
+      const connectionKey = `${room.code.toUpperCase()}:${session.token}`;
+      if (intentionalRoomLeaveRef.current === connectionKey) return;
+      intentionalRoomLeaveRef.current = connectionKey;
+      let explicitDisconnectCompleted = false;
       try {
-        await markDisconnected(room.code, session.token);
+        const pendingPoll = pendingRoomPollRef.current;
+        const cancelPendingReconnect = pendingPoll?.connectionKey === connectionKey && pendingPoll.reconnectRequestStarted;
+        if (intentionalRoomLeaveRef.current !== connectionKey) return;
+        await markDisconnected(room.code, session.token, cancelPendingReconnect);
+        explicitDisconnectCompleted = true;
       } catch {
+        if (intentionalRoomLeaveRef.current === connectionKey) intentionalRoomLeaveRef.current = null;
+        if (completedRoomLeaveRef.current === connectionKey) completedRoomLeaveRef.current = null;
         // Returning to the lobby is still safe when the network is unavailable.
       }
+      if (sessionRef.current !== leavingSession || roomRef.current?.code.toUpperCase() !== leavingRoom.code.toUpperCase()) {
+        if (intentionalRoomLeaveRef.current === connectionKey) intentionalRoomLeaveRef.current = null;
+        if (completedRoomLeaveRef.current === connectionKey) completedRoomLeaveRef.current = null;
+        return;
+      }
+      completedRoomLeaveRef.current = explicitDisconnectCompleted ? connectionKey : null;
     }
     setSession(null);
     setRoom(null);
@@ -1270,7 +1424,7 @@ function App() {
   }
 
   if (boardReviewOpen) {
-    return <BoardReview onClose={() => setBoardReviewOpen(false)} />;
+    return <Suspense fallback={<main className="board-review-screen" role="status">Loading board review…</main>}><BoardReview onClose={() => setBoardReviewOpen(false)} /></Suspense>;
   }
   if (!online && !localPlaytestStarted) {
     return (
@@ -1286,20 +1440,26 @@ function App() {
         publicRooms={publicRooms}
         setupComplete={false}
         error={error}
+        roomStartPending={roomStartPending}
         onDisplayNameChange={setDisplayName}
         onPlayerCountChange={changePlayerCount}
         onRoomPrivacyChange={setRoomPrivacy}
         onRoomCodeChange={setRoomCode}
         onRefreshPublicRooms={() => void refreshPublicRooms()}
-        onStartSession={(kind) => void startSession(kind)}
+        onStartSession={startSession}
         onToggleReady={() => undefined}
+        onRecoverConnection={() => undefined}
         onLeaveRoom={() => undefined}
         rulesOpen={homeRulesOpen}
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
         onStartLocal={resetLocal}
         onStartSolo={startSolo}
         onStartProvisionalPlaytest={startProvisionalPlaytest}
-        onOpenBoardReview={() => setBoardReviewOpen(true)}
+        onOpenBoardReview={() => {
+          if (roomStartPendingRef.current) return;
+          homeDestinationVersionRef.current += 1;
+          setBoardReviewOpen(true);
+        }}
         onStartVictoryScenario={startTemporaryVictoryScenario}
         accountPanel={<AccountPanel account={account} session={session} onAccountChange={setAccount} onSessionChange={replaceOnlineSession} />}
       />
@@ -1307,10 +1467,10 @@ function App() {
   }
 
   const renderedBoard = boardForGame(activeGame);
-  const fullBoardVerified = (renderedBoard?.id === AUDITED_BOARD.id || renderedBoard?.id === FULL_HONEYCOMB_BOARD.id)
+  const boardHasCompleteTranscriptionFlags = (renderedBoard?.id === AUDITED_BOARD.id || renderedBoard?.id === FULL_HONEYCOMB_BOARD.id)
     && Object.values(renderedBoard.hexes).every((hex) => hex.verification === "verified");
-  const boardDescription = fullBoardVerified
-    ? "The complete 336-cell human-audited North America board is active. Movement follows its printed features and water barriers."
+  const boardDescription = boardHasCompleteTranscriptionFlags
+    ? "The 336-cell transcribed board is active for playtesting. Independent source review and production sign-off remain open."
     : renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
       ? "The full honeycomb coordinate shell is unresolved review tooling and is not a playable board. Physical cell data is still being transcribed."
       : renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
@@ -1321,7 +1481,7 @@ function App() {
 
   return (
     <main
-      className={`game-screen ${!setupComplete ? "setup-in-progress" : ""} ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}
+      className={`game-screen ${!setupComplete ? "setup-in-progress" : ""} ${online ? "online-game" : "local-game"} ${gamePanelVisible ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}
       data-board-id={renderedBoard?.id ?? ""}
       data-board-version={renderedBoard?.version ?? ""}
       data-board-content-hash={renderedBoard?.contentHash ?? ""}
@@ -1331,18 +1491,24 @@ function App() {
       <header>
         <div className="top-turn-summary" aria-live="polite">
           <div className="turn-hud-heading">
-            <div><span className="label">{!setupComplete ? "GAME SETUP" : `ROUND ${activeGame.round} · ${soloMode && decisionPlayer !== 0 ? "BOT TURN" : canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER ${decisionPlayer + 1}`}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? action : "Monster and branch selection"}</h2></div>
-            <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="turn-hud-body" aria-label={gamePanelOpen ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelOpen ? "−" : "+"}</button>
+            <div><span className="label">{!setupComplete ? "GAME SETUP" : `ROUND ${activeGame.round} · ${soloMode && decisionPlayer !== 0 ? "BOT TURN" : canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER ${decisionPlayer + 1}`}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? action : "Monster and branch selection"}</h2>{retreatingMonsterId && <span className="retreat-phase-indicator" role="status">{canAct ? "Choose retreat" : "Waiting for retreat choice"}</span>}</div>
+            <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelVisible} aria-controls="turn-hud-body" aria-label={activeRetreatChoice ? gamePanelOpen ? "Keep turn panel minimized after retreat" : "Expand turn panel after retreat" : gamePanelVisible ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelVisible ? "−" : "+"}</button>
           </div>
         </div>
         <div className="header-actions">
           {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={playerRecordIndex} monster={playerRecordMonster} branch={playerRecordBranch} canAct={canAct} mobileCommandExpanded={mobileCommandExpanded} runCommand={runCommand} onDeploy={openMilitarySheet} onSelectDeployment={(choice) => { setDeploymentPieceId(choice.id); setFocusedHexKey(choice.destinations[0]); }} />}
-          <details className="hud-menu">
+          <details className="hud-menu" onKeyDown={(event) => {
+            if (event.key !== "Escape") return;
+            event.preventDefault();
+            const menu = event.currentTarget;
+            menu.open = false;
+            menu.querySelector<HTMLElement>(":scope > summary")?.focus({ preventScroll: true });
+          }}>
             <summary aria-label="Open game menu">☰ <span>Menu</span></summary>
             <div className="hud-menu-items">
               {online && <span className="room-hud-menu-status" role="status">{room?.code} · {connectionState}</span>}
               <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>How to play</button>
-              <button className="ghost settings-action" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>Settings</button>
+              <button className="ghost settings-action" onClick={(event) => { settingsOpenerRef.current = event.currentTarget; setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>Settings</button>
               <button className="ghost new-game-action" onClick={soloMode ? startSolo : resetLocal}>{soloMode ? "New solo game" : "New local game"}</button>
               {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
               {online && <button className="ghost leave-room-action" onClick={leaveRoomSafely}>Leave room</button>}
@@ -1374,14 +1540,15 @@ function App() {
         onRoomPrivacyChange={setRoomPrivacy}
         onRoomCodeChange={setRoomCode}
         onRefreshPublicRooms={() => void refreshPublicRooms()}
-        onStartSession={(kind) => void startSession(kind)}
+        onStartSession={startSession}
         onToggleReady={() => void toggleReady()}
+        onRecoverConnection={() => void recoverRoomConnection()}
         onLeaveRoom={leaveRoomSafely}
       />
       {settingsOpen && (
         <SettingsPanel largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} masterVolume={masterVolume} musicVolume={musicVolume} effectsVolume={effectsVolume} muted={muted} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} setMasterVolume={(value) => setStoredVolume("abominations-master-volume", setMasterVolume, value)} setMusicVolume={(value) => setStoredVolume("abominations-music-volume", setMusicVolume, value)} setEffectsVolume={(value) => setStoredVolume("abominations-effects-volume", setEffectsVolume, value)} setMuted={setMuted} togglePreference={togglePreference} />
       )}
-      {onboardingOpen && (
+      {onboardingVisible && (
         <section className="onboarding" aria-label="First match guide">
           <div>
             <span className="label">FIRST MATCH GUIDE</span>
@@ -1403,11 +1570,13 @@ function App() {
       {activeSetup && (
         <SetupPanel
           activeSetup={activeSetup}
+          setupApplied={Boolean(activeGame.setupApplied)}
           board={renderedBoard}
           setupSeat={setupSeat}
           online={online}
           playerIndex={participant?.playerIndex}
           participants={room?.participants ?? []}
+          submitting={setupActionPending}
           onChooseOption={(value) => void chooseSetupOption(value)}
           deploymentCount={setupPlacements.length}
           hasAvailableDeploymentOptions={setupChoices.length > 0}
@@ -1415,7 +1584,7 @@ function App() {
           selectedPiece={setupPiece?.typeId}
           onFinishDeployment={() => void chooseSetupStartingChoice("deploy")}
           onUndoDeployment={() => { setSetupPlacements((current) => current.slice(0, -1)); setSetupPieceId(null); }}
-          onChooseStartingChoice={(kind) => { if (kind === "deploy") { setSetupPlacementPlayer(setupSeat?.playerIndex ?? null); setSetupDeploying(true); setSetupSheetOpen(true); } else void chooseSetupStartingChoice(kind); }}
+          onChooseStartingChoice={(kind) => { if (setupActionPending) return; if (kind === "deploy") { setSetupPlacementPlayer(setupSeat?.playerIndex ?? null); setSetupDeploying(true); setSetupSheetOpen(true); } else void chooseSetupStartingChoice(kind); }}
         />
       )}
       <section className="development-notice" aria-label="Development ruleset notice">
@@ -1426,7 +1595,7 @@ function App() {
             : "This playtest uses a nine-space development board. The unresolved physical-board shell is not rendered as playable topology. The physical board, full combat, card effects, National Guard rules, and Monster Challenge are still under review."}
         </p>
       </section>
-      <section className={`layout ${gamePanelOpen ? "panel-open" : "panel-closed"}`}>
+      <section className={`layout ${gamePanelVisible ? "panel-open" : "panel-closed"}`} data-panel-preference={gamePanelOpen ? "open" : "closed"}>
         <div className="board-panel">
           <div className="panel-heading">
             <div>
@@ -1441,7 +1610,7 @@ function App() {
                 : `PLAYER ${activeGame.currentPlayer + 1}`}
             </span>
           </div>
-          <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={boardFollowHexKey} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
+          <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={boardFollowHexKey} focusHexKeys={retreatCameraFocusKeys} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
             {activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "trophy-choice" && <div className="deployment-prompt trophy-prompt" role="status">
               {activeGame.pendingDecision.unitIds.some((id) => activeGame.units.some((unit) => unit.id === id && unit.location === "record-tile"))
                 ? <>Player {activeGame.pendingDecision.playerIndex + 1} · {activeGame.pendingDecision.branch} military record<br />Choose a card still in reserve.</>
@@ -1581,17 +1750,16 @@ function App() {
               command={actionDock.command ?? (actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? undefined : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
               onPrimary={actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? selectNextMovableUnit : undefined}
               canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
-            /> : <ActionDock contextLabel={activeGame.phase} guidance={activeGame.phase === "deploy" ? "Choose a military action." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
-              onPrimary={!actionDock.command ? () => { if (activeGame.phase === "deploy") { openMilitarySheet(); return; } if (activeGame.phase === "fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } if (activeGame.phase === "move" && selectableUnitIds.size) { selectNextMovableUnit(); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
-              label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
+            /> : <ActionDock contextLabel={activeGame.phase} guidance={readOnlyFightView ? "Open a read-only view of the current battles." : activeGame.phase === "deploy" ? "Choose a military action." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
+              onPrimary={!actionDock.command || readOnlyFightView ? (event) => { if (activeGame.phase === "deploy") { openMilitarySheet(); return; } if (activeGame.phase === "fight") { fightReturnFocusRef.current = event.currentTarget; setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } if (activeGame.phase === "move" && selectableUnitIds.size) { selectNextMovableUnit(); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
+              label={readOnlyFightView ? "Watch fight" : actionDock.label} canAct={canAct || readOnlyFightView} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
           </div>
           <div id="mobile-command-details" className="bottom-context-dock">
-          {activeGame.pendingDecision?.type === "trophy-choice" && <MilitaryReference
-            sheet={activeGame.pendingDecision.branch}
-            game={{ ...activeGame, currentPlayer: activeGame.pendingDecision.playerIndex }}
-            trophyUnitIds={activeGame.pendingDecision.unitIds.filter((id) => activeGame.units.some((unit) => unit.id === id && unit.location === "record-tile"))}
-            onTrophy={(unitId) => void runCommand({ type: "resolve-encounter", trophyUnitId: unitId })}
-          />}
+          <TrophyChoicePanel
+            game={activeGame}
+            canAct={canAct}
+            onChoose={(unitId) => void runCommand({ type: "resolve-encounter", trophyUnitId: unitId })}
+          />
           {activeGame.phase === "deploy" ? null : activeGame.phase === "move" ? <details className="piece-context-tab" key={selectedUnitId ?? activePlayer.id}>
             <summary><span>{selectedUnitId ? (activeGame.units.find(unit => unit.id === selectedUnitId)?.unitTypeId ?? "Unit").replaceAll("-", " ") : activePlayer.name}</span><small>Details & options <span aria-hidden="true">⌃</span></small></summary>
             <div className="context-tab-body">
@@ -1652,7 +1820,7 @@ function App() {
           </div>
         </>}
         <aside id="game-side-panel" className="game-side-panel" aria-label="Game controls and information">
-          <div id="turn-hud-body" hidden={!gamePanelOpen}>
+          <div id="turn-hud-body" hidden={!gamePanelVisible}>
           {setupComplete && <>
             <TurnProgress game={activeGame} />
             <MatchStatus game={activeGame} action={action} />
@@ -1747,21 +1915,23 @@ function App() {
         onClose={() => setSetupSheetOpen(false)}
         onSelect={(choice) => { setSetupPieceId(choice.id); setSetupSheetOpen(false); setFocusedHexKey(choice.destinations[0]); }}
       />}
-      {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet initialSheet={militaryInitialSheet} canAct={canAct} runCommand={(command) => { setMilitarySheetOpen(false); return runCommand(command); }} game={activeGame} branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
+      {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet initialSheet={militaryInitialSheet} canAct={canAct} runCommand={(command) => { if (command.type === "draw-research") captureResearchReturnFocus(); setMilitarySheetOpen(false); return runCommand(command); }} game={activeGame} branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
         setDeploymentPieceId(choice.id);
         setMilitarySheetOpen(false);
         setFocusedHexKey(choice.destinations[0]);
         requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${choice.destinations[0]}"]`)?.focus({ preventScroll: true }));
       }} />}
       {challengeDuelOpen && activeGame.challenge?.active && <ChallengeArena game={activeGame} canAct={canAct} canUseMutation={canUseMutation} playerIndex={online ? participant?.playerIndex : undefined} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
-      <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={(unitId, battleId, spendInfamy) => { void runCommand({ type: "resolve-fight", battleId, targetUnitId: unitId, spendInfamy }); }} controls={<>
+      <FightResolutionPanel open={fightOverlayOpen} returnFocusTo={fightReturnFocusRef.current} returnFocusFallbackTo={actionHeadingRef.current} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={(unitId, battleId, spendInfamy) => { void runCommand({ type: "resolve-fight", battleId, targetUnitId: unitId, spendInfamy }); }} controls={<>
         <PhaseActions hideAttackTargets activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} canUseMutation={canUseMutation} canUseLaserFence={canUseLaserFence} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
         {error && <p role="alert">{error}</p>}
       </>} />
-      {researchReveal && <ResolutionStage title="Research" eyebrow="MILITARY / RESEARCH DIVISION" variant="research" onClose={() => setResearchReveal(null)}><CardReveal key={researchReveal} cardId={researchReveal} kind="research" /></ResolutionStage>}
+      {researchReveal && <ResolutionStage title="Research" eyebrow="MILITARY / RESEARCH DIVISION" variant="research" returnFocusTo={researchReturnFocusRef.current} returnFocusFallbackTo={researchReturnFocusFallbackRef.current} onClose={() => setResearchReveal(null)}><CardReveal key={researchReveal} cardId={researchReveal} kind="research" /></ResolutionStage>}
       <EncounterOverlay
         error={error}
-        open={encounterOverlayOpen && (!online || participant?.role === "player" && participant.playerIndex === encounterOverlayOwnerRef.current && decisionPlayer === encounterOverlayOwnerRef.current)}
+        open={encounterOverlay.open}
+        returnFocusTo={encounterReturnFocusRef.current}
+        returnFocusFallbackTo={actionHeadingRef.current}
         canAct={canAct}
         pendingChoice={activeGame.pendingDecision?.type === "encounter-choice"}
         monsterName={activePlayer.name}
@@ -1775,8 +1945,8 @@ function App() {
         mutationDraws={encounterMutationDraws}
         mutationCardId={encounterMutationDraws.some((draw) => draw.cardDrawn) ? encounterRevealCard : undefined}
         onReveal={() => void runCommand({ type: "resolve-encounter" })}
-        onChoice={(choice) => void runCommand({ type: "resolve-encounter", choice })}
-        onClose={() => { setEncounterOverlayOpen(false); encounterOverlayOwnerRef.current = undefined; }}
+        onChoice={(choice, opener) => void runCommand({ type: "resolve-encounter", choice }, opener)}
+        onClose={encounterOverlay.close}
       />
       <BoardEventPlayback
         matchId={activeGame.matchId}

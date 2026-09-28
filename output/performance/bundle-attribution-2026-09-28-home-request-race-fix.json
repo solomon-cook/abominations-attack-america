@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-28T10:49:55.086Z",
+  "measurementRecord": "output/performance/browser-benchmark-2026-09-28-home-request-race-fix-seven-run.json",
+  "measurementBuild": {
+    "sha256": "93a66846a57814827091fbcf66bdfc667e117ef4cf4a790f01685e32a2f205b0",
+    "fileCount": 1456,
+    "totalBytes": 143502918,
+    "mainAssets": [
+      {
+        "path": "assets/BoardReview-tNwpeFrb.js",
+        "bytes": 5241
+      },
+      {
+        "path": "assets/index-CC-DyazW.css",
+        "bytes": 262560
+      },
+      {
+        "path": "assets/index-CHyFpp1r.js",
+        "bytes": 742929
+      },
+      {
+        "path": "index.html",
+        "bytes": 704
+      }
+    ]
+  },
+  "mainEntry": {
+    "path": "assets/index-CHyFpp1r.js",
+    "bytes": 742929,
+    "sha256": "dda06c168bac0c8a7ae7172ac7020dbf0cfa0ea8bfd22fda7078919001860e49",
+    "gzipBytesNodeDefault": 186182
+  },
+  "sourceMapBuild": {
+    "mainEntryBytes": 742972,
+    "sourceMappingURLBytes": 43,
+    "sourcemapBytes": 2209426,
+    "temporaryPath": "/tmp/abominations-home-race-attribution (not checked in)"
+  },
+  "moduleInventory": {
+    "sourceCount": 82,
+    "appSourceCount": 62,
+    "sourceContentBytesOnly": true,
+    "previousInventory": "output/performance/bundle-attribution-2026-09-28.json",
+    "changedOrNewSourceContentByteCounts": [
+      {
+        "source": "apps/web/src/components/HomeScreen.tsx",
+        "previousSourceBytes": 7355,
+        "currentSourceBytes": 7584,
+        "deltaBytes": 229
+      },
+      {
+        "source": "apps/web/src/components/LobbyPanel.tsx",
+        "previousSourceBytes": 5791,
+        "currentSourceBytes": 7090,
+        "deltaBytes": 1299
+      },
+      {
+        "source": "apps/web/src/main.tsx",
+        "previousSourceBytes": 108381,
+        "currentSourceBytes": 109776,
+        "deltaBytes": 1395
+      }
+    ],
+    "sources": [
+      {
+        "source": "apps/web/src/api.ts",
+        "sourceBytes": 11851
+      },
+      {
+        "source": "apps/web/src/audio.ts",
+        "sourceBytes": 2081
+      },
+      {
+        "source": "apps/web/src/board-camera.ts",
+        "sourceBytes": 2760
+      },
+      {
+        "source": "apps/web/src/board-layout.ts",
+        "sourceBytes": 2872
+      },
+      {
+        "source": "apps/web/src/board-pin.ts",
+        "sourceBytes": 1222
+      },
+      {
+        "source": "apps/web/src/bot-action-fallback.ts",
+        "sourceBytes": 855
+      },
+      {
+        "source": "apps/web/src/command-ack.ts",
+        "sourceBytes": 1060
+      },
+      {
+        "source": "apps/web/src/components/AccountPanel.tsx",
+        "sourceBytes": 21305
+      },
+      {
+        "source": "apps/web/src/components/ActionDock.tsx",
+        "sourceBytes": 1642
+      },
+      {
+        "source": "apps/web/src/components/ActionResolutionFeedback.tsx",
+        "sourceBytes": 455
+      },
+      {
+        "source": "apps/web/src/components/BlondeLureActions.tsx",
+        "sourceBytes": 1578
+      },
+      {
+        "source": "apps/web/src/components/BoardContextTray.tsx",
+        "sourceBytes": 3357
+      },
+      {
+        "source": "apps/web/src/components/BoardEventPlayback.tsx",
+        "sourceBytes": 18899
+      },
+      {
+        "source": "apps/web/src/components/BoardFeatureOverlays.tsx",
+        "sourceBytes": 2326
+      },
+      {
+        "source": "apps/web/src/components/BoardReferenceCard.tsx",
+        "sourceBytes": 407
+      },
+      {
+        "source": "apps/web/src/components/BoardTerrain.tsx",
+        "sourceBytes": 4402
+      },
+      {
+        "source": "apps/web/src/components/BoardViewport.tsx",
+        "sourceBytes": 11930
+      },
+      {
+        "source": "apps/web/src/components/ChallengeActions.tsx",
+        "sourceBytes": 347
+      },
+      {
+        "source": "apps/web/src/components/ChallengeArena.tsx",
+        "sourceBytes": 11412
+      },
+      {
+        "source": "apps/web/src/components/ChallengeDuelPanel.tsx",
+        "sourceBytes": 4128
+      },
+      {
+        "source": "apps/web/src/components/ChallengeMutationControls.tsx",
+        "sourceBytes": 1820
+      },
+      {
+        "source": "apps/web/src/components/ChopperLiftChoiceControls.tsx",
+        "sourceBytes": 2864
+      },
+      {
+        "source": "apps/web/src/components/combat-presentation.ts",
+        "sourceBytes": 2179
+      },
+      {
+        "source": "apps/web/src/components/DieCube.tsx",
+        "sourceBytes": 1003
+      },
+      {
+        "source": "apps/web/src/components/DigitalCard.tsx",
+        "sourceBytes": 1873
+      },
+      {
+        "source": "apps/web/src/components/EncounterOverlay.tsx",
+        "sourceBytes": 5494
+      },
+      {
+        "source": "apps/web/src/components/EncounterResultPanel.tsx",
+        "sourceBytes": 3770
+      },
+      {
+        "source": "apps/web/src/components/FightResolutionPanel.tsx",
+        "sourceBytes": 19423
+      },
+      {
+        "source": "apps/web/src/components/HexGrid.tsx",
+        "sourceBytes": 27971
+      },
+      {
+        "source": "apps/web/src/components/HomeScreen.tsx",
+        "sourceBytes": 7584
+      },
+      {
+        "source": "apps/web/src/components/LaserFenceControls.tsx",
+        "sourceBytes": 1745
+      },
+      {
+        "source": "apps/web/src/components/LobbyPanel.tsx",
+        "sourceBytes": 7090
+      },
+      {
+        "source": "apps/web/src/components/LogPanel.tsx",
+        "sourceBytes": 722
+      },
+      {
+        "source": "apps/web/src/components/MatchStatus.tsx",
+        "sourceBytes": 1517
+      },
+      {
+        "source": "apps/web/src/components/MilitarySheet.tsx",
+        "sourceBytes": 10661
+      },
+      {
+        "source": "apps/web/src/components/MovementChecklist.tsx",
+        "sourceBytes": 3571
+      },
+      {
+        "source": "apps/web/src/components/MutationStrip.tsx",
+        "sourceBytes": 2477
+      },
+      {
+        "source": "apps/web/src/components/owned-sheets.ts",
+        "sourceBytes": 969
+      },
+      {
+        "source": "apps/web/src/components/PhaseActions.tsx",
+        "sourceBytes": 13362
+      },
+      {
+        "source": "apps/web/src/components/PieceStackInspector.tsx",
+        "sourceBytes": 3292
+      },
+      {
+        "source": "apps/web/src/components/PlayerStatusControls.tsx",
+        "sourceBytes": 17954
+      },
+      {
+        "source": "apps/web/src/components/ResolutionStage.tsx",
+        "sourceBytes": 2995
+      },
+      {
+        "source": "apps/web/src/components/RevealedCardsPanel.tsx",
+        "sourceBytes": 9493
+      },
+      {
+        "source": "apps/web/src/components/SelectedPieceTray.tsx",
+        "sourceBytes": 5457
+      },
+      {
+        "source": "apps/web/src/components/SettingsPanel.tsx",
+        "sourceBytes": 2900
+      },
+      {
+        "source": "apps/web/src/components/setup-location-label.ts",
+        "sourceBytes": 832
+      },
+      {
+        "source": "apps/web/src/components/SetupPanel.tsx",
+        "sourceBytes": 10351
+      },
+      {
+        "source": "apps/web/src/components/SheetCards.tsx",
+        "sourceBytes": 7827
+      },
+      {
+        "source": "apps/web/src/components/SheetReference.tsx",
+        "sourceBytes": 8215
+      },
+      {
+        "source": "apps/web/src/components/StabilizerRayControls.tsx",
+        "sourceBytes": 1366
+      },
+      {
+        "source": "apps/web/src/components/TerminalSummary.tsx",
+        "sourceBytes": 875
+      },
+      {
+        "source": "apps/web/src/components/ToxicorMutationControls.tsx",
+        "sourceBytes": 741
+      },
+      {
+        "source": "apps/web/src/components/TurnProgress.tsx",
+        "sourceBytes": 2584
+      },
+      {
+        "source": "apps/web/src/components/TurnPrompt.tsx",
+        "sourceBytes": 2972
+      },
+      {
+        "source": "apps/web/src/components/UnitCard.tsx",
+        "sourceBytes": 1401
+      },
+      {
+        "source": "apps/web/src/connection-lease.ts",
+        "sourceBytes": 2763
+      },
+      {
+        "source": "apps/web/src/development-setup.ts",
+        "sourceBytes": 1052
+      },
+      {
+        "source": "apps/web/src/main.tsx",
+        "sourceBytes": 109776
+      },
+      {
+        "source": "apps/web/src/monster-assets.ts",
+        "sourceBytes": 221
+      },
+      {
+        "source": "apps/web/src/player-visuals.ts",
+        "sourceBytes": 3114
+      },
+      {
+        "source": "apps/web/src/pwa.ts",
+        "sourceBytes": 1579
+      },
+      {
+        "source": "apps/web/src/routine-stomp.ts",
+        "sourceBytes": 4703
+      },
+      {
+        "source": "node_modules/react-dom/cjs/react-dom-client.production.js",
+        "sourceBytes": 536016
+      },
+      {
+        "source": "node_modules/react-dom/cjs/react-dom.production.js",
+        "sourceBytes": 6655
+      },
+      {
+        "source": "node_modules/react-dom/client.js",
+        "sourceBytes": 1373
+      },
+      {
+        "source": "node_modules/react-dom/index.js",
+        "sourceBytes": 1359
+      },
+      {
+        "source": "node_modules/react/cjs/react-jsx-runtime.production.js",
+        "sourceBytes": 976
+      },
+      {
+        "source": "node_modules/react/cjs/react.production.js",
+        "sourceBytes": 17217
+      },
+      {
+        "source": "node_modules/react/index.js",
+        "sourceBytes": 186
+      },
+      {
+        "source": "node_modules/react/jsx-runtime.js",
+        "sourceBytes": 210
+      },
+      {
+        "source": "node_modules/scheduler/cjs/scheduler.production.js",
+        "sourceBytes": 10181
+      },
+      {
+        "source": "node_modules/scheduler/index.js",
+        "sourceBytes": 194
+      },
+      {
+        "source": "packages/game-engine/src/audited-board-data.ts",
+        "sourceBytes": 91795
+      },
+      {
+        "source": "packages/game-engine/src/audited-board.ts",
+        "sourceBytes": 5801
+      },
+      {
+        "source": "packages/game-engine/src/board.ts",
+        "sourceBytes": 30678
+      },
+      {
+        "source": "packages/game-engine/src/bots.ts",
+        "sourceBytes": 56245
+      },
+      {
+        "source": "packages/game-engine/src/cards.ts",
+        "sourceBytes": 23580
+      },
+      {
+        "source": "packages/game-engine/src/effects.ts",
+        "sourceBytes": 6776
+      },
+      {
+        "source": "packages/game-engine/src/index.ts",
+        "sourceBytes": 244400
+      },
+      {
+        "source": "packages/game-engine/src/monsters.ts",
+        "sourceBytes": 3267
+      },
+      {
+        "source": "packages/game-engine/src/setup.ts",
+        "sourceBytes": 9233
+      },
+      {
+        "source": "packages/game-engine/src/units.ts",
+        "sourceBytes": 6634
+      }
+    ]
+  },
+  "finding": {
+    "homeLoadsMainEntry": true,
+    "lazyBoardReviewSeparateChunk": true,
+    "staticGraphModuleCountUnchangedFromPreviousSnapshot": true,
+    "noImportBoundaryImplemented": true
+  }
+}

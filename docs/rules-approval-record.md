@@ -2,13 +2,13 @@
 
 ## Approval
 
-On 2026-08-26, Solomon approved the current implemented and tested rules behavior for the promoted `playtest-0.2-promoted-guess` ruleset as suitable for the labelled MVP playtest.
+On 2026-08-26, Solomon approved the then-current implemented and tested behavior for the `playtest-0.2-promoted-guess` ruleset as suitable for a clearly labelled MVP playtest. This is a historical playtest authorization only. It is not evidence that the behavior was checked against the user's physical edition.
 
 This approval covers the behavior that is present in the engine and its projections/tests, including setup, movement, combat sequencing, encounters, deployment, Challenge flow, implemented Mutation/Research effects, hidden-information boundaries, reconnect handling, and the temporary playtest victory condition.
 
 ## Explicit boundary
 
-This is not production source sign-off. The following remain fail-closed and are not claimed as approved production rules:
+This record is not source verification, board promotion, or production release approval. The following remain open and are not claimed to match the user's physical edition:
 
 - physical board geometry, printed features, water classes, barriers, bases, lairs, and off-board edges;
 - monster lair assignments and any unresolved monster special-effect boundaries;
@@ -17,7 +17,7 @@ This is not production source sign-off. The following remain fail-closed and are
 - unresolved stacking/conflict or component-dependent exceptions;
 - managed persistence, deployment, security, accessibility, and release acceptance.
 
-The approval authorizes the current best-guess board and rules behavior to be used as an explicitly provisional production release. It does not convert guessed board data or source-gated rules into source-faithful production data, and it does not replace the second-reviewer and release-sign-off requirements in [`docs/review-signoff.md`](review-signoff.md). Future verified board data must be released as a new immutable board version; existing matches remain pinned to this version.
+The approval authorizes only the playtest scope stated above. It does not authorize a production release, convert candidate board or component data into source-verified facts, or replace the reviewer and release-sign-off requirements in [`docs/review-signoff.md`](review-signoff.md). Any source-verified replacement board must have a recorded version and content hash; the candidate currently used by runtime matches remains identified by its existing board ID and hash for compatibility.
 
 ## Evidence
 

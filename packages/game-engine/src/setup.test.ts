@@ -37,6 +37,13 @@ test("setup rejects duplicate assignments and invalid lairs", () => {
   assert.throws(() => chooseLair(state, 0, "lair-b-1"), /not valid/);
 });
 
+test("setup rejects a branch catalogue that cannot assign every seat", () => {
+  assert.throws(
+    () => createSetup({ ...definition, playerCount: 4, eligibleBranches: ["Army", "Navy", "Air Force"] }),
+    /branch catalogue has too few entries/
+  );
+});
+
 test("a complete setup requires distinct lairs and a starting choice for every player", () => {
   let state = createSetup(definition);
   state = chooseMonster(state, 0, "monster-a");

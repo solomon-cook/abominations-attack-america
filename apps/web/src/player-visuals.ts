@@ -1,4 +1,4 @@
-import type { Branch, GameState, MilitaryUnit } from "@abominations/game-engine";
+import { isHexKey, type Branch, type GameState, type MilitaryUnit } from "@abominations/game-engine";
 
 export const BRANCH_MARK: Record<Branch, string> = {
   Army: "A",
@@ -11,6 +11,18 @@ const DEFAULT_BRANCHES: readonly Branch[] = ["Army", "Navy", "Air Force", "Marin
 
 export function branchForPlayer(game: GameState, playerIndex: number): Branch {
   return game.setupAssignments?.[playerIndex]?.branch ?? DEFAULT_BRANCHES[playerIndex % DEFAULT_BRANCHES.length]!;
+}
+
+export function branchDeploymentCounts(game: GameState, playerIndex: number, branch: Branch): { deployed: number; reserve: number } {
+  const branchUnits = game.units.filter((unit) => unit.ownerPlayer === playerIndex
+    && unit.branch === branch
+    && !game.removedUnitIds.includes(unit.id)
+    && unit.location !== "permanently-removed"
+    && (unit.health === undefined || unit.health > 0));
+  return {
+    deployed: branchUnits.filter((unit) => isHexKey(unit.location)).length,
+    reserve: branchUnits.filter((unit) => unit.location === "record-tile").length,
+  };
 }
 
 export type PlayerControlBadge = { id: "national-guard" | "mecha-monster" | "captain-colossal"; mark: "NG" | "MM" | "CC"; label: string };

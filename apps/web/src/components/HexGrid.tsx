@@ -1,65 +1,23 @@
 import {
   buildBoardIndex,
-  FULL_HONEYCOMB_BOARD,
   AUDITED_BOARD,
   PROVISIONAL_AUTHORITATIVE_BOARD,
-  locationIdToHexKey,
   isHexKey,
   locations,
   type GameState,
   type HexKey,
   type BoardHex,
-  type BoardDefinition,
 } from "@abominations/game-engine";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { mutationArt } from "./MutationStrip";
 import { cardDefinition } from "@abominations/game-engine";
-import { buildDisplayHexLayout, AUDITED_TILE_WIDTH_PERCENT } from "../board-layout";
+import { renderedHexLayout, AUDITED_TILE_WIDTH_PERCENT } from "../board-layout";
 import { boardForGame } from "../board-pin";
 import { TerrainArt, FeatureMarkers, BoardGridLines } from "./BoardTerrain";
 import { StompedMarker } from "./BoardFeatureOverlays";
 import { monsterAssetSlug } from "../monster-assets";
 import "../board-pieces.css";
-
-function displayHexesForBoard(board: BoardDefinition | undefined) {
-  if (!board) return [];
-  if (board.id === AUDITED_BOARD.id || board.id === FULL_HONEYCOMB_BOARD.id || board.id === PROVISIONAL_AUTHORITATIVE_BOARD.id) {
-    return buildDisplayHexLayout(board).map(({ hex, left, top }) => ({
-      hex,
-      // The candidate shell must not inherit the development fixture's named
-      // locations or artwork. Those overlays are only authoritative for the
-      // explicitly pinned development board until the physical cells are reviewed.
-      place: undefined,
-      left,
-      top,
-      developmentFixture: false,
-    }));
-  }
-  const developmentPlaces = new Map(locations.map((place) => [locationIdToHexKey(place.id), place]));
-  const developmentHexes = new Map(Object.values(board.hexes).map((hex) => [hex.key, hex]));
-  const candidateLayout = buildDisplayHexLayout(FULL_HONEYCOMB_BOARD);
-  const candidateKeys = new Set(candidateLayout.map(({ hex }) => hex.key));
-  const shell = candidateLayout.map(({ hex: candidateHex, left, top }) => {
-    const developmentHex = developmentHexes.get(candidateHex.key);
-    return {
-      // The candidate shell is presentation-only here. Only the nine named
-      // development hexes below remain enabled by the actual board selectors.
-      hex: developmentHex ?? candidateHex,
-      place: developmentPlaces.get(candidateHex.key),
-      left,
-      top,
-      developmentFixture: Boolean(developmentHex),
-    };
-  });
-  const outlyingDevelopmentHexes = [...developmentHexes.values()]
-    .filter((hex) => !candidateKeys.has(hex.key))
-    .map((hex) => {
-      const place = developmentPlaces.get(hex.key);
-      return { hex, place, left: place?.x ?? 50, top: place?.y ?? 50, developmentFixture: true };
-    });
-  return [...shell, ...outlyingDevelopmentHexes];
-}
 
 function boardArtForHex(hex: BoardHex, place?: (typeof locations)[number]) {
   if (place?.kind === "city" || hex.features.some((feature) => feature.kind === "city")) return "/assets/board/coastal-city/small/coastal_city_0deg.webp";
@@ -138,7 +96,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
   const peekCards = peekMonster ? (game.players[game.monsters.indexOf(peekMonster)]?.mutationCardIds ?? []).filter(id=>cardDefinition(id)) : [];
   const board = boardForGame(game);
   const audited = board?.id === AUDITED_BOARD.id;
-  const boardHexes = useMemo(() => displayHexesForBoard(board), [board]);
+  const boardHexes = useMemo(() => renderedHexLayout(board), [board]);
   const gridRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const boardIndex = useMemo(() => board ? buildBoardIndex(board) : undefined, [board]);
@@ -305,6 +263,12 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
         const boardArt = audited ? undefined : boardArtForHex(hex, place);
         const stomped = game.stompedLocations.includes(placeKey);
         const occupantCount = monstersHere.length + unitsHere.length;
+        const showMonsterPeek = (element: HTMLButtonElement) => {
+          const monster = monstersHere[0];
+          if (!monster) return;
+          const rect = element.getBoundingClientRect();
+          setMonsterPeek({ id: monster.id, x: rect.left + rect.width / 2, y: rect.top });
+        };
         const provisionalBoard = audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id;
         const trophyChoice = canAct && game.pendingDecision?.type === "trophy-choice";
         const trophySelectableUnit = trophyChoice ? unitsHere.find((unit) => trophyUnitIds.has(unit.id)) : undefined;
@@ -348,15 +312,16 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
             className={`hex-tile ${place?.kind ?? (audited ? "audited-tile" : "unresolved")} ${hex.waterClass === "land" || hex.waterClass === "lakeshore" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${deploymentLegal ? "deployment-legal" : ""} ${retreatLegal ? "retreat-legal" : ""} ${trophySelectableUnit ? "deployment-legal trophy-legal" : deploymentLegal || retreatLegal || monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%`, ...(audited ? { width: `${AUDITED_TILE_WIDTH_PERCENT}%` } : {}) }}
             ref={(node) => { buttonRefs.current[placeKey] = node; }}
-            onFocus={() => onFocusHex(placeKey)}
+            onFocus={(event) => { onFocusHex(placeKey); showMonsterPeek(event.currentTarget); }}
+            onBlur={() => setMonsterPeek(null)}
             onKeyDown={(event) => {
               if (event.key === "ArrowLeft" || event.key === "ArrowRight" || event.key === "ArrowUp" || event.key === "ArrowDown") {
                 event.preventDefault();
                 moveFocus(event.key.slice(5).toLowerCase() as "left" | "right" | "up" | "down");
               }
             }}
-            onMouseEnter={(event) => { if(monsterLegal || unitLegal) onPreviewPath(placeKey); const monster=game.monsters.find(m=>m.location===placeKey); if(monster) {const r=event.currentTarget.getBoundingClientRect();setMonsterPeek({id:monster.id,x:r.left+r.width/2,y:r.top});} }}
-            onMouseLeave={() => {onClearPreview();setMonsterPeek(null);}}
+            onMouseEnter={(event) => { if(monsterLegal || unitLegal) onPreviewPath(placeKey); showMonsterPeek(event.currentTarget); }}
+            onMouseLeave={(event) => { onClearPreview(); if (document.activeElement !== event.currentTarget) setMonsterPeek(null); }}
             onClick={(event) => {
               if (setupLegal) { onSetupLocation?.(placeKey); return; }
               if (retreatLegal) { onRetreat(placeKey); return; }

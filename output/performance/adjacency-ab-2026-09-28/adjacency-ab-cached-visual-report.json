@@ -1,0 +1,77 @@
+{
+  "started": "2026-09-28T18:10:32.405Z",
+  "pendingArtAllowed": false,
+  "viewports": [
+    {
+      "width": 1280,
+      "height": 720,
+      "checks": [
+        "first-match guide dismissed before board pointer input",
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/minimap/keyboard/touch/resize",
+        "movement confirmed; encounter resolved; legal unit deployed; deployment tray counts refreshed at 1280x720"
+      ],
+      "errors": [],
+      "brokenImages": [],
+      "resources": {
+        "navigation": {
+          "domContentLoadedMs": 467,
+          "loadMs": 473
+        },
+        "terrain": {
+          "measurement": "Cumulative after setup, camera interactions, movement, encounter and the selected follow-up action; viewport has a fresh browser context.",
+          "resourceCount": 842,
+          "uniqueResourceCount": 790,
+          "transferBytes": 2987240,
+          "encodedBodyBytes": 2823740,
+          "decodedBodyBytes": 2823740,
+          "currentDecodedImageCount": 336,
+          "estimatedCurrentBitmapBytes": 76382208,
+          "sizes": {
+            "256": 336,
+            "512": 356,
+            "1024": 150
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "checks": [
+        "first-match guide dismissed before board pointer input",
+        "user setup completed; 336 cells",
+        "details preserves camera",
+        "bounds/wheel/drag/touch/resize",
+        "movement confirmed; encounter resolved; research alternative passed the turn; branch/player tray followed Player 2 and matched its branch sheet counts"
+      ],
+      "errors": [],
+      "brokenImages": [],
+      "resources": {
+        "navigation": {
+          "domContentLoadedMs": 208,
+          "loadMs": 210
+        },
+        "terrain": {
+          "measurement": "Cumulative after setup, camera interactions, movement, encounter and the selected follow-up action; viewport has a fresh browser context.",
+          "resourceCount": 580,
+          "uniqueResourceCount": 573,
+          "transferBytes": 2950706,
+          "encodedBodyBytes": 2809040,
+          "decodedBodyBytes": 2809040,
+          "currentDecodedImageCount": 336,
+          "estimatedCurrentBitmapBytes": 76382208,
+          "sizes": {
+            "256": 336,
+            "512": 174,
+            "1024": 70
+          }
+        }
+      },
+      "passed": true
+    }
+  ],
+  "finished": "2026-09-28T18:11:05.955Z"
+}

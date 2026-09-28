@@ -1,0 +1,822 @@
+{
+  "started": "2026-09-28T21:23:14.952Z",
+  "scope": "Fixture-level Chromium evidence for a real applyCommand move and Fight resolution generating pendingRetreat.monsterId, then feeding that generated state to production PhaseActions, HexGrid, and BoardViewport. PhaseActions presents the monster-retreat instruction; the engine's legal options drive board highlights and immediate destination commands. Controlled combat stats bound the scenario. It checks default and expanded panel preferences while the production route temporarily clears the board only for the canAct seat, confirms the phase status stays readable and the panel preference returns after resolution, and tests every legal destination. A separate read-only projection checks that panel and single-monster camera focus stay unchanged for waiting users. It does not establish an engine path for the distinct multi-unit retreat-choice box, a full main-route flow, persisted-service behavior, physical-edition rules, or accessibility conformance.",
+  "browser": "Chromium via Playwright",
+  "scenarios": {
+    "desktopPointer": {
+      "status": "passed",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "input": "pointer",
+      "initialPanelPreference": "closed",
+      "panelTemporarilyCollapsed": true,
+      "fixture": {
+        "seed": 8,
+        "moveCommand": {
+          "type": "move",
+          "path": [
+            "los-angeles",
+            "denver"
+          ]
+        },
+        "battleFightEvents": [
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "fight.resolved"
+        ],
+        "combatStatsControlled": {
+          "unitDefense": 99,
+          "monsterHealth": 40
+        },
+        "generatedPendingMonsterId": "monster-1",
+        "battleId": "monster-1:1:-1,0"
+      },
+      "phaseActions": {
+        "status": "passed",
+        "generatedPendingRetreatConsumed": true,
+        "renderedInHiddenTurnPanelDuringImmediateChoice": true,
+        "label": "Zorb must retreat.",
+        "instruction": "Select a glowing adjacent hex on the board.",
+        "destinationControls": "production HexGrid legal highlights; one immediate retreat command per selected hex"
+      },
+      "legalHighlights": [
+        "-1,1",
+        "-2,2"
+      ],
+      "visibleLegalCells": [
+        {
+          "key": "-2,2",
+          "bounds": {
+            "x": 475.77252197265625,
+            "y": 491.6640625,
+            "right": 540.6475219726562,
+            "bottom": 547.8359375,
+            "width": 64.875,
+            "height": 56.171875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        },
+        {
+          "key": "-1,1",
+          "bounds": {
+            "x": 739.3350219726562,
+            "y": 352.1640625,
+            "right": 804.2100219726562,
+            "bottom": 408.3359375,
+            "width": 64.875,
+            "height": 56.171875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        }
+      ],
+      "selectionResults": [
+        {
+          "destination": "-1,1",
+          "input": "pointer",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-1,1",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        },
+        {
+          "destination": "-2,2",
+          "input": "pointer",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-2,2",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        }
+      ],
+      "promptBounds": {
+        "x": 457.5078125,
+        "y": 90,
+        "right": 822.4921875,
+        "bottom": 134,
+        "width": 364.984375,
+        "height": 44,
+        "viewportWidth": 1280,
+        "viewportHeight": 900
+      },
+      "statusMessageBounds": {
+        "x": 8,
+        "y": 14.28125,
+        "right": 109.3125,
+        "bottom": 45.71875,
+        "width": 101.3125,
+        "height": 31.4375,
+        "viewportWidth": 1280,
+        "viewportHeight": 900
+      },
+      "promptStatusOverlap": false,
+      "noHorizontalOverflow": true
+    },
+    "desktopPointerExpandedPreference": {
+      "status": "passed",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "input": "pointer",
+      "initialPanelPreference": "open",
+      "panelTemporarilyCollapsed": true,
+      "fixture": {
+        "seed": 8,
+        "moveCommand": {
+          "type": "move",
+          "path": [
+            "los-angeles",
+            "denver"
+          ]
+        },
+        "battleFightEvents": [
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "fight.resolved"
+        ],
+        "combatStatsControlled": {
+          "unitDefense": 99,
+          "monsterHealth": 40
+        },
+        "generatedPendingMonsterId": "monster-1",
+        "battleId": "monster-1:1:-1,0"
+      },
+      "phaseActions": {
+        "status": "passed",
+        "generatedPendingRetreatConsumed": true,
+        "renderedInHiddenTurnPanelDuringImmediateChoice": true,
+        "label": "Zorb must retreat.",
+        "instruction": "Select a glowing adjacent hex on the board.",
+        "destinationControls": "production HexGrid legal highlights; one immediate retreat command per selected hex"
+      },
+      "legalHighlights": [
+        "-1,1",
+        "-2,2"
+      ],
+      "visibleLegalCells": [
+        {
+          "key": "-2,2",
+          "bounds": {
+            "x": 475.77252197265625,
+            "y": 491.6640625,
+            "right": 540.6475219726562,
+            "bottom": 547.8359375,
+            "width": 64.875,
+            "height": 56.171875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        },
+        {
+          "key": "-1,1",
+          "bounds": {
+            "x": 739.3350219726562,
+            "y": 352.1640625,
+            "right": 804.2100219726562,
+            "bottom": 408.3359375,
+            "width": 64.875,
+            "height": 56.171875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        }
+      ],
+      "selectionResults": [
+        {
+          "destination": "-1,1",
+          "input": "pointer",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-1,1",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        },
+        {
+          "destination": "-2,2",
+          "input": "pointer",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-2,2",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        }
+      ],
+      "promptBounds": {
+        "x": 457.5078125,
+        "y": 90,
+        "right": 822.4921875,
+        "bottom": 134,
+        "width": 364.984375,
+        "height": 44,
+        "viewportWidth": 1280,
+        "viewportHeight": 900
+      },
+      "statusMessageBounds": {
+        "x": 8,
+        "y": 14.28125,
+        "right": 109.3125,
+        "bottom": 45.71875,
+        "width": 101.3125,
+        "height": 31.4375,
+        "viewportWidth": 1280,
+        "viewportHeight": 900
+      },
+      "promptStatusOverlap": false,
+      "noHorizontalOverflow": true
+    },
+    "phoneTouch": {
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "input": "touch",
+      "initialPanelPreference": "closed",
+      "panelTemporarilyCollapsed": true,
+      "fixture": {
+        "seed": 8,
+        "moveCommand": {
+          "type": "move",
+          "path": [
+            "los-angeles",
+            "denver"
+          ]
+        },
+        "battleFightEvents": [
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "fight.resolved"
+        ],
+        "combatStatsControlled": {
+          "unitDefense": 99,
+          "monsterHealth": 40
+        },
+        "generatedPendingMonsterId": "monster-1",
+        "battleId": "monster-1:1:-1,0"
+      },
+      "phaseActions": {
+        "status": "passed",
+        "generatedPendingRetreatConsumed": true,
+        "renderedInHiddenTurnPanelDuringImmediateChoice": true,
+        "label": "Zorb must retreat.",
+        "instruction": "Select a glowing adjacent hex on the board.",
+        "destinationControls": "production HexGrid legal highlights; one immediate retreat command per selected hex"
+      },
+      "legalHighlights": [
+        "-1,1",
+        "-2,2"
+      ],
+      "visibleLegalCells": [
+        {
+          "key": "-2,2",
+          "bounds": {
+            "x": 40.999359130859375,
+            "y": 393.53656005859375,
+            "right": 101.82748413085938,
+            "bottom": 446.20843505859375,
+            "width": 60.828125,
+            "height": 52.671875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        },
+        {
+          "key": "-1,1",
+          "bounds": {
+            "x": 288.1556091308594,
+            "y": 262.72406005859375,
+            "right": 348.9837341308594,
+            "bottom": 315.39593505859375,
+            "width": 60.828125,
+            "height": 52.671875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        }
+      ],
+      "selectionResults": [
+        {
+          "destination": "-1,1",
+          "input": "touch",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-1,1",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        },
+        {
+          "destination": "-2,2",
+          "input": "touch",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-2,2",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        }
+      ],
+      "promptBounds": {
+        "x": 19.5,
+        "y": 160,
+        "right": 370.5,
+        "bottom": 202,
+        "width": 351,
+        "height": 42,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "statusMessageBounds": {
+        "x": 8,
+        "y": 24.28125,
+        "right": 109.3125,
+        "bottom": 55.71875,
+        "width": 101.3125,
+        "height": 31.4375,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "promptStatusOverlap": false,
+      "noHorizontalOverflow": true
+    },
+    "phoneTouchExpandedPreference": {
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "input": "touch",
+      "initialPanelPreference": "open",
+      "panelTemporarilyCollapsed": true,
+      "fixture": {
+        "seed": 8,
+        "moveCommand": {
+          "type": "move",
+          "path": [
+            "los-angeles",
+            "denver"
+          ]
+        },
+        "battleFightEvents": [
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "fight.resolved"
+        ],
+        "combatStatsControlled": {
+          "unitDefense": 99,
+          "monsterHealth": 40
+        },
+        "generatedPendingMonsterId": "monster-1",
+        "battleId": "monster-1:1:-1,0"
+      },
+      "phaseActions": {
+        "status": "passed",
+        "generatedPendingRetreatConsumed": true,
+        "renderedInHiddenTurnPanelDuringImmediateChoice": true,
+        "label": "Zorb must retreat.",
+        "instruction": "Select a glowing adjacent hex on the board.",
+        "destinationControls": "production HexGrid legal highlights; one immediate retreat command per selected hex"
+      },
+      "legalHighlights": [
+        "-1,1",
+        "-2,2"
+      ],
+      "visibleLegalCells": [
+        {
+          "key": "-2,2",
+          "bounds": {
+            "x": 40.999359130859375,
+            "y": 393.53656005859375,
+            "right": 101.82748413085938,
+            "bottom": 446.20843505859375,
+            "width": 60.828125,
+            "height": 52.671875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        },
+        {
+          "key": "-1,1",
+          "bounds": {
+            "x": 288.1556091308594,
+            "y": 262.72406005859375,
+            "right": 348.9837341308594,
+            "bottom": 315.39593505859375,
+            "width": 60.828125,
+            "height": 52.671875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        }
+      ],
+      "selectionResults": [
+        {
+          "destination": "-1,1",
+          "input": "touch",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-1,1",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        },
+        {
+          "destination": "-2,2",
+          "input": "touch",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-2,2",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        }
+      ],
+      "promptBounds": {
+        "x": 19.5,
+        "y": 160,
+        "right": 370.5,
+        "bottom": 202,
+        "width": 351,
+        "height": 42,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "statusMessageBounds": {
+        "x": 8,
+        "y": 24.28125,
+        "right": 109.3125,
+        "bottom": 55.71875,
+        "width": 101.3125,
+        "height": 31.4375,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "promptStatusOverlap": false,
+      "noHorizontalOverflow": true
+    },
+    "compactTouch": {
+      "status": "passed",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "input": "touch",
+      "initialPanelPreference": "closed",
+      "panelTemporarilyCollapsed": true,
+      "fixture": {
+        "seed": 8,
+        "moveCommand": {
+          "type": "move",
+          "path": [
+            "los-angeles",
+            "denver"
+          ]
+        },
+        "battleFightEvents": [
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "fight.resolved"
+        ],
+        "combatStatsControlled": {
+          "unitDefense": 99,
+          "monsterHealth": 40
+        },
+        "generatedPendingMonsterId": "monster-1",
+        "battleId": "monster-1:1:-1,0"
+      },
+      "phaseActions": {
+        "status": "passed",
+        "generatedPendingRetreatConsumed": true,
+        "renderedInHiddenTurnPanelDuringImmediateChoice": true,
+        "label": "Zorb must retreat.",
+        "instruction": "Select a glowing adjacent hex on the board.",
+        "destinationControls": "production HexGrid legal highlights; one immediate retreat command per selected hex"
+      },
+      "legalHighlights": [
+        "-1,1",
+        "-2,2"
+      ],
+      "visibleLegalCells": [
+        {
+          "key": "-2,2",
+          "bounds": {
+            "x": 24.975296020507812,
+            "y": 345.0609436035156,
+            "right": 78.30342102050781,
+            "bottom": 391.2328186035156,
+            "width": 53.328125,
+            "height": 46.171875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        },
+        {
+          "key": "-1,1",
+          "bounds": {
+            "x": 241.6784210205078,
+            "y": 230.35781860351562,
+            "right": 295.00653076171875,
+            "bottom": 276.5296936035156,
+            "width": 53.32810974121094,
+            "height": 46.171875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        }
+      ],
+      "selectionResults": [
+        {
+          "destination": "-1,1",
+          "input": "touch",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-1,1",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        },
+        {
+          "destination": "-2,2",
+          "input": "touch",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-2,2",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        }
+      ],
+      "promptBounds": {
+        "x": 16,
+        "y": 160,
+        "right": 304,
+        "bottom": 218,
+        "width": 288,
+        "height": 58,
+        "viewportWidth": 320,
+        "viewportHeight": 740
+      },
+      "statusMessageBounds": {
+        "x": 8,
+        "y": 24.28125,
+        "right": 109.3125,
+        "bottom": 55.71875,
+        "width": 101.3125,
+        "height": 31.4375,
+        "viewportWidth": 320,
+        "viewportHeight": 740
+      },
+      "promptStatusOverlap": false,
+      "noHorizontalOverflow": true
+    },
+    "compactTouchExpandedPreference": {
+      "status": "passed",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "input": "touch",
+      "initialPanelPreference": "open",
+      "panelTemporarilyCollapsed": true,
+      "fixture": {
+        "seed": 8,
+        "moveCommand": {
+          "type": "move",
+          "path": [
+            "los-angeles",
+            "denver"
+          ]
+        },
+        "battleFightEvents": [
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "battle.target-required",
+          "fight.resolved"
+        ],
+        "combatStatsControlled": {
+          "unitDefense": 99,
+          "monsterHealth": 40
+        },
+        "generatedPendingMonsterId": "monster-1",
+        "battleId": "monster-1:1:-1,0"
+      },
+      "phaseActions": {
+        "status": "passed",
+        "generatedPendingRetreatConsumed": true,
+        "renderedInHiddenTurnPanelDuringImmediateChoice": true,
+        "label": "Zorb must retreat.",
+        "instruction": "Select a glowing adjacent hex on the board.",
+        "destinationControls": "production HexGrid legal highlights; one immediate retreat command per selected hex"
+      },
+      "legalHighlights": [
+        "-1,1",
+        "-2,2"
+      ],
+      "visibleLegalCells": [
+        {
+          "key": "-2,2",
+          "bounds": {
+            "x": 24.975296020507812,
+            "y": 345.0609436035156,
+            "right": 78.30342102050781,
+            "bottom": 391.2328186035156,
+            "width": 53.328125,
+            "height": 46.171875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        },
+        {
+          "key": "-1,1",
+          "bounds": {
+            "x": 241.6784210205078,
+            "y": 230.35781860351562,
+            "right": 295.00653076171875,
+            "bottom": 276.5296936035156,
+            "width": 53.32810974121094,
+            "height": 46.171875
+          },
+          "centerVisibleAndUnobscured": true,
+          "centerHitTarget": {
+            "tag": "SPAN",
+            "className": "node",
+            "id": ""
+          },
+          "fullyVisibleInViewport": true,
+          "fullyVisibleInBoard": true,
+          "touchTargetAtLeast44px": true
+        }
+      ],
+      "selectionResults": [
+        {
+          "destination": "-1,1",
+          "input": "touch",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-1,1",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        },
+        {
+          "destination": "-2,2",
+          "input": "touch",
+          "commandCount": 1,
+          "eventAction": "retreat.resolved",
+          "eventCountDelta": 1,
+          "finalMonsterLocation": "-2,2",
+          "pendingRetreatCleared": true,
+          "panelPreferenceRestored": true
+        }
+      ],
+      "promptBounds": {
+        "x": 16,
+        "y": 160,
+        "right": 304,
+        "bottom": 218,
+        "width": 288,
+        "height": 58,
+        "viewportWidth": 320,
+        "viewportHeight": 740
+      },
+      "statusMessageBounds": {
+        "x": 8,
+        "y": 24.28125,
+        "right": 109.3125,
+        "bottom": 55.71875,
+        "width": 101.3125,
+        "height": 31.4375,
+        "viewportWidth": 320,
+        "viewportHeight": 740
+      },
+      "promptStatusOverlap": false,
+      "noHorizontalOverflow": true
+    }
+  },
+  "runtimeErrors": [],
+  "browserVersion": "140.0.7339.186",
+  "readOnlyProjection": {
+    "status": "passed",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "panelVisible": true,
+    "panelPreferenceOpen": true,
+    "focusedLegalDestinationKeys": [],
+    "retainedSingleFocusKey": "-1,0",
+    "actionableRetreatHighlights": 0,
+    "toggleExpanded": true
+  },
+  "completed": "2026-09-28T21:23:28.779Z",
+  "status": "passed"
+}

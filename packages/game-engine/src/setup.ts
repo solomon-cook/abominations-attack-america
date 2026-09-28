@@ -15,11 +15,11 @@ export type SetupAction =
 
 export interface SetupDefinition {
   readonly playerCount: 2 | 3 | 4;
-  /** Supplied by the verified component catalogue; no fallback roster is inferred here. */
+  /** Supplied by the selected setup catalogue; no fallback roster is inferred here. */
   readonly monsterIds: readonly string[];
-  /** Supplied by the verified component catalogue; National Guard is intentionally excluded. */
+  /** Supplied by the selected setup catalogue; National Guard is intentionally excluded. */
   readonly eligibleBranches: readonly Branch[];
-  /** Supplied by the verified board definition. */
+  /** Supplied by the selected board candidate. */
   readonly lairsByMonster: Readonly<Record<string, readonly string[]>>;
 }
 
@@ -78,12 +78,13 @@ function nextUnassigned(state: SetupState, field: keyof Pick<SetupSeat, "monster
 
 export function createSetup(definition: SetupDefinition): SetupState {
   if (![2, 3, 4].includes(definition.playerCount)) throw new Error("A production match must have exactly 2, 3, or 4 players.");
-  if (definition.monsterIds.length < definition.playerCount) throw new Error("The verified monster catalogue has too few entries for this match.");
+  if (definition.monsterIds.length < definition.playerCount) throw new Error("The setup monster catalogue has too few entries for this match.");
   if (new Set(definition.monsterIds).size !== definition.monsterIds.length) throw new Error("The setup monster catalogue contains duplicates.");
+  if (definition.eligibleBranches.length < definition.playerCount) throw new Error("The setup branch catalogue has too few entries for this match.");
   if (new Set(definition.eligibleBranches).size !== definition.eligibleBranches.length) throw new Error("The setup branch catalogue contains duplicates.");
   for (const monsterId of definition.monsterIds) {
     const lairs = definition.lairsByMonster[monsterId] ?? [];
-    if (lairs.length !== 3 || new Set(lairs).size !== 3) throw new Error(`Monster ${monsterId} must have exactly three distinct verified lairs.`);
+    if (lairs.length !== 3 || new Set(lairs).size !== 3) throw new Error(`Monster ${monsterId} must have exactly three distinct configured lairs.`);
   }
   return {
     definition,
@@ -95,7 +96,7 @@ export function createSetup(definition: SetupDefinition): SetupState {
 export function chooseMonster(state: SetupState, playerIndex: number, monsterId: string): SetupState {
   if (state.phase !== "monster-selection") throw new Error("Monster selection is not the current setup step.");
   if (nextUnassigned(state, "monsterId")?.playerIndex !== playerIndex) throw new Error("Monster selection must follow the ordered setup turn.");
-  if (!state.definition.monsterIds.includes(monsterId)) throw new Error(`Monster ${monsterId} is not in the verified setup catalogue.`);
+  if (!state.definition.monsterIds.includes(monsterId)) throw new Error(`Monster ${monsterId} is not in the configured setup catalogue.`);
   if (state.seats.some((candidate) => candidate.monsterId === monsterId)) throw new Error(`Monster ${monsterId} has already been claimed.`);
   const next = replaceSeat(state, { ...seat(state, playerIndex), monsterId });
   return nextUnassigned(next, "monsterId") ? next : { ...next, phase: "branch-selection" };

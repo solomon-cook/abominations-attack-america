@@ -13,8 +13,9 @@ import {
   legalLaserFenceTargets,
   legalMolecularCannonTargets,
   legalMonsterPaths,
-  movementPathAllowed,
+  legalMovementNeighbors,
   legalSubmarineTargets,
+  locationIdToHexKey,
   monsters,
   shortestLegalUnitPaths,
   setupDeploymentState,
@@ -27,9 +28,34 @@ import {
 export const BRANCHES = ["Army", "Navy", "Air Force", "Marines"] as const;
 export type BotBranch = typeof BRANCHES[number];
 export type BotTactic = "force-first" | "research-first";
+export type BotTacticOverrides = ReadonlyMap<number, BotTactic>;
+
+export interface BotResearchDrawGateDiagnostics {
+  researchDeckAvailable: boolean;
+  deploymentNotStarted: boolean;
+  researchHandBelowTwo: boolean;
+  researchFirstPolicy: boolean;
+  activeMilitaryScreen: boolean;
+  objectiveThreatAbsent: boolean;
+  blockerOpportunityAbsent: boolean;
+}
+
+export interface BotDeployDecisionDiagnostics {
+  playerIndex: number;
+  path: "optional-research-choice" | "no-deployment-choices" | "priority-giant-placement";
+  deploymentChoiceCount: number | null;
+  legalResearchDrawAvailable: boolean;
+  selectedCommandType: GameCommand["type"];
+  gates: BotResearchDrawGateDiagnostics | null;
+  eligible: boolean | null;
+}
+
+export type BotDeployDecisionObserver = (diagnostics: BotDeployDecisionDiagnostics) => void;
 
 /** Pick a match-stable, evenly mixed style from the match seed and bot seat. */
-export function botTacticForPlayer(state: GameState, playerIndex: number): BotTactic {
+export function botTacticForPlayer(state: GameState, playerIndex: number, overrides?: BotTacticOverrides): BotTactic {
+  const override = overrides?.get(playerIndex);
+  if (override) return override;
   let value = ((state.rng.seed >>> 0) ^ Math.imul(playerIndex + 1, 0x9e3779b1)) >>> 0;
   for (let index = 0; index < state.matchId.length; index += 1) {
     value = Math.imul(value ^ state.matchId.charCodeAt(index), 0x85ebca6b) >>> 0;
@@ -66,6 +92,8 @@ const counterPicks: Record<string, readonly string[]> = {
   Tomanagi: ["Konk", "Gargantis", "Toxicor", "Megaclaw", "Zorb"],
 };
 
+const defaultMonsterPreference = ["Gargantis", "Toxicor", "Megaclaw", "Konk", "Tomanagi", "Zorb"] as const;
+
 const branchCounters: Record<string, readonly BotBranch[]> = {
   Konk: ["Army", "Marines", "Navy", "Air Force"],
   Zorb: ["Marines", "Army", "Air Force", "Navy"],
@@ -81,8 +109,10 @@ function monsterName(monsterId?: string): string | undefined {
 
 function hexDistance(state: GameState, left: string, right: string): number {
   const board = boardForState(state);
-  const a = board.hexes[left as HexKey]?.coord;
-  const b = board.hexes[right as HexKey]?.coord;
+  const leftKey = board.hexes[left as HexKey] ? left as HexKey : locationIdToHexKey(left);
+  const rightKey = board.hexes[right as HexKey] ? right as HexKey : locationIdToHexKey(right);
+  const a = leftKey ? board.hexes[leftKey]?.coord : undefined;
+  const b = rightKey ? board.hexes[rightKey]?.coord : undefined;
   if (!a || !b) return 99;
   const dq = a.q - b.q;
   const dr = a.r - b.r;
@@ -141,30 +171,86 @@ function selectChallengeMutation(cardIds: readonly string[]): string | undefined
   return [...cardIds].sort((a, b) => (challengeMutationPriority[b] ?? 0) - (challengeMutationPriority[a] ?? 0))[0];
 }
 
-function preferredBranch(enemyName: string, available: readonly string[]): BotBranch {
-  const preference = branchCounters[enemyName] ?? ["Marines", "Army", "Air Force", "Navy"];
-  return (preference.find((branch) => available.includes(branch)) ?? available[0] ?? "Army") as BotBranch;
+function pickMonsterAgainstRivals(available: readonly string[], rivalNames: readonly string[]): string | undefined {
+  const fallbackRank = (name: string) => {
+    const rank = defaultMonsterPreference.indexOf(name as typeof defaultMonsterPreference[number]);
+    return rank < 0 ? defaultMonsterPreference.length : rank;
+  };
+  const candidateScore = (monsterId: string) => {
+    const candidateName = monsterName(monsterId) ?? monsterId;
+    if (rivalNames.length === 0) return fallbackRank(candidateName);
+    return rivalNames.reduce((score, rivalName) => {
+      const preference = counterPicks[rivalName] ?? defaultMonsterPreference;
+      const rank = preference.indexOf(candidateName);
+      return score + (rank < 0 ? preference.length : rank);
+    }, 0);
+  };
+  return [...available].sort((left, right) =>
+    candidateScore(left) - candidateScore(right)
+    || fallbackRank(monsterName(left) ?? left) - fallbackRank(monsterName(right) ?? right)
+    || left.localeCompare(right),
+  )[0];
+}
+
+function preferredBranch(rivalNames: readonly string[], available: readonly string[]): BotBranch {
+  const fallback = ["Marines", "Army", "Air Force", "Navy"] as const;
+  const candidateScore = (branch: string) => {
+    if (rivalNames.length === 0) return fallback.indexOf(branch as typeof fallback[number]);
+    return rivalNames.reduce((score, rivalName) => {
+      const preference = branchCounters[rivalName] ?? fallback;
+      const rank = preference.indexOf(branch as BotBranch);
+      return score + (rank < 0 ? preference.length : rank);
+    }, 0);
+  };
+  const picked = [...available].sort((left, right) =>
+    candidateScore(left) - candidateScore(right)
+    || BRANCHES.indexOf(left as BotBranch) - BRANCHES.indexOf(right as BotBranch)
+    || left.localeCompare(right),
+  )[0];
+  return (picked ?? fallback.find((branch) => available.includes(branch)) ?? available[0] ?? "Army") as BotBranch;
+}
+
+function pickLairAwayFromRivals(state: GameState, options: readonly string[], rivalLairs: readonly string[]): string | undefined {
+  const separation = (lair: string) => {
+    const distances = rivalLairs.map((rivalLair) => hexDistance(state, lair, rivalLair));
+    return {
+      nearest: distances.length > 0 ? Math.min(...distances) : -1,
+      total: distances.reduce((sum, distance) => sum + distance, 0),
+    };
+  };
+  return [...options].sort((left, right) => {
+    const leftSeparation = separation(left);
+    const rightSeparation = separation(right);
+    return rightSeparation.nearest - leftSeparation.nearest
+      || rightSeparation.total - leftSeparation.total
+      || left.localeCompare(right);
+  })[0];
 }
 
 /** Complete one setup choice using the same setup transitions and deployment legality as a human. */
 export function chooseBotSetupAction(game: GameState, setup: SetupState, playerIndex: number): SetupState {
   if (setup.phase === "monster-selection") {
-    const opponentName = monsterName(setup.seats[0]?.monsterId);
-    const preferences = counterPicks[opponentName ?? ""] ?? ["Gargantis", "Toxicor", "Megaclaw", "Konk", "Tomanagi", "Zorb"];
     const available = setup.definition.monsterIds.filter((id) => !setup.seats.some((seat) => seat.monsterId === id));
-    const picked = preferences.map((name) => available.find((id) => monsterName(id) === name)).find(Boolean) ?? available[0];
+    const rivalNames = setup.seats
+      .filter((seat) => seat.playerIndex !== playerIndex && seat.monsterId)
+      .map((seat) => monsterName(seat.monsterId) ?? "");
+    const picked = pickMonsterAgainstRivals(available, rivalNames) ?? available[0];
     return picked ? chooseMonster(setup, playerIndex, picked) : setup;
   }
   if (setup.phase === "branch-selection") {
-    const enemyName = monsterName(setup.seats[0]?.monsterId) ?? "";
+    const rivalNames = setup.seats
+      .filter((seat) => seat.playerIndex !== playerIndex && seat.monsterId)
+      .map((seat) => monsterName(seat.monsterId) ?? "");
     const available = setup.definition.eligibleBranches.filter((branch) => !setup.seats.some((seat) => seat.branch === branch));
-    return chooseBranch(setup, playerIndex, preferredBranch(enemyName, available));
+    return chooseBranch(setup, playerIndex, preferredBranch(rivalNames, available));
   }
   if (setup.phase === "lair-selection") {
     const seat = setup.seats.find((candidate) => candidate.playerIndex === playerIndex);
     const options = setup.definition.lairsByMonster[seat?.monsterId ?? ""]?.filter((lair) => !setup.seats.some((candidate) => candidate.lair === lair)) ?? [];
-    const humanLair = setup.seats[0]?.lair;
-    const picked = [...options].sort((a, b) => humanLair ? hexDistance(game, b, humanLair) - hexDistance(game, a, humanLair) : a.localeCompare(b))[0];
+    const rivalLairs = setup.seats
+      .filter((candidate) => candidate.playerIndex !== playerIndex && candidate.lair)
+      .map((candidate) => candidate.lair!);
+    const picked = pickLairAwayFromRivals(game, options, rivalLairs);
     return picked ? chooseLair(setup, playerIndex, picked) : setup;
   }
   if (setup.phase !== "starting-choice") return setup;
@@ -338,53 +424,61 @@ function focusTarget(state: GameState, playerIndex: number, branch: BotBranch) {
 }
 
 /** Military positions along threatened city, branch-base, and Infamy routes gain defensive value. */
-export function routeBlockScores(state: GameState, actor = state.currentPlayer, branch = (state.setupAssignments?.[actor]?.branch ?? "Army") as BotBranch): Map<HexKey, number> {
+export function routeBlockScores(state: GameState, actor = state.currentPlayer, branch = (state.setupAssignments?.[actor]?.branch ?? "Army") as BotBranch, tacticOverrides?: BotTacticOverrides): Map<HexKey, number> {
   const scores = new Map<HexKey, number>();
   const board = boardForState(state);
-  const forceFirst = botTacticForPlayer(state, actor) === "force-first";
+  const forceFirst = botTacticForPlayer(state, actor, tacticOverrides) === "force-first";
   const goals = Object.values(board.hexes).filter((hex) => !state.stompedLocations.includes(hex.key)
     && hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site" || feature.kind === "military-base"));
-  for (const monster of state.monsters) {
+  for (const [monsterIndex, monster] of state.monsters.entries()) {
+    // This player should block rival monsters from objectives, not obstruct
+    // the monster they control from reaching those same objectives.
+    if (monsterIndex === actor) continue;
     const start = monster.location as HexKey;
     if (monster.health <= 0 || !board.hexes[start]) continue;
     const movement = monster.movement;
+    if (!legalMovementNeighbors(board, movement, start).length) continue;
+    const distance = new Map<HexKey, number>([[start, 0]]);
+    const previous = new Map<HexKey, HexKey>();
+    const queue: HexKey[] = [start];
+    for (let head = 0; head < queue.length; head += 1) {
+      const current = queue[head]!;
+      const steps = distance.get(current)!;
+      if (steps >= 10) continue;
+      for (const next of legalMovementNeighbors(board, movement, current)) {
+        if (distance.has(next)) continue;
+        distance.set(next, steps + 1);
+        previous.set(next, current);
+        queue.push(next);
+      }
+    }
     for (const goal of goals) {
       if (goal.key === start) continue;
-      // Follow the monster's actual legal edges beyond this turn's move range so
-      // military pieces can occupy a corridor before the monster reaches it.
-      const queue: HexKey[][] = [[start]];
-      const distance = new Map<HexKey, number>([[start, 0]]);
-      let shortest = Infinity;
-      while (queue.length) {
-        const path = queue.shift()!;
-        const current = path.at(-1)!;
-        const steps = path.length - 1;
-        if (current === goal.key) {
-          shortest = steps;
-          const city = goal.features.some((feature) => feature.kind === "city");
-          const ownBase = goal.features.some((feature) => feature.kind === "military-base" && feature.branch === branch);
-          const value = (city ? 13 : 0) + (ownBase ? 10 : goal.features.some((feature) => feature.kind === "military-base") ? 7 : 4);
-          const defenders = state.units.filter((unit) => unit.ownerPlayer === actor && unit.location !== "record-tile" && unit.location !== "permanently-removed" && hexDistance(state, unit.location, goal.key) <= 1).length;
-          const coverage = defenders === 0 ? 1 : defenders === 1 ? 0.7 : 0.5;
-          const turnsAway = Math.ceil(steps / Math.max(1, monster.move));
-          const urgency = turnsAway <= 1 ? 1 : turnsAway === 2 ? 0.75 : 0.5;
-          path.slice(1).forEach((key, index) => {
-            const toGoal = steps - index - 1;
-            const approach = Math.max(0, 4 - toGoal) * 2;
-            const pressure = (value * urgency + approach) * coverage * (forceFirst ? 1.15 : 0.9);
-            scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
-          });
-          continue;
-        }
-        if (steps >= shortest || steps >= 10) continue;
-        for (const edge of board.edges) {
-          if (!edge.enabled || edge.from !== current || distance.has(edge.to)) continue;
-          const nextPath = [...path, edge.to];
-          if (!movementPathAllowed(board, nextPath, movement)) continue;
-          distance.set(edge.to, steps + 1);
-          queue.push(nextPath);
-        }
+      const steps = distance.get(goal.key);
+      if (steps === undefined) continue;
+      const path: HexKey[] = [];
+      let current = goal.key;
+      while (current !== start) {
+        path.push(current);
+        const parent = previous.get(current);
+        if (!parent) break;
+        current = parent;
       }
+      if (current !== start) continue;
+      path.reverse();
+      const city = goal.features.some((feature) => feature.kind === "city");
+      const ownBase = goal.features.some((feature) => feature.kind === "military-base" && feature.branch === branch);
+      const value = (city ? 13 : 0) + (ownBase ? 10 : goal.features.some((feature) => feature.kind === "military-base") ? 7 : 4);
+      const defenders = state.units.filter((unit) => unit.ownerPlayer === actor && unit.location !== "record-tile" && unit.location !== "permanently-removed" && hexDistance(state, unit.location, goal.key) <= 1).length;
+      const coverage = defenders === 0 ? 1 : defenders === 1 ? 0.7 : 0.5;
+      const turnsAway = Math.ceil(steps / Math.max(1, monster.move));
+      const urgency = turnsAway <= 1 ? 1 : turnsAway === 2 ? 0.75 : 0.5;
+      path.forEach((key, index) => {
+        const toGoal = steps - index - 1;
+        const approach = Math.max(0, 4 - toGoal) * 2;
+        const pressure = (value * urgency + approach) * coverage * (forceFirst ? 1.15 : 0.9);
+        scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
+      });
     }
   }
   return scores;
@@ -427,7 +521,7 @@ function retreatCommand(state: GameState): GameCommand {
   return { type: "retreat", destinations };
 }
 
-function shouldDrawResearch(state: GameState, actor: number, branch: BotBranch, choices: ReturnType<typeof deploymentChoices>, routeScores: ReadonlyMap<HexKey, number>): boolean {
+function shouldDrawResearch(state: GameState, actor: number, branch: BotBranch, choices: ReturnType<typeof deploymentChoices>, routeScores: ReadonlyMap<HexKey, number>, tacticOverrides?: BotTacticOverrides): boolean {
   if (state.decks.research.exhausted || state.deploymentsThisTurn > 0) return false;
   const hand = state.players[actor]?.researchCardIds ?? [];
   if (hand.length >= 2) return false;
@@ -437,7 +531,7 @@ function shouldDrawResearch(state: GameState, actor: number, branch: BotBranch, 
     .filter((hex) => hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site") && !state.stompedLocations.includes(hex.key))
     .reduce((nearest, hex) => Math.min(nearest, hexDistance(state, focus.location, hex.key)), 99) : 99;
   const objectiveThreat = Boolean(focus && objectiveDistance <= focus.move + 1 && (focus.infamy >= 2 || objectiveDistance <= 1));
-  const researchFirst = botTacticForPlayer(state, actor) === "research-first";
+  const researchFirst = botTacticForPlayer(state, actor, tacticOverrides) === "research-first";
   if (!researchFirst) return false;
   const blockerOpportunity = choices.some((choice) => choice.destinations.some((destination) => (routeScores.get(destination) ?? 0) >= 10));
   // Research-first bots draw once they have a screen in play; force-first bots
@@ -445,7 +539,46 @@ function shouldDrawResearch(state: GameState, actor: number, branch: BotBranch, 
   return units.length >= 1 && !objectiveThreat && !blockerOpportunity;
 }
 
-export function chooseBotCommand(state: GameState, botPlayerIndices: ReadonlySet<number> = new Set([1, 2, 3])): GameCommand | undefined {
+/** Re-evaluate the optional Research gates for a diagnostic observer. The selector checks this against its own decision before reporting it. */
+function inspectResearchDrawGates(state: GameState, actor: number, branch: BotBranch, choices: ReturnType<typeof deploymentChoices>, routeScores: ReadonlyMap<HexKey, number>, tacticOverrides?: BotTacticOverrides): BotResearchDrawGateDiagnostics {
+  const researchDeckAvailable = !state.decks.research.exhausted;
+  const deploymentNotStarted = state.deploymentsThisTurn === 0;
+  const hand = state.players[actor]?.researchCardIds ?? [];
+  const researchHandBelowTwo = hand.length < 2;
+  const units = state.units.filter((unit) => unit.ownerPlayer === actor && unit.location !== "record-tile" && unit.location !== "permanently-removed");
+  const focus = focusTarget(state, actor, branch);
+  const objectiveDistance = focus ? Object.values(boardForState(state).hexes)
+    .filter((hex) => hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site") && !state.stompedLocations.includes(hex.key))
+    .reduce((nearest, hex) => Math.min(nearest, hexDistance(state, focus.location, hex.key)), 99) : 99;
+  const objectiveThreat = Boolean(focus && objectiveDistance <= focus.move + 1 && (focus.infamy >= 2 || objectiveDistance <= 1));
+  const researchFirstPolicy = botTacticForPlayer(state, actor, tacticOverrides) === "research-first";
+  const blockerOpportunity = choices.some((choice) => choice.destinations.some((destination) => (routeScores.get(destination) ?? 0) >= 10));
+  return {
+    researchDeckAvailable,
+    deploymentNotStarted,
+    researchHandBelowTwo,
+    researchFirstPolicy,
+    activeMilitaryScreen: units.length >= 1,
+    objectiveThreatAbsent: !objectiveThreat,
+    blockerOpportunityAbsent: !blockerOpportunity,
+  };
+}
+
+function legalResearchDrawAvailable(state: GameState): boolean {
+  return state.phase === "deploy"
+    && state.pendingDecision?.type === "deployment"
+    && (!("playerIndex" in state.pendingDecision) || state.pendingDecision.playerIndex === state.currentPlayer)
+    && state.deploymentsThisTurn === 0
+    && !state.decks.research.exhausted
+    && Boolean(state.players[state.currentPlayer]);
+}
+
+export function chooseBotCommand(
+  state: GameState,
+  botPlayerIndices: ReadonlySet<number> = new Set([1, 2, 3]),
+  tacticOverrides?: BotTacticOverrides,
+  onDeployDecision?: BotDeployDecisionObserver,
+): GameCommand | undefined {
   const decision = state.pendingDecision;
   const actor = decision && "playerIndex" in decision ? decision.playerIndex : state.currentPlayer;
   const branch = (state.setupAssignments?.[actor]?.branch ?? BRANCHES[(actor - 1) % BRANCHES.length]) as BotBranch;
@@ -575,12 +708,63 @@ export function chooseBotCommand(state: GameState, botPlayerIndices: ReadonlySet
     if (giantBases.length) {
       const heldGiant = state.players[actor]?.researchCardIds.includes("Captain Colossal") ? "Captain Colossal"
         : state.players[actor]?.researchCardIds.includes("Mecha-Monster") ? "Mecha-Monster" : undefined;
-      if (heldGiant) return { type: "use-research", cardId: heldGiant, destination: giantBases[0]! };
+      if (heldGiant) {
+        const command: GameCommand = { type: "use-research", cardId: heldGiant, destination: giantBases[0]! };
+        onDeployDecision?.({
+          playerIndex: actor,
+          path: "priority-giant-placement",
+          deploymentChoiceCount: null,
+          legalResearchDrawAvailable: legalResearchDrawAvailable(state),
+          selectedCommandType: command.type,
+          gates: null,
+          eligible: null,
+        });
+        return command;
+      }
     }
     const options = deploymentChoices(state);
-    if (!options.length) return state.deploymentsThisTurn > 0 || state.decks.research.exhausted ? { type: "pass-deploy" } : { type: "draw-research" };
-    const routeScores = routeBlockScores(state, actor, branch);
-    if (shouldDrawResearch(state, actor, branch, options, routeScores)) return { type: "draw-research" };
+    if (!options.length) {
+      const command: GameCommand = state.deploymentsThisTurn > 0 || state.decks.research.exhausted ? { type: "pass-deploy" } : { type: "draw-research" };
+      onDeployDecision?.({
+        playerIndex: actor,
+        path: "no-deployment-choices",
+        deploymentChoiceCount: 0,
+        legalResearchDrawAvailable: legalResearchDrawAvailable(state),
+        selectedCommandType: command.type,
+        gates: null,
+        eligible: null,
+      });
+      return command;
+    }
+    const routeScores = routeBlockScores(state, actor, branch, tacticOverrides);
+    const drawResearch = shouldDrawResearch(state, actor, branch, options, routeScores, tacticOverrides);
+    let gates: BotResearchDrawGateDiagnostics | null = null;
+    if (onDeployDecision) {
+      gates = inspectResearchDrawGates(state, actor, branch, options, routeScores, tacticOverrides);
+      const independentlyEvaluated = gates.researchDeckAvailable
+        && gates.deploymentNotStarted
+        && gates.researchHandBelowTwo
+        && gates.researchFirstPolicy
+        && gates.activeMilitaryScreen
+        && gates.objectiveThreatAbsent
+        && gates.blockerOpportunityAbsent;
+      if (independentlyEvaluated !== drawResearch) {
+        throw new Error("Research-draw diagnostics disagree with the selector's existing eligibility check.");
+      }
+    }
+    if (drawResearch) {
+      const command: GameCommand = { type: "draw-research" };
+      onDeployDecision?.({
+        playerIndex: actor,
+        path: "optional-research-choice",
+        deploymentChoiceCount: options.length,
+        legalResearchDrawAvailable: legalResearchDrawAvailable(state),
+        selectedCommandType: command.type,
+        gates: gates!,
+        eligible: true,
+      });
+      return command;
+    }
     const focus = focusTarget(state, actor, branch);
     const deploymentScore = (option: typeof options[number]) => Math.max(...option.destinations.map((destination) => {
       const target = state.monsters.find((monster) => monster.location === destination && monster.id !== state.monsters[actor]?.id);
@@ -592,7 +776,17 @@ export function chooseBotCommand(state: GameState, botPlayerIndices: ReadonlySet
     }));
     const choice = [...options].sort((a, b) => deploymentScore(b) - deploymentScore(a))[0]!;
     const destination = [...choice.destinations].sort((a, b) => nearestTargetScore(state, b, actor, branch, routeScores, choice.typeId) - nearestTargetScore(state, a, actor, branch, routeScores, choice.typeId))[0]!;
-    return { type: choice.kind, unitId: choice.id, destination };
+    const command: GameCommand = { type: choice.kind, unitId: choice.id, destination };
+    onDeployDecision?.({
+      playerIndex: actor,
+      path: "optional-research-choice",
+      deploymentChoiceCount: options.length,
+      legalResearchDrawAvailable: legalResearchDrawAvailable(state),
+      selectedCommandType: command.type,
+      gates: gates!,
+      eligible: false,
+    });
+    return command;
   }
   if (decision?.type === "monster-movement") {
     const monster = state.monsters.find((candidate) => candidate.id === decision.pieceId);
@@ -605,7 +799,7 @@ export function chooseBotCommand(state: GameState, botPlayerIndices: ReadonlySet
     // The movement decision normally names the active monster, not a unit.
     // Once that monster has moved (or has no legal move), use the rest of the
     // movement window to reposition this player's military pieces.
-    const routeScores = routeBlockScores(state, actor, branch);
+    const routeScores = routeBlockScores(state, actor, branch, tacticOverrides);
     const focus = focusTarget(state, actor, branch);
     const unmovedUnits = state.units.filter((unit) => unit.ownerPlayer === actor
       && unit.location !== "record-tile" && unit.location !== "permanently-removed"
@@ -681,7 +875,12 @@ function explainBotCommand(state: GameState, command: GameCommand, actor: number
     if (focus) return `Concentrated ${branch} forces toward ${focus.name}${focus.health < 8 ? " to finish the wounded target" : " for a coordinated attack"}.`;
     return `Deployed ${branch} forces to protect objectives and build an attack group.`;
   }
-  if (command.type === "draw-research") return "Drew Military Research because the attack group was assembled and no valuable monster route needed an urgent block.";
+  if (command.type === "draw-research") {
+    if (deploymentChoices(state).length === 0) {
+      return "Drew Military Research because no legal military deployments were available.";
+    }
+    return "Drew Military Research as part of the research-first plan while no urgent monster route needed blocking.";
+  }
   if (command.type === "choose-mutation-card" && state.monsters[actor]?.name === "Toxicor") return `Toxicor kept ${command.cardId} for its Monster Challenge.`;
   if (command.type === "use-mutation" && state.phase === "challenge") return `Toxicor used ${command.cardId} to strengthen its Monster Challenge turn.`;
   if (command.type === "use-mutation" && command.cardId === "Berserk") return "Used Berserk to add attacks while the monster faced a concentrated force.";

@@ -16,7 +16,7 @@ type Props = {
   canUseLaserFence?: boolean;
   onOpenMilitarySheet: () => void;
   canAct: boolean;
-  runCommand: (command: GameCommand) => void | Promise<void>;
+  runCommand: (command: GameCommand, opener?: HTMLButtonElement) => void | Promise<void>;
   getLocationName: (key: HexKey) => string;
   pendingAttackTarget?: AttackTargetDecision;
   pendingAttackPrompt: string;
@@ -174,11 +174,11 @@ export function PhaseActions({
   if (activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "encounter-choice") {
     const encounterDecision = activeGame.pendingDecision;
     const ironStomach = encounterDecision.source === "iron-stomach";
-    return <div className="battle-choice" aria-label={ironStomach ? "Choose Iron Stomach base reward" : "Choose Zorb city benefit"}>
+    return <div className="battle-choice" role="group" aria-label={ironStomach ? "Choose Iron Stomach base reward" : "Choose Zorb city benefit"}>
       {defenseSatellitesButton}
       {encounterDecision.healthRoll !== undefined && <p>Zorb rolled {encounterDecision.healthRoll} Health from the city.</p>}
       {ironStomach && <p>Iron Stomach: choose 3 Health or the base’s 1 Infamy.</p>}
-      {encounterDecision.choices.map((choice) => <button key={choice} disabled={!canAct} onClick={() => void runCommand({ type: "resolve-encounter", choice })}>{choice === "health" ? `Take ${ironStomach ? 3 : encounterDecision.healthRoll ?? "the city"} Health` : `Take ${ironStomach ? 1 : 2} Infamy instead`}</button>)}
+      {encounterDecision.choices.map((choice) => <button key={choice} disabled={!canAct} onClick={(event) => void runCommand({ type: "resolve-encounter", choice }, event.currentTarget)}>{choice === "health" ? `Take ${ironStomach ? 3 : encounterDecision.healthRoll ?? "the city"} Health` : `Take ${ironStomach ? 1 : 2} Infamy instead`}</button>)}
     </div>;
   }
 

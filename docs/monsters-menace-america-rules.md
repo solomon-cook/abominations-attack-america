@@ -1,11 +1,15 @@
 # Monsters Menace America - Rules Reference
 
-> Canonical source for engine implementation and rules tests.
+> Working paraphrase and interpretation record used by parts of the current development implementation. The user's physical edition remains authoritative.
 >
-> Derived from the supplied 16-page 2005 *Monsters Menace America* rulebook
-> (`766630657-monsters-menace-america.pdf`), cross-checked against its supplied
-> text extraction. This is a structured paraphrase, not a replacement scan or a
-> transcription of card and record-tile content.
+> This text was attributed to a supplied 16-page 2005 *Monsters Menace America*
+> rulebook (`766630657-monsters-menace-america.pdf`) and text extraction; those
+> files are not present in this checkout. Sixteen rendered English rulebook
+> page images are present and are compared with the current paraphrase and code
+> in [`docs/rulebook-page-alignment-audit.md`](rulebook-page-alignment-audit.md).
+> The images are not confirmed against the user's physical printing. Treat
+> summaries and digital rulings as candidates for review, not as authority or
+> release approval. See [`docs/rules-source.md`](rules-source.md).
 
 ## Source authority
 
@@ -21,10 +25,12 @@
 This hierarchy must also apply in the game engine. A general-rule test must not
 silently override a card, unit, monster, or board-space exception.
 
-## Confirmed digital interpretations
+## Current digital rulings for the labelled playtest
 
-The original rulebook leaves a few edge cases implicit. The following rulings
-are confirmed for this implementation:
+The implementation currently uses the following rulings to make its playtest
+behavior deterministic. Their recorded approval is limited to the labelled
+playtest; each still requires comparison with the user's physical edition
+before it can be described as source-verified:
 
 - Fly permits a monster to pass through another monster's space before the
   Monster Challenge, but not to finish its move there.
@@ -497,11 +503,11 @@ relying on the user interface. At minimum it needs:
 - Monster Challenge timing, weigh-in Health for each duel, duel order, defeated
   creatures, giant-unit-last ordering, and the final winner condition.
 
-## Deliberately unresolved implementation inputs
+## Deliberately unresolved source and implementation inputs
 
-The supplied rulebook does not fully define the following without the physical
-components. These must come from authoritative board, record-tile, and card data
-rather than being guessed:
+The available paraphrase and development data do not establish the following
+facts against the user's physical edition. They must be captured from the
+physical board, rulebook, record tiles, and card faces rather than guessed:
 
 - the complete map geometry and every printed space/icon;
 - each monster's and unit's numeric stats and special ability text;
@@ -514,3 +520,7 @@ rather than being guessed:
 
 Until those sources are captured, the engine should mark such content as
 unsupported or data-incomplete rather than inventing substitute rules.
+
+The specific outstanding board, setup, Navy Nuclear Submarine, and release
+acceptance checks are tracked in the [source inventory](unresolved-rules-inventory.md)
+and [board promotion record](board-promotion-signoff.md).

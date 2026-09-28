@@ -1,0 +1,95 @@
+{
+  "started": "2026-09-28T19:07:41.545Z",
+  "route": "production main.tsx route with memory API; online two-player match",
+  "scenario": "P1 moves Zorb from 13,4 onto the Army base at 12,4; P2 owns Army and chooses one reserve unit as trophy",
+  "viewports": {
+    "portrait": {
+      "viewport": "834x1112",
+      "trophyActionBounds": {
+        "x": 393,
+        "y": 526,
+        "width": 54,
+        "height": 66
+      },
+      "referencePanelBounds": {
+        "x": 378,
+        "y": 371,
+        "width": 440,
+        "height": 585
+      },
+      "documentWidths": {
+        "viewport": 834,
+        "document": 834,
+        "body": 834
+      },
+      "dockScroll": {
+        "scrollHeight": 84,
+        "clientHeight": 84,
+        "dockScrollHeight": 659,
+        "dockClientHeight": 659
+      },
+      "trayShortcutHitTest": {
+        "bounds": {
+          "x": 648,
+          "y": 800,
+          "width": 174,
+          "height": 54
+        },
+        "centerHit": "ARTICLE",
+        "centerHitClass": "",
+        "centerHitIsButton": false
+      }
+    },
+    "landscape": {
+      "viewport": "1024x768",
+      "trophyActionBounds": {
+        "x": 583,
+        "y": 182,
+        "width": 54,
+        "height": 66
+      },
+      "referencePanelBounds": {
+        "x": 568,
+        "y": 27,
+        "width": 440,
+        "height": 585
+      },
+      "documentWidths": {
+        "viewport": 1024,
+        "document": 1024,
+        "body": 1024
+      },
+      "dockScroll": {
+        "scrollHeight": 84,
+        "clientHeight": 84,
+        "dockScrollHeight": 659,
+        "dockClientHeight": 659
+      },
+      "trayShortcutHitTest": {
+        "bounds": {
+          "x": 102,
+          "y": 692,
+          "width": 174,
+          "height": 54
+        },
+        "centerHit": "SPAN",
+        "centerHitClass": "deployment-tray-summary",
+        "centerHitIsButton": true
+      }
+    }
+  },
+  "runtimeErrors": [],
+  "result": {
+    "selectedUnitId": "0-0",
+    "unitTypeId": "army-tank",
+    "removedLocation": "permanently-removed",
+    "removedUnitIndexed": true,
+    "pendingDecisionAfterChoice": "deployment",
+    "trayBefore": "Open Army military sheet, 0 deployed, 8 in reserve",
+    "trayAfter": "Open Army military sheet, 0 deployed, 7 in reserve",
+    "takingPlayerTrophyBadgeVisible": true,
+    "trayShortcutOverlapAtPortrait": true,
+    "repeatedTrophyActionsAfterResolution": 0
+  },
+  "completed": "2026-09-28T19:07:54.320Z"
+}

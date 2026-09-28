@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { createServer as createNetServer } from "node:net";
 import { spawn } from "node:child_process";
 import { WebSocket } from "ws";
 
@@ -8,7 +10,15 @@ if (persistence !== "memory" && persistence !== "prisma") throw new Error("LOAD_
 if (persistence === "prisma" && !(process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL)?.trim()) {
   throw new Error("LOAD_PERSISTENCE=prisma requires DATABASE_URL, PRISMA_DATABASE_URL, or POSTGRES_URL.");
 }
-const port = 22000 + (process.pid % 1000);
+const port = await new Promise((resolve, reject) => {
+  const probe = createNetServer();
+  probe.once("error", reject);
+  probe.listen(0, "127.0.0.1", () => {
+    const address = probe.address();
+    if (!address || typeof address === "string") return reject(new Error("Could not reserve an API load-test port."));
+    probe.close((error) => error ? reject(error) : resolve(address.port));
+  });
+});
 const baseUrl = `http://127.0.0.1:${port}`;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const closeSocket = (socket) => {
@@ -35,8 +45,19 @@ async function waitForHealth() {
   throw new Error("Development API did not become healthy in time.");
 }
 
-function openSocket(code, token) {
-  const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${code}&token=${encodeURIComponent(token)}`);
+async function issueSocketTicket(code, token, connectionId = null) {
+  const response = await fetch(`${baseUrl}/rooms/${code}/ws-ticket`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-room-token": token },
+    body: JSON.stringify({ connectionId, requestedConnectionId: randomUUID() }),
+  });
+  const lease = await response.json();
+  if (!response.ok) throw new Error(`Room ${code} WebSocket ticket failed: ${lease.error ?? response.status}`);
+  return lease;
+}
+
+function openSocket(code, ticket) {
+  const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${code}&ticket=${encodeURIComponent(ticket)}`);
   const firstMessage = new Promise((resolve, reject) => {
     const onMessage = (data) => { cleanup(); resolve(JSON.parse(data.toString()).room); };
     const onError = (error) => { cleanup(); reject(error); };
@@ -73,7 +94,8 @@ async function createRoom(index) {
   });
   const spectator = await spectatorResponse.json();
   if (!spectatorResponse.ok) throw new Error(`Room ${index} spectator failed: ${spectator.error ?? spectatorResponse.status}`);
-  const host = openSocket(created.room.code, created.token);
+  const lease = await issueSocketTicket(created.room.code, created.token);
+  const host = openSocket(created.room.code, lease.ticket);
   await withTimeout(host.opened, `Room ${index} WebSocket open`);
   const initialSocketRoom = await withTimeout(host.firstMessage, `Room ${index} initial WebSocket update`);
   const [hostRoom, spectatorRoom] = await Promise.all([
@@ -81,7 +103,7 @@ async function createRoom(index) {
     fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(spectator.token)}`).then((result) => result.json()),
   ]);
   if (initialSocketRoom.version !== hostRoom.version || hostRoom.version !== spectatorRoom.version) throw new Error(`Room ${index} initial WebSocket/polling revision diverged.`);
-  return { code: created.room.code, token: created.token, version: hostRoom.version, hostSocket: host.socket };
+  return { code: created.room.code, token: created.token, connectionId: lease.connectionId, version: hostRoom.version, hostSocket: host.socket };
 }
 
 async function main() {
@@ -120,13 +142,22 @@ async function main() {
       const settled = await fetch(`${baseUrl}/rooms/${session.code}/state?token=${encodeURIComponent(session.token)}`).then((result) => result.json());
       if (settled.version !== session.version + 1) throw new Error(`Room ${session.code} did not advance exactly once.`);
       for (let index = 0; index < reconnectsPerRoom; index += 1) {
-        const restored = openSocket(session.code, session.token);
+        const lease = await issueSocketTicket(session.code, session.token, session.connectionId);
+        const restored = openSocket(session.code, lease.ticket);
         sockets.push(restored.socket);
         await withTimeout(restored.opened, `Room ${session.code} reconnect ${index + 1} WebSocket open`);
         const socketRoom = await withTimeout(restored.firstMessage, `Room ${session.code} reconnect ${index + 1} update`);
         const polledRoom = await fetch(`${baseUrl}/rooms/${session.code}/state?token=${encodeURIComponent(session.token)}`).then((result) => result.json());
         if (socketRoom.version !== settled.version || polledRoom.version !== settled.version) throw new Error(`Room ${session.code} reconnect ${index + 1} diverged.`);
+        session.connectionId = lease.connectionId;
         restored.socket.close();
+        await withTimeout(new Promise((resolve) => restored.socket.once("close", resolve)), `Room ${session.code} reconnect ${index + 1} close`);
+        const disconnected = await fetch(`${baseUrl}/rooms/${session.code}/disconnect`, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-room-token": session.token },
+          body: JSON.stringify({ connectionId: session.connectionId }),
+        });
+        if (!disconnected.ok) throw new Error(`Room ${session.code} reconnect ${index + 1} disconnect failed.`);
       }
     }));
     const metrics = await fetch(`${baseUrl}/metrics`).then((result) => result.json());

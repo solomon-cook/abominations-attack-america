@@ -1,8 +1,11 @@
+import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import process from "node:process";
 
 const cases = [
   { name: "desktop", width: 1280, height: 720 },
+  { name: "compact-desktop", width: 900, height: 700 },
+  { name: "compact-tablet", width: 768, height: 600 },
   { name: "tablet", width: 834, height: 1112 },
   { name: "mobile", width: 390, height: 844 },
 ];
@@ -28,7 +31,16 @@ function runCase(testCase) {
         reject(new Error(`${testCase.name} browser smoke failed (code ${code ?? "none"}, signal ${signal ?? "none"})\n${stdout}${stderr}`));
         return;
       }
-      resolve({ ...testCase, output: stdout.trim() });
+      const reports = stdout.trim().split(/\r?\n/).flatMap((line) => {
+        try { return [JSON.parse(line)]; } catch { return []; }
+      });
+      const viewportReport = reports.find((report) => report.viewport === `${testCase.width}x${testCase.height}`);
+      try {
+        assert.ok(viewportReport?.ok, `${testCase.name} run did not exercise requested viewport ${testCase.width}x${testCase.height}. Output:\n${stdout}${stderr}`);
+        resolve({ ...testCase, output: viewportReport });
+      } catch (error) {
+        reject(error);
+      }
     });
   });
 }

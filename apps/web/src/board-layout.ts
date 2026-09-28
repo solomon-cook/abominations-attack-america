@@ -1,4 +1,12 @@
-import { FULL_HONEYCOMB_BOARD, type BoardDefinition, type BoardHex } from "@abominations/game-engine";
+import {
+  AUDITED_BOARD,
+  FULL_HONEYCOMB_BOARD,
+  PROVISIONAL_AUTHORITATIVE_BOARD,
+  locationIdToHexKey,
+  locations,
+  type BoardDefinition,
+  type BoardHex,
+} from "@abominations/game-engine";
 
 export type DisplayHex = Readonly<{
   hex: BoardHex;
@@ -6,6 +14,14 @@ export type DisplayHex = Readonly<{
   column: number;
   left: number;
   top: number;
+}>;
+
+export type RenderedDisplayHex = Readonly<{
+  hex: BoardHex;
+  place?: (typeof locations)[number];
+  left: number;
+  top: number;
+  developmentFixture: boolean;
 }>;
 
 // The player-facing tiles use the flat-top polygon visible in the supplied
@@ -60,4 +76,39 @@ export function buildDisplayHexLayout(board: BoardDefinition = FULL_HONEYCOMB_BO
       top: DISPLAY_BOARD_TOP_PERCENT + (row / 13) * DISPLAY_BOARD_TOP_SPAN_PERCENT + (column % 2 ? DISPLAY_TILE_WIDTH_PERCENT / DISPLAY_TILE_ASPECT_RATIO / 2 : 0),
     };
   }));
+}
+
+/**
+ * Match HexGrid's presentation positions for a pinned board. The nine-space
+ * development board is drawn on the candidate shell, with outlying named
+ * fixture locations placed using their location coordinates. BoardViewport
+ * uses this projection too, so a camera focus tracks the rendered hit target.
+ */
+export function renderedHexLayout(board: BoardDefinition | undefined): RenderedDisplayHex[] {
+  if (!board) return [];
+  if (board.id === AUDITED_BOARD.id || board.id === FULL_HONEYCOMB_BOARD.id || board.id === PROVISIONAL_AUTHORITATIVE_BOARD.id) {
+    return buildDisplayHexLayout(board).map(({ hex, left, top }) => ({ hex, left, top, developmentFixture: false }));
+  }
+
+  const developmentPlaces = new Map(locations.map((place) => [locationIdToHexKey(place.id), place]));
+  const developmentHexes = new Map(Object.values(board.hexes).map((hex) => [hex.key, hex]));
+  const candidateLayout = buildDisplayHexLayout(FULL_HONEYCOMB_BOARD);
+  const candidateKeys = new Set(candidateLayout.map(({ hex }) => hex.key));
+  const shell = candidateLayout.map(({ hex: candidateHex, left, top }) => {
+    const developmentHex = developmentHexes.get(candidateHex.key);
+    return {
+      hex: developmentHex ?? candidateHex,
+      place: developmentPlaces.get(candidateHex.key),
+      left,
+      top,
+      developmentFixture: Boolean(developmentHex),
+    };
+  });
+  const outlyingDevelopmentHexes = [...developmentHexes.values()]
+    .filter((hex) => !candidateKeys.has(hex.key))
+    .map((hex) => {
+      const place = developmentPlaces.get(hex.key);
+      return { hex, place, left: place?.x ?? 50, top: place?.y ?? 50, developmentFixture: true };
+    });
+  return [...shell, ...outlyingDevelopmentHexes];
 }

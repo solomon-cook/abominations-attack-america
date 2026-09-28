@@ -64,6 +64,7 @@
   margin:0; overflow:auto; overscroll-behavior:contain; background:var(--hud-bg);
   border:1px solid #b4b186; border-radius:8px; box-shadow:0 16px 60px #07120dbb;
 }
+.game-screen > .onboarding { z-index:49; }
 .game-screen > .onboarding { display:block; padding:18px; }
 .game-screen > .onboarding h2,.game-screen > .onboarding p,.game-screen > .onboarding-grid { display:revert; }
 .game-screen > .onboarding .onboarding-grid { display:grid; }
@@ -178,6 +179,8 @@
   background:var(--hud-bg); border:1px solid var(--hud-border);
   border-radius:10px; box-shadow:0 8px 30px #06131155;
 }
+/* A collapsed panel has no visible content; keep its empty box from intercepting HUD controls. */
+.game-screen > .layout.panel-closed > .game-side-panel { display:none; }
 .game-screen .layout.panel-closed > .game-side-panel > .turn-hud-heading,
 .game-screen .layout.panel-closed > .game-side-panel > .board-action-bar { display:flex; }
 .turn-hud-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px; }
@@ -299,6 +302,17 @@
 .top-turn-summary .turn-progress li { display:block; flex:1; text-align:center; padding:8px 2px; letter-spacing:.025em; }
 .top-turn-summary .turn-progress li > span { display:none; }
 .game-screen > header .header-actions { max-width:440px; }
+.game-screen > header .retreat-phase-indicator {
+  display:inline-block;
+  margin-top:4px;
+  padding:3px 7px;
+  border:1px solid var(--hud-border);
+  border-radius:999px;
+  background:#172625;
+  color:#f0d89e;
+  font-size:.65rem;
+  line-height:1.2;
+}
 .game-screen > .status { top:150px; width:max-content; max-width:calc(100% - 28px); right:auto; }
 .game-screen > .status div:nth-child(2),.game-screen > .status div:nth-child(3),.game-screen > .status div:nth-child(4) { display:none; }
 .game-screen > .layout.panel-open > .game-side-panel,.game-screen > .layout.panel-closed > .game-side-panel { max-height:calc(100dvh - 225px); }

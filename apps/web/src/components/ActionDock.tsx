@@ -1,15 +1,16 @@
 import type { GameCommand } from "@abominations/game-engine";
+import type { MouseEvent } from "react";
 
 type Props = {
   label: string;
   contextLabel?: string;
   guidance?: string;
-  onPrimary?: () => void;
+  onPrimary?: (event: MouseEvent<HTMLButtonElement>) => void;
   pressed?: boolean;
   canAct: boolean;
   command?: GameCommand;
   unavailableReason?: string;
-  onAction: (command: GameCommand) => void;
+  onAction: (command: GameCommand, opener?: HTMLButtonElement) => void;
 };
 
 export function ActionDock({ contextLabel, guidance, onPrimary, label, canAct, command, unavailableReason, onAction, pressed }: Props) {
@@ -32,7 +33,7 @@ export function ActionDock({ contextLabel, guidance, onPrimary, label, canAct, c
   return (
     <div className="action-dock" aria-label="Current action control">
       <div className="action-dock-info"><span className="label">{contextLabel ?? "TAKE ACTION"}</span><small id="action-dock-status" className="action-dock-status" aria-live="polite">{!canAct ? status : guidance ?? status}</small></div>
-      <button type="button" data-action-icon={actionIcon} aria-label={label} aria-pressed={pressed} disabled={!canAct || (!command && !onPrimary)} title={status} aria-describedby="action-dock-status" onClick={() => onPrimary ? onPrimary() : command && onAction(command)}>
+      <button type="button" data-action-icon={actionIcon} aria-label={label} aria-pressed={pressed} disabled={!canAct || (!command && !onPrimary)} title={status} aria-describedby="action-dock-status" onClick={(event) => onPrimary ? onPrimary(event) : command && onAction(command, event.currentTarget)}>
         {label}
       </button>
     </div>

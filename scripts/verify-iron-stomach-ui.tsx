@@ -14,6 +14,7 @@ const html = renderToStaticMarkup(React.createElement(EncounterOverlay, {
   locationName: "Denver Military Base",
   eventId: "iron-stomach-choice",
   baselineEventId: "before-choice",
+  pendingChoice: true,
   effects: [],
   rolls: [],
   choices: ["health", "infamy"],

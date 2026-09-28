@@ -9,10 +9,11 @@ type Props = LobbyPanelProps & {
   onStartProvisionalPlaytest: () => void;
   onOpenBoardReview: () => void;
   onStartVictoryScenario: () => void;
+  roomStartPending: boolean;
   accountPanel: ReactNode;
 };
 
-export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo, onStartProvisionalPlaytest, onOpenBoardReview, onStartVictoryScenario, accountPanel, ...lobbyProps }: Props) {
+export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo, onStartProvisionalPlaytest, onOpenBoardReview, onStartVictoryScenario, roomStartPending, accountPanel, ...lobbyProps }: Props) {
   return (
     <main className="home-screen">
       <header className="home-masthead">
@@ -29,6 +30,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
             <span>Players</span>
             <select
               aria-label="Number of players"
+              disabled={roomStartPending}
               value={lobbyProps.playerCount}
               onChange={(event) => lobbyProps.onPlayerCountChange(Number(event.target.value) as 2 | 3 | 4)}
             >
@@ -37,9 +39,9 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
               <option value="4">4 players</option>
             </select>
           </label>
-          <button className="home-start" type="button" onClick={onStartLocal}>Start local game <span aria-hidden="true">→</span></button>
+          <button className="home-start" type="button" disabled={roomStartPending} onClick={onStartLocal}>Start local game <span aria-hidden="true">→</span></button>
           <p className="home-local-note">One screen. Everyone at the table.</p>
-          <button className="home-start home-start-solo" type="button" onClick={onStartSolo}>Play solo vs bots <span aria-hidden="true">→</span></button>
+          <button className="home-start home-start-solo" type="button" disabled={roomStartPending} onClick={onStartSolo}>Play solo vs bots <span aria-hidden="true">→</span></button>
           <p className="home-local-note">You command Player 1. The remaining seats use tactical bots.</p>
         </div>
         <figure className="home-monster">
@@ -90,9 +92,9 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
         <details className="home-tools">
           <summary>Playtest tools</summary>
           <div>
-            <button type="button" onClick={onStartProvisionalPlaytest}>Play audited board</button>
-            <button type="button" onClick={onOpenBoardReview}>Review full board</button>
-            <button type="button" onClick={onStartVictoryScenario}>Victory test</button>
+            <button type="button" disabled={roomStartPending} onClick={onStartProvisionalPlaytest}>Play audited board</button>
+            <button type="button" disabled={roomStartPending} onClick={onOpenBoardReview}>Review full board</button>
+            <button type="button" disabled={roomStartPending} onClick={onStartVictoryScenario}>Victory test</button>
           </div>
         </details>
       </footer>

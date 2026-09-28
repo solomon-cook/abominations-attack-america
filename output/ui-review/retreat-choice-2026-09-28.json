@@ -1,0 +1,95 @@
+{
+  "started": "2026-09-28T21:23:34.994Z",
+  "scope": "Fixture-level browser acceptance of the production PhaseActions multi-unit retreat chooser and applyCommand retreat resolution. The pending retreat options are seeded deterministically; this does not exercise resolve-fight generation, a full match, persisted service, or physical-edition rules.",
+  "browser": "Chromium via Playwright",
+  "scenarios": {
+    "desktopKeyboard": {
+      "status": "passed",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "role": "active decision maker",
+      "selection": {
+        "initialConfirmDisabled": true,
+        "remainsDisabledAfterFirstRequiredChoice": true,
+        "selectedDestinationCanBeChanged": true,
+        "forcedDisappearanceIsShown": true
+      },
+      "confirmation": {
+        "enabledOnlyAfterAllRequiredDestinations": true,
+        "keyboardTabAndEnter": true
+      },
+      "resolution": {
+        "commandCount": 1,
+        "eventAction": "retreat.resolved",
+        "eventCountDelta": 1,
+        "destinations": {
+          "0-0": "0,2",
+          "0-1": "-2,2",
+          "2-0": "disappeared"
+        },
+        "disappearedUnitIds": [
+          "2-0"
+        ]
+      }
+    },
+    "phoneTouch": {
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "input": "touch taps",
+      "requiredChoicesGateConfirmation": true,
+      "forcedDisappearanceIncluded": true,
+      "commandCount": 1,
+      "eventCountDelta": 1,
+      "finalPositions": {
+        "0-0": "1,-1",
+        "0-1": "-2,2",
+        "2-0": "disappeared"
+      },
+      "pendingRetreatCleared": true,
+      "noHorizontalOverflow": true,
+      "choiceBounds": {
+        "x": 14,
+        "y": 612,
+        "right": 376,
+        "bottom": 830,
+        "width": 362,
+        "height": 218,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "eventAction": "retreat.resolved"
+    },
+    "canActFalseCompact": {
+      "status": "passed",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "canAct": false,
+      "onlineRoleProjection": "not tested; the fixture only gates PhaseActions with canAct",
+      "allChoiceAndConfirmControlsDisabled": true,
+      "forcedDisappearanceVisible": true,
+      "noCommandSubmitted": true,
+      "noHorizontalOverflow": true,
+      "choiceBounds": {
+        "x": 14,
+        "y": 436,
+        "right": 306,
+        "bottom": 726,
+        "width": 292,
+        "height": 290,
+        "viewportWidth": 320,
+        "viewportHeight": 740
+      }
+    }
+  },
+  "runtimeErrors": [],
+  "browserVersion": "140.0.7339.186",
+  "completed": "2026-09-28T21:23:36.941Z",
+  "status": "passed"
+}

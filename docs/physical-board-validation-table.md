@@ -1,12 +1,17 @@
 # Physical board validation table
 
-This is the human-validation worksheet for the supplied board photographs. The
-photographs are authoritative; the entries in **Current candidate** are only
-our present transcription and must not be treated as confirmed production data.
+This worksheet records comparisons for the prior board-photo transcription.
+Those photographs are evidence for the candidate, not the deciding source: the
+user's physical edition is authoritative. Entries in **Current candidate**
+must not be treated as source-verified or approved production data. All
+correction and decision fields remain blank until the physical edition is
+captured and checked.
 
-Please edit only **Your correction / confirmation** and **Decision**. Useful
-decisions are `confirmed`, `correct`, `remove`, `move`, or `unreadable`.
-Leave the current candidate unchanged so that differences remain auditable.
+After the source capture, edit only **Your correction / confirmation** and
+**Decision**. Useful decisions are `confirmed`, `correct`, `remove`, `move`, or
+`unreadable`. Leave the current candidate unchanged so that differences remain
+auditable. A confirmation must refer to the physical-edition evidence, not just
+to agreement between a photograph, overlay, generated data, and code.
 
 Coordinate convention: `row / column` is the fitted flat-top face in the full
 24-column by 14-row rectangle. The rectangle includes cropped, empty, and sea
@@ -116,12 +121,17 @@ Each row is one face. Co-located features are deliberately combined in one row.
 
 | Item | Current candidate | Your correction / confirmation | Decision |
 | --- | --- | --- | --- |
-| Hollywood | Board overlay/title treatment; not a visitable hex |  |  |
+| Hollywood | The engine represents Hollywood as an off-board state; the board overlay anchor `-5,10` is illustration metadata, not a Hollywood movement destination. The user clarified that the game should follow the rulebook: a monster enters Hollywood only when reduced to 0 Health. The checked-in page image agrees. | User confirms Hollywood is not reached by ordinary movement; the 0-Health rule governs entry. | Keep Hollywood off-board and inaccessible to movement/deployment. Compare the printed logo footprint with the physical hex grid separately; its underlying board-cell topology remains source-unverified. |
 | Los Angeles | `8/2`; visitable city face with a separate Los Angeles overlay/token location |  |  |
 | Mutation sites | `4/6` Experimental Breeder Reactor; `5/20` Three Mile Island; `6/4` Nevada Test Site; `9/8` Roswell |  |  |
 | Lairs | `3/2`, `4/2`, `3/14`, `7/5`, `7/13`, `11/8`; identities unreadable |  |  |
 | Infamy sites | 15 current candidates; orange panels, including co-locations at `7/4`, `9/6`, `10/11`, `10/19` |  |  |
 | Challenge site | `10/16`, co-located with Navy base |  |  |
+
+The co-location list is a candidate checklist, not a resolved finding. Check
+each icon independently on the physical board. In particular, verify both
+branches recorded at `6/21`, the Infamy/Navy-base pair at `10/19`, and the
+Infamy/base pairs at `7/4`, `9/6`, and `10/11`.
 
 ## Water and thick blue sea-border validation
 
@@ -138,6 +148,11 @@ coast, land, and inland lake candidates as follows:
 | Sea-border edges | 71 candidate sea barrier edges |  |  |
 | Lake-border edges | 22 candidate lake barrier edges |  |  |
 | Barrier rule | Thick blue line blocks movement for monsters that cannot cross sea; confirm which exact face-to-face edges carry it |  |  |
+
+The eight inland lake faces and 22 lake-barrier edge count are also candidate
+transcriptions. Confirm each face class and each shared boundary against the
+physical printing; do not infer a barrier from the shoreline artwork. Record
+both reciprocal sides and any exception separately.
 
 For a cell-by-cell check of all 336 faces, including empty and cropped faces,
 use the [provisional transcription ledger](provisional-board-transcription.md#cell-ledger).
@@ -156,3 +171,7 @@ comparison overlay.
    inferring it from a nearby city or from the rulebook.
 5. Once reviewed, I will apply only your corrections to the engine/data,
    regenerate the overlays and ledger, and rerun the validation chain.
+
+Setup order and the Navy Nuclear Submarine choice/launch lifecycle are rules
+checks rather than board worksheet entries. Their separate acceptance checks
+are listed in [the board/source reconciliation](board-source-status-reconciliation.md).

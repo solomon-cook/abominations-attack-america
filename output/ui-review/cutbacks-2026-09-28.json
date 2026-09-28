@@ -1,0 +1,67 @@
+{
+  "started": "2026-09-28T13:19:24.214Z",
+  "fixture": "deterministic Move UI fixture; no physical rules claim",
+  "scenarios": {
+    "activePlayer": {
+      "status": "passed",
+      "phaseBefore": "move",
+      "eligibleTarget": "Player 2's public Guard Commander",
+      "hiddenResearchTargetable": false,
+      "command": "research.used",
+      "removedResearchCardIds": [
+        "Guard Commander"
+      ],
+      "cutbacksSpent": true,
+      "hiddenResearchRemains": true,
+      "drawerOpenAfterPlay": true,
+      "focusAfterUnmount": "Military Research · 0 heading",
+      "targetBounds": {
+        "x": 930,
+        "y": 673.5,
+        "width": 319,
+        "height": 61
+      }
+    },
+    "waitingPlayer": {
+      "status": "passed",
+      "currentPlayer": 0,
+      "viewerPlayer": 1,
+      "canAct": false,
+      "cutbacksVisible": true,
+      "targetControls": 0,
+      "commandsApplied": 0
+    },
+    "mobileTouch": {
+      "status": "passed",
+      "viewport": "390x844 touch emulation",
+      "drawerBounds": {
+        "x": 8,
+        "y": 354.484375,
+        "width": 374,
+        "height": 489.515625
+      },
+      "researchTabBounds": {
+        "x": 198,
+        "y": 413,
+        "width": 173,
+        "height": 44
+      },
+      "targetBounds": {
+        "x": 44,
+        "y": 747.40625,
+        "width": 302,
+        "height": 61
+      },
+      "targetRemoved": true,
+      "cutbacksSpent": true,
+      "focusAfterUnmount": "Military Research heading",
+      "horizontalWidths": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    }
+  },
+  "runtimeErrors": [],
+  "completed": "2026-09-28T13:19:28.160Z"
+}

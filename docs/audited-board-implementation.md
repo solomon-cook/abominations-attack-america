@@ -2,13 +2,13 @@
 
 ## Rules and coordinates
 
-New local and online games use `human-audited-north-america`, version 1. The source is [the completed human audit](authoritative-board-human-audit.md), SHA-256 `34c9ac6d7f51f3f067cbdd30a4cfbdad32edf4ab0a6f11f43f744a2b3598f952`. Run `npm run board-audit:verify` to check all 336 compiled observations against it.
+New local and online games currently use the photo-transcribed candidate `human-audited-north-america`, version 1. Its generated observations correspond to [the hash-pinned transcription record](authoritative-board-human-audit.md), SHA-256 `34c9ac6d7f51f3f067cbdd30a4cfbdad32edf4ab0a6f11f43f744a2b3598f952`; `npm run board-audit:verify` checks that correspondence. This does not verify the candidate against the user's physical edition. See [board provenance reconciliation](board-source-status-reconciliation.md).
 
-The board has 187 land, 81 sea, 49 coast and 19 lakeshore cells. Audit row/column coordinates convert to axial engine coordinates with `q = column`, `r = row - floor(column / 2)`. Gameplay, placement, overlays, hit targets and review share this flat-top, staggered-column layout.
+The current candidate records 187 land, 81 sea, 49 coast and 19 lakeshore cells. Audit row/column coordinates convert to axial engine coordinates with `q = column`, `r = row - floor(column / 2)`. Gameplay, placement, overlays, hit targets and review share this flat-top, staggered-column layout. These counts and mappings describe candidate data; they do not establish source verification.
 
-Recorded barriers are reciprocal unions, retaining source references from both observations. Visual shorelines do not determine movement restrictions. Lakeshore permits land entry through unblocked edges; naval eligibility and lake-crossing capabilities remain separate. The 18 monster markings are three lairs for each of six monsters, with the user-confirmed `10/2` normalization to Tomanagi.
+The candidate contains reciprocal barrier unions and 18 monster markings provisionally assigned as three lairs for each of six monsters. The `10/2` transcription says “Toronagi or similar,” while the current generator normalizes that candidate to Tomanagi. No dated, attributable user confirmation for that normalization is recorded in the repository, so its identity remains source-gated. These candidate values and their compiled correspondence are not physical-edition approval.
 
-Existing development, shell and provisional board definitions and their content hashes remain available for pinned saves. Setup materializes each selected monster at its audited lair.
+The active candidate ID/version and existing board definitions/content hashes remain unchanged in this docs-only reconciliation. Setup currently materializes each selected monster at a candidate lair. It does not establish that the lairs or other board data match the user's edition.
 
 ## Camera and controls
 

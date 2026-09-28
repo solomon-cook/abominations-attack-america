@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 2,
+  "researchDrawDiagnosticsVersion": 1,
+  "probe": "deterministic Research draw eligibility and action path",
+  "generatedAt": "2026-09-28T17:12:04.391Z",
+  "gitHead": "6ec09a93a5caf3d5bbd9217c46f36c55fe698b06",
+  "worktreeDirty": true,
+  "dirtyPathCount": 218,
+  "sourceSha256": {
+    "botSelector": "47d990c8d099af9d3e0e7d0ad83c248d6d9537068c6181d5a55ee8d7d1a984d7",
+    "probe": "7f151efb190edc8b362eca0d4e7cd4925f81778d8f722580ec2c3a39b64ac5cd"
+  },
+  "fixture": {
+    "seed": 23,
+    "matchId": "bot-research-draw-eligibility-probe-2026-09-28",
+    "playerCount": 2,
+    "focalPlayerIndex": 1,
+    "initialStateSha256": "ae2174cab836561e03f8d692f6c6b16c08ad679bf3636c1285f61cab65065db3",
+    "construction": "Fresh deterministic development game, focal seat 1 in an authoritative Deploy decision, all rival monsters defeated, an owned military unit on the board, no deployments this turn, empty Research hand, available deck, and remaining legal deployment choices.",
+    "scope": "Single branch-selection probe; this does not measure strategic quality, gameplay balance, or terminal outcomes."
+  },
+  "outcomes": [
+    {
+      "treatment": "force-first",
+      "actor": 1,
+      "inferredDefaultTactic": "research-first",
+      "overrideTactic": "force-first",
+      "eligibility": {
+        "phase": "deploy",
+        "pendingDecision": {
+          "type": "deployment",
+          "playerIndex": 1
+        },
+        "deploymentsThisTurn": 0,
+        "deploymentsAvailable": 8,
+        "activeMilitaryScreenCount": 4,
+        "researchHandSize": 0,
+        "researchDeckAvailable": true,
+        "liveRivalCount": 0,
+        "routeBlockScoreCount": 0,
+        "blockerOpportunityDestinations": [],
+        "objectiveThreat": false,
+        "objectiveThreatReason": "No living rival monster can be selected by focusTarget"
+      },
+      "shouldDrawResearchEligibility": {
+        "researchDeckAvailable": true,
+        "deploymentNotStarted": true,
+        "researchHandBelowTwo": true,
+        "researchFirstPolicy": false,
+        "activeMilitaryScreen": true,
+        "objectiveThreatAbsent": true,
+        "blockerOpportunityAbsent": true
+      },
+      "allShouldDrawResearchRequirementsMet": false,
+      "selectorDiagnostics": {
+        "playerIndex": 1,
+        "path": "optional-research-choice",
+        "deploymentChoiceCount": 8,
+        "legalResearchDrawAvailable": true,
+        "selectedCommandType": "deploy",
+        "gates": {
+          "researchDeckAvailable": true,
+          "deploymentNotStarted": true,
+          "researchHandBelowTwo": true,
+          "researchFirstPolicy": false,
+          "activeMilitaryScreen": true,
+          "objectiveThreatAbsent": true,
+          "blockerOpportunityAbsent": true
+        },
+        "eligible": false
+      },
+      "selectedCommand": {
+        "type": "deploy",
+        "unitId": "national-guard-tank-1",
+        "destination": "1,-1"
+      },
+      "acceptedAction": {
+        "eventType": "unit.deployed",
+        "eventPayload": {
+          "unitId": "national-guard-tank-1",
+          "branch": "National Guard",
+          "destination": "1,-1",
+          "deploymentsThisTurn": 1,
+          "nextPlayer": 1,
+          "nextPhase": "deploy"
+        },
+        "resultingPhase": "deploy",
+        "resultingCurrentPlayer": 1,
+        "resultingDeploymentsThisTurn": 1,
+        "resultingResearchHand": [],
+        "resultingDeckDrawIndex": 0
+      }
+    },
+    {
+      "treatment": "research-first",
+      "actor": 1,
+      "inferredDefaultTactic": "research-first",
+      "overrideTactic": "research-first",
+      "eligibility": {
+        "phase": "deploy",
+        "pendingDecision": {
+          "type": "deployment",
+          "playerIndex": 1
+        },
+        "deploymentsThisTurn": 0,
+        "deploymentsAvailable": 8,
+        "activeMilitaryScreenCount": 4,
+        "researchHandSize": 0,
+        "researchDeckAvailable": true,
+        "liveRivalCount": 0,
+        "routeBlockScoreCount": 0,
+        "blockerOpportunityDestinations": [],
+        "objectiveThreat": false,
+        "objectiveThreatReason": "No living rival monster can be selected by focusTarget"
+      },
+      "shouldDrawResearchEligibility": {
+        "researchDeckAvailable": true,
+        "deploymentNotStarted": true,
+        "researchHandBelowTwo": true,
+        "researchFirstPolicy": true,
+        "activeMilitaryScreen": true,
+        "objectiveThreatAbsent": true,
+        "blockerOpportunityAbsent": true
+      },
+      "allShouldDrawResearchRequirementsMet": true,
+      "selectorDiagnostics": {
+        "playerIndex": 1,
+        "path": "optional-research-choice",
+        "deploymentChoiceCount": 8,
+        "legalResearchDrawAvailable": true,
+        "selectedCommandType": "draw-research",
+        "gates": {
+          "researchDeckAvailable": true,
+          "deploymentNotStarted": true,
+          "researchHandBelowTwo": true,
+          "researchFirstPolicy": true,
+          "activeMilitaryScreen": true,
+          "objectiveThreatAbsent": true,
+          "blockerOpportunityAbsent": true
+        },
+        "eligible": true
+      },
+      "selectedCommand": {
+        "type": "draw-research"
+      },
+      "acceptedAction": {
+        "eventType": "research.drawn",
+        "eventPayload": {
+          "cardId": "Chopper Lift",
+          "playerIndex": 1,
+          "nextPlayer": 0,
+          "nextPhase": "move"
+        },
+        "resultingPhase": "move",
+        "resultingCurrentPlayer": 0,
+        "resultingDeploymentsThisTurn": 0,
+        "resultingResearchHand": [
+          "Chopper Lift"
+        ],
+        "resultingDeckDrawIndex": 1
+      }
+    }
+  ],
+  "result": "Both tactic overrides exercised against cloned identical eligible state: force-first deployed; research-first selected and completed draw-research."
+}

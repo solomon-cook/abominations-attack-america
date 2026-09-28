@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-28T15:58:52Z",
+  "evidenceKind": "isolated scratch deployment-shape experiment; API HTTP probe blocked at process startup",
+  "scratchLocation": "temporary directory outside shared worktree; removed after experiment",
+  "worktreeDependencyFilesChanged": false,
+  "runtime": {
+    "node": "v24.9.0",
+    "npm": "11.6.0"
+  },
+  "scratchSource": [
+    "root package.json and package-lock.json",
+    "apps/api package.json, source, Prisma schema/config/migrations, TypeScript config",
+    "packages/game-engine and packages/shared source/manifests",
+    "apps/web package manifest and the two source files imported by API tests and included by its tsconfig"
+  ],
+  "commands": [
+    {
+      "command": "npm ci --include=dev",
+      "exitCode": 0,
+      "result": "added 286 packages, audited 291; npm reported four high findings in the full dependency graph"
+    },
+    {
+      "command": "npm --workspace=@abominations/api run prisma:generate",
+      "exitCode": 0,
+      "result": "generated Prisma Client with Prisma 7.9.1"
+    },
+    {
+      "command": "npm --workspace=@abominations/api run build",
+      "exitCode": 0,
+      "result": "API TypeScript compilation passed"
+    },
+    {
+      "command": "npm prune --omit=dev --omit=optional --omit=peer",
+      "exitCode": 0,
+      "result": "up to date, audited 50 packages, zero vulnerabilities"
+    },
+    {
+      "command": "npm audit --omit=dev --omit=optional --omit=peer --json",
+      "exitCode": 0,
+      "result": "zero vulnerable packages in the filtered/pruned tree"
+    },
+    {
+      "command": "node dist/apps/api/src/server.js (from apps/api after prune)",
+      "exitCode": 1,
+      "result": "process failed before listening; see runtimeBlocker"
+    }
+  ],
+  "packageInventoryAfterPrune": {
+    "absent": ["prisma", "@prisma/config", "deepmerge-ts", "mysql2", "@electric-sql/pglite"],
+    "retained": ["@prisma/client", "@prisma/adapter-pg", "pg"],
+    "lockedPrismaRelatedVersions": {
+      "prisma": "7.9.1 (absent after prune)",
+      "@prisma/client": "7.9.1",
+      "@prisma/config": "7.9.1 (absent after prune)",
+      "deepmerge-ts": "7.1.5 (absent after prune)",
+      "mysql2": "3.15.3 (absent after prune)",
+      "@prisma/adapter-pg": "7.9.1"
+    }
+  },
+  "databaseFixture": {
+    "implementation": "PGlite 0.4.3 exposed by @electric-sql/pglite-socket 0.1.3",
+    "migrationSetup": "All nine checked-in SQL migration files were applied directly to the scratch PGlite database before the prune/start attempt; Prisma Migrate bookkeeping was not run.",
+    "productionConnection": false
+  },
+  "runtimeBlocker": {
+    "module": "@abominations/game-engine",
+    "packageExport": "packages/game-engine/package.json exports '.' as './src/index.ts'",
+    "resolvedPath": "packages/game-engine/src/index.ts",
+    "location": "line 567",
+    "code": "ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX",
+    "detail": "Node v24.9.0's strip-only TypeScript loader rejects the parameter property `constructor(public readonly code: DomainErrorCode, message: string)` in GameDomainError. The compiled API imports the workspace package by name, but the package export resolves to raw TypeScript instead of emitted JavaScript.",
+    "httpServerReachedListen": false
+  },
+  "apiChecks": {
+    "health": "not run: API process failed before listening",
+    "roomCreate": "not run: API process failed before listening",
+    "roomRead": "not run: API process failed before listening",
+    "databaseQuery": "not attempted through the API"
+  },
+  "interpretation": [
+    "This confirms the scratch API TypeScript build succeeds and that build-then-prune removes the four advisory-related packages while retaining Prisma Client, its PostgreSQL adapter, and pg.",
+    "It does not validate the complete deployed API runtime or a database request because startup fails on the workspace package export before opening an HTTP listener.",
+    "The previous narrower scratch smoke that imported the generated client and constructed PrismaClient/PrismaPg without connecting remains valid; it is not API startup or query evidence."
+  ],
+  "limits": [
+    "PGlite is not PostgreSQL and this setup does not prove PostgreSQL MVCC, row locks, rollback, durability, migrations through Prisma Migrate, or multi-instance behavior.",
+    "No production database, network connection, or live deployment artifact was used.",
+    "The attempt did not apply a scratch-only export rewrite or bundler workaround, so it preserves the observed runtime packaging blocker.",
+    "Any claim about current published advisory ranges or fixed upstream Prisma pins requires up-to-date external source verification; this file records the local locked-tree experiment only."
+  ],
+  "cleanup": {
+    "scratchTreeRemoved": true,
+    "pgliteAndScratchNodeProcessesStopped": true
+  }
+}

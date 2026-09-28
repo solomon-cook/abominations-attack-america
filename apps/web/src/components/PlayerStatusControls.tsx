@@ -7,7 +7,7 @@ import { getLocation, isHexKey, MONSTER_DEFINITIONS, UNIT_DEFINITIONS, type Bran
 import { MilitarySheet, type DeploymentChoice } from "./MilitarySheet";
 import { monsterAssetSlug } from "../monster-assets";
 import { movementLabel, SheetStats } from "./SheetReference";
-import { branchForPlayer, BRANCH_MARK, playerControlBadges, trophyUnitsForPlayer } from "../player-visuals";
+import { branchDeploymentCounts, branchForPlayer, BRANCH_MARK, playerControlBadges, trophyUnitsForPlayer } from "../player-visuals";
 
 type Props = { game: GameState; monster: GameState["monsters"][number]; branch: Branch; playerIndex: number; canAct: boolean; mobileCommandExpanded: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void; onSelectDeployment?: (choice: DeploymentChoice) => void };
 
@@ -68,22 +68,27 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
   const [tab, setTab] = useState<"monster" | "military" | "map">("monster");
   const [mobileRecordOpen, setMobileRecordOpen] = useState(false);
   const [mobileViewport, setMobileViewport] = useState(false);
-  const [mobileRecordHost, setMobileRecordHost] = useState<HTMLElement | null>(null);
+  const [recordPortalHost, setRecordPortalHost] = useState<HTMLElement | null>(null);
   const [inspectedPlayer, setInspectedPlayer] = useState<number | null>(null);
   const roster = UNIT_DEFINITIONS.filter(unit => unit.branch === branch);
-  const available = game.units.filter(unit => unit.ownerPlayer === playerIndex && !game.removedUnitIds.includes(unit.id) && unit.location !== "permanently-removed");
+  const { deployed: deployedBranchUnits, reserve: reserveBranchUnits } = branchDeploymentCounts(game, playerIndex, branch);
   const healthPercent = Math.max(0, Math.min(100, Math.round(monster.health / monster.maxHealth * 100)));
   const ownBranch = branchForPlayer(game, playerIndex);
   const playCard = (command: GameCommand) => { setOpen(null); return runCommand(command); };
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 700px)");
+    const mobileMedia = window.matchMedia("(max-width: 700px)");
+    const portalMedia = window.matchMedia("(max-width: 900px)");
     const update = () => {
-      setMobileViewport(media.matches);
-      setMobileRecordHost(media.matches ? document.querySelector<HTMLElement>(".mobile-record-slot") : null);
+      setMobileViewport(mobileMedia.matches);
+      setRecordPortalHost(portalMedia.matches ? document.querySelector<HTMLElement>(".mobile-record-slot") : null);
     };
     update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
+    mobileMedia.addEventListener("change", update);
+    portalMedia.addEventListener("change", update);
+    return () => {
+      mobileMedia.removeEventListener("change", update);
+      portalMedia.removeEventListener("change", update);
+    };
   }, []);
   const recordExpanded = mobileViewport ? mobileCommandExpanded : mobileRecordOpen;
   const recordContent = <section className={`persistent-record ${recordExpanded ? "mobile-record-open" : "mobile-record-closed"}`} data-record-tab={tab} aria-label="Player record and map">
@@ -121,7 +126,7 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
         {tab === "military" && <button className="record-preview military-record-preview" onClick={() => setOpen(branch)} aria-label={`Open ${branch} military sheet`}>
           <img src={`/assets/military/${roster[0]?.id ?? "army-tank"}.webp`} alt="" />
           <span className="record-preview-body"><small>PLAYER {playerIndex + 1} · MILITARY RECORD</small><strong>{branch}</strong>
-            <span>{available.filter(unit => unit.location !== "record-tile").length} deployed · {available.filter(unit => unit.location === "record-tile").length} reserve</span>
+            <span>{deployedBranchUnits} deployed · {reserveBranchUnits} reserve</span>
             <span>{game.players[playerIndex]?.researchCardIds.length ?? 0} Research cards</span>
             <span className="record-mini-stats">{roster.map(unit => `${unit.name} · Move ${unit.move}`).join(" / ")}</span><small>Open full sheet ↗</small>
           </span>
@@ -169,7 +174,20 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
         </section>;
       })()}
     </nav>
-    {mobileRecordHost ? createPortal(recordContent, mobileRecordHost) : recordContent}
+    {recordPortalHost ? createPortal(recordContent, recordPortalHost) : recordContent}
+    <button
+      type="button"
+      className="deployment-tray-shortcut"
+      data-branch={branch}
+      aria-label={`Open ${branch} military sheet, ${deployedBranchUnits} deployed, ${reserveBranchUnits} in reserve`}
+      aria-haspopup="dialog"
+      title={`${branch} · ${deployedBranchUnits} deployed · ${reserveBranchUnits} in reserve`}
+      onClick={() => setOpen(branch)}
+    >
+      <span className="deployment-tray-mark" aria-hidden="true">{BRANCH_MARK[branch]}</span>
+      <span className="deployment-tray-summary"><b>{branch}</b><small>{deployedBranchUnits} deployed · {reserveBranchUnits} reserve</small></span>
+      <span className="deployment-tray-open" aria-hidden="true">↗</span>
+    </button>
     <nav className="player-sheet-peeks" aria-label={`Player ${playerIndex + 1} reference sheets`}>
       {[{ id: "monster", name: monster.name, kind: "Monster", theme: "monster", count: game.players[playerIndex]?.mutationCardIds.length ?? 0 },
         ...ownedMilitarySheets(game, playerIndex, branch).map((name) => ({ id: name, name, kind: "Military", theme: name, count: name === branch ? game.players[playerIndex]?.researchCardIds.length ?? 0 : undefined })),

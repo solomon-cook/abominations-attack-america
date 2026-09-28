@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { applyCommand, cardDefinition, sourcedCardRule, legalGiantPlacementDestinations, legalMolecularCannonTargets, type GameCommand, type GameState } from "@abominations/game-engine";
 import { boardForGame } from "../board-pin";
 import { DigitalCard } from "./DigitalCard";
@@ -59,7 +59,7 @@ function kindForMonsterCard(game: GameState, cardId: string): boolean {
     && game.players[game.currentPlayer]?.mutationCardIds.includes(cardId) === true;
 }
 
-function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game: GameState; cardId: string; kind: "mutation" | "research"; canPlay: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void }) {
+function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy, onPlay }: { game: GameState; cardId: string; kind: "mutation" | "research"; canPlay: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void; onPlay?: (cardId: string, command: GameCommand) => void | Promise<void> }) {
   const [selected, setSelected] = useState("");
   const rule = sourcedCardRule(cardId);
   const implemented = cardDefinition(cardId)?.availability === "implemented";
@@ -73,12 +73,12 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game:
     : !actions.length ? "No legal play or target at this point in the turn."
     : "Ready to play.";
   return <DigitalCard cardId={cardId} kind={kind} className="sheet-held-card" status={status} tabIndex={0}>
-    {actions.length === 1 && runCommand && <button type="button" onClick={() => void runCommand(actions[0].command)}>{actions[0].label}</button>}
+    {actions.length === 1 && runCommand && <button type="button" onClick={() => void (onPlay ? onPlay(cardId, actions[0].command) : runCommand(actions[0].command))}>{actions[0].label}</button>}
     {actions.length > 1 && runCommand && <>
       <label>Choose target or outcome<select aria-label={`${cardId} target or outcome`} value={chosen ? selected : ""} onChange={(event) => setSelected(event.target.value)}>
         <option value="">Select…</option>{actions.map((action) => <option key={JSON.stringify(action.command)} value={JSON.stringify(action.command)}>{action.label}</option>)}
       </select></label>
-      <button type="button" disabled={!chosen} onClick={() => chosen && void runCommand(chosen.command)}>Play {cardId}</button>
+      <button type="button" disabled={!chosen} onClick={() => chosen && void (onPlay ? onPlay(cardId, chosen.command) : runCommand(chosen.command))}>Play {cardId}</button>
     </>}
     {cardId === "X-Fighters" && canPlay && game.phase === "deploy" && onDeploy && <button type="button" onClick={() => onDeploy("X-Fighters")}>Choose an X-Fighter to deploy</button>}
   </DigitalCard>;
@@ -86,8 +86,19 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game:
 
 export function SheetCards({ game, playerIndex, kind, canAct = false, runCommand, onDeploy }: { game: GameState; playerIndex: number; kind: "mutation" | "research"; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void }) {
   const cards = game.players[playerIndex]?.[kind === "mutation" ? "mutationCardIds" : "researchCardIds"] ?? [];
+  const heading = useRef<HTMLHeadingElement>(null);
+  const playedCard = useRef<string | null>(null);
+  useEffect(() => {
+    if (!playedCard.current || cards.includes(playedCard.current)) return;
+    playedCard.current = null;
+    heading.current?.focus({ preventScroll: true });
+  }, [cards]);
+  const playCard = (cardId: string, command: GameCommand) => {
+    playedCard.current = cardId;
+    return runCommand?.(command);
+  };
   return <section className="sheet-held-cards" aria-label={kind === "mutation" ? "Your Mutation cards" : "Your Military Research cards"}>
-    <h3>{kind === "mutation" ? "Monster Mutation" : "Military Research"} · {cards.length}</h3>
-    {!cards.length ? <p>No {kind === "mutation" ? "Mutation" : "Military Research"} cards held.</p> : <div className="sheet-held-card-grid">{cards.map((cardId) => <HeldCard key={cardId} game={game} cardId={cardId} kind={kind} canPlay={canAct && playerIndex === game.currentPlayer} runCommand={runCommand} onDeploy={onDeploy} />)}</div>}
+    <h3 ref={heading} tabIndex={-1}>{kind === "mutation" ? "Monster Mutation" : "Military Research"} · {cards.length}</h3>
+    {!cards.length ? <p>No {kind === "mutation" ? "Mutation" : "Military Research"} cards held.</p> : <div className="sheet-held-card-grid">{cards.map((cardId) => <HeldCard key={cardId} game={game} cardId={cardId} kind={kind} canPlay={canAct && playerIndex === game.currentPlayer} runCommand={runCommand} onPlay={playCard} onDeploy={onDeploy} />)}</div>}
   </section>;
 }

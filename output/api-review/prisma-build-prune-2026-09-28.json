@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-28T15:40:11Z",
+  "evidenceKind": "integration summary of isolated scratch-install experiments; raw npm logs were not retained",
+  "packageLockSha256": "9ac2b914a45bbb1fd0e3b619ff30a4cfcdea28ea90e067d94c29f571b5c44620",
+  "scratchLocation": "temporary directories outside the shared worktree; all removed after each experiment",
+  "worktreeDependencyFilesChanged": false,
+  "lockedPackages": {
+    "@prisma/client": "7.9.1",
+    "prisma": "7.9.1",
+    "@prisma/config": "7.9.1",
+    "deepmerge-ts": "7.1.5",
+    "mysql2": "3.15.3",
+    "@prisma/adapter-pg": "7.9.1"
+  },
+  "experiments": [
+    {
+      "name": "clean omit-dev install",
+      "commands": ["npm ci --omit=dev", "npm audit --omit=dev --json"],
+      "installExitCode": 0,
+      "installedPackages": 225,
+      "auditedPackages": 230,
+      "auditExitCode": 1,
+      "vulnerablePackageRecords": ["@prisma/config", "deepmerge-ts", "mysql2", "prisma"],
+      "vulnerablePackagesPhysicallyPresent": true,
+      "prismaGenerateExitCode": 0,
+      "generatedClientAndPgAdapterConstruction": "passed; no database connection attempted"
+    },
+    {
+      "name": "clean omit-dev and omit-peer install",
+      "commands": ["npm ci --omit=dev --omit=peer", "npm audit --omit=dev --omit=peer --json"],
+      "installExitCode": 0,
+      "vulnerablePackagesPhysicallyPresent": true,
+      "vulnerablePackageRecords": ["@prisma/config", "deepmerge-ts", "mysql2", "prisma"],
+      "auditExitCode": 1,
+      "prismaGenerateExitCode": 0,
+      "generatedClientAndPgAdapterConstruction": "passed; no database connection attempted"
+    },
+    {
+      "name": "full build then production prune",
+      "commands": [
+        "npm ci",
+        "npm --workspace=@abominations/api run prisma:generate",
+        "npm prune --omit=dev --omit=optional --omit=peer",
+        "npm audit --omit=dev --omit=optional --omit=peer --json"
+      ],
+      "installExitCode": 0,
+      "installedPackages": 286,
+      "initialAuditedPackages": 291,
+      "prismaGenerateExitCode": 0,
+      "pruneExitCode": 0,
+      "packagesAfterPrune": 50,
+      "removedPackages": ["prisma", "@prisma/config", "deepmerge-ts", "mysql2"],
+      "retainedPackages": ["@prisma/client", "@prisma/adapter-pg", "pg"],
+      "filteredAuditExitCode": 0,
+      "filteredAuditVulnerabilities": 0,
+      "generatedClientAndPgAdapterConstruction": "passed; no database connection attempted"
+    }
+  ],
+  "runtimeProbe": {
+    "imported": ["./generated/prisma/client.ts", "@prisma/adapter-pg"],
+    "constructed": ["PrismaClient", "PrismaPg adapter"],
+    "queryOrConnectionAttempted": false,
+    "result": {"clientCreated": true, "queryRawType": "function", "adapter": "PrismaPgAdapterFactory"}
+  },
+  "limits": [
+    "The build-then-prune experiment proves a generated client and PostgreSQL adapter can be imported and constructed from the filtered tree; it does not prove an API process can serve requests or complete a database query after pruning.",
+    "No deployment manifest or host packaging pipeline was found, so the deployed artifact is not yet proven to use the verified prune sequence.",
+    "The full development/build dependency graph remains affected; this evidence only validates a candidate production runtime tree."
+  ]
+}

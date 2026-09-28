@@ -101,5 +101,6 @@
   .game-screen .command-station .action-dock { grid-template-columns:minmax(0,1fr) 128px; padding:12px; gap:10px; }
   .game-screen .command-station .action-dock > button { width:128px; font-size:12px; }
   .game-screen .command-station .action-dock-status { font-size:12px; }
+  .piece-context-tab > summary { min-height:44px; }
   .context-tab-body { max-height:45dvh; }
 }

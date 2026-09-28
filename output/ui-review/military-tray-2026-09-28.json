@@ -1,0 +1,81 @@
+{
+  "started": "2026-09-28T12:27:11.833Z",
+  "scenarios": {
+    "trophy": {
+      "status": "passed",
+      "decisionOwner": 0,
+      "monsterPlayer": 1,
+      "selectedUnitId": "4-0",
+      "reserveBefore": 6,
+      "reserveAfter": 5,
+      "trayBefore": {
+        "deployed": 2,
+        "reserve": 6
+      },
+      "trayAfter": {
+        "deployed": 2,
+        "reserve": 5
+      },
+      "removed": true,
+      "attributedToTakingPlayer": true,
+      "keyboardActivated": true
+    },
+    "mobileTrophy": {
+      "status": "passed",
+      "viewport": "390x844 touch emulation",
+      "trayBounds": {
+        "x": 78,
+        "y": 700,
+        "width": 174,
+        "height": 52
+      },
+      "drawerBounds": {
+        "x": 8,
+        "y": 354.484375,
+        "width": 374,
+        "height": 489.515625
+      },
+      "trophyButtonBounds": {
+        "x": 68,
+        "y": 398.1875,
+        "width": 35,
+        "height": 48
+      },
+      "keyboardActivated": true,
+      "trayAfter": {
+        "deployed": 2,
+        "reserve": 5
+      },
+      "horizontalWidths": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    },
+    "unauthorized": {
+      "status": "passed",
+      "pendingDecisionVisible": true,
+      "trophyControls": 0
+    },
+    "nonpending": {
+      "status": "passed",
+      "referenceMounted": false,
+      "trophyControls": 0
+    },
+    "redeploy": {
+      "status": "passed",
+      "unitId": "0-0",
+      "from": "1,-1",
+      "to": "-1,0",
+      "tray": {
+        "deployed": 1,
+        "reserve": 7
+      },
+      "reference": {
+        "reserve": 7,
+        "total": 8
+      }
+    }
+  },
+  "runtimeErrors": []
+}

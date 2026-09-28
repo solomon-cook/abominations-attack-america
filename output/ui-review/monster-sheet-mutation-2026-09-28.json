@@ -1,0 +1,64 @@
+{
+  "started": "2026-09-28T13:19:06.918Z",
+  "scope": "one Berserk Mutation action from the production modal Monster Sheet component; fixture-level applyCommand, not full CARD-LEAF-02 coverage or physical-rule parity",
+  "scenarios": {
+    "ownerKeyboard": {
+      "status": "passed",
+      "activation": "Enter opened sheet; Tab reached Berserk; Enter played it",
+      "tabStepsToAction": 3,
+      "action": "mutation.used",
+      "extraAttacks": 5,
+      "cardSpentAndDiscarded": true,
+      "dialogBounds": {
+        "x": 20,
+        "y": 135.25,
+        "right": 1276,
+        "bottom": 764.75,
+        "width": 1256,
+        "height": 629.5,
+        "viewportWidth": 1280,
+        "viewportHeight": 900
+      },
+      "focusAfterCardUnmount": "Open Zorb monster sheet trigger"
+    },
+    "waitingRole": {
+      "status": "passed",
+      "canAct": false,
+      "actionButtons": 0,
+      "mutationRemainsHeld": true,
+      "escapeRestoresFocus": true
+    },
+    "mobileBounds": {
+      "status": "passed",
+      "viewport": "390x844 touch emulation",
+      "dialogBounds": {
+        "x": 20,
+        "y": 125.796875,
+        "right": 386,
+        "bottom": 718.1875,
+        "width": 366,
+        "height": 592.390625,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "actionBounds": {
+        "x": 113,
+        "y": 629.1875,
+        "right": 363,
+        "bottom": 673.1875,
+        "width": 250,
+        "height": 44,
+        "viewportWidth": 390,
+        "viewportHeight": 844
+      },
+      "pageWidths": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    }
+  },
+  "runtimeErrors": [],
+  "completed": "2026-09-28T13:19:10.664Z",
+  "status": "passed"
+}

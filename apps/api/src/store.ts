@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupAction, createMvpRoomGame, createRoomGame, legalLaserFenceTargets, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicRoomSummary, RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
@@ -6,9 +6,15 @@ import { emptyMatchCounters, updateMatchCounters, type MatchCounters } from "./p
 
 type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string; disconnectedAt?: number };
 type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
-export interface RoomSocketPrincipal { roomCode: string; participantId: string; sessionHash: string }
+export interface RoomSocketPrincipal { roomCode: string; participantId: string; sessionHash: string; connectionId: string }
+export interface RoomSocketTicket { ticket: string; connectionId: string }
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
+const CANCELLED_CONNECTION_PREFIX = "cancelled:";
+export const cancelledConnectionId = (pendingConnectionId: string) => `${CANCELLED_CONNECTION_PREFIX}${pendingConnectionId}`;
+export const cancelledPendingConnectionId = (connectionId: string | null | undefined) => connectionId?.startsWith(CANCELLED_CONNECTION_PREFIX)
+  ? connectionId.slice(CANCELLED_CONNECTION_PREFIX.length)
+  : undefined;
 
 export function mutationBattleOwner(state: GameState, envelope: GameCommandEnvelope): number | undefined {
   const command = envelope.command;
@@ -71,16 +77,18 @@ export interface RoomStore {
   listPublicRooms(): Promise<PublicRoomSummary[]>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
   spectateRoom(code: string, displayName: string): Promise<SessionResponse>;
-  disconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
-  reconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
+  disconnect(code: string, token: string, connectionId?: string, pendingConnectionId?: string): Promise<RoomView>;
+  reconnect(code: string, token: string, expectedConnectionId?: string, connectionId?: string): Promise<RoomView>;
   rotateSession(code: string, token: string): Promise<SessionResponse>;
   setReady(code: string, token: string, ready: boolean): Promise<RoomView>;
   setupAction(code: string, token: string, action: SetupAction, expectedRevision: number): Promise<RoomView>;
   getRoom(code: string, token: string, afterVersion?: number): Promise<RoomView>;
   submitAction(code: string, token: string, envelope: GameCommandEnvelope): Promise<RoomView>;
-  createSocketTicket(code: string, token: string): Promise<string>;
+  createSocketTicket(code: string, token: string, expectedConnectionId?: string | null, requestedConnectionId?: string): Promise<RoomSocketTicket>;
   consumeSocketTicket(code: string, ticket: string): Promise<RoomSocketPrincipal>;
+  participantIdForToken(code: string, token: string): Promise<string>;
   getRoomForParticipant(code: string, participantId: string, afterVersion?: number): Promise<RoomView>;
+  getRoomForConnection(code: string, participantId: string, connectionId: string, sessionHash: string, afterVersion?: number): Promise<RoomView | undefined>;
   submitActionForParticipant(code: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomView>;
   connectParticipant(code: string, participantId: string, connectionId: string, sessionHash: string): Promise<RoomView>;
   disconnectParticipant(code: string, participantId: string, connectionId?: string): Promise<RoomView>;
@@ -96,7 +104,7 @@ const gameSeed = () => randomBytes(4).readUInt32LE(0);
 export class MemoryRoomStore implements RoomStore {
   private rooms = new Map<string, StoredRoom>();
   private actionIds = new Set<string>();
-  private socketTickets = new Map<string, { roomCode: string; participantId: string; sessionHash: string; expiresAt: number }>();
+  private socketTickets = new Map<string, { roomCode: string; participantId: string; sessionHash: string; connectionId: string; expiresAt: number }>();
 
   constructor(private readonly allowDevelopmentFixture = false) {}
 
@@ -147,17 +155,25 @@ export class MemoryRoomStore implements RoomStore {
 
   async spectateRoom(roomCode: string, displayName: string) {
     const room = this.requireRoom(roomCode);
+    if (room.status === "expired") throw new Error("This room has expired.");
     if (room.privacy === "private") throw new Error("This room is private and does not allow spectator entry.");
     const session = this.addParticipant(room, displayName || "Spectator", "spectator");
     this.touch(room);
     return session;
   }
 
-  async disconnect(roomCode: string, accessToken: string, connectionId = "legacy") {
+  async disconnect(roomCode: string, accessToken: string, connectionId = "legacy", pendingConnectionId?: string) {
     const room = this.authorize(roomCode, accessToken);
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
     if (!participant) throw new Error("Invalid room token.");
-    if (participant.connectionId && participant.connectionId !== connectionId) return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+    if (pendingConnectionId) {
+      if (participant.connectionId && participant.connectionId !== connectionId && participant.connectionId !== pendingConnectionId) return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+      // Preserve the cancelled lease in the existing connectionId field. This
+      // lets a late reconnect be rejected without adding a persistence column.
+      participant.connectionId = cancelledConnectionId(pendingConnectionId);
+    } else if (participant.connectionId && participant.connectionId !== connectionId) {
+      return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+    }
     participant.connected = false;
     participant.disconnectedAt = Date.now();
     this.touch(room);
@@ -165,10 +181,17 @@ export class MemoryRoomStore implements RoomStore {
     return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
   }
 
-  async reconnect(roomCode: string, accessToken: string, connectionId = "legacy") {
+  async reconnect(roomCode: string, accessToken: string, expectedConnectionId = "legacy", connectionId = expectedConnectionId) {
     const room = this.authorize(roomCode, accessToken);
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
     if (!participant) throw new Error("Invalid room token.");
+    if (cancelledPendingConnectionId(participant.connectionId)) throw new Error("This room connection was replaced. Reconnect with the current lease.");
+    const retryingSameLease = participant.connectionId === connectionId;
+    if (!retryingSameLease && participant.connectionId && participant.connectionId !== expectedConnectionId) throw new Error("This room connection was replaced. Reconnect with the current lease.");
+    if (retryingSameLease && participant.connected) {
+      this.refreshStatus(room);
+      return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+    }
     participant.connected = true;
     participant.disconnectedAt = undefined;
     participant.botControlled = false;
@@ -200,10 +223,6 @@ export class MemoryRoomStore implements RoomStore {
     participant.ready = ready;
     this.touch(room);
     this.refreshStatus(room);
-    if ((room.status as RoomStatus) === "active" && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
-      room.state = applyCompletedSetup(room.state);
-      room.version += 1;
-    }
     return this.view(room, 0, "player", participant.playerIndex);
   }
 
@@ -219,8 +238,8 @@ export class MemoryRoomStore implements RoomStore {
       const choice = action.startingChoice;
       setupDeploymentState(room.state, participant.playerIndex, "placements" in choice ? choice.placements : [choice]);
     }
-    if (nextSetup.phase === "complete") applyCompletedSetup({ ...room.state, setupState: nextSetup });
-    room.state = { ...room.state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
+    const setupState = { ...room.state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
+    room.state = nextSetup.phase === "complete" ? applyCompletedSetup(setupState) : setupState;
     this.touch(room);
     room.version += 1;
     room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: participant.id, type: "setup.updated", payload: { phase: nextSetup.phase, action: action.type }, createdAt: now() });
@@ -251,20 +270,47 @@ export class MemoryRoomStore implements RoomStore {
     return this.applyRoomCommand(room, actor, envelope, "human");
   }
 
-  async createSocketTicket(roomCode: string, accessToken: string): Promise<string> {
+  async createSocketTicket(roomCode: string, accessToken: string, expectedConnectionId: string | null = null, requestedConnectionId?: string): Promise<RoomSocketTicket> {
     const room = this.authorize(roomCode, accessToken);
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
     if (!participant) throw new Error("Invalid room token.");
-    const ticket = token();
-    this.socketTickets.set(hash(ticket), { roomCode: room.code, participantId: participant.id, sessionHash: participant.tokenHash, expiresAt: Date.now() + 30_000 });
-    return ticket;
+    const currentConnectionId = participant.connectionId ?? null;
+    const connectionId = requestedConnectionId ?? randomUUID();
+    const retryingSameLease = currentConnectionId === connectionId && !participant.connected;
+    if (currentConnectionId === connectionId && participant.connected) throw new Error("This room connection is already connected.");
+    if (!retryingSameLease && currentConnectionId !== expectedConnectionId) throw new Error("This room connection was replaced. Reconnect with the current lease.");
+    for (const [ticketHash, record] of this.socketTickets) {
+      if (record.participantId === participant.id) this.socketTickets.delete(ticketHash);
+    }
+    const ticket = `${token()}.${connectionId}`;
+    // Issuance is the lease handoff point: delayed sockets using older tickets and
+    // the currently connected socket stop being authoritative immediately.
+    participant.connectionId = connectionId;
+    participant.connected = false;
+    participant.disconnectedAt = Date.now();
+    this.touch(room);
+    this.refreshStatus(room);
+    this.socketTickets.set(hash(ticket), { roomCode: room.code, participantId: participant.id, sessionHash: participant.tokenHash, connectionId, expiresAt: Date.now() + 30_000 });
+    return { ticket, connectionId };
   }
 
   async consumeSocketTicket(roomCode: string, ticket: string): Promise<RoomSocketPrincipal> {
-    const record = this.socketTickets.get(hash(ticket));
+    const ticketHash = hash(ticket);
+    const record = this.socketTickets.get(ticketHash);
     if (!record || record.expiresAt <= Date.now() || record.roomCode !== roomCode.toUpperCase()) throw new Error("WebSocket ticket is invalid or expired.");
-    this.socketTickets.delete(hash(ticket));
-    return { roomCode: record.roomCode, participantId: record.participantId, sessionHash: record.sessionHash };
+    this.socketTickets.delete(ticketHash);
+    const room = this.rooms.get(record.roomCode);
+    const participant = room?.participants.find((candidate) => candidate.id === record.participantId);
+    if (!participant || participant.tokenHash !== record.sessionHash) throw new Error("WebSocket ticket was issued for a replaced room session.");
+    if (isSessionExpired(participant.sessionExpiresAt)) throw new Error("Session token has expired.");
+    return { roomCode: record.roomCode, participantId: record.participantId, sessionHash: record.sessionHash, connectionId: record.connectionId };
+  }
+
+  async participantIdForToken(roomCode: string, accessToken: string): Promise<string> {
+    const room = this.authorize(roomCode, accessToken);
+    const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!participant) throw new Error("Invalid room token.");
+    return participant.id;
   }
 
   async getRoomForParticipant(roomCode: string, participantId: string, afterVersion = 0): Promise<RoomView> {
@@ -274,10 +320,20 @@ export class MemoryRoomStore implements RoomStore {
     return this.view(room, afterVersion, viewer.role === "player" ? "player" : "spectator", viewer.playerIndex);
   }
 
+  async getRoomForConnection(roomCode: string, participantId: string, connectionId: string, sessionHash: string, afterVersion = 0): Promise<RoomView | undefined> {
+    const room = this.requireRoom(roomCode);
+    if (room.status === "expired") return undefined;
+    const participant = room.participants.find((candidate) => candidate.id === participantId);
+    if (!participant || isSessionExpired(participant.sessionExpiresAt) || !participant.connected || participant.connectionId !== connectionId || participant.tokenHash !== sessionHash) return undefined;
+    return this.view(room, afterVersion, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+  }
+
   async submitActionForParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomView> {
     const room = this.requireRoom(roomCode);
+    if (room.status === "expired") throw new Error("This room has expired.");
     const actor = room.participants.find((candidate) => candidate.id === participantId);
     if (!actor || actor.role !== "player") throw new Error("Spectators cannot submit game actions.");
+    if (isSessionExpired(actor.sessionExpiresAt)) throw new Error("Session token has expired.");
     if (!actor.connected || actor.connectionId !== connectionId || actor.tokenHash !== sessionHash) throw new Error("This WebSocket connection has been replaced. Reconnect to continue.");
     if (actor.botControlled) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
     if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
@@ -302,13 +358,16 @@ export class MemoryRoomStore implements RoomStore {
 
   async connectParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string): Promise<RoomView> {
     const room = this.requireRoom(roomCode);
+    if (room.status === "expired") throw new Error("This room has expired.");
     const participant = room.participants.find((candidate) => candidate.id === participantId);
     if (!participant) throw new Error("Room participant not found.");
     if (participant.tokenHash !== sessionHash) throw new Error("WebSocket ticket was issued for a replaced room session.");
+    if (isSessionExpired(participant.sessionExpiresAt)) throw new Error("Session token has expired.");
+    if (participant.connectionId !== connectionId) throw new Error("WebSocket ticket was replaced by a newer connection.");
+    if (participant.connected) throw new Error("This room connection is already connected.");
     participant.connected = true;
     participant.disconnectedAt = undefined;
     participant.botControlled = false;
-    participant.connectionId = connectionId;
     this.touch(room);
     this.refreshStatus(room);
     return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
@@ -335,17 +394,14 @@ export class MemoryRoomStore implements RoomStore {
           if (nextSetup === setup) break;
           const seat = nextSetup.seats.find((candidate) => candidate.playerIndex === setupPlayer);
           if (seat?.startingChoice?.kind === "deploy") setupDeploymentState({ ...room.state, setupState: nextSetup }, setupPlayer, "placements" in seat.startingChoice ? seat.startingChoice.placements : [seat.startingChoice]);
-          room.state = { ...room.state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
+          const setupState = { ...room.state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
+          room.state = nextSetup.phase === "complete" ? applyCompletedSetup(setupState) : setupState;
           actor.ready = Boolean(seat?.startingChoice);
           this.touch(room);
           room.version += 1;
           room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: "setup.updated", controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, createdAt: now() });
           room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
           this.refreshStatus(room);
-          if (room.status === "active" && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
-            room.state = applyCompletedSetup(room.state);
-            room.version += 1;
-          }
           updated.push(room.code);
           continue;
         }
@@ -401,6 +457,7 @@ export class MemoryRoomStore implements RoomStore {
 
   private authorize(roomCode: string, accessToken: string) {
     const room = this.requireRoom(roomCode);
+    if (room.status === "expired") throw new Error("This room has expired.");
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
     if (!participant) throw new Error("Invalid room token.");
     if (isSessionExpired(participant.sessionExpiresAt)) throw new Error("Session token has expired.");
@@ -414,12 +471,12 @@ export class MemoryRoomStore implements RoomStore {
     }
     const players = room.participants.filter((participant) => participant.role === "player");
     const setupComplete = !room.state.setupState || room.state.setupState.phase === "complete";
-    if (room.status === "completed") return;
+    if (room.status === "completed" || room.status === "expired") return;
     if (room.status === "active") {
-      room.status = "active";
+      room.status = players.length > 0 && players.every((participant) => !participant.connected) ? "abandoned" : "active";
       return;
     }
-    if (room.status === "abandoned" && !(setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.ready && participant.connected))) return;
+    if (room.status === "abandoned" && !(setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.ready && (participant.connected || participant.botControlled)))) return;
     room.status = setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.ready && (participant.connected || participant.botControlled)) ? "active" : "waiting";
   }
 

@@ -17,6 +17,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const drawerDrag = useRef<{ y: number; height: number } | null>(null);
   const suppressSelection = useRef(false);
+  const focusSelectedSheet = useRef(false);
   const [section, setSection] = useState<"units" | "research">("units");
   const [selectedSheet, setSelectedSheet] = useState(initialSheet ?? nextDeploymentSheet(choices, branch));
   const [compactDeployment, setCompactDeployment] = useState(() => window.matchMedia("(max-width: 600px)").matches);
@@ -25,6 +26,11 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
   const sheets = [branch, ...new Set([...choices.map((choice) => choice.sheet), ...extraSheets].filter((sheet) => sheet !== branch))];
   const activeSheet = sheets.includes(selectedSheet) ? selectedSheet : branch;
   const pageIndex = sheets.indexOf(activeSheet);
+  useEffect(() => {
+    if (!focusSelectedSheet.current) return;
+    focusSelectedSheet.current = false;
+    ref.current?.querySelector<HTMLButtonElement>(".military-sheet-tabs button[aria-pressed='true']")?.focus();
+  }, [activeSheet]);
   const interactiveChoices = referenceOnly && game && canAct && playerIndex === game.currentPlayer ? deploymentChoices(game) : choices;
   const pageChoices = interactiveChoices.filter((choice) => choice.sheet === activeSheet);
   const turnPage = (direction: number) => setSelectedSheet(sheets[(pageIndex + direction + sheets.length) % sheets.length]);
@@ -34,24 +40,46 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
     return () => previous?.focus({ preventScroll: true });
   }, []);
   useEffect(() => {
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", dismissOnEscape, true);
+    return () => window.removeEventListener("keydown", dismissOnEscape, true);
+  }, [onClose]);
+  useEffect(() => {
     const media = window.matchMedia("(max-width: 600px)");
     const update = () => setCompactDeployment(media.matches);
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-  const drawerBounds = () => ({ min: 96, max: Math.max(260, window.innerHeight - 54) });
+  const drawerBounds = () => ({ min: 96, max: Math.max(96, window.innerHeight - 54) });
   const resizeDrawer = (height: number) => {
     const { min, max } = drawerBounds();
     setDrawerHeight(Math.min(max, Math.max(min, height)));
   };
+  useEffect(() => {
+    const reclamp = () => setDrawerHeight((height) => {
+      if (height === null) return height;
+      const { min, max } = drawerBounds();
+      return Math.min(max, Math.max(min, height));
+    });
+    window.addEventListener("resize", reclamp);
+    return () => window.removeEventListener("resize", reclamp);
+  }, []);
   const drawerStyle = compactDeployment && drawerHeight ? { "--mobile-drawer-height": `${drawerHeight}px` } as CSSProperties : undefined;
   return <div className="military-drawer-layer">
     <div className={`military-hand military-drawer ${drawerHeight ? "military-drawer-resized" : ""}`} style={drawerStyle} ref={ref} role="dialog" aria-labelledby="military-sheet-title" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => {
-      if (event.key === "Escape") onClose();
-      if (!(event.target instanceof HTMLSelectElement) && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); turnPage(event.key === "ArrowRight" ? 1 : -1); }
-
+      const inSheetNavigation = event.target instanceof HTMLElement && Boolean(event.target.closest(".military-sheet-tabs"));
+      if (inSheetNavigation && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        focusSelectedSheet.current = true;
+        turnPage(event.key === "ArrowRight" ? 1 : -1);
+      }
     }}>
-      <div className="military-drawer-grab" role="slider" tabIndex={0} aria-label="Resize military sheet" aria-orientation="vertical" aria-valuemin={96} aria-valuemax={Math.max(260, typeof window === "undefined" ? 800 : window.innerHeight - 54)} aria-valuenow={Math.round(drawerHeight ?? window.innerHeight * .58)} onPointerDown={(event) => {
+      <div className="military-drawer-grab" role="slider" tabIndex={0} aria-label="Resize military sheet" aria-orientation="vertical" aria-valuemin={96} aria-valuemax={drawerBounds().max} aria-valuenow={Math.round(drawerHeight ?? window.innerHeight * .58)} onPointerDown={(event) => {
         if (!compactDeployment) return;
         drawerDrag.current = { y: event.clientY, height: ref.current?.getBoundingClientRect().height ?? window.innerHeight * .58 };
         event.currentTarget.setPointerCapture(event.pointerId);

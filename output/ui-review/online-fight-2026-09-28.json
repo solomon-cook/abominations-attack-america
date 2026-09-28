@@ -1,0 +1,79 @@
+{
+  "ok": true,
+  "date": "2026-09-28",
+  "roomCode": "965221",
+  "setupActions": 8,
+  "activePlayerIndex": 0,
+  "selectedMonster": "monster-1",
+  "targetHex": "19,1",
+  "setupDeployedUnit": "1-1",
+  "onlineFight": "entered-and-resolved",
+  "multiplePendingBattles": "chooser-selected-one-remaining-continue-resolve",
+  "optionalChoice": "navy-submarine-launched-and-persisted",
+  "readOnlyFightViews": [
+    {
+      "role": "waiting player",
+      "pendingBattleCount": 2,
+      "revision": 11,
+      "targetsDisabled": true,
+      "chooserViewOnly": true,
+      "focusReturned": true,
+      "dialogLeftOpen": false
+    },
+    {
+      "role": "spectator",
+      "pendingBattleCount": 2,
+      "revision": 11,
+      "targetsDisabled": true,
+      "chooserViewOnly": true,
+      "focusReturned": false,
+      "dialogLeftOpen": true
+    }
+  ],
+  "spectatorProjection": "current-battles-visible-private-hands-and-decks-redacted-rejected-command-no-revision-change",
+  "spectatorRemotePhaseFocus": "encounter-heading-focus-fallback",
+  "infamy": {
+    "scenario": "component-fixture-with-applyCommand",
+    "availableControl": true,
+    "zeroTokenControlHidden": true,
+    "readOnlyControlDisabled": true,
+    "spent": 1,
+    "remaining": 0,
+    "firstRoundMonsterAttacks": 4,
+    "zeroInfamyFirstRoundAttacks": 3
+  },
+  "deploymentTrayBeforeFight": {
+    "label": "Open Navy military sheet, 2 deployed, 6 in reserve",
+    "deployed": 2,
+    "reserve": 6
+  },
+  "returnedSubmarine": {
+    "unitTypeId": "navy-nuclear-submarine",
+    "location": "record-tile",
+    "removed": false
+  },
+  "returnedFighter": {
+    "unitTypeId": "navy-fighter",
+    "location": "record-tile",
+    "removed": false
+  },
+  "deploymentTrayAfterFight": {
+    "label": "Open Navy military sheet, 0 deployed, 8 in reserve",
+    "deployed": 0,
+    "reserve": 8
+  },
+  "fightPlayback": "recorded-history-selection-without-room-mutation",
+  "fightDialogKeyboard": "focus-entry-escape-focus-return",
+  "fightDialogViewport": "390x844-bounded",
+  "fightControls": [
+    "Launch Nuclear Submarine as cruise missile",
+    "Target this unit · roll",
+    "Target this unit · roll",
+    "Target this unit · roll",
+    "Target this unit · roll"
+  ],
+  "fightEvents": 2,
+  "pendingBattles": 0,
+  "resultingPhase": "encounter",
+  "runtimeErrors": []
+}

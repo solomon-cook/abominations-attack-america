@@ -5,11 +5,13 @@ import { monsterAssetSlug } from "../monster-assets";
 
 type Props = {
   activeSetup: SetupState;
+  setupApplied: boolean;
   board?: BoardDefinition;
   setupSeat?: SetupState["seats"][number];
   online: boolean;
   playerIndex?: number;
   participants: RoomView["participants"];
+  submitting: boolean;
   onChooseOption: (value: string) => void;
   deploymentCount: number;
   hasAvailableDeploymentOptions: boolean;
@@ -20,16 +22,16 @@ type Props = {
   onChooseStartingChoice: (kind: "research" | "deploy") => void;
 };
 
-export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex, participants, onChooseOption, onChooseStartingChoice, deploymentCount, hasAvailableDeploymentOptions, selectingDeployment, selectedPiece, onFinishDeployment, onUndoDeployment }: Props) {
+export function SetupPanel({ activeSetup, setupApplied, board, setupSeat, online, playerIndex, participants, submitting, onChooseOption, onChooseStartingChoice, deploymentCount, hasAvailableDeploymentOptions, selectingDeployment, selectedPiece, onFinishDeployment, onUndoDeployment }: Props) {
   const waiting = online && playerIndex !== setupSeat?.playerIndex;
-  const disabled = Boolean(waiting);
+  const disabled = Boolean(waiting || submitting);
   const setupSteps = ["Monster", "Branch", "Lair", "Starting choice"];
   const activeStep = ({ "monster-selection": 0, "branch-selection": 1, "lair-selection": 2, "starting-choice": 3 } as const)[activeSetup.phase as "monster-selection" | "branch-selection" | "lair-selection" | "starting-choice"] ?? 3;
   const lairLabel = (key?: string, monsterId = setupSeat?.monsterId) => key && monsterId ? setupLairLabel(activeSetup, board, monsterId, key) : "Not selected";
   if (activeSetup.phase === "lair-selection") {
     const lairs = setupSeat?.monsterId
       ? activeSetup.definition.lairsByMonster[setupSeat.monsterId]?.filter((lair) => !activeSetup.seats.some((seat) => seat.lair === lair)) ?? [] : [];
-    return <section className="setup-panel lair-selection-prompt" aria-label="Game setup">
+    return <section className="setup-panel lair-selection-prompt" aria-label="Game setup" aria-busy={submitting}>
       <ol className="setup-step-track" aria-label="Setup progress">{setupSteps.map((step, index) => <li key={step} className={index < activeStep ? "complete" : index === activeStep ? "current" : "upcoming"}>{step}</li>)}</ol>
       <strong>{waiting ? `Waiting for Player ${(setupSeat?.playerIndex ?? 0) + 1}` : `Player ${(setupSeat?.playerIndex ?? 0) + 1} · Choose your lair`}</strong>
       <span>Click a glowing spawn on the map.</span>
@@ -37,12 +39,13 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
         <summary>Choose from list</summary>
         <div className="setup-options">{lairs.map((lair) => <button key={lair} disabled={disabled} onClick={() => onChooseOption(lair)}>{lairLabel(lair)}</button>)}</div>
       </details>
+      {submitting && <p className="setup-progress" role="status">Saving setup choice…</p>}
     </section>;
   }
   return (
     <>
       {activeSetup.phase !== "complete" && (
-        <section className={`setup-panel ${activeSetup.phase === "starting-choice" ? "setup-command-panel" : ""}`} aria-label="Game setup">
+        <section className={`setup-panel ${activeSetup.phase === "starting-choice" ? "setup-command-panel" : ""}`} aria-label="Game setup" aria-busy={submitting}>
           <ol className="setup-step-track" aria-label="Setup progress">{setupSteps.map((step, index) => <li key={step} className={index < activeStep ? "complete" : index === activeStep ? "current" : "upcoming"}>{step}</li>)}</ol>
           <span className="label">GAME SETUP</span>
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
@@ -108,9 +111,10 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
             </>}
           </div>
           <p className="setup-progress">{activeSetup.seats.filter((seat) => seat.ready).length}/{activeSetup.seats.length} starting choices confirmed</p>
+          {submitting && <p className="setup-progress" role="status">Saving setup choice…</p>}
         </section>
       )}
-      {online && activeSetup.phase === "complete" && (
+      {online && activeSetup.phase === "complete" && !setupApplied && (
         <section className="setup-summary" aria-label="Setup summary">
           <span className="label">SETUP LOCKED</span>
           <h2>Match configuration</h2>

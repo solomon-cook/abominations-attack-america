@@ -72,7 +72,7 @@ const stopServer = (server) => new Promise((resolve) => {
   server.child.kill("SIGTERM");
 });
 
-async function openBrowser(port, name, existingProfile) {
+async function openBrowser(port, name, existingProfile, restoredSessionStorage = []) {
   const profile = existingProfile ?? await mkdtemp(join(tmpdir(), `abominations-online-${name}-`));
   const child = spawn(chromePath, ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--window-size=1280,720", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
   let page;
@@ -90,11 +90,14 @@ async function openBrowser(port, name, existingProfile) {
   const socket = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise((resolve, reject) => { socket.once("open", resolve); socket.once("error", reject); });
   let nextId = 0;
+  let nextDialogAccepted = true;
   const pending = new Map();
   socket.on("message", (raw) => {
     const message = JSON.parse(raw.toString());
     if (message.method === "Page.javascriptDialogOpening") {
-      void command("Page.handleJavaScriptDialog", { accept: true });
+      const accept = nextDialogAccepted;
+      nextDialogAccepted = true;
+      void command("Page.handleJavaScriptDialog", { accept });
       return;
     }
     const callback = pending.get(message.id);
@@ -111,24 +114,44 @@ async function openBrowser(port, name, existingProfile) {
   });
   await command("Page.enable");
   await command("Runtime.enable");
+  if (restoredSessionStorage.length) {
+    const serializedStorage = JSON.stringify(restoredSessionStorage);
+    await command("Page.addScriptToEvaluateOnNewDocument", {
+      source: `const restoredSessionStorage = JSON.parse(${JSON.stringify(serializedStorage)}); for (const [key, value] of restoredSessionStorage) sessionStorage.setItem(key, value);`,
+    });
+  }
   await command("Page.navigate", { url });
   const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
+  const clickPoint = async ({ x, y }) => {
+    await command("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+    await command("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount: 1 });
+    await command("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
+  };
+  const clickSelector = async (selector) => {
+    const box = await evaluate(`(() => { for (const element of document.querySelectorAll(${JSON.stringify(selector)})) { element.scrollIntoView({ block: "center", inline: "nearest" }); const rect = element.getBoundingClientRect(); const style = getComputedStyle(element); const x = rect.x + rect.width / 2; const y = rect.y + rect.height / 2; const hit = document.elementFromPoint(x, y); if (style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0 && rect.x >= 0 && rect.y >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && (hit === element || element.contains(hit))) return { x, y }; } return null; })()`);
+    if (!box) return false;
+    await clickPoint(box);
+    return true;
+  };
   const waitFor = async (expression, label) => {
     for (let attempt = 0; attempt < 120; attempt += 1) {
       if (await evaluate(expression)) return;
       await wait(100);
     }
-    const diagnostic = await evaluate(`({ url: location.href, connection: document.querySelector(".connection")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim() })`);
+    const diagnostic = await evaluate(`({ url: location.href, connection: document.querySelector(".connection")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim(), connectionLeaseStorage: Object.entries(sessionStorage).filter(([key]) => key.startsWith("abominations-connection-id:")) })`);
     throw new Error(`${name}: timed out waiting for ${label}: ${JSON.stringify(diagnostic)}`);
   };
   return {
     evaluate,
     waitFor,
-    restart: async () => {
+    clickPoint,
+    clickSelector,
+    setNextDialogResponse: (accept) => { nextDialogAccepted = accept; },
+    restart: async (sessionStorageSnapshot = []) => {
       socket.close();
       child.kill("SIGKILL");
       if (child.exitCode === null && child.signalCode === null) await new Promise((resolve) => child.once("exit", resolve));
-      return openBrowser(port, name, profile);
+      return openBrowser(port, name, profile, sessionStorageSnapshot);
     },
     click: (label) => evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled); if (!button) return false; button.click(); return true; })()`),
     close: async () => {
@@ -162,7 +185,7 @@ try {
       command: process.execPath,
       args: ["--import", "tsx/esm", "src/server.ts"],
       cwd: join(process.cwd(), "apps/api"),
-      env: { ...process.env, PORT: String(apiPort), PERSISTENCE: "memory" },
+      env: { ...process.env, PORT: String(apiPort), PERSISTENCE: "memory", ALLOWED_ORIGIN: new URL(url).origin },
       name: "MVP API",
       ready: async () => (await fetch(`${apiUrl}/health`)).ok,
     });
@@ -251,7 +274,11 @@ try {
   if (spectating !== "true" || Number(enabledActionCount) > 0 || Number(enabledLegalTileCount) > 0) throw new Error(`enabled spectator action: count=${enabledActionCount}, legalTiles=${enabledLegalTileCount}, labels=${enabledActionLabels}`);
   const savedSession = await first.evaluate(`localStorage.getItem("abominations-session")`);
   if (!savedSession) throw new Error("First browser did not expose its persisted room session before restart.");
-  const reconnectedFirst = await first.restart();
+  const savedConnectionLease = await first.evaluate(`JSON.stringify(Object.entries(sessionStorage))`);
+  if (!JSON.parse(savedConnectionLease).some(([key, value]) => key === `abominations-connection-id:${roomCode}` && value)) {
+    throw new Error("First browser did not expose its acknowledged session-scoped connection lease before restart.");
+  }
+  const reconnectedFirst = await first.restart(JSON.parse(savedConnectionLease));
   first = reconnectedFirst;
   const disconnectState = "websocket-process-restart";
   await first.waitFor(`!!document.querySelector(".lobby strong") || !!document.querySelector('[aria-label="Display name"]')`, "first browser reopened");
@@ -352,6 +379,11 @@ try {
   const opponentEncounterDicePromise = opponentBrowser.waitFor(`(() => { const playback = document.querySelector(".board-event-playback"); return playback?.dataset.outcomeVisible === "true" && Number(playback.dataset.rollCount) > 0; })()`, "opponent Encounter dice playback").then(() => true, () => false);
   const clickEncounterDecision = async () => {
     for (const [browser, label] of [[first, "first"], [second, "second"]]) {
+      const turnPanelCollapsed = await browser.evaluate(`document.querySelector("#turn-hud-body")?.hidden === true`);
+      if (turnPanelCollapsed) {
+        if (!await browser.clickSelector('button[aria-label="Expand turn panel"]')) continue;
+        await browser.waitFor(`document.querySelector("#turn-hud-body")?.hidden === false`, `${label} expanded turn panel for Encounter`);
+      }
       const clicked = await browser.evaluate(`(() => {
         const routineStomp = document.querySelector(".board-event-roll-all:not(:disabled)");
         if (routineStomp) { routineStomp.click(); return true; }
@@ -363,6 +395,8 @@ try {
         if (stageAction) { stageAction.click(); return true; }
         const details = document.querySelector("#phase-command-context");
         if (details) details.open = true;
+        const reward = [...document.querySelectorAll(".battle-choice button")].find((candidate) => !candidate.disabled && /^(Take .* Health|Take .* Infamy(?: instead)?)$/.test(candidate.textContent.trim()));
+        if (reward) { reward.click(); return true; }
         const button = [...document.querySelectorAll(".path-controls button")].find((candidate) => !candidate.disabled && /^(Resolve encounter|Take .* Health|Take .* Infamy instead)$/.test(candidate.textContent.trim()));
         if (!button) return false;
         button.click();
@@ -373,7 +407,21 @@ try {
         return true;
       }
     }
-    const diagnostic = await Promise.all([first, second].map((browser) => browser.evaluate(`({ phase: document.querySelector(".action-card h2")?.textContent?.trim(), stage: document.querySelector(".resolution-stage[open]")?.innerText, controls: [...document.querySelectorAll(".path-controls button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), pending: document.querySelector(".deployment-prompt")?.textContent?.trim() })`)));
+    const diagnostic = await Promise.all([first, second].map((browser) => browser.evaluate(`(async () => {
+      const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+      const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+      const room = await response.json();
+      return {
+        phase: document.querySelector(".action-card h2")?.textContent?.trim(),
+        serverPhase: room.state?.phase,
+        currentPlayer: room.state?.currentPlayer,
+        pendingDecision: room.state?.pendingDecision,
+        participants: room.participants?.map(({ id, playerIndex, connected }) => ({ id, playerIndex, connected })),
+        stage: document.querySelector(".resolution-stage[open]")?.innerText,
+        controls: [...document.querySelectorAll(".path-controls button, .action-card button, .action-dock button, .resolution-stage button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled, visible: button.getBoundingClientRect().width > 0 })),
+        pending: document.querySelector(".deployment-prompt")?.textContent?.trim(),
+      };
+    })()`)));
     throw new Error(`Encounter remained active without an enabled legal decision control in either player session: ${JSON.stringify(diagnostic)}`);
   };
   const encounterAction = await clickEncounterDecision();
@@ -447,8 +495,41 @@ try {
     await Promise.all(researchObservers.map((browser) => browser.waitFor(`(window.__boardPlaybackSnapshots ?? []).some((snapshot) => snapshot.action === "research.drawn" && snapshot.cards.some((card) => card.className.includes("research") && /MILITARY RESEARCH card drawn/.test(card.label ?? "")))`, "generic Military Research observer card")));
     await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first next Move phase");
     await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
-    concessionActor = await first.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled); if (!button) return false; button.click(); return true; })()`) ? "first" : await second.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled); if (!button) return false; button.click(); return true; })()`) ? "second" : undefined;
-    if (!concessionActor) throw new Error("Neither online player exposed an enabled Concede match control.");
+    for (const [browser, label] of [[first, "first"], [second, "second"]]) {
+      if (!await browser.clickSelector('button[aria-label="Expand turn panel"]')) continue;
+      await browser.waitFor(`document.querySelector("#turn-hud-body")?.hidden === false`, `${label} expanded turn panel`);
+      const optionBounds = await browser.evaluate(`(() => {
+        const matches = [...document.querySelectorAll("details.hud-section")].filter((candidate) => candidate.querySelector("summary")?.textContent.trim() === "Match options");
+        for (const section of matches) {
+          const summary = section.querySelector("summary");
+          const button = [...section.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled);
+          if (!summary || !button) continue;
+          summary.scrollIntoView({ block: "center", inline: "nearest" });
+          const rect = summary.getBoundingClientRect();
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          const hit = document.elementFromPoint(x, y);
+          if (getComputedStyle(section).display !== "none" && rect.width > 0 && rect.height > 0 && rect.x >= 0 && rect.y >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && (hit === summary || summary.contains(hit))) return { summary: { x, y }, open: section.open };
+        }
+        return null;
+      })()`);
+      if (!optionBounds) continue;
+      if (!optionBounds.open) {
+        await browser.clickPoint(optionBounds.summary);
+        await browser.waitFor(`(() => [...document.querySelectorAll("details.hud-section")].some((section) => { const summary = section.querySelector("summary"); if (!section.open || summary?.textContent.trim() !== "Match options") return false; const rect = summary.getBoundingClientRect(); const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2); return rect.width > 0 && rect.height > 0 && (hit === summary || summary.contains(hit)); }))()`, "visible Match options disclosure");
+      }
+      const visibleConcede = await browser.evaluate(`(() => [...document.querySelectorAll("details.hud-section")].some((section) => { const button = [...section.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled); if (!section.open || section.querySelector("summary")?.textContent.trim() !== "Match options" || !button) return false; const rect = button.getBoundingClientRect(); const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2); return rect.width > 0 && rect.height > 0 && getComputedStyle(button).visibility !== "hidden" && (hit === button || button.contains(hit)); }))()`);
+      if (!visibleConcede) throw new Error(`${label} player's Match options disclosure did not expose the enabled concession control.`);
+      browser.setNextDialogResponse(false);
+      if (!await browser.clickSelector("details.hud-section[open] button.cancel")) throw new Error(`${label} browser could not pointer-activate the visible Concede match control.`);
+      const cancelled = await browser.evaluate(`(() => { const section = [...document.querySelectorAll("details.hud-section")].find((candidate) => candidate.open && candidate.querySelector("summary")?.textContent.trim() === "Match options"); return { phase: document.querySelector(".action-card h2")?.textContent?.trim(), open: Boolean(section), button: [...(section?.querySelectorAll("button") ?? [])].some((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled) }; })()`);
+      if (cancelled.phase !== "Move" || !cancelled.open || !cancelled.button) throw new Error(`${label} cancelling the concession prompt changed match state or closed Match options: ${JSON.stringify(cancelled)}`);
+      browser.setNextDialogResponse(true);
+      if (!await browser.clickSelector("details.hud-section[open] button.cancel")) throw new Error(`${label} browser could not confirm the visible Concede match control.`);
+      concessionActor = label;
+      break;
+    }
+    if (!concessionActor) throw new Error("Neither online player exposed the visible Match options disclosure and concession control.");
   } else if (!/^Victory · /.test(postEncounterPhase ?? "")) {
     throw new Error(`Expected Deploy or an encounter-triggered victory, got ${postEncounterPhase ?? "unknown"}.`);
   }

@@ -1,0 +1,178 @@
+{
+  "started": "2026-09-28T15:59:15.235Z",
+  "viewports": {
+    "desktop": {
+      "status": "passed",
+      "escape": {
+        "openerRemovedByReveal": true,
+        "focusRestoredTo": "action-heading",
+        "dialogBounds": {
+          "x": 230,
+          "y": 131.6875,
+          "right": 1050,
+          "bottom": 588.3125,
+          "width": 820,
+          "height": 456.625,
+          "viewportWidth": 1280,
+          "viewportHeight": 720
+        }
+      },
+      "boardClose": {
+        "activation": "pointer",
+        "clickedTriggerCaptured": true,
+        "openerRemovedByReveal": true,
+        "focusRestoredTo": "action-heading",
+        "dialogBounds": {
+          "x": 230,
+          "y": 131.6875,
+          "right": 1050,
+          "bottom": 588.3125,
+          "width": 820,
+          "height": 456.625,
+          "viewportWidth": 1280,
+          "viewportHeight": 720
+        }
+      },
+      "bodyFallback": {
+        "activeElementAtOpen": "BODY",
+        "openerCaptured": false,
+        "focusRestoredTo": "action-heading",
+        "dialogBounds": {
+          "x": 230,
+          "y": 131.6875,
+          "right": 1050,
+          "bottom": 588.3125,
+          "width": 820,
+          "height": 456.625,
+          "viewportWidth": 1280,
+          "viewportHeight": 720
+        }
+      },
+      "pendingChoice": {
+        "stayedOpenUntilChoice": true,
+        "selected": "health",
+        "focusRestoredTo": "action-heading",
+        "dialogBounds": {
+          "x": 230,
+          "y": 131.6875,
+          "right": 1050,
+          "bottom": 588.3125,
+          "width": 820,
+          "height": 456.625,
+          "viewportWidth": 1280,
+          "viewportHeight": 720
+        }
+      },
+      "choiceCommandFailure": {
+        "failureInjectedInLocalHarnessCallbackBeforeCommandAcceptance": true,
+        "rewardStayedAvailable": true,
+        "focusRestoredToRewardButton": true,
+        "keyboardRetryAccepted": true,
+        "serviceFailureNotTested": true,
+        "dialogBounds": {
+          "x": 230,
+          "y": 131.6875,
+          "right": 1050,
+          "bottom": 588.3125,
+          "width": 820,
+          "height": 456.625,
+          "viewportWidth": 1280,
+          "viewportHeight": 720
+        }
+      },
+      "ownershipGate": {
+        "roleChangeDoesNotReopen": true,
+        "seatChangeDoesNotReopen": true,
+        "decisionPlayerUnchanged": 0
+      }
+    },
+    "mobile-390x844": {
+      "status": "passed",
+      "escape": {
+        "openerRemovedByReveal": true,
+        "focusRestoredTo": "action-heading",
+        "dialogBounds": {
+          "x": 8,
+          "y": 253.296875,
+          "right": 382,
+          "bottom": 590.703125,
+          "width": 374,
+          "height": 337.40625,
+          "viewportWidth": 390,
+          "viewportHeight": 844
+        }
+      },
+      "boardClose": {
+        "activation": "touch",
+        "clickedTriggerCaptured": true,
+        "openerRemovedByReveal": true,
+        "focusRestoredTo": "action-heading",
+        "dialogBounds": {
+          "x": 8,
+          "y": 253.296875,
+          "right": 382,
+          "bottom": 590.703125,
+          "width": 374,
+          "height": 337.40625,
+          "viewportWidth": 390,
+          "viewportHeight": 844
+        }
+      },
+      "bodyFallback": {
+        "activeElementAtOpen": "BODY",
+        "openerCaptured": false,
+        "focusRestoredTo": "action-heading",
+        "dialogBounds": {
+          "x": 8,
+          "y": 253.296875,
+          "right": 382,
+          "bottom": 590.703125,
+          "width": 374,
+          "height": 337.40625,
+          "viewportWidth": 390,
+          "viewportHeight": 844
+        }
+      },
+      "pendingChoice": {
+        "stayedOpenUntilChoice": true,
+        "selected": "health",
+        "focusRestoredTo": "action-heading",
+        "dialogBounds": {
+          "x": 8,
+          "y": 253.296875,
+          "right": 382,
+          "bottom": 590.703125,
+          "width": 374,
+          "height": 337.40625,
+          "viewportWidth": 390,
+          "viewportHeight": 844
+        }
+      },
+      "choiceCommandFailure": {
+        "failureInjectedInLocalHarnessCallbackBeforeCommandAcceptance": true,
+        "rewardStayedAvailable": true,
+        "focusRestoredToRewardButton": true,
+        "keyboardRetryAccepted": true,
+        "serviceFailureNotTested": true,
+        "dialogBounds": {
+          "x": 8,
+          "y": 253.296875,
+          "right": 382,
+          "bottom": 590.703125,
+          "width": 374,
+          "height": 337.40625,
+          "viewportWidth": 390,
+          "viewportHeight": 844
+        }
+      },
+      "ownershipGate": {
+        "roleChangeDoesNotReopen": true,
+        "seatChangeDoesNotReopen": true,
+        "decisionPlayerUnchanged": 0
+      }
+    }
+  },
+  "runtimeErrors": [],
+  "finished": "2026-09-28T15:59:33.095Z",
+  "status": "passed"
+}

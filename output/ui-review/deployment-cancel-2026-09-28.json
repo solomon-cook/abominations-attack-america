@@ -1,0 +1,85 @@
+{
+  "started": "2026-09-28T13:52:31.338Z",
+  "scope": "fixture-level browser acceptance of the production MilitarySheet choice and HexGrid selection state with the production Cancel placement label/callback behavior mirrored from main.tsx; command dispatch goes through applyCommand if a highlighted map cell is selected; not full-match or persisted-service evidence",
+  "scenarios": {
+    "deploy": {
+      "status": "passed",
+      "productionSheetAction": "Deploy army tank piece 2",
+      "commandTypeIfDestinationWereSelected": "deploy",
+      "selectedDestinationKeys": [
+        "-1,0"
+      ],
+      "before": {
+        "inventory": {
+          "totalUnits": 32,
+          "reserveUnits": 24,
+          "onBoardUnits": 8,
+          "removedUnits": 0
+        },
+        "selectedUnit": {
+          "id": "4-0",
+          "typeId": "army-tank",
+          "location": "record-tile",
+          "ownerPlayer": 0
+        },
+        "phase": "deploy",
+        "eventCount": 0
+      },
+      "after": {
+        "inventory": {
+          "totalUnits": 32,
+          "reserveUnits": 24,
+          "onBoardUnits": 8,
+          "removedUnits": 0
+        },
+        "unitPositionsUnchanged": true,
+        "selectedPieceCleared": true,
+        "legalHighlights": [],
+        "commandCount": 0,
+        "eventCount": 0
+      },
+      "choiceRemainsAvailable": true
+    },
+    "redeploy": {
+      "status": "passed",
+      "productionSheetAction": "Redeploy army tank piece 1",
+      "commandTypeIfDestinationWereSelected": "redeploy",
+      "selectedDestinationKeys": [
+        "-1,0"
+      ],
+      "before": {
+        "inventory": {
+          "totalUnits": 32,
+          "reserveUnits": 24,
+          "onBoardUnits": 8,
+          "removedUnits": 0
+        },
+        "selectedUnit": {
+          "id": "0-0",
+          "typeId": "army-tank",
+          "location": "chicago",
+          "ownerPlayer": 0
+        },
+        "phase": "deploy",
+        "eventCount": 0
+      },
+      "after": {
+        "inventory": {
+          "totalUnits": 32,
+          "reserveUnits": 24,
+          "onBoardUnits": 8,
+          "removedUnits": 0
+        },
+        "unitPositionsUnchanged": true,
+        "selectedPieceCleared": true,
+        "legalHighlights": [],
+        "commandCount": 0,
+        "eventCount": 0
+      },
+      "choiceRemainsAvailable": true
+    }
+  },
+  "runtimeErrors": [],
+  "completed": "2026-09-28T13:52:38.304Z",
+  "status": "passed"
+}

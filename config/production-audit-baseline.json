@@ -3,7 +3,7 @@
     {
       "name": "@prisma/config",
       "severity": "high",
-      "range": ">=6.13.0-dev.1",
+      "range": "6.13.0-dev.1 - 8.1.0-dev.4",
       "via": "deepmerge-ts"
     },
     {
@@ -13,10 +13,22 @@
       "via": "DeepmergeTS has stack exhaustion when merging recursive object graphs"
     },
     {
+      "name": "mysql2",
+      "severity": "high",
+      "range": "<=3.23.0",
+      "via": [
+        "MySQL2: Auth Plugin Downgrade to mysql_clear_password Leaks Plaintext Credentials",
+        "MySQL2: Unbounded zlib inflate in compressed MySQL protocol handler allows decompression-bomb DoS"
+      ]
+    },
+    {
       "name": "prisma",
       "severity": "high",
-      "range": ">=6.13.0-dev.1",
-      "via": "@prisma/config"
+      "range": "6.13.0-dev.1 - 8.1.0-dev.6",
+      "via": [
+        "@prisma/config",
+        "mysql2"
+      ]
     }
   ]
 }

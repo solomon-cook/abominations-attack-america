@@ -1,6 +1,12 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import type { AccountGameSummary, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats } from "@abominations/shared";
+import type { RoomPrivacy as PrismaRoomPrivacy, RoomStatus as PrismaRoomStatus } from "../generated/prisma/enums.js";
+import type { AccountToken, Prisma, PrismaClient, UserAccount } from "../generated/prisma/client.js";
 import { sumPlayerStats } from "./player-stats.js";
+
+type AccountDatabase = Pick<PrismaClient,
+  "userAccount" | "accountSession" | "accountToken" | "participant" | "playerMatchStat" | "gameResult" | "$transaction"
+>;
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
@@ -9,6 +15,29 @@ const hash = (value: string) => createHash("sha256").update(value).digest("hex")
 const randomToken = () => randomBytes(32).toString("base64url");
 const emailFrom = (value: string) => value.trim().toLowerCase();
 const usernameFrom = () => `player-${randomBytes(4).toString("hex")}`;
+
+const roomStatusToWire: Record<PrismaRoomStatus, AccountGameSummary["status"]> = {
+  WAITING: "waiting",
+  ACTIVE: "active",
+  COMPLETED: "completed",
+  ABANDONED: "abandoned",
+  EXPIRED: "expired",
+};
+const roomPrivacyToWire: Record<PrismaRoomPrivacy, AccountGameSummary["privacy"]> = {
+  PRIVATE: "private",
+  PUBLIC: "public",
+};
+
+function hasWinnerPlayer(summary: Prisma.JsonValue): boolean {
+  if (typeof summary !== "object" || summary === null || Array.isArray(summary)) return false;
+  const winnerPlayer = summary.winnerPlayer;
+  return winnerPlayer !== undefined && winnerPlayer !== null;
+}
+
+function accountGameOutcome(participantId: string, winnerId: string | null, summary: Prisma.JsonValue): AccountGameSummary["outcome"] {
+  if (!hasWinnerPlayer(summary)) return "tie";
+  return winnerId === participantId ? "win" : "loss";
+}
 
 export interface AccountEmail {
   to: string;
@@ -42,13 +71,13 @@ function passwordMatches(password: string, encoded: string): boolean {
   }
 }
 
-export function publicAccount(user: any): AccountSummary {
+export function publicAccount(user: Pick<UserAccount, "id" | "username" | "emailVerifiedAt">): AccountSummary {
   return { id: user.id, username: user.username, emailVerified: Boolean(user.emailVerifiedAt) };
 }
 
 export class AccountService {
   constructor(
-    private readonly prisma: any,
+    private readonly prisma: AccountDatabase,
     private readonly sendEmail: (message: AccountEmail) => Promise<void> = deliverAccountEmail,
     private readonly now: () => Date = () => new Date(),
     private readonly production = process.env.NODE_ENV === "production",
@@ -58,7 +87,7 @@ export class AccountService {
     const email = emailFrom(emailInput);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error("Enter a valid email address.");
     if (password.length < 12 || password.length > 128) throw new Error("Password must be between 12 and 128 characters.");
-    let user: any;
+    let user: UserAccount | undefined;
     for (let attempt = 0; attempt < 4; attempt += 1) {
       try {
         user = await this.prisma.userAccount.create({ data: { email, passwordHash: passwordHash(password), username: usernameFrom() } });
@@ -84,7 +113,7 @@ export class AccountService {
 
   async verifyEmail(rawToken: string): Promise<AccountActionResult> {
     const record = await this.findActionToken(rawToken, "EMAIL_VERIFICATION");
-    await this.prisma.$transaction(async (tx: any) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const consumed = await tx.accountToken.updateMany({ where: { id: record.id, consumedAt: null, expiresAt: { gt: this.now() } }, data: { consumedAt: this.now() } });
       if (consumed.count !== 1) throw new Error("This verification link is expired or has already been used.");
       await tx.userAccount.update({ where: { id: record.userId }, data: { emailVerifiedAt: this.now() } });
@@ -114,7 +143,7 @@ export class AccountService {
   async completePasswordReset(rawToken: string, newPassword: string): Promise<AccountActionResult> {
     if (newPassword.length < 12 || newPassword.length > 128) throw new Error("Password must be between 12 and 128 characters.");
     const record = await this.findActionToken(rawToken, "PASSWORD_RESET");
-    await this.prisma.$transaction(async (tx: any) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const consumed = await tx.accountToken.updateMany({ where: { id: record.id, consumedAt: null, expiresAt: { gt: this.now() } }, data: { consumedAt: this.now() } });
       if (consumed.count !== 1) throw new Error("This reset link is expired or has already been used.");
       await tx.userAccount.update({ where: { id: record.userId }, data: { passwordHash: passwordHash(newPassword) } });
@@ -123,7 +152,7 @@ export class AccountService {
     return { message: "Password reset. Sign in with your new password." };
   }
 
-  async authenticate(sessionToken: string): Promise<any | null> {
+  async authenticate(sessionToken: string): Promise<UserAccount | null> {
     if (!sessionToken) return null;
     const session = await this.prisma.accountSession.findUnique({ where: { tokenHash: hash(sessionToken) }, include: { user: true } });
     if (!session || session.revokedAt || session.expiresAt <= this.now() || !session.user.emailVerifiedAt) return null;
@@ -139,7 +168,7 @@ export class AccountService {
     const username = usernameInput.trim().toLowerCase();
     if (!/^[A-Za-z0-9_-]{3,24}$/.test(username)) throw new Error("Username must be 3–24 letters, numbers, hyphens, or underscores.");
     try {
-      const user = await this.prisma.$transaction(async (tx: any) => {
+      const user = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const current = await tx.userAccount.findUnique({ where: { id: userId }, select: { username: true } });
         if (!current) throw new Error("Account not found.");
         const updated = await tx.userAccount.update({ where: { id: userId }, data: { username } });
@@ -155,9 +184,9 @@ export class AccountService {
     }
   }
 
-  async deleteAccount(user: any): Promise<void> {
+  async deleteAccount(user: Pick<UserAccount, "id" | "username">): Promise<void> {
     const linked = await this.prisma.participant.findMany({ where: { userId: user.id }, select: { id: true, roomId: true } });
-    await this.prisma.$transaction(async (tx: any) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       for (const participant of linked) {
         await tx.participant.update({ where: { id: participant.id }, data: {
           userId: null,
@@ -182,17 +211,17 @@ export class AccountService {
       include: { room: { include: { result: true } } },
       orderBy: { createdAt: "desc" },
     });
-    return participants.map((participant: any) => ({
+    return participants.map((participant) => ({
       roomId: participant.roomId,
       code: participant.room.code,
-      status: participant.room.status.toLowerCase(),
-      privacy: participant.room.privacy.toLowerCase(),
+      status: roomStatusToWire[participant.room.status],
+      privacy: roomPrivacyToWire[participant.room.privacy],
       playerIndex: participant.playerIndex ?? 0,
       displayName: participant.displayName,
       botControlled: participant.botControlled,
       botAssisted: participant.botAssisted,
       ...(participant.room.completedAt ? { completedAt: participant.room.completedAt.toISOString() } : {}),
-      ...(participant.room.result ? { outcome: (participant.room.result.summary?.winnerPlayer === undefined || participant.room.result.summary?.winnerPlayer === null ? "tie" : participant.room.result.winnerId === participant.id ? "win" : "loss") as "win" | "loss" | "tie" } : {}),
+      ...(participant.room.result ? { outcome: accountGameOutcome(participant.id, participant.room.result.winnerId, participant.room.result.summary) } : {}),
     }));
   }
 
@@ -208,7 +237,7 @@ export class AccountService {
     const user = await this.prisma.userAccount.findUnique({ where: { username }, select: { id: true, username: true } });
     if (!user) throw new Error("Player not found.");
     const rows = await this.prisma.playerMatchStat.findMany({ where: { userId: user.id }, orderBy: { completedAt: "desc" } });
-    return { ...sumPlayerStats(rows, user.username), botAssistedMatches: rows.filter((row: any) => row.botAssisted).length };
+    return { ...sumPlayerStats(rows, user.username), botAssistedMatches: rows.filter((row) => row.botAssisted).length };
   }
 
   async leaderboard(category: LeaderboardCategory): Promise<LeaderboardEntry[]> {
@@ -236,7 +265,7 @@ export class AccountService {
     return sessionToken;
   }
 
-  private async createActionToken(user: any, purpose: "EMAIL_VERIFICATION" | "PASSWORD_RESET", ttl: number, subject: string, path: string): Promise<string | undefined> {
+  private async createActionToken(user: Pick<UserAccount, "id" | "email">, purpose: "EMAIL_VERIFICATION" | "PASSWORD_RESET", ttl: number, subject: string, path: string): Promise<string | undefined> {
     const value = randomToken();
     const expiresAt = new Date(this.now().getTime() + ttl);
     await this.prisma.accountToken.create({ data: { userId: user.id, tokenHash: hash(value), purpose, expiresAt } });
@@ -246,7 +275,7 @@ export class AccountService {
     return this.production ? undefined : link;
   }
 
-  private async findActionToken(value: string, purpose: "EMAIL_VERIFICATION" | "PASSWORD_RESET"): Promise<any> {
+  private async findActionToken(value: string, purpose: "EMAIL_VERIFICATION" | "PASSWORD_RESET"): Promise<AccountToken & { user: UserAccount }> {
     if (!value || value.length > 160) throw new Error("This account link is invalid.");
     const record = await this.prisma.accountToken.findUnique({ where: { tokenHash: hash(value) }, include: { user: true } });
     if (!record || record.purpose !== purpose || record.consumedAt || record.expiresAt <= this.now()) throw new Error("This account link is expired or has already been used.");

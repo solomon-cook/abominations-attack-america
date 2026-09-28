@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-28T20:24:22.430Z",
+  "route": "production main app route served by Vite; API is an isolated local in-memory service",
+  "cases": {
+    "local": {
+      "visibility": {
+        "newLocalGame": true,
+        "ready": false,
+        "leaveRoom": false
+      },
+      "nestedAccountEscapeOrder": true,
+      "focusReturnedToAccountThenMenu": true,
+      "activeMatchPresentationPreserved": true,
+      "gamePhase": "Move",
+      "newLocalAction": {
+        "activationCount": 1,
+        "result": "returns to local setup",
+        "trackedOnlineRequests": 0
+      }
+    },
+    "solo": {
+      "visibility": {
+        "newSoloGame": true,
+        "ready": false,
+        "leaveRoom": false
+      },
+      "newSoloAction": {
+        "activationCount": 1,
+        "result": "returns to solo setup",
+        "trackedOnlineRequests": 0
+      }
+    },
+    "onlineWaitingPlayer": {
+      "visibility": {
+        "newLocalGame": true,
+        "ready": true,
+        "leaveRoom": true,
+        "setupComplete": true
+      },
+      "accountEscapeOrder": true,
+      "accountMenuInspectionPreservedAuthoritativeState": true,
+      "ready": {
+        "httpRequestCount": 2,
+        "transitionedToNotReady": true,
+        "roomRemainedWaiting": true,
+        "gameEventsUnchangedAcrossToggles": true
+      },
+      "notReady": {
+        "transitionedToReady": true,
+        "httpRequestCount": 2,
+        "gameEventsUnchanged": true
+      },
+      "inspectionSnapshot": {
+        "status": "waiting",
+        "version": 8,
+        "phase": "move",
+        "setupPhase": "complete",
+        "gameEventCount": 0,
+        "gameEventIds": [],
+        "roomEventCount": 8
+      }
+    },
+    "onlineSpectator": {
+      "visibility": {
+        "newLocalGame": true,
+        "ready": false,
+        "leaveRoom": true
+      },
+      "leaveRoom": {
+        "httpRequestCount": 1,
+        "confirmationAccepted": true,
+        "returnedToHome": true,
+        "gamePhaseAndEventHistoryUnchanged": true,
+        "roomUpdatedWhileDisconnectDelayed": true,
+        "receivedNewReadinessSnapshot": true,
+        "observedRoomVersion": 8
+      }
+    },
+    "onlineSpectatorPendingPoll": {
+      "socketLossForced": true,
+      "productionPageCloseEventObserved": true,
+      "statePollHeldUntilAfterLeave": true,
+      "confirmedLeaveReturnedWithinFiveSeconds": true,
+      "lateStateResponseReceived": true,
+      "latePollResponseDidNotRestoreRoom": true,
+      "reconnectRequestsAfterLeave": 0,
+      "disconnectRequests": 2
+    },
+    "onlineSpectatorCommittedReconnect": {
+      "forcedSocketLoss": true,
+      "reconnectCommittedBeforeItsResponseWasReleased": true,
+      "confirmedLeaveReturnedWithinFiveSeconds": true,
+      "leaveCancelledTheRequestedReconnectLease": true,
+      "replacementSessionSurvivedDelayedReconnectResponse": true,
+      "authoritativeParticipantRemainsDisconnectedAfterLateResponse": true,
+      "replacementSocketAndLeaseRemainActiveAfterLateAcknowledgement": true,
+      "cancellationDisconnectRequests": 1
+    },
+    "onlinePlayerLeave": {
+      "activeMatch": true,
+      "confirmationPreferenceEnabled": true,
+      "cancelStayedInRoomWithoutDisconnect": true,
+      "acceptReturnedHome": true,
+      "disconnectRequests": 1,
+      "matchStatusPhaseAndEventHistoryUnchanged": true,
+      "departedSeatDisconnected": true,
+      "opponentRemainedConnected": true
+    }
+  },
+  "limits": [
+    "This verifies the development browser route and a local memory API, not a deployed build or durable database.",
+    "Role coverage is one waiting player and one spectator in a public two-player room; no signed-in account state is exercised.",
+    "New local and New solo are checked from their corresponding local/solo modes; clicking those actions intentionally resets setup, so they are not selected while an online match is under inspection.",
+    "Menu click counts count DOM activations; ready and leave counts count the corresponding HTTP requests. The test does not instrument private React callback invocation directly."
+  ],
+  "ok": true,
+  "apiMode": "memory",
+  "browser": "Chromium via Playwright",
+  "requestCounts": {
+    "local": {
+      "ready": 0,
+      "disconnect": 0,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "solo": {
+      "ready": 0,
+      "disconnect": 0,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "firstPlayer": {
+      "ready": 3,
+      "disconnect": 1,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "secondPlayer": {
+      "ready": 1,
+      "disconnect": 0,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "spectator": {
+      "ready": 0,
+      "disconnect": 1,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "pollSpectator": {
+      "ready": 0,
+      "disconnect": 2,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "reconnectSpectator": {
+      "ready": 0,
+      "disconnect": 2,
+      "reconnect": 1,
+      "actions": 0
+    }
+  }
+}

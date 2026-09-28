@@ -13,7 +13,7 @@ They corroborate the giant and National Guard record values and provide board
 comparison evidence, but are not treated as a complete cell-level board
 transcription.
 
-## Rules confirmed by this copy
+## Rules summarized by this secondary source
 
 - Setup uses 20, 17, or 14 Stomp markers for 4, 3, or 2 players.
 - The last player to choose a monster chooses a military branch, and the National Guard cannot be chosen.
@@ -27,7 +27,10 @@ transcription.
 - Redeployment excludes National Guard, Captain Colossal, and Mecha-Monster; giant placement does not consume the normal deployment slot.
 - The Monster Challenge sequence, giant-last ordering, and America-saved outcome are summarized.
 
-These statements corroborate existing canonical transcription and tests. They do not by themselves establish board coordinates or component-specific values.
+These statements can help locate rules questions and corroborate the current
+working paraphrase. They are not verification against the user's physical
+edition, and they do not establish board coordinates or component-specific
+values.
 
 ## Missing from this copy
 
@@ -45,4 +48,4 @@ The player aid does not resolve:
 
 ## Disposition
 
-No remaining source-gated category is closed solely from this PDF. The fewer-than-four-player setup sub-rule is already confirmed and tracked separately in `TODO.md`; its exact board placement remains dependent on verified base coordinates. The PDF should be retained as corroborating rules evidence, not promoted to board or card authority.
+No remaining source-gated category is closed solely from this PDF. The fewer-than-four-player setup sub-rule is corroborated by this secondary aid and tracked in `TODO.md`, but it has not been confirmed against the user's physical rulebook and branch records. Exact unit placement also depends on physically verified base coordinates. Retain this PDF as corroborating rules evidence, not as board/card authority or physical-edition sign-off.

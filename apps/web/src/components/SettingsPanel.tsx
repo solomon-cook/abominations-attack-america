@@ -29,7 +29,7 @@ export function SettingsPanel({ largeText, showBoardLabels, manualReducedMotion,
         <label><input type="checkbox" checked={largeText} onChange={() => togglePreference("abominations-large-text", setLargeText)} /> Larger text</label>
         <label><input type="checkbox" checked={showBoardLabels} onChange={() => togglePreference("abominations-board-labels", setShowBoardLabels)} /> Show board labels</label>
         <label><input type="checkbox" checked={manualReducedMotion} onChange={() => togglePreference("abominations-reduced-motion", setManualReducedMotion)} /> Reduce motion</label>
-        <label><input type="checkbox" checked={confirmIrreversible} onChange={() => togglePreference("abominations-confirm-irreversible", setConfirmIrreversible)} /> Confirm disappearance</label>
+        <label><input type="checkbox" checked={confirmIrreversible} onChange={() => togglePreference("abominations-confirm-irreversible", setConfirmIrreversible)} /> Confirm leave, concede, or disappear</label>
         <label><input type="checkbox" checked={muted} onChange={() => togglePreference("abominations-audio-muted", setMuted)} /> Mute all feedback</label>
       </div>
       <div className="settings-audio" aria-label="Audio levels">

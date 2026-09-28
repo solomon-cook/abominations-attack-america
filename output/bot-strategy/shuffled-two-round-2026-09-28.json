@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "config": {
+    "playerCounts": [
+      3,
+      4
+    ],
+    "seedStart": 31,
+    "seedCountPerPlayerCount": 2,
+    "seedStride": 10,
+    "maximumRoundsPerMatch": 2,
+    "actionSafetyCapPerMatch": 2000,
+    "setupStrategy": "seeded shuffled distinct monster/branch assignments and seeded valid lairs; bot-selected starting troops",
+    "actionStrategy": "existing all-bot action selector",
+    "randomGenerator": "32-bit xorshift; setup choices are reproducible from player count and seed"
+  },
+  "batch": {
+    "matchesRequested": 4,
+    "terminalMatches": 0,
+    "roundCappedMatches": 4,
+    "safetyCappedMatches": 0,
+    "invalidMatches": 0,
+    "invalidActions": 0,
+    "winsBySeat": {},
+    "winsByMonster": {},
+    "winsByBranch": {}
+  },
+  "matches": [
+    {
+      "playerCount": 3,
+      "seed": 31,
+      "termination": "round-cap",
+      "roundsCompleted": 2,
+      "finalRound": 3,
+      "actions": 56,
+      "turns": 6,
+      "invalidActions": 0,
+      "invalidActionEvidence": [],
+      "caps": {
+        "maximumRounds": 2,
+        "actionSafetyCap": 2000,
+        "roundCapReached": true,
+        "actionSafetyCapReached": false
+      },
+      "winner": null,
+      "seats": [
+        {
+          "seat": 1,
+          "playerIndex": 0,
+          "monster": "Konk",
+          "branch": "Navy",
+          "lair": "17,-1",
+          "tactic": "force-first",
+          "finalHealth": 12,
+          "finalInfamy": 2,
+          "actions": 18,
+          "turns": 2
+        },
+        {
+          "seat": 2,
+          "playerIndex": 1,
+          "monster": "Zorb",
+          "branch": "Air Force",
+          "lair": "5,5",
+          "tactic": "research-first",
+          "finalHealth": 11,
+          "finalInfamy": 6,
+          "actions": 20,
+          "turns": 2
+        },
+        {
+          "seat": 3,
+          "playerIndex": 2,
+          "monster": "Gargantis",
+          "branch": "Army",
+          "lair": "3,5",
+          "tactic": "research-first",
+          "finalHealth": 10,
+          "finalInfamy": 6,
+          "actions": 18,
+          "turns": 2
+        }
+      ]
+    },
+    {
+      "playerCount": 3,
+      "seed": 32,
+      "termination": "round-cap",
+      "roundsCompleted": 2,
+      "finalRound": 3,
+      "actions": 61,
+      "turns": 6,
+      "invalidActions": 0,
+      "invalidActionEvidence": [],
+      "caps": {
+        "maximumRounds": 2,
+        "actionSafetyCap": 2000,
+        "roundCapReached": true,
+        "actionSafetyCapReached": false
+      },
+      "winner": null,
+      "seats": [
+        {
+          "seat": 1,
+          "playerIndex": 0,
+          "monster": "Tomanagi",
+          "branch": "Navy",
+          "lair": "21,0",
+          "tactic": "research-first",
+          "finalHealth": 17,
+          "finalInfamy": 2,
+          "actions": 20,
+          "turns": 2
+        },
+        {
+          "seat": 2,
+          "playerIndex": 1,
+          "monster": "Zorb",
+          "branch": "Army",
+          "lair": "5,5",
+          "tactic": "research-first",
+          "finalHealth": 11,
+          "finalInfamy": 7,
+          "actions": 19,
+          "turns": 2
+        },
+        {
+          "seat": 3,
+          "playerIndex": 2,
+          "monster": "Konk",
+          "branch": "Marines",
+          "lair": "2,3",
+          "tactic": "force-first",
+          "finalHealth": 15,
+          "finalInfamy": 2,
+          "actions": 22,
+          "turns": 2
+        }
+      ]
+    },
+    {
+      "playerCount": 4,
+      "seed": 41,
+      "termination": "round-cap",
+      "roundsCompleted": 2,
+      "finalRound": 3,
+      "actions": 77,
+      "turns": 8,
+      "invalidActions": 0,
+      "invalidActionEvidence": [],
+      "caps": {
+        "maximumRounds": 2,
+        "actionSafetyCap": 2000,
+        "roundCapReached": true,
+        "actionSafetyCapReached": false
+      },
+      "winner": null,
+      "seats": [
+        {
+          "seat": 1,
+          "playerIndex": 0,
+          "monster": "Gargantis",
+          "branch": "Army",
+          "lair": "3,5",
+          "tactic": "research-first",
+          "finalHealth": 13,
+          "finalInfamy": 5,
+          "actions": 17,
+          "turns": 2
+        },
+        {
+          "seat": 2,
+          "playerIndex": 1,
+          "monster": "Konk",
+          "branch": "Navy",
+          "lair": "13,1",
+          "tactic": "force-first",
+          "finalHealth": 11,
+          "finalInfamy": 4,
+          "actions": 23,
+          "turns": 2
+        },
+        {
+          "seat": 3,
+          "playerIndex": 2,
+          "monster": "Tomanagi",
+          "branch": "Marines",
+          "lair": "21,0",
+          "tactic": "research-first",
+          "finalHealth": 14,
+          "finalInfamy": 3,
+          "actions": 22,
+          "turns": 2
+        },
+        {
+          "seat": 4,
+          "playerIndex": 3,
+          "monster": "Toxicor",
+          "branch": "Air Force",
+          "lair": "14,-4",
+          "tactic": "force-first",
+          "finalHealth": 24,
+          "finalInfamy": 1,
+          "actions": 15,
+          "turns": 2
+        }
+      ]
+    },
+    {
+      "playerCount": 4,
+      "seed": 42,
+      "termination": "round-cap",
+      "roundsCompleted": 2,
+      "finalRound": 3,
+      "actions": 74,
+      "turns": 8,
+      "invalidActions": 0,
+      "invalidActionEvidence": [],
+      "caps": {
+        "maximumRounds": 2,
+        "actionSafetyCap": 2000,
+        "roundCapReached": true,
+        "actionSafetyCapReached": false
+      },
+      "winner": null,
+      "seats": [
+        {
+          "seat": 1,
+          "playerIndex": 0,
+          "monster": "Toxicor",
+          "branch": "Army",
+          "lair": "14,-4",
+          "tactic": "force-first",
+          "finalHealth": 16,
+          "finalInfamy": 1,
+          "actions": 18,
+          "turns": 2
+        },
+        {
+          "seat": 2,
+          "playerIndex": 1,
+          "monster": "Tomanagi",
+          "branch": "Marines",
+          "lair": "2,9",
+          "tactic": "force-first",
+          "finalHealth": 17,
+          "finalInfamy": 5,
+          "actions": 20,
+          "turns": 2
+        },
+        {
+          "seat": 3,
+          "playerIndex": 2,
+          "monster": "Gargantis",
+          "branch": "Navy",
+          "lair": "8,7",
+          "tactic": "research-first",
+          "finalHealth": 10,
+          "finalInfamy": 4,
+          "actions": 16,
+          "turns": 2
+        },
+        {
+          "seat": 4,
+          "playerIndex": 3,
+          "monster": "Konk",
+          "branch": "Air Force",
+          "lair": "13,1",
+          "tactic": "research-first",
+          "finalHealth": 21,
+          "finalInfamy": 2,
+          "actions": 20,
+          "turns": 2
+        }
+      ]
+    }
+  ]
+}

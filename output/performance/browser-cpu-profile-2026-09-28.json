@@ -1,0 +1,1563 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-28T17:21:47.963Z",
+  "build": {
+    "sha256": "8919e8651afe8d80ef00e6f1d58bc4690b63add4cab48372bc49c8f0f67b2228",
+    "assets": [
+      {
+        "path": "assets/BoardReview-C9SnmDnO.js",
+        "bytes": 5241
+      },
+      {
+        "path": "assets/index-B3_3yVjF.js",
+        "bytes": 747515
+      },
+      {
+        "path": "assets/index-Ce5D7sPS.css",
+        "bytes": 263117
+      }
+    ]
+  },
+  "sourceMapBuild": {
+    "applicationEntry": "index-B3_3yVjF.js",
+    "productionEntry": "assets/index-B3_3yVjF.js",
+    "exactJavaScriptMatchAfterMapCommentRemoval": true,
+    "mappedBuildBytes": 747515,
+    "productionBuildBytes": 747515,
+    "byteDifference": 0
+  },
+  "environment": {
+    "node": "v24.9.0",
+    "playwright": "1.63.0",
+    "browser": "140.0.7339.186"
+  },
+  "protocol": {
+    "contextPerViewport": true,
+    "cacheDisabled": true,
+    "serviceWorkers": "blocked",
+    "cpuThrottle": "4x",
+    "network": {
+      "rttMs": 150,
+      "downloadBytesPerSecond": 200000,
+      "uploadBytesPerSecond": 93750
+    },
+    "samplingIntervalMicroseconds": 1000,
+    "phases": "Cold Home through hero image decode and fonts; local setup through visible choices; first legal board selection through Confirm move visible.",
+    "input": "Mouse at 1280x720; touchscreen at 390x844.",
+    "graphics": "Production assets served unchanged; no image interception, replacement, or visual changes.",
+    "caveat": "This is source-stack attribution from one profiled run per phase and viewport, not a performance timing comparison. It profiles a temporary Vite source-map build of the same source tree; minification can change with source-map generation, so the exact main JavaScript byte comparison is recorded separately. CPU sampling and 4x throttling affect runtime; use the exact-build unprofiled seven-run measurements for timing comparisons."
+  },
+  "results": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "setupChoiceCount": 8,
+      "firstLegalDestination": "7,5",
+      "phases": {
+        "coldHomeStartup": {
+          "sampleCount": 1843,
+          "sampledDurationMs": 2629.88,
+          "topSelfTimeFrames": [
+            {
+              "label": "<runtime> · (idle):0:0",
+              "sampledMs": 1836.71
+            },
+            {
+              "label": "<runtime> · (program):0:0",
+              "sampledMs": 456.04
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · <anonymous>:94:34",
+              "sampledMs": 48.17
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · h:98:10",
+              "sampledMs": 28.29
+            },
+            {
+              "label": "http://127.0.0.1:56674/assets/index-B3_3yVjF.js · <anonymous>:1:1",
+              "sampledMs": 16.29
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · m:92:10",
+              "sampledMs": 16.08
+            },
+            {
+              "label": "<runtime> · (garbage collector):0:0",
+              "sampledMs": 14.63
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · mo:4333:10",
+              "sampledMs": 14.5
+            },
+            {
+              "label": "<runtime> · createElement:0:0",
+              "sampledMs": 12.71
+            },
+            {
+              "label": "apps/web/src/main.tsx · fs:145:10",
+              "sampledMs": 7.83
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · jc:7955:10",
+              "sampledMs": 6.17
+            },
+            {
+              "label": "packages/game-engine/src/audited-board.ts · <anonymous>:55:53",
+              "sampledMs": 5.92
+            },
+            {
+              "label": "<runtime> · <anonymous>:2:10",
+              "sampledMs": 5.46
+            },
+            {
+              "label": "apps/web/src/main.tsx · us:114:10",
+              "sampledMs": 5.04
+            },
+            {
+              "label": "<runtime> · InjectedScript:6810:14",
+              "sampledMs": 4.83
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · <anonymous>:581:42",
+              "sampledMs": 4.75
+            },
+            {
+              "label": "<runtime> · fetch:0:0",
+              "sampledMs": 4.63
+            },
+            {
+              "label": "packages/game-engine/src/audited-board.ts · fe:66:10",
+              "sampledMs": 4.58
+            },
+            {
+              "label": "<runtime> · query:5719:21",
+              "sampledMs": 4.54
+            },
+            {
+              "label": "node_modules/react-dom/index.js · <anonymous>:35:10",
+              "sampledMs": 4.5
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · M:315:10",
+              "sampledMs": 4.46
+            },
+            {
+              "label": "http://127.0.0.1:56674/assets/index-B3_3yVjF.js · <anonymous>:1:81",
+              "sampledMs": 4.33
+            },
+            {
+              "label": "<runtime> · <anonymous>:1:2",
+              "sampledMs": 3.75
+            },
+            {
+              "label": "<runtime> · addEventListener:0:0",
+              "sampledMs": 3.63
+            },
+            {
+              "label": "node_modules/react/index.js · <anonymous>:4:10",
+              "sampledMs": 3.58
+            },
+            {
+              "label": "<runtime> · _cached:5500:10",
+              "sampledMs": 3.08
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · z:550:10",
+              "sampledMs": 2.92
+            },
+            {
+              "label": "<runtime> · evaluate:305:11",
+              "sampledMs": 2.79
+            },
+            {
+              "label": "packages/game-engine/src/index.ts · zt:358:17",
+              "sampledMs": 2.67
+            },
+            {
+              "label": "<runtime> · appendChild:0:0",
+              "sampledMs": 2.67
+            }
+          ],
+          "topSampledStacks": [
+            {
+              "label": "(root) (<runtime>:0) <- (idle) (<runtime>:0)",
+              "sampledMs": 1836.71
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (program) (<runtime>:0)",
+              "sampledMs": 456.04
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- g (packages/game-engine/src/board.ts:107) <- m (packages/game-engine/src/board.ts:92) <- <anonymous> (packages/game-engine/src/board.ts:94)",
+              "sampledMs": 48.17
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- g (packages/game-engine/src/board.ts:107) <- h (packages/game-engine/src/board.ts:98)",
+              "sampledMs": 28.29
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1)",
+              "sampledMs": 16.29
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- g (packages/game-engine/src/board.ts:107) <- m (packages/game-engine/src/board.ts:92)",
+              "sampledMs": 16.08
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (garbage collector) (<runtime>:0)",
+              "sampledMs": 14.63
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333)",
+              "sampledMs": 14.5
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405) <- jc (node_modules/react-dom/cjs/react-dom-client.production.js:7955) <- createElement (<runtime>:0)",
+              "sampledMs": 11.25
+            },
+            {
+              "label": "Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- e.useState (node_modules/react/cjs/react.production.js:525) <- useState (node_modules/react-dom/cjs/react-dom-client.production.js:5564) <- Lo (node_modules/react-dom/cjs/react-dom-client.production.js:4765) <- ps (apps/web/src/main.tsx:153) <- fs (apps/web/src/main.tsx:145)",
+              "sampledMs": 7.83
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405) <- jc (node_modules/react-dom/cjs/react-dom-client.production.js:7955)",
+              "sampledMs": 6.17
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (packages/game-engine/src/audited-board.ts:55)",
+              "sampledMs": 5.92
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- <anonymous> (<runtime>:2)",
+              "sampledMs": 5.46
+            },
+            {
+              "label": "sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- us (apps/web/src/main.tsx:114)",
+              "sampledMs": 5.04
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- <anonymous> (<runtime>:2) <- InjectedScript (<runtime>:6810)",
+              "sampledMs": 4.83
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (packages/game-engine/src/board.ts:581)",
+              "sampledMs": 4.75
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- fe (packages/game-engine/src/audited-board.ts:66)",
+              "sampledMs": 4.58
+            },
+            {
+              "label": "<anonymous> (<runtime>:5709) <- query (<runtime>:5747) <- query (<runtime>:5534) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5538) <- _querySimple (<runtime>:5595) <- _queryCSS (<runtime>:5716) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5717) <- query (<runtime>:5719)",
+              "sampledMs": 4.54
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:16000) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (node_modules/react-dom/index.js:35)",
+              "sampledMs": 4.5
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- M (packages/game-engine/src/board.ts:315)",
+              "sampledMs": 4.46
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1)",
+              "sampledMs": 4.33
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:16000) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (node_modules/react-dom/index.js:35) <- addEventListener (<runtime>:0)",
+              "sampledMs": 3.63
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:16000) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (node_modules/react-dom/index.js:35) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (node_modules/scheduler/cjs/scheduler.production.js:340) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (node_modules/react/index.js:4)",
+              "sampledMs": 3.58
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1)",
+              "sampledMs": 3.04
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- z (packages/game-engine/src/board.ts:550)",
+              "sampledMs": 2.92
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305)",
+              "sampledMs": 2.79
+            },
+            {
+              "label": "sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- e.useState (node_modules/react/cjs/react.production.js:525) <- useState (node_modules/react-dom/cjs/react-dom-client.production.js:5564) <- Lo (node_modules/react-dom/cjs/react-dom-client.production.js:4765) <- <anonymous> (apps/web/src/main.tsx:167) <- Yt (packages/game-engine/src/index.ts:824) <- Bt (packages/game-engine/src/index.ts:427) <- zt (packages/game-engine/src/index.ts:358)",
+              "sampledMs": 2.67
+            },
+            {
+              "label": "bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- Pc (node_modules/react-dom/cjs/react-dom-client.production.js:8571) <- <anonymous> (apps/web/src/components/AccountPanel.tsx:111) <- Jr (apps/web/src/api.ts:69) <- Lr (apps/web/src/api.ts:25) <- fetch (<runtime>:0)",
+              "sampledMs": 2.63
+            },
+            {
+              "label": "D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405) <- jc (node_modules/react-dom/cjs/react-dom-client.production.js:7955) <- Pd (node_modules/react-dom/cjs/react-dom-client.production.js:13346) <- Ft (node_modules/react-dom/cjs/react-dom-client.production.js:1147)",
+              "sampledMs": 2.58
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- g (packages/game-engine/src/board.ts:107)",
+              "sampledMs": 2.38
+            }
+          ]
+        },
+        "localSetup": {
+          "sampleCount": 2887,
+          "sampledDurationMs": 4097.96,
+          "topSelfTimeFrames": [
+            {
+              "label": "<runtime> · (program):0:0",
+              "sampledMs": 1526.21
+            },
+            {
+              "label": "<runtime> · (idle):0:0",
+              "sampledMs": 423.3
+            },
+            {
+              "label": "<runtime> · focus:0:0",
+              "sampledMs": 319.08
+            },
+            {
+              "label": "<runtime> · removeChild:0:0",
+              "sampledMs": 213.38
+            },
+            {
+              "label": "<runtime> · scrollIntoView:0:0",
+              "sampledMs": 137.25
+            },
+            {
+              "label": "<runtime> · query:5719:21",
+              "sampledMs": 132.37
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · v:172:17",
+              "sampledMs": 88.42
+            },
+            {
+              "label": "<runtime> · setAttribute:0:0",
+              "sampledMs": 72.29
+            },
+            {
+              "label": "<runtime> · (garbage collector):0:0",
+              "sampledMs": 63.88
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · <anonymous>:208:19",
+              "sampledMs": 61.33
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · <anonymous>:198:65",
+              "sampledMs": 58.67
+            },
+            {
+              "label": "<runtime> · elementsFromPoint:0:0",
+              "sampledMs": 56.29
+            },
+            {
+              "label": "packages/game-engine/src/index.ts · mr:2763:17",
+              "sampledMs": 50.75
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Fd:13577:10",
+              "sampledMs": 47.29
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Iu:11524:10",
+              "sampledMs": 44.13
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Vc:8725:10",
+              "sampledMs": 29.88
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · mo:4333:10",
+              "sampledMs": 28.92
+            },
+            {
+              "label": "<runtime> · <anonymous>:1:1",
+              "sampledMs": 28.08
+            },
+            {
+              "label": "packages/game-engine/src/index.ts · W:567:3",
+              "sampledMs": 25.54
+            },
+            {
+              "label": "<runtime> · <anonymous>:5:64",
+              "sampledMs": 20.88
+            },
+            {
+              "label": "packages/game-engine/src/index.ts · c:1150:9",
+              "sampledMs": 20.04
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · W:1291:10",
+              "sampledMs": 19.8
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · <anonymous>:221:17",
+              "sampledMs": 19.54
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · _:111:17",
+              "sampledMs": 18.5
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · h:3622:12",
+              "sampledMs": 15.21
+            },
+            {
+              "label": "<runtime> · <anonymous>:0:0",
+              "sampledMs": 15.16
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · ref:314:19",
+              "sampledMs": 12.92
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · $c:9008:10",
+              "sampledMs": 12.42
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · t:1615:12",
+              "sampledMs": 12.08
+            },
+            {
+              "label": "apps/web/src/main.tsx · hs:164:10",
+              "sampledMs": 11.71
+            }
+          ],
+          "topSampledStacks": [
+            {
+              "label": "(root) (<runtime>:0) <- (program) (<runtime>:0)",
+              "sampledMs": 1526.21
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (idle) (<runtime>:0)",
+              "sampledMs": 423.3
+            },
+            {
+              "label": "bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- Pc (node_modules/react-dom/cjs/react-dom-client.production.js:8571) <- <anonymous> (apps/web/src/main.tsx:555) <- focus (<runtime>:0)",
+              "sampledMs": 318
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- il (node_modules/react-dom/cjs/react-dom-client.production.js:9159) <- removeChild (<runtime>:0)",
+              "sampledMs": 165.71
+            },
+            {
+              "label": "bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- Pc (node_modules/react-dom/cjs/react-dom-client.production.js:8571) <- <anonymous> (apps/web/src/components/MovementChecklist.tsx:30) <- scrollIntoView (<runtime>:0)",
+              "sampledMs": 137.25
+            },
+            {
+              "label": "<anonymous> (<runtime>:5709) <- query (<runtime>:5747) <- query (<runtime>:5534) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5538) <- _querySimple (<runtime>:5595) <- _queryCSS (<runtime>:5716) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5717) <- query (<runtime>:5719)",
+              "sampledMs": 132.37
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (garbage collector) (<runtime>:0)",
+              "sampledMs": 63.88
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577) <- Md (node_modules/react-dom/cjs/react-dom-client.production.js:12957) <- setAttribute (<runtime>:0)",
+              "sampledMs": 53.83
+            },
+            {
+              "label": "wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- e.useMemo (node_modules/react/cjs/react.production.js:513) <- ds (node_modules/react-dom/cjs/react-dom-client.production.js:5162) <- <anonymous> (apps/web/src/main.tsx:598) <- gr (packages/game-engine/src/index.ts:2872) <- <anonymous> (packages/game-engine/src/index.ts:2878) <- mr (packages/game-engine/src/index.ts:2763)",
+              "sampledMs": 50.75
+            },
+            {
+              "label": "up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- vd (node_modules/react-dom/cjs/react-dom-client.production.js:12272) <- onChange (apps/web/src/components/HomeScreen.tsx:35) <- yi (apps/web/src/main.tsx:1159) <- en (packages/game-engine/src/index.ts:923) <- Qt (packages/game-engine/src/index.ts:907) <- v (packages/game-engine/src/board.ts:172)",
+              "sampledMs": 49
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- il (node_modules/react-dom/cjs/react-dom-client.production.js:9159) <- rl (node_modules/react-dom/cjs/react-dom-client.production.js:9150) <- il (node_modules/react-dom/cjs/react-dom-client.production.js:9159) <- removeChild (<runtime>:0)",
+              "sampledMs": 47.67
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577)",
+              "sampledMs": 46.08
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12089) <- ad (node_modules/react-dom/cjs/react-dom-client.production.js:11966) <- rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- hu (node_modules/react-dom/cjs/react-dom-client.production.js:10848) <- Fu (node_modules/react-dom/cjs/react-dom-client.production.js:11457) <- Iu (node_modules/react-dom/cjs/react-dom-client.production.js:11524)",
+              "sampledMs": 44.13
+            },
+            {
+              "label": "cp (node_modules/react-dom/cjs/react-dom-client.production.js:15263) <- up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- vd (node_modules/react-dom/cjs/react-dom-client.production.js:12272) <- Ti (apps/web/src/main.tsx:1166) <- en (packages/game-engine/src/index.ts:923) <- Qt (packages/game-engine/src/index.ts:907) <- v (packages/game-engine/src/board.ts:172)",
+              "sampledMs": 39.42
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- setupHitTargetInterceptor (<runtime>:7676) <- expectHitTarget (<runtime>:7589) <- elementsFromPoint (<runtime>:0)",
+              "sampledMs": 32.46
+            },
+            {
+              "label": "up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- vd (node_modules/react-dom/cjs/react-dom-client.production.js:12272) <- Ti (apps/web/src/main.tsx:1166) <- en (packages/game-engine/src/index.ts:923) <- Qt (packages/game-engine/src/index.ts:907) <- v (packages/game-engine/src/board.ts:172) <- <anonymous> (packages/game-engine/src/board.ts:198)",
+              "sampledMs": 31.25
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725)",
+              "sampledMs": 29.88
+            },
+            {
+              "label": "sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- e.useMemo (node_modules/react/cjs/react.production.js:513) <- ds (node_modules/react-dom/cjs/react-dom-client.production.js:5162) <- <anonymous> (apps/web/src/main.tsx:598) <- gr (packages/game-engine/src/index.ts:2872) <- <anonymous> (packages/game-engine/src/index.ts:2878) <- mr (packages/game-engine/src/index.ts:2763) <- W (packages/game-engine/src/index.ts:567)",
+              "sampledMs": 25.54
+            },
+            {
+              "label": "Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- vd (node_modules/react-dom/cjs/react-dom-client.production.js:12272) <- onChange (apps/web/src/components/HomeScreen.tsx:35) <- yi (apps/web/src/main.tsx:1159) <- en (packages/game-engine/src/index.ts:923) <- Qt (packages/game-engine/src/index.ts:907) <- v (packages/game-engine/src/board.ts:172) <- <anonymous> (packages/game-engine/src/board.ts:198)",
+              "sampledMs": 24.17
+            },
+            {
+              "label": "(root) (<runtime>:0) <- listener (<runtime>:7995) <- listener (<runtime>:7693) <- expectHitTarget (<runtime>:7589) <- elementsFromPoint (<runtime>:0)",
+              "sampledMs": 23.84
+            },
+            {
+              "label": "sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93) <- <anonymous> (apps/web/src/components/HexGrid.tsx:208)",
+              "sampledMs": 23.25
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- next (<runtime>:25) <- predicate (<runtime>:3) <- <anonymous> (<runtime>:1) <- <anonymous> (<runtime>:5)",
+              "sampledMs": 20.88
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1)",
+              "sampledMs": 20.84
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577) <- Md (node_modules/react-dom/cjs/react-dom-client.production.js:12957) <- W (node_modules/react-dom/cjs/react-dom-client.production.js:1291)",
+              "sampledMs": 19.25
+            },
+            {
+              "label": "rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93) <- <anonymous> (apps/web/src/components/HexGrid.tsx:208)",
+              "sampledMs": 15.17
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:0)",
+              "sampledMs": 15.16
+            },
+            {
+              "label": "cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93) <- <anonymous> (apps/web/src/components/HexGrid.tsx:208)",
+              "sampledMs": 13.5
+            },
+            {
+              "label": "<anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12089) <- ad (node_modules/react-dom/cjs/react-dom-client.production.js:11966) <- rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333)",
+              "sampledMs": 12.58
+            },
+            {
+              "label": "(root) (<runtime>:0) <- lp (node_modules/react-dom/cjs/react-dom-client.production.js:15280) <- up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- t (node_modules/react-dom/cjs/react-dom-client.production.js:1615)",
+              "sampledMs": 12.08
+            },
+            {
+              "label": "wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- e.useMemo (node_modules/react/cjs/react.production.js:513) <- ds (node_modules/react-dom/cjs/react-dom-client.production.js:5162) <- <anonymous> (apps/web/src/main.tsx:598) <- gr (packages/game-engine/src/index.ts:2872) <- <anonymous> (packages/game-engine/src/index.ts:2878) <- vn (packages/game-engine/src/index.ts:1272)",
+              "sampledMs": 11.38
+            }
+          ]
+        },
+        "firstLegalSelection": {
+          "sampleCount": 339,
+          "sampledDurationMs": 609.29,
+          "topSelfTimeFrames": [
+            {
+              "label": "<runtime> · (program):0:0",
+              "sampledMs": 364
+            },
+            {
+              "label": "<runtime> · setAttribute:0:0",
+              "sampledMs": 44.25
+            },
+            {
+              "label": "<runtime> · isElementHiddenForAria:3546:32",
+              "sampledMs": 20.75
+            },
+            {
+              "label": "<runtime> · checkVisibility:0:0",
+              "sampledMs": 19.54
+            },
+            {
+              "label": "<runtime> · elementFromPoint:0:0",
+              "sampledMs": 11.79
+            },
+            {
+              "label": "<runtime> · (idle):0:0",
+              "sampledMs": 11.25
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · Ja:93:17",
+              "sampledMs": 8
+            },
+            {
+              "label": "<runtime> · query:5719:21",
+              "sampledMs": 7.92
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Fd:13577:10",
+              "sampledMs": 6.17
+            },
+            {
+              "label": "<runtime> · <anonymous>:3516:21",
+              "sampledMs": 5.79
+            },
+            {
+              "label": "<runtime> · getImplicitAriaRole:3411:29",
+              "sampledMs": 5.58
+            },
+            {
+              "label": "<runtime> · (garbage collector):0:0",
+              "sampledMs": 5.58
+            },
+            {
+              "label": "<runtime> · query:5413:17",
+              "sampledMs": 5.25
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Vc:8725:10",
+              "sampledMs": 4.04
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · ref:314:19",
+              "sampledMs": 3.96
+            },
+            {
+              "label": "<runtime> · createElementNS:0:0",
+              "sampledMs": 3.58
+            },
+            {
+              "label": "<runtime> · elementSafeTagName:3193:28",
+              "sampledMs": 3.54
+            },
+            {
+              "label": "<runtime> · _cached:5500:10",
+              "sampledMs": 3
+            },
+            {
+              "label": "<runtime> · getAriaRole:3521:21",
+              "sampledMs": 2.92
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · <anonymous>:12455:20",
+              "sampledMs": 2.92
+            },
+            {
+              "label": "<runtime> · getTextAlternativeInternal:3807:36",
+              "sampledMs": 2.75
+            },
+            {
+              "label": "<runtime> · hasGlobalAriaAttribute:3258:32",
+              "sampledMs": 2.54
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · <anonymous>:221:17",
+              "sampledMs": 2.5
+            },
+            {
+              "label": "apps/web/src/components/DigitalCard.tsx · ki:9:17",
+              "sampledMs": 2.46
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · _:111:17",
+              "sampledMs": 2.33
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Md:12957:10",
+              "sampledMs": 2.33
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · timeStamp:1672:16",
+              "sampledMs": 2.13
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Au:11304:10",
+              "sampledMs": 2
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Qc:8842:10",
+              "sampledMs": 1.96
+            },
+            {
+              "label": "<runtime> · hasPointerCapture:0:0",
+              "sampledMs": 1.88
+            }
+          ],
+          "topSampledStacks": [
+            {
+              "label": "(root) (<runtime>:0) <- (program) (<runtime>:0)",
+              "sampledMs": 364
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577) <- Md (node_modules/react-dom/cjs/react-dom-client.production.js:12957) <- wt (node_modules/react-dom/cjs/react-dom-client.production.js:970) <- setAttribute (<runtime>:0)",
+              "sampledMs": 44.25
+            },
+            {
+              "label": "<anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- isElementHiddenForAria (<runtime>:3546)",
+              "sampledMs": 19.25
+            },
+            {
+              "label": "querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- isElementHiddenForAria (<runtime>:3546) <- isElementStyleVisibilityVisible (<runtime>:3141) <- computeElementStyleVisibilityVisible (<runtime>:3149) <- checkVisibility (<runtime>:0)",
+              "sampledMs": 12.42
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- <anonymous> (<runtime>:1) <- elementFromPoint (<runtime>:0)",
+              "sampledMs": 11.79
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (idle) (<runtime>:0)",
+              "sampledMs": 11.25
+            },
+            {
+              "label": "rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93)",
+              "sampledMs": 8
+            },
+            {
+              "label": "query (<runtime>:5534) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5538) <- _querySimple (<runtime>:5595) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5598) <- _queryCSS (<runtime>:5716) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5717) <- query (<runtime>:5719)",
+              "sampledMs": 7.92
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- <anonymous> (<runtime>:1) <- isElementVisible (<runtime>:3184) <- computeBox (<runtime>:3165) <- isElementStyleVisibilityVisible (<runtime>:3141) <- computeElementStyleVisibilityVisible (<runtime>:3149) <- checkVisibility (<runtime>:0)",
+              "sampledMs": 7.13
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577)",
+              "sampledMs": 6.17
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (garbage collector) (<runtime>:0)",
+              "sampledMs": 5.58
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413)",
+              "sampledMs": 5.25
+            },
+            {
+              "label": "evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getAriaRole (<runtime>:3521) <- <anonymous> (<runtime>:3516)",
+              "sampledMs": 4.83
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725)",
+              "sampledMs": 4.04
+            },
+            {
+              "label": "evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getAriaRole (<runtime>:3521) <- getImplicitAriaRole (<runtime>:3411)",
+              "sampledMs": 3.75
+            },
+            {
+              "label": "ad (node_modules/react-dom/cjs/react-dom-client.production.js:11966) <- rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405) <- jc (node_modules/react-dom/cjs/react-dom-client.production.js:7955) <- createElementNS (<runtime>:0)",
+              "sampledMs": 3.58
+            },
+            {
+              "label": "querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getAriaRole (<runtime>:3521) <- computeAriaRole (<runtime>:3529) <- getImplicitAriaRole (<runtime>:3411) <- elementSafeTagName (<runtime>:3193)",
+              "sampledMs": 3.54
+            },
+            {
+              "label": "<anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getElementAccessibleNameText (<runtime>:3711) <- computeAccessibleNameComposite (<runtime>:3683) <- getTextAlternativeInternal (<runtime>:3807)",
+              "sampledMs": 2.75
+            },
+            {
+              "label": "querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getAriaRole (<runtime>:3521) <- getImplicitAriaRole (<runtime>:3411) <- IMG (<runtime>:3313) <- hasGlobalAriaAttribute (<runtime>:3258)",
+              "sampledMs": 2.54
+            },
+            {
+              "label": "mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93) <- <anonymous> (apps/web/src/components/HexGrid.tsx:208) <- <anonymous> (apps/web/src/components/HexGrid.tsx:221)",
+              "sampledMs": 2.5
+            },
+            {
+              "label": "cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ai (apps/web/src/components/DigitalCard.tsx:13) <- ki (apps/web/src/components/DigitalCard.tsx:9)",
+              "sampledMs": 2.46
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- zc (node_modules/react-dom/cjs/react-dom-client.production.js:8682) <- ref (apps/web/src/components/HexGrid.tsx:314)",
+              "sampledMs": 2.38
+            },
+            {
+              "label": "cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- fa (apps/web/src/components/BoardContextTray.tsx:26) <- _ (packages/game-engine/src/board.ts:111)",
+              "sampledMs": 2.33
+            },
+            {
+              "label": "(root) (<runtime>:0) <- up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455)",
+              "sampledMs": 2.17
+            },
+            {
+              "label": "(root) (<runtime>:0) <- cp (node_modules/react-dom/cjs/react-dom-client.production.js:15263) <- up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- t (node_modules/react-dom/cjs/react-dom-client.production.js:1615) <- timeStamp (node_modules/react-dom/cjs/react-dom-client.production.js:1672)",
+              "sampledMs": 2.13
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577) <- Md (node_modules/react-dom/cjs/react-dom-client.production.js:12957)",
+              "sampledMs": 2.08
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12089) <- ad (node_modules/react-dom/cjs/react-dom-client.production.js:11966) <- rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304)",
+              "sampledMs": 2
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12089) <- ad (node_modules/react-dom/cjs/react-dom-client.production.js:11966) <- rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- hu (node_modules/react-dom/cjs/react-dom-client.production.js:10848) <- Fu (node_modules/react-dom/cjs/react-dom-client.production.js:11457) <- Qc (node_modules/react-dom/cjs/react-dom-client.production.js:8842)",
+              "sampledMs": 1.96
+            },
+            {
+              "label": "<anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getAriaRole (<runtime>:3521)",
+              "sampledMs": 1.92
+            },
+            {
+              "label": "(root) (<runtime>:0) <- cp (node_modules/react-dom/cjs/react-dom-client.production.js:15263) <- up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- vd (node_modules/react-dom/cjs/react-dom-client.production.js:12272) <- O (apps/web/src/components/BoardViewport.tsx:147) <- hasPointerCapture (<runtime>:0)",
+              "sampledMs": 1.88
+            }
+          ]
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "setupChoiceCount": 8,
+      "firstLegalDestination": "6,2",
+      "phases": {
+        "coldHomeStartup": {
+          "sampleCount": 1606,
+          "sampledDurationMs": 2300.75,
+          "topSelfTimeFrames": [
+            {
+              "label": "<runtime> · (idle):0:0",
+              "sampledMs": 1829.13
+            },
+            {
+              "label": "<runtime> · (program):0:0",
+              "sampledMs": 235.75
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · <anonymous>:94:34",
+              "sampledMs": 33.54
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · h:98:10",
+              "sampledMs": 21.04
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · m:92:10",
+              "sampledMs": 19.5
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · mo:4333:10",
+              "sampledMs": 13.87
+            },
+            {
+              "label": "http://127.0.0.1:56674/assets/index-B3_3yVjF.js · <anonymous>:1:1",
+              "sampledMs": 12.63
+            },
+            {
+              "label": "<runtime> · InjectedScript:6810:14",
+              "sampledMs": 5.92
+            },
+            {
+              "label": "<runtime> · (garbage collector):0:0",
+              "sampledMs": 5.46
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · z:550:10",
+              "sampledMs": 5.29
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · <anonymous>:581:42",
+              "sampledMs": 4.58
+            },
+            {
+              "label": "<runtime> · <anonymous>:2:10",
+              "sampledMs": 4.42
+            },
+            {
+              "label": "<runtime> · fetch:0:0",
+              "sampledMs": 4.25
+            },
+            {
+              "label": "<runtime> · createElement:0:0",
+              "sampledMs": 4
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · jc:7955:10",
+              "sampledMs": 3.79
+            },
+            {
+              "label": "packages/game-engine/src/audited-board.ts · <anonymous>:55:53",
+              "sampledMs": 3.75
+            },
+            {
+              "label": "node_modules/scheduler/cjs/scheduler.production.js · D:121:10",
+              "sampledMs": 3
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Nu:11405:10",
+              "sampledMs": 2.96
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Pc:8571:10",
+              "sampledMs": 2.96
+            },
+            {
+              "label": "<runtime> · evaluate:305:11",
+              "sampledMs": 2.79
+            },
+            {
+              "label": "packages/game-engine/src/index.ts · gn:1213:10",
+              "sampledMs": 2.54
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Pd:13346:10",
+              "sampledMs": 2.29
+            },
+            {
+              "label": "apps/web/src/main.tsx · <anonymous>:178:35",
+              "sampledMs": 2.13
+            },
+            {
+              "label": "apps/web/src/main.tsx · hs:164:10",
+              "sampledMs": 1.96
+            },
+            {
+              "label": "<runtime> · <anonymous>:5538:117",
+              "sampledMs": 1.96
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · bu:11009:10",
+              "sampledMs": 1.96
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Ft:1147:10",
+              "sampledMs": 1.92
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Md:12957:10",
+              "sampledMs": 1.92
+            },
+            {
+              "label": "<runtime> · <anonymous>:5633:139",
+              "sampledMs": 1.92
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · M:315:10",
+              "sampledMs": 1.88
+            }
+          ],
+          "topSampledStacks": [
+            {
+              "label": "(root) (<runtime>:0) <- (idle) (<runtime>:0)",
+              "sampledMs": 1829.13
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (program) (<runtime>:0)",
+              "sampledMs": 235.75
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- g (packages/game-engine/src/board.ts:107) <- m (packages/game-engine/src/board.ts:92) <- <anonymous> (packages/game-engine/src/board.ts:94)",
+              "sampledMs": 33.54
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- g (packages/game-engine/src/board.ts:107) <- h (packages/game-engine/src/board.ts:98)",
+              "sampledMs": 21.04
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- g (packages/game-engine/src/board.ts:107) <- m (packages/game-engine/src/board.ts:92)",
+              "sampledMs": 19.5
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333)",
+              "sampledMs": 13.87
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1)",
+              "sampledMs": 12.63
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- <anonymous> (<runtime>:2)",
+              "sampledMs": 5.96
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- <anonymous> (<runtime>:2) <- InjectedScript (<runtime>:6810)",
+              "sampledMs": 5.92
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (garbage collector) (<runtime>:0)",
+              "sampledMs": 5.46
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- z (packages/game-engine/src/board.ts:550)",
+              "sampledMs": 5.29
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (packages/game-engine/src/board.ts:581)",
+              "sampledMs": 4.58
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405) <- jc (node_modules/react-dom/cjs/react-dom-client.production.js:7955) <- createElement (<runtime>:0)",
+              "sampledMs": 4
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405) <- jc (node_modules/react-dom/cjs/react-dom-client.production.js:7955)",
+              "sampledMs": 3.79
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- <anonymous> (packages/game-engine/src/audited-board.ts:55)",
+              "sampledMs": 3.75
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121)",
+              "sampledMs": 3
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405)",
+              "sampledMs": 2.96
+            },
+            {
+              "label": "<anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:11497) <- Vu (node_modules/react-dom/cjs/react-dom-client.production.js:11741) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- Pc (node_modules/react-dom/cjs/react-dom-client.production.js:8571)",
+              "sampledMs": 2.96
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305)",
+              "sampledMs": 2.79
+            },
+            {
+              "label": "bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- Pc (node_modules/react-dom/cjs/react-dom-client.production.js:8571) <- <anonymous> (apps/web/src/components/AccountPanel.tsx:111) <- Jr (apps/web/src/api.ts:69) <- Lr (apps/web/src/api.ts:25) <- fetch (<runtime>:0)",
+              "sampledMs": 2.75
+            },
+            {
+              "label": "wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- e.useMemo (node_modules/react/cjs/react.production.js:513) <- useMemo (node_modules/react-dom/cjs/react-dom-client.production.js:5515) <- <anonymous> (apps/web/src/main.tsx:279) <- <anonymous> (apps/web/src/main.tsx:283) <- hn (packages/game-engine/src/index.ts:1209) <- gn (packages/game-engine/src/index.ts:1213)",
+              "sampledMs": 2.54
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405) <- jc (node_modules/react-dom/cjs/react-dom-client.production.js:7955) <- Pd (node_modules/react-dom/cjs/react-dom-client.production.js:13346)",
+              "sampledMs": 2.29
+            },
+            {
+              "label": "Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- e.useState (node_modules/react/cjs/react.production.js:525) <- useState (node_modules/react-dom/cjs/react-dom-client.production.js:5564) <- Lo (node_modules/react-dom/cjs/react-dom-client.production.js:4765) <- <anonymous> (apps/web/src/main.tsx:178)",
+              "sampledMs": 2.13
+            },
+            {
+              "label": "D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164)",
+              "sampledMs": 1.96
+            },
+            {
+              "label": "_cached (<runtime>:5500) <- <anonymous> (<runtime>:5538) <- _queryEngine (<runtime>:5696) <- _callQuery (<runtime>:5708) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5709) <- query (<runtime>:5747) <- query (<runtime>:5534) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5538)",
+              "sampledMs": 1.96
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- bu (node_modules/react-dom/cjs/react-dom-client.production.js:11009)",
+              "sampledMs": 1.96
+            },
+            {
+              "label": "D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405) <- jc (node_modules/react-dom/cjs/react-dom-client.production.js:7955) <- Pd (node_modules/react-dom/cjs/react-dom-client.production.js:13346) <- Ft (node_modules/react-dom/cjs/react-dom-client.production.js:1147)",
+              "sampledMs": 1.92
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577) <- Md (node_modules/react-dom/cjs/react-dom-client.production.js:12957)",
+              "sampledMs": 1.92
+            },
+            {
+              "label": "_cached (<runtime>:5500) <- <anonymous> (<runtime>:5709) <- query (<runtime>:5747) <- query (<runtime>:5534) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5538) <- <anonymous> (<runtime>:5546) <- _matchesParents (<runtime>:5630) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5633)",
+              "sampledMs": 1.92
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (http://127.0.0.1:56674/assets/index-B3_3yVjF.js:1) <- M (packages/game-engine/src/board.ts:315)",
+              "sampledMs": 1.88
+            }
+          ]
+        },
+        "localSetup": {
+          "sampleCount": 2882,
+          "sampledDurationMs": 4191.13,
+          "topSelfTimeFrames": [
+            {
+              "label": "<runtime> · (program):0:0",
+              "sampledMs": 1888.63
+            },
+            {
+              "label": "<runtime> · (idle):0:0",
+              "sampledMs": 262.12
+            },
+            {
+              "label": "<runtime> · removeChild:0:0",
+              "sampledMs": 228.21
+            },
+            {
+              "label": "<runtime> · focus:0:0",
+              "sampledMs": 174.21
+            },
+            {
+              "label": "<runtime> · query:5719:21",
+              "sampledMs": 137.04
+            },
+            {
+              "label": "<runtime> · scrollIntoView:0:0",
+              "sampledMs": 104.21
+            },
+            {
+              "label": "<runtime> · setAttribute:0:0",
+              "sampledMs": 86.79
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · v:172:17",
+              "sampledMs": 76.88
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · <anonymous>:198:65",
+              "sampledMs": 62.54
+            },
+            {
+              "label": "<runtime> · (garbage collector):0:0",
+              "sampledMs": 57.91
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Iu:11524:10",
+              "sampledMs": 57.83
+            },
+            {
+              "label": "<runtime> · elementsFromPoint:0:0",
+              "sampledMs": 46.96
+            },
+            {
+              "label": "packages/game-engine/src/index.ts · mr:2763:17",
+              "sampledMs": 44.79
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · <anonymous>:208:19",
+              "sampledMs": 43.91
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Fd:13577:10",
+              "sampledMs": 39.88
+            },
+            {
+              "label": "packages/game-engine/src/index.ts · W:567:3",
+              "sampledMs": 30.33
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · _:111:17",
+              "sampledMs": 27.5
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · h:3622:12",
+              "sampledMs": 25.83
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · W:1291:10",
+              "sampledMs": 25.62
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · up:15297:10",
+              "sampledMs": 23.33
+            },
+            {
+              "label": "<runtime> · <anonymous>:1:1",
+              "sampledMs": 22.92
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · mo:4333:10",
+              "sampledMs": 21.75
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Vc:8725:10",
+              "sampledMs": 21.46
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · <anonymous>:221:17",
+              "sampledMs": 18.79
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · Ja:93:17",
+              "sampledMs": 18.29
+            },
+            {
+              "label": "packages/game-engine/src/index.ts · c:1150:9",
+              "sampledMs": 18.25
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · ref:314:19",
+              "sampledMs": 16.67
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Md:12957:10",
+              "sampledMs": 15.87
+            },
+            {
+              "label": "<runtime> · <anonymous>:0:0",
+              "sampledMs": 15.29
+            },
+            {
+              "label": "<runtime> · querySelectorAll:0:0",
+              "sampledMs": 15.08
+            }
+          ],
+          "topSampledStacks": [
+            {
+              "label": "(root) (<runtime>:0) <- (program) (<runtime>:0)",
+              "sampledMs": 1888.63
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (idle) (<runtime>:0)",
+              "sampledMs": 262.12
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- il (node_modules/react-dom/cjs/react-dom-client.production.js:9159) <- removeChild (<runtime>:0)",
+              "sampledMs": 176.63
+            },
+            {
+              "label": "bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- Pc (node_modules/react-dom/cjs/react-dom-client.production.js:8571) <- <anonymous> (apps/web/src/main.tsx:555) <- focus (<runtime>:0)",
+              "sampledMs": 174.21
+            },
+            {
+              "label": "<anonymous> (<runtime>:5709) <- query (<runtime>:5747) <- query (<runtime>:5534) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5538) <- _querySimple (<runtime>:5595) <- _queryCSS (<runtime>:5716) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5717) <- query (<runtime>:5719)",
+              "sampledMs": 137.04
+            },
+            {
+              "label": "bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- yl (node_modules/react-dom/cjs/react-dom-client.production.js:10093) <- bl (node_modules/react-dom/cjs/react-dom-client.production.js:10109) <- Pc (node_modules/react-dom/cjs/react-dom-client.production.js:8571) <- <anonymous> (apps/web/src/components/MovementChecklist.tsx:30) <- scrollIntoView (<runtime>:0)",
+              "sampledMs": 104.21
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577) <- Md (node_modules/react-dom/cjs/react-dom-client.production.js:12957) <- setAttribute (<runtime>:0)",
+              "sampledMs": 67.58
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (garbage collector) (<runtime>:0)",
+              "sampledMs": 57.91
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12089) <- ad (node_modules/react-dom/cjs/react-dom-client.production.js:11966) <- rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- hu (node_modules/react-dom/cjs/react-dom-client.production.js:10848) <- Fu (node_modules/react-dom/cjs/react-dom-client.production.js:11457) <- Iu (node_modules/react-dom/cjs/react-dom-client.production.js:11524)",
+              "sampledMs": 54.5
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- il (node_modules/react-dom/cjs/react-dom-client.production.js:9159) <- rl (node_modules/react-dom/cjs/react-dom-client.production.js:9150) <- il (node_modules/react-dom/cjs/react-dom-client.production.js:9159) <- removeChild (<runtime>:0)",
+              "sampledMs": 51.58
+            },
+            {
+              "label": "wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- e.useMemo (node_modules/react/cjs/react.production.js:513) <- ds (node_modules/react-dom/cjs/react-dom-client.production.js:5162) <- <anonymous> (apps/web/src/main.tsx:598) <- gr (packages/game-engine/src/index.ts:2872) <- <anonymous> (packages/game-engine/src/index.ts:2878) <- mr (packages/game-engine/src/index.ts:2763)",
+              "sampledMs": 44.79
+            },
+            {
+              "label": "up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- vd (node_modules/react-dom/cjs/react-dom-client.production.js:12272) <- onChange (apps/web/src/components/HomeScreen.tsx:35) <- yi (apps/web/src/main.tsx:1159) <- en (packages/game-engine/src/index.ts:923) <- Qt (packages/game-engine/src/index.ts:907) <- v (packages/game-engine/src/board.ts:172)",
+              "sampledMs": 43
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577)",
+              "sampledMs": 39.88
+            },
+            {
+              "label": "cp (node_modules/react-dom/cjs/react-dom-client.production.js:15263) <- up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- vd (node_modules/react-dom/cjs/react-dom-client.production.js:12272) <- Ti (apps/web/src/main.tsx:1166) <- en (packages/game-engine/src/index.ts:923) <- Qt (packages/game-engine/src/index.ts:907) <- v (packages/game-engine/src/board.ts:172)",
+              "sampledMs": 33.88
+            },
+            {
+              "label": "up (node_modules/react-dom/cjs/react-dom-client.production.js:15297) <- Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- vd (node_modules/react-dom/cjs/react-dom-client.production.js:12272) <- Ti (apps/web/src/main.tsx:1166) <- en (packages/game-engine/src/index.ts:923) <- Qt (packages/game-engine/src/index.ts:907) <- v (packages/game-engine/src/board.ts:172) <- <anonymous> (packages/game-engine/src/board.ts:198)",
+              "sampledMs": 32.25
+            },
+            {
+              "label": "sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- hs (apps/web/src/main.tsx:164) <- e.useMemo (node_modules/react/cjs/react.production.js:513) <- ds (node_modules/react-dom/cjs/react-dom-client.production.js:5162) <- <anonymous> (apps/web/src/main.tsx:598) <- gr (packages/game-engine/src/index.ts:2872) <- <anonymous> (packages/game-engine/src/index.ts:2878) <- mr (packages/game-engine/src/index.ts:2763) <- W (packages/game-engine/src/index.ts:567)",
+              "sampledMs": 30.33
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- setupHitTargetInterceptor (<runtime>:7676) <- expectHitTarget (<runtime>:7589) <- elementsFromPoint (<runtime>:0)",
+              "sampledMs": 25.58
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577) <- Md (node_modules/react-dom/cjs/react-dom-client.production.js:12957) <- W (node_modules/react-dom/cjs/react-dom-client.production.js:1291)",
+              "sampledMs": 24.37
+            },
+            {
+              "label": "Cd (node_modules/react-dom/cjs/react-dom-client.production.js:12408) <- Xt (node_modules/react-dom/cjs/react-dom-client.production.js:1494) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12455) <- vd (node_modules/react-dom/cjs/react-dom-client.production.js:12272) <- onChange (apps/web/src/components/HomeScreen.tsx:35) <- yi (apps/web/src/main.tsx:1159) <- en (packages/game-engine/src/index.ts:923) <- Qt (packages/game-engine/src/index.ts:907) <- v (packages/game-engine/src/board.ts:172) <- <anonymous> (packages/game-engine/src/board.ts:198)",
+              "sampledMs": 23.08
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725)",
+              "sampledMs": 21.46
+            },
+            {
+              "label": "(root) (<runtime>:0) <- listener (<runtime>:7995) <- listener (<runtime>:7693) <- expectHitTarget (<runtime>:7589) <- elementsFromPoint (<runtime>:0)",
+              "sampledMs": 21.38
+            },
+            {
+              "label": "(root) (<runtime>:0) <- up (node_modules/react-dom/cjs/react-dom-client.production.js:15297)",
+              "sampledMs": 21.04
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:0)",
+              "sampledMs": 15.29
+            },
+            {
+              "label": "query (<runtime>:5747) <- query (<runtime>:5534) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5538) <- _querySimple (<runtime>:5595) <- _queryCSS (<runtime>:5716) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5717) <- query (<runtime>:5719) <- querySelectorAll (<runtime>:0)",
+              "sampledMs": 15.08
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- next (<runtime>:25) <- predicate (<runtime>:3) <- <anonymous> (<runtime>:1) <- <anonymous> (<runtime>:5)",
+              "sampledMs": 14.17
+            },
+            {
+              "label": "sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93) <- <anonymous> (apps/web/src/components/HexGrid.tsx:208)",
+              "sampledMs": 13.79
+            },
+            {
+              "label": "rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93) <- <anonymous> (apps/web/src/components/HexGrid.tsx:208)",
+              "sampledMs": 13.58
+            },
+            {
+              "label": "hs (apps/web/src/main.tsx:164) <- e.useMemo (node_modules/react/cjs/react.production.js:513) <- ds (node_modules/react-dom/cjs/react-dom-client.production.js:5162) <- <anonymous> (apps/web/src/main.tsx:261) <- pn (packages/game-engine/src/index.ts:1172) <- fn (packages/game-engine/src/index.ts:1141) <- c (packages/game-engine/src/index.ts:1150) <- c (packages/game-engine/src/index.ts:1150) <- c (packages/game-engine/src/index.ts:1150) <- c (packages/game-engine/src/index.ts:1150)",
+              "sampledMs": 13.46
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577) <- Md (node_modules/react-dom/cjs/react-dom-client.production.js:12957)",
+              "sampledMs": 13.33
+            },
+            {
+              "label": "<anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:12089) <- ad (node_modules/react-dom/cjs/react-dom-client.production.js:11966) <- rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333)",
+              "sampledMs": 13.17
+            }
+          ]
+        },
+        "firstLegalSelection": {
+          "sampleCount": 385,
+          "sampledDurationMs": 656.88,
+          "topSelfTimeFrames": [
+            {
+              "label": "<runtime> · (program):0:0",
+              "sampledMs": 357
+            },
+            {
+              "label": "<runtime> · setAttribute:0:0",
+              "sampledMs": 51.08
+            },
+            {
+              "label": "<runtime> · isElementHiddenForAria:3546:32",
+              "sampledMs": 26.17
+            },
+            {
+              "label": "<runtime> · (idle):0:0",
+              "sampledMs": 24.08
+            },
+            {
+              "label": "<runtime> · query:5413:17",
+              "sampledMs": 15.42
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Fd:13577:10",
+              "sampledMs": 12.37
+            },
+            {
+              "label": "<runtime> · checkVisibility:0:0",
+              "sampledMs": 11.58
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · Ja:93:17",
+              "sampledMs": 9.67
+            },
+            {
+              "label": "<runtime> · getAriaRole:3521:21",
+              "sampledMs": 8.88
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · h:3622:12",
+              "sampledMs": 7.38
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · <anonymous>:208:19",
+              "sampledMs": 6.79
+            },
+            {
+              "label": "<runtime> · getImplicitAriaRole:3411:29",
+              "sampledMs": 6
+            },
+            {
+              "label": "<runtime> · query:5719:21",
+              "sampledMs": 5.17
+            },
+            {
+              "label": "<runtime> · (garbage collector):0:0",
+              "sampledMs": 5
+            },
+            {
+              "label": "packages/game-engine/src/board.ts · _:111:17",
+              "sampledMs": 4.79
+            },
+            {
+              "label": "<runtime> · elementFromPoint:0:0",
+              "sampledMs": 4.5
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · mo:4333:10",
+              "sampledMs": 4.29
+            },
+            {
+              "label": "<runtime> · <anonymous>:1:1",
+              "sampledMs": 3.5
+            },
+            {
+              "label": "<runtime> · createElementNS:0:0",
+              "sampledMs": 3.33
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · Vc:8725:10",
+              "sampledMs": 3.33
+            },
+            {
+              "label": "apps/web/src/components/HexGrid.tsx · <anonymous>:221:17",
+              "sampledMs": 3.33
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · dl:9427:10",
+              "sampledMs": 3.21
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · p:3503:12",
+              "sampledMs": 3.04
+            },
+            {
+              "label": "<runtime> · _cached:5500:10",
+              "sampledMs": 2.83
+            },
+            {
+              "label": "apps/web/src/components/UnitCard.tsx · <anonymous>:21:26",
+              "sampledMs": 2.75
+            },
+            {
+              "label": "<runtime> · <anonymous>:3607:30",
+              "sampledMs": 2.75
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · t:1615:12",
+              "sampledMs": 2.71
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · $r:2452:10",
+              "sampledMs": 2.58
+            },
+            {
+              "label": "node_modules/react-dom/cjs/react-dom-client.production.js · m:3551:12",
+              "sampledMs": 2.42
+            },
+            {
+              "label": "<runtime> · asFlatString:3606:22",
+              "sampledMs": 2.42
+            }
+          ],
+          "topSampledStacks": [
+            {
+              "label": "(root) (<runtime>:0) <- (program) (<runtime>:0)",
+              "sampledMs": 357
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577) <- Md (node_modules/react-dom/cjs/react-dom-client.production.js:12957) <- wt (node_modules/react-dom/cjs/react-dom-client.production.js:970) <- setAttribute (<runtime>:0)",
+              "sampledMs": 51.08
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (idle) (<runtime>:0)",
+              "sampledMs": 24.08
+            },
+            {
+              "label": "<anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- isElementHiddenForAria (<runtime>:3546)",
+              "sampledMs": 23.5
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413)",
+              "sampledMs": 15.42
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725) <- Fd (node_modules/react-dom/cjs/react-dom-client.production.js:13577)",
+              "sampledMs": 12.37
+            },
+            {
+              "label": "querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- isElementHiddenForAria (<runtime>:3546) <- isElementStyleVisibilityVisible (<runtime>:3141) <- computeElementStyleVisibilityVisible (<runtime>:3149) <- checkVisibility (<runtime>:0)",
+              "sampledMs": 11.58
+            },
+            {
+              "label": "rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93)",
+              "sampledMs": 9.67
+            },
+            {
+              "label": "<anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getAriaRole (<runtime>:3521)",
+              "sampledMs": 8.88
+            },
+            {
+              "label": "<anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getAriaRole (<runtime>:3521) <- computeAriaRole (<runtime>:3529) <- getImplicitAriaRole (<runtime>:3411)",
+              "sampledMs": 5.42
+            },
+            {
+              "label": "query (<runtime>:5534) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5538) <- _querySimple (<runtime>:5595) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5598) <- _queryCSS (<runtime>:5716) <- _cached (<runtime>:5500) <- <anonymous> (<runtime>:5717) <- query (<runtime>:5719)",
+              "sampledMs": 5.17
+            },
+            {
+              "label": "(root) (<runtime>:0) <- (garbage collector) (<runtime>:0)",
+              "sampledMs": 5
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1) <- <anonymous> (<runtime>:1) <- elementFromPoint (<runtime>:0)",
+              "sampledMs": 4.5
+            },
+            {
+              "label": "cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- Xs (node_modules/react-dom/cjs/react-dom-client.production.js:6115) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:3961) <- b (node_modules/react-dom/cjs/react-dom-client.production.js:3793) <- h (node_modules/react-dom/cjs/react-dom-client.production.js:3622)",
+              "sampledMs": 4.42
+            },
+            {
+              "label": "sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- fa (apps/web/src/components/BoardContextTray.tsx:26) <- _ (packages/game-engine/src/board.ts:111)",
+              "sampledMs": 3.63
+            },
+            {
+              "label": "cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93) <- <anonymous> (apps/web/src/components/HexGrid.tsx:208)",
+              "sampledMs": 3.54
+            },
+            {
+              "label": "(root) (<runtime>:0) <- <anonymous> (<runtime>:1) <- evaluate (<runtime>:305) <- <anonymous> (<runtime>:1)",
+              "sampledMs": 3.5
+            },
+            {
+              "label": "ad (node_modules/react-dom/cjs/react-dom-client.production.js:11966) <- rd (node_modules/react-dom/cjs/react-dom-client.production.js:11918) <- cd (node_modules/react-dom/cjs/react-dom-client.production.js:12084) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- Nu (node_modules/react-dom/cjs/react-dom-client.production.js:11405) <- jc (node_modules/react-dom/cjs/react-dom-client.production.js:7955) <- createElementNS (<runtime>:0)",
+              "sampledMs": 3.33
+            },
+            {
+              "label": "dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- Vc (node_modules/react-dom/cjs/react-dom-client.production.js:8725)",
+              "sampledMs": 3.33
+            },
+            {
+              "label": "mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93) <- <anonymous> (apps/web/src/components/HexGrid.tsx:208) <- <anonymous> (apps/web/src/components/HexGrid.tsx:221)",
+              "sampledMs": 3.33
+            },
+            {
+              "label": "sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333) <- Ja (apps/web/src/components/HexGrid.tsx:93) <- <anonymous> (apps/web/src/components/HexGrid.tsx:208)",
+              "sampledMs": 3.25
+            },
+            {
+              "label": "ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427) <- ll (node_modules/react-dom/cjs/react-dom-client.production.js:9384) <- dl (node_modules/react-dom/cjs/react-dom-client.production.js:9427)",
+              "sampledMs": 3.21
+            },
+            {
+              "label": "mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- Xs (node_modules/react-dom/cjs/react-dom-client.production.js:6115) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:3961) <- b (node_modules/react-dom/cjs/react-dom-client.production.js:3793) <- h (node_modules/react-dom/cjs/react-dom-client.production.js:3622) <- p (node_modules/react-dom/cjs/react-dom-client.production.js:3503)",
+              "sampledMs": 3.04
+            },
+            {
+              "label": "sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- Xs (node_modules/react-dom/cjs/react-dom-client.production.js:6115) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:3961) <- b (node_modules/react-dom/cjs/react-dom-client.production.js:3793) <- h (node_modules/react-dom/cjs/react-dom-client.production.js:3622)",
+              "sampledMs": 2.96
+            },
+            {
+              "label": "(root) (<runtime>:0) <- D (node_modules/scheduler/cjs/scheduler.production.js:121) <- sd (node_modules/react-dom/cjs/react-dom-client.production.js:12065) <- mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- sc (node_modules/react-dom/cjs/react-dom-client.production.js:6489) <- mo (node_modules/react-dom/cjs/react-dom-client.production.js:4333)",
+              "sampledMs": 2.79
+            },
+            {
+              "label": "querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getElementAccessibleNameText (<runtime>:3711) <- computeAccessibleNameComposite (<runtime>:3683) <- asFlatString (<runtime>:3606) <- <anonymous> (<runtime>:3607)",
+              "sampledMs": 2.75
+            },
+            {
+              "label": "querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getElementAccessibleNameText (<runtime>:3711) <- computeAccessibleNameComposite (<runtime>:3683) <- getTextAlternativeInternal (<runtime>:3807) <- isElementHiddenForAria (<runtime>:3546)",
+              "sampledMs": 2.67
+            },
+            {
+              "label": "mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- Xs (node_modules/react-dom/cjs/react-dom-client.production.js:6115) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:3961) <- b (node_modules/react-dom/cjs/react-dom-client.production.js:3793) <- i (node_modules/react-dom/cjs/react-dom-client.production.js:3327) <- $r (node_modules/react-dom/cjs/react-dom-client.production.js:2452)",
+              "sampledMs": 2.58
+            },
+            {
+              "label": "mu (node_modules/react-dom/cjs/react-dom-client.production.js:10681) <- Eu (node_modules/react-dom/cjs/react-dom-client.production.js:11120) <- Du (node_modules/react-dom/cjs/react-dom-client.production.js:11181) <- Au (node_modules/react-dom/cjs/react-dom-client.production.js:11304) <- wc (node_modules/react-dom/cjs/react-dom-client.production.js:7392) <- Xs (node_modules/react-dom/cjs/react-dom-client.production.js:6115) <- <anonymous> (node_modules/react-dom/cjs/react-dom-client.production.js:3961) <- b (node_modules/react-dom/cjs/react-dom-client.production.js:3793) <- h (node_modules/react-dom/cjs/react-dom-client.production.js:3622) <- m (node_modules/react-dom/cjs/react-dom-client.production.js:3551)",
+              "sampledMs": 2.42
+            },
+            {
+              "label": "<anonymous> (<runtime>:1) <- querySelectorAll (<runtime>:7010) <- _queryEngineAll (<runtime>:7058) <- queryAll (<runtime>:5429) <- queryRole (<runtime>:5371) <- query (<runtime>:5413) <- match (<runtime>:5373) <- getElementAccessibleNameText (<runtime>:3711) <- computeAccessibleNameComposite (<runtime>:3683) <- asFlatString (<runtime>:3606)",
+              "sampledMs": 2.42
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "rawProfileArtifact": "output/performance/browser-cpu-profile-2026-09-28.json.gz",
+  "rawProfileSha256": "73e22d28289c8af3c5627b815ba399fbef9382d8ed44eb0bbb011161ced68d64",
+  "rawProfileCompressedSha256": "5a7b123f5dc822b7610f708e729b6762829e708efdfc7a2cc99bd35f30244b99"
+}

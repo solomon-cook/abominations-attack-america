@@ -501,12 +501,12 @@ const PROVISIONAL_BOARD_FEATURES: Readonly<Record<string, readonly BoardFeature[
   "11/11": [{ kind: "military-base", branch: "Navy" }],
 };
 
-/** Hollywood is printed across the board as an area overlay; its anchor is not a visitable space. */
+/** Hollywood is printed across the board as an area overlay; the anchor locates the art, not a special gameplay space. */
 export const PHOTOGRAPHED_BOARD_OVERLAYS: readonly BoardOverlay[] = [{
   id: "hollywood",
   anchor: "-5,10",
   sourceRefs: [PROVISIONAL_BOARD_SOURCE, FULL_HONEYCOMB_SOURCE],
-  notes: "Printed Hollywood area/title overlay; do not expose the anchor as a visitable hex feature.",
+  notes: "Printed Hollywood area/title overlay; the anchor is illustration metadata, not a Hollywood feature or special movement destination.",
 }];
 
 /** Sea cells traced from the thick blue boundary in the supplied board photo. */

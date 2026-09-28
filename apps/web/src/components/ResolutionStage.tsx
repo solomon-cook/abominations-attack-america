@@ -7,17 +7,28 @@ export function monsterPortrait(name: string) {
   return `/assets/monsters/portraits/${slug === "gargantis" ? "gargantis-light" : slug === "tomanagi" ? "tomanagi-dark" : slug}.webp`;
 }
 
-export function ResolutionStage({ title, eyebrow, onClose, children, variant = "encounter" }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode; variant?: string }) {
+export function ResolutionStage({ title, eyebrow, onClose, children, variant = "encounter", returnFocusTo, returnFocusFallbackTo }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode; variant?: string; returnFocusTo?: HTMLElement | null; returnFocusFallbackTo?: HTMLElement | null }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
+    const previous = returnFocusTo ?? document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     dialog.current?.showModal();
-    return () => { document.body.style.overflow = overflow; previous?.focus(); };
+    dialog.current?.querySelector<HTMLButtonElement>(".resolution-close")?.focus({ preventScroll: true });
+    return () => {
+      document.body.style.overflow = overflow;
+      if (previous?.isConnected && previous !== document.body && previous !== document.documentElement && !previous.matches(":disabled") && previous.getAttribute("aria-disabled") !== "true") {
+        previous.focus({ preventScroll: true });
+        return;
+      }
+      const fallback = returnFocusFallbackTo;
+      if (fallback?.isConnected) window.requestAnimationFrame(() => {
+        if (fallback.isConnected) fallback.focus({ preventScroll: true });
+      });
+    };
   }, []);
   return <dialog ref={dialog} className={`resolution-stage resolution-${variant}`} aria-label={title} onCancel={event => { event.preventDefault(); onClose(); }}>
-    <header className="resolution-header"><div><p className="resolution-eyebrow">{eyebrow}</p><h2>{title}</h2></div><button autoFocus className="resolution-close" onClick={onClose} aria-label="Return to board">✕ <span>Board</span></button></header>
+    <header className="resolution-header"><div><p className="resolution-eyebrow">{eyebrow}</p><h2>{title}</h2></div><button className="resolution-close" onClick={onClose} aria-label="Return to board">✕ <span>Board</span></button></header>
     <div className="resolution-content">{children}</div>
     <footer className="resolution-footer"><span>ABOMINATIONS ATTACK AMERICA</span></footer>
   </dialog>;

@@ -1,0 +1,156 @@
+{
+  "started": "2026-09-28T13:18:48.515Z",
+  "fixture": "createGame(3, 2841) with an active challenge-opponent decision; owner action goes through applyCommand",
+  "coveredSlice": "select one eligible monster opponent; complete duel resolution is outside this slice",
+  "scenarios": {
+    "activeOwner": {
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dialogBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "emptyMutationText": {
+        "label": "MUTATIONS · 0",
+        "explanation": "No revealed mutations",
+        "labelBounds": {
+          "x": 49.53125,
+          "y": 442.59375,
+          "width": 95.9375,
+          "height": 17.3125,
+          "right": 145.46875,
+          "bottom": 459.90625
+        },
+        "explanationBounds": {
+          "x": 16.109375,
+          "y": 463.90625,
+          "width": 162.78125,
+          "height": 20.796875,
+          "right": 178.890625,
+          "bottom": 484.703125
+        },
+        "overlaps": false
+      },
+      "initialDialogScroll": {
+        "width": 390,
+        "height": 844,
+        "scrollWidth": 390,
+        "scrollHeight": 844,
+        "overflowY": "auto"
+      },
+      "choiceBoundsBeforeScroll": {
+        "x": 39,
+        "y": 509.703125,
+        "width": 148,
+        "height": 201
+      },
+      "choiceBoundsAfterScroll": {
+        "x": 39,
+        "y": 509.703125,
+        "width": 148,
+        "height": 201
+      },
+      "selectedOpponent": "Tomanagi",
+      "keyboard": "Tab to first opponent; Enter selects it",
+      "submittedCommands": [
+        {
+          "type": "challenge-opponent",
+          "opponentMonsterId": "monster-2"
+        }
+      ],
+      "event": {
+        "id": "1:0",
+        "action": "challenge.opponent.selected",
+        "detail": {
+          "challengerMonsterId": "monster-1",
+          "opponentMonsterId": "monster-2",
+          "challengerWeighIn": 20,
+          "opponentWeighIn": 20
+        }
+      },
+      "nextDecision": "challenge-resolution",
+      "postSelectionDialogScroll": {
+        "scrollTop": 0,
+        "scrollHeight": 844,
+        "clientHeight": 844
+      },
+      "pageWidths": {
+        "before": {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        "after": {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        }
+      },
+      "screenshots": [
+        "challenge-arena-active-mobile-2026-09-28.png",
+        "challenge-arena-selected-mobile-2026-09-28.png"
+      ]
+    },
+    "shortViewportScroll": {
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 600
+      },
+      "dialogBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 600
+      },
+      "before": {
+        "scrollHeight": 831,
+        "clientHeight": 600,
+        "overflowY": "auto"
+      },
+      "after": {
+        "scrollTop": 231,
+        "scrollHeight": 831,
+        "clientHeight": 600
+      },
+      "battleRulesBounds": {
+        "x": 29,
+        "y": 515.703125,
+        "width": 332,
+        "height": 24
+      },
+      "pageWidths": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      },
+      "screenshot": "challenge-arena-scroll-mobile-2026-09-28.png"
+    },
+    "spectator": {
+      "status": "passed",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "dialogBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      },
+      "opponentChoiceButtons": 2,
+      "disabledButtons": true,
+      "submittedCommands": 0,
+      "engineEvents": null,
+      "screenshot": "challenge-arena-spectator-desktop-2026-09-28.png"
+    }
+  },
+  "runtimeErrors": [],
+  "finished": "2026-09-28T13:18:52.561Z",
+  "status": "passed"
+}

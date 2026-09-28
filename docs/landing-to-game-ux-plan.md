@@ -8,32 +8,28 @@ This is a UX and presentation plan. It preserves the existing local playtest, pr
 
 ## Audit summary
 
-### Current journey
+### Current journey (runtime snapshot checked 2026-09-27)
 
-1. The landing screen shows a hero, five action buttons, the online lobby, and optional quick rules in one vertical surface.
-2. The primary actions currently mix player-facing play with development and review tools:
-   - `Start local playtest`
-   - `Play honeycomb board`
-   - `Victory test`
-   - `Review full board`
-   - `Rules`
-3. Online play is exposed directly beside the hero rather than being a deliberate mode in the game menu.
-4. Starting local play immediately enters the game shell, while online play enters a lobby/setup state. The user therefore experiences two different journeys from the same landing screen.
-5. The game shell includes a title, development label, board status, turn progress, onboarding, map controls, action dock, optional side panel, settings, and several development notices. These are useful, but they compete for attention before the player understands the current decision.
-6. Setup is functionally present in `SetupPanel`, but it is visually part of the game page rather than a clear pre-game “Create / Configure / Ready / Start” menu step.
-7. The game already has important foundations for the desired direction: full-screen layout CSS, a board-first layout, a collapsible details panel, `TurnProgress`, `ActionDock`, `SettingsPanel`, and a full-screen Monster Challenge overlay.
+The prior journey notes below were stale: they described controls and labels that no longer match the current `HomeScreen`. Use the [frontend surface audit ledger](ui-surface-audit.md) for evidence status, and refresh this snapshot when the home/lobby flow changes.
+
+1. Home presents a player-count selector, `Start local game`, and `Play solo vs bots` next to the monster artwork.
+2. A collapsed `Play online` disclosure contains the `LobbyPanel`; room state opens it automatically. The lobby offers online room actions within the same home page.
+3. The account panel appears on Home. `How to play` opens quick rules in the masthead; a separate field manual disclosure contains monster and branch strategy guidance.
+4. `Playtest tools` is a footer disclosure containing the candidate-board playtest, full-board review, and victory test actions.
+5. Local and solo start enter the game setup flow. Online creation/join enters a waiting room and then the same ordered setup flow; these are distinct pre-game paths.
+6. During play, the shell includes the map, current-turn/status controls, command and order surfaces, collapsible information panels, settings/menu, source-status notices, and phase-specific Fight/Encounter/Challenge/card surfaces.
+7. Existing foundations include the map-first layout, turn progress, action dock, settings, movement queue, record, minimap, deployment/research sheet, and full-screen Challenge overlay. Their presence does not mean every state and input mode has been audited.
 
 ### Main UX issues
 
 | Issue | User impact | Recommended treatment |
 | --- | --- | --- |
-| Too many equally prominent landing actions | New players cannot tell what the normal path is | Make one primary `Play` route; move development/review tools into `More / Development` |
-| Online lobby is visually attached to the landing page | Multiplayer feels like a form rather than a game mode | Put `Online` behind the Play menu and give create/join/spectate a shared lobby screen |
-| Local play skips a meaningful pre-game menu | The game appears to start abruptly and defaults are hard to understand | Add a lightweight local game setup screen with a clear `Start match` action |
-| Development language is visible at the top of play | Players feel they are using a test harness rather than entering a game | Keep source/provisional warnings, but move them into a compact status drawer or pre-game warning |
-| Information is split between many panels | Players must scan the whole page to find the current decision | Keep the board central; use one contextual action panel and optional drawers |
-| Settings and help are peer actions beside play controls | Important and occasional actions have equal visual weight | Put them in a consistent top-right menu with keyboard/focus support |
-| The first action is not always obvious | Players may read the board before understanding what they can do | Use one prominent current-turn prompt plus board highlights and a single next-action control |
+| Home combines local, solo, online, account, rules, strategy, and development-tool surfaces | Players may have to scan several sections before finding the intended mode | Keep one clear primary route and make secondary disclosures predictable; review the live page before changing hierarchy |
+| Online creation/join and local play enter different pre-game states | Players may not understand which settings/setup are shared | Make the two paths legible while preserving their distinct room/privacy requirements |
+| Account, lobby errors, and recovery are not covered by browser interaction evidence | Failures may be confusing even when the happy path works | Add dedicated interaction coverage for success, loading, empty, invalid, stale-session, and server-error states |
+| Information is split among panels and phase-specific surfaces | Players must locate rules and current decisions across several controls | Keep the board central; audit entry points and keyboard/focus behavior for each panel before consolidating them |
+| Source/playtest status must stay visible without obscuring play | Users could mistake a candidate board for a physically verified release | Retain accurate board/source status and make its location understandable in both setup and play |
+| The first action can depend on the current phase and selected piece | Players may not know which control or board selection is actionable | Use a prominent phase prompt, legal highlights, and a clear next-action path; verify every phase surface |
 
 ## Reference patterns to borrow
 
@@ -246,4 +242,3 @@ Do not remove the existing action components. Change when and where they appear 
 - Removing local playtest, provisional-board playtest, victory scenario, board review, spectator mode, or settings.
 - Replacing the current art direction with copied Risk or Civilization VI assets.
 - Treating Digital Risk or Civilization VI as exact visual specifications; they are interaction and information-hierarchy references only.
-

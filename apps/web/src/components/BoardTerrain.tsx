@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { type BoardDefinition, type BoardHex, type HexKey } from "@abominations/game-engine";
 import { buildDisplayHexLayout, AUDITED_TILE_WIDTH_PERCENT, AUDITED_BOARD_ASPECT_RATIO } from "../board-layout";
 import manifest from "../board-art-manifest.json";
@@ -7,9 +7,10 @@ type CellArt = { cellId: string; asset: string; unique: boolean; src: string };
 const artByKey: Readonly<Record<string, CellArt>> = manifest.cells;
 export function cellArt(key: HexKey) { return artByKey[key]; }
 
-/** Subscribe once for all cells; transforms do not trigger ResizeObserver. */
+/** One shared camera listener; transforms do not trigger ResizeObserver. */
 let requestedSize = 256;
 const subscribers = new Set<(size: number) => void>();
+let terrainInstanceCount = 0;
 function onCamera(event: Event) {
   // Keep extra source samples for fine lettering and angled hex edges.
   const pixels = (event as CustomEvent<{ tilePixels: number }>).detail.tilePixels * (window.devicePixelRatio || 1) * 2;
@@ -43,15 +44,23 @@ export const TerrainArt = memo(function TerrainArt({ hex }: { hex: BoardHex }) {
   const image = useRef<HTMLImageElement>(null);
   const [size, setSize] = useState(requestedSize);
   const [nearby, setNearby] = useState(false);
+  const updateSize = useCallback((nextSize: number) => setSize(nextSize), []);
   useEffect(() => {
-    if (!subscribers.size) window.addEventListener("board-camera-change", onCamera);
-    subscribers.add(setSize);
-    setSize(requestedSize);
+    terrainInstanceCount += 1;
+    if (terrainInstanceCount === 1) window.addEventListener("board-camera-change", onCamera);
     return () => {
-      subscribers.delete(setSize);
-      if (!subscribers.size) window.removeEventListener("board-camera-change", onCamera);
+      terrainInstanceCount -= 1;
+      if (terrainInstanceCount === 0) window.removeEventListener("board-camera-change", onCamera);
     };
   }, []);
+  useEffect(() => {
+    if (!nearby) return;
+    // Only tiles in or near the camera need resolution updates. Far tiles use
+    // the 256px fallback and can read the latest size when they become nearby.
+    subscribers.add(updateSize);
+    updateSize(requestedSize);
+    return () => { subscribers.delete(updateSize); };
+  }, [nearby, updateSize]);
   useEffect(() => {
     const element = image.current;
     if (!element) return;

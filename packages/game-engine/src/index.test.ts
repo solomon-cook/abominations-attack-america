@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CARD_STACKING_RULES, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
-import { setupDeploymentState, canDeployNationalGuard, canUseAntimatter, canUseDefenseSatellites, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalGiantPlacementDestinations, legalUnitPaths, legalSubmarineTargets, locations, migrateGameState, militaryUnitStats, monsterCombatStats, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, legalMolecularCannonTargets, legalLaserFenceTargets, legalChopperLiftDestinations, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type BattleAttack, type GameState, type HexKey } from "./index.js";
+import { setupDeploymentState, canDeployNationalGuard, canUseAntimatter, canUseDefenseSatellites, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalGiantPlacementDestinations, legalUnitPaths, legalSubmarineTargets, legalMovementNeighbors, locations, migrateGameState, militaryUnitStats, monsterCombatStats, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, legalMolecularCannonTargets, legalLaserFenceTargets, legalChopperLiftDestinations, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type BattleAttack, type GameState, type HexKey, type UnitMovement, type MonsterMovement } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
-import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
+import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
 import { AUDITED_BOARD } from "./audited-board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
 import { BRANCH_DEPLOYMENT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS } from "./units.js";
@@ -27,7 +27,7 @@ function resolveDevelopmentFight(state: GameState): GameState {
   return next;
 }
 
-test("MVP room creation uses the pinned human-audited board", () => {
+test("MVP room creation uses the pinned board candidate", () => {
   assert.doesNotThrow(() => assertMvpBoardReady());
   const state = createMvpRoomGame(2, 7, "best-guess-mvp");
   assert.equal(state.boardId, "human-audited-north-america");
@@ -44,7 +44,7 @@ test("supported player counts get the correct stomp stack", () => {
   assert.throws(() => createGame(5), /exactly 2, 3, or 4/);
 });
 
-test("source-backed monster catalogue preserves record statistics and ability boundaries", () => {
+test("configured monster catalogue preserves record statistics and ability boundaries", () => {
   assert.equal(MONSTER_DEFINITIONS.length, 6);
   assert.deepEqual(MONSTER_DEFINITIONS.map((monster) => monster.id), ["zorb", "tomanagi", "gargantis", "megaclaw", "konk", "toxicor"]);
   assert.deepEqual(MONSTER_DEFINITIONS.map((monster) => monster.startingHealth), [11, 11, 10, 12, 10, 9]);
@@ -62,7 +62,7 @@ test("source-backed monster catalogue preserves record statistics and ability bo
   assert.equal(monsterDefinition("unknown"), undefined);
 });
 
-test("development monsters use the source-backed record statistics", () => {
+test("development monsters use the configured record statistics", () => {
   const state = createGame(4);
   assert.deepEqual(state.monsters.map((monster) => [monster.name, monster.health, monster.move, monster.attacks, monster.defense, monster.damage]), [
     ["Zorb", 11, 4, 3, 4, 3],
@@ -73,7 +73,7 @@ test("development monsters use the source-backed record statistics", () => {
   assert.equal(state.monsters.every((monster) => monster.maxHealth === 40), true);
 });
 
-test("source-backed unit catalogue preserves branch quantities and control boundaries", () => {
+test("configured unit catalogue preserves branch quantities and control boundaries", () => {
   assert.deepEqual(UNIT_DEFINITIONS.map((unit) => unit.quantity), [5, 3, 5, 3, 4, 4, 6, 2]);
   assert.deepEqual(UNIT_DEFINITIONS.map((unit) => unit.branch), ["Army", "Army", "Navy", "Navy", "Marines", "Marines", "Air Force", "Air Force"]);
   assert.equal(UNIT_DEFINITIONS.every((unit) => unit.sourceRefs.length === 1 && unit.effectsImplementation === "source-gated"), true);
@@ -85,7 +85,7 @@ test("source-backed unit catalogue preserves branch quantities and control bound
   assert.equal(BRANCH_DEPLOYMENT_DEFINITIONS.every((entry) => entry.canDrawResearchInstead && entry.implementation === "source-gated"), true);
 });
 
-test("development military roster uses source-backed unit records", () => {
+test("development military roster uses configured unit records", () => {
   const state = createGame(2);
   assert.deepEqual(state.units.slice(0, 8).map((unit) => [unit.unitTypeId, unit.move, unit.defense, unit.damage]), [
     ["army-tank", 4, 5, 1],
@@ -288,7 +288,7 @@ test("National Guard deployment destinations are limited to unstomped city, base
   assert.equal(legalNationalGuardDeploymentDestinations(stomped).includes(K("infamy-site")), false);
 });
 
-test("owned deployment destinations are verified, unstomped, and unique per Deploy step", () => {
+test("owned deployment destinations are configured, unstomped, and unique per Deploy step", () => {
   const state = createGame(2);
   assert.deepEqual(legalOwnedDeploymentDestinations(state), [K("denver")]);
   state.deploymentDestinations = [K("denver")];
@@ -579,6 +579,45 @@ test("Defense Satellites leaves Captain Colossal and Mecha-Monster unharmed", ()
   const health = giants.map((unit) => unit.health);
   const result = applyCommand(withGiants, { type: "use-research", cardId: "Defense Satellites" });
   assert.deepEqual(giants.map((unit) => result.state.units.find((candidate) => candidate.id === unit.id)?.health), health);
+});
+
+test("Research command metadata stays in the event while resolver inputs use the card-specific request", () => {
+  const state = createGame(2, 24);
+  state.players[0].researchCardIds = ["Defense Satellites"];
+  const result = applyCommand(state, {
+    type: "use-research",
+    cardId: "Defense Satellites",
+    battleId: "unused-battle-id",
+    mutationCardId: "Rampage",
+    choice: "infamy",
+    destination: K("denver"),
+    targetMonsterId: "monster-2",
+    researchCardId: "unused-research-card",
+    researchPlayerIndex: 1,
+  });
+
+  assert.equal(result.eventType, "research.used");
+  assert.deepEqual(
+    {
+      battleId: result.eventPayload.battleId,
+      mutationCardId: result.eventPayload.mutationCardId,
+      choice: result.eventPayload.choice,
+      destination: result.eventPayload.destination,
+      targetMonsterId: result.eventPayload.targetMonsterId,
+      removedResearchCardId: result.eventPayload.removedResearchCardId,
+      removedResearchPlayerIndex: result.eventPayload.removedResearchPlayerIndex,
+    },
+    {
+      battleId: undefined,
+      mutationCardId: "Rampage",
+      choice: "infamy",
+      destination: K("denver"),
+      targetMonsterId: "monster-2",
+      removedResearchCardId: "unused-research-card",
+      removedResearchPlayerIndex: 1,
+    },
+  );
+  assert.deepEqual(result.state.players[0]!.researchCardIds, []);
 });
 
 test("Antimatter arms a battle and doubles first-round military damage", () => {
@@ -1010,9 +1049,31 @@ test("command receipts record structured actor, action, outcome, and detail", ()
 
 test("legacy schema-1 snapshots without eventLog remain command-compatible", () => {
   const legacy = createGame(2) as any;
+  legacy.schemaVersion = 1;
   delete legacy.eventLog;
   const result = applyCommand(legacy, { type: "move", path: ["los-angeles", "denver"] });
   assert.equal(result.state.eventLog.length, 1);
+});
+
+test("schema-1 snapshots without eventLog migrate before player projection and retain privacy", () => {
+  const legacy = createGame(2) as any;
+  legacy.schemaVersion = 1;
+  legacy.monsters[0].location = "los-angeles";
+  legacy.units[0].location = "denver";
+  legacy.players[0].mutationCardIds = ["War Spikes"];
+  legacy.players[1].researchCardIds = ["Laser Fence"];
+  delete legacy.eventLog;
+
+  const projected = projectState(legacy, "player", 0);
+  assert.equal(projected.schemaVersion, 2);
+  assert.deepEqual(projected.eventLog, []);
+  assert.equal(projected.monsters[0]!.location, K("los-angeles"));
+  assert.equal(projected.units[0]!.location, K("denver"));
+  assert.deepEqual(projected.players[0]!.mutationCardIds, ["War Spikes"]);
+  assert.deepEqual(projected.players[1]!.researchCardIds, []);
+  assert.deepEqual(projected.players[1]!.visibleResearchCardIds, ["Laser Fence"]);
+  assert.equal(legacy.schemaVersion, 1, "projection migrates a clone and does not mutate the persisted snapshot");
+  assert.equal(legacy.eventLog, undefined);
 });
 
 test("schema-1 development positions migrate explicitly to hex keys and schema 2", () => {
@@ -1126,7 +1187,18 @@ test("new matches pin board and ruleset metadata and reject unsupported state sc
   assert.equal(state.boardId, "development-nine-location");
   assert.equal(state.boardVersion, 1);
   assert.equal(state.rulesetVersion, "prototype-0.1");
-  assert.throws(() => applyCommand({ ...state, schemaVersion: 999 as 1 }, { type: "advance" }), /Unsupported match-state schema/);
+  const incompatibleState = { ...state, schemaVersion: 999 as 1 };
+  assert.throws(() => applyCommand(incompatibleState, { type: "advance" }), (error: unknown) => error instanceof Error
+    && "code" in error && error.code === "INTERNAL_INVARIANT" && /Unsupported match-state schema/.test(error.message));
+  assert.throws(() => applyCommandEnvelope(incompatibleState, {
+    actionId: "corrupt-state",
+    actorId: "player-1",
+    expectedRevision: 0,
+    protocolVersion: 1,
+    command: { type: "advance" },
+  }, 0), (error: unknown) => error instanceof Error
+    && "code" in error && error.code === "INTERNAL_INVARIANT" && /Unsupported match-state schema/.test(error.message),
+  "the command boundary must preserve internal state errors for server classification");
 });
 
 test("provisional playtest factory pins the complete guessed board without promoting it", () => {
@@ -1361,6 +1433,38 @@ test("movement matrix covers every implemented movement mode, water class, barri
   assert.equal(challengeFinish, true);
 });
 
+test("cached movement adjacency preserves every board edge and mode filter", () => {
+  const boards = [DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, AUDITED_BOARD] as const;
+  const movements: readonly (MonsterMovement | UnitMovement)[] = ["land-only", "land-lake", "land-lake-sea", "fly", "sea-seacoast-only", "sea-seacoast-or-fly", "stationary"];
+  const waterAllowed = (movement: MonsterMovement | UnitMovement, water: string) => {
+    if (water === "unresolved" || movement === "stationary") return false;
+    if (movement === "fly" || movement === "land-lake-sea") return true;
+    if (movement === "land-only") return water === "land" || water === "seacoast" || water === "lakeshore";
+    if (movement === "land-lake") return water === "land" || water === "lake" || water === "seacoast" || water === "lakeshore";
+    return water === "sea" || water === "seacoast";
+  };
+  const barrierAllowed = (movement: MonsterMovement | UnitMovement, barrier: string) => {
+    if (barrier === "unresolved") return false;
+    if (movement === "fly" || movement === "land-lake-sea") return true;
+    if (movement === "land-only") return barrier === "none";
+    if (movement === "land-lake") return barrier === "none" || barrier === "lake";
+    return barrier === "none" || barrier === "sea";
+  };
+  for (const board of boards) for (const movement of movements) for (const crossesWaterBarriers of [false, true]) {
+    for (const key of Object.keys(board.hexes) as HexKey[]) {
+      const expected = board.edges
+        .filter((edge) => edge.enabled && edge.from === key
+          && waterAllowed(movement, board.hexes[edge.from].waterClass)
+          && waterAllowed(movement, board.hexes[edge.to].waterClass)
+          && (crossesWaterBarriers || barrierAllowed(movement, edge.barrier)))
+        .map((edge) => edge.to);
+      const actual = legalMovementNeighbors(board, movement, key, crossesWaterBarriers);
+      assert.deepEqual(actual, expected, `${board.id} ${movement} ${crossesWaterBarriers} ${key}`);
+      assert.strictEqual(legalMovementNeighbors(board, movement, key, crossesWaterBarriers), actual, "cached neighbors retain a stable immutable-array reference");
+    }
+  }
+});
+
 test("movement stops at military occupancy and rejects monster occupancy", () => {
   const state = createGame(2);
   assert.throws(() => applyCommand(state, { type: "move", path: ["los-angeles", "denver", "seattle"] }), /not legal/);
@@ -1573,7 +1677,7 @@ test("Captain Colossal can be played from hand only during Deploy, takes a legal
   assert.equal(placed.state.deploymentsThisTurn, state.deploymentsThisTurn);
 
   const wrongBase = structuredClone(state);
-  assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Captain Colossal", destination: K("chicago") }), /active player's verified bases/);
+  assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Captain Colossal", destination: K("chicago") }), /active player's configured bases/);
   wrongBase.phase = "move";
   assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Captain Colossal", destination: base }), /during the active Deploy step/);
 
@@ -1611,7 +1715,7 @@ test("Mecha-Monster can be played from the hand only during Deploy and immediate
   assert.equal(placed.state.phase, "deploy");
 
   const wrongBase = structuredClone(state);
-  assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Mecha-Monster", destination: K("chicago") }), /active player's verified bases/);
+  assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Mecha-Monster", destination: K("chicago") }), /active player's configured bases/);
   wrongBase.phase = "move";
   assert.throws(() => applyCommand(wrongBase, { type: "use-research", cardId: "Mecha-Monster", destination: base }), /during the active Deploy step/);
 });
@@ -1675,6 +1779,7 @@ test("X-Fighters are removed from play individually and the Research card discar
   drawn.decks.research = { order: ["X-Fighters"], drawIndex: 0, discard: [], exhausted: false };
   const initialized = applyCommand(drawn, { type: "draw-research" }).state;
   const fighters = initialized.units.filter((unit) => unit.unitTypeId === "x-fighter");
+  initialized.players[0]!.visibleResearchCardIds = ["X-Fighters"];
   const monster = initialized.monsters[0]!;
   monster.attacks = 1;
   monster.defense = 99;
@@ -1708,7 +1813,15 @@ test("X-Fighters are removed from play individually and the Research card discar
   const secondDeath = destroyOne(firstDeath, fighters[1]!.id);
   assert.equal(secondDeath.units.find((unit) => unit.id === fighters[1]!.id)!.location, "permanently-removed");
   assert.ok(!secondDeath.players[0]!.researchCardIds.includes("X-Fighters"));
+  assert.deepEqual(secondDeath.players[0]!.visibleResearchCardIds, []);
   assert.ok(secondDeath.decks.research.discard.includes("X-Fighters"));
+  assert.deepEqual(projectState(secondDeath, "spectator").players[0]!.visibleResearchCardIds, [], "the exhausted card stays absent from later public projections");
+
+  const cutbacksAttempt = structuredClone(secondDeath);
+  cutbacksAttempt.currentPlayer = 1;
+  cutbacksAttempt.phase = "move";
+  cutbacksAttempt.players[1]!.researchCardIds = ["Cutbacks"];
+  assert.throws(() => applyCommand(cutbacksAttempt, { type: "use-research", cardId: "Cutbacks", researchCardId: "X-Fighters", researchPlayerIndex: 0 }), /face-up Research card in play/, "an automatically discarded X-Fighters card is no longer a Cutbacks target");
 });
 
 test("exhausted Military Research cannot consume Deploy or mutate the match", () => {
@@ -1793,7 +1906,7 @@ test("deployment matrix covers supported player counts, every branch, inventory,
       assert.ok(sourceUnit, `${branch} should have a deployable record unit`);
       const hasVerifiedBase = Object.values(DEVELOPMENT_BOARD.hexes).some((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch));
       if (!hasVerifiedBase) {
-        assert.throws(() => applyCommand(state, { type: "deploy" }), /No verified .* base exists/);
+        assert.throws(() => applyCommand(state, { type: "deploy" }), /No eligible .* base exists/);
         continue;
       }
       const deployed = applyCommand(state, { type: "deploy" });
@@ -2781,14 +2894,14 @@ test("Winged Horror grants fly movement and one extra Move", () => {
   assert.ok(Math.max(...legalMonsterPaths(noLongerFlying, "monster-1").map((path) => path.length - 1)) <= noLongerFlying.monsters[0]!.move);
 });
 
-test("Winged Horror can move across a sea barrier on the audited board and loses that route when removed", () => {
+test("Winged Horror can move across a sea barrier on the current board candidate and loses that route when removed", () => {
   const state = createGame(2);
   state.boardId = AUDITED_BOARD.id;
   state.boardVersion = AUDITED_BOARD.version;
   state.boardContentHash = AUDITED_BOARD.contentHash;
   const edge = AUDITED_BOARD.edges.find((candidate) => candidate.enabled && candidate.barrier === "sea"
     && AUDITED_BOARD.hexes[candidate.from]?.waterClass === "seacoast" && AUDITED_BOARD.hexes[candidate.to]?.waterClass === "sea");
-  assert.ok(edge, "the audited board should contain a verified coast-to-sea barrier");
+  assert.ok(edge, "the current board candidate should contain a transcribed coast-to-sea barrier");
   const monster = state.monsters[0]!;
   monster.location = edge.from;
   state.monsters[1]!.location = "record-tile";
@@ -3032,7 +3145,7 @@ test("encounter stomps are persisted once and Infamy is capped", () => {
   assert.equal(second.eventPayload.stomped, false);
 });
 
-test("Megaclaw receives its source-backed three-Infamy site benefit", () => {
+test("the configured Megaclaw site effect grants three Infamy", () => {
   const state = createGame(4);
   state.currentPlayer = 3;
   state.phase = "encounter";
@@ -3255,7 +3368,7 @@ test("stomps after Challenge declaration use extra markers without redeclaring",
   assert.equal((result.eventPayload.effects as Array<{ type: string }>).some((effect) => effect.type === "stomp"), true);
 });
 
-test("Konk applies its source-backed fighter attack modifier", () => {
+test("the configured fighter attack modifier applies to Konk", () => {
   let attack: any;
   for (let seed = 0; seed < 128 && !attack; seed += 1) {
     const state = createGame(2, seed);
@@ -3279,7 +3392,7 @@ test("Konk applies its source-backed fighter attack modifier", () => {
   assert.deepEqual(attack.modifiers, ["+1 to hit fighters"]);
 });
 
-test("Army Missile Launcher makes its source-backed pre-monster first-round attack", () => {
+test("Army Missile Launcher uses the configured pre-monster first-round attack", () => {
   const state = createGame(2, 0);
   state.currentPlayer = 0;
   state.monsters[0].health = 40;
@@ -3293,7 +3406,7 @@ test("Army Missile Launcher makes its source-backed pre-monster first-round atta
   assert.deepEqual(first.modifiers, ["extra first-round attack before monster"]);
 });
 
-test("Air Force Cruise Missile is source-backed one-round hardware", () => {
+test("Air Force Cruise Missile uses its configured one-round attack profile", () => {
   const state = createGame(2, 0);
   state.currentPlayer = 0;
   state.monsters[0].health = 40;
@@ -3767,13 +3880,13 @@ test("Cutbacks removes any player's face-up Research card from play on the activ
   state.currentPlayer = 0;
   state.phase = "move";
   state.players[0].researchCardIds = ["Cutbacks", "Molecular Cannon"];
-  state.players[1].researchCardIds = ["Guard Commander"];
+  state.players[1].researchCardIds = ["Guard Commander", "Laser Fence"];
   const projected = projectState(state, "player", 0);
   assert.deepEqual(projected.players[1].researchCardIds, []);
-  assert.deepEqual(projected.players[1].visibleResearchCardIds, ["Guard Commander"]);
+  assert.deepEqual(projected.players[1].visibleResearchCardIds, ["Guard Commander", "Laser Fence"], "games without an explicit public subset keep the existing all-held-cards projection");
   const result = applyCommand(state, { type: "use-research", cardId: "Cutbacks", researchCardId: "Guard Commander", researchPlayerIndex: 1 });
   assert.deepEqual(result.state.players[0].researchCardIds, ["Molecular Cannon"]);
-  assert.deepEqual(result.state.players[1].researchCardIds, []);
+  assert.deepEqual(result.state.players[1].researchCardIds, ["Laser Fence"]);
   assert.deepEqual(result.state.removedResearchCardIds, ["Guard Commander"]);
   assert.equal(result.state.decks.research.discard.includes("Cutbacks"), true);
   assert.equal(result.state.decks.research.discard.includes("Guard Commander"), false);
@@ -3784,6 +3897,28 @@ test("Cutbacks removes any player's face-up Research card from play on the activ
   const wrongTiming = structuredClone(state);
   wrongTiming.phase = "setup";
   assert.throws(() => applyCommand(wrongTiming, { type: "use-research", cardId: "Cutbacks", researchCardId: "Molecular Cannon", researchPlayerIndex: 0 }), /only be used during your turn/);
+});
+
+test("player projections preserve an explicit face-up Research subset and remove cards from that subset when Cutbacks resolves", () => {
+  const state = createGame(2, 0);
+  state.currentPlayer = 0;
+  state.phase = "move";
+  state.players[0]!.researchCardIds = ["Cutbacks"];
+  state.players[1]!.researchCardIds = ["Guard Commander", "Laser Fence"];
+  state.players[1]!.visibleResearchCardIds = ["Guard Commander"];
+
+  const projected = projectState(state, "player", 0);
+  assert.deepEqual(projected.players[1]!.researchCardIds, [], "the opponent's hand remains redacted");
+  assert.deepEqual(projected.players[1]!.visibleResearchCardIds, ["Guard Commander"], "only the explicitly public card survives projection");
+  assert.throws(() => applyCommand(state, { type: "use-research", cardId: "Cutbacks", researchCardId: "Laser Fence", researchPlayerIndex: 1 }), /face-up Research card in play/, "Cutbacks cannot remove a held card absent from an explicit public subset");
+
+  const result = applyCommand(state, { type: "use-research", cardId: "Cutbacks", researchCardId: "Guard Commander", researchPlayerIndex: 1 });
+  assert.deepEqual(result.state.players[1]!.researchCardIds, ["Laser Fence"], "the hidden Research card remains in the opponent's hand");
+  assert.deepEqual(result.state.players[1]!.visibleResearchCardIds, [], "the removed public card is deleted from the public subset");
+  const after = projectState(result.state, "player", 0);
+  assert.deepEqual(after.players[1]!.researchCardIds, []);
+  assert.deepEqual(after.players[1]!.visibleResearchCardIds, [], "the removed Guard Commander no longer appears in later projections");
+  assert.equal(JSON.stringify(after.players[1]).includes("Laser Fence"), false, "the hidden Research card remains redacted");
 });
 
 test("Molecular Cannon is available only at its own battle start and offers all configured lairs", () => {

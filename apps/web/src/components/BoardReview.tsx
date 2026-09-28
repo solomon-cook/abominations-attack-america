@@ -26,20 +26,20 @@ export function BoardReview({ onClose }: Props) {
       <header className="board-review-header">
         <div>
           <p className="eyebrow">ABOMINATIONS ATTACK AMERICA · BOARD REVIEW</p>
-          <h1>Audited North America board</h1>
+          <h1>North America board review</h1>
           <p className="board-review-lede">
-            The 336 audited cells used by new games. Select a cell to inspect its geography, features, neighbours and artwork assignment.
+            The 336-cell transcribed board candidate used by local and room games. Select a cell to inspect its recorded geography, features, neighbours and artwork mapping; physical-source verification remains open.
           </p>
         </div>
         <button type="button" className="ghost" onClick={onClose}>Back to home</button>
       </header>
       <section className="board-review-warning" role="status">
-        <strong>HUMAN-AUDITED BOARD · 336 CELLS</strong>
-        <span>This view uses the same board definition and cell artwork as local and online matches.</span>
+        <strong>PLAYTEST BOARD CANDIDATE · 336 CELLS</strong>
+        <span>This is the pinned board candidate used by local and online matches. Internal transcription flags do not establish physical-edition sign-off.</span>
       </section>
       <div className="board-review-layout">
         <div className="board-review-visuals">
-          <section className="board-review-frame" aria-label="336-cell audited North America map">
+          <section className="board-review-frame" aria-label="336-cell North America board candidate">
             <div className="board-review-canvas audited-review">
             {cells.map(({ hex, left, top }) => (
               <button
@@ -107,7 +107,7 @@ export function BoardReview({ onClose }: Props) {
           })}
         </div>
       </section>
-      <p className="board-review-count">336 audited cells · 14 rows × 24 columns · flat-top hex orientation</p>
+      <p className="board-review-count">336 transcribed cells · 14 rows × 24 columns · flat-top hex orientation</p>
     </main>
   );
 }

@@ -94,8 +94,17 @@ try {
   await command("Runtime.enable");
   await command("Emulation.setDeviceMetricsOverride", { width: viewportWidth, height: viewportHeight, deviceScaleFactor: 1, mobile: viewportWidth <= 600 });
   await command("Page.navigate", { url });
-  await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board")`, "home board-review control");
-  await evaluate(`([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board"))?.click()`);
+  await waitFor(`Boolean(document.querySelector("details.home-tools summary")?.getClientRects().length)`, "Playtest tools disclosure");
+  const disclosure = await evaluate(`(() => { const summary = document.querySelector("details.home-tools summary"); summary?.scrollIntoView({ block: "center" }); const rect = summary?.getBoundingClientRect(); return rect && { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }; })()`);
+  if (!disclosure) throw new Error("Playtest tools disclosure has no visible hit target.");
+  await command("Input.dispatchMouseEvent", { type: "mousePressed", x: disclosure.x, y: disclosure.y, button: "left", clickCount: 1 });
+  await command("Input.dispatchMouseEvent", { type: "mouseReleased", x: disclosure.x, y: disclosure.y, button: "left", clickCount: 1 });
+  await waitFor(`Boolean(document.querySelector("details.home-tools")?.open)`, "expanded Playtest tools disclosure");
+  await waitFor(`Boolean([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board")?.getClientRects().length)`, "visible home board-review control");
+  const reviewControl = await evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Review full board"); button?.scrollIntoView({ block: "center" }); const rect = button?.getBoundingClientRect(); return rect && { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }; })()`);
+  if (!reviewControl) throw new Error("Review full board control has no visible hit target.");
+  await command("Input.dispatchMouseEvent", { type: "mousePressed", x: reviewControl.x, y: reviewControl.y, button: "left", clickCount: 1 });
+  await command("Input.dispatchMouseEvent", { type: "mouseReleased", x: reviewControl.x, y: reviewControl.y, button: "left", clickCount: 1 });
   await waitFor(`document.querySelectorAll(".board-review-hex").length === 336`, "336 board-review faces");
   await waitFor(`document.querySelectorAll(".board-review-source img").length === 2 && [...document.querySelectorAll(".board-review-source img")].every((image) => image.complete && image.naturalWidth > 0)`, "reference board photographs");
   await waitFor(`document.querySelectorAll('.dense-stack-fixture').length === 8`, "dense stack fixtures");
@@ -106,6 +115,7 @@ try {
     const tops = new Set(cells.map((cell) => cell.style.top));
     const columnCounts = [...new Set(cells.map((cell) => Math.round(cell.getBoundingClientRect().left * 100)))].map((left) => cells.filter((cell) => Math.round(cell.getBoundingClientRect().left * 100) === left).length);
     const style = getComputedStyle(cells[0]);
+    const terrainImages = [...document.querySelectorAll(".board-review-hex img.audited-terrain")];
     const references = [...document.querySelectorAll(".board-review-source img")];
     const canvasRect = document.querySelector(".board-review-canvas").getBoundingClientRect();
     const visible = cells.every((cell) => { const rect = cell.getBoundingClientRect(); return rect.width > 0 && rect.height > 0; });
@@ -117,7 +127,8 @@ try {
       rows: tops.size,
       columnCounts,
       aspectRatio: style.aspectRatio,
-      creamFace: style.backgroundImage.includes("linear-gradient"),
+      terrainImageCount: terrainImages.length,
+      loadedTerrainImageCount: terrainImages.filter((image) => image.complete && image.naturalWidth > 0).length,
       visible,
       contained,
       minimumSameRowGap: Math.min(...rowGaps),
@@ -134,14 +145,16 @@ try {
       denseStackContained: [...document.querySelectorAll('.dense-stack-fixture')].every((fixture) => [...fixture.querySelectorAll('img')].every((piece) => { const outer = fixture.getBoundingClientRect(); const inner = piece.getBoundingClientRect(); return inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom; })),
     };
   })()`);
-  if (!result || result.count !== 336 || result.rows !== 28 || JSON.stringify(result.columnCounts) !== JSON.stringify(Array.from({ length: 24 }, () => 14)) || result.minimumSameRowGap <= 0 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0 || JSON.stringify(result.denseStackCounts) !== JSON.stringify([1,2,3,4,5,6,7,8]) || !result.denseStackImagesLoaded || !result.denseStackContained) {
+  if (!result || result.count !== 336 || result.rows !== 28 || JSON.stringify(result.columnCounts) !== JSON.stringify(Array.from({ length: 24 }, () => 14)) || result.minimumSameRowGap <= 0 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || result.terrainImageCount !== 336 || result.loadedTerrainImageCount === 0 || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0 || JSON.stringify(result.denseStackCounts) !== JSON.stringify([1,2,3,4,5,6,7,8]) || !result.denseStackImagesLoaded || !result.denseStackContained) {
     throw new Error(`Board review browser contract failed: ${JSON.stringify(result)}`);
   }
   if (screenshotPath) {
     const screenshot = await command("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     await writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));
   }
-  console.log(JSON.stringify({ ok: true, url, viewport: `${viewportWidth}x${viewportHeight}`, ...result }));
+  await evaluate(`([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Back to home")?.click())`);
+  await waitFor(`Boolean(document.querySelector(".home-screen") && !document.querySelector(".board-review-screen"))`, "return from board review to Home");
+  console.log(JSON.stringify({ ok: true, url, viewport: `${viewportWidth}x${viewportHeight}`, ...result, returnToHome: true }));
 } finally {
   socket.close();
   chrome.kill("SIGKILL");

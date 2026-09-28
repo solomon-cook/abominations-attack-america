@@ -36,6 +36,81 @@ function createSoloMatch(humanMonsterId: string): GameState {
   return started;
 }
 
+function createAllBotMatch(playerCount: 2 | 3 | 4, seed: number): GameState {
+  const game = createMvpRoomGame(playerCount, seed, `all-bot-${playerCount}-${seed}`);
+  let setup = game.setupState!;
+  for (let step = 0; setup.phase !== "complete" && step < playerCount * 4; step += 1) {
+    let playerIndex: number;
+    if (setup.phase === "monster-selection" || setup.phase === "starting-choice") {
+      playerIndex = setup.seats.find((seat) => seat[setup.phase === "monster-selection" ? "monsterId" : "startingChoice"] === undefined)!.playerIndex;
+    } else if (setup.phase === "branch-selection") {
+      playerIndex = [...setup.seats].reverse().find((seat) => !seat.branch)!.playerIndex;
+    } else {
+      playerIndex = setup.seats.find((seat) => !seat.lair)!.playerIndex;
+    }
+    const next = chooseBotSetupAction({ ...game, setupState: setup }, setup, playerIndex);
+    assert.notEqual(next, setup, `bot setup should advance ${setup.phase} for seat ${playerIndex}`);
+    setup = next;
+  }
+  assert.equal(setup.phase, "complete", `${playerCount}-seat bot setup should complete`);
+  assert.equal(new Set(setup.seats.map((seat) => seat.monsterId)).size, playerCount);
+  assert.equal(new Set(setup.seats.map((seat) => seat.branch)).size, playerCount);
+  assert.equal(new Set(setup.seats.map((seat) => seat.lair)).size, playerCount);
+  return applyCompletedSetup({ ...game, setupState: setup });
+}
+
+interface BotMatchMetrics {
+  playerCount: 3 | 4;
+  seed: number;
+  actions: number;
+  turns: number;
+  turnsBySeat: number[];
+  commandsBySeat: number[];
+  invalidActions: number;
+  winnerPlayer?: number;
+  victoryType?: GameState["victoryType"];
+  terminal: boolean;
+}
+
+function playAllBotMatch(playerCount: 3 | 4, seed: number, maxActions = 80): BotMatchMetrics {
+  let state = createAllBotMatch(playerCount, seed);
+  const botSeats = new Set(state.players.map((_, index) => index));
+  let actions = 0;
+  let turns = 0;
+  let invalidActions = 0;
+  const commandsBySeat = Array.from({ length: playerCount }, () => 0);
+  const turnsBySeat = Array.from({ length: playerCount }, () => 0);
+  while (state.phase !== "game-over" && actions < maxActions && turnsBySeat.some((count) => count < 1)) {
+    const command = chooseBotCommand(state, botSeats);
+    assert.ok(command, `all-bot match should have a command at action ${actions + 1} (seat=${state.currentPlayer}, phase=${state.phase}, decision=${state.pendingDecision?.type})`);
+    const actor = state.pendingDecision && "playerIndex" in state.pendingDecision ? state.pendingDecision.playerIndex : state.currentPlayer;
+    commandsBySeat[actor]! += 1;
+    try {
+      state = applyCommand(state, command!).state;
+    } catch (error) {
+      invalidActions += 1;
+      assert.fail(`bot selected an invalid command in ${playerCount}-seat match at action ${actions + 1}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    actions += 1;
+    if (state.eventLog.at(-1)?.action === "turn.passed") {
+      turns += 1;
+      turnsBySeat[actor]! += 1;
+    }
+  }
+  return {
+    playerCount,
+    seed,
+    actions,
+    turns,
+    turnsBySeat,
+    commandsBySeat,
+    invalidActions,
+    winnerPlayer: state.winnerPlayer,
+    victoryType: state.victoryType,
+    terminal: state.phase === "game-over",
+  };
+}
+
 function beginBotMove(state: GameState): GameState {
   const next = structuredClone(state);
   next.currentPlayer = 1;
@@ -345,4 +420,18 @@ for (const branch of ["Army", "Navy", "Air Force", "Marines"] as const) {
   assert.ok([...defenseScores.keys()].some((key) => boardForState(routeState).hexes[key]?.features.some((feature) => feature.kind === "city")), `${branch} should cover 3D city spaces`);
   assert.ok([...defenseScores.keys()].some((key) => boardForState(routeState).hexes[key]?.features.some((feature) => feature.kind === "military-base")), `${branch} should cover military base spaces`);
 }
-console.log("Solo bots vary their tactics, protect city and base routes, coordinate attacks, and use monster-specific challenge plans.");
+
+// Deterministic bot runs complete one turn for every seat at each supported multiplayer size.
+const multiplayerBotMatches = [playAllBotMatch(3, 303), playAllBotMatch(4, 404)];
+for (const metrics of multiplayerBotMatches) {
+  assert.equal(metrics.invalidActions, 0, `${metrics.playerCount}-seat bot match should not emit invalid actions`);
+  assert.ok(metrics.actions > metrics.turns, `${metrics.playerCount}-seat match should exercise multiple actions per turn`);
+  assert.ok(metrics.turns >= metrics.playerCount, `${metrics.playerCount}-seat match should hand off control through a complete round`);
+  assert.ok(metrics.turnsBySeat.every((count) => count >= 1), `${metrics.playerCount}-seat match should complete one turn for every bot`);
+  assert.ok(metrics.commandsBySeat.every((count) => count > 0), `${metrics.playerCount}-seat match should exercise every bot seat`);
+  if (metrics.terminal) {
+    assert.ok(metrics.winnerPlayer !== undefined && metrics.winnerPlayer >= 0 && metrics.winnerPlayer < metrics.playerCount);
+    assert.ok(metrics.victoryType, `${metrics.playerCount}-seat match should record its victory condition`);
+  }
+}
+console.log(`Solo bot verification passed. Multiplayer match metrics: ${multiplayerBotMatches.map((match) => `${match.playerCount} seats: ${match.terminal ? `winner=${match.winnerPlayer} (${match.victoryType})` : "winner=not reached in one-round sample"}, actions=${match.actions}, turns=${match.turns}, turns by seat=[${match.turnsBySeat.join(",")}], actions by seat=[${match.commandsBySeat.join(",")}], invalid=${match.invalidActions}`).join("; ")}.`);

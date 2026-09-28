@@ -70,6 +70,34 @@ test("account credentials stay private while verification, reset, username, logo
   assert.equal(JSON.stringify(registration).includes(password), false);
   const storedUser = [...fixture.users.values()][0]!;
   fixture.results.get("result-1")!.winnerName = storedUser.username;
+  const accountParticipant = fixture.participants.get("seat-1")!;
+  accountParticipant.userId = storedUser.id;
+  accountParticipant.playerIndex = 0;
+  accountParticipant.room = {
+    code: "ABCD",
+    status: "COMPLETED",
+    privacy: "PUBLIC",
+    completedAt: new Date("2026-09-27T09:00:00Z"),
+    result: { winnerId: accountParticipant.id, summary: { winnerPlayer: 0 } },
+  };
+  assert.deepEqual(await service.listGames(storedUser.id), [{
+    roomId: "room-1",
+    code: "ABCD",
+    status: "completed",
+    privacy: "public",
+    playerIndex: 0,
+    displayName: "public-name",
+    botControlled: false,
+    botAssisted: false,
+    completedAt: "2026-09-27T09:00:00.000Z",
+    outcome: "win",
+  }]);
+  accountParticipant.room.result = { winnerId: null, summary: { winnerPlayer: null } };
+  assert.equal((await service.listGames(storedUser.id))[0]?.outcome, "tie");
+  for (const summary of [null, "legacy summary", 7, false, [], ["legacy"], {}, { winnerPlayer: null }]) {
+    accountParticipant.room.result = { winnerId: null, summary };
+    assert.equal((await service.listGames(storedUser.id))[0]?.outcome, "tie", `summary ${JSON.stringify(summary)} remains a tie`);
+  }
   assert.match(storedUser.passwordHash, /^scrypt\$32768\$/);
   assert.notEqual(storedUser.passwordHash, password);
   assert.equal(sent[0]?.to, email);

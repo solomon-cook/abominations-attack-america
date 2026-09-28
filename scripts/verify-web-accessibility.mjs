@@ -11,6 +11,8 @@ const source = [
   await readFile(resolve(root, "apps/web/src/board-camera.ts"), "utf8"),
   ...(await Promise.all(componentFiles.map((file) => readFile(file, "utf8")))),
 ].join("\n");
+const resolutionStageSource = await readFile(resolve(root, "apps/web/src/components/ResolutionStage.tsx"), "utf8");
+const setupPanelSource = await readFile(resolve(root, "apps/web/src/components/SetupPanel.tsx"), "utf8");
 const styles = (await Promise.all(["styles.css", "dice.css", "combat-stage.css", "fullscreen-shell.css", "civ-hud.css", "command-panels.css", "encounter-command.css", "physical-sheets.css"].map(file => readFile(resolve(root, "apps/web/src", file), "utf8")))).join("\n");
 const failures = [];
 
@@ -19,7 +21,7 @@ const requiredSourceMarkers = [
   ["unsupported browser guard", /if \(!browserSupported\) \{/],
   ["unsupported browser fallback", /className="unsupported-browser" role="main"[\s\S]*This browser cannot run the playtest[\s\S]*No match state has been started/],
   ["named map group", /aria-label=\"Board coordinate shell\"/],
-  ["resolved board description requires verified cells", /const fullBoardVerified = \(renderedBoard\?\.id === AUDITED_BOARD\.id[\s\S]*every\(\(hex\) => hex\.verification === "verified"\)/],
+  ["board description scopes transcription flags to a playtest candidate", /const boardHasCompleteTranscriptionFlags = \(renderedBoard\?\.id === AUDITED_BOARD\.id[\s\S]*every\(\(hex\) => hex\.verification === "verified"\)[\s\S]*The 336-cell transcribed board is active for playtesting\. Independent source review and production sign-off remain open\./],
   ["unresolved full shell disclosure", /full honeycomb coordinate shell is unresolved review tooling and is not a playable board/],
   ["development board disclosure", /unresolved physical-board shell is not rendered as playable topology/],
   ["hex accessible names", /aria-label=\{`[\s\S]*\$\{displayName\}[\s\S]*hex \$\{hex\.key\}/],
@@ -49,7 +51,6 @@ const requiredSourceMarkers = [
   ["Hollywood recovery die", /aria-label="Recorded Hollywood recovery die"/],
   ["Monster Challenge duel surface", /aria-label="Recorded Monster Challenge duel"/],
   ["full-screen Monster Challenge return", /<ChallengeArena[\s\S]*onClose=\{\(\) => setChallengeDuelOpen\(false\)\}/],
-  ["full-screen Monster Challenge focus entry", /<button autoFocus className="resolution-close"[\s\S]*aria-label="Return to board"/],
   ["authoritative Challenge Health replay", /targetHealthBefore/],
   ["visible combat outcomes", /className=\"combat-outcomes\"[\s\S]*lastFightOutcomes/],
   ["normal fight resolution surface", /ResolutionStage variant="fight"[\s\S]*className="battle-forces" aria-label=\{`Military targets/],
@@ -61,7 +62,7 @@ const requiredSourceMarkers = [
   ["hex hover and focus explanations", /title=\{tooltipText\}/],
   ["consistent metric icon treatment", /className="metric-icon"[\s\S]*aria-hidden="true"/],
   ["viewport-fitted gameplay shell", /className=\{`game-screen/],
-  ["on-demand game details toggle", /aria-controls="turn-hud-body" aria-label=\{gamePanelOpen/],
+  ["on-demand game details toggle", /aria-controls="turn-hud-body" aria-label=\{activeRetreatChoice \? gamePanelOpen \? "Keep turn panel minimized after retreat" : "Expand turn panel after retreat" : gamePanelVisible \? "Minimize turn panel" : "Expand turn panel"\}/],
   ["named game controls panel", /id="game-side-panel" className="game-side-panel" aria-label="Game controls and information"/],
   ["private hand details", /aria-label=\{`Private hand for Player/],
   ["apostrophe-safe card artwork slugs", /replaceAll\("'", ""\)/],
@@ -75,6 +76,16 @@ const requiredSourceMarkers = [
   ["persisted audio settings", /type="range" min="0" max="1"/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
+
+const requiredResolutionStageMarkers = [
+  ["modal focus enters its named close control after opening", /dialog\.current\?\.showModal\(\);\s*dialog\.current\?\.querySelector<HTMLButtonElement>\("\.resolution-close"\)\?\.focus\(\{ preventScroll: true \}\)/],
+  ["named resolution close control", /<button className="resolution-close" onClick=\{onClose\} aria-label="Return to board"/],
+];
+for (const [label, marker] of requiredResolutionStageMarkers) if (!marker.test(resolutionStageSource)) failures.push(`missing ${label}`);
+const requiredSetupPanelMarkers = [
+  ["lair setup announces and marks an in-flight save", /if \(activeSetup\.phase === "lair-selection"\) \{[\s\S]*?<section className="setup-panel lair-selection-prompt" aria-label="Game setup" aria-busy=\{submitting\}[\s\S]*?\{submitting && <p className="setup-progress" role="status">Saving setup choice…<\/p>\}/],
+];
+for (const [label, marker] of requiredSetupPanelMarkers) if (!marker.test(setupPanelSource)) failures.push(`missing ${label}`);
 if (/className="map-copy"|className="region-label/.test(source)) {
   failures.push("gameplay map contains decorative title or region overlays that can cross authored tile seams");
 }
