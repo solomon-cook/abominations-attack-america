@@ -1,0 +1,53 @@
+{
+  "capturedAt": "2026-09-28T22:51:47.851Z",
+  "head": "f23a4cd9e722945d20c0f7cbba355013f0d49c5b",
+  "note": "Production Vite build before solo-bot dynamic-import experiment. Working tree includes in-progress docs, audit scripts, and evidence changes; no web product source changes were present.",
+  "js": [
+    {
+      "name": "BoardReview-BlMeKWRI.js",
+      "rawBytes": 5241,
+      "gzipBytes": 1842,
+      "sha256": "3dcfec8cb1b9799f326ece02cf8e4bef2ee702505f71a3a941d07dca8782f9c5"
+    },
+    {
+      "name": "index-BQROqsXN.js",
+      "rawBytes": 750246,
+      "gzipBytes": 187938,
+      "sha256": "5c1e3869b9b0cd56603c3d0c62a6a16095006a5c5368581a9f4e9ba7b45008d9"
+    }
+  ],
+  "sourceHashes": {
+    "apps/web/src/main.tsx": "a0c196a216987e286cd8af1766da232a3f7b6281a8e21eb451fe20b3b7a5092d",
+    "apps/web/src/solo-bots.ts": "3825a28be1fceba92120195625eb32551c002d1e1a66121742cd3615e8635e87",
+    "packages/game-engine/src/bots.ts": "ac1ff7d9f8ab678e973bcf5c9442436f18292998f3b7c6504f6e12474b493129",
+    "package-lock.json": "d172b0e852e9dec338bc713c0bd4d66ba3e1fafb683e4d7df371656234434086"
+  },
+  "dirtyPaths": [
+    "ocs/bot-strategy-audit.md",
+    "docs/development.md",
+    "docs/overhaul-plan.md",
+    "docs/performance-baseline.md",
+    "docs/ui-surface-audit.md",
+    "package.json",
+    "packages/game-engine/src/bots.test.ts",
+    "packages/game-engine/src/bots.ts",
+    "scripts/capture-browser-performance-trace.mjs",
+    "scripts/verify-browser-online.mjs",
+    "output/bot-strategy/route-block-multiplier-paired-2026-09-28.json",
+    "output/bot-strategy/route-block-multiplier-paired-analysis-2026-09-28.json",
+    "output/performance/board-camera-react-profile-2026-09-28-camera-1280x720.json.gz",
+    "output/performance/board-camera-react-profile-2026-09-28-camera-390x844.json.gz",
+    "output/performance/board-camera-react-profile-2026-09-28-summary.json",
+    "output/performance/board-camera-react-profile-2026-09-28-visual-1280x720.png",
+    "output/performance/board-camera-react-profile-2026-09-28-visual-390x844.png",
+    "output/ui-review/online-concede-confirm-disabled-2026-09-28.json",
+    "output/ui-review/online-concede-confirm-disabled-settings-2026-09-28.png",
+    "output/ui-review/online-concede-confirm-disabled-terminal-2026-09-28.png",
+    "output/ui-review/online-disappear-confirm-disabled-2026-09-28.json",
+    "output/ui-review/online-disappear-confirm-disabled-result-2026-09-28.png",
+    "output/ui-review/online-disappear-confirm-disabled-settings-2026-09-28.png",
+    "scripts/analyze-bot-route-multiplier.mjs",
+    "scripts/verify-bot-route-multiplier-paired.tsx",
+    "scripts/verify-doc-commands.mjs"
+  ]
+}

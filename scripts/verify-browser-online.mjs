@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -91,10 +91,12 @@ async function openBrowser(port, name, existingProfile, restoredSessionStorage =
   await new Promise((resolve, reject) => { socket.once("open", resolve); socket.once("error", reject); });
   let nextId = 0;
   let nextDialogAccepted = true;
+  const dialogOpenings = [];
   const pending = new Map();
   socket.on("message", (raw) => {
     const message = JSON.parse(raw.toString());
     if (message.method === "Page.javascriptDialogOpening") {
+      dialogOpenings.push({ type: message.params?.type, message: message.params?.message ?? "" });
       const accept = nextDialogAccepted;
       nextDialogAccepted = true;
       void command("Page.handleJavaScriptDialog", { accept });
@@ -127,6 +129,18 @@ async function openBrowser(port, name, existingProfile, restoredSessionStorage =
     await command("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount: 1 });
     await command("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
   };
+  const pressKey = async (key) => {
+    const keys = {
+      Escape: { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 },
+      Enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 },
+      Space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, nativeVirtualKeyCode: 32 },
+    };
+    const definition = keys[key];
+    if (!definition) throw new Error(`${name}: unsupported browser test key ${key}.`);
+    await command("Input.dispatchKeyEvent", { type: "rawKeyDown", ...definition });
+    if (key === "Space") await command("Input.dispatchKeyEvent", { type: "char", key: " ", text: " " });
+    await command("Input.dispatchKeyEvent", { type: "keyUp", ...definition });
+  };
   const clickSelector = async (selector) => {
     const box = await evaluate(`(() => { for (const element of document.querySelectorAll(${JSON.stringify(selector)})) { element.scrollIntoView({ block: "center", inline: "nearest" }); const rect = element.getBoundingClientRect(); const style = getComputedStyle(element); const x = rect.x + rect.width / 2; const y = rect.y + rect.height / 2; const hit = document.elementFromPoint(x, y); if (style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0 && rect.x >= 0 && rect.y >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && (hit === element || element.contains(hit))) return { x, y }; } return null; })()`);
     if (!box) return false;
@@ -146,6 +160,12 @@ async function openBrowser(port, name, existingProfile, restoredSessionStorage =
     waitFor,
     clickPoint,
     clickSelector,
+    pressKey,
+    dialogOpenings: () => dialogOpenings.map((dialog) => ({ ...dialog })),
+    screenshot: async () => {
+      const result = await command("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+      return Buffer.from(result.data, "base64");
+    },
     setNextDialogResponse: (accept) => { nextDialogAccepted = accept; },
     restart: async (sessionStorageSnapshot = []) => {
       socket.close();
@@ -168,6 +188,10 @@ let apiServer;
 let first;
 let second;
 let spectator;
+let disabledConcedeEvidence;
+let disappearFirst;
+let disappearSecond;
+let disabledConfirmDisappearEvidence;
 try {
   if (ownsWebServer) {
     webServer = startServer({
@@ -524,8 +548,115 @@ try {
       if (!await browser.clickSelector("details.hud-section[open] button.cancel")) throw new Error(`${label} browser could not pointer-activate the visible Concede match control.`);
       const cancelled = await browser.evaluate(`(() => { const section = [...document.querySelectorAll("details.hud-section")].find((candidate) => candidate.open && candidate.querySelector("summary")?.textContent.trim() === "Match options"); return { phase: document.querySelector(".action-card h2")?.textContent?.trim(), open: Boolean(section), button: [...(section?.querySelectorAll("button") ?? [])].some((candidate) => candidate.textContent.trim() === "Concede match" && !candidate.disabled) }; })()`);
       if (cancelled.phase !== "Move" || !cancelled.open || !cancelled.button) throw new Error(`${label} cancelling the concession prompt changed match state or closed Match options: ${JSON.stringify(cancelled)}`);
+
+      const firstMatchGuideOpen = await browser.evaluate(`Boolean(document.querySelector(".onboarding"))`);
+      if (firstMatchGuideOpen) {
+        if (!await browser.clickSelector(".onboarding-actions button")) throw new Error(`${label} player could not dismiss the first-match guide to reach Settings.`);
+        await browser.waitFor(`!document.querySelector(".onboarding")`, `${label} dismissed the first-match guide`);
+      }
+      const menuOpen = await browser.evaluate(`document.querySelector(".hud-menu")?.open === true`);
+      if (!menuOpen && !await browser.clickSelector("details.hud-menu > summary")) throw new Error(`${label} player could not open the game menu for Settings.`);
+      if (!await browser.clickSelector(".hud-menu .settings-action")) {
+        const diagnostic = await browser.evaluate(`(() => { const menu = document.querySelector(".hud-menu"); const button = menu?.querySelector(".settings-action"); const rect = button?.getBoundingClientRect(); const hit = rect && document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2); return { menuOpen: menu?.open, buttonExists: Boolean(button), buttonText: button?.textContent?.trim(), rect: rect && { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom }, hit: hit?.outerHTML?.slice(0, 180), viewport: { width: innerWidth, height: innerHeight }, documentWidth: document.documentElement.scrollWidth }; })()`);
+        throw new Error(`${label} player could not open Settings from the game menu: ${JSON.stringify(diagnostic)}`);
+      }
+      await browser.waitFor(`!!document.querySelector(".settings-panel")`, `${label} Settings panel`);
+      const confirmPreferenceBefore = await browser.evaluate(`(() => { const label = [...document.querySelectorAll(".settings-grid label")].find((node) => node.textContent.includes("Confirm leave, concede, or disappear")); const input = label?.querySelector("input"); return { checked: input?.checked, stored: localStorage.getItem("abominations-confirm-irreversible") }; })()`);
+      if (confirmPreferenceBefore.checked !== true) throw new Error(`${label} player did not start the disabled-confirm audit with confirmation enabled: ${JSON.stringify(confirmPreferenceBefore)}`);
+      if (!await browser.clickSelector(".settings-panel .settings-grid label:nth-child(4)")) throw new Error(`${label} player could not disable confirmation from Settings.`);
+      const confirmPreferenceAfter = await browser.evaluate(`(() => { const label = [...document.querySelectorAll(".settings-grid label")].find((node) => node.textContent.includes("Confirm leave, concede, or disappear")); const input = label?.querySelector("input"); return { checked: input?.checked, stored: localStorage.getItem("abominations-confirm-irreversible") }; })()`);
+      if (confirmPreferenceAfter.checked !== false || confirmPreferenceAfter.stored !== "0") throw new Error(`${label} player's disabled confirmation preference did not persist: ${JSON.stringify(confirmPreferenceAfter)}`);
+      const evidenceDir = join(process.cwd(), "output/ui-review");
+      await mkdir(evidenceDir, { recursive: true });
+      await writeFile(join(evidenceDir, "online-concede-confirm-disabled-settings-2026-09-28.png"), await browser.screenshot());
+      await browser.pressKey("Escape");
+      await browser.waitFor(`!document.querySelector(".settings-panel")`, `${label} closed Settings panel`);
+      const settingsFocusRestored = await browser.evaluate(`document.querySelector(".hud-menu .settings-action") === document.activeElement`);
+      if (!settingsFocusRestored) throw new Error(`${label} player did not regain focus on the Settings opener after Escape.`);
+      if (await browser.evaluate(`document.querySelector(".hud-menu")?.open === true`)
+        && !await browser.clickSelector("details.hud-menu > summary")) throw new Error(`${label} player could not close the game menu before concession.`);
+      const beforeConcession = await browser.evaluate(`(async () => {
+        const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+        const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+        const room = await response.json();
+        const participant = room.participants?.find((entry) => entry.id === session.participantId);
+        return { status: response.status, roomVersion: room.version, phase: room.state.phase, currentPlayer: room.state.currentPlayer,
+          participantId: session.participantId, participantRole: participant?.role, playerIndex: participant?.playerIndex,
+          participants: room.participants?.map((entry) => ({ id: entry.id, role: entry.role, playerIndex: entry.playerIndex, connected: entry.connected })),
+          eventIds: room.state.eventLog.map((event) => event.id), eventActions: room.state.eventLog.map((event) => event.action) };
+      })()`);
+      if (beforeConcession.status !== 200 || beforeConcession.phase !== "move") throw new Error(`${label} player's room was not in an active Move phase before disabled-confirm concession: ${JSON.stringify(beforeConcession)}`);
+      await browser.evaluate(`(() => {
+        const originalSend = WebSocket.prototype.send;
+        window.__disabledConcedeAuditMessages = [];
+        WebSocket.prototype.send = function(data) {
+          if (typeof data === "string") {
+            try {
+              const message = JSON.parse(data);
+              if (message.type === "command.submit") window.__disabledConcedeAuditMessages.push({ type: message.type, envelope: message.envelope });
+            } catch { /* ignore non-JSON websocket frames */ }
+          }
+          return originalSend.call(this, data);
+        };
+        return true;
+      })()`);
+      const dialogsBeforeDisabledConcede = browser.dialogOpenings().length;
       browser.setNextDialogResponse(true);
       if (!await browser.clickSelector("details.hud-section[open] button.cancel")) throw new Error(`${label} browser could not confirm the visible Concede match control.`);
+      await browser.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${label} disabled-confirm concession result`);
+      const requestsAfterDisabledConcede = await browser.evaluate(`window.__disabledConcedeAuditMessages ?? []`);
+      const afterConcession = await browser.evaluate(`(async () => {
+        const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+        const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+        const room = await response.json();
+        const event = room.state.eventLog.at(-1);
+        return { status: response.status, roomVersion: room.version, phase: room.state.phase, currentPlayer: room.state.currentPlayer,
+          winnerPlayer: room.state.winnerPlayer, victoryType: room.state.victoryType, pendingDecision: room.state.pendingDecision,
+          participants: room.participants?.map((entry) => ({ id: entry.id, role: entry.role, playerIndex: entry.playerIndex, connected: entry.connected })),
+          eventIds: room.state.eventLog.map((entry) => entry.id), eventActions: room.state.eventLog.map((entry) => entry.action),
+          lastEvent: event ? { action: event.action, detail: event.detail } : null };
+      })()`);
+      const newEventIds = afterConcession.eventIds.filter((eventId) => !beforeConcession.eventIds.includes(eventId));
+      const dialogCountAfterDisabledConcede = browser.dialogOpenings().length;
+      const concedeCommandRequests = requestsAfterDisabledConcede.filter((request) => request.type === "command.submit" && request.envelope?.command?.type === "concede");
+      if (requestsAfterDisabledConcede.length !== 1 || concedeCommandRequests.length !== 1) {
+        throw new Error(`${label} disabled-confirm Concede did not submit exactly one game command: ${JSON.stringify(requestsAfterDisabledConcede)}`);
+      }
+      if (concedeCommandRequests[0].envelope.actorId !== beforeConcession.participantId
+        || concedeCommandRequests[0].envelope.expectedRevision !== beforeConcession.roomVersion
+        || beforeConcession.participantRole !== "player" || beforeConcession.playerIndex !== beforeConcession.currentPlayer) {
+        throw new Error(`${label} disabled-confirm Concede did not use the active player's current room revision: ${JSON.stringify({ beforeConcession, request: concedeCommandRequests[0] })}`);
+      }
+      if (dialogCountAfterDisabledConcede !== dialogsBeforeDisabledConcede) throw new Error(`${label} disabled-confirm Concede opened a native browser prompt: ${JSON.stringify(browser.dialogOpenings())}`);
+      if (afterConcession.status !== 200 || afterConcession.phase !== "game-over" || afterConcession.victoryType !== "concession"
+        || afterConcession.winnerPlayer !== (beforeConcession.currentPlayer + 1) % 2
+        || JSON.stringify(afterConcession.pendingDecision) !== JSON.stringify({ type: "game-over", playerIndex: afterConcession.winnerPlayer, victoryType: "concession" })
+        || afterConcession.lastEvent?.action !== "match.conceded"
+        || afterConcession.lastEvent?.detail?.concedingPlayer !== beforeConcession.currentPlayer
+        || afterConcession.lastEvent?.detail?.winnerPlayer !== afterConcession.winnerPlayer
+        || newEventIds.length !== 1 || afterConcession.eventIds.length !== beforeConcession.eventIds.length + 1
+        || afterConcession.eventIds.slice(0, beforeConcession.eventIds.length).some((eventId, index) => eventId !== beforeConcession.eventIds[index])
+        || JSON.stringify(afterConcession.participants) !== JSON.stringify(beforeConcession.participants)) {
+        throw new Error(`${label} Concede result did not match the engine's terminal/event contract: ${JSON.stringify({ beforeConcession, afterConcession, newEventIds })}`);
+      }
+      await writeFile(join(evidenceDir, "online-concede-confirm-disabled-terminal-2026-09-28.png"), await browser.screenshot());
+      disabledConcedeEvidence = {
+        actor: label,
+        viewport: "1280x720",
+        input: "pointer",
+        firstMatchGuideDismissedBeforeSettings: firstMatchGuideOpen,
+        preferenceChangedThroughSettings: true,
+        settingsEscapeRestoredFocus: settingsFocusRestored,
+        browserDialogCountBefore: dialogsBeforeDisabledConcede,
+        browserDialogCountAfter: dialogCountAfterDisabledConcede,
+        nativeConfirmationOpened: false,
+        actionRequests: requestsAfterDisabledConcede,
+        disconnectRequests: 0,
+        playerConnectionsUnchanged: true,
+        before: { phase: beforeConcession.phase, currentPlayer: beforeConcession.currentPlayer, eventCount: beforeConcession.eventIds.length },
+        after: { phase: afterConcession.phase, winnerPlayer: afterConcession.winnerPlayer, victoryType: afterConcession.victoryType, event: afterConcession.lastEvent, eventCount: afterConcession.eventIds.length, appendedEventCount: newEventIds.length },
+        screenshots: ["online-concede-confirm-disabled-settings-2026-09-28.png", "online-concede-confirm-disabled-terminal-2026-09-28.png"],
+      };
       concessionActor = label;
       break;
     }
@@ -542,8 +673,184 @@ try {
   await second.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "reloaded second terminal");
   const reloadedTerminal = await second.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
   if (!reloadedTerminal) throw new Error("Reloaded second browser lost the terminal result.");
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineResearchDraw, onlineConcession: concessionActor ? "verified" : "skipped-after-victory", terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
+
+  // Use an independent room so the disappearance check starts from an untouched
+  // active Move decision and does not affect the multiplayer flow above.
+  const disappearPorts = await Promise.all([freePort(), freePort()]);
+  disappearFirst = await openBrowser(disappearPorts[0], "disappear-first");
+  disappearSecond = await openBrowser(disappearPorts[1], "disappear-second");
+  await disappearFirst.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "disappearance first lobby");
+  await disappearFirst.evaluate(`(() => { const input = document.querySelector('[aria-label="Display name"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(input, "Disappear audit player"); input.dispatchEvent(new Event("input", { bubbles: true })); const select = document.querySelector('[aria-label="Room privacy"]'); if (select) { const selectSetter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set; selectSetter.call(select, "public"); select.dispatchEvent(new Event("change", { bubbles: true })); } })()`);
+  if (!await disappearFirst.click("Create")) throw new Error("Disappearance audit browser could not create its room.");
+  await disappearFirst.waitFor(`!!document.querySelector(".lobby strong")`, "disappearance audit room code");
+  const disappearRoomCode = await disappearFirst.evaluate(`document.querySelector(".lobby strong")?.textContent?.trim()`);
+  if (!disappearRoomCode) throw new Error("Disappearance audit room did not expose its room code.");
+  await disappearSecond.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "disappearance second lobby");
+  await disappearSecond.evaluate(`(() => { const inputs = document.querySelectorAll("input"); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(inputs[0], "Disappear audit opponent"); inputs[0].dispatchEvent(new Event("input", { bubbles: true })); setter.call(inputs[1], ${JSON.stringify(disappearRoomCode)}); inputs[1].dispatchEvent(new Event("input", { bubbles: true })); })()`);
+  if (!await disappearSecond.click("Join")) throw new Error("Disappearance audit opponent could not join the room.");
+  await disappearSecond.waitFor(`!!document.querySelector(".setup-panel")`, "disappearance audit setup");
+  let disappearSetupWaits = 0;
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    let progressed = false;
+    for (const browser of [disappearFirst, disappearSecond]) {
+      const clicked = await browser.evaluate(`(() => { const phase = document.querySelector(".setup-panel h2")?.textContent?.trim(); const buttons = [...document.querySelectorAll(".setup-options button")].filter((candidate) => !candidate.disabled); const button = phase === "starting choice" ? buttons.find((candidate) => candidate.textContent?.trim().toLowerCase().includes("draw research")) : buttons[0]; if (!button) return false; button.click(); return true; })()`);
+      if (clicked) { progressed = true; disappearSetupWaits = 0; await wait(120); break; }
+    }
+    if (!progressed) {
+      if (await disappearFirst.evaluate("!document.querySelector('.setup-panel')") && await disappearSecond.evaluate("!document.querySelector('.setup-panel')")) break;
+      disappearSetupWaits += 1;
+      if (disappearSetupWaits >= 8) throw new Error("Disappearance audit room stalled during setup without an enabled choice.");
+      await wait(180);
+    }
+  }
+  await disappearFirst.waitFor("!document.querySelector('.setup-panel')", "disappearance first setup completion");
+  await disappearSecond.waitFor("!document.querySelector('.setup-panel')", "disappearance second setup completion");
+  if (!await disappearFirst.click("Ready") || !await disappearSecond.click("Ready")) throw new Error("Disappearance audit players did not expose Ready controls.");
+  await Promise.all([disappearFirst, disappearSecond].map((browser) => browser.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "disappearance audit Move phase")));
+  const disappearActive = await disappearFirst.evaluate(`(async () => {
+    const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+    const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${disappearRoomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+    const room = await response.json();
+    const participant = room.participants?.find((entry) => entry.id === session.participantId);
+    return { status: response.status, roomVersion: room.version, participantId: session.participantId, participantRole: participant?.role,
+      participantPlayerIndex: participant?.playerIndex, currentPlayer: room.state.currentPlayer,
+      participants: room.participants?.map((entry) => ({ id: entry.id, role: entry.role, playerIndex: entry.playerIndex, connected: entry.connected })),
+      phase: room.state.phase, pendingDecision: room.state.pendingDecision, movedPieceIds: room.state.movedPieceIds ?? [],
+      setupAssignments: room.state.setupAssignments, monsters: room.state.monsters.map((monster) => ({ id: monster.id, name: monster.name, location: monster.location })),
+      eventIds: room.state.eventLog.map((event) => event.id), eventCount: room.state.eventLog.length };
+  })()`);
+  if (disappearActive.status !== 200 || disappearActive.phase !== "move" || disappearActive.participantRole !== "player"
+    || disappearActive.participantPlayerIndex !== disappearActive.currentPlayer
+    || disappearActive.pendingDecision?.type !== "monster-movement") {
+    throw new Error(`Disappearance audit did not start at an active online Move decision: ${JSON.stringify(disappearActive)}`);
+  }
+  const disappearMonster = disappearActive.monsters[disappearActive.currentPlayer];
+  const disappearAssignment = disappearActive.setupAssignments?.find((seat) => seat.playerIndex === disappearActive.currentPlayer && seat.monsterId === disappearMonster?.id);
+  if (!disappearMonster || !disappearAssignment?.lair || disappearMonster.location !== disappearAssignment.lair
+    || disappearMonster.location === "hollywood" || disappearActive.movedPieceIds.includes(disappearMonster.id)) {
+    throw new Error(`Disappearance audit did not preserve the configured-lair, unmoved-monster eligibility boundary: ${JSON.stringify({ disappearMonster, disappearAssignment, movedPieceIds: disappearActive.movedPieceIds })}`);
+  }
+  const disappearBrowser = disappearActive.participantPlayerIndex === 0 ? disappearFirst : disappearSecond;
+  const disappearActorLabel = disappearActive.participantPlayerIndex === 0 ? "first" : "second";
+  const firstMatchGuideOpenForDisappear = await disappearBrowser.evaluate(`Boolean(document.querySelector(".onboarding"))`);
+  if (firstMatchGuideOpenForDisappear) {
+    if (!await disappearBrowser.clickSelector(".onboarding-actions button")) throw new Error("Disappearance audit player could not dismiss the first-match guide.");
+    await disappearBrowser.waitFor(`!document.querySelector(".onboarding")`, "disappearance audit first-match guide dismissal");
+  }
+  const menuOpenForDisappear = await disappearBrowser.evaluate(`document.querySelector(".hud-menu")?.open === true`);
+  if (!menuOpenForDisappear && !await disappearBrowser.clickSelector("details.hud-menu > summary")) throw new Error("Disappearance audit player could not open the game menu.");
+  if (!await disappearBrowser.clickSelector(".hud-menu .settings-action")) throw new Error("Disappearance audit player could not open Settings from the game menu.");
+  await disappearBrowser.waitFor(`!!document.querySelector(".settings-panel")`, "disappearance audit Settings panel");
+  const disappearPreferenceBefore = await disappearBrowser.evaluate(`(() => { const label = [...document.querySelectorAll(".settings-grid label")].find((node) => node.textContent.includes("Confirm leave, concede, or disappear")); return { checked: label?.querySelector("input")?.checked, stored: localStorage.getItem("abominations-confirm-irreversible") }; })()`);
+  if (disappearPreferenceBefore.checked !== true) throw new Error(`Disappearance audit did not begin with confirmation enabled: ${JSON.stringify(disappearPreferenceBefore)}`);
+  if (!await disappearBrowser.clickSelector(".settings-panel .settings-grid label:nth-child(4)")) throw new Error("Disappearance audit player could not disable confirmation in Settings.");
+  const disappearPreferenceAfter = await disappearBrowser.evaluate(`(() => { const label = [...document.querySelectorAll(".settings-grid label")].find((node) => node.textContent.includes("Confirm leave, concede, or disappear")); return { checked: label?.querySelector("input")?.checked, stored: localStorage.getItem("abominations-confirm-irreversible") }; })()`);
+  if (disappearPreferenceAfter.checked !== false || disappearPreferenceAfter.stored !== "0") throw new Error(`Disappearance audit confirmation preference did not persist to storage: ${JSON.stringify(disappearPreferenceAfter)}`);
+  const evidenceDir = join(process.cwd(), "output/ui-review");
+  await mkdir(evidenceDir, { recursive: true });
+  await writeFile(join(evidenceDir, "online-disappear-confirm-disabled-settings-2026-09-28.png"), await disappearBrowser.screenshot());
+  await disappearBrowser.pressKey("Escape");
+  await disappearBrowser.waitFor(`!document.querySelector(".settings-panel")`, "disappearance audit Settings close");
+  const disappearFocusRestored = await disappearBrowser.evaluate(`document.querySelector(".hud-menu .settings-action") === document.activeElement`);
+  const disappearPreferenceAfterEscape = await disappearBrowser.evaluate(`localStorage.getItem("abominations-confirm-irreversible")`);
+  if (!disappearFocusRestored || disappearPreferenceAfterEscape !== "0") throw new Error(`Disappearance audit did not restore focus or retain the preference after Escape: ${JSON.stringify({ disappearFocusRestored, disappearPreferenceAfterEscape })}`);
+  if (await disappearBrowser.evaluate(`document.querySelector(".hud-menu")?.open === true`)
+    && !await disappearBrowser.clickSelector("details.hud-menu > summary")) throw new Error("Disappearance audit player could not close the game menu.");
+  const disappearControlBounds = await disappearBrowser.evaluate(`(() => {
+    const details = document.querySelector(".command-station .bottom-context-dock details.piece-context-tab");
+    if (!details) return null;
+    const summary = details.querySelector("summary");
+    if (!details.open && summary) { summary.scrollIntoView({ block: "center", inline: "nearest" }); return { needsOpen: true, summary: (() => { const rect = summary.getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }; })() }; }
+    const button = [...details.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Disappear to lair" && !candidate.disabled);
+    if (!button) return { needsOpen: false, missing: true };
+    button.scrollIntoView({ block: "center", inline: "nearest" });
+    const rect = button.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    return { needsOpen: false, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, visible: rect.width > 0 && rect.height > 0 && rect.x >= 0 && rect.y >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && (hit === button || button.contains(hit)), disabled: button.disabled };
+  })()`);
+  if (disappearControlBounds?.needsOpen) {
+    await disappearBrowser.clickPoint(disappearControlBounds.summary);
+    await disappearBrowser.waitFor(`document.querySelector(".command-station .bottom-context-dock details.piece-context-tab")?.open === true`, "visible Move options disclosure");
+  }
+  const enabledDisappearControl = await disappearBrowser.evaluate(`(() => { const details = document.querySelector(".command-station .bottom-context-dock details.piece-context-tab"); const button = [...(details?.querySelectorAll("button") ?? [])].find((candidate) => candidate.textContent.trim() === "Disappear to lair"); if (!details?.open || !button || button.disabled) return null; button.scrollIntoView({ block: "center", inline: "nearest" }); const rect = button.getBoundingClientRect(); const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, visible: rect.width > 0 && rect.height > 0 && rect.x >= 0 && rect.y >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && (hit === button || button.contains(hit)), disabled: button.disabled }; })()`);
+  if (!enabledDisappearControl?.visible || enabledDisappearControl.disabled) {
+    const uiDiagnostic = await disappearBrowser.evaluate(`(() => { const details = document.querySelector(".command-station .bottom-context-dock details.piece-context-tab"); return { open: details?.open, summary: details?.querySelector("summary")?.textContent?.trim(), content: details?.textContent?.trim(), buttons: [...(details?.querySelectorAll("button") ?? [])].map((button) => ({ text: button.textContent.trim(), aria: button.getAttribute("aria-label"), disabled: button.disabled })), selectedUnitRecord: document.querySelector(".unit-command-record h3")?.textContent?.trim(), monsterRecord: document.querySelector(".monster-command-record h3")?.textContent?.trim() }; })()`);
+    throw new Error(`The production UI did not offer an enabled, visible disappearance control at the eligible Move step: ${JSON.stringify({ disappearControlBounds, enabledDisappearControl, uiDiagnostic })}`);
+  }
+  await disappearBrowser.evaluate(`(() => {
+    const originalSend = WebSocket.prototype.send;
+    window.__disabledDisappearAuditMessages = [];
+    WebSocket.prototype.send = function(data) {
+      if (typeof data === "string") {
+        try { const message = JSON.parse(data); if (message.type === "command.submit") window.__disabledDisappearAuditMessages.push({ type: message.type, envelope: message.envelope }); } catch { /* ignore non-JSON websocket frames */ }
+      }
+      return originalSend.call(this, data);
+    };
+  })()`);
+  const disappearDialogsBefore = disappearBrowser.dialogOpenings().length;
+  disappearBrowser.setNextDialogResponse(true);
+  await disappearBrowser.clickPoint({ x: enabledDisappearControl.x, y: enabledDisappearControl.y });
+  await Promise.all([disappearFirst, disappearSecond].map((browser) => browser.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Deploy"`, "disappearance result Deploy phase")));
+  const disappearRequests = await disappearBrowser.evaluate(`window.__disabledDisappearAuditMessages ?? []`);
+  const disappearAfter = await disappearBrowser.evaluate(`(async () => {
+    const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+    const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${disappearRoomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+    const room = await response.json();
+    const event = room.state.eventLog.at(-1);
+    const monster = room.state.monsters.find((entry) => entry.id === ${JSON.stringify(disappearMonster.id)});
+    return { status: response.status, roomVersion: room.version, phase: room.state.phase, currentPlayer: room.state.currentPlayer,
+      pendingDecision: room.state.pendingDecision, monster: monster ? { id: monster.id, location: monster.location } : null,
+      movedPieceIds: room.state.movedPieceIds ?? [], encounterSuppressed: room.state.encounterSuppressed,
+      participants: room.participants?.map((entry) => ({ id: entry.id, role: entry.role, playerIndex: entry.playerIndex, connected: entry.connected })),
+      eventIds: room.state.eventLog.map((entry) => entry.id), eventCount: room.state.eventLog.length,
+      lastEvent: event ? { id: event.id, actorId: event.actorId, action: event.action, detail: event.detail } : null };
+  })()`);
+  const disappearDialogCountAfter = disappearBrowser.dialogOpenings().length;
+  const disappearNewEventIds = disappearAfter.eventIds.filter((eventId) => !disappearActive.eventIds.includes(eventId));
+  const disappearCommands = disappearRequests.filter((request) => request.type === "command.submit");
+  if (disappearCommands.length !== 1 || disappearCommands[0].envelope?.command?.type !== "disappear-monster"
+    || disappearCommands[0].envelope?.actorId !== disappearActive.participantId
+    || disappearCommands[0].envelope?.expectedRevision !== disappearActive.roomVersion
+    || disappearCommands[0].envelope?.protocolVersion !== 1) {
+    throw new Error(`Disabled-confirm disappearance did not submit exactly one current-revision command for the active player: ${JSON.stringify({ disappearActive, disappearRequests })}`);
+  }
+  if (disappearDialogCountAfter !== disappearDialogsBefore) throw new Error(`Disabled-confirm disappearance opened a native browser prompt: ${JSON.stringify(disappearBrowser.dialogOpenings())}`);
+  if (disappearAfter.status !== 200 || disappearAfter.phase !== "deploy" || disappearAfter.currentPlayer !== disappearActive.currentPlayer
+    || disappearAfter.pendingDecision?.type !== "deployment" || disappearAfter.pendingDecision?.playerIndex !== disappearActive.currentPlayer
+    || disappearAfter.monster?.location !== "disappeared" || !disappearAfter.movedPieceIds.includes(disappearMonster.id)
+    || disappearAfter.encounterSuppressed !== true || disappearAfter.lastEvent?.action !== "monster.disappeared"
+    || disappearAfter.lastEvent?.detail?.monsterId !== disappearMonster.id || disappearAfter.lastEvent?.detail?.nextPhase !== "deploy"
+    || disappearNewEventIds.length !== 1 || disappearAfter.eventCount !== disappearActive.eventCount + 1
+    || disappearAfter.eventIds.slice(0, disappearActive.eventIds.length).some((eventId, index) => eventId !== disappearActive.eventIds[index])
+    || JSON.stringify(disappearAfter.participants) !== JSON.stringify(disappearActive.participants)) {
+    throw new Error(`Authoritative disappearance result did not match the engine contract or changed player connections: ${JSON.stringify({ disappearActive, disappearAfter, disappearNewEventIds })}`);
+  }
+  await writeFile(join(evidenceDir, "online-disappear-confirm-disabled-result-2026-09-28.png"), await disappearBrowser.screenshot());
+  disabledConfirmDisappearEvidence = {
+    roomCode: disappearRoomCode,
+    actor: disappearActorLabel,
+    viewport: "1280x720",
+    input: "pointer",
+    firstMatchGuideDismissedBeforeSettings: firstMatchGuideOpenForDisappear,
+    eligibility: { phase: disappearActive.phase, currentPlayer: disappearActive.currentPlayer, monsterId: disappearMonster.id, monsterAtAssignedLair: true, lair: disappearAssignment.lair, notMoved: true, notHollywood: true, offeredByProductionUI: true },
+    preference: { enabledBefore: disappearPreferenceBefore.checked, disabledAfter: disappearPreferenceAfter.checked, stored: disappearPreferenceAfter.stored, remainsStoredAfterEscape: disappearPreferenceAfterEscape },
+    settingsEscapeRestoredFocus: disappearFocusRestored,
+    browserDialogCountBefore: disappearDialogsBefore,
+    browserDialogCountAfter: disappearDialogCountAfter,
+    nativeConfirmationOpened: false,
+    actionRequests: disappearCommands,
+    playerConnectionsUnchanged: true,
+    before: { roomVersion: disappearActive.roomVersion, phase: disappearActive.phase, currentPlayer: disappearActive.currentPlayer, participants: disappearActive.participants, eventCount: disappearActive.eventCount },
+    after: { roomVersion: disappearAfter.roomVersion, phase: disappearAfter.phase, currentPlayer: disappearAfter.currentPlayer, pendingDecision: disappearAfter.pendingDecision, monster: disappearAfter.monster, event: disappearAfter.lastEvent, eventCount: disappearAfter.eventCount, appendedEventCount: disappearNewEventIds.length, participants: disappearAfter.participants },
+    screenshots: ["online-disappear-confirm-disabled-settings-2026-09-28.png", "online-disappear-confirm-disabled-result-2026-09-28.png"],
+  };
+
+  const outputDir = join(process.cwd(), "output/ui-review");
+  await mkdir(outputDir, { recursive: true });
+  if (disabledConcedeEvidence) await writeFile(join(outputDir, "online-concede-confirm-disabled-2026-09-28.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), route: "main app route served by Vite with local in-memory API", ...disabledConcedeEvidence }, null, 2)}\n`);
+  if (disabledConfirmDisappearEvidence) await writeFile(join(outputDir, "online-disappear-confirm-disabled-2026-09-28.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), route: "main app route served by Vite with local in-memory API", ...disabledConfirmDisappearEvidence }, null, 2)}\n`);
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineResearchDraw, onlineConcession: concessionActor ? "verified" : "skipped-after-victory", disabledConfirmConcession: disabledConcedeEvidence, disabledConfirmDisappear: disabledConfirmDisappearEvidence, terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
 } finally {
-  await Promise.all([first?.close(), second?.close(), spectator?.close()]);
+  await Promise.all([first?.close(), second?.close(), spectator?.close(), disappearFirst?.close(), disappearSecond?.close()]);
   await Promise.all([stopServer(apiServer), stopServer(webServer)]);
 }

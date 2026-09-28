@@ -29,6 +29,7 @@ export const BRANCHES = ["Army", "Navy", "Air Force", "Marines"] as const;
 export type BotBranch = typeof BRANCHES[number];
 export type BotTactic = "force-first" | "research-first";
 export type BotTacticOverrides = ReadonlyMap<number, BotTactic>;
+export type BotRouteBlockMultiplierOverrides = ReadonlyMap<number, number>;
 
 export interface BotResearchDrawGateDiagnostics {
   researchDeckAvailable: boolean;
@@ -424,10 +425,22 @@ function focusTarget(state: GameState, playerIndex: number, branch: BotBranch) {
 }
 
 /** Military positions along threatened city, branch-base, and Infamy routes gain defensive value. */
-export function routeBlockScores(state: GameState, actor = state.currentPlayer, branch = (state.setupAssignments?.[actor]?.branch ?? "Army") as BotBranch, tacticOverrides?: BotTacticOverrides): Map<HexKey, number> {
+export function routeBlockScores(
+  state: GameState,
+  actor = state.currentPlayer,
+  branch = (state.setupAssignments?.[actor]?.branch ?? "Army") as BotBranch,
+  tacticOverrides?: BotTacticOverrides,
+  routeBlockMultiplierOverride?: number,
+): Map<HexKey, number> {
   const scores = new Map<HexKey, number>();
   const board = boardForState(state);
   const forceFirst = botTacticForPlayer(state, actor, tacticOverrides) === "force-first";
+  // Preserve the existing tactic-derived multiplier unless a controlled
+  // experiment explicitly overrides this actor's route-block policy.
+  const routeBlockMultiplier = routeBlockMultiplierOverride ?? (forceFirst ? 1.15 : 0.9);
+  if (!Number.isFinite(routeBlockMultiplier) || routeBlockMultiplier < 0) {
+    throw new RangeError("Route-block multiplier must be a finite non-negative number.");
+  }
   const goals = Object.values(board.hexes).filter((hex) => !state.stompedLocations.includes(hex.key)
     && hex.features.some((feature) => feature.kind === "city" || feature.kind === "infamy-site" || feature.kind === "military-base"));
   for (const [monsterIndex, monster] of state.monsters.entries()) {
@@ -476,7 +489,7 @@ export function routeBlockScores(state: GameState, actor = state.currentPlayer, 
       path.forEach((key, index) => {
         const toGoal = steps - index - 1;
         const approach = Math.max(0, 4 - toGoal) * 2;
-        const pressure = (value * urgency + approach) * coverage * (forceFirst ? 1.15 : 0.9);
+        const pressure = (value * urgency + approach) * coverage * routeBlockMultiplier;
         scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
       });
     }
@@ -578,6 +591,7 @@ export function chooseBotCommand(
   botPlayerIndices: ReadonlySet<number> = new Set([1, 2, 3]),
   tacticOverrides?: BotTacticOverrides,
   onDeployDecision?: BotDeployDecisionObserver,
+  routeBlockMultiplierOverrides?: BotRouteBlockMultiplierOverrides,
 ): GameCommand | undefined {
   const decision = state.pendingDecision;
   const actor = decision && "playerIndex" in decision ? decision.playerIndex : state.currentPlayer;
@@ -736,7 +750,7 @@ export function chooseBotCommand(
       });
       return command;
     }
-    const routeScores = routeBlockScores(state, actor, branch, tacticOverrides);
+    const routeScores = routeBlockScores(state, actor, branch, tacticOverrides, routeBlockMultiplierOverrides?.get(actor));
     const drawResearch = shouldDrawResearch(state, actor, branch, options, routeScores, tacticOverrides);
     let gates: BotResearchDrawGateDiagnostics | null = null;
     if (onDeployDecision) {
@@ -799,7 +813,7 @@ export function chooseBotCommand(
     // The movement decision normally names the active monster, not a unit.
     // Once that monster has moved (or has no legal move), use the rest of the
     // movement window to reposition this player's military pieces.
-    const routeScores = routeBlockScores(state, actor, branch, tacticOverrides);
+    const routeScores = routeBlockScores(state, actor, branch, tacticOverrides, routeBlockMultiplierOverrides?.get(actor));
     const focus = focusTarget(state, actor, branch);
     const unmovedUnits = state.units.filter((unit) => unit.ownerPlayer === actor
       && unit.location !== "record-tile" && unit.location !== "permanently-removed"

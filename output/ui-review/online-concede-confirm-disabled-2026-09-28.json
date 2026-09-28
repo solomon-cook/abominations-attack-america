@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-09-28T22:49:31.975Z",
+  "route": "main app route served by Vite with local in-memory API",
+  "actor": "second",
+  "viewport": "1280x720",
+  "input": "pointer",
+  "firstMatchGuideDismissedBeforeSettings": true,
+  "preferenceChangedThroughSettings": true,
+  "settingsEscapeRestoredFocus": true,
+  "browserDialogCountBefore": 1,
+  "browserDialogCountAfter": 1,
+  "nativeConfirmationOpened": false,
+  "actionRequests": [
+    {
+      "type": "command.submit",
+      "envelope": {
+        "actionId": "a15be9e8-bc0c-44f1-a4f9-d375bc0025d7",
+        "actorId": "ec82d3a8847a20e8e21f",
+        "expectedRevision": 13,
+        "protocolVersion": 1,
+        "command": {
+          "type": "concede"
+        }
+      }
+    }
+  ],
+  "disconnectRequests": 0,
+  "playerConnectionsUnchanged": true,
+  "before": {
+    "phase": "move",
+    "currentPlayer": 1,
+    "eventCount": 5
+  },
+  "after": {
+    "phase": "game-over",
+    "winnerPlayer": 0,
+    "victoryType": "concession",
+    "event": {
+      "action": "match.conceded",
+      "detail": {
+        "concedingPlayer": 1,
+        "winnerPlayer": 0,
+        "victoryType": "concession"
+      }
+    },
+    "eventCount": 6,
+    "appendedEventCount": 1
+  },
+  "screenshots": [
+    "online-concede-confirm-disabled-settings-2026-09-28.png",
+    "online-concede-confirm-disabled-terminal-2026-09-28.png"
+  ]
+}

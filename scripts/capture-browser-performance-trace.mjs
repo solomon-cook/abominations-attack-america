@@ -246,6 +246,10 @@ const captureBoardCameraGestures = async ({ page, session, viewport }) => {
     return { visibleImages: visible.length, decodedVisibleImages: visible.filter((image) => image.complete && image.naturalWidth > 0).length };
   });
   const beforePan = await page.evaluate(() => ({ zoom: Number(document.querySelector(".board-viewport")?.getAttribute("data-camera-zoom")), scale: Number(document.querySelector(".board-viewport")?.getAttribute("data-camera-scale")) }));
+  await page.evaluate(() => {
+    window.__boardReactProfile.active = true;
+    window.__boardReactProfile.phase = "pan";
+  });
   phaseMark(page, "audit-camera-pan-start");
   if (viewport.width <= 600) {
     await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: start.x, y: start.y, id: 1 }] });
@@ -271,6 +275,7 @@ const captureBoardCameraGestures = async ({ page, session, viewport }) => {
   const zoomStart = await findUnobstructedPoint();
   assert.ok(zoomStart, `board camera retains an unobstructed zoom point at ${viewport.width}x${viewport.height}`);
   const zoomBefore = afterPan.zoom;
+  await page.evaluate(() => { window.__boardReactProfile.phase = "zoom"; });
   phaseMark(page, "audit-camera-zoom-start");
   if (viewport.width <= 600) {
     const initialSeparation = 28;
@@ -299,12 +304,50 @@ const captureBoardCameraGestures = async ({ page, session, viewport }) => {
   phaseMark(page, "audit-camera-zoom-gesture-end");
   const afterZoomGesture = await page.evaluate(() => ({ zoom: Number(document.querySelector(".board-viewport")?.getAttribute("data-camera-zoom")), scale: Number(document.querySelector(".board-viewport")?.getAttribute("data-camera-scale")) }));
   assert.ok(afterZoomGesture.zoom > zoomBefore, "wheel or pinch input zooms the board camera");
-  const highResolutionTerrainLoaded = await page.waitForFunction(() => [...document.querySelectorAll("img.audited-terrain")].some((image) => {
-    const rect = image.getBoundingClientRect();
-    const visible = rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 && rect.left < innerWidth && rect.top < innerHeight;
-    return visible && /\/(?:512|1024)\//.test(image.currentSrc || image.src) && image.complete && image.naturalWidth > 0;
-  }), null, { timeout: 8000 }).then(() => true).catch(() => false);
-  await page.waitForTimeout(250);
+  const allVisibleTerrainDecodedHandle = await page.waitForFunction(() => {
+    const expectedSize = window.__boardReactProfile.desiredTerrainSize;
+    const visible = [...document.querySelectorAll("img.audited-terrain")].filter((image) => {
+      const rect = image.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 && rect.left < innerWidth && rect.top < innerHeight;
+    });
+    if (!visible.length) return false;
+    const matchesRequestedVariant = (image) => new URL(image.currentSrc || image.src, location.href).pathname.includes(`/audited/${expectedSize}/`);
+    if (visible.some((image) => !matchesRequestedVariant(image) || !image.complete || image.naturalWidth <= 0)) {
+      window.__terrainDecodeReadiness = { signature: null, stableSince: 0, decodedSignature: null, decodedNodes: [], decodingSignature: null };
+      return false;
+    }
+    const signature = visible.map((image) => `${image.dataset.artCell}:${image.currentSrc || image.src}`).sort().join("\n");
+    const readiness = window.__terrainDecodeReadiness ??= { signature: null, stableSince: 0, decodedSignature: null, decodedNodes: [], decodingSignature: null };
+    if (readiness.signature !== signature) {
+      readiness.signature = signature;
+      readiness.stableSince = performance.now();
+      readiness.decodedSignature = null;
+      readiness.decodedNodes = [];
+      readiness.decodingSignature = null;
+      return false;
+    }
+    if (readiness.decodingSignature !== signature && readiness.decodedSignature !== signature) {
+      const nodes = [...visible];
+      readiness.decodingSignature = signature;
+      Promise.all(nodes.map((image) => image.decode())).then(() => {
+        readiness.decodedSignature = signature;
+        readiness.decodedNodes = nodes;
+        readiness.decodingSignature = null;
+      }).catch(() => {
+        readiness.signature = null;
+        readiness.stableSince = 0;
+        readiness.decodedSignature = null;
+        readiness.decodedNodes = [];
+        readiness.decodingSignature = null;
+      });
+    }
+    const sameDecodedNodes = readiness.decodedSignature === signature && readiness.decodedNodes.length === visible.length && visible.every((image) => readiness.decodedNodes.includes(image));
+    return sameDecodedNodes && performance.now() - readiness.stableSince >= 300 ? { signature, imageCount: visible.length, expectedSize } : false;
+  }, null, { polling: "raf", timeout: 45000 }).catch(() => null);
+  const allVisibleTerrainDecoded = Boolean(allVisibleTerrainDecodedHandle);
+  const decodedTerrainState = allVisibleTerrainDecodedHandle ? await allVisibleTerrainDecodedHandle.jsonValue() : null;
+  assert.equal(allVisibleTerrainDecoded, true, `every visible terrain tile must reach and decode its requested resolution at ${viewport.width}x${viewport.height}`);
+  await page.evaluate(() => new Promise((resolveFrame) => requestAnimationFrame(() => requestAnimationFrame(resolveFrame))));
   phaseMark(page, "audit-camera-zoom-settled");
   const finalState = await page.evaluate(() => {
     const board = document.querySelector(".board-viewport");
@@ -320,6 +363,8 @@ const captureBoardCameraGestures = async ({ page, session, viewport }) => {
     });
     const profile = window.__boardCameraProfile;
     profile?.observer.disconnect();
+    const reactProfile = window.__boardReactProfile;
+    reactProfile.active = false;
     return {
       zoom: Number(board?.getAttribute("data-camera-zoom")),
       scale: Number(board?.getAttribute("data-camera-scale")),
@@ -329,6 +374,14 @@ const captureBoardCameraGestures = async ({ page, session, viewport }) => {
       terrainElementsOutsideNearbyMargin: images.length - withinNearbyMargin,
       visibleTerrainImages: visible.length,
       visibleTerrainDecoded: visible.filter((image) => image.complete && image.naturalWidth > 0).length,
+      requestedTerrainVariant: reactProfile.desiredTerrainSize,
+      visibleTerrainAtRequestedVariant: visible.filter((image) => new URL(image.currentSrc || image.src, location.href).pathname.includes(`/audited/${reactProfile.desiredTerrainSize}/`)).length,
+      visibleTerrainNodesWithDecodeConfirmation: visible.filter((image) => window.__terrainDecodeReadiness?.decodedNodes.includes(image)).length,
+      visibleTerrainDecodeIdentityStable: visible.length > 0
+        && window.__terrainDecodeReadiness?.decodedSignature === window.__terrainDecodeReadiness?.signature
+        && window.__terrainDecodeReadiness.decodedNodes.length === visible.length
+        && visible.every((image) => window.__terrainDecodeReadiness.decodedNodes.includes(image)),
+      visibleTerrainDecodeSignature: visible.map((image) => `${image.dataset.artCell}:${image.currentSrc || image.src}`).sort().join("\n"),
       visibleHighResolutionDecoded: visible.filter((image) => /\/(?:512|1024)\//.test(image.currentSrc || image.src) && image.complete && image.naturalWidth > 0).length,
       visibleVariantCounts: visible.reduce((counts, image) => {
         const match = (image.currentSrc || image.src).match(/\/(256|512|1024)\//);
@@ -336,10 +389,28 @@ const captureBoardCameraGestures = async ({ page, session, viewport }) => {
         return counts;
       }, { 256: 0, 512: 0, 1024: 0 }),
       counts: profile?.counts ?? null,
+      reactCameraCommits: reactProfile.commits,
+      reactCameraCommitTotals: {
+        rendererVersion: reactProfile.rendererVersion,
+        rendererPackageName: reactProfile.rendererPackageName,
+        commits: reactProfile.commits.length,
+        panCommits: reactProfile.commits.filter((commit) => commit.phase === "pan").length,
+        zoomCommits: reactProfile.commits.filter((commit) => commit.phase === "zoom").length,
+        fibersVisitedAcrossCommits: reactProfile.totalCommittedFiberNodes,
+        terrainArtFibersInCommittedTrees: reactProfile.totalTerrainArtFibers,
+        terrainArtPerformedWorkFlag: reactProfile.terrainArtPerformedWorkFlag,
+        terrainArtUpdateFlag: reactProfile.terrainArtUpdateFlag,
+      },
     };
   });
   assert.ok(finalState.visibleTerrainImages > 0, "camera zoom keeps terrain tiles in the viewport");
-  return { terrainAtCameraStart, beforePan, afterPan, afterZoomGesture, finalState, highResolutionTerrainLoadedWithin8Seconds: highResolutionTerrainLoaded, input: viewport.width <= 600 ? "touch drag and two-finger pinch" : "mouse drag and wheel zoom" };
+  assert.equal(allVisibleTerrainDecoded, true, `every visible terrain tile must finish decode before measurement at ${viewport.width}x${viewport.height}`);
+  assert.equal(finalState.visibleTerrainAtRequestedVariant, finalState.visibleTerrainImages, "all visible terrain images use the requested camera resolution");
+  assert.equal(finalState.visibleTerrainNodesWithDecodeConfirmation, finalState.visibleTerrainImages, "all visible image nodes are the same nodes whose decode promises resolved");
+  assert.equal(finalState.visibleTerrainDecodeIdentityStable, true, "the visible decoded DOM node set stays stable after the two-frame checkpoint");
+  assert.equal(finalState.visibleTerrainDecodeSignature, decodedTerrainState?.signature, "visible terrain source set stays unchanged after full decode");
+  assert.equal(finalState.visibleTerrainImages, decodedTerrainState?.imageCount, "visible terrain image count stays stable after full decode");
+  return { terrainAtCameraStart, beforePan, afterPan, afterZoomGesture, finalState, allVisibleTerrainDecodedAtRequestedResolution: allVisibleTerrainDecoded, input: viewport.width <= 600 ? "touch drag and two-finger pinch" : "mouse drag and wheel zoom" };
 };
 
 const phaseMark = (page, name) => page.evaluate((label) => {
@@ -526,14 +597,91 @@ const captureCase = async ({ viewport, scenario }) => {
   const context = await browser.newContext({ viewport, deviceScaleFactor, isMobile: viewport.width <= 600, hasTouch: viewport.width <= 600, serviceWorkers: "block" });
   const page = await context.newPage();
   const pageErrors = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("pageerror", (error) => pageErrors.push(error.stack ?? error.message));
   const session = await context.newCDPSession(page);
   await session.send("Network.enable");
   await session.send("Network.setCacheDisabled", { cacheDisabled: true });
   await session.send("Network.setBypassServiceWorker", { bypass: true });
   await session.send("Network.emulateNetworkConditions", { offline: false, latency: 150, downloadThroughput: 200000, uploadThroughput: 93750, connectionType: "cellular3g" });
   await session.send("Emulation.setCPUThrottlingRate", { rate: 4 });
-  await page.addInitScript(() => performance.mark("audit-document-start"));
+  await page.addInitScript(() => {
+    // Keep the service-worker-blocked benchmark deterministic. Some Chrome
+    // builds expose a native container whose blocked register() resolves with
+    // no registration, so provide an inert container rather than masking that
+    // runner-specific failure as an app exception.
+    Object.defineProperty(navigator, "serviceWorker", { configurable: true, value: {
+      addEventListener() {},
+      removeEventListener() {},
+      async register() { return { waiting: null, installing: null, addEventListener() {}, removeEventListener() {} }; },
+      async getRegistration() { return undefined; },
+    } });
+    performance.mark("audit-document-start");
+    // React's public DevTools hook reports committed roots without changing the
+    // app bundle. Keep the callback dormant outside the measured camera window.
+    const profile = {
+      active: false,
+      phase: null,
+      desiredTerrainSize: 256,
+      rendererVersion: null,
+      rendererPackageName: null,
+      commits: [],
+      totalCommittedFiberNodes: 0,
+      totalTerrainArtFibers: 0,
+      terrainArtPerformedWorkFlag: 0,
+      terrainArtUpdateFlag: 0,
+    };
+    window.__boardReactProfile = profile;
+    window.addEventListener("board-camera-change", (event) => {
+      const pixels = event.detail.tilePixels * (window.devicePixelRatio || 1) * 2;
+      profile.desiredTerrainSize = pixels > 512 ? 1024 : pixels > 256 ? 512 : 256;
+    });
+    window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
+      supportsFiber: true,
+      isDisabled: false,
+      inject: (renderer) => {
+        profile.rendererVersion = renderer.version ?? null;
+        profile.rendererPackageName = renderer.rendererPackageName ?? null;
+        return 1;
+      },
+      onCommitFiberRoot: (_rendererId, root) => {
+        if (!profile.active) return;
+        let fibersVisited = 0;
+        let terrainArtFibers = 0;
+        let terrainArtPerformedWork = 0;
+        let terrainArtUpdate = 0;
+        const pending = [root.current];
+        while (pending.length) {
+          const fiber = pending.pop();
+          if (!fiber) continue;
+          fibersVisited += 1;
+          if (fiber.sibling) pending.push(fiber.sibling);
+          if (fiber.child) pending.push(fiber.child);
+          const elementType = fiber.elementType ?? fiber.type;
+          const componentType = typeof elementType === "function" ? elementType : elementType?.type;
+          const name = componentType?.displayName || componentType?.name;
+          const props = fiber.memoizedProps;
+          const terrainFiber = name === "TerrainArt" || fiber.tag === 15 && typeof props?.hex?.key === "string";
+          if (terrainFiber) {
+            terrainArtFibers += 1;
+            if (fiber.flags & 1) terrainArtPerformedWork += 1; // React PerformedWork flag.
+            if (fiber.flags & 4) terrainArtUpdate += 1; // React Update flag.
+          }
+        }
+        profile.commits.push({
+          phase: profile.phase,
+          timeMs: performance.now(),
+          fibersVisited,
+          terrainArtFibers,
+          terrainArtPerformedWork,
+          terrainArtUpdate,
+        });
+        profile.totalCommittedFiberNodes += fibersVisited;
+        profile.totalTerrainArtFibers += terrainArtFibers;
+        profile.terrainArtPerformedWorkFlag += terrainArtPerformedWork;
+        profile.terrainArtUpdateFlag += terrainArtUpdate;
+      },
+    };
+  });
   await fulfillHomeApi(page, new URL(url).origin);
 
   const traceCompleted = new Promise((resolveTrace, rejectTrace) => {
@@ -628,7 +776,7 @@ try {
     for (const scenario of scenarios) {
       const trace = await captureCase({ viewport, scenario });
       traces.push(trace);
-      if (scenario === "camera") console.log(`Captured board pan/zoom at ${viewport.width}x${viewport.height}: zoom ${trace.phaseMarkers.camera.beforePan.zoom}→${trace.phaseMarkers.camera.finalState.zoom}, 512/1024px terrain decoded within 8s=${trace.phaseMarkers.camera.highResolutionTerrainLoadedWithin8Seconds}.`);
+      if (scenario === "camera") console.log(`Captured board pan/zoom at ${viewport.width}x${viewport.height}: zoom ${trace.phaseMarkers.camera.beforePan.zoom}→${trace.phaseMarkers.camera.finalState.zoom}, all ${trace.phaseMarkers.camera.finalState.visibleTerrainImages} visible tiles decoded at ${trace.phaseMarkers.camera.finalState.requestedTerrainVariant}px, ${trace.phaseMarkers.camera.finalState.reactCameraCommitTotals.commits} React commits.`);
     }
   }
   const summary = {
@@ -647,8 +795,8 @@ try {
       categories: categories.split(","),
       coldHomeWait: "load, #home-title, Megaclaw hero image decode, document.fonts.ready, then 250 ms",
       firstSelection: "2-player local setup through visible UI choices; nearest visible legal tile passing center-point hit test; mouse at desktop, touch at phone; stop at Confirm move visible",
-      boardCamera: "after local setup, wait until all currently visible terrain images decode, then run a 20-step mouse/touch drag pan; apply 10 desktop wheel zoom steps or a 16-step two-finger phone pinch; step waits request 16 ms but measured gesture intervals vary substantially; traces event, render, raster, image decode, and network intervals, then waits up to 8 seconds for one visible 512/1024 terrain image to decode; phone device scale factor 2, desktop 1",
-      boardCameraMutationCounts: "records map-canvas style attributes, board camera data attributes, terrain image src changes, and terrain element bounds within the existing 300 px observer margin; these are DOM/geometry proxies, not React Profiler commit counts",
+      boardCamera: "after local setup, wait until all currently visible terrain images decode, then run a 20-step mouse/touch drag pan; apply 10 desktop wheel zoom steps or a 16-step two-finger phone pinch; step waits request 16 ms but measured gesture intervals vary substantially; traces event, render, raster, image decode, and network intervals, then waits up to 30 seconds for every visible terrain image to switch to the requested 256/512/1024 variant and complete HTMLImageElement.decode(); phone device scale factor 2, desktop 1",
+      boardCameraMutationCounts: "records map-canvas style attributes, board camera data attributes, terrain image src changes, and terrain element bounds within the existing 300 px observer margin; an injected React DevTools hook also records commit-root callbacks and TerrainArt fiber performed-work/update flags during camera gestures. The hook reports the renderer version and applies React 19.2.8 flag meanings (PerformedWork bit 1, Update bit 4, memo tag 15); treat these as build-specific attribution. The hook is profiling instrumentation and can perturb timings; use it for callback/render attribution, not uninstrumented latency comparisons",
       graphics: "production images and rendering resources served unchanged; no screenshots or image interception",
       traceFormat: "Chrome DevTools Protocol Tracing stream JSON, compressed with gzip level 9; each trace includes navigation through the named endpoint",
     },

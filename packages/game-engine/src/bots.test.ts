@@ -116,6 +116,21 @@ test("route-score traversal preserves exact scores and tie paths on the transcri
   }
 });
 
+test("route-block multiplier overrides change scores without changing the pinned tactic", () => {
+  const state = createMvpRoomGame(4, 171, "route-score-multiplier-override");
+  const actor = 0;
+  const pinnedTactics = new Map([[actor, "force-first" as const]]);
+  const low = routeBlockScores(state, actor, "Army", pinnedTactics, 0.9);
+  const high = routeBlockScores(state, actor, "Army", pinnedTactics, 1.15);
+
+  assert.ok(low.size > 0, "fixture should contain threatened routes");
+  assert.deepEqual([...low.keys()], [...high.keys()], "multiplier should not change route reachability or score insertion order");
+  for (const [key, score] of low) {
+    assert.ok(Math.abs(score - high.get(key)! * (0.9 / 1.15)) < 1e-9, `only the configured multiplier should change score at ${key}`);
+  }
+  assert.throws(() => routeBlockScores(state, actor, "Army", pinnedTactics, Number.NaN), /finite non-negative/);
+});
+
 test("cached movement neighbors match the canonical movement-path gate", () => {
   const states = [createGame(2, 0), createMvpRoomGame(4, 0, "movement-neighbors-parity")];
   const movementModes: MonsterMovement[] = ["land-only", "land-lake", "land-lake-sea", "fly"];

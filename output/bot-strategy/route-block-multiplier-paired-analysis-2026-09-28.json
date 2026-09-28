@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-28T22:48:36.603Z",
+  "rawArtifact": {
+    "path": "output/bot-strategy/route-block-multiplier-paired-2026-09-28.json",
+    "sha256": "3a2e5efde9a781c4eda1b4c6f051f0d1e7cb28669089cb5df23206474e5da038",
+    "bytes": 4519883,
+    "runMetadata": {
+      "generatedAt": "2026-09-28T22:43:45.906Z",
+      "gitHead": "f23a4cd9e722945d20c0f7cbba355013f0d49c5b",
+      "worktreeDirty": true,
+      "dirtyPathCount": 22,
+      "sourceSha256": {
+        "botSelector": "ac1ff7d9f8ab678e973bcf5c9442436f18292998f3b7c6504f6e12474b493129",
+        "harness": "17ba2a514ff41d92334e3db9fdd375c56333acc4409bbbf2fcb739fdc4205789"
+      }
+    }
+  },
+  "preregisteredAnalysis": {
+    "practicalEffectThreshold": {
+      "absoluteMeanScoreDifference": 0.1,
+      "registeredIn": "docs/bot-strategy-audit.md, before the full outcome run"
+    },
+    "appliedDecisionRule": "Assess whether the approximate paired 95% t interval spans both -0.10 and +0.10. This is a descriptive threshold check, not a post hoc claim of equivalence or proof of no effect.",
+    "assessment": "The approximate paired 95% interval includes effects more negative than -0.10 and more positive than +0.10; this study does not resolve whether the practical-effect threshold is exceeded.",
+    "policyDecision": "Do not change the route-block policy from this study alone."
+  },
+  "independentValidation": {
+    "pairCount": 30,
+    "completePairs": 30,
+    "allTerminalAndValid": true,
+    "allArmsStartFromIdenticalPairRng": true,
+    "everySeatPinnedForceFirst": true,
+    "setupRosterIdenticalWithinPairs": true,
+    "executionOrderBalanced": {
+      "lowMultiplierFirst": 15,
+      "highMultiplierFirst": 15
+    },
+    "uniqueSeeds": 30,
+    "uniqueInitialSetupHashes": 30,
+    "pairedScoreRecomputed": {
+      "meanDifference": 0,
+      "standardError": 0.06780635036208103,
+      "approximatePairedT95ConfidenceInterval": [
+        -0.13867940280360982,
+        0.13867940280360982
+      ]
+    }
+  },
+  "analysis": {
+    "estimand": "Focal match score at multiplier 0.9 minus focal match score at 1.15; win=1, draw=0.5, loss=0.",
+    "armAt09": {
+      "outcomes": {
+        "win": 7,
+        "draw": 0,
+        "loss": 23,
+        "incomplete": 0,
+        "invalid": 0
+      },
+      "meanTerminalScore": 0.23333333333333334,
+      "terminalMatches": 30,
+      "invalidActions": 0,
+      "cappedMatches": 0,
+      "meanActions": 277.1,
+      "meanRounds": 6.366666666666666,
+      "focalObjectiveStomps": 83,
+      "meanFocalFinalHealth": 8,
+      "meanFocalFinalInfamy": 9.7
+    },
+    "armAt115": {
+      "outcomes": {
+        "win": 7,
+        "draw": 0,
+        "loss": 23,
+        "incomplete": 0,
+        "invalid": 0
+      },
+      "meanTerminalScore": 0.23333333333333334,
+      "terminalMatches": 30,
+      "invalidActions": 0,
+      "cappedMatches": 0,
+      "meanActions": 274.06666666666666,
+      "meanRounds": 6.333333333333333,
+      "focalObjectiveStomps": 82,
+      "meanFocalFinalHealth": 8.9,
+      "meanFocalFinalInfamy": 9.833333333333334
+    },
+    "completePairs": 30,
+    "meanPairedScoreDifference": 0,
+    "pairedStandardError": 0.06780635036208103,
+    "approximatePairedT95ConfidenceInterval": [
+      -0.13867940280360982,
+      0.13867940280360982
+    ],
+    "deterministicBootstrapPercentile95ConfidenceInterval": [
+      -0.13333333333333333,
+      0.13333333333333333
+    ],
+    "discordantPairCount": 4,
+    "discordantFavoring09": 2,
+    "discordantFavoring115": 2,
+    "uncertaintyInterpretation": "The observed paired mean is zero and the interval is wide enough to include materially favorable or unfavorable effects. Equal observed arm totals do not demonstrate equivalence.",
+    "rngDivergence": {
+      "pairsWithCommandDivergence": 24,
+      "pairsWithRngCursorDivergence": 17,
+      "medianFirstCommandDivergenceAction": 64.5,
+      "medianFirstRngCursorDivergenceAction": 115
+    },
+    "setupComposition": {
+      "focalPlayerCounts": {
+        "3": 14,
+        "4": 16
+      },
+      "focalSeatCounts": {
+        "0": 9,
+        "1": 9,
+        "2": 8,
+        "3": 4
+      },
+      "focalMonsters": {
+        "Zorb": 4,
+        "Toxicor": 4,
+        "Tomanagi": 4,
+        "Megaclaw": 7,
+        "Konk": 5,
+        "Gargantis": 6
+      },
+      "focalBranches": {
+        "Army": 7,
+        "Air Force": 8,
+        "Navy": 8,
+        "Marines": 7
+      },
+      "allSeatMonsters": {
+        "Zorb": 17,
+        "Konk": 19,
+        "Megaclaw": 19,
+        "Toxicor": 18,
+        "Tomanagi": 14,
+        "Gargantis": 19
+      },
+      "allSeatBranches": {
+        "Army": 29,
+        "Navy": 26,
+        "Air Force": 25,
+        "Marines": 26
+      }
+    }
+  },
+  "provenance": {
+    "note": "The run artifact hashes bots.ts and the harness, and records the Git HEAD plus only a dirty-path count. This sidecar hashes every tracked packages/game-engine/src file as it exists at analysis time; engineSourceChangesSinceHead shows the current changes from HEAD. The game engine files outside the two bot-owned files were not modified between run completion and sidecar capture, but the original dirty-path list itself was not captured by the raw run artifact.",
+    "exactRunHashedSources": {
+      "packages/game-engine/src/bots.ts": "ac1ff7d9f8ab678e973bcf5c9442436f18292998f3b7c6504f6e12474b493129",
+      "scripts/verify-bot-route-multiplier-paired.tsx": "17ba2a514ff41d92334e3db9fdd375c56333acc4409bbbf2fcb739fdc4205789"
+    },
+    "analysisScript": {
+      "path": "scripts/analyze-bot-route-multiplier.mjs",
+      "sha256": "f7ff420360b6d4dbc348634478647cefdbdd15d649c4aa1d4e4a000b8d42df47"
+    },
+    "trackedEngineFiles": {
+      "packages/game-engine/src/audited-board-data.ts": "54b67d2d1dfc621e59dfad9512c584c06300837d2de1b2cc80ad58b2090c727d",
+      "packages/game-engine/src/audited-board.test.ts": "25c3138c509edbe5fb7bd35fe90f8b65aca1e7353fd556cfe7b88627a81e07fb",
+      "packages/game-engine/src/audited-board.ts": "6b5f86eddb9a113b581583e0de8387b30be0cf05fcd6d597656c46a3e57bd7e5",
+      "packages/game-engine/src/board.test.ts": "1ffa525ef631b31062272a05d0fe482196b1ea0fbdf07d251ca94130bce9598d",
+      "packages/game-engine/src/board.ts": "344e85341e5a338073d8a653836ab427fadd1c2bc333668a95c3d14db8c00b0b",
+      "packages/game-engine/src/bots.test.ts": "587363063d1510994e294c92659eb8bc1b628cb2dbe25af1621649d775037fdf",
+      "packages/game-engine/src/bots.ts": "ac1ff7d9f8ab678e973bcf5c9442436f18292998f3b7c6504f6e12474b493129",
+      "packages/game-engine/src/cards.ts": "cf92708733934841809f9a1c1903536c6becef86f3b8ef6d571afb769359ad83",
+      "packages/game-engine/src/challenge-turns.test.ts": "b16565f73da41bbedeecd74bf2cad324cc73512d57fc8d02004705cde96a183f",
+      "packages/game-engine/src/combat-presentation.test.ts": "79c5feeb87fe3875ebcbc4a23741ed546cf303f411d6893be02392fe91022107",
+      "packages/game-engine/src/effects.test.ts": "c7b4aa5df4d59e4ef8cc072ffcb863cde7f06b35301835b31a766293befd1ed7",
+      "packages/game-engine/src/effects.ts": "005fd6343b5149bb210682afea947c9ff7e0020beee9ed589557ca67647ca81b",
+      "packages/game-engine/src/index.test.ts": "5e2474472fcf48213b062ec04c5e9e77c166a96f38849d71f11bce4c090702f7",
+      "packages/game-engine/src/index.ts": "06836985a557bf709c8ee172c24c441fb5dccf7049e4c0c0d582c2dbb1baa2b8",
+      "packages/game-engine/src/monsters.ts": "0cddf32d779c2814b6d94deebf1121acf605b308984f7ae376c2f6e8e97f627a",
+      "packages/game-engine/src/setup.test.ts": "a84d693669050b4e15a9aba63ad98177fce4d7aca197c74cdafdbb16df8e3991",
+      "packages/game-engine/src/setup.ts": "6324def85ba259b06b644c9acdfafbfd3785a57d7d37c4d9be5049c61dc99ed3",
+      "packages/game-engine/src/unit-movement-performance.test.ts": "b7201d25b57b6e7c056faca2c077837cb8d79e6a75bab5f2987ba5459bae43e4",
+      "packages/game-engine/src/units.ts": "d646f5b88abef8c7613f9a50f6b8bdb839bd13d5ca3f4fb0fc43cd6070eae25b"
+    },
+    "engineSourceChangesSinceHead": [
+      "packages/game-engine/src/bots.test.ts",
+      "packages/game-engine/src/bots.ts"
+    ],
+    "currentDirtyPaths": [
+      " M docs/bot-strategy-audit.md",
+      " M docs/development.md",
+      " M docs/overhaul-plan.md",
+      " M docs/performance-baseline.md",
+      " M docs/ui-surface-audit.md",
+      " M package.json",
+      " M packages/game-engine/src/bots.test.ts",
+      " M packages/game-engine/src/bots.ts",
+      " M scripts/capture-browser-performance-trace.mjs",
+      " M scripts/verify-browser-online.mjs",
+      "?? output/bot-strategy/route-block-multiplier-paired-2026-09-28.json",
+      "?? output/bot-strategy/route-block-multiplier-paired-analysis-2026-09-28.json",
+      "?? output/performance/board-camera-react-profile-2026-09-28-camera-1280x720.json.gz",
+      "?? output/performance/board-camera-react-profile-2026-09-28-camera-390x844.json.gz",
+      "?? output/performance/board-camera-react-profile-2026-09-28-summary.json",
+      "?? output/performance/board-camera-react-profile-2026-09-28-visual-1280x720.png",
+      "?? output/performance/board-camera-react-profile-2026-09-28-visual-390x844.png",
+      "?? output/ui-review/online-concede-confirm-disabled-2026-09-28.json",
+      "?? output/ui-review/online-concede-confirm-disabled-settings-2026-09-28.png",
+      "?? output/ui-review/online-concede-confirm-disabled-terminal-2026-09-28.png",
+      "?? output/ui-review/online-disappear-confirm-disabled-settings-2026-09-28.png",
+      "?? scripts/analyze-bot-route-multiplier.mjs",
+      "?? scripts/verify-bot-route-multiplier-paired.tsx",
+      "?? scripts/verify-doc-commands.mjs"
+    ]
+  }
+}

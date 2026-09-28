@@ -1,0 +1,106 @@
+{
+  "generatedAt": "2026-09-28T22:49:31.994Z",
+  "route": "main app route served by Vite with local in-memory API",
+  "roomCode": "5B4785",
+  "actor": "first",
+  "viewport": "1280x720",
+  "input": "pointer",
+  "firstMatchGuideDismissedBeforeSettings": true,
+  "eligibility": {
+    "phase": "move",
+    "currentPlayer": 0,
+    "monsterId": "monster-1",
+    "monsterAtAssignedLair": true,
+    "lair": "5,5",
+    "notMoved": true,
+    "notHollywood": true,
+    "offeredByProductionUI": true
+  },
+  "preference": {
+    "enabledBefore": true,
+    "disabledAfter": false,
+    "stored": "0",
+    "remainsStoredAfterEscape": "0"
+  },
+  "settingsEscapeRestoredFocus": true,
+  "browserDialogCountBefore": 0,
+  "browserDialogCountAfter": 0,
+  "nativeConfirmationOpened": false,
+  "actionRequests": [
+    {
+      "type": "command.submit",
+      "envelope": {
+        "actionId": "c55d1779-eab7-4672-bc1c-b14d3c25bbd3",
+        "actorId": "90511f966b8b8c85026a",
+        "expectedRevision": 8,
+        "protocolVersion": 1,
+        "command": {
+          "type": "disappear-monster"
+        }
+      }
+    }
+  ],
+  "playerConnectionsUnchanged": true,
+  "before": {
+    "roomVersion": 8,
+    "phase": "move",
+    "currentPlayer": 0,
+    "participants": [
+      {
+        "id": "90511f966b8b8c85026a",
+        "role": "player",
+        "playerIndex": 0,
+        "connected": true
+      },
+      {
+        "id": "141a803c42024bc136c3",
+        "role": "player",
+        "playerIndex": 1,
+        "connected": true
+      }
+    ],
+    "eventCount": 0
+  },
+  "after": {
+    "roomVersion": 9,
+    "phase": "deploy",
+    "currentPlayer": 0,
+    "pendingDecision": {
+      "type": "deployment",
+      "playerIndex": 0
+    },
+    "monster": {
+      "id": "monster-1",
+      "location": "disappeared"
+    },
+    "event": {
+      "id": "1:0",
+      "actorId": "90511f966b8b8c85026a",
+      "action": "monster.disappeared",
+      "detail": {
+        "monsterId": "monster-1",
+        "nextPhase": "deploy"
+      }
+    },
+    "eventCount": 1,
+    "appendedEventCount": 1,
+    "participants": [
+      {
+        "id": "90511f966b8b8c85026a",
+        "role": "player",
+        "playerIndex": 0,
+        "connected": true
+      },
+      {
+        "id": "141a803c42024bc136c3",
+        "role": "player",
+        "playerIndex": 1,
+        "connected": true
+      }
+    ]
+  },
+  "screenshots": [
+    "online-disappear-confirm-disabled-settings-2026-09-28.png",
+    "online-disappear-confirm-disabled-result-2026-09-28.png"
+  ]
+}

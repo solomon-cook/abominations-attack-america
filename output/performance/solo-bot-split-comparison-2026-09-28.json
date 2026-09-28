@@ -1,0 +1,49 @@
+{
+  "capturedAt": "2026-09-28T22:55:47.892Z",
+  "baselineHead": "f23a4cd9e722945d20c0f7cbba355013f0d49c5b",
+  "baselineSourceHashes": {
+    "apps/web/src/main.tsx": "a0c196a216987e286cd8af1766da232a3f7b6281a8e21eb451fe20b3b7a5092d",
+    "apps/web/src/solo-bots.ts": "3825a28be1fceba92120195625eb32551c002d1e1a66121742cd3615e8635e87",
+    "packages/game-engine/src/bots.ts": "ac1ff7d9f8ab678e973bcf5c9442436f18292998f3b7c6504f6e12474b493129",
+    "package-lock.json": "d172b0e852e9dec338bc713c0bd4d66ba3e1fafb683e4d7df371656234434086"
+  },
+  "baselineEntry": {
+    "path": "index-BQROqsXN.js",
+    "rawBytes": 750246,
+    "gzipBytesLevel9": 187938,
+    "sha256": "5c1e3869b9b0cd56603c3d0c62a6a16095006a5c5368581a9f4e9ba7b45008d9"
+  },
+  "candidateEntry": {
+    "path": "apps/web/dist/assets/index-C4ouMo26.js",
+    "rawBytes": 760461,
+    "gzipBytesLevel9": 191134,
+    "sha256": "cc6dff2cbca0f1d55cba4c84639f859171f9d3327c2cbf2fcd6efe57d98b7471"
+  },
+  "candidateOtherJs": [
+    {
+      "path": "apps/web/dist/assets/BoardReview-DU5X2lqj.js",
+      "rawBytes": 5239,
+      "gzipBytesLevel9": 1842,
+      "sha256": "fa3dfdcdf328b398f5923bb2b45cffa06b3f2267ac7036a437d5723911a84f84"
+    },
+    {
+      "path": "apps/web/dist/assets/solo-bots-C93ZRcxb.js",
+      "rawBytes": 4699,
+      "gzipBytesLevel9": 2024,
+      "sha256": "510cf0a53bd8d6119d3647bd9f447b39873367b76ad3b89a36cadf86e49fed98"
+    }
+  ],
+  "css": [
+    {
+      "path": "apps/web/dist/assets/index-DGwYgOQC.css",
+      "rawBytes": 263382,
+      "gzipBytesLevel9": 48716,
+      "sha256": "300c2bc0b37637df1ea4437bada8f2a64ec67e45834f29df0f5faf06187eb194"
+    }
+  ],
+  "homeInitialJsDelta": {
+    "rawBytes": 10215,
+    "gzipBytesLevel9": 3196
+  },
+  "conclusion": "Rejected: the Home entry bundle is larger after the dynamic import. A browser speed run is not warranted for this variant."
+}
