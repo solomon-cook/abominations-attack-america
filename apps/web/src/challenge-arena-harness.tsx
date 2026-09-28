@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { useState } from "react";
 import { applyCommand, createGame, projectState, type GameCommand, type GameState } from "@abominations/game-engine";
 import { ChallengeArena } from "./components/ChallengeArena";
+import { ChallengeActions } from "./components/ChallengeActions";
 import "./styles.css";
 import "./encounter-command.css";
 
@@ -37,8 +38,10 @@ function createFixture() {
 
 function Harness() {
   const spectator = new URLSearchParams(window.location.search).get("role") === "spectator";
+  const enterThroughAction = new URLSearchParams(window.location.search).get("entry") === "cta";
   const [authoritativeGame, setAuthoritativeGame] = useState<GameState>(createFixture);
   const [submittedCommands, setSubmittedCommands] = useState<GameCommand[]>([]);
+  const [arenaOpen, setArenaOpen] = useState(!enterThroughAction);
   const viewerGame = spectator
     ? projectState(authoritativeGame, "spectator")
     : projectState(authoritativeGame, "player", 0);
@@ -60,13 +63,14 @@ function Harness() {
   return <main>
     <h1>Monster Challenge arena fixture</h1>
     <output id="challenge-arena-state" aria-label="Challenge arena fixture state">{JSON.stringify(snapshot)}</output>
-    <ChallengeArena
-      game={viewerGame}
-      canAct={!spectator && authoritativeGame.pendingDecision?.playerIndex === 0}
-      playerIndex={spectator ? undefined : 0}
-      runCommand={runCommand}
-      onClose={() => undefined}
-    />
+    {enterThroughAction && <ChallengeActions activeGame={viewerGame} onOpen={() => setArenaOpen(true)} />}
+    {arenaOpen && <ChallengeArena
+        game={viewerGame}
+        canAct={!spectator && authoritativeGame.pendingDecision?.playerIndex === 0}
+        playerIndex={spectator ? undefined : 0}
+        runCommand={runCommand}
+        onClose={() => setArenaOpen(false)}
+      />}
   </main>;
 }
 

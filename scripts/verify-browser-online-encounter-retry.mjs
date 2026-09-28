@@ -50,11 +50,20 @@ const readRoom = async (page, roomCode) => page.evaluate(async ({ service, code 
   const response = await fetch(`${service}/rooms/${code}/state?token=${encodeURIComponent(session.token ?? "")}`);
   return { status: response.status, body: await response.json() };
 }, { service: apiUrl, code: roomCode });
+const boundsOf = (locator) => locator.evaluate((node) => {
+  const rect = node.getBoundingClientRect();
+  return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height, viewportWidth: innerWidth, viewportHeight: innerHeight };
+});
+const mobileOverflow = (page) => page.evaluate(() => ({
+  document: document.documentElement.scrollWidth <= innerWidth,
+  body: document.body.scrollWidth <= innerWidth,
+}));
 let webServer;
 let apiServer;
 let browser;
 
 try {
+  await mkdir(join(cwd, "output", "ui-review"), { recursive: true });
   webServer = startServer({
     command: process.execPath,
     args: [join(cwd, "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(webPort), "--strictPort"],
@@ -74,8 +83,9 @@ try {
 
   browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
   const runtimeErrors = [];
-  const activePage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-  const secondPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const phoneViewport = { width: 390, height: 844 };
+  const activePage = await browser.newPage({ viewport: phoneViewport, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  const secondPage = await browser.newPage({ viewport: phoneViewport, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
   let injectedStaleRevision = null;
   for (const page of [activePage, secondPage]) {
     page.setDefaultTimeout(8000);
@@ -175,7 +185,9 @@ try {
     return room.state.monsters[0]?.location === "12,4";
   }, { service: apiUrl, code: roomCode });
   const endMovement = activePage.getByRole("button", { name: "End all movement →", exact: true });
-  if (!await endMovement.isVisible()) await activePage.locator("details.piece-context-tab > summary").click();
+  const activeRecordToggle = activePage.locator(".mobile-command-toggle");
+  if (await activeRecordToggle.count() && await activeRecordToggle.getAttribute("aria-expanded") !== "true") await activeRecordToggle.tap();
+  if (!await endMovement.isVisible()) await activePage.locator("details.piece-context-tab > summary").tap();
   await endMovement.waitFor({ state: "visible" });
   await endMovement.click();
   await activePage.waitForFunction(() => document.querySelector(".action-card h2")?.textContent?.trim() === "Fight");
@@ -227,10 +239,10 @@ try {
     if (body?.envelope?.command?.type === "resolve-encounter" && body.envelope.command.choice) choicePostResponses.push(response.status());
   });
 
-  await activePage.getByRole("button", { name: "Resolve encounter", exact: true }).click();
+  await activePage.getByRole("button", { name: "Resolve encounter", exact: true }).tap();
   const overlay = activePage.locator("dialog.resolution-stage[open]");
   await overlay.waitFor({ state: "visible" });
-  await overlay.getByRole("button", { name: /Reveal encounter/ }).click();
+  await overlay.getByRole("button", { name: /Reveal encounter/ }).tap();
   await activePage.waitForFunction(async ({ service, code }) => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
     const room = await (await fetch(`${service}/rooms/${code}/state?token=${encodeURIComponent(session.token ?? "")}`)).json();
@@ -239,8 +251,40 @@ try {
   const beforeChoice = await readRoom(activePage, roomCode);
   assert.equal(beforeChoice.body.state.pendingDecision?.source, "zorb-city", "the real engine records the Zorb city reward decision");
   assert.deepEqual(beforeChoice.body.state.pendingDecision?.choices, ["health", "infamy"], "the authoritative reward offers Health or Infamy");
+  await secondPage.waitForFunction(() => document.querySelector(".action-card h2")?.textContent?.trim() === "Encounter");
+  const secondPageChoicePosts = [];
+  secondPage.on("request", (request) => {
+    if (request.method() !== "POST" || new URL(request.url()).pathname !== `/rooms/${roomCode}/actions`) return;
+    secondPageChoicePosts.push(request.postDataJSON()?.envelope?.command);
+  });
+  const waitingState = await readRoom(secondPage, roomCode);
+  assert.equal(waitingState.body.state.pendingDecision?.type, "encounter-choice", "the opponent's live route receives the authoritative pending reward");
+  assert.equal(waitingState.body.state.pendingDecision?.playerIndex, 0, "Player 1 owns the pending choice while Player 2 is waiting");
+  if (await secondPage.locator(".onboarding").isVisible().catch(() => false)) {
+    await secondPage.getByRole("button", { name: /Got it.*hide guide/ }).tap();
+  }
+  const playerRecordToggle = secondPage.getByRole("button", { name: /Open .* player record/ });
+  if (await playerRecordToggle.count()) await playerRecordToggle.tap();
+  const phaseContext = secondPage.locator("#phase-command-context");
+  if (!(await phaseContext.getAttribute("open"))) await phaseContext.locator(":scope > summary").tap();
+  const waitingChoiceGroup = secondPage.getByRole("group", { name: "Choose Zorb city benefit" });
+  await waitingChoiceGroup.waitFor({ state: "visible" });
+  const waitingChoiceButtons = waitingChoiceGroup.getByRole("button");
+  const waitingChoiceCount = await waitingChoiceButtons.count();
+  assert.equal(waitingChoiceCount, 2, "the waiting player's expanded phase context shows both public reward choices");
+  const waitingChoicesDisabled = await waitingChoiceButtons.evaluateAll((buttons) => buttons.every((button) => button.disabled));
+  assert.ok(waitingChoicesDisabled,
+    "neither reward choice is enabled for the waiting opponent");
+  assert.deepEqual(secondPageChoicePosts, [], "the waiting player has submitted no reward command");
+  const waitingBounds = await boundsOf(waitingChoiceGroup);
+  assert.ok(waitingBounds.x >= -1 && waitingBounds.right <= phoneViewport.width + 1 && waitingBounds.y >= -1 && waitingBounds.bottom <= phoneViewport.height + 1,
+    `waiting-player reward choices fit the phone viewport: ${JSON.stringify(waitingBounds)}`);
+  assert.deepEqual(await mobileOverflow(secondPage), { document: true, body: true }, "the waiting-player phone route has no horizontal overflow");
+  const waitingScreenshot = join(cwd, "output/ui-review", `online-encounter-waiting-phone-${new Date().toISOString().slice(0, 10)}.png`);
+  await secondPage.screenshot({ path: waitingScreenshot, fullPage: true });
+
   const revealRemainingRolls = overlay.getByRole("button", { name: "Reveal remaining rolls" });
-  if (await revealRemainingRolls.count()) await revealRemainingRolls.click();
+  if (await revealRemainingRolls.count()) await revealRemainingRolls.tap();
   const rewardButton = overlay.getByRole("button", { name: /Take 2 Infamy/ });
   if (await rewardButton.count() !== 1) {
     const diagnostic = await activePage.evaluate(() => ({
@@ -252,6 +296,19 @@ try {
     throw new Error(`The full-route reward control did not render: ${JSON.stringify(diagnostic)}`);
   }
   await rewardButton.waitFor({ state: "visible" });
+  const encounterBounds = await boundsOf(overlay);
+  const rewardGroup = overlay.locator(".cinema-choice");
+  const rewardGroupBounds = await boundsOf(rewardGroup);
+  const rewardButtonBounds = await rewardButton.evaluate((node) => {
+    const rect = node.getBoundingClientRect();
+    return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height };
+  });
+  for (const [label, bounds] of [["Encounter dialog", encounterBounds], ["reward choice", rewardGroupBounds]]) {
+    assert.ok(bounds.x >= -1 && bounds.right <= phoneViewport.width + 1 && bounds.y >= -1 && bounds.bottom <= phoneViewport.height + 1,
+      `${label} fits the phone viewport: ${JSON.stringify(bounds)}`);
+  }
+  assert.ok(rewardButtonBounds.height >= 44, `reward touch target is at least 44px high: ${JSON.stringify(rewardButtonBounds)}`);
+  assert.deepEqual(await mobileOverflow(activePage), { document: true, body: true }, "the active phone route has no horizontal overflow while choosing a reward");
 
   const failedChoiceResponse = activePage.waitForResponse((response) => {
     const request = response.request();
@@ -261,7 +318,7 @@ try {
       return command?.type === "resolve-encounter" && command.choice === "infamy";
     } catch { return false; }
   });
-  await rewardButton.click();
+  await rewardButton.tap();
   const rejected = await failedChoiceResponse;
   assert.equal(rejected.status(), 400, "the actual memory API rejects the first reward POST for its injected stale revision");
   assert.ok(injectedStaleRevision !== null, "the verifier injected the stale revision into exactly one choice POST");
@@ -275,6 +332,9 @@ try {
   assert.equal(afterFailure.body.state.pendingDecision?.type, "encounter-choice", "the same reward decision remains authoritative after rejection");
   assert.equal(afterFailure.body.state.monsters[0].infamy, beforeChoice.body.state.monsters[0].infamy, "the failed reward POST grants no Infamy");
   assert.equal(afterFailure.body.state.eventLog.length, beforeChoice.body.state.eventLog.length, "the failed reward POST appends no game event");
+  assert.deepEqual(secondPageChoicePosts, [], "the opponent does not post a reward command after the rejected active-player action");
+  const activeScreenshot = join(cwd, "output/ui-review", `online-encounter-reward-error-phone-${new Date().toISOString().slice(0, 10)}.png`);
+  await activePage.screenshot({ path: activeScreenshot, fullPage: true });
 
   const retryResponse = activePage.waitForResponse((response) => {
     const request = response.request();
@@ -284,7 +344,7 @@ try {
       return command?.type === "resolve-encounter" && command.choice === "infamy";
     } catch { return false; }
   });
-  await rewardButton.click();
+  await rewardButton.tap();
   const accepted = await retryResponse;
   assert.equal(accepted.status(), 200, "retry reaches and is accepted by the actual memory API");
   await activePage.waitForFunction(async ({ service, code }) => {
@@ -303,17 +363,22 @@ try {
   assert.equal(completed.body.version, beforeChoice.body.version + 1, "only the successful retry advances the authoritative revision");
   assert.equal(choicePostResponses.length, 2, "exactly two reward choice POSTs reached the API response path");
   assert.deepEqual(choicePostResponses, [400, 200], "the API rejected the stale first POST and accepted the retry");
+  assert.deepEqual(secondPageChoicePosts, [], "the waiting opponent submits no reward commands throughout the choice and retry");
   assert.deepEqual(runtimeErrors, [], "the active full-route encounter flow has no browser runtime or console errors");
 
   const report = {
     ok: true,
     date: new Date().toISOString().slice(0, 10),
     roomCode,
-    environment: "full web route + local memory API + audited-board game state",
+    environment: "full web route + local memory API + audited-board game state; active and waiting players at 390x844 with touch",
     scenario: "Zorb at 13,4 moves to adjacent city/base 12,4 with an opponent Army unit; actual Fight resolution precedes the Zorb city reward decision",
     failure: "one choice POST sent to the real memory API with an injected stale expectedRevision; API returned 400 without changing authoritative state",
     focusRecovery: "same Infamy reward button remains enabled and receives focus after the API rejection",
     retry: "same UI reward button submitted through HTTP fallback to the actual memory API; API returned 200",
+    viewport: { width: phoneViewport.width, height: phoneViewport.height, isMobile: true, hasTouch: true },
+    mobileLayout: { encounterBounds, rewardChoiceBounds: rewardGroupBounds, rewardButtonBounds, activeNoHorizontalOverflow: true },
+    waitingOpponent: { playerIndex: 1, canAct: false, visibleChoiceCount: waitingChoiceCount, allChoicesDisabled: waitingChoicesDisabled, actionPostCount: secondPageChoicePosts.length, noHorizontalOverflow: true, screenshot: waitingScreenshot },
+    screenshots: { activeStaleRevision: activeScreenshot, waitingOpponent: waitingScreenshot },
     authoritativeResult: { phase: completed.body.state.phase, infamyBefore: beforeChoice.body.state.monsters[0].infamy, infamyAfter: completed.body.state.monsters[0].infamy, infamyDelta: 3, selectedCityReward: 2, adjacentArmyBaseReward: 1, eventDelta: 1, revisionDelta: 1 },
     choicePostResponses,
     limits: ["Board/source and rule parity remain separately gated; this verifies only the configured audited-board route behavior.", "Failure injection modifies one browser request's expectedRevision; it does not simulate an unavailable database or arbitrary server crash."],

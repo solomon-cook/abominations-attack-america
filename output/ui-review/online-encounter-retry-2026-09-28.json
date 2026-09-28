@@ -1,12 +1,62 @@
 {
   "ok": true,
   "date": "2026-09-28",
-  "roomCode": "F81E7C",
-  "environment": "full web route + local memory API + audited-board game state",
+  "roomCode": "46314F",
+  "environment": "full web route + local memory API + audited-board game state; active and waiting players at 390x844 with touch",
   "scenario": "Zorb at 13,4 moves to adjacent city/base 12,4 with an opponent Army unit; actual Fight resolution precedes the Zorb city reward decision",
   "failure": "one choice POST sent to the real memory API with an injected stale expectedRevision; API returned 400 without changing authoritative state",
   "focusRecovery": "same Infamy reward button remains enabled and receives focus after the API rejection",
   "retry": "same UI reward button submitted through HTTP fallback to the actual memory API; API returned 200",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "isMobile": true,
+    "hasTouch": true
+  },
+  "mobileLayout": {
+    "encounterBounds": {
+      "x": 8,
+      "y": 229.296875,
+      "right": 382,
+      "bottom": 614.703125,
+      "width": 374,
+      "height": 385.40625,
+      "viewportWidth": 390,
+      "viewportHeight": 844
+    },
+    "rewardChoiceBounds": {
+      "x": 21,
+      "y": 412.453125,
+      "right": 369,
+      "bottom": 528.703125,
+      "width": 348,
+      "height": 116.25,
+      "viewportWidth": 390,
+      "viewportHeight": 844
+    },
+    "rewardButtonBounds": {
+      "x": 191.6875,
+      "y": 484.703125,
+      "right": 332.234375,
+      "bottom": 528.703125,
+      "width": 140.546875,
+      "height": 44
+    },
+    "activeNoHorizontalOverflow": true
+  },
+  "waitingOpponent": {
+    "playerIndex": 1,
+    "canAct": false,
+    "visibleChoiceCount": 2,
+    "allChoicesDisabled": true,
+    "actionPostCount": 0,
+    "noHorizontalOverflow": true,
+    "screenshot": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/ui-review/online-encounter-waiting-phone-2026-09-28.png"
+  },
+  "screenshots": {
+    "activeStaleRevision": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/ui-review/online-encounter-reward-error-phone-2026-09-28.png",
+    "waitingOpponent": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/ui-review/online-encounter-waiting-phone-2026-09-28.png"
+  },
   "authoritativeResult": {
     "phase": "encounter",
     "infamyBefore": 0,

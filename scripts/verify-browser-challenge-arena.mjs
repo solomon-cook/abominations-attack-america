@@ -63,6 +63,48 @@ try {
 
   browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
 
+  const entryPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  entryPage.setDefaultTimeout(8000);
+  entryPage.on("pageerror", (error) => report.runtimeErrors.push(`challenge-entry: ${error.message}`));
+  await entryPage.emulateMedia({ reducedMotion: "reduce" });
+  await entryPage.goto(`${url}?entry=cta`, { waitUntil: "domcontentloaded" });
+  const entryButton = entryPage.getByRole("button", { name: "Enter Monster Challenge" });
+  await entryButton.waitFor({ state: "visible" });
+  assert.equal(await entryPage.locator("dialog.resolution-challenge[open]").count(), 0,
+    "the Challenge arena starts closed until the phase action is activated");
+  const entryBefore = await stateOf(entryPage);
+  assert.equal(entryBefore.role, "active-owner");
+  assert.equal(entryBefore.pendingDecision?.type, "challenge-opponent");
+  assert.deepEqual(entryBefore.submittedCommands, []);
+  await entryPage.keyboard.press("Tab");
+  assert.equal(await entryButton.evaluate((node) => document.activeElement === node), true,
+    "the Challenge phase action is reachable by keyboard");
+  await entryPage.keyboard.press("Enter");
+  const entryDialog = entryPage.locator("dialog.resolution-challenge[open]");
+  await entryDialog.waitFor({ state: "visible" });
+  await entryPage.waitForFunction(() => document.activeElement?.classList.contains("resolution-close"));
+  const entryAfter = await stateOf(entryPage);
+  assert.equal(entryAfter.pendingDecision?.type, "challenge-opponent");
+  assert.deepEqual(entryAfter.submittedCommands, [], "opening the Challenge arena does not submit a game command");
+  assert.deepEqual(entryAfter.latestEvent, entryBefore.latestEvent, "opening the Challenge arena does not add an engine event");
+  const entryBounds = await entryDialog.boundingBox();
+  assert.ok(inside(entryBounds, 390, 844), `the opened Challenge arena fits the phone viewport: ${JSON.stringify(entryBounds)}`);
+  const entryWidths = await entryPage.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
+  assert.ok(entryWidths.document <= entryWidths.viewport + 1 && entryWidths.body <= entryWidths.viewport + 1,
+    `the Challenge entry flow must not create phone page overflow: ${JSON.stringify(entryWidths)}`);
+  report.scenarios.phaseActionEntry = {
+    status: "passed",
+    role: "active-owner",
+    viewport: { width: 390, height: 844 },
+    keyboard: "Tab then Enter",
+    dialogBounds: entryBounds,
+    closeButtonFocused: true,
+    submittedCommands: entryAfter.submittedCommands.length,
+    latestEventUnchanged: true,
+    pageWidths: entryWidths,
+  };
+  await entryPage.close();
+
   const ownerPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   ownerPage.setDefaultTimeout(8000);
   ownerPage.on("pageerror", (error) => report.runtimeErrors.push(`active-owner: ${error.message}`));
@@ -207,7 +249,12 @@ try {
   spectatorPage.setDefaultTimeout(8000);
   spectatorPage.on("pageerror", (error) => report.runtimeErrors.push(`spectator: ${error.message}`));
   await spectatorPage.emulateMedia({ reducedMotion: "reduce" });
-  await spectatorPage.goto(`${url}?role=spectator`, { waitUntil: "domcontentloaded" });
+  await spectatorPage.goto(`${url}?role=spectator&entry=cta`, { waitUntil: "domcontentloaded" });
+  const spectatorEntryButton = spectatorPage.getByRole("button", { name: "Enter Monster Challenge" });
+  await spectatorEntryButton.waitFor({ state: "visible" });
+  assert.equal(await spectatorPage.locator("dialog.resolution-challenge[open]").count(), 0,
+    "the spectator can choose when to open the read-only Challenge arena");
+  await spectatorEntryButton.click();
   const spectatorDialog = spectatorPage.locator("dialog.resolution-challenge[open]");
   await spectatorDialog.waitFor({ state: "visible" });
   const spectatorBefore = await stateOf(spectatorPage);

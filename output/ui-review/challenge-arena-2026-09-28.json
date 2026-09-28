@@ -1,8 +1,31 @@
 {
-  "started": "2026-09-28T13:18:48.515Z",
+  "started": "2026-09-28T21:44:39.023Z",
   "fixture": "createGame(3, 2841) with an active challenge-opponent decision; owner action goes through applyCommand",
   "coveredSlice": "select one eligible monster opponent; complete duel resolution is outside this slice",
   "scenarios": {
+    "phaseActionEntry": {
+      "status": "passed",
+      "role": "active-owner",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "keyboard": "Tab then Enter",
+      "dialogBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "closeButtonFocused": true,
+      "submittedCommands": 0,
+      "latestEventUnchanged": true,
+      "pageWidths": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    },
     "activeOwner": {
       "status": "passed",
       "viewport": {
@@ -151,6 +174,6 @@
     }
   },
   "runtimeErrors": [],
-  "finished": "2026-09-28T13:18:52.561Z",
+  "finished": "2026-09-28T21:44:41.584Z",
   "status": "passed"
 }
