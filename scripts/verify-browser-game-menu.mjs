@@ -10,6 +10,19 @@ import { chromePath } from "./chrome-path.mjs";
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const rgbChannels = (value) => {
+  const match = value.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  assert.ok(match, `Expected a computed RGB color, received ${value}`);
+  return match.slice(1, 4).map(Number);
+};
+const relativeLuminance = (color) => rgbChannels(color)
+  .map((channel) => channel / 255)
+  .map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+  .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+const contrastRatio = (foreground, background) => {
+  const [lighter, darker] = [relativeLuminance(foreground), relativeLuminance(background)].sort((a, b) => b - a);
+  return (lighter + 0.05) / (darker + 0.05);
+};
 const reservePort = () => new Promise((resolve, reject) => {
   const probe = createNetServer();
   probe.once("error", reject);
@@ -269,6 +282,72 @@ try {
   await enterRoom(spectator, "Menu Audit Viewer", code, "Spectate");
   await completeOnlineSetup(first, second);
   await waitFor(spectator, () => !document.querySelector(".setup-panel"), "spectator setup projection completion");
+
+  const waitingPlayerBeforeOptions = await snapshot(second, code);
+  assert.equal(waitingPlayerBeforeOptions.phase, "move", "the role-specific Concede check begins in a playable phase");
+  assert.equal(waitingPlayerBeforeOptions.status, "waiting", "the role-specific Concede check runs while the room awaits Ready");
+  const secondViewport = { width: 390, height: 844 };
+  await second.setViewportSize(secondViewport);
+  const waitingTurnPanelToggle = second.locator(".turn-hud-heading button");
+  if (await waitingTurnPanelToggle.getAttribute("aria-expanded") !== "true") {
+    await waitingTurnPanelToggle.focus();
+    await second.keyboard.press("Enter");
+  }
+  await second.waitForFunction(() => {
+    const body = document.querySelector("#turn-hud-body");
+    return Boolean(body && !body.hidden);
+  });
+  const waitingActionStatus = (await second.locator("#action-dock-status").innerText()).trim();
+  assert.match(waitingActionStatus, /Waiting for all players to press Ready/,
+    "phone action dock explains that the room is still waiting for Ready");
+  const waitingMatchOptions = second.locator("#turn-hud-body .action-card > details.hud-section").filter({ hasText: "Concede match" });
+  const waitingMatchOptionsSummary = waitingMatchOptions.locator(":scope > summary");
+  await waitingMatchOptionsSummary.scrollIntoViewIfNeeded();
+  const waitingMatchOptionsBounds = await waitingMatchOptions.boundingBox();
+  assert.ok(waitingMatchOptionsBounds && waitingMatchOptionsBounds.x >= 0
+    && waitingMatchOptionsBounds.x + waitingMatchOptionsBounds.width <= secondViewport.width + 1
+    && waitingMatchOptionsBounds.y >= 0 && waitingMatchOptionsBounds.y + waitingMatchOptionsBounds.height <= secondViewport.height + 1,
+  `waiting-player Match options should fit the phone viewport: ${JSON.stringify(waitingMatchOptionsBounds)}`);
+  assert.equal(await waitingMatchOptions.evaluate((node) => node.open), false, "Match options starts collapsed for the waiting player");
+  await waitingMatchOptionsSummary.focus();
+  await second.keyboard.press("Enter");
+  await second.waitForFunction(() => document.querySelector("#turn-hud-body .action-card > details.hud-section")?.open === true);
+  assert.equal(await waitingMatchOptionsSummary.evaluate((node) => node === document.activeElement), true,
+    "keyboard opening Match options keeps focus on its summary");
+  const waitingConcedeButton = waitingMatchOptions.getByRole("button", { name: "Concede match", exact: true });
+  assert.equal(await waitingConcedeButton.isVisible(), true, "waiting player can inspect the Concede option");
+  assert.equal(await waitingConcedeButton.isDisabled(), true, "waiting player cannot submit Concede out of turn");
+  const waitingConcedeStyle = await waitingConcedeButton.evaluate((node) => {
+    const style = getComputedStyle(node);
+    return { foreground: style.color, background: style.backgroundColor, opacity: style.opacity };
+  });
+  const waitingConcedeContrast = contrastRatio(waitingConcedeStyle.foreground, waitingConcedeStyle.background);
+  assert.equal(waitingConcedeStyle.opacity, "1", "disabled Concede text is not faded into the panel background");
+  assert.ok(waitingConcedeContrast >= 4.5,
+    `disabled Concede text retains readable contrast: ${waitingConcedeContrast.toFixed(2)}:1`);
+  const waitingActionsBefore = requests.secondPlayer.filter((request) => request.path.endsWith("/actions")).length;
+  const waitingPlayerAfterOptions = await snapshot(second, code);
+  assert.deepEqual(waitingPlayerAfterOptions, waitingPlayerBeforeOptions,
+    "opening the waiting player's Match options leaves the authoritative room unchanged");
+  assert.equal(requests.secondPlayer.filter((request) => request.path.endsWith("/actions")).length, waitingActionsBefore,
+    "the disabled Concede control submits no game action");
+  await second.screenshot({ path: join(process.cwd(), "output/ui-review/game-menu-waiting-concede-2026-09-29.png") });
+  report.cases.waitingPlayerConcedeDisclosure = {
+    role: "online player waiting for all participants to press Ready",
+    viewport: "390x844",
+    phase: waitingPlayerBeforeOptions.phase,
+    actionStatus: waitingActionStatus,
+    disclosureStartsCollapsed: true,
+    keyboardOpensAndRetainsFocus: true,
+    concedeVisibleButDisabled: true,
+    disabledButtonStyle: waitingConcedeStyle,
+    disabledTextContrastRatio: Number(waitingConcedeContrast.toFixed(2)),
+    disclosureBounds: waitingMatchOptionsBounds,
+    roomSnapshotUnchanged: true,
+    gameActionsSubmitted: requests.secondPlayer.filter((request) => request.path.endsWith("/actions")).length - waitingActionsBefore,
+    screenshot: "game-menu-waiting-concede-2026-09-29.png",
+  };
+
   const playerMenu = first.locator(".hud-menu");
   const playerSummary = first.locator(".hud-menu > summary");
   const menuItems = first.locator(".hud-menu-items");
@@ -587,11 +666,11 @@ try {
     `phone Settings panel stays within the viewport: ${JSON.stringify(settingsBounds)}`);
   const evidenceDir = join(process.cwd(), "output/ui-review");
   await mkdir(evidenceDir, { recursive: true });
-  await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-confirm-disabled-phone-2026-09-28.png") });
+  await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-confirm-disabled-phone-2026-09-29.png") });
   await phoneSettingsButton.tap();
   assert.equal(await preferenceDisabledViewer.locator(".settings-panel").count(), 0, "touching Settings closes its panel before Leave");
   assert.equal(await phoneMenuItems.isVisible(), true, "the phone menu remains open and usable after closing Settings");
-  await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-open-phone-2026-09-28.png") });
+  await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-open-phone-2026-09-29.png") });
   const phoneLeave = phoneMenu.locator(".leave-room-action");
   const phoneLeaveBounds = await phoneLeave.boundingBox();
   assert.ok(phoneLeaveBounds && phoneLeaveBounds.height >= 44 && phoneLeaveBounds.x >= 0 && phoneLeaveBounds.x + phoneLeaveBounds.width <= 390,
@@ -613,7 +692,7 @@ try {
   assert.deepEqual(matchAfterPreferenceDisabledLeave.gameEventIds, matchBeforePreferenceDisabledLeave.gameEventIds, "phone spectator Leave does not change game event history");
   const disabledViewerSession = await preferenceDisabledViewer.evaluate(() => JSON.parse(localStorage.getItem("abominations-session") ?? "null"));
   assert.equal(disabledViewerSession, null, "completed phone Leave clears the room session");
-  await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-home-after-confirm-disabled-leave-phone-2026-09-28.png") });
+  await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-home-after-confirm-disabled-leave-phone-2026-09-29.png") });
   report.cases.onlineSpectatorLeavePreferenceDisabled = {
     role: "spectator",
     viewport: "390x844",
@@ -626,7 +705,7 @@ try {
     disconnectRequests: requests.preferenceDisabledViewer.filter((request) => request.path.endsWith("/disconnect")).length,
     returnedHomeAndClearedSession: true,
     activeMatchStatusPhaseAndEventHistoryUnchanged: true,
-    screenshots: ["game-menu-confirm-disabled-phone-2026-09-28.png", "game-menu-open-phone-2026-09-28.png", "game-menu-home-after-confirm-disabled-leave-phone-2026-09-28.png"],
+    screenshots: ["game-menu-confirm-disabled-phone-2026-09-29.png", "game-menu-open-phone-2026-09-29.png", "game-menu-home-after-confirm-disabled-leave-phone-2026-09-29.png"],
   };
 
   const playerLeaveSession = await playerLeaving.evaluate(() => JSON.parse(localStorage.getItem("abominations-session") ?? "null"));
@@ -708,7 +787,7 @@ try {
     && desktopSettingsBounds.x + desktopSettingsBounds.width <= 1280
     && desktopSettingsBounds.y + desktopSettingsBounds.height <= 800,
   `desktop Settings panel stays within the viewport: ${JSON.stringify(desktopSettingsBounds)}`);
-  await playerStaying.screenshot({ path: join(evidenceDir, "game-menu-confirm-disabled-desktop-2026-09-28.png") });
+  await playerStaying.screenshot({ path: join(evidenceDir, "game-menu-confirm-disabled-desktop-2026-09-29.png") });
   await keyboardSettingsButton.focus();
   await playerStaying.keyboard.press("Enter");
   await playerStaying.locator(".settings-panel").waitFor({ state: "detached" });
@@ -754,7 +833,7 @@ try {
     lastConnectedSeatLeavingMarksRoomAbandoned: activeMatchAfterDisabledPlayerLeave.status === "abandoned",
     gamePhaseAndEventHistoryUnchanged: true,
     departedSeatDisconnected: true,
-    screenshot: "game-menu-confirm-disabled-desktop-2026-09-28.png",
+    screenshot: "game-menu-confirm-disabled-desktop-2026-09-29.png",
   };
 
   assert.deepEqual(requests.local, [], "local menu slice produces no online request");
@@ -768,7 +847,7 @@ try {
   assert.deepEqual(requests.secondPlayer.filter((request) => request.path.endsWith("/actions")), [], "the uninspected waiting player receives no game command");
   assert.deepEqual(requests.spectator.filter((request) => request.path.endsWith("/actions")), [], "spectator menu inspection submits no game command");
   assert.deepEqual(await first.evaluate(() => [...document.querySelectorAll('[role="alert"]')].map((node) => node.textContent?.trim())), [], "menu matrix produces no visible game errors");
-  const evidencePath = join(process.cwd(), "output/ui-review/game-menu-matrix-2026-09-28.json");
+  const evidencePath = join(process.cwd(), "output/ui-review/game-menu-matrix-2026-09-29.json");
   report.ok = true;
   report.apiMode = "memory";
   report.browser = "Chromium via Playwright";

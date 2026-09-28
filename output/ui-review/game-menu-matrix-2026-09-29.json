@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-28T23:12:02.060Z",
+  "route": "production main app route served by Vite; API is an isolated local in-memory service",
+  "cases": {
+    "local": {
+      "visibility": {
+        "newLocalGame": true,
+        "ready": false,
+        "leaveRoom": false
+      },
+      "nestedAccountEscapeOrder": true,
+      "focusReturnedToAccountThenMenu": true,
+      "activeMatchPresentationPreserved": true,
+      "gamePhase": "Move",
+      "newLocalAction": {
+        "activationCount": 1,
+        "result": "returns to local setup",
+        "trackedOnlineRequests": 0
+      }
+    },
+    "solo": {
+      "visibility": {
+        "newSoloGame": true,
+        "ready": false,
+        "leaveRoom": false
+      },
+      "newSoloAction": {
+        "activationCount": 1,
+        "result": "returns to solo setup",
+        "trackedOnlineRequests": 0
+      }
+    },
+    "waitingPlayerConcedeDisclosure": {
+      "role": "online player waiting for all participants to press Ready",
+      "viewport": "390x844",
+      "phase": "move",
+      "actionStatus": "Waiting for all players to press Ready.",
+      "disclosureStartsCollapsed": true,
+      "keyboardOpensAndRetainsFocus": true,
+      "concedeVisibleButDisabled": true,
+      "disabledButtonStyle": {
+        "foreground": "rgb(244, 241, 234)",
+        "background": "rgb(91, 75, 64)",
+        "opacity": "1"
+      },
+      "disabledTextContrastRatio": 7.37,
+      "disclosureBounds": {
+        "x": 87,
+        "y": 533.015625,
+        "width": 280,
+        "height": 42
+      },
+      "roomSnapshotUnchanged": true,
+      "gameActionsSubmitted": 0,
+      "screenshot": "game-menu-waiting-concede-2026-09-29.png"
+    },
+    "onlineWaitingPlayer": {
+      "visibility": {
+        "newLocalGame": true,
+        "ready": true,
+        "leaveRoom": true,
+        "setupComplete": true
+      },
+      "accountEscapeOrder": true,
+      "accountMenuInspectionPreservedAuthoritativeState": true,
+      "ready": {
+        "httpRequestCount": 2,
+        "transitionedToNotReady": true,
+        "roomRemainedWaiting": true,
+        "gameEventsUnchangedAcrossToggles": true
+      },
+      "notReady": {
+        "transitionedToReady": true,
+        "httpRequestCount": 2,
+        "gameEventsUnchanged": true
+      },
+      "inspectionSnapshot": {
+        "status": "waiting",
+        "version": 8,
+        "phase": "move",
+        "setupPhase": "complete",
+        "gameEventCount": 0,
+        "gameEventIds": [],
+        "roomEventCount": 8
+      }
+    },
+    "onlineSpectator": {
+      "visibility": {
+        "newLocalGame": true,
+        "ready": false,
+        "leaveRoom": true
+      },
+      "leaveRoom": {
+        "httpRequestCount": 1,
+        "confirmationAccepted": true,
+        "returnedToHome": true,
+        "gamePhaseAndEventHistoryUnchanged": true,
+        "roomUpdatedWhileDisconnectDelayed": true,
+        "receivedNewReadinessSnapshot": true,
+        "observedRoomVersion": 8
+      }
+    },
+    "onlineSpectatorPendingPoll": {
+      "socketLossForced": true,
+      "productionPageCloseEventObserved": true,
+      "statePollHeldUntilAfterLeave": true,
+      "confirmedLeaveReturnedWithinFiveSeconds": true,
+      "lateStateResponseReceived": true,
+      "latePollResponseDidNotRestoreRoom": true,
+      "reconnectRequestsAfterLeave": 0,
+      "disconnectRequests": 2
+    },
+    "onlineSpectatorCommittedReconnect": {
+      "forcedSocketLoss": true,
+      "reconnectCommittedBeforeItsResponseWasReleased": true,
+      "confirmedLeaveReturnedWithinFiveSeconds": true,
+      "leaveCancelledTheRequestedReconnectLease": true,
+      "replacementSessionSurvivedDelayedReconnectResponse": true,
+      "authoritativeParticipantRemainsDisconnectedAfterLateResponse": true,
+      "replacementSocketAndLeaseRemainActiveAfterLateAcknowledgement": true,
+      "cancellationDisconnectRequests": 1
+    },
+    "onlineSpectatorLeavePreferenceDisabled": {
+      "role": "spectator",
+      "viewport": "390x844",
+      "touchEnabled": true,
+      "preferenceChangedThroughSettings": true,
+      "settingsPanelInBounds": true,
+      "menuBounds": {
+        "x": 12,
+        "right": 382,
+        "width": 370
+      },
+      "leaveTargetHeight": 44,
+      "browserConfirmationOpened": false,
+      "disconnectRequests": 1,
+      "returnedHomeAndClearedSession": true,
+      "activeMatchStatusPhaseAndEventHistoryUnchanged": true,
+      "screenshots": [
+        "game-menu-confirm-disabled-phone-2026-09-29.png",
+        "game-menu-open-phone-2026-09-29.png",
+        "game-menu-home-after-confirm-disabled-leave-phone-2026-09-29.png"
+      ]
+    },
+    "onlinePlayerLeave": {
+      "activeMatch": true,
+      "confirmationPreferenceEnabled": true,
+      "cancelStayedInRoomWithoutDisconnect": true,
+      "acceptReturnedHome": true,
+      "disconnectRequests": 1,
+      "matchStatusPhaseAndEventHistoryUnchanged": true,
+      "departedSeatDisconnected": true,
+      "opponentRemainedConnected": true
+    },
+    "onlinePlayerLeavePreferenceDisabled": {
+      "activeMatch": true,
+      "role": "player",
+      "viewport": "1280x800",
+      "input": "keyboard",
+      "preferenceChangedThroughSettings": true,
+      "settingsPanelInBounds": true,
+      "leaveTargetHeight": 44,
+      "browserConfirmationOpened": false,
+      "disconnectRequests": 1,
+      "returnedHome": true,
+      "lastConnectedSeatLeavingMarksRoomAbandoned": true,
+      "gamePhaseAndEventHistoryUnchanged": true,
+      "departedSeatDisconnected": true,
+      "screenshot": "game-menu-confirm-disabled-desktop-2026-09-29.png"
+    }
+  },
+  "limits": [
+    "This verifies the development browser route and a local memory API, not a deployed build or durable database.",
+    "Role coverage is one waiting player and one spectator in a public two-player room; no signed-in account state is exercised.",
+    "New local and New solo are checked from their corresponding local/solo modes; clicking those actions intentionally resets setup, so they are not selected while an online match is under inspection.",
+    "Menu click counts count DOM activations; ready and leave counts count the corresponding HTTP requests. The test does not instrument private React callback invocation directly."
+  ],
+  "ok": true,
+  "apiMode": "memory",
+  "browser": "Chromium via Playwright",
+  "requestCounts": {
+    "local": {
+      "ready": 0,
+      "disconnect": 0,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "solo": {
+      "ready": 0,
+      "disconnect": 0,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "firstPlayer": {
+      "ready": 3,
+      "disconnect": 1,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "secondPlayer": {
+      "ready": 1,
+      "disconnect": 1,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "spectator": {
+      "ready": 0,
+      "disconnect": 1,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "pollSpectator": {
+      "ready": 0,
+      "disconnect": 2,
+      "reconnect": 0,
+      "actions": 0
+    },
+    "reconnectSpectator": {
+      "ready": 0,
+      "disconnect": 2,
+      "reconnect": 1,
+      "actions": 0
+    },
+    "preferenceDisabledViewer": {
+      "ready": 0,
+      "disconnect": 1,
+      "reconnect": 0,
+      "actions": 0
+    }
+  }
+}
