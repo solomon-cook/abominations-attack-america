@@ -36,6 +36,7 @@ const configuredDevelopmentLimit = (name: string, fallback: number) => {
 };
 const RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_API_RATE_LIMIT", 120);
 const WEBSOCKET_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_WS_RATE_LIMIT", 30);
+const WEBSOCKET_UPGRADE_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_WS_UPGRADE_RATE_LIMIT", 30);
 const WEBSOCKET_COMMAND_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_WS_COMMAND_RATE_LIMIT", 120);
 const MAX_JSON_BODY_BYTES = 64 * 1024;
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -48,6 +49,7 @@ const isLeaderboardCategory = (value: string): value is LeaderboardCategory => v
   || value === "luck";
 const mutationRate = new Map<string, RateBucket>();
 const socketRate = new Map<string, RateBucket>();
+const socketUpgradeRate = new Map<string, RateBucket>();
 const socketCommandRate = new Map<string, RateBucket>();
 const metrics = new ApiMetrics();
 const errorReporter = new ErrorReporter(createErrorReporterSink({
@@ -528,6 +530,10 @@ const wsServer = new WebSocketServer({
   path: "/ws",
   maxPayload: MAX_JSON_BODY_BYTES,
   verifyClient: ({ req }, callback) => {
+    if (!withinRate(socketUpgradeRate, requestAddress(req), Date.now(), RATE_WINDOW_MS, WEBSOCKET_UPGRADE_RATE_LIMIT)) {
+      callback(false, 429, "Too many connection attempts.");
+      return;
+    }
     const origin = req.headers.origin;
     if (origin === undefined || origin === allowedOrigin) callback(true);
     else callback(false, 403, "Request origin is not allowed.");

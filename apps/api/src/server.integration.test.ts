@@ -911,6 +911,40 @@ test("WebSocket rejects a mismatched Origin before consuming its ticket and perm
   }
 });
 
+test("WebSocket upgrade attempts are rate limited before Origin rejection", async () => {
+  const port = 19350 + (process.pid % 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: {
+      ...process.env,
+      PORT: String(port),
+      ALLOW_DEVELOPMENT_FIXTURE: "true",
+      ALLOWED_ORIGIN: "https://play.example.test",
+      DEVELOPMENT_WS_UPGRADE_RATE_LIMIT: "30",
+    },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  try {
+    await waitForHealth(baseUrl);
+    const rejectionStatuses: number[] = [];
+    for (let attempt = 0; attempt < 31; attempt += 1) {
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers: { Origin: "https://attacker.example" } });
+      rejectionStatuses.push(await new Promise<number>((resolve, reject) => {
+        socket.once("unexpected-response", (_request, response) => {
+          response.resume();
+          resolve(response.statusCode ?? 0);
+        });
+        socket.once("error", reject);
+      }));
+    }
+    assert.deepEqual(rejectionStatuses.slice(0, 30), Array.from({ length: 30 }, () => 403));
+    assert.equal(rejectionStatuses[30], 429, "the 31st upgrade is rate limited even though earlier attempts failed Origin verification");
+  } finally {
+    await stop(child);
+  }
+});
+
 test("metrics expose redacted error counters without private room data", async () => {
   const port = 19800 + (process.pid % 1000);
   const baseUrl = `http://127.0.0.1:${port}`;
