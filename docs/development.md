@@ -72,6 +72,7 @@ Run the narrowest checks relevant to the change, then run the full CI gate befor
 | Pruned API runtime bundle with sequential PGlite HTTP probe (Node 24; isolated scratch install) | `npm run api:production-package:pglite:verify` |
 | Home entry flow and responsive disclosures (mocked API fixture) | `npm run browser:home:verify` |
 | Home account/profile browser flow (mocked API fixture) | `npm run browser:account:verify` |
+| Production PWA update prompt, worker activation, and offline fallback | `npm run pwa:browser:verify` |
 | Local game browser flow and desktop/tablet/phone matrix | `npm run browser:local:verify` and `npm run browser:local:matrix` |
 | Keyboard navigation/settings and accessible game controls | `npm run browser:keyboard:verify` |
 | Multi-session online room/API smoke (local in-memory API by default) | `npm run browser:online:verify` |

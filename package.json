@@ -52,6 +52,7 @@
     "browser:firefox:verify": "WEBDRIVER_COMMAND=geckodriver WEBDRIVER_BROWSER=firefox WEBDRIVER_PORT=4445 node scripts/verify-safari-browser.mjs",
     "browser:edge:verify": "BROWSER_BINARY=microsoft-edge node scripts/verify-browser-local.mjs",
     "pwa:verify": "node scripts/verify-pwa.mjs",
+    "pwa:browser:verify": "npm run build && node scripts/verify-browser-pwa-update.mjs",
     "browser:online:verify": "node scripts/verify-browser-online.mjs",
     "browser:online:fight:verify": "node scripts/verify-browser-online-fight.mjs",
     "browser:online:encounter-retry:verify": "node scripts/verify-browser-online-encounter-retry.mjs",

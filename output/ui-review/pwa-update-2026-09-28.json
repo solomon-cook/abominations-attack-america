@@ -1,0 +1,75 @@
+{
+  "started": "2026-09-28T22:00:46.087Z",
+  "environment": "production web build served over loopback with real browser service-worker lifecycle",
+  "coverage": "first install, waiting update prompt, keyboard focus retention, user-triggered activation/reload, offline fallback",
+  "scenarios": {
+    "bootstrap": {
+      "secureContext": true,
+      "serviceWorkerSupported": true,
+      "documentReadyState": "complete",
+      "loadEventFired": true,
+      "loadListenerAddedAfterLoad": false
+    },
+    "prompt": {
+      "status": "passed",
+      "focusBeforeUpdate": {
+        "tag": "BUTTON",
+        "label": "Start local game →"
+      },
+      "focusAfterPrompt": {
+        "tag": "BUTTON",
+        "label": "Start local game →"
+      },
+      "promptBounds": {
+        "x": 1010.75,
+        "y": 576.984375,
+        "width": 251.25,
+        "height": 125.015625
+      },
+      "waitingWorker": true
+    },
+    "activation": {
+      "status": "passed",
+      "documentReloaded": true,
+      "activeWorkerVersion": 2,
+      "promptCleared": true
+    },
+    "offlineFallback": {
+      "status": "passed",
+      "heading": "Connection paused",
+      "pageContainsReference": true
+    }
+  },
+  "runtimeErrors": [],
+  "status": "passed",
+  "finished": "2026-09-28T22:00:52.402Z",
+  "servedPaths": [
+    "GET /",
+    "GET /assets/index-DIg0QrXr.js",
+    "GET /assets/index-C05cZ5A5.css",
+    "GET /assets/monsters/megaclaw.webp",
+    "GET /pwa-icon.svg",
+    "GET /sw.js",
+    "GET /",
+    "GET /offline.html",
+    "GET /reference.html",
+    "GET /manifest.webmanifest",
+    "GET /pwa-icon.svg",
+    "GET /",
+    "GET /assets/index-DIg0QrXr.js",
+    "GET /assets/index-C05cZ5A5.css",
+    "GET /assets/monsters/megaclaw.webp",
+    "GET /__test/release-worker?version=2",
+    "GET /sw.js",
+    "GET /",
+    "GET /offline.html",
+    "GET /reference.html",
+    "GET /manifest.webmanifest",
+    "GET /pwa-icon.svg",
+    "GET /",
+    "GET /assets/index-DIg0QrXr.js",
+    "GET /assets/index-C05cZ5A5.css",
+    "GET /assets/monsters/megaclaw.webp",
+    "GET /favicon.ico"
+  ]
+}

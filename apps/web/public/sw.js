@@ -2,7 +2,7 @@ const CACHE_NAME = "abominations-shell-audited-v3";
 const SHELL = ["/", "/offline.html", "/reference.html", "/manifest.webmanifest", "/pwa-icon.svg"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)));
 });
 
 self.addEventListener("activate", (event) => {

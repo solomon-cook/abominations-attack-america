@@ -14,17 +14,21 @@ export function registerPwaServiceWorker(onUpdateAvailable: () => void): () => v
       if (worker.state === "installed") notifyIfWaiting();
     });
   };
-  navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
-  window.addEventListener("load", () => {
+  const onLoad = () => {
+    if (disposed) return;
     void navigator.serviceWorker.register("/sw.js", { scope: "/" }).then((nextRegistration) => {
       if (disposed) return;
       registration = nextRegistration;
       registration.addEventListener("updatefound", onUpdateFound);
       notifyIfWaiting();
     });
-  }, { once: true });
+  };
+  navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+  if (document.readyState === "complete") onLoad();
+  else window.addEventListener("load", onLoad, { once: true });
   return () => {
     disposed = true;
+    window.removeEventListener("load", onLoad);
     navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
     registration?.removeEventListener("updatefound", onUpdateFound);
   };
