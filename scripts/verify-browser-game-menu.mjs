@@ -51,7 +51,7 @@ let webServer;
 let apiServer;
 let browser;
 let contexts = [];
-const requests = { local: [], solo: [], firstPlayer: [], secondPlayer: [], spectator: [], pollSpectator: [], reconnectSpectator: [] };
+const requests = { local: [], solo: [], firstPlayer: [], secondPlayer: [], spectator: [], pollSpectator: [], reconnectSpectator: [], preferenceDisabledViewer: [] };
 const socketFrames = {};
 const report = {
   schemaVersion: 1,
@@ -72,8 +72,8 @@ const attachRequests = (page, key) => page.on("request", (request) => {
     requests[key].push({ method: request.method(), path: url.pathname });
   }
 });
-const openPage = async (key, viewport = { width: 1280, height: 800 }) => {
-  const context = await browser.newContext({ viewport, acceptDownloads: false });
+const openPage = async (key, viewport = { width: 1280, height: 800 }, { touch = false } = {}) => {
+  const context = await browser.newContext({ viewport, acceptDownloads: false, hasTouch: touch, isMobile: touch });
   contexts.push(context);
   await context.addInitScript(() => localStorage.setItem("abominations-onboarding-seen", "1"));
   const page = await context.newPage();
@@ -115,13 +115,13 @@ const beginRoom = async (page, name) => {
   const code = (await page.locator(".lobby strong").innerText()).trim();
   return code;
 };
-const enterRoom = async (page, name, code, action) => {
+const enterRoom = async (page, name, code, action, { expectSetup = true } = {}) => {
   await page.locator(".home-online > summary").click();
   await page.getByRole("textbox", { name: "Display name" }).fill(name);
   await page.getByRole("textbox", { name: "Room code" }).fill(code);
   await page.getByRole("button", { name: action, exact: true }).click();
   await page.locator(".game-screen.online-game").waitFor({ state: "visible" });
-  await page.locator(".setup-panel").waitFor({ state: "visible" });
+  if (expectSetup) await page.locator(".setup-panel").waitFor({ state: "visible" });
 };
 const completeOnlineSetup = async (first, second) => {
   for (let attempt = 0; attempt < 150; attempt += 1) {
@@ -563,6 +563,72 @@ try {
     await wait(100);
   }
   assert.equal(activeMatchSnapshot.status, "active", "both ready players activate the player-Leave audit match");
+
+  const preferenceDisabledViewer = await openPage("preferenceDisabledViewer", { width: 390, height: 844 }, { touch: true });
+  await enterRoom(preferenceDisabledViewer, "Preference Audit Viewer", playerLeaveCode, "Spectate", { expectSetup: false });
+  await waitFor(preferenceDisabledViewer, () => Boolean(document.querySelector(".hud-menu")), "phone spectator game menu");
+  const phoneMenu = preferenceDisabledViewer.locator(".hud-menu");
+  const phoneMenuSummary = phoneMenu.locator(":scope > summary");
+  await phoneMenuSummary.tap();
+  const phoneMenuItems = phoneMenu.locator(".hud-menu-items");
+  const phoneMenuBounds = await phoneMenuItems.boundingBox();
+  assert.ok(phoneMenuBounds && phoneMenuBounds.x >= 0 && phoneMenuBounds.x + phoneMenuBounds.width <= 390,
+    `phone game menu stays within horizontal viewport bounds: ${JSON.stringify(phoneMenuBounds)}`);
+  const phoneSettingsButton = phoneMenu.getByRole("button", { name: "Settings", exact: true });
+  await phoneSettingsButton.tap();
+  const confirmationPreference = preferenceDisabledViewer.getByRole("checkbox", { name: "Confirm leave, concede, or disappear" });
+  await confirmationPreference.waitFor({ state: "visible" });
+  assert.equal(await confirmationPreference.isChecked(), true, "the confirmation preference starts enabled for the new phone session");
+  await confirmationPreference.tap();
+  await preferenceDisabledViewer.waitForFunction(() => localStorage.getItem("abominations-confirm-irreversible") === "0");
+  assert.equal(await confirmationPreference.isChecked(), false, "touching the Settings checkbox disables irreversible-action confirmation");
+  const settingsBounds = await preferenceDisabledViewer.locator(".settings-panel").boundingBox();
+  assert.ok(settingsBounds && settingsBounds.x >= 0 && settingsBounds.y >= 0 && settingsBounds.x + settingsBounds.width <= 390 && settingsBounds.y + settingsBounds.height <= 844,
+    `phone Settings panel stays within the viewport: ${JSON.stringify(settingsBounds)}`);
+  const evidenceDir = join(process.cwd(), "output/ui-review");
+  await mkdir(evidenceDir, { recursive: true });
+  await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-confirm-disabled-phone-2026-09-28.png") });
+  await phoneSettingsButton.tap();
+  assert.equal(await preferenceDisabledViewer.locator(".settings-panel").count(), 0, "touching Settings closes its panel before Leave");
+  assert.equal(await phoneMenuItems.isVisible(), true, "the phone menu remains open and usable after closing Settings");
+  await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-open-phone-2026-09-28.png") });
+  const phoneLeave = phoneMenu.locator(".leave-room-action");
+  const phoneLeaveBounds = await phoneLeave.boundingBox();
+  assert.ok(phoneLeaveBounds && phoneLeaveBounds.height >= 44 && phoneLeaveBounds.x >= 0 && phoneLeaveBounds.x + phoneLeaveBounds.width <= 390,
+    `phone Leave target is at least 44px tall and horizontally in bounds: ${JSON.stringify(phoneLeaveBounds)}`);
+  const matchBeforePreferenceDisabledLeave = await snapshot(playerStaying, playerLeaveCode);
+  const phoneLeaveDialogs = [];
+  preferenceDisabledViewer.on("dialog", async (dialog) => {
+    phoneLeaveDialogs.push(dialog.message());
+    await dialog.dismiss();
+  });
+  await phoneLeave.tap();
+  await preferenceDisabledViewer.locator(".home-screen").waitFor({ state: "visible" });
+  assert.deepEqual(phoneLeaveDialogs, [], "disabled confirmation preference leaves without opening a browser prompt");
+  assert.equal(requests.preferenceDisabledViewer.filter((request) => request.path.endsWith("/disconnect")).length, 1,
+    "phone Leave sends exactly one disconnect request when confirmation is disabled");
+  const matchAfterPreferenceDisabledLeave = await snapshot(playerStaying, playerLeaveCode);
+  assert.equal(matchAfterPreferenceDisabledLeave.status, matchBeforePreferenceDisabledLeave.status, "phone spectator Leave does not change active match status");
+  assert.equal(matchAfterPreferenceDisabledLeave.phase, matchBeforePreferenceDisabledLeave.phase, "phone spectator Leave does not change game phase");
+  assert.deepEqual(matchAfterPreferenceDisabledLeave.gameEventIds, matchBeforePreferenceDisabledLeave.gameEventIds, "phone spectator Leave does not change game event history");
+  const disabledViewerSession = await preferenceDisabledViewer.evaluate(() => JSON.parse(localStorage.getItem("abominations-session") ?? "null"));
+  assert.equal(disabledViewerSession, null, "completed phone Leave clears the room session");
+  await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-home-after-confirm-disabled-leave-phone-2026-09-28.png") });
+  report.cases.onlineSpectatorLeavePreferenceDisabled = {
+    role: "spectator",
+    viewport: "390x844",
+    touchEnabled: true,
+    preferenceChangedThroughSettings: true,
+    settingsPanelInBounds: true,
+    menuBounds: { x: Math.round(phoneMenuBounds.x), right: Math.round(phoneMenuBounds.x + phoneMenuBounds.width), width: Math.round(phoneMenuBounds.width) },
+    leaveTargetHeight: Math.round(phoneLeaveBounds.height),
+    browserConfirmationOpened: phoneLeaveDialogs.length > 0,
+    disconnectRequests: requests.preferenceDisabledViewer.filter((request) => request.path.endsWith("/disconnect")).length,
+    returnedHomeAndClearedSession: true,
+    activeMatchStatusPhaseAndEventHistoryUnchanged: true,
+    screenshots: ["game-menu-confirm-disabled-phone-2026-09-28.png", "game-menu-open-phone-2026-09-28.png", "game-menu-home-after-confirm-disabled-leave-phone-2026-09-28.png"],
+  };
+
   const playerLeaveSession = await playerLeaving.evaluate(() => JSON.parse(localStorage.getItem("abominations-session") ?? "null"));
   assert.ok(playerLeaveSession?.token, "the leaving player token is retained for the authoritative disconnect check");
   assert.notEqual(await playerLeaving.evaluate(() => localStorage.getItem("abominations-confirm-irreversible")), "0",
@@ -622,12 +688,82 @@ try {
     opponentRemainedConnected: true,
   };
 
+  const keyboardMenu = playerStaying.locator(".hud-menu");
+  const keyboardMenuSummary = keyboardMenu.locator(":scope > summary");
+  if (!(await keyboardMenu.evaluate((node) => node.open))) {
+    await keyboardMenuSummary.focus();
+    await playerStaying.keyboard.press("Enter");
+  }
+  const keyboardSettingsButton = keyboardMenu.getByRole("button", { name: "Settings", exact: true });
+  await keyboardSettingsButton.focus();
+  await playerStaying.keyboard.press("Enter");
+  const keyboardConfirmationPreference = playerStaying.getByRole("checkbox", { name: "Confirm leave, concede, or disappear" });
+  assert.equal(await keyboardConfirmationPreference.isChecked(), true, "the active player's confirmation preference starts enabled");
+  await keyboardConfirmationPreference.focus();
+  await playerStaying.keyboard.press("Space");
+  await playerStaying.waitForFunction(() => localStorage.getItem("abominations-confirm-irreversible") === "0");
+  assert.equal(await keyboardConfirmationPreference.isChecked(), false, "keyboard disables the confirmation preference in Settings");
+  const desktopSettingsBounds = await playerStaying.locator(".settings-panel").boundingBox();
+  assert.ok(desktopSettingsBounds && desktopSettingsBounds.x >= 0 && desktopSettingsBounds.y >= 0
+    && desktopSettingsBounds.x + desktopSettingsBounds.width <= 1280
+    && desktopSettingsBounds.y + desktopSettingsBounds.height <= 800,
+  `desktop Settings panel stays within the viewport: ${JSON.stringify(desktopSettingsBounds)}`);
+  await playerStaying.screenshot({ path: join(evidenceDir, "game-menu-confirm-disabled-desktop-2026-09-28.png") });
+  await keyboardSettingsButton.focus();
+  await playerStaying.keyboard.press("Enter");
+  await playerStaying.locator(".settings-panel").waitFor({ state: "detached" });
+  const keyboardLeave = keyboardMenu.locator(".leave-room-action");
+  await keyboardLeave.focus();
+  const keyboardLeaveBounds = await keyboardLeave.boundingBox();
+  assert.ok(keyboardLeaveBounds && keyboardLeaveBounds.height > 0 && keyboardLeaveBounds.x >= 0
+    && keyboardLeaveBounds.x + keyboardLeaveBounds.width <= 1280,
+  `desktop Leave target is visible and in bounds: ${JSON.stringify(keyboardLeaveBounds)}`);
+  const secondSession = await playerStaying.evaluate(() => JSON.parse(localStorage.getItem("abominations-session") ?? "null"));
+  assert.ok(secondSession?.token, "active player session exists before keyboard Leave");
+  const activeMatchBeforeDisabledPlayerLeave = await snapshot(playerStaying, playerLeaveCode);
+  const keyboardLeaveDialogs = [];
+  playerStaying.on("dialog", async (dialog) => {
+    keyboardLeaveDialogs.push(dialog.message());
+    await dialog.dismiss();
+  });
+  await playerStaying.keyboard.press("Enter");
+  await playerStaying.locator(".home-screen").waitFor({ state: "visible" });
+  assert.deepEqual(keyboardLeaveDialogs, [], "disabled confirmation preference leaves without opening a browser prompt");
+  assert.equal(requests.secondPlayer.filter((request) => request.path.endsWith("/disconnect")).length, 1,
+    "active player keyboard Leave sends exactly one disconnect request when confirmation is disabled");
+  const activeMatchAfterDisabledPlayerLeaveResponse = await fetch(`${apiUrl}/rooms/${playerLeaveCode}/state?token=${encodeURIComponent(secondSession.token)}&afterVersion=0`);
+  assert.equal(activeMatchAfterDisabledPlayerLeaveResponse.ok, true, "departed active player's token remains readable for the match-state check");
+  const activeMatchAfterDisabledPlayerLeave = await activeMatchAfterDisabledPlayerLeaveResponse.json();
+  assert.equal(activeMatchAfterDisabledPlayerLeave.status, "abandoned", "the room becomes abandoned when its final connected player leaves");
+  assert.equal(activeMatchAfterDisabledPlayerLeave.state.phase, activeMatchBeforeDisabledPlayerLeave.phase, "disabled-confirm Leave preserves game phase");
+  assert.deepEqual(activeMatchAfterDisabledPlayerLeave.state.eventLog.map((event) => event.id), activeMatchBeforeDisabledPlayerLeave.gameEventIds,
+    "disabled-confirm Leave preserves game event history");
+  assert.equal(activeMatchAfterDisabledPlayerLeave.participants.find((participant) => participant.displayName === "Menu Audit Player Two")?.connected, false,
+    "keyboard Leave marks the active player's seat disconnected");
+  report.cases.onlinePlayerLeavePreferenceDisabled = {
+    activeMatch: true,
+    role: "player",
+    viewport: "1280x800",
+    input: "keyboard",
+    preferenceChangedThroughSettings: true,
+    settingsPanelInBounds: true,
+    leaveTargetHeight: Math.round(keyboardLeaveBounds.height),
+    browserConfirmationOpened: keyboardLeaveDialogs.length > 0,
+    disconnectRequests: requests.secondPlayer.filter((request) => request.path.endsWith("/disconnect")).length,
+    returnedHome: true,
+    lastConnectedSeatLeavingMarksRoomAbandoned: activeMatchAfterDisabledPlayerLeave.status === "abandoned",
+    gamePhaseAndEventHistoryUnchanged: true,
+    departedSeatDisconnected: true,
+    screenshot: "game-menu-confirm-disabled-desktop-2026-09-28.png",
+  };
+
   assert.deepEqual(requests.local, [], "local menu slice produces no online request");
   assert.deepEqual(requests.solo, [], "solo menu slice produces no online request");
   assert.equal(requests.firstPlayer.filter((request) => request.path.endsWith("/ready")).length, 3,
     "the third readiness request is the separate active-match Leave case");
   assert.equal(requests.spectator.filter((request) => request.path.endsWith("/disconnect")).length, 1);
   assert.equal(requests.firstPlayer.filter((request) => request.path.endsWith("/disconnect")).length, 1);
+  assert.equal(requests.secondPlayer.filter((request) => request.path.endsWith("/disconnect")).length, 1);
   assert.deepEqual(requests.firstPlayer.filter((request) => request.path.endsWith("/actions")), [], "menu inspection does not submit game commands");
   assert.deepEqual(requests.secondPlayer.filter((request) => request.path.endsWith("/actions")), [], "the uninspected waiting player receives no game command");
   assert.deepEqual(requests.spectator.filter((request) => request.path.endsWith("/actions")), [], "spectator menu inspection submits no game command");

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-28T20:24:22.430Z",
+  "generatedAt": "2026-09-28T22:15:44.587Z",
   "route": "production main app route served by Vite; API is an isolated local in-memory service",
   "cases": {
     "local": {
@@ -97,6 +97,28 @@
       "replacementSocketAndLeaseRemainActiveAfterLateAcknowledgement": true,
       "cancellationDisconnectRequests": 1
     },
+    "onlineSpectatorLeavePreferenceDisabled": {
+      "role": "spectator",
+      "viewport": "390x844",
+      "touchEnabled": true,
+      "preferenceChangedThroughSettings": true,
+      "settingsPanelInBounds": true,
+      "menuBounds": {
+        "x": 12,
+        "right": 382,
+        "width": 370
+      },
+      "leaveTargetHeight": 44,
+      "browserConfirmationOpened": false,
+      "disconnectRequests": 1,
+      "returnedHomeAndClearedSession": true,
+      "activeMatchStatusPhaseAndEventHistoryUnchanged": true,
+      "screenshots": [
+        "game-menu-confirm-disabled-phone-2026-09-28.png",
+        "game-menu-open-phone-2026-09-28.png",
+        "game-menu-home-after-confirm-disabled-leave-phone-2026-09-28.png"
+      ]
+    },
     "onlinePlayerLeave": {
       "activeMatch": true,
       "confirmationPreferenceEnabled": true,
@@ -106,6 +128,22 @@
       "matchStatusPhaseAndEventHistoryUnchanged": true,
       "departedSeatDisconnected": true,
       "opponentRemainedConnected": true
+    },
+    "onlinePlayerLeavePreferenceDisabled": {
+      "activeMatch": true,
+      "role": "player",
+      "viewport": "1280x800",
+      "input": "keyboard",
+      "preferenceChangedThroughSettings": true,
+      "settingsPanelInBounds": true,
+      "leaveTargetHeight": 36,
+      "browserConfirmationOpened": false,
+      "disconnectRequests": 1,
+      "returnedHome": true,
+      "lastConnectedSeatLeavingMarksRoomAbandoned": true,
+      "gamePhaseAndEventHistoryUnchanged": true,
+      "departedSeatDisconnected": true,
+      "screenshot": "game-menu-confirm-disabled-desktop-2026-09-28.png"
     }
   },
   "limits": [
@@ -138,7 +176,7 @@
     },
     "secondPlayer": {
       "ready": 1,
-      "disconnect": 0,
+      "disconnect": 1,
       "reconnect": 0,
       "actions": 0
     },
@@ -158,6 +196,12 @@
       "ready": 0,
       "disconnect": 2,
       "reconnect": 1,
+      "actions": 0
+    },
+    "preferenceDisabledViewer": {
+      "ready": 0,
+      "disconnect": 1,
+      "reconnect": 0,
       "actions": 0
     }
   }

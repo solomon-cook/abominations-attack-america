@@ -447,6 +447,8 @@
   .game-screen > header .hud-menu-items .how-to-play-action,
   .game-screen > header .hud-menu-items .new-game-action,
   .game-screen > header .hud-menu-items .leave-room-action { display:block; }
+  .game-screen > header .hud-menu-items { left:0; right:auto; max-width:calc(100vw - 20px); }
+  .game-screen > header .header-actions .hud-menu-items .ghost { min-height:44px; }
   .game-screen.setup-in-progress > .setup-panel:has(.monster-options) { max-height:min(65dvh,calc(100dvh - 185px)); overflow-y:auto; }
   .game-screen.setup-in-progress > .setup-panel:has(.monster-options) .monster-options { height:auto; min-height:0; max-height:none; overflow-x:auto; overflow-y:visible; align-items:stretch; }
   .game-screen.setup-in-progress > .setup-panel:has(.monster-options) .monster-choice,
