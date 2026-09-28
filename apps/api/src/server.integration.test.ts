@@ -406,7 +406,7 @@ test("ready endpoint rejects non-boolean input without mutating readiness", asyn
   }
 });
 
-test("HTTP actions reject command envelopes that fail the WebSocket runtime guard", async () => {
+test("HTTP and WebSocket actions reject malformed command payloads before mutation", async () => {
   const port = 19900 + (process.pid % 1000);
   const baseUrl = `http://127.0.0.1:${port}`;
   const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
@@ -414,6 +414,7 @@ test("HTTP actions reject command envelopes that fail the WebSocket runtime guar
     env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true" },
     stdio: ["ignore", "ignore", "pipe"],
   });
+  let socket: WebSocket | undefined;
   try {
     await waitForHealth(baseUrl);
     const createResponse = await fetch(`${baseUrl}/rooms`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ maxPlayers: 2 }) });
@@ -435,6 +436,23 @@ test("HTTP actions reject command envelopes that fail the WebSocket runtime guar
       { envelope: { ...envelope, command: [] } },
       { envelope: { ...envelope, command: {} } },
       { envelope: null, ...envelope },
+      ...[
+        { type: "made-up-command" },
+        { type: "use-monster-ability", ability: "gargantis-heal" },
+        { type: "move", path: "los-angeles,denver" },
+        { type: "resolve-fight", spendInfamy: "1" },
+        { type: "launch-submarine", battleId: "battle-1" },
+        { type: "retreat", destinations: [] },
+        { type: "use-research", cardId: "Berserk" },
+        { type: "deploy", destination: "not-a-hex" },
+      ].map((command) => ({ envelope: { ...envelope, command } })),
+      {
+        actionId: "malformed-flattened-command",
+        actorId: envelope.actorId,
+        expectedRevision: envelope.expectedRevision,
+        protocolVersion: 1,
+        command: { type: "use-monster-ability", ability: "gargantis-heal" },
+      },
     ];
     for (const payload of malformedBodies) {
       const response: Response = await fetch(`${baseUrl}/rooms/${created.room.code}/actions`, {
@@ -446,9 +464,36 @@ test("HTTP actions reject command envelopes that fail the WebSocket runtime guar
       assert.deepEqual(await response.json(), { error: "Command envelope is invalid." });
     }
 
-    const snapshot = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((response) => response.json()) as RoomPayload;
-    assert.equal(snapshot.version, created.room.version);
+    const wellShapedButIllegal = await fetch(`${baseUrl}/rooms/${created.room.code}/actions`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-room-token": created.token },
+      body: JSON.stringify({ envelope: { ...envelope, actionId: "well-shaped-illegal-command", command: { type: "pass-move" } } }),
+    });
+    assert.equal(wellShapedButIllegal.status, 400);
+    assert.notDeepEqual(await wellShapedButIllegal.json(), { error: "Command envelope is invalid." },
+      "well-shaped commands still reach game-state legality checks");
+
+    const snapshotBeforeSocket = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((response) => response.json()) as RoomPayload;
+    assert.equal(snapshotBeforeSocket.version, created.room.version);
+    assert.equal(snapshotBeforeSocket.events.length, created.room.events.length);
+
+    const ticket = await createWebSocketTicket(baseUrl, created.room.code, created.token);
+    socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&ticket=${encodeURIComponent(ticket.ticket)}`);
+    await waitForWebSocketOpen(socket);
+    await nextWebSocketMessage(socket);
+    const protocolResult = nextWebSocketCommandResult(socket);
+    socket.send(JSON.stringify({ type: "command.submit", envelope: { ...envelope, actionId: "malformed-websocket-command", command: { type: "use-monster-ability", ability: "gargantis-heal" } } }));
+    const rejected = await protocolResult;
+    assert.equal(rejected.type, "protocol.error");
+    assert.equal(rejected.error, "Unsupported WebSocket message.");
+
+    const snapshotAfterSocket = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((response) => response.json()) as RoomPayload;
+    assert.equal(snapshotAfterSocket.version, snapshotBeforeSocket.version);
+    assert.equal(snapshotAfterSocket.events.length, snapshotBeforeSocket.events.length);
+    const metrics = await fetch(`${baseUrl}/metrics`).then((response) => response.json()) as Record<string, unknown>;
+    assert.equal(metrics.serverErrors, 0);
   } finally {
+    socket?.terminate();
     await stop(child);
   }
 });

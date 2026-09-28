@@ -9,6 +9,7 @@ import { withinRate, type RateBucket } from "./rate-limit.js";
 import { ApiMetrics } from "./metrics.js";
 import { createErrorReporterSink, ErrorReporter } from "./error-reporting.js";
 import { additionalClientDomainErrors } from "./client-domain-errors.js";
+import { isGameCommandEnvelope } from "./command-validation.js";
 import { validateRuntimeConfig } from "./runtime-config.js";
 import { AccountService, accountSessionCookie, clearAccountSessionCookie, sessionFromCookie } from "./accounts.js";
 import type { LeaderboardCategory } from "@abominations/shared";
@@ -218,16 +219,6 @@ const isSetupAction = (value: unknown): value is SetupAction => {
       && typeof (placement as Record<string, unknown>).destination === "string");
   }
   return typeof choice.unitId === "string" && typeof choice.destination === "string";
-};
-const isGameCommandEnvelope = (value: unknown): value is GameCommandEnvelope => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const envelope = value as Record<string, unknown>;
-  if (typeof envelope.actionId !== "string" || envelope.actionId.length < 1 || envelope.actionId.length > 128) return false;
-  if (typeof envelope.actorId !== "string" || envelope.actorId.length < 1 || envelope.actorId.length > 128) return false;
-  if (!Number.isSafeInteger(envelope.expectedRevision) || Number(envelope.expectedRevision) < 0) return false;
-  if (!Number.isSafeInteger(envelope.protocolVersion)) return false;
-  if (!envelope.command || typeof envelope.command !== "object" || Array.isArray(envelope.command)) return false;
-  return typeof (envelope.command as Record<string, unknown>).type === "string";
 };
 const requestedConnectionIdFrom = (input: Record<string, unknown>) => {
   const requested = input.requestedConnectionId;
