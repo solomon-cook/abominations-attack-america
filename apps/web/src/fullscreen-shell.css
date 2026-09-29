@@ -383,3 +383,13 @@
   .game-screen .player-sheet-peeks .sheet-peek small,.game-screen .player-sheet-peeks .sheet-peek-invite { display:none; }
 }
 .game-screen #turn-hud-body .board-context-tray { position:static; display:block; width:100%; max-height:none; margin:8px 0; padding:10px; }
+.game-screen #turn-hud-body .board-context-tray .board-context-facts { display:flex; }
+.game-screen #turn-hud-body .board-context-tray .board-context-edges,
+.game-screen #turn-hud-body .board-context-tray .board-context-note { display:block; }
+@media(min-width:901px) {
+  /* Keep the expanded HUD disclosure clear of the fixed lower-right action dock. */
+  .game-screen > .layout.panel-open > .game-side-panel:has(#turn-hud-body) {
+    bottom:calc(var(--action-dock-bottom) + var(--action-dock-height) + 12px);
+    max-height:calc(100dvh - var(--action-dock-bottom) - var(--action-dock-height) - 24px);
+  }
+}

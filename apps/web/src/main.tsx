@@ -1905,7 +1905,7 @@ function App() {
               mutationDraws={encounterMutationDraws}
               nextPhase={typeof lastEncounterEvent?.detail.nextPhase === "string" ? lastEncounterEvent.detail.nextPhase : undefined}
             />
-          <LogPanel eventLog={eventLog} log={log} />
+          <LogPanel eventLog={eventLog} log={log} participants={room?.participants ?? []} />
           </details>
           </div>
         </aside>

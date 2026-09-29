@@ -26,14 +26,15 @@ function featureLabel(hex: BoardHex): string {
 export function BoardContextTray({ game, board, hex }: Props) {
   if (!hex) return null;
   const neighbours = board ? buildBoardIndex(board).neighbours[hex.key] ?? [] : [];
-  const edgeDetails = board
-    ? board.edges
-      .filter((edge) => edge.enabled && (edge.from === hex.key || edge.to === hex.key))
-      .map((edge) => {
-        const destination = edge.from === hex.key ? edge.to : edge.from;
-        return `${destination}: ${edge.barrier} barrier`;
-      })
-    : [];
+  const edgeDetailMap = new Map<string, string>();
+  for (const edge of board?.edges ?? []) {
+    if (!edge.enabled || (edge.from !== hex.key && edge.to !== hex.key)) continue;
+    const destination = edge.from === hex.key ? edge.to : edge.from;
+    const key = `${destination}:${edge.barrier}`;
+    const barrierLabel = edge.barrier === "none" ? "no barrier" : `${edge.barrier} barrier`;
+    edgeDetailMap.set(key, `${destination}: ${barrierLabel}`);
+  }
+  const edgeDetails = [...edgeDetailMap.values()];
   const occupants = [
     ...game.monsters.filter((monster) => monster.location === hex.key).map((monster) => monster.name),
     ...game.units.filter((unit) => unit.location === hex.key).map((unit) => `${unit.branch} unit`),

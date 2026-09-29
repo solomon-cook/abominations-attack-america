@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-09-28T23:37:14.683Z",
+  "route": "main app route served by Vite with local in-memory API",
+  "viewport": "1280x720",
+  "input": "keyboard",
+  "players": [
+    "First player",
+    "Second player"
+  ],
+  "totalAuthoritativeEventCount": 6,
+  "displayedEventCount": 5,
+  "displayedEvents": [
+    {
+      "eventId": "1:5",
+      "actor": "Second player",
+      "summary": "Second player · match.conceded · conceded"
+    },
+    {
+      "eventId": "1:4",
+      "actor": "First player",
+      "summary": "First player · research.drawn · drawn"
+    },
+    {
+      "eventId": "1:3",
+      "actor": "First player",
+      "summary": "First player · encounter.resolved · resolved"
+    },
+    {
+      "eventId": "1:2",
+      "actor": "First player",
+      "summary": "First player · encounter.choice-required · choice-required"
+    },
+    {
+      "eventId": "1:1",
+      "actor": "First player",
+      "summary": "First player · monster.stayed · stayed"
+    }
+  ],
+  "distinctEventActors": 2,
+  "summariesUsePublicNames": true,
+  "opaqueActorIdsHidden": true,
+  "eventDetailExpandedAndCollapsedBySpace": true,
+  "eventIdsAndDetailsUnchanged": true,
+  "screenshot": "online-log-panel-actors-expanded-2026-09-29.png"
+}

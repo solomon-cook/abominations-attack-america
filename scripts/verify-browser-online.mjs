@@ -189,6 +189,8 @@ let first;
 let second;
 let spectator;
 let disabledConcedeEvidence;
+let concessionBrowser;
+let logPanelAcceptance;
 let disappearFirst;
 let disappearSecond;
 let disabledConfirmDisappearEvidence;
@@ -658,6 +660,7 @@ try {
         screenshots: ["online-concede-confirm-disabled-settings-2026-09-28.png", "online-concede-confirm-disabled-terminal-2026-09-28.png"],
       };
       concessionActor = label;
+      concessionBrowser = browser;
       break;
     }
     if (!concessionActor) throw new Error("Neither online player exposed the visible Match options disclosure and concession control.");
@@ -669,6 +672,72 @@ try {
     const terminalSummary = await browser.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
     if (!terminalSummary) throw new Error(`${label} did not render the authoritative terminal summary.`);
   }
+  if (concessionBrowser) {
+    const logBefore = await concessionBrowser.evaluate(`(async () => {
+      const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+      const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+      const room = await response.json();
+      return { status: response.status, version: room.version,
+        participants: room.participants.filter((entry) => entry.role === "player").map((entry) => ({ id: entry.id, displayName: entry.displayName })),
+        events: room.state.eventLog.map((entry) => ({ id: entry.id, actorId: entry.actorId, action: entry.action, outcome: entry.outcome, detail: entry.detail })) };
+    })()`);
+    if (logBefore.status !== 200) throw new Error(`Turn history could not read the authoritative room before inspection: ${JSON.stringify(logBefore)}`);
+    const actorEvents = new Set(logBefore.events.map((event) => event.actorId).filter(Boolean));
+    if (!logBefore.participants.every((participant) => actorEvents.has(participant.id))) {
+      throw new Error(`Online history did not include events from both named players: ${JSON.stringify({ participants: logBefore.participants, events: logBefore.events.map(({ actorId, action }) => ({ actorId, action })) })}`);
+    }
+    const focusedHistoryDisclosure = await concessionBrowser.evaluate(`(() => { const summary = [...document.querySelectorAll("#turn-hud-body details.hud-section > summary")].find((candidate) => candidate.textContent.trim() === "Recent results & turn history"); summary?.focus(); return Boolean(summary && summary === document.activeElement); })()`);
+    if (!focusedHistoryDisclosure) throw new Error("The active player could not focus the Recent results & turn history disclosure.");
+    await concessionBrowser.pressKey("Space");
+    await concessionBrowser.waitFor(`(() => [...document.querySelectorAll("#turn-hud-body details.hud-section")].some((section) => section.querySelector("summary")?.textContent.trim() === "Recent results & turn history" && section.open))()`, "keyboard-opened Recent results & turn history");
+    const renderedHistory = await concessionBrowser.evaluate(`(() => [...document.querySelectorAll(".card.log > details")].map((row) => ({ summary: row.querySelector("summary")?.textContent?.trim() ?? "", content: row.textContent ?? "", open: row.open, detail: row.querySelector("pre")?.textContent ?? "" })) )()`);
+    const displayedEvents = logBefore.events.slice(-5).reverse();
+    if (renderedHistory.length !== displayedEvents.length) throw new Error(`Turn history does not render the expected five-event window: ${JSON.stringify({ expected: displayedEvents.length, rendered: renderedHistory.length })}`);
+    for (const [index, event] of displayedEvents.entries()) {
+      const actor = logBefore.participants.find((candidate) => candidate.id === event.actorId);
+      const actorLabel = event.actorId ? actor?.displayName?.trim() || "Player" : "";
+      const summary = renderedHistory[index]?.summary ?? "";
+      if ((actorLabel && !summary.startsWith(`${actorLabel} · `))
+        || (event.actorId && renderedHistory[index]?.content.includes(event.actorId))
+        || !summary.includes(`${event.action} · ${event.outcome}`)) {
+        throw new Error(`Turn history actor label/action did not match the public roster for event ${event.id}: ${JSON.stringify({ actorLabel, summary, event })}`);
+      }
+    }
+    const displayedPlayers = logBefore.participants.filter((participant) => renderedHistory.some((row) => row.summary.startsWith(`${participant.displayName} · `)));
+    if (displayedPlayers.length !== 2) throw new Error(`Turn history did not show both distinct player display names: ${JSON.stringify({ participants: logBefore.participants, renderedHistory })}`);
+    const firstEventDetails = concessionBrowser.evaluate(`(() => { const summary = document.querySelector(".card.log > details > summary"); summary?.focus(); return Boolean(summary && summary === document.activeElement); })()`);
+    if (!await firstEventDetails) throw new Error("The first turn-history event could not receive keyboard focus.");
+    await concessionBrowser.pressKey("Space");
+    await concessionBrowser.waitFor(`document.querySelector(".card.log > details")?.open === true`, "keyboard-expanded event detail");
+    const expandedHistory = await concessionBrowser.evaluate(`(() => { const row = document.querySelector(".card.log > details"); return { activeSummary: row?.querySelector("summary") === document.activeElement, detail: row?.querySelector("pre")?.textContent ?? "" }; })()`);
+    if (!expandedHistory.activeSummary || expandedHistory.detail !== JSON.stringify(displayedEvents[0].detail, null, 2)) {
+      throw new Error(`Keyboard expansion did not expose the unchanged event detail: ${JSON.stringify({ expandedHistory, event: displayedEvents[0] })}`);
+    }
+    const outputDir = join(process.cwd(), "output/ui-review");
+    await mkdir(outputDir, { recursive: true });
+    await writeFile(join(outputDir, "online-log-panel-actors-expanded-2026-09-29.png"), await concessionBrowser.screenshot());
+    await concessionBrowser.pressKey("Space");
+    await concessionBrowser.waitFor(`document.querySelector(".card.log > details")?.open === false`, "keyboard-collapsed event detail");
+    const logAfter = await concessionBrowser.evaluate(`(async () => {
+      const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+      const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+      const room = await response.json();
+      return { status: response.status, version: room.version, events: room.state.eventLog.map((entry) => ({ id: entry.id, actorId: entry.actorId, action: entry.action, outcome: entry.outcome, detail: entry.detail })) };
+    })()`);
+    if (logAfter.status !== 200 || logAfter.version !== logBefore.version || JSON.stringify(logAfter.events) !== JSON.stringify(logBefore.events)) {
+      throw new Error(`Reading and expanding turn history changed the authoritative revision or event details: ${JSON.stringify({ logBefore, logAfter })}`);
+    }
+    logPanelAcceptance = { viewport: "1280x720", input: "keyboard", players: logBefore.participants.map(({ displayName }) => displayName), totalAuthoritativeEventCount: logBefore.events.length, displayedEventCount: displayedEvents.length, displayedEvents: displayedEvents.map((event, index) => ({ eventId: event.id, actor: event.actorId ? logBefore.participants.find((participant) => participant.id === event.actorId)?.displayName?.trim() || "Player" : undefined, summary: renderedHistory[index]?.summary })), distinctEventActors: displayedPlayers.length, summariesUsePublicNames: true, opaqueActorIdsHidden: true, eventDetailExpandedAndCollapsedBySpace: true, eventIdsAndDetailsUnchanged: true, screenshot: "online-log-panel-actors-expanded-2026-09-29.png" };
+  } else {
+    logPanelAcceptance = { skipped: "the shared online room ended before a second named player authored an event" };
+  }
+  const logOutputDir = join(process.cwd(), "output/ui-review");
+  await mkdir(logOutputDir, { recursive: true });
+  await writeFile(join(logOutputDir, "online-log-panel-actors-2026-09-29.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), route: "main app route served by Vite with local in-memory API", ...logPanelAcceptance }, null, 2)}\n`);
+  if (process.env.BROWSER_ONLINE_LOG_PANEL_ONLY === "1") {
+    console.log(JSON.stringify({ ok: true, logPanelAcceptance }));
+  } else {
+
   await second.evaluate("location.reload()");
   await second.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "reloaded second terminal");
   const reloadedTerminal = await second.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
@@ -849,7 +918,8 @@ try {
   await mkdir(outputDir, { recursive: true });
   if (disabledConcedeEvidence) await writeFile(join(outputDir, "online-concede-confirm-disabled-2026-09-28.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), route: "main app route served by Vite with local in-memory API", ...disabledConcedeEvidence }, null, 2)}\n`);
   if (disabledConfirmDisappearEvidence) await writeFile(join(outputDir, "online-disappear-confirm-disabled-2026-09-28.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), route: "main app route served by Vite with local in-memory API", ...disabledConfirmDisappearEvidence }, null, 2)}\n`);
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineResearchDraw, onlineConcession: concessionActor ? "verified" : "skipped-after-victory", disabledConfirmConcession: disabledConcedeEvidence, disabledConfirmDisappear: disabledConfirmDisappearEvidence, terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineResearchDraw, onlineConcession: concessionActor ? "verified" : "skipped-after-victory", disabledConfirmConcession: disabledConcedeEvidence, disabledConfirmDisappear: disabledConfirmDisappearEvidence, logPanelAcceptance, terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
+  }
 } finally {
   await Promise.all([first?.close(), second?.close(), spectator?.close(), disappearFirst?.close(), disappearSecond?.close()]);
   await Promise.all([stopServer(apiServer), stopServer(webServer)]);

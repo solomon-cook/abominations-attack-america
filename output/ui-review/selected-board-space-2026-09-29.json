@@ -1,0 +1,134 @@
+{
+  "run": "selected board space disclosure on the production local-game route",
+  "date": "2026-09-29",
+  "route": "Start local game → two monsters/branches/lairs → both Starting Choices → Move",
+  "states": {
+    "unselectedDesktop": {
+      "activeHex": "5,5",
+      "activeName": null,
+      "title": "Cell 7/5",
+      "facts": "landlair · zorbZorb6 neighbours",
+      "focusIsOnBoardCell": false
+    },
+    "selectedFeatureEdgeDesktop": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "title": "Los Angeles",
+      "facts": "Coastcity · 3d6 Health, los-angelesEmpty6 neighbours",
+      "factsDisplay": "flex",
+      "edges": "Edges: 1,7: sea barrier · 1,8: sea barrier · 2,6: no barrier · 3,6: sea barrier · 3,7: sea barrier · 2,8: sea barrier",
+      "edgesDisplay": "block",
+      "noteDisplay": "block",
+      "tray": {
+        "x": 931,
+        "y": 379.390625,
+        "width": 320,
+        "height": 182.6875,
+        "right": 1251,
+        "bottom": 562.078125
+      },
+      "panel": {
+        "x": 916,
+        "y": 12,
+        "width": 350,
+        "height": 550,
+        "right": 1266,
+        "bottom": 562
+      },
+      "actionDock": {
+        "x": 824,
+        "y": 620,
+        "width": 440,
+        "height": 84,
+        "right": 1264,
+        "bottom": 704
+      },
+      "panelOverlapsActionDock": false,
+      "trayOverlapsActionDock": false,
+      "panelLayout": {
+        "maxHeight": "550px",
+        "overflowY": "auto",
+        "scrollTop": 147,
+        "scrollHeight": 810,
+        "clientHeight": 548,
+        "pageScrollY": 0
+      },
+      "contentVisible": {
+        "facts": true,
+        "edges": true,
+        "note": true
+      },
+      "contentWithinViewport": {
+        "tray": true,
+        "facts": true,
+        "edges": true,
+        "note": true
+      },
+      "horizontalOverflow": false
+    },
+    "selectedFeatureEdgePhone": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "title": "Los Angeles",
+      "facts": "Coastcity · 3d6 Health, los-angelesEmpty6 neighbours",
+      "factsDisplay": "flex",
+      "edges": "Edges: 1,7: sea barrier · 1,8: sea barrier · 2,6: no barrier · 3,6: sea barrier · 3,7: sea barrier · 2,8: sea barrier",
+      "edgesDisplay": "block",
+      "noteDisplay": "block",
+      "tray": {
+        "x": 87,
+        "y": 534.78125,
+        "width": 280,
+        "height": 193.359375,
+        "right": 367,
+        "bottom": 728.140625
+      },
+      "panel": {
+        "x": 72,
+        "y": 249,
+        "width": 310,
+        "height": 479,
+        "right": 382,
+        "bottom": 728
+      },
+      "panelLayout": {
+        "maxHeight": "479px",
+        "overflowY": "auto",
+        "scrollTop": 307,
+        "scrollHeight": 899,
+        "clientHeight": 477,
+        "pageScrollY": 0
+      },
+      "contentVisible": {
+        "facts": true,
+        "edges": true,
+        "note": true
+      },
+      "contentWithinViewport": {
+        "tray": true,
+        "facts": true,
+        "edges": true,
+        "note": true
+      },
+      "horizontalOverflow": false,
+      "touchEnabled": true
+    },
+    "stackedOccupantDesktop": {
+      "hex": "1,5",
+      "unitCount": 2,
+      "facts": "Coast\ncity · 2d6 Health\nNavy unit, National Guard unit\n6 neighbours",
+      "disclosure": {
+        "title": "San Francisco",
+        "facts": "Coastcity · 2d6 HealthNavy unit, National Guard unit6 neighbours",
+        "visible": true,
+        "withinViewport": true
+      }
+    }
+  },
+  "failures": [],
+  "ok": true
+}
