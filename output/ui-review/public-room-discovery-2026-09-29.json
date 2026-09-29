@@ -1,0 +1,103 @@
+{
+  "generatedAt": "2026-09-29T16:23:35.480Z",
+  "route": "Home production UI against local memory API; public-room discovery responses intercepted by browser fixture",
+  "coverage": "390x844 and 320x740 delayed load, duplicate-click suppression, empty response, nonempty retry, 503 failure, successful recovery, and bounds",
+  "viewportEvidence": [
+    {
+      "viewport": "390x844",
+      "requestCount": 4,
+      "pendingAnnounced": true,
+      "duplicateRefreshPrevented": true,
+      "emptyStateAnnounced": true,
+      "nonemptyStateAnnounced": true,
+      "candidateSelectionFillsRoomCode": true,
+      "failureAnnouncedAndRetryable": true,
+      "retryRecoversAndClearsError": true,
+      "layout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "bounds": [
+          {
+            "className": "home-online",
+            "x": 24,
+            "right": 366,
+            "width": 342,
+            "height": 477
+          },
+          {
+            "className": "lobby",
+            "x": 24,
+            "right": 366,
+            "width": 342,
+            "height": 380
+          },
+          {
+            "className": "lobby-discovery-status",
+            "x": 41,
+            "right": 349,
+            "width": 308,
+            "height": 16
+          },
+          {
+            "className": "public-room",
+            "x": 41,
+            "right": 349,
+            "width": 308,
+            "height": 36
+          }
+        ]
+      },
+      "screenshot": "public-room-discovery-390-844-2026-09-29.png"
+    },
+    {
+      "viewport": "320x740",
+      "requestCount": 4,
+      "pendingAnnounced": true,
+      "duplicateRefreshPrevented": true,
+      "emptyStateAnnounced": true,
+      "nonemptyStateAnnounced": true,
+      "candidateSelectionFillsRoomCode": true,
+      "failureAnnouncedAndRetryable": true,
+      "retryRecoversAndClearsError": true,
+      "layout": {
+        "viewportWidth": 320,
+        "documentWidth": 320,
+        "bodyWidth": 320,
+        "bounds": [
+          {
+            "className": "home-online",
+            "x": 24,
+            "right": 296,
+            "width": 272,
+            "height": 710
+          },
+          {
+            "className": "lobby",
+            "x": 24,
+            "right": 296,
+            "width": 272,
+            "height": 598
+          },
+          {
+            "className": "lobby-discovery-status",
+            "x": 41,
+            "right": 279,
+            "width": 238,
+            "height": 16
+          },
+          {
+            "className": "public-room",
+            "x": 41,
+            "right": 279,
+            "width": 238,
+            "height": 48
+          }
+        ]
+      },
+      "screenshot": "public-room-discovery-320-740-2026-09-29.png"
+    }
+  ],
+  "runtimeErrors": [],
+  "serviceEvidenceLimit": "The API route is a browser fixture for UI states; this does not prove production service availability or persistence behavior."
+}

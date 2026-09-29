@@ -208,6 +208,10 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
     return new URLSearchParams(window.location.search).get("room")?.trim().toUpperCase().slice(0, 6) ?? "";
   });
   const [publicRooms, setPublicRooms] = useState<import("@abominations/shared").PublicRoomSummary[]>([]);
+  const [publicRoomsStatus, setPublicRoomsStatus] = useState<"idle" | "loading" | "loaded" | "error">("idle");
+  const [publicRoomsError, setPublicRoomsError] = useState("");
+  const publicRoomsRequestIdRef = useRef(0);
+  const publicRoomsInFlightRef = useRef(false);
   const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(2);
   const [roomPrivacy, setRoomPrivacy] = useState<"private" | "public">("private");
   const [localSetup, setLocalSetup] = useState<SetupState>(() =>
@@ -959,8 +963,15 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
     setRoomCode(next.room.code);
     localStorage.setItem("abominations-session", JSON.stringify({ token: next.token, participantId: next.participantId, accountLinked, room: { code: next.room.code } }));
   };
+  const invalidatePublicRoomsRequest = () => {
+    publicRoomsRequestIdRef.current += 1;
+    publicRoomsInFlightRef.current = false;
+    setPublicRoomsStatus((status) => status === "loading" ? "idle" : status);
+    setPublicRoomsError("");
+  };
   const startSession = async (kind: "create" | "join" | "spectate") => {
     if (roomStartPendingRef.current) return;
+    invalidatePublicRoomsRequest();
     roomStartPendingRef.current = true;
     const requestId = ++roomStartRequestIdRef.current;
     const destinationVersion = homeDestinationVersionRef.current;
@@ -992,11 +1003,24 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
     }
   };
   const refreshPublicRooms = async () => {
+    if (publicRoomsInFlightRef.current) return;
+    publicRoomsInFlightRef.current = true;
+    const requestId = ++publicRoomsRequestIdRef.current;
+    setPublicRoomsStatus("loading");
+    setPublicRooms([]);
+    setPublicRoomsError("");
     setError("");
     try {
-      setPublicRooms(await listPublicRooms());
+      const nextRooms = await listPublicRooms();
+      if (requestId !== publicRoomsRequestIdRef.current) return;
+      setPublicRooms(nextRooms);
+      setPublicRoomsStatus("loaded");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load public rooms");
+      if (requestId !== publicRoomsRequestIdRef.current) return;
+      setPublicRoomsError(caught instanceof Error ? caught.message : "Could not load public rooms");
+      setPublicRoomsStatus("error");
+    } finally {
+      if (requestId === publicRoomsRequestIdRef.current) publicRoomsInFlightRef.current = false;
     }
   };
   const startRematch = async () => {
@@ -1226,6 +1250,7 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
   };
   const resetLocal = () => {
     if (roomStartPendingRef.current) return;
+    invalidatePublicRoomsRequest();
     homeDestinationVersionRef.current += 1;
     setSoloMode(false);
     setBotThinking(false);
@@ -1244,6 +1269,7 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
   };
   const startSolo = () => {
     if (roomStartPendingRef.current) return;
+    invalidatePublicRoomsRequest();
     homeDestinationVersionRef.current += 1;
     setSoloMode(true);
     setBotThinking(false);
@@ -1263,6 +1289,7 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
   };
   const startTemporaryVictoryScenario = () => {
     if (roomStartPendingRef.current) return;
+    invalidatePublicRoomsRequest();
     homeDestinationVersionRef.current += 1;
     setLocalPlaytestStarted(true);
     setOnboardingOpen(shouldShowFirstMatchGuide());
@@ -1458,6 +1485,8 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
         roomPrivacy={roomPrivacy}
         roomCode={roomCode}
         publicRooms={publicRooms}
+        publicRoomsStatus={publicRoomsStatus}
+        publicRoomsError={publicRoomsError}
         setupComplete={false}
         error={error}
         roomStartPending={roomStartPending}
@@ -1477,6 +1506,7 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
         onStartProvisionalPlaytest={startProvisionalPlaytest}
         onOpenBoardReview={() => {
           if (roomStartPendingRef.current) return;
+          invalidatePublicRoomsRequest();
           homeDestinationVersionRef.current += 1;
           setBoardReviewOpen(true);
         }}
@@ -1560,6 +1590,8 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
         roomPrivacy={roomPrivacy}
         roomCode={roomCode}
         publicRooms={publicRooms}
+        publicRoomsStatus={publicRoomsStatus}
+        publicRoomsError={publicRoomsError}
         setupComplete={setupComplete}
         error={error}
         onDisplayNameChange={setDisplayName}

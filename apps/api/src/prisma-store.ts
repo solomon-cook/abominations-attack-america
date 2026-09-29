@@ -740,7 +740,7 @@ export class PrismaRoomStore implements RoomStore {
       const command = chooseBotCommand(liveState, botIndices);
       if (!command) return;
       const probe = { command, actorId: "bot-probe", actionId: "bot-probe", expectedRevision: refreshed.version, protocolVersion: 1 as const };
-      const actor = participants.find((participant: any) => participant.playerIndex === this.requiredPlayer(liveState, probe));
+      const actor = participants.find((participant) => participant.playerIndex === this.requiredPlayer(liveState, probe));
       if (!actor?.botControlled) return;
       const envelope: GameCommandEnvelope = { actionId: randomBytes(16).toString("hex"), actorId: actor.id, expectedRevision: refreshed.version, protocolVersion: 1, command };
       try {

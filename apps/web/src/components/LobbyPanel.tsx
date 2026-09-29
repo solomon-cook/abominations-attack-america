@@ -12,6 +12,8 @@ export type LobbyPanelProps = {
   roomPrivacy: "private" | "public";
   roomCode: string;
   publicRooms: PublicRoomSummary[];
+  publicRoomsStatus: "idle" | "loading" | "loaded" | "error";
+  publicRoomsError: string;
   setupComplete: boolean;
   error: string;
   onDisplayNameChange: (value: string) => void;
@@ -35,6 +37,8 @@ export function LobbyPanel({
   roomPrivacy,
   roomCode,
   publicRooms,
+  publicRoomsStatus,
+  publicRoomsError,
   setupComplete,
   error,
   onDisplayNameChange,
@@ -95,19 +99,36 @@ export function LobbyPanel({
           <button type="button" disabled={Boolean(pendingSessionAction)} onClick={() => void startSession("create")}>Create</button>
           <button type="button" disabled={Boolean(pendingSessionAction)} onClick={() => void startSession("join")}>Join</button>
           <button type="button" className="subtle" disabled={Boolean(pendingSessionAction)} onClick={() => void startSession("spectate")}>Spectate</button>
-          <button type="button" className="subtle" disabled={Boolean(pendingSessionAction)} onClick={onRefreshPublicRooms}>Find public rooms</button>
+          <button
+            type="button"
+            className="subtle"
+            disabled={Boolean(pendingSessionAction) || publicRoomsStatus === "loading"}
+            aria-busy={publicRoomsStatus === "loading"}
+            aria-controls="public-room-results"
+            onClick={onRefreshPublicRooms}
+          >
+            {publicRoomsStatus === "loading" ? "Finding rooms…" : publicRoomsStatus === "error" ? "Retry public rooms" : "Find public rooms"}
+          </button>
         </div>
       )}
       {pendingMessage && <p className="lobby-pending" role="status">{pendingMessage}</p>}
-      {!online && publicRooms.length > 0 && (
-        <div className="public-room-list" aria-label="Public rooms">
-          <span className="label">OPEN ROOMS</span>
-          {publicRooms.map((candidate) => (
-            <button key={candidate.code} type="button" className="public-room" disabled={Boolean(pendingSessionAction)} onClick={() => onRoomCodeChange(candidate.code)}>
-              <strong>{candidate.code}</strong>
-              <span>{candidate.status} · {candidate.playerCount}/{candidate.maxPlayers} players · {candidate.spectatorCount} spectators</span>
-            </button>
-          ))}
+      {!online && (
+        <div id="public-room-results" className="public-room-results" aria-busy={publicRoomsStatus === "loading"}>
+          {publicRoomsStatus === "loading" && <p className="lobby-discovery-status" role="status">Loading public rooms…</p>}
+          {publicRoomsStatus === "loaded" && publicRooms.length === 0 && <p className="lobby-discovery-status" role="status">No public rooms are open right now.</p>}
+          {publicRoomsStatus === "loaded" && publicRooms.length > 0 && <p className="lobby-discovery-status" role="status">{publicRooms.length} public {publicRooms.length === 1 ? "room" : "rooms"} found.</p>}
+          {publicRoomsError && <p className="error" role="alert">{publicRoomsError}</p>}
+          {publicRoomsStatus === "loaded" && publicRooms.length > 0 && (
+            <div className="public-room-list" role="region" aria-label="Public rooms">
+              <span className="label">OPEN ROOMS</span>
+              {publicRooms.map((candidate) => (
+                <button key={candidate.code} type="button" className="public-room" disabled={Boolean(pendingSessionAction)} onClick={() => onRoomCodeChange(candidate.code)}>
+                  <strong>{candidate.code}</strong>
+                  <span>{candidate.status} · {candidate.playerCount}/{candidate.maxPlayers} players · {candidate.spectatorCount} spectators</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {online && participant?.role === "player" && (

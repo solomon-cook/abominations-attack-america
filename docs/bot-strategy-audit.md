@@ -81,7 +81,7 @@ The run used the harness defaults: three- and four-seat matches; seeds 31–32 a
 
 The JSON was parsed and checked against the default configuration, expected four player-count/seed pairs, per-seat distinct monster/branch/lair assignments, aggregate-versus-match outcome totals, and seat-versus-match action/turn totals. All four matches terminated normally by Monster Challenge after 6, 6, 7, and 6 rounds, with 188, 224, 356, and 342 actions. There were no invalid actions, round caps, or action-safety caps. Winners were Zorb (Air Force, seat 2), Tomanagi (Navy, seat 1), Tomanagi (Marines, seat 3), and Toxicor (Army, seat 1), respectively.
 
-This confirms that the same small shuffled sample remains reproducible and reaches terminal states under the current dirty worktree. Four outcomes do not estimate balance, seat fairness, or tactic quality, and the harness does not validate physical-edition rule fidelity.
+The captured run reached terminal states. Its seeded configuration can be rerun, but the artifact is tied to the historical dirty worktree and does not establish behavior for the current source. Four outcomes do not estimate balance, seat fairness, or tactic quality, and the harness does not validate physical-edition rule fidelity.
 
 An independent read-only review reconciled the retained JSON against the documented configuration, all four match outcomes, winner/seat/branch aggregates, and the stated limitations; no mismatch was found.
 
