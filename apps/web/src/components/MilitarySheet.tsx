@@ -108,8 +108,19 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
       </nav>}
       <div className="military-sheet physical-military-sheet" data-branch={activeSheet} key={activeSheet} onTouchStart={(event) => {
         suppressSelection.current = false;
+        const target = event.target instanceof Element ? event.target : null;
+        const startedOnControl = Boolean(target?.closest("button, a, input, select, textarea, summary, [role='button'], [role='slider'], [contenteditable='true']"));
+        const startedInHorizontalScroller = (() => {
+          for (let node = target instanceof HTMLElement ? target : target?.parentElement; node && node !== event.currentTarget; node = node.parentElement) {
+            const overflowX = getComputedStyle(node).overflowX;
+            if ((overflowX === "auto" || overflowX === "scroll") && node.scrollWidth > node.clientWidth + 1) return true;
+          }
+          return false;
+        })();
         const touch = event.touches[0];
-        touchStart.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null;
+        touchStart.current = event.touches.length === 1 && !startedOnControl && !startedInHorizontalScroller
+          ? { x: touch.clientX, y: touch.clientY }
+          : null;
       }} onTouchCancel={() => { touchStart.current = null; }} onTouchEnd={(event) => {
         const start = touchStart.current;
         touchStart.current = null;

@@ -56,6 +56,23 @@ const referenceCounts = (page, selector = ".sheet-reference") => page.locator(`$
   return counts;
 }, { reserve: 0, total: 0 }));
 const trayLabel = (page) => page.locator(".deployment-tray-shortcut").getAttribute("aria-label");
+const dispatchTouchSwipe = async (page, start, end) => {
+  const session = await page.context().newCDPSession(page);
+  await session.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 });
+  try {
+    await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ id: 1, x: start.x, y: start.y }] });
+    for (let step = 1; step <= 8; step += 1) {
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ id: 1, x: start.x + (end.x - start.x) * step / 8, y: start.y + (end.y - start.y) * step / 8 }],
+      });
+      await wait(12);
+    }
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  } finally {
+    await session.detach();
+  }
+};
 const report = { started: new Date().toISOString(), scenarios: {}, runtimeErrors: [] };
 let server;
 let browser;
@@ -173,6 +190,52 @@ try {
     horizontalWidths: mobileWidths,
   };
   await mobileTrophyPage.close();
+
+  const reserveSwipePage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  reserveSwipePage.setDefaultTimeout(8000);
+  reserveSwipePage.on("pageerror", (error) => report.runtimeErrors.push(`reserve swipe: ${error.message}`));
+  await reserveSwipePage.goto(`${url}?scenario=redeploy&viewer=0`, { waitUntil: "domcontentloaded" });
+  const reserveTray = reserveSwipePage.locator(".deployment-tray-shortcut");
+  const reserveTrayBounds = await reserveTray.boundingBox();
+  assert.ok(reserveTrayBounds);
+  await reserveSwipePage.touchscreen.tap(reserveTrayBounds.x + reserveTrayBounds.width / 2, reserveTrayBounds.y + reserveTrayBounds.height / 2);
+  const reserveDrawer = reserveSwipePage.locator(".military-drawer");
+  await reserveDrawer.waitFor({ state: "visible" });
+  await reserveDrawer.getByRole("button", { name: "National Guard", exact: true }).click();
+  const guardScroller = reserveDrawer.locator('.record-reserve[aria-label*="national guard tank"] .record-reserve-slots').first();
+  const beforeSwipe = await guardScroller.evaluate((node) => ({
+    clientWidth: node.clientWidth,
+    scrollWidth: node.scrollWidth,
+    scrollLeft: node.scrollLeft,
+    rect: (() => { const { x, y, width, height } = node.getBoundingClientRect(); return { x, y, width, height }; })(),
+  }));
+  assert.ok(beforeSwipe.scrollWidth > beforeSwipe.clientWidth + 1, `the Guard reserve row should overflow horizontally on phone: ${JSON.stringify(beforeSwipe)}`);
+  assert.equal((await reserveDrawer.locator(".military-sheet-tabs button[aria-pressed='true']").innerText()).trim(), "National Guard");
+  const scrollStart = { x: beforeSwipe.rect.x + beforeSwipe.rect.width - 12, y: beforeSwipe.rect.y + beforeSwipe.rect.height / 2 };
+  await dispatchTouchSwipe(reserveSwipePage, scrollStart, { x: scrollStart.x - 130, y: scrollStart.y });
+  await wait(120);
+  const afterReserveSwipe = {
+    activeSheet: (await reserveDrawer.locator(".military-sheet-tabs button[aria-pressed='true']").innerText()).trim(),
+    scrollLeft: await guardScroller.evaluate((node) => node.scrollLeft),
+  };
+  assert.equal(afterReserveSwipe.activeSheet, "National Guard", `a reserve-row swipe should scroll pieces without paging the military sheet: ${JSON.stringify(afterReserveSwipe)}`);
+  assert.ok(afterReserveSwipe.scrollLeft > 0, `the native reserve-row scroller should move horizontally: ${JSON.stringify(afterReserveSwipe)}`);
+
+  await guardScroller.evaluate((node) => { node.scrollLeft = 0; });
+  const inertInstruction = reserveDrawer.locator(".deployment-instruction");
+  const inertInstructionBounds = await inertInstruction.boundingBox();
+  assert.ok(inertInstructionBounds && inertInstructionBounds.width > 120, `the deployment instruction provides room for a deliberate page swipe: ${JSON.stringify(inertInstructionBounds)}`);
+  const pageSwipeStart = { x: inertInstructionBounds.x + inertInstructionBounds.width - 5, y: inertInstructionBounds.y + inertInstructionBounds.height / 2 };
+  await dispatchTouchSwipe(reserveSwipePage, pageSwipeStart, { x: pageSwipeStart.x - 110, y: pageSwipeStart.y });
+  await reserveSwipePage.waitForFunction(() => document.querySelector(".military-sheet-tabs button[aria-pressed='true']")?.textContent?.trim() === "Army");
+  report.scenarios.reserveSwipe = {
+    status: "passed",
+    viewport: "390x844 touch emulation",
+    reserveRow: beforeSwipe,
+    afterReserveSwipe,
+    deliberateSheetSwipe: "National Guard → Army",
+  };
+  await reserveSwipePage.close();
 
   const unauthorizedPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   unauthorizedPage.setDefaultTimeout(8000);
