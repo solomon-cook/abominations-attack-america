@@ -103,7 +103,48 @@
       ],
       "phase": "Move",
       "legalMoveVisible": true,
-      "opponentCardVisible": true
+      "opponentCardVisible": true,
+      "monsterSheetMobile": {
+        "status": "passed",
+        "viewport": "390x844 phone-sized browser viewport",
+        "input": "pointer and keyboard",
+        "entry": "solo Home flow → Move turn → mobile player record → Monster Sheet",
+        "modal": {
+          "accessibleName": "Zorb",
+          "ariaModal": true,
+          "initialFocus": "Close",
+          "tabWrapsAtBothEnds": true,
+          "bounds": {
+            "x": 20,
+            "y": 122,
+            "width": 366,
+            "height": 600
+          },
+          "pageWidths": {
+            "viewport": 390,
+            "document": 390,
+            "body": 390
+          }
+        },
+        "currentValues": {
+          "health": "11 / 40",
+          "infamy": "0",
+          "matchesPlayerRecordProjection": true
+        },
+        "mutationCards": {
+          "count": 0,
+          "emptyState": "No Mutation cards held.",
+          "horizontalScrollRevealsArea": true,
+          "scrollHint": "Swipe across to read the full monster record and view its Mutation cards.",
+          "screenshot": "monster-sheet-mutation-area-mobile-move-390x844-2026-09-29.png"
+        },
+        "dismissals": {
+          "escapeRestoresFocus": true,
+          "closeRestoresFocus": true,
+          "backdropRestoresFocus": true
+        },
+        "gameStateUnchanged": true
+      }
     },
     "firstMatchGuide": {
       "freshProfileShowsGuide": true,

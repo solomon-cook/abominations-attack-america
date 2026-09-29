@@ -384,6 +384,106 @@ try {
   assert.equal(focusAfterGuideDismiss.same, true, `dismissing the auto-show guide should focus the current game action heading: ${JSON.stringify(focusAfterGuideDismiss)}`);
   assert.equal(await soloPage.evaluate(() => localStorage.getItem("abominations-onboarding-seen")), "1", "dismissing the guide should persist for this browser profile");
 
+  await soloPage.setViewportSize({ width: 390, height: 844 });
+  const recordStateBeforeSheet = await soloPage.evaluate(() => ({
+    phase: document.querySelector(".action-card h2")?.textContent?.trim(),
+    legalDestinations: [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")].map((tile) => tile.getAttribute("data-hex-key")).sort(),
+    eventSummaries: [...document.querySelectorAll(".card.log > details > summary")].map((summary) => summary.textContent?.trim()),
+  }));
+  assert.equal(recordStateBeforeSheet.phase, "Move", "the Monster Sheet check starts on the active solo player's Move turn");
+  const mobileRecordToggle = soloPage.getByRole("button", { name: /Open .* player record/ });
+  await mobileRecordToggle.click();
+  await soloPage.locator(".command-station.mobile-command-expanded").waitFor({ state: "visible" });
+  const monsterPreview = soloPage.locator(".mobile-record-slot .record-preview");
+  await monsterPreview.waitFor({ state: "visible" });
+  const previewVitals = (await monsterPreview.locator(".record-preview-body > span").innerText()).trim();
+  const expectedVitals = previewVitals.match(/♥\s*(\d+)\/(\d+)\s*·\s*★\s*(\d+)/);
+  assert.ok(expectedVitals, `the player record should expose projected Health and Infamy before opening the sheet: ${previewVitals}`);
+  await monsterPreview.click();
+  const monsterDialog = soloPage.getByRole("dialog", { name: "Zorb" });
+  await monsterDialog.waitFor({ state: "visible" });
+  const monsterClose = monsterDialog.getByRole("button", { name: "Close", exact: true });
+  await soloPage.waitForFunction(() => document.activeElement?.classList.contains("military-sheet-close"));
+  assert.equal(await monsterDialog.getAttribute("aria-modal"), "true", "the mobile Monster Sheet is announced as modal");
+  assert.equal(await monsterClose.evaluate((node) => node === document.activeElement), true, "opening the mobile Monster Sheet starts focus on Close");
+  const sheetScrollHint = await monsterDialog.locator(".monster-sheet-scroll-hint").innerText();
+  assert.match(sheetScrollHint, /full monster record.*Mutation cards/i, "the phone hint explains that horizontal scrolling reveals both the full record and Mutation cards");
+  const monsterDialogBounds = await monsterDialog.boundingBox();
+  assert.ok(monsterDialogBounds && monsterDialogBounds.x >= -1 && monsterDialogBounds.y >= -1
+    && monsterDialogBounds.x + monsterDialogBounds.width <= 391
+    && monsterDialogBounds.y + monsterDialogBounds.height <= 845,
+  `the Monster Sheet dialog fits the 390x844 viewport: ${JSON.stringify(monsterDialogBounds)}`);
+  const sheetWidths = await soloPage.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
+  assert.ok(sheetWidths.document <= sheetWidths.viewport + 1 && sheetWidths.body <= sheetWidths.viewport + 1,
+    `the open Monster Sheet does not cause page-level horizontal overflow: ${JSON.stringify(sheetWidths)}`);
+  const valuesDisclosure = monsterDialog.locator(".monster-current-values");
+  const valuesSummary = valuesDisclosure.locator("summary");
+  await soloPage.keyboard.press("Shift+Tab");
+  assert.equal(await valuesSummary.evaluate((node) => node === document.activeElement), true, "Shift+Tab from the first control stays within the modal and reaches its final focusable control");
+  await soloPage.keyboard.press("Tab");
+  assert.equal(await monsterClose.evaluate((node) => node === document.activeElement), true, "Tab from the final modal control wraps to Close");
+  await valuesSummary.click();
+  assert.equal(await valuesDisclosure.evaluate((node) => node.open), true, "Current game values expands inside the Monster Sheet");
+  const currentStats = await valuesDisclosure.locator(".sheet-stats > div").evaluateAll((rows) => Object.fromEntries(rows.map((row) => [
+    row.querySelector("dt")?.textContent?.trim(), row.querySelector("dd")?.textContent?.trim(),
+  ])));
+  assert.equal(currentStats.Health, `${expectedVitals[1]} / ${expectedVitals[2]}`, "the disclosure's Health matches the live player-record projection");
+  assert.equal(currentStats.Infamy, expectedVitals[3], "the disclosure's Infamy matches the live player-record projection");
+  const mutationArea = monsterDialog.getByRole("region", { name: "Your Mutation cards" });
+  await mutationArea.waitFor({ state: "visible" });
+  const mutationEmptyState = mutationArea.getByText("No Mutation cards held.");
+  assert.equal(await mutationEmptyState.count(), 1, "the current empty Mutation hand has a clear empty state");
+  const sheetWorkspace = monsterDialog.locator(".monster-sheet-workspace");
+  const workspaceBounds = await sheetWorkspace.boundingBox();
+  const workspaceScroll = await sheetWorkspace.evaluate((node) => ({ clientWidth: node.clientWidth, scrollWidth: node.scrollWidth, scrollLeft: node.scrollLeft }));
+  assert.ok(workspaceScroll.scrollWidth > workspaceScroll.clientWidth, "the fixed-width Monster Sheet and Mutation column are intentionally horizontally scrollable on a phone");
+  await soloPage.screenshot({ path: join(cwd, "output", "ui-review", "monster-sheet-mobile-move-390x844-2026-09-29.png") });
+  assert.ok(workspaceBounds, "the Monster Sheet workspace has a visible scroll viewport");
+  await soloPage.mouse.move(workspaceBounds.x + workspaceBounds.width / 2, workspaceBounds.y + workspaceBounds.height / 2);
+  await soloPage.mouse.wheel(workspaceScroll.scrollWidth, 0);
+  await soloPage.waitForFunction(() => {
+    const workspace = document.querySelector(".monster-reference-sheet .monster-sheet-workspace");
+    return workspace instanceof HTMLElement && workspace.scrollLeft > 0;
+  });
+  await mutationEmptyState.scrollIntoViewIfNeeded();
+  const mutationBounds = await mutationArea.boundingBox();
+  assert.equal(await mutationEmptyState.isVisible(), true, "horizontal workspace scrolling reveals the Mutation area and empty state");
+  assert.ok(mutationBounds && mutationBounds.x >= workspaceBounds.x - 1 && mutationBounds.x + mutationBounds.width <= workspaceBounds.x + workspaceBounds.width + 1,
+    `the Mutation area is reachable within the horizontally scrolled workspace: ${JSON.stringify({ workspaceBounds, mutationBounds })}`);
+  const mutationScreenshot = "monster-sheet-mutation-area-mobile-move-390x844-2026-09-29.png";
+  await soloPage.screenshot({ path: join(cwd, "output", "ui-review", mutationScreenshot) });
+  await soloPage.keyboard.press("Escape");
+  await monsterDialog.waitFor({ state: "detached" });
+  assert.equal(await monsterPreview.evaluate((node) => node === document.activeElement), true, "Escape restores focus to the Monster Sheet opener");
+  await monsterPreview.click();
+  await monsterDialog.waitFor({ state: "visible" });
+  await monsterDialog.getByRole("button", { name: "Close", exact: true }).click();
+  await monsterDialog.waitFor({ state: "detached" });
+  assert.equal(await monsterPreview.evaluate((node) => node === document.activeElement), true, "Close restores focus to the Monster Sheet opener");
+  await monsterPreview.click();
+  await monsterDialog.waitFor({ state: "visible" });
+  await soloPage.locator(".military-sheet-backdrop").click({ position: { x: 2, y: 2 } });
+  await monsterDialog.waitFor({ state: "detached" });
+  assert.equal(await monsterPreview.evaluate((node) => node === document.activeElement), true, "backdrop dismissal restores focus to the Monster Sheet opener");
+  const recordStateAfterSheet = await soloPage.evaluate(() => ({
+    phase: document.querySelector(".action-card h2")?.textContent?.trim(),
+    legalDestinations: [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")].map((tile) => tile.getAttribute("data-hex-key")).sort(),
+    eventSummaries: [...document.querySelectorAll(".card.log > details > summary")].map((summary) => summary.textContent?.trim()),
+  }));
+  assert.deepEqual(recordStateAfterSheet, recordStateBeforeSheet, "opening the record, sheet, and disclosure does not change phase, legal moves, or game events");
+  const monsterSheetMobile = {
+    status: "passed",
+    viewport: "390x844 phone-sized browser viewport",
+    input: "pointer and keyboard",
+    entry: "solo Home flow → Move turn → mobile player record → Monster Sheet",
+    modal: { accessibleName: "Zorb", ariaModal: true, initialFocus: "Close", tabWrapsAtBothEnds: true, bounds: monsterDialogBounds, pageWidths: sheetWidths },
+    currentValues: { health: currentStats.Health, infamy: currentStats.Infamy, matchesPlayerRecordProjection: true },
+    mutationCards: { count: 0, emptyState: "No Mutation cards held.", horizontalScrollRevealsArea: true, scrollHint: sheetScrollHint, screenshot: mutationScreenshot },
+    dismissals: { escapeRestoresFocus: true, closeRestoresFocus: true, backdropRestoresFocus: true },
+    gameStateUnchanged: true,
+  };
+  await soloPage.setViewportSize({ width: 1280, height: 720 });
+
   const gameMenuSummary = soloPage.locator("details.hud-menu > summary");
   await gameMenuSummary.focus();
   await soloPage.keyboard.press("Enter");
@@ -475,7 +575,7 @@ try {
       homeRoomLoadingAndError: { pendingStatus: "Creating room…", disabledControls: homePendingDisabledControls, rapidRepeatSubmissionsPrevented: true, fixtureFailureShownAsAlert: true },
       localSetupSeatCounts: setupSeats,
       playAuditedBoard: { destination: "local setup", boardId: auditedPlaytestDestination },
-      soloSetup: { setupChoices: soloSetupChoices, phase: "Move", legalMoveVisible: true, opponentCardVisible: true },
+      soloSetup: { setupChoices: soloSetupChoices, phase: "Move", legalMoveVisible: true, opponentCardVisible: true, monsterSheetMobile },
       firstMatchGuide: { freshProfileShowsGuide: true, dismissalPersisted: true, menuReopens: true, escapeRetainsFocus: true, returningProfileSuppressesAutoShow: true, returningSetupChoices, viewportChecks: [{ viewport: "1280x720", bounds: guideBounds }, ...guideViewportChecks] },
       horizontalOverflow: overflowReports,
       apiFixtureRequests: requests,

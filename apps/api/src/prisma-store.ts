@@ -813,12 +813,12 @@ export class PrismaRoomStore implements RoomStore {
     if (guarded.count !== 1) throw new RoomSnapshotConflictError();
   }
 
-  private async lockParticipantSnapshot(tx: Prisma.TransactionClient, where: any, connectedAt: Date | null) {
+  private async lockParticipantSnapshot(tx: Prisma.TransactionClient, where: Prisma.ParticipantWhereInput & { id: string }, connectedAt: Date | null) {
     const locked = await tx.participant.updateMany({ where, data: { connectedAt } });
     return locked.count === 1;
   }
 
-  private async lockLiveSessionSnapshot(tx: Prisma.TransactionClient, where: any, connectedAt: Date | null, observedExpiry: Date) {
+  private async lockLiveSessionSnapshot(tx: Prisma.TransactionClient, where: Prisma.ParticipantWhereInput & { id: string }, connectedAt: Date | null, observedExpiry: Date) {
     const evaluatedAt = new Date();
     if (isSessionExpired(observedExpiry, evaluatedAt.getTime())) throw new Error("Session token has expired.");
     const locked = await this.lockParticipantSnapshot(tx, { ...where, sessionExpiresAt: { gt: evaluatedAt } }, connectedAt);

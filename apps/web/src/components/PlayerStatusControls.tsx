@@ -30,7 +30,7 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
       }
     }}>
       <div className="military-hand-toolbar"><span className="label">MONSTER RECORD SHEET</span><button className="military-sheet-close" onClick={onClose}>Close</button></div>
-      <p className="monster-sheet-scroll-hint">Swipe across to view the mutation cards beside your sheet.</p>
+      <p className="monster-sheet-scroll-hint">Swipe across to read the full monster record and view its Mutation cards.</p>
       <div className="monster-sheet-workspace">
       <div className="military-sheet physical-monster-sheet">
         <div className="monster-physical-record" role="group" aria-label={`${monster.name} physical-style record`}>

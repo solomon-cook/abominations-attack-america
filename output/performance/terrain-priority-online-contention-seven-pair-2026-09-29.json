@@ -1,0 +1,3056 @@
+{
+  "generatedAt": "2026-09-29T13:02:05.661Z",
+  "status": "contention-overlap-incomplete",
+  "purpose": "Check whether visible terrain upgrades interfere with one authenticated online room-state API response and a legal-destination UI selection while upgrades are active.",
+  "interpretation": "Local browser evidence only. It does not model hosted API compute, CDN routing, production database load, other users, or target devices.",
+  "order": "Per viewport, samples alternate AB then BA; each sample uses a fresh cache-disabled context and newly created in-memory room.",
+  "api": "Node MVP API on loopback with PERSISTENCE=memory, reached through the same API URL compiled into both production builds.",
+  "profile": {
+    "cpuThrottleRate": 4,
+    "networkRttMs": 150,
+    "downloadBytesPerSecond": 200000,
+    "uploadBytesPerSecond": 93750
+  },
+  "pairsPerViewport": 7,
+  "webOrigin": "http://127.0.0.1:4173/",
+  "apiOrigin": "http://localhost:8787",
+  "builds": {
+    "A": {
+      "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+      "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+      "terrainAssetFiles": 1253,
+      "fileCount": 1456
+    },
+    "B": {
+      "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+      "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+      "terrainAssetFiles": 1253,
+      "fileCount": 1456
+    }
+  },
+  "paired": [
+    {
+      "viewport": "desktop",
+      "sampleCountPerBuild": 7,
+      "apiMedianMs": {
+        "baseline": 366.89999997615814,
+        "candidate": 360.5
+      },
+      "interactionMedianMs": {
+        "baseline": 210.39999997615814,
+        "candidate": 202
+      },
+      "pairedDeltas": [
+        {
+          "pair": 1,
+          "apiDeltaMs": -5.299999952316284,
+          "interactionDeltaMs": -30.399999976158142,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 84,
+            "candidate": 83
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 24,
+            "candidate": 24
+          }
+        },
+        {
+          "pair": 2,
+          "apiDeltaMs": -6.299999952316284,
+          "interactionDeltaMs": 4.100000023841858,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 84,
+            "candidate": 79
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 24,
+            "candidate": 24
+          }
+        },
+        {
+          "pair": 3,
+          "apiDeltaMs": -9.900000095367432,
+          "interactionDeltaMs": -1.1999999284744263,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 84,
+            "candidate": 81
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 24,
+            "candidate": 24
+          }
+        },
+        {
+          "pair": 4,
+          "apiDeltaMs": -7.4999998807907104,
+          "interactionDeltaMs": -9.299999952316284,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 84,
+            "candidate": 84
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 24,
+            "candidate": 24
+          }
+        },
+        {
+          "pair": 5,
+          "apiDeltaMs": 31.300000071525574,
+          "interactionDeltaMs": -0.2999999523162842,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 84,
+            "candidate": 79
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 24,
+            "candidate": 24
+          }
+        },
+        {
+          "pair": 6,
+          "apiDeltaMs": -105.90000009536743,
+          "interactionDeltaMs": -18.600000023841858,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 60,
+            "candidate": 60
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 24,
+            "candidate": 24
+          }
+        },
+        {
+          "pair": 7,
+          "apiDeltaMs": 34.39999997615814,
+          "interactionDeltaMs": -19,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 84,
+            "candidate": 60
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 24,
+            "candidate": 24
+          }
+        }
+      ],
+      "allProbesReturned200": true,
+      "allApiResponsesOverlappedTerrainUpgrades": true,
+      "allUiSelectionsStartedDuringTerrainUpgrades": true
+    },
+    {
+      "viewport": "phone",
+      "sampleCountPerBuild": 7,
+      "apiMedianMs": {
+        "baseline": 2429.6999999284744,
+        "candidate": 399.5
+      },
+      "interactionMedianMs": {
+        "baseline": 271.39999997615814,
+        "candidate": 310.7000000476837
+      },
+      "pairedDeltas": [
+        {
+          "pair": 1,
+          "apiDeltaMs": 87.59999990463257,
+          "interactionDeltaMs": 62.800000071525574,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 45,
+            "candidate": 45
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 15,
+            "candidate": 3
+          }
+        },
+        {
+          "pair": 2,
+          "apiDeltaMs": -16.700000047683716,
+          "interactionDeltaMs": 55,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 40,
+            "candidate": 45
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 15,
+            "candidate": 3
+          }
+        },
+        {
+          "pair": 3,
+          "apiDeltaMs": 88.60000002384186,
+          "interactionDeltaMs": 2.700000047683716,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 0,
+            "candidate": 40
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 15,
+            "candidate": 3
+          }
+        },
+        {
+          "pair": 4,
+          "apiDeltaMs": -2485.5,
+          "interactionDeltaMs": 39.800000071525574,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 15,
+            "candidate": 45
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 15,
+            "candidate": 3
+          }
+        },
+        {
+          "pair": 5,
+          "apiDeltaMs": -328.6999999284744,
+          "interactionDeltaMs": 60.5,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 15,
+            "candidate": 3
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 15,
+            "candidate": 3
+          }
+        },
+        {
+          "pair": 6,
+          "apiDeltaMs": -9924.100000023842,
+          "interactionDeltaMs": -5.700000047683716,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 15,
+            "candidate": 3
+          }
+        },
+        {
+          "pair": 7,
+          "apiDeltaMs": -4664.700000047684,
+          "interactionDeltaMs": 28.50000011920929,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 0,
+            "candidate": 45
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 3,
+            "candidate": 3
+          }
+        }
+      ],
+      "allProbesReturned200": true,
+      "allApiResponsesOverlappedTerrainUpgrades": false,
+      "allUiSelectionsStartedDuringTerrainUpgrades": true
+    }
+  ],
+  "samples": [
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 1,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "796DD0",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686303843.8,
+          "startedAt": 16352.700000047684,
+          "startedWallTime": 1790686320196,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686303843.8,
+          "now": 17780.100000023842,
+          "wallTime": 1790686321623
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 365.7999999523163,
+          "start": {
+            "timeOrigin": 1790686303843.8,
+            "startedAt": 16352.700000047684,
+            "startedWallTime": 1790686320196,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686303843.8,
+            "endedAt": 16718.5,
+            "endedWallTime": 1790686320562
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 84,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686303843.8,
+            "now": 17806.800000071526,
+            "wallTime": 1790686321650
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 18034.300000071526,
+            "wallTime": 1790686321878
+          },
+          "clickToConfirmMs": 227.5
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "Low": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 0,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 121
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 1,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "317AF7",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686322778.4,
+          "startedAt": 16134.399999976158,
+          "startedWallTime": 1790686338912,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686322778.4,
+          "now": 17355.100000023842,
+          "wallTime": 1790686340133
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 360.5,
+          "start": {
+            "timeOrigin": 1790686322778.4,
+            "startedAt": 16134.399999976158,
+            "startedWallTime": 1790686338912,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686322778.4,
+            "endedAt": 16494.899999976158,
+            "endedWallTime": 1790686339273
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 83,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686322778.4,
+            "now": 17395.299999952316,
+            "wallTime": 1790686340173
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17592.399999976158,
+            "wallTime": 1790686340370
+          },
+          "clickToConfirmMs": 197.10000002384186
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "High": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 28442,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 115
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 2,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "7C3DA2",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686341688.7,
+          "startedAt": 16104.199999928474,
+          "startedWallTime": 1790686357793,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686341688.7,
+          "now": 17340,
+          "wallTime": 1790686359028
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 360.60000002384186,
+          "start": {
+            "timeOrigin": 1790686341688.7,
+            "startedAt": 16104.199999928474,
+            "startedWallTime": 1790686357793,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686341688.7,
+            "endedAt": 16464.799999952316,
+            "endedWallTime": 1790686358153
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 79,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686341688.7,
+            "now": 17364,
+            "wallTime": 1790686359052
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17557.299999952316,
+            "wallTime": 1790686359245
+          },
+          "clickToConfirmMs": 193.29999995231628
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "High": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 59138,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 109
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 2,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "1699D1",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686360065.1,
+          "startedAt": 16230.100000023842,
+          "startedWallTime": 1790686376295,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686360065.1,
+          "now": 17564.5,
+          "wallTime": 1790686377629
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 366.89999997615814,
+          "start": {
+            "timeOrigin": 1790686360065.1,
+            "startedAt": 16230.100000023842,
+            "startedWallTime": 1790686376295,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686360065.1,
+            "endedAt": 16597,
+            "endedWallTime": 1790686376662
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 84,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686360065.1,
+            "now": 17630,
+            "wallTime": 1790686377694
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17819.199999928474,
+            "wallTime": 1790686377884
+          },
+          "clickToConfirmMs": 189.19999992847443
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "Low": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 0,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 121
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 3,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "3DC6A9",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686378522.5,
+          "startedAt": 16049.899999976158,
+          "startedWallTime": 1790686394573,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686378522.5,
+          "now": 17373.899999976158,
+          "wallTime": 1790686395896
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 369.7000000476837,
+          "start": {
+            "timeOrigin": 1790686378522.5,
+            "startedAt": 16049.899999976158,
+            "startedWallTime": 1790686394573,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686378522.5,
+            "endedAt": 16419.600000023842,
+            "endedWallTime": 1790686394942
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 84,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686378522.5,
+            "now": 17447,
+            "wallTime": 1790686395969
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17652.899999976158,
+            "wallTime": 1790686396175
+          },
+          "clickToConfirmMs": 205.89999997615814
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "Low": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 0,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 121
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 3,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "CF0C37",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686397426.9,
+          "startedAt": 15728.400000095367,
+          "startedWallTime": 1790686413156,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686397426.9,
+          "now": 17000.200000047684,
+          "wallTime": 1790686414427
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 359.7999999523163,
+          "start": {
+            "timeOrigin": 1790686397426.9,
+            "startedAt": 15728.400000095367,
+            "startedWallTime": 1790686413156,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686397426.9,
+            "endedAt": 16088.200000047684,
+            "endedWallTime": 1790686413515
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 81,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686397426.9,
+            "now": 17036.5,
+            "wallTime": 1790686414463
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17241.200000047684,
+            "wallTime": 1790686414668
+          },
+          "clickToConfirmMs": 204.70000004768372
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "High": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 39652,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 113
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 4,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "01C27E",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686415306.6,
+          "startedAt": 15803.399999976158,
+          "startedWallTime": 1790686431110,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686415306.6,
+          "now": 16991.5,
+          "wallTime": 1790686432297
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 347.3000000715256,
+          "start": {
+            "timeOrigin": 1790686415306.6,
+            "startedAt": 15803.399999976158,
+            "startedWallTime": 1790686431110,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686415306.6,
+            "endedAt": 16150.700000047684,
+            "endedWallTime": 1790686431457
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 84,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686415306.6,
+            "now": 17020.700000047684,
+            "wallTime": 1790686432327
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17222.700000047684,
+            "wallTime": 1790686432529
+          },
+          "clickToConfirmMs": 202
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "High": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 5792,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 120
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 4,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "1C56CD",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686433272.7,
+          "startedAt": 15855.899999976158,
+          "startedWallTime": 1790686449128,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686433272.7,
+          "now": 17166.899999976158,
+          "wallTime": 1790686450439
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 354.7999999523163,
+          "start": {
+            "timeOrigin": 1790686433272.7,
+            "startedAt": 15855.899999976158,
+            "startedWallTime": 1790686449128,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686433272.7,
+            "endedAt": 16210.699999928474,
+            "endedWallTime": 1790686449483
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 84,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686433272.7,
+            "now": 17247.299999952316,
+            "wallTime": 1790686450519
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17458.599999904633,
+            "wallTime": 1790686450731
+          },
+          "clickToConfirmMs": 211.29999995231628
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "Low": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 0,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 121
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 5,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "AA7EA3",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686451349.7,
+          "startedAt": 15913.700000047684,
+          "startedWallTime": 1790686467263,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686451349.7,
+          "now": 17197.200000047684,
+          "wallTime": 1790686468546
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 366.5,
+          "start": {
+            "timeOrigin": 1790686451349.7,
+            "startedAt": 15913.700000047684,
+            "startedWallTime": 1790686467263,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686451349.7,
+            "endedAt": 16280.200000047684,
+            "endedWallTime": 1790686467629
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 84,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686451349.7,
+            "now": 17240.100000023842,
+            "wallTime": 1790686468589
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17448,
+            "wallTime": 1790686468797
+          },
+          "clickToConfirmMs": 207.89999997615814
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 141,
+        "initialPriorityCounts": {
+          "Low": 141
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 0,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 117
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 5,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "C4A664",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686469444.4,
+          "startedAt": 15974.600000023842,
+          "startedWallTime": 1790686485418,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686469444.4,
+          "now": 17187.700000047684,
+          "wallTime": 1790686486631
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 397.8000000715256,
+          "start": {
+            "timeOrigin": 1790686469444.4,
+            "startedAt": 15974.600000023842,
+            "startedWallTime": 1790686485418,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686469444.4,
+            "endedAt": 16372.400000095367,
+            "endedWallTime": 1790686485816
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 79,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686469444.4,
+            "now": 17214.200000047684,
+            "wallTime": 1790686486658
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17421.800000071526,
+            "wallTime": 1790686486866
+          },
+          "clickToConfirmMs": 207.60000002384186
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "High": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 30878,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 114
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 6,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "33902C",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686487501.3,
+          "startedAt": 15937.200000047684,
+          "startedWallTime": 1790686503438,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686487501.3,
+          "now": 17039.700000047684,
+          "wallTime": 1790686504540
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 283.89999997615814,
+          "start": {
+            "timeOrigin": 1790686487501.3,
+            "startedAt": 15937.200000047684,
+            "startedWallTime": 1790686503438,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686487501.3,
+            "endedAt": 16221.100000023842,
+            "endedWallTime": 1790686503722
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 60,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686487501.3,
+            "now": 17092.100000023842,
+            "wallTime": 1790686504593
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17296.100000023842,
+            "wallTime": 1790686504797
+          },
+          "clickToConfirmMs": 204
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 124,
+        "initialPriorityCounts": {
+          "High": 124
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 9882,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 98
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 6,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "715948",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686505443.7,
+          "startedAt": 15829,
+          "startedWallTime": 1790686521272,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686505443.7,
+          "now": 17073.300000071526,
+          "wallTime": 1790686522516
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 389.8000000715256,
+          "start": {
+            "timeOrigin": 1790686505443.7,
+            "startedAt": 15829,
+            "startedWallTime": 1790686521272,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686505443.7,
+            "endedAt": 16218.800000071526,
+            "endedWallTime": 1790686521663
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 60,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686505443.7,
+            "now": 17175.899999976158,
+            "wallTime": 1790686522619
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17398.5,
+            "wallTime": 1790686522842
+          },
+          "clickToConfirmMs": 222.60000002384186
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 141,
+        "initialPriorityCounts": {
+          "Low": 141
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 0,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 117
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 7,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "605EEE",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686523469.7,
+          "startedAt": 15925.299999952316,
+          "startedWallTime": 1790686539396,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686523469.7,
+          "now": 17260.399999976158,
+          "wallTime": 1790686540729
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 371.2000000476837,
+          "start": {
+            "timeOrigin": 1790686523469.7,
+            "startedAt": 15925.299999952316,
+            "startedWallTime": 1790686539396,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686523469.7,
+            "endedAt": 16296.5,
+            "endedWallTime": 1790686539766
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 84,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686523469.7,
+            "now": 17288.5,
+            "wallTime": 1790686540758
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17498.899999976158,
+            "wallTime": 1790686540968
+          },
+          "clickToConfirmMs": 210.39999997615814
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 145,
+        "initialPriorityCounts": {
+          "Low": 145
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 0,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 121
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 7,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "4933C4",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686542106.1,
+          "startedAt": 15890.299999952316,
+          "startedWallTime": 1790686557996,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686542106.1,
+          "now": 16973.600000023842,
+          "wallTime": 1790686559079
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 405.60000002384186,
+          "start": {
+            "timeOrigin": 1790686542106.1,
+            "startedAt": 15890.299999952316,
+            "startedWallTime": 1790686557996,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686542106.1,
+            "endedAt": 16295.899999976158,
+            "endedWallTime": 1790686558401
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 60,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790686542106.1,
+            "now": 16997.5,
+            "wallTime": 1790686559103
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17188.899999976158,
+            "wallTime": 1790686559295
+          },
+          "clickToConfirmMs": 191.39999997615814
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 124,
+        "initialPriorityCounts": {
+          "High": 124
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 5792,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 99
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 1,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "46E0D6",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686559915.4,
+          "startedAt": 17121.799999952316,
+          "startedWallTime": 1790686577037,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686559915.4,
+          "now": 19150.100000023842,
+          "wallTime": 1790686579065
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 378.3000000715256,
+          "start": {
+            "timeOrigin": 1790686559915.4,
+            "startedAt": 17121.799999952316,
+            "startedWallTime": 1790686577037,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686559915.4,
+            "endedAt": 17500.100000023842,
+            "endedWallTime": 1790686577415
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 413648,
+          "priorityUpgradeRequestsInflightAtResponse": 45,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 15,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 15
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686559915.4,
+            "now": 19201,
+            "wallTime": 1790686579116
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 19457.5,
+            "wallTime": 1790686579372
+          },
+          "clickToConfirmMs": 256.5
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "Low": 235
+        },
+        "completedBeforeApiProbeStartBytes": 413648,
+        "completedByCaptureBytes": 413648,
+        "pendingAtCapture": 15,
+        "failedOrCanceledAtCapture": 150
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 1,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "58977B",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686580033.5,
+          "startedAt": 14903.900000095367,
+          "startedWallTime": 1790686594938,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686580033.5,
+          "now": 17093.200000047684,
+          "wallTime": 1790686597126
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 465.89999997615814,
+          "start": {
+            "timeOrigin": 1790686580033.5,
+            "startedAt": 14903.900000095367,
+            "startedWallTime": 1790686594938,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686580033.5,
+            "endedAt": 15369.800000071526,
+            "endedWallTime": 1790686595403
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 987950,
+          "priorityUpgradeRequestsInflightAtResponse": 45,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 3,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 0
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686580033.5,
+            "now": 17114.100000023842,
+            "wallTime": 1790686597147
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17433.400000095367,
+            "wallTime": 1790686597466
+          },
+          "clickToConfirmMs": 319.3000000715256
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "High": 235
+        },
+        "completedBeforeApiProbeStartBytes": 987950,
+        "completedByCaptureBytes": 1251648,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 55
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 2,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "E85654",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686598146.8,
+          "startedAt": 16088.800000071526,
+          "startedWallTime": 1790686614235,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686598146.8,
+          "now": 18131.5,
+          "wallTime": 1790686616278
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 393.10000002384186,
+          "start": {
+            "timeOrigin": 1790686598146.8,
+            "startedAt": 16088.800000071526,
+            "startedWallTime": 1790686614235,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686598146.8,
+            "endedAt": 16481.900000095367,
+            "endedWallTime": 1790686614628
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 719846,
+          "priorityUpgradeRequestsInflightAtResponse": 45,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 3,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 0
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686598146.8,
+            "now": 18151.600000023842,
+            "wallTime": 1790686616298
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 18465.200000047684,
+            "wallTime": 1790686616611
+          },
+          "clickToConfirmMs": 313.60000002384186
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "High": 235
+        },
+        "completedBeforeApiProbeStartBytes": 719846,
+        "completedByCaptureBytes": 983544,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 97
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 2,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "06B489",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686617246,
+          "startedAt": 16937.599999904633,
+          "startedWallTime": 1790686634183,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686617246,
+          "now": 18939.399999976158,
+          "wallTime": 1790686636185
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 409.8000000715256,
+          "start": {
+            "timeOrigin": 1790686617246,
+            "startedAt": 16937.599999904633,
+            "startedWallTime": 1790686634183,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686617246,
+            "endedAt": 17347.399999976158,
+            "endedWallTime": 1790686634593
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 413648,
+          "priorityUpgradeRequestsInflightAtResponse": 40,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 15,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 15
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686617246,
+            "now": 18959.899999976158,
+            "wallTime": 1790686636205
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 19218.5,
+            "wallTime": 1790686636464
+          },
+          "clickToConfirmMs": 258.60000002384186
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 230,
+        "initialPriorityCounts": {
+          "Low": 230
+        },
+        "completedBeforeApiProbeStartBytes": 413648,
+        "completedByCaptureBytes": 413648,
+        "pendingAtCapture": 15,
+        "failedOrCanceledAtCapture": 145
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 3,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "C595EF",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686637163.1,
+          "startedAt": 17605.300000071526,
+          "startedWallTime": 1790686654768,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686637163.1,
+          "now": 19737.100000023842,
+          "wallTime": 1790686656900
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 310.89999997615814,
+          "start": {
+            "timeOrigin": 1790686637163.1,
+            "startedAt": 17605.300000071526,
+            "startedWallTime": 1790686654768,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686637163.1,
+            "endedAt": 17916.200000047684,
+            "endedWallTime": 1790686655079
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 473960,
+          "priorityUpgradeRequestsInflightAtResponse": 0,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 15,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 15
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686637163.1,
+            "now": 19756.700000047684,
+            "wallTime": 1790686656919
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 20054.399999976158,
+            "wallTime": 1790686657217
+          },
+          "clickToConfirmMs": 297.6999999284744
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 230,
+        "initialPriorityCounts": {
+          "Low": 230
+        },
+        "completedBeforeApiProbeStartBytes": 473960,
+        "completedByCaptureBytes": 473960,
+        "pendingAtCapture": 15,
+        "failedOrCanceledAtCapture": 137
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 3,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "9C2BED",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686657883.5,
+          "startedAt": 15020.5,
+          "startedWallTime": 1790686672903,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686657883.5,
+          "now": 17070.800000071526,
+          "wallTime": 1790686674954
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 399.5,
+          "start": {
+            "timeOrigin": 1790686657883.5,
+            "startedAt": 15020.5,
+            "startedWallTime": 1790686672903,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686657883.5,
+            "endedAt": 15420,
+            "endedWallTime": 1790686673304
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 987950,
+          "priorityUpgradeRequestsInflightAtResponse": 40,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 3,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 0
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686657883.5,
+            "now": 17094,
+            "wallTime": 1790686674977
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17394.399999976158,
+            "wallTime": 1790686675277
+          },
+          "clickToConfirmMs": 300.39999997615814
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 230,
+        "initialPriorityCounts": {
+          "High": 230
+        },
+        "completedBeforeApiProbeStartBytes": 987950,
+        "completedByCaptureBytes": 1222424,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 52
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 4,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "5A4931",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686675987.4,
+          "startedAt": 16979.299999952316,
+          "startedWallTime": 1790686692966,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686675987.4,
+          "now": 18972.299999952316,
+          "wallTime": 1790686694959
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 383.10000002384186,
+          "start": {
+            "timeOrigin": 1790686675987.4,
+            "startedAt": 16979.299999952316,
+            "startedWallTime": 1790686692966,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686675987.4,
+            "endedAt": 17362.399999976158,
+            "endedWallTime": 1790686693350
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 599626,
+          "priorityUpgradeRequestsInflightAtResponse": 45,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 3,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 0
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686675987.4,
+            "now": 19028.299999952316,
+            "wallTime": 1790686695015
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 19358.5,
+            "wallTime": 1790686695345
+          },
+          "clickToConfirmMs": 330.2000000476837
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "High": 235
+        },
+        "completedBeforeApiProbeStartBytes": 599626,
+        "completedByCaptureBytes": 847078,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 119
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 4,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "A68C68",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686696013.8,
+          "startedAt": 20404.199999928474,
+          "startedWallTime": 1790686716417,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686696013.8,
+          "now": 22360.899999976158,
+          "wallTime": 1790686718374
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 2868.600000023842,
+          "start": {
+            "timeOrigin": 1790686696013.8,
+            "startedAt": 20404.199999928474,
+            "startedWallTime": 1790686716417,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686696013.8,
+            "endedAt": 23272.799999952316,
+            "endedWallTime": 1790686719287
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 413648,
+          "priorityUpgradeRequestsInflightAtResponse": 15,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 15,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 15
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686696013.8,
+            "now": 22421.100000023842,
+            "wallTime": 1790686718434
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 22711.5,
+            "wallTime": 1790686718725
+          },
+          "clickToConfirmMs": 290.39999997615814
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "Low": 235
+        },
+        "completedBeforeApiProbeStartBytes": 413648,
+        "completedByCaptureBytes": 413648,
+        "pendingAtCapture": 15,
+        "failedOrCanceledAtCapture": 150
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 5,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "303947",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686719899.9,
+          "startedAt": 21827.800000071526,
+          "startedWallTime": 1790686741727,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686719899.9,
+          "now": 23751.700000047684,
+          "wallTime": 1790686743651
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 2429.6999999284744,
+          "start": {
+            "timeOrigin": 1790686719899.9,
+            "startedAt": 21827.800000071526,
+            "startedWallTime": 1790686741727,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686719899.9,
+            "endedAt": 24257.5,
+            "endedWallTime": 1790686744157
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 413648,
+          "priorityUpgradeRequestsInflightAtResponse": 15,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 15,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 15
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686719899.9,
+            "now": 23772.5,
+            "wallTime": 1790686743672
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 24022.700000047684,
+            "wallTime": 1790686743922
+          },
+          "clickToConfirmMs": 250.20000004768372
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "Low": 235
+        },
+        "completedBeforeApiProbeStartBytes": 413648,
+        "completedByCaptureBytes": 413648,
+        "pendingAtCapture": 15,
+        "failedOrCanceledAtCapture": 150
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 5,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "E8A7AE",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686744801.4,
+          "startedAt": 17264.299999952316,
+          "startedWallTime": 1790686762065,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686744801.4,
+          "now": 19365.199999928474,
+          "wallTime": 1790686764166
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 2101,
+          "start": {
+            "timeOrigin": 1790686744801.4,
+            "startedAt": 17264.299999952316,
+            "startedWallTime": 1790686762065,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686744801.4,
+            "endedAt": 19365.299999952316,
+            "endedWallTime": 1790686764167
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 966148,
+          "priorityUpgradeRequestsInflightAtResponse": 3,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 3,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 0
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686744801.4,
+            "now": 19387.099999904633,
+            "wallTime": 1790686764188
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 19697.799999952316,
+            "wallTime": 1790686764499
+          },
+          "clickToConfirmMs": 310.7000000476837
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "High": 235
+        },
+        "completedBeforeApiProbeStartBytes": 966148,
+        "completedByCaptureBytes": 1213600,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 60
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 6,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "97D4E8",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686765190.6,
+          "startedAt": 30054.899999976158,
+          "startedWallTime": 1790686795246,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686765190.6,
+          "now": 32396.600000023842,
+          "wallTime": 1790686797586
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 671.1000000238419,
+          "start": {
+            "timeOrigin": 1790686765190.6,
+            "startedAt": 30054.899999976158,
+            "startedWallTime": 1790686795246,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686765190.6,
+            "endedAt": 30726,
+            "endedWallTime": 1790686795916
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 1174948,
+          "priorityUpgradeRequestsInflightAtResponse": 0,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 3,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 0
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686765190.6,
+            "now": 32447.200000047684,
+            "wallTime": 1790686797637
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 32712.899999976158,
+            "wallTime": 1790686797903
+          },
+          "clickToConfirmMs": 265.6999999284744
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 230,
+        "initialPriorityCounts": {
+          "High": 230
+        },
+        "completedBeforeApiProbeStartBytes": 1174948,
+        "completedByCaptureBytes": 1395886,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 24
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 6,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "1DC431",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686798647.5,
+          "startedAt": 22758.599999904633,
+          "startedWallTime": 1790686821406,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686798647.5,
+          "now": 24841.099999904633,
+          "wallTime": 1790686823488
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 10595.200000047684,
+          "start": {
+            "timeOrigin": 1790686798647.5,
+            "startedAt": 22758.599999904633,
+            "startedWallTime": 1790686821406,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686798647.5,
+            "endedAt": 33353.799999952316,
+            "endedWallTime": 1790686832001
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 1174948,
+          "priorityUpgradeRequestsInflightAtResponse": 0,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 15,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 15
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686798647.5,
+            "now": 24889.799999952316,
+            "wallTime": 1790686823537
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 25161.199999928474,
+            "wallTime": 1790686823808
+          },
+          "clickToConfirmMs": 271.39999997615814
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 230,
+        "initialPriorityCounts": {
+          "Low": 230
+        },
+        "completedBeforeApiProbeStartBytes": 1174948,
+        "completedByCaptureBytes": 1382584,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 25
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "20eafef baseline",
+      "pair": 7,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "2B2117",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686832818.8,
+          "startedAt": 41863.800000071526,
+          "startedWallTime": 1790686874682,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686832818.8,
+          "now": 43903.10000002384,
+          "wallTime": 1790686876721
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 5016,
+          "start": {
+            "timeOrigin": 1790686832818.8,
+            "startedAt": 41863.800000071526,
+            "startedWallTime": 1790686874682,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686832818.8,
+            "endedAt": 46879.800000071526,
+            "endedWallTime": 1790686879699
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 1174948,
+          "priorityUpgradeRequestsInflightAtResponse": 0,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 3,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 0
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686832818.8,
+            "now": 43961.90000009537,
+            "wallTime": 1790686876780
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 44238.10000002384,
+            "wallTime": 1790686877056
+          },
+          "clickToConfirmMs": 276.1999999284744
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "Low": 235
+        },
+        "completedBeforeApiProbeStartBytes": 1174948,
+        "completedByCaptureBytes": 1382584,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 30
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "51eac79 priority candidate",
+      "pair": 7,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "F188F2",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790686880625.1,
+          "startedAt": 42353.700000047684,
+          "startedWallTime": 1790686922978,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790686880625.1,
+          "now": 44433.200000047684,
+          "wallTime": 1790686925057
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 351.2999999523163,
+          "start": {
+            "timeOrigin": 1790686880625.1,
+            "startedAt": 42353.700000047684,
+            "startedWallTime": 1790686922978,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790686880625.1,
+            "endedAt": 42705,
+            "endedWallTime": 1790686923329
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 1174948,
+          "priorityUpgradeRequestsInflightAtResponse": 45,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 3,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 0
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790686880625.1,
+            "now": 44475,
+            "wallTime": 1790686925099
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 44779.700000047684,
+            "wallTime": 1790686925404
+          },
+          "clickToConfirmMs": 304.7000000476837
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "High": 235
+        },
+        "completedBeforeApiProbeStartBytes": 1174948,
+        "completedByCaptureBytes": 1422400,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 27
+      },
+      "pageErrors": []
+    }
+  ],
+  "limitations": [
+    "This isolates a room-state GET from the active online player session; game mutations use the existing WebSocket command channel and are not timed by this scenario.",
+    "Only the legal-tile selection and its Confirm control are timed on the interface; this does not cover every submenu, text/image resource, or production telemetry.",
+    "Results are a local in-memory API/load-shaping experiment, not proof of hosted API response time or behavior under production server contention."
+  ]
+}
