@@ -1,0 +1,43 @@
+{
+  "ok": true,
+  "generatedAt": "2026-09-29T00:31:17.980Z",
+  "harness": "node scripts/verify-account-api-pglite.mjs",
+  "artifact": "output/api-review/account-api-pglite-2026-09-29.json",
+  "database": "in-memory PGlite over PostgreSQL wire protocol",
+  "migrationsApplied": [
+    "20260825105749_init",
+    "20260825130000_add_command_receipts",
+    "20260825143000_add_participant_ready",
+    "20260825160000_add_connection_lease",
+    "20260825163000_add_room_expiry",
+    "20260826120000_session_expiry",
+    "20260826150000_add_room_privacy",
+    "20260826173000_unique_player_seat",
+    "20260927100000_add_accounts_and_player_stats"
+  ],
+  "schemaProvisioning": "checked-in migration SQL applied directly; Prisma Migrate bookkeeping is not exercised",
+  "prismaMigrateDeploy": "not compatible in this harness; Prisma returned a blank Schema engine error",
+  "actualApiProcess": true,
+  "verified": [
+    "registration",
+    "email verification",
+    "HttpOnly SameSite account cookie",
+    "valid-cookie origin rejection with unchanged persisted account",
+    "valid-cookie and room-token origin rejection with unchanged guest token on seat claim",
+    "valid-cookie origin rejection with unchanged claimed token on account resume",
+    "password reset",
+    "pre-reset session revocation",
+    "new-password login",
+    "seat claim",
+    "account game-list visibility",
+    "resume token rotation",
+    "old room-token rejection",
+    "HTTP Leave invalidates a pending reconnect lease",
+    "account resume after Leave rotates the token and permits a fresh WebSocket ticket"
+  ],
+  "limits": [
+    "PGlite socket server multiplexes a single database engine",
+    "does not establish PostgreSQL MVCC, row-lock, rollback, or concurrent CAS behavior",
+    "in-memory database does not establish durable restart or backup behavior"
+  ]
+}
