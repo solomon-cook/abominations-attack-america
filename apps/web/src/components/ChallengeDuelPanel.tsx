@@ -1,5 +1,7 @@
 import { DieCube } from "./DieCube";
 import { monsterAssetSlug } from "../monster-assets";
+import { combatantDisplayName } from "./combat-presentation";
+import type { GameState } from "@abominations/game-engine";
 
 type ChallengeAttack = Readonly<{
   attackerId: string;
@@ -21,6 +23,7 @@ type Props = {
   loserWeighIn?: number;
   rolls: readonly number[];
   attacks: readonly ChallengeAttack[];
+  game: Pick<GameState, "monsters" | "units">;
   victoryType?: string;
   onClose?: () => void;
 };
@@ -32,7 +35,7 @@ const monsterAsset = (name?: string) => {
     : undefined;
 };
 
-export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHealth, loserWeighIn, rolls, attacks, victoryType, onClose }: Props) {
+export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHealth, loserWeighIn, rolls, attacks, game, victoryType, onClose }: Props) {
   if (!eventId) return null;
   const winnerAsset = monsterAsset(winnerName);
   const defeatedAsset = monsterAsset(defeatedName);
@@ -65,7 +68,9 @@ export function ChallengeDuelPanel({ eventId, winnerName, defeatedName, winnerHe
         <h3 className="challenge-duel-timeline-heading">Health timeline</h3>
         <ol className="challenge-duel-attacks" aria-label="Authoritative duel Health changes">
         {attacks.map((attack, index) => <li key={`${eventId}-attack-${index}`} style={{ animationDelay: `${index * 180}ms` }}>
-          <span>Round {index + 1}: {attack.attackerId} → {attack.targetId}</span>
+          <span aria-label={`Round ${index + 1}: ${combatantDisplayName(game, attack.attackerId)} attacks ${combatantDisplayName(game, attack.targetId)}`}>
+            Round {index + 1}: {combatantDisplayName(game, attack.attackerId)} → {combatantDisplayName(game, attack.targetId)}
+          </span>
           <strong>{attack.hit ? `-${attack.damage} Health${attack.smash ? " · smash" : ""}` : attack.retaliationDamage ? `Miss · ${attack.retaliationDamage} electrocution damage` : "Miss"}</strong>
           {typeof attack.targetHealthBefore === "number" && typeof attack.targetHealthAfter === "number" && <small aria-label={`Health changed from ${attack.targetHealthBefore} to ${attack.targetHealthAfter}`}>{attack.targetHealthBefore} → {attack.targetHealthAfter} Health</small>}
         </li>)}

@@ -1,4 +1,20 @@
 import type { BattleAttack } from "@abominations/game-engine";
+import { GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS, type GameState } from "@abominations/game-engine";
+
+export function combatantDisplayName(game: Pick<GameState, "monsters" | "units">, id: string): string {
+  const monster = game.monsters.find((candidate) => candidate.id === id);
+  if (monster) return monster.name;
+
+  const unit = game.units.find((candidate) => candidate.id === id);
+  if (!unit) return "Unknown combatant";
+
+  const name = GIANT_UNIT_DEFINITIONS.find((definition) => definition.id === unit.unitTypeId)?.name
+    ?? NATIONAL_GUARD_DEFINITIONS.find((definition) => definition.id === unit.unitTypeId)?.name
+    ?? UNIT_DEFINITIONS.find((definition) => definition.id === unit.unitTypeId)?.name
+    ?? (unit.unitTypeId === "navy-nuclear-submarine-missile" ? "Cruise Missile" : undefined);
+  if (!name) return `${unit.branch} unit`;
+  return unit.branch === "Giant" ? name : `${unit.branch} ${name}`;
+}
 
 /** Older/reconnected event logs may not contain the optional combat snapshots. */
 export function readBattleAttacks(value: unknown): BattleAttack[] {

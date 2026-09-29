@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { applyCommand, createGame } from "../packages/game-engine/src/index.js";
+import { combatantDisplayName } from "../apps/web/src/components/combat-presentation.js";
 
 const require = createRequire(import.meta.url);
 require.extensions[".css"] = () => undefined;
@@ -37,8 +38,27 @@ const html = renderToStaticMarkup(React.createElement(ChallengeDuelPanel, {
   loserWeighIn: Number(result.eventPayload.loserWeighIn),
   rolls: result.eventPayload.rolls as number[],
   attacks,
+  game: result.state,
   victoryType: String(result.eventPayload.victoryType ?? "monster-challenge"),
 }));
 assert.match(html, /Miss · 1 electrocution damage/);
 assert.match(html, /Health timeline/);
+const attackerName = combatantDisplayName(result.state, attacks[0]!.attackerId);
+const targetName = combatantDisplayName(result.state, attacks[0]!.targetId);
+assert.ok(html.includes(`Round 1: ${attackerName} → ${targetName}`), "duel history should show combatant names, not internal IDs");
+assert.doesNotMatch(html, /monster-[12]/, "duel history should not expose engine monster IDs");
+const unit = result.state.units[0]!;
+const unitName = combatantDisplayName(result.state, unit.id);
+assert.match(unitName, /^(Army|Navy|Air Force|Marines|National Guard|Giant)\b/, "military combatants should resolve to a human-readable unit label");
+const unitTimeline = renderToStaticMarkup(React.createElement(ChallengeDuelPanel, {
+  eventId: `${event.id}-unit-label`,
+  winnerName: String(result.eventPayload.winnerName),
+  defeatedName: String(result.eventPayload.defeatedName),
+  rolls: result.eventPayload.rolls as number[],
+  attacks: [{ ...attacks[0]!, attackerId: unit.id }],
+  game: result.state,
+}));
+assert.ok(unitTimeline.includes(`Round 1: ${unitName} → ${targetName}`), "duel history should show a readable military-unit label");
+assert.ok(!unitTimeline.includes(unit.id), "duel history should not show the military unit's entity ID");
+assert.equal(combatantDisplayName(result.state, "missing-combatant"), "Unknown combatant", "unknown historical entities should not expose their raw IDs");
 console.log("Challenge result playback identifies It's a Robot!'s electrocution when its retaliation defeats the attacker.");

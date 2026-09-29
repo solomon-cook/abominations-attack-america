@@ -1894,6 +1894,7 @@ function App() {
               loserWeighIn={typeof lastChallengeEvent?.detail.loserWeighIn === "number" ? lastChallengeEvent.detail.loserWeighIn : undefined}
               rolls={challengeAttacks.length ? challengeAttacks.map(attack => attack.roll) : challengeRolls}
               attacks={challengeAttacks}
+              game={activeGame}
               victoryType={typeof lastChallengeEvent?.detail.victoryType === "string" ? lastChallengeEvent.detail.victoryType : undefined}
             />
             <EncounterResultPanel
