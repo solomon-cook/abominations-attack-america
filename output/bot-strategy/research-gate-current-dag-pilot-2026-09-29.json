@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "status": "ABORTED_WITHOUT_RESULTS",
+  "preregistration": "research-gate-current-dag-pilot-2026-09-29-preregistration.json",
+  "command": "npx tsx --tsconfig apps/web/tsconfig.json scripts/verify-bot-research-gates-paired.tsx --pair-count=30 --seed-start=7300 --order-seed=20260930 --max-rounds=12",
+  "startedAt": "2026-09-29T11:00:34Z",
+  "stoppedAt": "2026-09-29T11:44:11Z",
+  "elapsedSeconds": 2617,
+  "configuredPairCount": 30,
+  "completedPairs": null,
+  "reason": "Stopped by the coordinator after about 43 CPU minutes without output so the machine could return to online acceptance verification.",
+  "result": "The runner writes its JSON only at completion. No pair outcomes, variance estimate, or other analysis data were captured. This attempt is not a pilot result and supports no strategy conclusion or policy change."
+}

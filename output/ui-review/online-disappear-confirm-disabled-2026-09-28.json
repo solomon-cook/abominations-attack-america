@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-28T22:49:31.994Z",
+  "generatedAt": "2026-09-29T11:54:07.753Z",
   "route": "main app route served by Vite with local in-memory API",
-  "roomCode": "5B4785",
+  "roomCode": "F6DA30",
   "actor": "first",
   "viewport": "1280x720",
   "input": "pointer",
@@ -30,8 +30,8 @@
     {
       "type": "command.submit",
       "envelope": {
-        "actionId": "c55d1779-eab7-4672-bc1c-b14d3c25bbd3",
-        "actorId": "90511f966b8b8c85026a",
+        "actionId": "021ab5a6-ae6f-46aa-9bff-e5dc1d9e5090",
+        "actorId": "20d8a9dc7f66870d278c",
         "expectedRevision": 8,
         "protocolVersion": 1,
         "command": {
@@ -47,16 +47,18 @@
     "currentPlayer": 0,
     "participants": [
       {
-        "id": "90511f966b8b8c85026a",
+        "id": "20d8a9dc7f66870d278c",
         "role": "player",
         "playerIndex": 0,
-        "connected": true
+        "connected": true,
+        "ready": true
       },
       {
-        "id": "141a803c42024bc136c3",
+        "id": "610862cd2a80c839bf72",
         "role": "player",
         "playerIndex": 1,
-        "connected": true
+        "connected": true,
+        "ready": true
       }
     ],
     "eventCount": 0
@@ -75,7 +77,7 @@
     },
     "event": {
       "id": "1:0",
-      "actorId": "90511f966b8b8c85026a",
+      "actorId": "20d8a9dc7f66870d278c",
       "action": "monster.disappeared",
       "detail": {
         "monsterId": "monster-1",
@@ -86,16 +88,18 @@
     "appendedEventCount": 1,
     "participants": [
       {
-        "id": "90511f966b8b8c85026a",
+        "id": "20d8a9dc7f66870d278c",
         "role": "player",
         "playerIndex": 0,
-        "connected": true
+        "connected": true,
+        "ready": true
       },
       {
-        "id": "141a803c42024bc136c3",
+        "id": "610862cd2a80c839bf72",
         "role": "player",
         "playerIndex": 1,
-        "connected": true
+        "connected": true,
+        "ready": true
       }
     ]
   },

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-28T22:49:31.975Z",
+  "generatedAt": "2026-09-29T11:54:07.752Z",
   "route": "main app route served by Vite with local in-memory API",
   "actor": "second",
   "viewport": "1280x720",
@@ -14,8 +14,8 @@
     {
       "type": "command.submit",
       "envelope": {
-        "actionId": "a15be9e8-bc0c-44f1-a4f9-d375bc0025d7",
-        "actorId": "ec82d3a8847a20e8e21f",
+        "actionId": "c644790e-3605-4dbc-afbd-6780fbcf5277",
+        "actorId": "4772974d050cc6602cf2",
         "expectedRevision": 13,
         "protocolVersion": 1,
         "command": {

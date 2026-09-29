@@ -920,49 +920,52 @@ try {
   }
   await disappearFirst.waitFor("!document.querySelector('.setup-panel')", "disappearance first setup completion");
   await disappearSecond.waitFor("!document.querySelector('.setup-panel')", "disappearance second setup completion");
-  if (!await disappearFirst.click("Ready") || !await disappearSecond.click("Ready")) throw new Error("Disappearance audit players did not expose Ready controls.");
-  await Promise.all([disappearFirst, disappearSecond].map((browser) => browser.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "disappearance audit Move phase")));
-  const readDisappearRoomState = () => disappearFirst.evaluate(`(async () => {
-    const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
-    const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${disappearRoomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+  const disappearSession = await disappearFirst.evaluate(`JSON.parse(localStorage.getItem("abominations-session") ?? "{}")`);
+  const readDisappearRoomState = async () => {
+    const response = await fetch(`${apiUrl}/rooms/${disappearRoomCode}/state?token=${encodeURIComponent(disappearSession.token ?? "")}`);
     const room = await response.json();
-    const participant = room.participants?.find((entry) => entry.id === session.participantId);
-    const moveOptions = document.querySelector(".command-station .bottom-context-dock details.piece-context-tab");
-    const disappearControl = [...(moveOptions?.querySelectorAll("button") ?? [])].find((button) => button.textContent.trim() === "Disappear to lair");
-    return { status: response.status, roomStatus: room.status, roomVersion: room.version, participantId: session.participantId, participantRole: participant?.role,
-      participantPlayerIndex: participant?.playerIndex, currentPlayer: room.state.currentPlayer,
-      participants: room.participants?.map((entry) => ({ id: entry.id, role: entry.role, playerIndex: entry.playerIndex, connected: entry.connected })),
-      phase: room.state.phase, pendingDecision: room.state.pendingDecision, movedPieceIds: room.state.movedPieceIds ?? [],
-      setupPhase: room.state.setupState?.phase, pendingChopperLift: room.state.pendingChopperLift,
-      setupAssignments: room.state.setupAssignments, monsters: room.state.monsters.map((monster) => ({ id: monster.id, name: monster.name, location: monster.location })),
-      ui: { connection: document.querySelector(".connection")?.textContent?.trim(), heading: document.querySelector(".action-card h2")?.textContent?.trim(), settingsOpen: Boolean(document.querySelector(".settings-panel")), moveOptionsOpen: moveOptions?.open, disappearDisabled: disappearControl?.disabled, passMoveDisabled: [...(moveOptions?.querySelectorAll("button") ?? [])].find((button) => button.textContent.trim() === "End all movement →")?.disabled },
-      eventIds: room.state.eventLog.map((event) => event.id), eventCount: room.state.eventLog.length };
-  })()`);
-  let disappearActive;
-  let disappearProjection;
-  for (let attempt = 0; attempt < 120; attempt += 1) {
-    const roomState = await readDisappearRoomState();
-    const activeParticipant = roomState.participants?.find((entry) => entry.role === "player" && entry.playerIndex === roomState.currentPlayer);
-    if (roomState.status === 200 && roomState.roomStatus === "active" && roomState.phase === "move" && activeParticipant) {
-      const actingBrowser = activeParticipant.playerIndex === 0 ? disappearFirst : disappearSecond;
-      const projection = await actingBrowser.evaluate(`(() => ({
-        turnLabel: document.querySelector(".top-turn-summary .turn-hud-heading .label")?.textContent?.trim(),
-        heading: document.querySelector(".action-card h2")?.textContent?.trim(),
-        unavailableReason: document.querySelector(".unavailable-reason")?.textContent?.trim(),
-        connection: document.querySelector(".room-hud-menu-status")?.textContent?.trim(),
-        setupVisible: Boolean(document.querySelector(".setup-panel")),
-      }))()`);
-      disappearProjection = projection;
-      if (projection.heading === "Move" && projection.turnLabel?.includes(`YOUR TURN · PLAYER ${roomState.currentPlayer + 1}`)) {
-        disappearActive = { ...roomState, uiProjection: projection };
-        break;
-      }
-    }
-    await wait(100);
+    const participant = room.participants?.find((entry) => entry.id === disappearSession.participantId);
+    return { status: response.status, apiError: room.error, roomStatus: room.status, roomVersion: room.version,
+      participantId: disappearSession.participantId, participantRole: participant?.role, participantPlayerIndex: participant?.playerIndex,
+      currentPlayer: room.state?.currentPlayer,
+      participants: room.participants?.map((entry) => ({ id: entry.id, role: entry.role, playerIndex: entry.playerIndex, connected: entry.connected, ready: entry.ready })),
+      phase: room.state?.phase, pendingDecision: room.state?.pendingDecision, movedPieceIds: room.state?.movedPieceIds ?? [],
+      setupPhase: room.state?.setupState?.phase, pendingChopperLift: room.state?.pendingChopperLift,
+      setupAssignments: room.state?.setupAssignments, monsters: room.state?.monsters?.map((monster) => ({ id: monster.id, name: monster.name, location: monster.location })),
+      eventIds: room.state?.eventLog?.map((event) => event.id), eventCount: room.state?.eventLog?.length };
+  };
+  if (!await disappearFirst.click("Ready")) throw new Error("Disappearance audit first player did not expose Ready.");
+  await disappearFirst.waitFor(`[...document.querySelectorAll("button")].some((button) => button.textContent.trim() === "Not ready")`, "disappearance first player ready state");
+  const firstReadyState = await readDisappearRoomState();
+  if (firstReadyState.status !== 200 || firstReadyState.participants?.find((entry) => entry.id === disappearSession.participantId)?.ready !== true) {
+    throw new Error(`Disappearance audit first player's Ready action did not persist: ${JSON.stringify(firstReadyState)}`);
   }
-  if (!disappearActive) {
-    const latestRoomState = await readDisappearRoomState();
-    throw new Error(`Disappearance audit did not reach an active participant Move projection before exercising Settings: ${JSON.stringify({ room: latestRoomState, uiProjection: disappearProjection })}`);
+  const secondSession = await disappearSecond.evaluate(`JSON.parse(localStorage.getItem("abominations-session") ?? "{}")`);
+  if (!await disappearSecond.click("Ready")) throw new Error("Disappearance audit second player did not expose Ready.");
+  try {
+    await disappearFirst.waitFor(`document.querySelector(".top-turn-summary .turn-hud-heading .label")?.textContent?.includes("YOUR TURN · PLAYER 1")`, "disappearance active-player turn projection");
+  } catch (error) {
+    const roomState = await readDisappearRoomState();
+    throw new Error(`Disappearance audit did not project the active turn after both Ready actions: ${JSON.stringify({ room: roomState, waitError: error instanceof Error ? error.message : String(error) })}`);
+  }
+  const secondReadyState = await readDisappearRoomState();
+  if (secondReadyState.status !== 200 || secondReadyState.roomStatus !== "active"
+    || secondReadyState.participants?.find((entry) => entry.id === secondSession.participantId)?.ready !== true) {
+    throw new Error(`Disappearance audit room did not become active after the second Ready action: ${JSON.stringify({ firstReadyState, room: secondReadyState })}`);
+  }
+  const activeParticipant = secondReadyState.participants?.find((entry) => entry.role === "player" && entry.playerIndex === secondReadyState.currentPlayer);
+  const actingBrowser = activeParticipant?.playerIndex === 0 ? disappearFirst : disappearSecond;
+  const disappearProjection = await actingBrowser.evaluate(`(() => ({
+    turnLabel: document.querySelector(".top-turn-summary .turn-hud-heading .label")?.textContent?.trim(),
+    heading: document.querySelector(".action-card h2")?.textContent?.trim(),
+    unavailableReason: document.querySelector(".unavailable-reason")?.textContent?.trim(),
+    connection: document.querySelector(".room-hud-menu-status")?.textContent?.trim(),
+    setupVisible: Boolean(document.querySelector(".setup-panel")),
+  }))()`);
+  const disappearActive = activeParticipant && { ...secondReadyState, uiProjection: disappearProjection };
+  if (!disappearActive || disappearProjection.heading !== "Move"
+    || !disappearProjection.turnLabel?.includes(`YOUR TURN · PLAYER ${secondReadyState.currentPlayer + 1}`)) {
+    throw new Error(`Disappearance audit active player did not receive its Move projection: ${JSON.stringify({ firstReadyState, room: secondReadyState, uiProjection: disappearProjection })}`);
   }
   if (disappearActive.status !== 200 || disappearActive.phase !== "move" || disappearActive.participantRole !== "player"
     || disappearActive.participantPlayerIndex !== disappearActive.currentPlayer
@@ -1046,7 +1049,7 @@ try {
     return { status: response.status, roomVersion: room.version, phase: room.state.phase, currentPlayer: room.state.currentPlayer,
       pendingDecision: room.state.pendingDecision, monster: monster ? { id: monster.id, location: monster.location } : null,
       movedPieceIds: room.state.movedPieceIds ?? [], encounterSuppressed: room.state.encounterSuppressed,
-      participants: room.participants?.map((entry) => ({ id: entry.id, role: entry.role, playerIndex: entry.playerIndex, connected: entry.connected })),
+      participants: room.participants?.map((entry) => ({ id: entry.id, role: entry.role, playerIndex: entry.playerIndex, connected: entry.connected, ready: entry.ready })),
       eventIds: room.state.eventLog.map((entry) => entry.id), eventCount: room.state.eventLog.length,
       lastEvent: event ? { id: event.id, actorId: event.actorId, action: event.action, detail: event.detail } : null };
   })()`);
