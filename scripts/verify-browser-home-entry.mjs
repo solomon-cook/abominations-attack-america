@@ -407,7 +407,8 @@ try {
   assert.equal(await monsterDialog.getAttribute("aria-modal"), "true", "the mobile Monster Sheet is announced as modal");
   assert.equal(await monsterClose.evaluate((node) => node === document.activeElement), true, "opening the mobile Monster Sheet starts focus on Close");
   const sheetScrollHint = await monsterDialog.locator(".monster-sheet-scroll-hint").innerText();
-  assert.match(sheetScrollHint, /full monster record.*Mutation cards/i, "the phone hint explains that horizontal scrolling reveals both the full record and Mutation cards");
+  assert.equal(await monsterDialog.locator(".monster-sheet-scroll-hint").isVisible(), true, "the phone scrolling instruction is visible");
+  assert.match(sheetScrollHint, /swipe left or right here.*focus this area and use the arrow keys.*full monster record.*Mutation cards/i, "the phone hint explains touch and keyboard scrolling, its direction, and what it reveals");
   const monsterDialogBounds = await monsterDialog.boundingBox();
   assert.ok(monsterDialogBounds && monsterDialogBounds.x >= -1 && monsterDialogBounds.y >= -1
     && monsterDialogBounds.x + monsterDialogBounds.width <= 391
@@ -437,19 +438,81 @@ try {
   const workspaceBounds = await sheetWorkspace.boundingBox();
   const workspaceScroll = await sheetWorkspace.evaluate((node) => ({ clientWidth: node.clientWidth, scrollWidth: node.scrollWidth, scrollLeft: node.scrollLeft }));
   assert.ok(workspaceScroll.scrollWidth > workspaceScroll.clientWidth, "the fixed-width Monster Sheet and Mutation column are intentionally horizontally scrollable on a phone");
+  assert.equal(await sheetWorkspace.getAttribute("role"), "region", "the horizontal workspace is exposed as a named region");
+  assert.equal(await sheetWorkspace.getAttribute("aria-label"), "Monster record and Mutation cards", "the horizontal workspace has an accessible name");
+  assert.equal(await sheetWorkspace.getAttribute("tabindex"), "0", "the horizontal workspace can receive keyboard focus for scrolling");
   await soloPage.screenshot({ path: join(cwd, "output", "ui-review", "monster-sheet-mobile-move-390x844-2026-09-29.png") });
   assert.ok(workspaceBounds, "the Monster Sheet workspace has a visible scroll viewport");
-  await soloPage.mouse.move(workspaceBounds.x + workspaceBounds.width / 2, workspaceBounds.y + workspaceBounds.height / 2);
-  await soloPage.mouse.wheel(workspaceScroll.scrollWidth, 0);
+  const recordSwipeStart = await monsterDialog.locator(".monster-physical-record").evaluate((record) => {
+    const workspace = record.closest(".monster-sheet-workspace");
+    if (!workspace) throw new Error("Monster record is outside its horizontal workspace.");
+    const bounds = record.getBoundingClientRect();
+    const clip = workspace.getBoundingClientRect();
+    const left = Math.max(bounds.left, clip.left) + 32;
+    const right = Math.min(bounds.right, clip.right) - 16;
+    return { x: right, y: Math.max(bounds.top, clip.top) + Math.min(48, Math.max(12, (Math.min(bounds.bottom, clip.bottom) - Math.max(bounds.top, clip.top)) / 2)) , left };
+  });
+  assert.ok(recordSwipeStart.x > recordSwipeStart.left, `the visible Monster record has enough room for a touch swipe: ${JSON.stringify(recordSwipeStart)}`);
+  const touchSession = await soloPage.context().newCDPSession(soloPage);
+  await touchSession.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 });
+  const dispatchRecordSwipe = async (start, end) => {
+    await touchSession.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ id: 1, x: start.x, y: start.y }] });
+    await touchSession.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ id: 1, x: end.x, y: end.y }] });
+    await touchSession.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  };
+  const waitForScrollToSettle = async () => {
+    let previous = await sheetWorkspace.evaluate((node) => node.scrollLeft);
+    let stableSamples = 0;
+    for (let sample = 0; sample < 20 && stableSamples < 3; sample += 1) {
+      await wait(50);
+      const current = await sheetWorkspace.evaluate((node) => node.scrollLeft);
+      stableSamples = Math.abs(current - previous) < 0.5 ? stableSamples + 1 : 0;
+      previous = current;
+    }
+    return previous;
+  };
+  await dispatchRecordSwipe({ x: recordSwipeStart.x, y: recordSwipeStart.y }, { x: recordSwipeStart.left, y: recordSwipeStart.y });
   await soloPage.waitForFunction(() => {
     const workspace = document.querySelector(".monster-reference-sheet .monster-sheet-workspace");
     return workspace instanceof HTMLElement && workspace.scrollLeft > 0;
-  });
-  await mutationEmptyState.scrollIntoViewIfNeeded();
-  const mutationBounds = await mutationArea.boundingBox();
-  assert.equal(await mutationEmptyState.isVisible(), true, "horizontal workspace scrolling reveals the Mutation area and empty state");
+  }, { timeout: 5000 });
+  let touchSwipeCount = 1;
+  let touchScrollLeft = await waitForScrollToSettle();
+  let mutationBounds = await mutationArea.boundingBox();
+  if (mutationBounds && workspaceBounds && mutationBounds.right > workspaceBounds.x + workspaceBounds.width + 1) {
+    const nextSwipe = await monsterDialog.locator(".monster-physical-record").evaluate((record) => {
+      const workspace = record.closest(".monster-sheet-workspace");
+      if (!workspace) throw new Error("Monster record is outside its horizontal workspace.");
+      const bounds = record.getBoundingClientRect();
+      const clip = workspace.getBoundingClientRect();
+      const left = Math.max(bounds.left, clip.left);
+      const right = Math.min(bounds.right, clip.right);
+      const y = Math.max(bounds.top, clip.top) + (Math.min(bounds.bottom, clip.bottom) - Math.max(bounds.top, clip.top)) / 2;
+      return { start: { x: right - 12, y }, end: { x: left + 12, y } };
+    });
+    assert.ok(nextSwipe.start.x > nextSwipe.end.x, `the visible record has room for another leftward swipe: ${JSON.stringify(nextSwipe)}`);
+    await dispatchRecordSwipe(nextSwipe.start, nextSwipe.end);
+    touchSwipeCount += 1;
+    touchScrollLeft = await waitForScrollToSettle();
+    mutationBounds = await mutationArea.boundingBox();
+  }
+  await touchSession.detach();
+  assert.ok(touchScrollLeft > 0, `a touch gesture starting on the visible Monster record scrolls the workspace horizontally: ${touchScrollLeft}`);
+  assert.equal(await mutationEmptyState.isVisible(), true, "a touch swipe reveals the Mutation area and empty state");
   assert.ok(mutationBounds && mutationBounds.x >= workspaceBounds.x - 1 && mutationBounds.x + mutationBounds.width <= workspaceBounds.x + workspaceBounds.width + 1,
-    `the Mutation area is reachable within the horizontally scrolled workspace: ${JSON.stringify({ workspaceBounds, mutationBounds })}`);
+    `the touch-revealed Mutation area is reachable within the horizontal workspace: ${JSON.stringify({ workspaceBounds, mutationBounds })}`);
+  await sheetWorkspace.evaluate((node) => { node.scrollLeft = 0; });
+  await sheetWorkspace.focus();
+  await soloPage.keyboard.press("ArrowRight");
+  await soloPage.keyboard.press("ArrowRight");
+  await soloPage.waitForFunction(() => {
+    const workspace = document.querySelector(".monster-reference-sheet .monster-sheet-workspace");
+    return workspace instanceof HTMLElement && workspace.scrollLeft > 0;
+  }, { timeout: 5000 });
+  const keyboardScrollLeft = await sheetWorkspace.evaluate((node) => node.scrollLeft);
+  assert.ok(keyboardScrollLeft >= workspaceScroll.scrollWidth - workspaceScroll.clientWidth - 1,
+    `two ArrowRight presses on the focused Monster Sheet workspace reach the Mutation area: ${keyboardScrollLeft}`);
+  await mutationEmptyState.scrollIntoViewIfNeeded();
   const mutationScreenshot = "monster-sheet-mutation-area-mobile-move-390x844-2026-09-29.png";
   await soloPage.screenshot({ path: join(cwd, "output", "ui-review", mutationScreenshot) });
   await soloPage.keyboard.press("Escape");
@@ -474,13 +537,13 @@ try {
   const monsterSheetMobile = {
     status: "passed",
     viewport: "390x844 phone-sized browser viewport",
-    input: "pointer and keyboard",
+    input: "touch gesture, keyboard, and pointer",
     entry: "solo Home flow → Move turn → mobile player record → Monster Sheet",
     modal: { accessibleName: "Zorb", ariaModal: true, initialFocus: "Close", tabWrapsAtBothEnds: true, bounds: monsterDialogBounds, pageWidths: sheetWidths },
     currentValues: { health: currentStats.Health, infamy: currentStats.Infamy, matchesPlayerRecordProjection: true },
-    mutationCards: { count: 0, emptyState: "No Mutation cards held.", horizontalScrollRevealsArea: true, scrollHint: sheetScrollHint, screenshot: mutationScreenshot },
+    mutationCards: { count: 0, emptyState: "No Mutation cards held.", touchSwipesFromRecord: touchSwipeCount, touchSwipeFromRecordRevealsArea: true, touchScrollLeft, keyboardScrollRevealsArea: true, keyboardScrollKeys: 2, keyboardScrollLeft, scrollRegion: "named and keyboard-focusable", scrollHint: sheetScrollHint, screenshot: mutationScreenshot },
     dismissals: { escapeRestoresFocus: true, closeRestoresFocus: true, backdropRestoresFocus: true },
-    gameStateUnchanged: true,
+    observedUiSnapshotUnchanged: ["phase", "legal destinations", "event summaries"],
   };
   await soloPage.setViewportSize({ width: 1280, height: 720 });
 

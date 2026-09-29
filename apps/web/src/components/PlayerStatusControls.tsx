@@ -30,8 +30,12 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
       }
     }}>
       <div className="military-hand-toolbar"><span className="label">MONSTER RECORD SHEET</span><button className="military-sheet-close" onClick={onClose}>Close</button></div>
-      <p className="monster-sheet-scroll-hint">Swipe across to read the full monster record and view its Mutation cards.</p>
-      <div className="monster-sheet-workspace">
+      <p id="monster-sheet-scroll-hint" className="monster-sheet-scroll-hint">Swipe left or right here, or focus this area and use the arrow keys, to read the full monster record and Mutation cards.</p>
+      <div className="monster-sheet-workspace" role="region" aria-label="Monster record and Mutation cards" aria-describedby="monster-sheet-scroll-hint" tabIndex={0} onKeyDown={(event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        event.preventDefault();
+        event.currentTarget.scrollLeft += (event.key === "ArrowRight" ? 1 : -1) * Math.max(80, event.currentTarget.clientWidth * 0.8);
+      }}>
       <div className="military-sheet physical-monster-sheet">
         <div className="monster-physical-record" role="group" aria-label={`${monster.name} physical-style record`}>
           <div className="record-health-rail tens" aria-label="Health tens">{[0, 10, 20, 30, 40].map((value) => <span key={value} className={Math.floor(monster.health / 10) * 10 === value ? "health-marker" : ""}>{value}</span>)}<small>HEALTH</small></div>

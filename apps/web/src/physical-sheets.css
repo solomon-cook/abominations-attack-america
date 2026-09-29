@@ -132,7 +132,7 @@
 .record-reserve { margin-bottom:26px; }
 .monster-reference-sheet { width:min(1320px,calc(100vw - 24px)); }
 .monster-sheet-workspace { display:grid; grid-template-columns:minmax(460px,1.45fr) minmax(300px,1fr); gap:20px; align-items:start; overflow:auto; min-height:0; padding-bottom:10px; }
-.monster-sheet-workspace > .physical-monster-sheet { max-height:none; overflow:visible; margin:0; }
+.monster-sheet-workspace > .physical-monster-sheet { max-height:none; overflow:visible; margin:0; touch-action:auto; }
 .monster-sheet-workspace > .sheet-held-cards { margin:0; border:0; padding:12px 0; min-width:0; }
 .monster-sheet-workspace > .sheet-held-cards > h3 { color:#fff1cd; margin:0 0 8px; }
 .sheet-card-art { position:relative; width:100%; aspect-ratio:1.45; overflow:hidden; border-radius:6px; background:#292e24; }

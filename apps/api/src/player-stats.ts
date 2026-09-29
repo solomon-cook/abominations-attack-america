@@ -1,4 +1,5 @@
 import type { GameState } from "@abominations/game-engine";
+import type { PlayerMatchStat } from "../generated/prisma/client.js";
 
 export interface MatchCounters {
   stompedTiles: number;
@@ -73,7 +74,11 @@ export function completedMatchRows(roomId: string, state: GameState, counters: r
   });
 }
 
-export function sumPlayerStats(rows: readonly Record<string, any>[], username: string) {
+type PlayerStatSummaryRow = Pick<PlayerMatchStat,
+  "outcome" | "stompedTiles" | "damageTaken" | "healthGained" | "luckTotal" | "luckRolls" | "monsterName" | "branch"
+>;
+
+export function sumPlayerStats(rows: readonly PlayerStatSummaryRow[], username: string) {
   const stats = {
     username,
     gamesPlayed: rows.length,
