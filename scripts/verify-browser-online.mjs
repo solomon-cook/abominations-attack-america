@@ -161,6 +161,7 @@ async function openBrowser(port, name, existingProfile, restoredSessionStorage =
     clickPoint,
     clickSelector,
     pressKey,
+    setViewport: (width, height, mobile = false) => command("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile }),
     dialogOpenings: () => dialogOpenings.map((dialog) => ({ ...dialog })),
     screenshot: async () => {
       const result = await command("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
@@ -194,6 +195,7 @@ let logPanelAcceptance;
 let disappearFirst;
 let disappearSecond;
 let disabledConfirmDisappearEvidence;
+let encounterResultEvidence;
 try {
   if (ownsWebServer) {
     webServer = startServer({
@@ -279,6 +281,8 @@ try {
   await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first Move phase");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second Move phase");
   await spectator.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "spectator Move projection");
+  const noEncounterResultBeforeMovement = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`document.querySelectorAll(".encounter-result").length`)));
+  if (noEncounterResultBeforeMovement.some((count) => count !== 0)) throw new Error(`The Encounter result panel rendered without an encounter event: ${JSON.stringify(noEncounterResultBeforeMovement)}`);
   for (const [browser, targetPlayer, label] of [[first, "Player 2", "online opponent"], [spectator, "Player 1", "spectator player"]]) {
     const clickedPortrait = await browser.evaluate(`(() => { const button = [...document.querySelectorAll(".opponent-player-card")].find((candidate) => candidate.getAttribute("aria-label")?.startsWith(${JSON.stringify(targetPlayer)})); if (!button) return false; button.click(); return true; })()`);
     if (!clickedPortrait) throw new Error(`${label} portrait was missing.`);
@@ -461,6 +465,125 @@ try {
   }
   let postEncounterPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(postEncounterPhase)}`, "second synchronized post-encounter phase");
+  const captureEncounterResult = async (browser, viewport) => {
+    await browser.setViewport(viewport.width, viewport.height, viewport.mobile);
+    await browser.waitFor(`innerWidth === ${viewport.width} && innerHeight === ${viewport.height}`, `${viewport.name} viewport`);
+    if (await browser.evaluate(`Boolean(document.querySelector(".onboarding"))`)) {
+      if (!await browser.clickSelector(".onboarding-actions button")) throw new Error(`${viewport.name}: could not dismiss the first-match guide before reading the Encounter result.`);
+      await browser.waitFor(`!document.querySelector(".onboarding")`, `${viewport.name} first-match guide dismissal`);
+    }
+    const panelHidden = await browser.evaluate(`document.querySelector("#turn-hud-body")?.hidden === true`);
+    if (panelHidden) {
+      if (!await browser.clickSelector('button[aria-label="Expand turn panel"]')) throw new Error(`${viewport.name}: could not expand the persistent turn panel.`);
+      await browser.waitFor(`document.querySelector("#turn-hud-body")?.hidden === false`, `${viewport.name} turn panel expansion`);
+    }
+    const disclosureState = await browser.evaluate(`(() => {
+      const disclosure = [...document.querySelectorAll("#turn-hud-body details.hud-section")].find((section) => section.querySelector("summary")?.textContent.trim() === "Recent results & turn history");
+      if (!disclosure) return "missing";
+      if (disclosure.open) return "open";
+      const summary = disclosure.querySelector("summary");
+      summary?.scrollIntoView({ block: "center", inline: "nearest" });
+      summary?.focus();
+      return summary === document.activeElement ? "focused" : "unfocusable";
+    })()`);
+    if (disclosureState === "focused") {
+      await browser.pressKey("Space");
+      await browser.waitFor(`(() => [...document.querySelectorAll("#turn-hud-body details.hud-section")].some((section) => section.querySelector("summary")?.textContent.trim() === "Recent results & turn history" && section.open))()`, `${viewport.name} history disclosure`);
+    } else if (disclosureState !== "open") {
+      throw new Error(`${viewport.name}: history disclosure could not be opened (${disclosureState}).`);
+    }
+    await browser.evaluate(`document.querySelector(".encounter-result")?.scrollIntoView({ block: "center", inline: "nearest" })`);
+    const snapshot = await browser.evaluate(`(async () => {
+      const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+      const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+      const room = await response.json();
+      const candidates = (room.state?.eventLog ?? []).filter((event) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required"].includes(event.action));
+      const event = candidates.at(-1) ?? null;
+      const result = document.querySelector(".encounter-result");
+      const stateRows = [...(result?.querySelectorAll(".encounter-state") ?? [])].map((row) => row.textContent?.trim() ?? "");
+      const effectRows = [...(result?.querySelectorAll(".encounter-effects li") ?? [])].map((row) => {
+        const text = row.textContent?.trim() ?? "";
+        const icon = row.querySelector(".metric-icon")?.textContent?.trim() ?? "";
+        return icon && text.startsWith(icon) ? text.slice(icon.length).trim() : text;
+      });
+      const markerRow = stateRows.find((text) => text.includes("remain; the engine enforces")) ?? null;
+      const markerIcon = result?.querySelector(".encounter-state .metric-icon")?.textContent?.trim() ?? "";
+      return {
+        status: response.status,
+        authoritative: event ? { id: event.id, action: event.action, detail: event.detail ?? {} } : null,
+        pendingDecision: room.state?.pendingDecision ?? null,
+        rendered: {
+          eventId: result?.getAttribute("data-event-id") ?? null,
+          rolls: [...(result?.querySelectorAll(".encounter-roll-list [aria-label]") ?? [])].map((die) => Number((die.getAttribute("aria-label") ?? "").match(/: (\\d+)$/)?.[1])),
+          effects: effectRows,
+          choices: result?.querySelector(".encounter-choice-note")?.textContent?.trim() ?? null,
+          stomped: stateRows.find((text) => text.includes("space consumed a Stomp marker") || text.includes("already stomped; no new Stomp marker")) ?? null,
+          remainingStompMarkers: markerRow ? (markerIcon && markerRow.startsWith(markerIcon) ? markerRow.slice(markerIcon.length).trim() : markerRow) : null,
+          challenge: stateRows.find((text) => text.startsWith("Monster Challenge:")) ?? null,
+          mutationDraws: [...(result?.querySelectorAll(".encounter-mutation-draws li") ?? [])].map((row) => row.textContent?.trim() ?? ""),
+          nextPhase: result?.querySelector("small")?.textContent?.trim() ?? null,
+          noEffect: result?.querySelector(".encounter-no-effect")?.textContent?.trim() ?? null,
+        },
+        bounds: result ? (() => { const rect = result.getBoundingClientRect(); return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height, viewportWidth: innerWidth, viewportHeight: innerHeight, documentWidth: document.documentElement.scrollWidth }; })() : null,
+      };
+    })()`);
+    if (snapshot.status !== 200 || !snapshot.authoritative) throw new Error(`${viewport.name}: no authoritative Encounter event was available: ${JSON.stringify(snapshot)}`);
+    const detail = snapshot.authoritative.detail;
+    const expectedRolls = Array.isArray(detail.rolls) ? detail.rolls.filter((roll) => typeof roll === "number") : [];
+    const expectedEffects = Array.isArray(detail.effects) ? detail.effects.filter((effect) => effect && typeof effect.type === "string" && typeof effect.amount === "number" && typeof effect.source === "string").map((effect) => `${effect.type === "health" ? `+${effect.amount} Health` : effect.type === "infamy" ? `+${effect.amount} Infamy` : effect.type === "stomp" ? "Stomp marker placed" : `${effect.type} effect recorded (${effect.amount})`}${effect.type === "health" || effect.type === "infamy" ? ` from ${effect.source}` : ""}`) : [];
+    const expectedChoices = Array.isArray(detail.choices) ? detail.choices.filter((choice) => typeof choice === "string") : [];
+    const expectedStomped = typeof detail.stomped === "boolean" ? detail.stomped ? "The space consumed a Stomp marker." : "The space was already stomped; no new Stomp marker was consumed." : null;
+    const expectedRemaining = typeof detail.remainingStompMarkers === "number" ? `${detail.remainingStompMarkers} Stomp marker${detail.remainingStompMarkers === 1 ? "" : "s"} remain; the engine enforces the Infamy cap and marker limits.` : null;
+    const expectedChallenge = detail.challenge?.declared ? `Monster Challenge: ${detail.challenge.active ? "active" : detail.challenge.startAtEndOfTurn ? "new challenger starts at the end of this turn" : detail.challenge.challengerMonsterId ? "challenger scheduled for their next turn" : "waiting for an eligible Challenge-site arrival"}.` : null;
+    const expectedMutationDraws = Array.isArray(detail.mutationDraws) ? detail.mutationDraws.map((draw) => `${draw.siteId}: ${draw.cardDrawn ? draw.effectStatus === "implemented" ? "Mutation card drawn; implemented effect is active." : "Mutation card drawn; card effect remains source-gated." : "No Mutation card was available."}`) : [];
+    const expectedNextPhase = typeof detail.nextPhase === "string" ? `Next: ${detail.nextPhase}.` : null;
+    const expectedChoiceText = expectedChoices.length ? `Choose: ${expectedChoices.join(" or ")}.` : null;
+    const expectedNoEffect = expectedEffects.length === 0 && expectedChoices.length === 0 ? "No encounter reward was applied." : null;
+    const rendered = snapshot.rendered;
+    const checks = {
+      eventId: rendered.eventId === snapshot.authoritative.id,
+      rolls: JSON.stringify(rendered.rolls) === JSON.stringify(expectedRolls),
+      effects: JSON.stringify(rendered.effects) === JSON.stringify(expectedEffects),
+      choices: rendered.choices === expectedChoiceText,
+      stomped: rendered.stomped === expectedStomped,
+      remainingStompMarkers: rendered.remainingStompMarkers === expectedRemaining,
+      challenge: rendered.challenge === expectedChallenge,
+      mutationDraws: JSON.stringify(rendered.mutationDraws) === JSON.stringify(expectedMutationDraws),
+      nextPhase: rendered.nextPhase === expectedNextPhase,
+      noEffect: rendered.noEffect === expectedNoEffect,
+      overlayClear: await browser.evaluate(`!document.querySelector(".onboarding")`),
+    };
+    const bounds = snapshot.bounds;
+    checks.viewport = Boolean(bounds && bounds.width > 0 && bounds.x >= -1 && bounds.right <= bounds.viewportWidth + 1 && bounds.y >= -1 && bounds.bottom <= bounds.viewportHeight + 1);
+    if (Object.values(checks).some((passed) => !passed)) throw new Error(`${viewport.name}: Encounter result differs from the authoritative event or is clipped: ${JSON.stringify({ checks, snapshot, expected: { rolls: expectedRolls, effects: expectedEffects, choices: expectedChoiceText, stomped: expectedStomped, remainingStompMarkers: expectedRemaining, challenge: expectedChallenge, mutationDraws: expectedMutationDraws, nextPhase: expectedNextPhase, noEffect: expectedNoEffect } })}`);
+    const outputDir = join(process.cwd(), "output/ui-review");
+    await mkdir(outputDir, { recursive: true });
+    const screenshot = `encounter-result-full-route-2026-09-29-${viewport.name}.png`;
+    await writeFile(join(outputDir, screenshot), await browser.screenshot());
+    return { viewport: viewport.name, eventId: snapshot.authoritative.id, eventAction: snapshot.authoritative.action, detail: snapshot.authoritative.detail, rendered, bounds, checks, screenshot };
+  };
+  const desktopEncounterResult = await captureEncounterResult(first, { name: "desktop-1280x720", width: 1280, height: 720, mobile: false });
+  const phoneEncounterResult = await captureEncounterResult(first, { name: "phone-390x844", width: 390, height: 844, mobile: true });
+  encounterResultEvidence = {
+    route: "main app route served by Vite with local in-memory API",
+    noEventAbsentBeforeMovement: noEncounterResultBeforeMovement.every((count) => count === 0),
+    pendingEncounterChoiceObserved: desktopEncounterResult.eventAction === "encounter.choice-required" || phoneEncounterResult.eventAction === "encounter.choice-required",
+    coverageGaps: [
+      "The full route did not force a pending encounter-choice case. Existing phase-choice coverage is harness-level, so the full-route pending-choice presentation remains open.",
+      "This encountered event had no Mutation draw and no declared Challenge; those optional rows were checked for correct absence, but positive Mutation/Challenge text still needs a fixture.",
+      "The result had short details and was tested with the in-memory API; long-detail wrapping and durable Prisma route behavior remain open.",
+    ],
+    viewports: [desktopEncounterResult, phoneEncounterResult],
+  };
+  if (process.env.BROWSER_ENCOUNTER_RESULT_ONLY === "1") {
+    const outputDir = join(process.cwd(), "output/ui-review");
+    await mkdir(outputDir, { recursive: true });
+    await writeFile(join(outputDir, "encounter-result-full-route-2026-09-29.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), ...encounterResultEvidence }, null, 2)}\n`);
+    console.log(JSON.stringify({ ok: true, encounterResultAcceptance: encounterResultEvidence }));
+    await Promise.all([first?.close(), second?.close(), spectator?.close(), disappearFirst?.close(), disappearSecond?.close()]);
+    await Promise.all([stopServer(apiServer), stopServer(webServer)]);
+    process.exit(0);
+  }
   const encounterPlayback = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`({
     events: window.__boardPlaybackEvents ?? [],
     modalOpen: Boolean(document.querySelector(".resolution-stage[open]")),
@@ -916,9 +1039,10 @@ try {
 
   const outputDir = join(process.cwd(), "output/ui-review");
   await mkdir(outputDir, { recursive: true });
+  if (encounterResultEvidence) await writeFile(join(outputDir, "encounter-result-full-route-2026-09-29.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), ...encounterResultEvidence }, null, 2)}\n`);
   if (disabledConcedeEvidence) await writeFile(join(outputDir, "online-concede-confirm-disabled-2026-09-28.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), route: "main app route served by Vite with local in-memory API", ...disabledConcedeEvidence }, null, 2)}\n`);
   if (disabledConfirmDisappearEvidence) await writeFile(join(outputDir, "online-disappear-confirm-disabled-2026-09-28.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), route: "main app route served by Vite with local in-memory API", ...disabledConfirmDisappearEvidence }, null, 2)}\n`);
-  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineResearchDraw, onlineConcession: concessionActor ? "verified" : "skipped-after-victory", disabledConfirmConcession: disabledConcedeEvidence, disabledConfirmDisappear: disabledConfirmDisappearEvidence, logPanelAcceptance, terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
+  console.log(JSON.stringify({ ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", onlineFight, onlineEncounter: "verified", encounterResultAcceptance: encounterResultEvidence, onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineResearchDraw, onlineConcession: concessionActor ? "verified" : "skipped-after-victory", disabledConfirmConcession: disabledConcedeEvidence, disabledConfirmDisappear: disabledConfirmDisappearEvidence, logPanelAcceptance, terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", concessionActor, nextPhase }));
   }
 } finally {
   await Promise.all([first?.close(), second?.close(), spectator?.close(), disappearFirst?.close(), disappearSecond?.close()]);

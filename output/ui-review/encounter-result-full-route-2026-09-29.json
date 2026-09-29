@@ -1,0 +1,157 @@
+{
+  "generatedAt": "2026-09-29T10:09:34.708Z",
+  "route": "main app route served by Vite with local in-memory API",
+  "noEventAbsentBeforeMovement": true,
+  "pendingEncounterChoiceObserved": false,
+  "coverageGaps": [
+    "The full route did not force a pending encounter-choice case. Existing phase-choice coverage is harness-level, so the full-route pending-choice presentation remains open.",
+    "This encountered event had no Mutation draw and no declared Challenge; those optional rows were checked for correct absence, but positive Mutation/Challenge text still needs a fixture.",
+    "The result had short details and was tested with the in-memory API; long-detail wrapping and durable Prisma route behavior remain open."
+  ],
+  "viewports": [
+    {
+      "viewport": "desktop-1280x720",
+      "eventId": "1:3",
+      "eventAction": "encounter.resolved",
+      "detail": {
+        "playerIndex": 0,
+        "monsterId": "monster-1",
+        "location": "1,5",
+        "stomped": true,
+        "effects": [
+          {
+            "type": "health",
+            "amount": 2,
+            "source": "1,5"
+          },
+          {
+            "type": "stomp",
+            "amount": 1,
+            "source": "1,5"
+          }
+        ],
+        "rolls": [
+          2
+        ],
+        "mutationDraws": [],
+        "remainingStompMarkers": 13,
+        "nextPhase": "deploy"
+      },
+      "rendered": {
+        "eventId": "1:3",
+        "rolls": [
+          2
+        ],
+        "effects": [
+          "+2 Health from 1,5",
+          "Stomp marker placed"
+        ],
+        "choices": null,
+        "stomped": "The space consumed a Stomp marker.",
+        "remainingStompMarkers": "13 Stomp markers remain; the engine enforces the Infamy cap and marker limits.",
+        "challenge": null,
+        "mutationDraws": [],
+        "nextPhase": "Next: deploy.",
+        "noEffect": null
+      },
+      "bounds": {
+        "x": 931,
+        "y": 191.390625,
+        "right": 1251,
+        "bottom": 441.15625,
+        "width": 320,
+        "height": 249.765625,
+        "viewportWidth": 1280,
+        "viewportHeight": 720,
+        "documentWidth": 1280
+      },
+      "checks": {
+        "eventId": true,
+        "rolls": true,
+        "effects": true,
+        "choices": true,
+        "stomped": true,
+        "remainingStompMarkers": true,
+        "challenge": true,
+        "mutationDraws": true,
+        "nextPhase": true,
+        "noEffect": true,
+        "overlayClear": true,
+        "viewport": true
+      },
+      "screenshot": "encounter-result-full-route-2026-09-29-desktop-1280x720.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "eventId": "1:3",
+      "eventAction": "encounter.resolved",
+      "detail": {
+        "playerIndex": 0,
+        "monsterId": "monster-1",
+        "location": "1,5",
+        "stomped": true,
+        "effects": [
+          {
+            "type": "health",
+            "amount": 2,
+            "source": "1,5"
+          },
+          {
+            "type": "stomp",
+            "amount": 1,
+            "source": "1,5"
+          }
+        ],
+        "rolls": [
+          2
+        ],
+        "mutationDraws": [],
+        "remainingStompMarkers": 13,
+        "nextPhase": "deploy"
+      },
+      "rendered": {
+        "eventId": "1:3",
+        "rolls": [
+          2
+        ],
+        "effects": [
+          "+2 Health from 1,5",
+          "Stomp marker placed"
+        ],
+        "choices": null,
+        "stomped": "The space consumed a Stomp marker.",
+        "remainingStompMarkers": "13 Stomp markers remain; the engine enforces the Infamy cap and marker limits.",
+        "challenge": null,
+        "mutationDraws": [],
+        "nextPhase": "Next: deploy.",
+        "noEffect": null
+      },
+      "bounds": {
+        "x": 87,
+        "y": 364.390625,
+        "right": 367,
+        "bottom": 613.15625,
+        "width": 280,
+        "height": 248.765625,
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "documentWidth": 390
+      },
+      "checks": {
+        "eventId": true,
+        "rolls": true,
+        "effects": true,
+        "choices": true,
+        "stomped": true,
+        "remainingStompMarkers": true,
+        "challenge": true,
+        "mutationDraws": true,
+        "nextPhase": true,
+        "noEffect": true,
+        "overlayClear": true,
+        "viewport": true
+      },
+      "screenshot": "encounter-result-full-route-2026-09-29-phone-390x844.png"
+    }
+  ]
+}

@@ -39,11 +39,32 @@ function observeTerrain(element: Element, update: (visible: boolean) => void) {
   };
 }
 
+// Track actual viewport intersection separately from the larger terrain
+// prefetch margin so the browser can prioritize visible image upgrades.
+const viewportCallbacks = new Map<Element, (visible: boolean) => void>();
+let viewportObserver: IntersectionObserver | undefined;
+function observeViewportTerrain(element: Element, update: (visible: boolean) => void) {
+  viewportObserver ??= new IntersectionObserver((entries) => {
+    for (const entry of entries) viewportCallbacks.get(entry.target)?.(entry.isIntersecting);
+  });
+  viewportCallbacks.set(element, update);
+  viewportObserver.observe(element);
+  return () => {
+    viewportObserver?.unobserve(element);
+    viewportCallbacks.delete(element);
+    if (!viewportCallbacks.size) {
+      viewportObserver?.disconnect();
+      viewportObserver = undefined;
+    }
+  };
+}
+
 export const TerrainArt = memo(function TerrainArt({ hex }: { hex: BoardHex }) {
   const art = artByKey[hex.key];
   const image = useRef<HTMLImageElement>(null);
   const [size, setSize] = useState(requestedSize);
   const [nearby, setNearby] = useState(false);
+  const [visible, setVisible] = useState(false);
   const updateSize = useCallback((nextSize: number) => setSize(nextSize), []);
   useEffect(() => {
     terrainInstanceCount += 1;
@@ -66,10 +87,16 @@ export const TerrainArt = memo(function TerrainArt({ hex }: { hex: BoardHex }) {
     if (!element) return;
     return observeTerrain(element, setNearby);
   }, []);
+  useEffect(() => {
+    const element = image.current;
+    if (!element) return;
+    return observeViewportTerrain(element, setVisible);
+  }, []);
   if (!art) return null;
   return <img ref={image} className="tile-base audited-terrain" data-art-cell={art.cellId}
     src={`/assets/board/audited/${nearby ? size : 256}/${art.asset}.webp`}
-    alt="" aria-hidden="true" draggable={false} decoding="async" loading="lazy" />;
+    alt="" aria-hidden="true" draggable={false} decoding="async" loading="lazy"
+    fetchPriority={visible ? "high" : nearby ? "low" : "auto"} />;
 });
 
 // Preserve the existing integration point for board rendering.
