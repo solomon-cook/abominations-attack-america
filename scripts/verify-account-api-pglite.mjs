@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
+import { WebSocket } from "ws";
 
 // Local acceptance harness: apply the checked-in migration SQL to an in-memory
 // PGlite database, then exercise the real API process through HTTP and PrismaPg.
@@ -128,6 +130,58 @@ function tokenFromLink(link, key) {
   return value;
 }
 
+function waitForSocketMessage(socket, predicate, label, timeoutMs = 5_000) {
+  return new Promise((resolveMessage, reject) => {
+    const timeout = setTimeout(() => {
+      socket.off("message", onMessage);
+      reject(new Error(`Timed out waiting for ${label}.`));
+    }, timeoutMs);
+    const onMessage = (data) => {
+      let message;
+      try { message = JSON.parse(data.toString()); }
+      catch { return; }
+      if (!predicate(message)) return;
+      clearTimeout(timeout);
+      socket.off("message", onMessage);
+      resolveMessage(message);
+    };
+    socket.on("message", onMessage);
+  });
+}
+
+function waitForSocketClose(socket, timeoutMs = 5_000) {
+  return new Promise((resolveClose, reject) => {
+    const timeout = setTimeout(() => {
+      socket.off("close", onClose);
+      reject(new Error("Timed out waiting for the deleted account's WebSocket to close."));
+    }, timeoutMs);
+    const onClose = (code, reason) => {
+      clearTimeout(timeout);
+      socket.off("close", onClose);
+      resolveClose({ code, reason: reason.toString() });
+    };
+    socket.on("close", onClose);
+  });
+}
+
+async function connectRoomSocket(baseUrl, roomCode, roomToken, label) {
+  const connectionId = randomUUID();
+  const ticket = mustSucceed(await call(baseUrl, `/rooms/${roomCode}/ws-ticket`, {
+    method: "POST", roomToken, body: { requestedConnectionId: connectionId },
+  }), `${label} socket ticket`);
+  const socketUrl = new URL(baseUrl);
+  socketUrl.protocol = socketUrl.protocol === "https:" ? "wss:" : "ws:";
+  socketUrl.pathname = "/ws";
+  socketUrl.search = new URLSearchParams({ code: roomCode, ticket: ticket.ticket }).toString();
+  const socket = new WebSocket(socketUrl);
+  await new Promise((resolveOpen, rejectOpen) => {
+    socket.once("open", resolveOpen);
+    socket.once("error", rejectOpen);
+  });
+  const firstUpdate = await waitForSocketMessage(socket, (message) => message.type === "room.updated", `${label} initial room projection`);
+  return { socket, firstUpdate };
+}
+
 const db = await PGlite.create();
 let socketServer;
 let api;
@@ -237,6 +291,74 @@ try {
   }), "create a fresh socket ticket after account resume clears the cancelled lease");
   assert.equal(freshTicket.connectionId, "44444444-4444-4444-8444-444444444444");
 
+  const deletionRoom = mustSucceed(await call(api.baseUrl, "/rooms", {
+    method: "POST", body: { maxPlayers: 2, displayName: "Deletion Seat", privacy: "public" },
+  }), "create account-deletion room", 201);
+  const deletionClaim = mustSucceed(await call(api.baseUrl, `/rooms/${deletionRoom.room.code}/claim`, {
+    method: "POST", origin: allowedOrigin, cookie: sessionCookie, roomToken: deletionRoom.token, body: {},
+  }), "claim account-deletion room seat");
+  const deletionViewer = mustSucceed(await call(api.baseUrl, `/rooms/${deletionRoom.room.code}/spectate`, {
+    method: "POST", body: { displayName: "Deletion Room Viewer" },
+  }), "join account-deletion room as the surviving viewer");
+  const initialMonsterId = deletionRoom.room.state.setupState?.definition.monsterIds[0];
+  assert.ok(initialMonsterId, "the room must expose a configured first setup choice");
+  const setupEvent = mustSucceed(await call(api.baseUrl, `/rooms/${deletionRoom.room.code}/setup`, {
+    method: "POST", roomToken: deletionClaim.token,
+    body: { expectedRevision: deletionRoom.room.version, action: { type: "choose-monster", monsterId: initialMonsterId } },
+  }), "create one persisted setup event before account deletion");
+  assert.equal(setupEvent.version, deletionRoom.room.version + 1);
+  const deletedAccountSocket = await connectRoomSocket(api.baseUrl, deletionRoom.room.code, deletionClaim.token, "account-linked player");
+  const survivingViewerSocket = await connectRoomSocket(api.baseUrl, deletionRoom.room.code, deletionViewer.token, "surviving room viewer");
+  // Seed ACTIVE status to isolate account-deletion presence projection and
+  // status refresh. This is not a normally completed/activated gameplay match.
+  await db.query('UPDATE "GameRoom" SET status = $1 WHERE id = $2', ["ACTIVE", deletionRoom.room.id]);
+  const roomBeforeDeletion = mustSucceed(await call(api.baseUrl, `/rooms/${deletionRoom.room.code}/state`, { roomToken: deletionViewer.token }), "read active room before account deletion");
+  assert.equal(roomBeforeDeletion.status, "active");
+  const persistedRoomBeforeDeletion = await db.query('SELECT "state", "version" FROM "GameRoom" WHERE "id" = $1', [deletionRoom.room.id]);
+  assert.equal(persistedRoomBeforeDeletion.rows.length, 1, "the seeded lifecycle fixture must exist in persisted state before deletion");
+  const persistedEventsBeforeDeletion = await db.query('SELECT "id", "version", "actorId", "type", "controlSource", "payload", "createdAt" FROM "GameEvent" WHERE "roomId" = $1 ORDER BY "version" ASC, "id" ASC', [deletionRoom.room.id]);
+  assert.ok(persistedEventsBeforeDeletion.rows.length > 0, "persisted room-history comparison requires at least one event");
+  const deletedParticipantUpdate = waitForSocketMessage(survivingViewerSocket.socket, (message) => {
+    const participant = message.type === "room.updated" && message.room.participants.find((candidate) => candidate.id === deletionClaim.participantId);
+    return participant?.connected === false && participant.botControlled === true && participant.botAssisted === true;
+  }, "surviving viewer's deleted-seat projection");
+  const deletionProjectionMessages = [];
+  const recordDeletionProjection = (data) => {
+    let message;
+    try { message = JSON.parse(data.toString()); }
+    catch { return; }
+    const participant = message.type === "room.updated" && message.room.participants.find((candidate) => candidate.id === deletionClaim.participantId);
+    if (participant?.connected === false && participant.botControlled === true && participant.botAssisted === true) deletionProjectionMessages.push(message);
+  };
+  survivingViewerSocket.socket.on("message", recordDeletionProjection);
+  const deletedSocketClose = waitForSocketClose(deletedAccountSocket.socket);
+  const deletion = mustSucceed(await call(api.baseUrl, "/accounts/me", {
+    method: "DELETE", origin: allowedOrigin, cookie: sessionCookie,
+  }), "delete account with a connected player seat");
+  assert.equal(deletion.message, "Account deleted.");
+  const [closed, updatedProjection] = await Promise.all([deletedSocketClose, deletedParticipantUpdate]);
+  assert.equal(closed.code, 4001, "account deletion must close the old player lease as replaced");
+  assert.equal(updatedProjection.room.status, "abandoned", "deletion must refresh active-room presence before broadcasting the final-player abandonment");
+  const deletedParticipant = updatedProjection.room.participants.find((participant) => participant.id === deletionClaim.participantId);
+  assert.equal(deletedParticipant?.displayName, "Deleted player");
+  assert.equal(deletedParticipant?.connected, false);
+  assert.equal(deletedParticipant?.botControlled, true);
+  assert.equal(deletedParticipant?.botAssisted, true);
+  await wait(100);
+  survivingViewerSocket.socket.off("message", recordDeletionProjection);
+  assert.equal(deletionProjectionMessages.length, 1, "account deletion broadcasts one final seat projection after refreshing room lifecycle status");
+  const roomAfterDeletion = mustSucceed(await call(api.baseUrl, `/rooms/${deletionRoom.room.code}/state`, { roomToken: deletionViewer.token }), "read room after account deletion");
+  assert.equal(roomAfterDeletion.status, "abandoned", "the last disconnected player moves the room to its derived abandoned status");
+  assert.equal(roomAfterDeletion.version, roomBeforeDeletion.version, "account deletion must not alter the gameplay revision");
+  assert.deepEqual(roomAfterDeletion.state, roomBeforeDeletion.state, "account deletion must preserve persisted game state");
+  assert.deepEqual(roomAfterDeletion.events, roomBeforeDeletion.events, "account deletion must preserve room event history");
+  const persistedRoomAfterDeletion = await db.query('SELECT "state", "version" FROM "GameRoom" WHERE "id" = $1', [deletionRoom.room.id]);
+  const persistedEventsAfterDeletion = await db.query('SELECT "id", "version", "actorId", "type", "controlSource", "payload", "createdAt" FROM "GameEvent" WHERE "roomId" = $1 ORDER BY "version" ASC, "id" ASC', [deletionRoom.room.id]);
+  assert.deepEqual(persistedRoomAfterDeletion.rows, persistedRoomBeforeDeletion.rows, "raw persisted room state and revision must remain unchanged");
+  assert.deepEqual(persistedEventsAfterDeletion.rows, persistedEventsBeforeDeletion.rows, "ordered persisted GameEvent rows must remain unchanged");
+  deletedAccountSocket.socket.close();
+  survivingViewerSocket.socket.close();
+
   const evidence = {
     ok: true,
     generatedAt: new Date().toISOString(),
@@ -247,8 +369,8 @@ try {
     schemaProvisioning: "checked-in migration SQL applied directly; Prisma Migrate bookkeeping is not exercised",
     prismaMigrateDeploy: "not compatible in this harness; Prisma returned a blank Schema engine error",
     actualApiProcess: true,
-    verified: ["registration", "email verification", "HttpOnly SameSite account cookie", "valid-cookie origin rejection with unchanged persisted account", "valid-cookie and room-token origin rejection with unchanged guest token on seat claim", "valid-cookie origin rejection with unchanged claimed token on account resume", "password reset", "pre-reset session revocation", "new-password login", "seat claim", "account game-list visibility", "resume token rotation", "old room-token rejection", "HTTP Leave invalidates a pending reconnect lease", "account resume after Leave rotates the token and permits a fresh WebSocket ticket"],
-    limits: ["PGlite socket server multiplexes a single database engine", "does not establish PostgreSQL MVCC, row-lock, rollback, or concurrent CAS behavior", "in-memory database does not establish durable restart or backup behavior"],
+    verified: ["registration", "email verification", "HttpOnly SameSite account cookie", "valid-cookie origin rejection with unchanged persisted account", "valid-cookie and room-token origin rejection with unchanged guest token on seat claim", "valid-cookie origin rejection with unchanged claimed token on account resume", "password reset", "pre-reset session revocation", "new-password login", "seat claim", "account game-list visibility", "resume token rotation", "old room-token rejection", "HTTP Leave invalidates a pending reconnect lease", "account resume after Leave rotates the token and permits a fresh WebSocket ticket", "account deletion closes the linked player WebSocket, sends one matching disconnected/bot-controlled projection within the observation window to a surviving viewer, and refreshes the seeded ACTIVE status to ABANDONED", "account deletion preserves room game state, revision, and event history"],
+    limits: ["the account-deletion lifecycle check directly seeds ACTIVE status on a partially configured room with one setup event; it proves the presence-derived projection/status-refresh path, not a normally activated gameplay match", "the exactly-one projection assertion observes a 100 ms post-message window rather than using a deterministic server-side broadcast barrier", "PGlite socket server multiplexes a single database engine", "does not establish PostgreSQL MVCC, row-lock, rollback, or concurrent CAS behavior, including the UserAccount FOR UPDATE versus Participant.userId foreign-key key-share interleaving", "single-process socket coverage does not establish multi-instance WebSocket close or broadcast fanout", "in-memory database does not establish durable restart or backup behavior"],
   };
   await mkdir(dirname(evidencePath), { recursive: true });
   await writeFile(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);

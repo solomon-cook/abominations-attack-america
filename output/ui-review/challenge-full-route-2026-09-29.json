@@ -1,0 +1,128 @@
+{
+  "started": "2026-09-29T16:05:59.650Z",
+  "scope": "Production main.tsx route and local MemoryRoomStore API. The room reaches Challenge using ordinary legal setup/actions on its pinned playtest board; no Challenge state or pending decision is hand-written.",
+  "preparation": {
+    "status": "passed",
+    "playtestBoardId": "human-audited-north-america",
+    "setupActions": 8,
+    "acceptedEngineCommands": 43,
+    "challengeStartCommand": {
+      "type": "legal engine command sequence",
+      "acceptedCommands": 4,
+      "event": "turn.passed",
+      "revisionDelta": 4
+    },
+    "initialStompMarkers": 14,
+    "remainingStompMarkers": 0,
+    "engineEvents": 47,
+    "elapsedMs": 134,
+    "challenge": {
+      "phase": "challenge",
+      "pendingDecision": "challenge-opponent",
+      "challengerPlayerIndex": 1,
+      "eligibleOpponentIds": [
+        "monster-2"
+      ]
+    },
+    "sourceBoundary": "The room uses the currently pinned board/ruleset candidate. This verifies the present digital route and does not approve physical-edition parity."
+  },
+  "scenarios": {
+    "activeOwner": {
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "input": "production phase transition auto-opens Challenge arena; pointer opponent selection; Escape to close",
+      "eligibleChoices": [
+        "Tomanagi"
+      ],
+      "openingGameStateUnchanged": true,
+      "acceptedCommandFrames": 1,
+      "acceptedRevision": 56,
+      "acceptedEvent": {
+        "id": "8:47",
+        "actorId": "4539b82171d3a5ef999b",
+        "action": "challenge.opponent.selected",
+        "outcome": "selected",
+        "detail": {
+          "challengerMonsterId": "monster-3",
+          "opponentMonsterId": "monster-2",
+          "challengerWeighIn": 21,
+          "opponentWeighIn": 31
+        }
+      },
+      "pendingDecisionAfterChoice": "challenge-resolution",
+      "autoOpenFocusAfterClose": {
+        "returnedToHeading": true,
+        "tag": "H2",
+        "label": "Monster Challenge"
+      },
+      "reopenFocusReturnedToActionDock": true,
+      "horizontalOverflow": false,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "challenge-full-route-owner-open-2026-09-29.png",
+      "openingBaseline": {
+        "beforeConnectionVersion": 55,
+        "afterConnectionVersion": 55,
+        "gameStateUnchanged": true,
+        "eventCount": 47,
+        "pendingDecision": "challenge-opponent"
+      }
+    },
+    "spectator": {
+      "status": "passed",
+      "viewport": {
+        "width": 834,
+        "height": 1112
+      },
+      "input": "automatic route entry; disabled-choice attempt; keyboard dock re-entry; Escape to close",
+      "visibleChoices": 1,
+      "choicesDisabled": true,
+      "commandsSubmitted": 0,
+      "revisionUnchangedByAttempt": true,
+      "autoOpenFocusAfterClose": {
+        "returnedToHeading": true,
+        "tag": "H2",
+        "label": "Monster Challenge"
+      },
+      "reopenFocusReturnedToActionDock": true,
+      "horizontalOverflow": false,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 834,
+        "height": 1112
+      },
+      "screenshot": "challenge-full-route-spectator-2026-09-29.png",
+      "receivedOwnerResult": "challenge.opponent.selected",
+      "phoneReentry": {
+        "status": "passed",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "commandsSubmitted": 0,
+        "revisionUnchangedAfterConnection": true,
+        "focusReturnedToActionDock": true,
+        "horizontalOverflow": false,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "screenshot": "challenge-full-route-spectator-phone-2026-09-29.png"
+      }
+    }
+  },
+  "runtimeErrors": [],
+  "findings": [],
+  "finished": "2026-09-29T16:06:09.169Z",
+  "status": "passed"
+}

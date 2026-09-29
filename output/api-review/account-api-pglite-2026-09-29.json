@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "generatedAt": "2026-09-29T14:44:59.474Z",
+  "generatedAt": "2026-09-29T16:10:17.419Z",
   "harness": "node scripts/verify-account-api-pglite.mjs",
   "artifact": "output/api-review/account-api-pglite-2026-09-29.json",
   "database": "in-memory PGlite over PostgreSQL wire protocol",
@@ -33,11 +33,16 @@
     "resume token rotation",
     "old room-token rejection",
     "HTTP Leave invalidates a pending reconnect lease",
-    "account resume after Leave rotates the token and permits a fresh WebSocket ticket"
+    "account resume after Leave rotates the token and permits a fresh WebSocket ticket",
+    "account deletion closes the linked player WebSocket, sends one matching disconnected/bot-controlled projection within the observation window to a surviving viewer, and refreshes the seeded ACTIVE status to ABANDONED",
+    "account deletion preserves room game state, revision, and event history"
   ],
   "limits": [
+    "the account-deletion lifecycle check directly seeds ACTIVE status on a partially configured room with one setup event; it proves the presence-derived projection/status-refresh path, not a normally activated gameplay match",
+    "the exactly-one projection assertion observes a 100 ms post-message window rather than using a deterministic server-side broadcast barrier",
     "PGlite socket server multiplexes a single database engine",
-    "does not establish PostgreSQL MVCC, row-lock, rollback, or concurrent CAS behavior",
+    "does not establish PostgreSQL MVCC, row-lock, rollback, or concurrent CAS behavior, including the UserAccount FOR UPDATE versus Participant.userId foreign-key key-share interleaving",
+    "single-process socket coverage does not establish multi-instance WebSocket close or broadcast fanout",
     "in-memory database does not establish durable restart or backup behavior"
   ]
 }

@@ -350,6 +350,36 @@ test("WebSocket command acknowledgement exposes only action metadata, then strea
     assert.equal(Object.hasOwn(acknowledgement, "room"), false);
     const validatedUpdate = await nextWebSocketMessageMatching(hostSocket, (room) => room.version >= Number(acknowledgement.version));
     assert.ok(validatedUpdate.version >= Number(acknowledgement.version));
+
+    const rotate = async (token: string) => {
+      const response = await fetch(`${baseUrl}/rooms/${created.room!.code}/rotate-session`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-room-token": token },
+        body: JSON.stringify({}),
+      });
+      const result = await response.json() as { token?: string; error?: string };
+      assert.equal(response.ok, true, result.error ?? `Session rotation failed with HTTP ${response.status}`);
+      assert.ok(result.token);
+      return result.token;
+    };
+    const hostClose = waitForWebSocketClose(hostSocket);
+    const rotatedHostToken = await rotate(created.token);
+    assert.equal((await hostClose).code, 4001);
+    const joinedSocket = sockets[1]!;
+    const joinedClose = waitForWebSocketClose(joinedSocket);
+    const rotatedJoinedToken = await rotate(joined.token!);
+    assert.equal((await joinedClose).code, 4001);
+    let abandonedRoom: RoomPayload & { error?: string } | undefined;
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const stateResponse: Response = await fetch(`${baseUrl}/rooms/${created.room.code}/state`, { headers: { "x-room-token": rotatedHostToken } });
+      abandonedRoom = await stateResponse.json() as RoomPayload & { error?: string };
+      assert.equal(stateResponse.ok, true, abandonedRoom.error ?? `Room state failed with HTTP ${stateResponse.status}`);
+      if (abandonedRoom.status === "abandoned") break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.ok(abandonedRoom);
+    assert.equal(abandonedRoom.status, "abandoned", "rotating the last active guest session still refreshes lifecycle status through its socket-close callback");
+    assert.ok(rotatedJoinedToken);
   } finally {
     for (const socket of sockets) socket.terminate();
     await stop(child);

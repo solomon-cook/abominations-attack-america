@@ -128,6 +128,7 @@ export function persistentAdapter() {
     },
     playerMatchStat: { createMany: async ({ data }: { data: any[] }) => { data.forEach((row, index) => matchStats.set(`${row.roomId}:${row.participantId}:${index}`, row)); return { count: data.length }; } },
     $transaction: async (callback: (tx: any) => Promise<void>) => callback({
+      $queryRaw: adapter.$queryRaw,
       gameRoom: adapter.gameRoom,
       participant: adapter.participant,
       webSocketTicket: adapter.webSocketTicket,

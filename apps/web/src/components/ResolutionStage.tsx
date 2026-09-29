@@ -17,13 +17,15 @@ export function ResolutionStage({ title, eyebrow, onClose, children, variant = "
     dialog.current?.querySelector<HTMLButtonElement>(".resolution-close")?.focus({ preventScroll: true });
     return () => {
       document.body.style.overflow = overflow;
-      if (previous?.isConnected && previous !== document.body && previous !== document.documentElement && !previous.matches(":disabled") && previous.getAttribute("aria-disabled") !== "true") {
-        previous.focus({ preventScroll: true });
-        return;
-      }
-      const fallback = returnFocusFallbackTo;
-      if (fallback?.isConnected) window.requestAnimationFrame(() => {
-        if (fallback.isConnected) fallback.focus({ preventScroll: true });
+      const previousIsInsideDialog = Boolean(previous && dialog.current?.contains(previous));
+      const usable = (target: HTMLElement | null | undefined) => Boolean(target?.isConnected
+        && target !== document.body
+        && target !== document.documentElement
+        && !target.matches(":disabled")
+        && target.getAttribute("aria-disabled") !== "true");
+      const preferred = !previousIsInsideDialog && usable(previous) ? previous : returnFocusFallbackTo;
+      if (preferred && usable(preferred)) window.requestAnimationFrame(() => {
+        if (usable(preferred)) preferred.focus({ preventScroll: true });
       });
     };
   }, []);

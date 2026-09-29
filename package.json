@@ -62,6 +62,7 @@
     "browser:cutbacks:verify": "node scripts/verify-browser-cutbacks.mjs",
     "browser:encounter:focus:verify": "node scripts/verify-browser-encounter-focus.mjs",
     "browser:challenge:arena:verify": "node scripts/verify-browser-challenge-arena.mjs",
+    "browser:challenge:full-route:verify": "tsx scripts/verify-browser-challenge-full-route.mts",
     "browser:challenge:mutations:verify": "node scripts/verify-browser-challenge-mutations.mjs",
     "browser:monster-sheet:mutation:verify": "node scripts/verify-browser-monster-sheet-mutation.mjs",
     "browser:deployment-cancel:verify": "node scripts/verify-browser-deployment-cancel.mjs",

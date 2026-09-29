@@ -8,9 +8,9 @@ import { militaryArt, readBattleAttacks } from "./combat-presentation";
 import { ChallengeMutationControls } from "./ChallengeMutationControls";
 import "../combat-stage.css";
 
-type Props = { game: GameState; canAct: boolean; canUseMutation?: boolean; playerIndex?: number; runCommand: (command: GameCommand) => void | Promise<void>; onClose: () => void; error?: string };
+type Props = { game: GameState; canAct: boolean; canUseMutation?: boolean; playerIndex?: number; runCommand: (command: GameCommand) => void | Promise<void>; onClose: () => void; returnFocusTo?: HTMLElement | null; returnFocusFallbackTo?: HTMLElement | null; error?: string };
 
-export function ChallengeArena({ game, canAct, canUseMutation = canAct, playerIndex, runCommand, onClose, error }: Props) {
+export function ChallengeArena({ game, canAct, canUseMutation = canAct, playerIndex, runCommand, onClose, returnFocusTo, returnFocusFallbackTo, error }: Props) {
   const event = game.eventLog.at(-1);
   const [settledId, setSettledId] = useState<string>();
   const [acknowledged, setAcknowledged] = useState<string>();
@@ -59,7 +59,7 @@ export function ChallengeArena({ game, canAct, canUseMutation = canAct, playerIn
     return typeof value === "number" ? value : fallback;
   };
   const title = showResult && settled ? `${String(event?.detail.winnerName ?? name(leftId))} wins.` : choosing ? "Who’s next?" : "Clash of titans.";
-  return <ResolutionStage title={title} eyebrow="THE FINAL MONSTER CHALLENGE" variant="challenge" onClose={onClose}>
+  return <ResolutionStage title={title} eyebrow="THE FINAL MONSTER CHALLENGE" variant="challenge" returnFocusTo={returnFocusTo} returnFocusFallbackTo={returnFocusFallbackTo} onClose={onClose}>
     <div className="challenge-live-turn" aria-live="polite">{showResult ? settled ? game.phase === "game-over" ? game.victoryType === "america-saved" ? "America is saved" : "King of the Giant Monsters" : "A challenger survives" : "The final strike…" : choosing ? "Choose the next opponent" : `Round ${challenge?.turn?.round ?? 1} · ${name(attackerId)}’s turn`}</div>
     <ChallengeMutationControls game={game} canUseMutation={canUseMutation} playerIndex={playerIndex} disabled={busy || !settled} runCommand={(command) => send(command, canUseMutation)} />
     <div className="challenge-live-arena">

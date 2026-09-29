@@ -899,6 +899,35 @@ test("Prisma account claim advances activity so a stale unlinked expiry snapshot
   assert.equal(room.status, "ACTIVE");
 });
 
+test("Prisma account claim locks UserAccount before the participant row", async () => {
+  for (const alreadyLinked of [false, true]) {
+    const { adapter, participant } = persistentAdapter();
+    if (alreadyLinked) participant.userId = "account-1";
+    const operations: string[] = [];
+    const transaction = adapter.$transaction;
+    adapter.$transaction = (callback: (tx: any) => Promise<unknown>) => transaction(async (tx: any) => {
+      tx.$queryRaw = async (parts: TemplateStringsArray, ...values: unknown[]) => {
+        operations.push("lock-account");
+        assert.match(parts.join("?"), /SELECT "id" FROM "UserAccount" WHERE "id" = \? FOR KEY SHARE/);
+        assert.deepEqual(values, ["account-1"], "account ID must be passed as a bound value");
+        return [{ id: "account-1" }];
+      };
+      const updateMany = tx.participant.updateMany;
+      tx.participant.updateMany = async (args: unknown) => {
+        operations.push("lock-participant");
+        return updateMany(args);
+      };
+      return callback(tx);
+    });
+
+    await new PrismaRoomStore(adapter).claimParticipant("ABC123", "token", {
+      id: "account-1", username: "linked", emailVerifiedAt: new Date(),
+    });
+    assert.deepEqual(operations.slice(0, 2), ["lock-account", "lock-participant"],
+      `account row must be locked before the participant for alreadyLinked=${alreadyLinked}`);
+  }
+});
+
 test("expired rooms reject WebSocket ticket consumption before consuming the ticket", async () => {
   const { adapter, room, socketTickets } = persistentAdapter();
   const store = new PrismaRoomStore(adapter);
@@ -1035,6 +1064,22 @@ test("Prisma marks an active room abandoned after the final player disconnects a
   other.connectedAt = new Date();
   const recovered = await store.reconnect(room.code, "token", "legacy");
   assert.equal(recovered.status, "active");
+});
+
+test("account deletion refreshes room lifecycle before its status projection is broadcast", async () => {
+  const { adapter, room, participant } = persistentAdapter();
+  const store = new PrismaRoomStore(adapter);
+  room.status = "ACTIVE";
+  const version = room.version;
+  participant.connectedAt = null;
+  participant.connectionId = null;
+  participant.botControlled = true;
+  participant.botAssisted = true;
+
+  await store.refreshRoomLifecycle(room.code);
+
+  assert.equal(room.status, "ABANDONED");
+  assert.equal(room.version, version, "presence-derived status refresh must not create a gameplay revision");
 });
 
 test("Prisma reconnect leases ignore stale tab disconnects", async () => {

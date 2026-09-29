@@ -277,6 +277,13 @@ export class PrismaRoomStore implements RoomStore {
     const replacement = token();
     try {
       await this.prismaClient.$transaction(async (tx: Prisma.TransactionClient) => {
+        // Account deletion locks UserAccount before it reads and updates linked
+        // participants. Take the same lock first here so a claim cannot hold a
+        // participant row while waiting for the account's foreign-key key-share.
+        const lockedAccounts = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM "UserAccount" WHERE "id" = ${user.id} FOR KEY SHARE
+        `;
+        if (!lockedAccounts[0]) throw new Error("Account not found.");
         const participantWhere = { id: participant.id, tokenHash: hash(accessToken), ...(participant.userId ? { userId: user.id } : { userId: null }) };
         if (!await this.lockLiveSessionSnapshot(tx, participantWhere, participant.connectedAt, participant.sessionExpiresAt)) throw new Error("This seat was linked from another session. Refresh the room and try again.");
         // Linking a seat creates the ACTIVE+linked-player idle-expiry exemption.
@@ -539,6 +546,12 @@ export class PrismaRoomStore implements RoomStore {
     return this.getRoomForParticipant(roomCode, participantId);
   }
 
+  async refreshRoomLifecycle(roomCode: string): Promise<void> {
+    const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() }, select: { id: true, maxPlayers: true, state: true } });
+    if (!room) throw new Error("Room not found.");
+    await this.refreshStatus(room.id, room.maxPlayers, room.state as unknown as GameState);
+  }
+
   async connectParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string): Promise<RoomView> {
     const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
     if (!room) throw new Error("Room not found.");
@@ -667,16 +680,24 @@ export class PrismaRoomStore implements RoomStore {
       }
       const state = room.state as unknown as GameState;
       const participants = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" } });
-      const botIndices = new Set<number>(participants.filter((participant: any) => participant.botControlled && participant.playerIndex !== null).map((participant: any) => participant.playerIndex));
+      const botIndices = new Set(participants.flatMap((participant) => participant.botControlled && participant.playerIndex !== null ? [participant.playerIndex] : []));
       if (!botIndices.size) return;
-      if (state.setupState && state.setupState.phase !== "complete") {
-        const field = state.setupState.phase === "monster-selection" ? "monsterId" : state.setupState.phase === "branch-selection" ? "branch" : state.setupState.phase === "lair-selection" ? "lair" : "startingChoice";
-        const seats = [...state.setupState.seats].sort((left, right) => state.setupState?.phase === "branch-selection" ? right.playerIndex - left.playerIndex : left.playerIndex - right.playerIndex);
-        const playerIndex = seats.find((seat) => (seat as any)[field] === undefined)?.playerIndex;
-        const actor = participants.find((participant: any) => participant.playerIndex === playerIndex);
+      const currentSetup = state.setupState;
+      if (currentSetup && currentSetup.phase !== "complete") {
+        const phase = currentSetup.phase;
+        const seats = [...currentSetup.seats].sort((left, right) => phase === "branch-selection" ? right.playerIndex - left.playerIndex : left.playerIndex - right.playerIndex);
+        const playerIndex = seats.find((seat) => {
+          switch (phase) {
+            case "monster-selection": return seat.monsterId === undefined;
+            case "branch-selection": return seat.branch === undefined;
+            case "lair-selection": return seat.lair === undefined;
+            case "starting-choice": return seat.startingChoice === undefined;
+          }
+        })?.playerIndex;
+        const actor = participants.find((participant) => participant.playerIndex === playerIndex);
         if (playerIndex === undefined || !actor?.botControlled) return;
-        const nextSetup = chooseBotSetupAction(state, state.setupState, playerIndex);
-        if (nextSetup === state.setupState) return;
+        const nextSetup = chooseBotSetupAction(state, currentSetup, playerIndex);
+        if (nextSetup === currentSetup) return;
         const seat = nextSetup.seats.find((candidate) => candidate.playerIndex === playerIndex);
         if (seat?.startingChoice?.kind === "deploy") setupDeploymentState({ ...state, setupState: nextSetup }, playerIndex, "placements" in seat.startingChoice ? seat.startingChoice.placements : [seat.startingChoice]);
         const setupState = { ...state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };

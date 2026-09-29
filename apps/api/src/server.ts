@@ -27,6 +27,7 @@ const store: RoomStore = usePrisma
 const accountService = prisma && usePrisma ? new AccountService(prisma) : undefined;
 type SocketLease = { participantId: string; connectionId: string; sessionHash: string };
 const sockets = new Map<string, Map<WebSocket, SocketLease>>();
+const explicitlyClosedSockets = new WeakSet<WebSocket>();
 const broadcastQueues = new Map<string, Promise<void>>();
 const RATE_WINDOW_MS = 60_000;
 const configuredDevelopmentLimit = (name: string, fallback: number) => {
@@ -256,14 +257,17 @@ const afterVersionFrom = (url: URL) => {
   if (!Number.isSafeInteger(version)) throw new HttpError(400, "afterVersion must be a non-negative safe integer.");
   return version;
 };
-const closeParticipantSockets = (roomCode: string, participantId: string, exceptConnectionId?: string) => {
+const closeParticipantSockets = (roomCode: string, participantId: string, options: { exceptConnectionId?: string; suppressDisconnectCallback?: boolean } = {}) => {
   const code = roomCode.toUpperCase();
   const group = sockets.get(code);
   if (!group) return;
   for (const [socket, lease] of group) {
-    if (lease.participantId !== participantId || lease.connectionId === exceptConnectionId) continue;
+    if (lease.participantId !== participantId || lease.connectionId === options.exceptConnectionId) continue;
     group.delete(socket);
-    if (socket.readyState === socket.OPEN) socket.close(4001, "Room connection was replaced");
+    if (options.suppressDisconnectCallback) explicitlyClosedSockets.add(socket);
+    if (socket.readyState === socket.OPEN) {
+      socket.close(4001, "Room connection was replaced");
+    }
   }
   if (group.size === 0 && sockets.get(code) === group) sockets.delete(code);
 };
@@ -373,8 +377,18 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
         return json(response, 200, { account: await accountService.updateUsername(user.id, String(input.username ?? "")) });
       }
       if (request.method === "DELETE" && parts.length === 2 && parts[1] === "me") {
+        if (!(store instanceof PrismaRoomStore)) throw new HttpError(503, "Account deletion requires database persistence.");
         const user = await currentUser();
-        await accountService.deleteAccount(user);
+        const affectedSeats = await accountService.deleteAccount(user);
+        const roomCodes = new Set<string>();
+        for (const { participantId, roomCode } of affectedSeats) {
+          closeParticipantSockets(roomCode, participantId, { suppressDisconnectCallback: true });
+          roomCodes.add(roomCode.toUpperCase());
+        }
+        await Promise.all([...roomCodes].map(async (roomCode) => {
+          await store.refreshRoomLifecycle(roomCode);
+          await broadcast(roomCode);
+        }));
         return json(response, 200, { message: "Account deleted." }, { "set-cookie": clearAccountSessionCookie() });
       }
       if (request.method === "GET" && parts.length === 3 && parts[1] === "me" && parts[2] === "games") {
@@ -464,7 +478,7 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
       const participantId = await store.participantIdForToken(code, accessToken);
       const nextConnectionId = requestedConnectionIdFrom(input);
       const result = await store.reconnect(code, accessToken, String(input.connectionId ?? "legacy"), nextConnectionId);
-      closeParticipantSockets(code, participantId, nextConnectionId);
+      closeParticipantSockets(code, participantId, { exceptConnectionId: nextConnectionId });
       metrics.reconnect();
       await broadcast(code.toUpperCase());
       return json(response, 200, { ...result, connectionId: nextConnectionId });
@@ -575,6 +589,7 @@ wsServer.on("connection", async (socket, request) => {
     socket.on("close", () => {
       group.delete(socket);
       if (group.size === 0 && sockets.get(code) === group) sockets.delete(code);
+      if (explicitlyClosedSockets.delete(socket)) return;
       void store.disconnectParticipant(code, principal.participantId, connectionId)
         .then(() => broadcast(code))
         .catch(() => undefined);

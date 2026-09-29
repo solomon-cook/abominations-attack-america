@@ -203,9 +203,17 @@ export class AccountService {
     }
   }
 
-  async deleteAccount(user: Pick<UserAccount, "id" | "username">): Promise<void> {
-    const linked = await this.prisma.participant.findMany({ where: { userId: user.id }, select: { id: true, roomId: true } });
-    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  async deleteAccount(user: Pick<UserAccount, "id" | "username">): Promise<Array<{ participantId: string; roomCode: string }>> {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // A claim's Participant.userId foreign-key check takes a key-share lock on
+      // this row. Locking the account first serializes claims against deletion;
+      // read the roster only after that lock is held so the cleanup list is complete.
+      const lockedAccounts = await tx.$queryRaw<Array<{ id: string; username: string }>>`
+        SELECT "id", "username" FROM "UserAccount" WHERE "id" = ${user.id} FOR UPDATE
+      `;
+      const account = lockedAccounts[0];
+      if (!account) throw new Error("Account not found.");
+      const linked = await tx.participant.findMany({ where: { userId: account.id }, select: { id: true, room: { select: { code: true } } } });
       for (const participant of linked) {
         await tx.participant.update({ where: { id: participant.id }, data: {
           userId: null,
@@ -219,8 +227,9 @@ export class AccountService {
           sessionExpiresAt: this.now(),
         } });
       }
-      await tx.gameResult.updateMany({ where: { winnerName: user.username }, data: { winnerName: "Deleted player" } });
-      await tx.userAccount.delete({ where: { id: user.id } });
+      await tx.gameResult.updateMany({ where: { winnerName: account.username }, data: { winnerName: "Deleted player" } });
+      await tx.userAccount.delete({ where: { id: account.id } });
+      return linked.map((participant) => ({ participantId: participant.id, roomCode: participant.room.code }));
     });
   }
 

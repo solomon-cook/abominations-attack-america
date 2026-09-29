@@ -50,7 +50,7 @@ const requiredSourceMarkers = [
   ["Mutation draw status", /aria-label="Mutation site draw status"[\s\S]*Mutation card drawn; card effect remains source-gated/],
   ["Hollywood recovery die", /aria-label="Recorded Hollywood recovery die"/],
   ["Monster Challenge duel surface", /aria-label="Recorded Monster Challenge duel"/],
-  ["full-screen Monster Challenge return", /<ChallengeArena[\s\S]*onClose=\{\(\) => setChallengeDuelOpen\(false\)\}/],
+  ["full-screen Monster Challenge return", /<ChallengeArena[\s\S]*onClose=\{\(\) => \{ setChallengeDuelOpen\(false\); challengeReturnFocusRef\.current = null; \}\}/],
   ["authoritative Challenge Health replay", /targetHealthBefore/],
   ["visible combat outcomes", /className=\"combat-outcomes\"[\s\S]*lastFightOutcomes/],
   ["normal fight resolution surface", /ResolutionStage variant="fight"[\s\S]*className="battle-forces" aria-label=\{`Military targets/],

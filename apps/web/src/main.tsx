@@ -257,6 +257,7 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
   const encounterReturnFocusRef = useRef<HTMLElement | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsOpenerRef = useRef<HTMLButtonElement | null>(null);
+  const challengeReturnFocusRef = useRef<HTMLElement | null>(null);
   const [gamePanelOpen, setGamePanelOpen] = useState(false);
   const [mobileCommandExpanded, setMobileCommandExpanded] = useState(false);
   const [followBotTurns, setFollowBotTurns] = useState(false);
@@ -571,14 +572,15 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
           : routineStompPrompt
             ? { label: routineStompPrompt.dice > 0 ? `Roll all ${routineStompPrompt.dice} dice` : "Resolve city stomp", command: { type: "resolve-encounter" } as GameCommand }
             : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
-        : activeGame.phase === "deploy"
-          ? militaryChoices.length
-            ? { label: deploymentPiece ? "Change deployment piece" : "Deploy military", command: undefined }
-            : { label: "Deployment complete", command: undefined }
+          : activeGame.phase === "deploy"
+            ? militaryChoices.length
+              ? { label: deploymentPiece ? "Change deployment piece" : "Deploy military", command: undefined }
+              : { label: "Deployment complete", command: undefined }
           : activeGame.phase === "challenge"
-            ? { label: "Resolve Monster Challenge", command: undefined }
+            ? { label: canAct ? "Resolve Monster Challenge" : "Watch Monster Challenge", command: undefined }
           : { label: "Match complete", command: undefined };
   const readOnlyFightView = activeGame.phase === "fight" && !canAct;
+  const readOnlyChallengeView = activeGame.phase === "challenge" && !canAct;
 
   useEffect(() => {
     actionHeadingRef.current?.focus({ preventScroll: true });
@@ -1775,9 +1777,9 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
               command={actionDock.command ?? (actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? undefined : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
               onPrimary={actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? selectNextMovableUnit : undefined}
               canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
-            /> : <ActionDock contextLabel={activeGame.phase} guidance={readOnlyFightView ? "Open a read-only view of the current battles." : activeGame.phase === "deploy" ? "Choose a military action." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
-              onPrimary={!actionDock.command || readOnlyFightView ? (event) => { if (activeGame.phase === "deploy") { openMilitarySheet(); return; } if (activeGame.phase === "fight") { fightReturnFocusRef.current = event.currentTarget; setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } if (activeGame.phase === "move" && selectableUnitIds.size) { selectNextMovableUnit(); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
-              label={readOnlyFightView ? "Watch fight" : actionDock.label} canAct={canAct || readOnlyFightView} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
+          /> : <ActionDock contextLabel={activeGame.phase} guidance={readOnlyFightView ? "Open a read-only view of the current battles." : readOnlyChallengeView ? "Open a read-only view of the current Challenge." : activeGame.phase === "deploy" ? "Choose a military action." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
+              onPrimary={!actionDock.command || readOnlyFightView ? (event) => { if (activeGame.phase === "challenge") { challengeReturnFocusRef.current = event.currentTarget; setChallengeDuelOpen(true); return; } if (activeGame.phase === "deploy") { openMilitarySheet(); return; } if (activeGame.phase === "fight") { fightReturnFocusRef.current = event.currentTarget; setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } if (activeGame.phase === "move" && selectableUnitIds.size) { selectNextMovableUnit(); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
+              label={readOnlyFightView ? "Watch fight" : actionDock.label} canAct={canAct || readOnlyFightView || readOnlyChallengeView} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
           </div>
           <div id="mobile-command-details" className="bottom-context-dock">
           <TrophyChoicePanel
@@ -1947,7 +1949,7 @@ function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolea
         setFocusedHexKey(choice.destinations[0]);
         requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${choice.destinations[0]}"]`)?.focus({ preventScroll: true }));
       }} />}
-      {challengeDuelOpen && activeGame.challenge?.active && <ChallengeArena game={activeGame} canAct={canAct} canUseMutation={canUseMutation} playerIndex={online ? participant?.playerIndex : undefined} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
+      {challengeDuelOpen && activeGame.challenge?.active && <ChallengeArena game={activeGame} canAct={canAct} canUseMutation={canUseMutation} playerIndex={online ? participant?.playerIndex : undefined} runCommand={runCommand} error={error} returnFocusTo={challengeReturnFocusRef.current ?? actionHeadingRef.current} returnFocusFallbackTo={actionHeadingRef.current} onClose={() => { setChallengeDuelOpen(false); challengeReturnFocusRef.current = null; }} />}
       <FightResolutionPanel open={fightOverlayOpen} returnFocusTo={fightReturnFocusRef.current} returnFocusFallbackTo={actionHeadingRef.current} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={(unitId, battleId, spendInfamy) => { void runCommand({ type: "resolve-fight", battleId, targetUnitId: unitId, spendInfamy }); }} controls={<>
         <PhaseActions hideAttackTargets activeGame={activeGame} onOpenMilitarySheet={openMilitarySheet} canAct={canAct} canUseMutation={canUseMutation} canUseLaserFence={canUseLaserFence} runCommand={runCommand} getLocationName={(key) => getLocation(key)?.name ?? key} pendingAttackTarget={pendingAttackTarget} pendingAttackPrompt={pendingAttackPrompt} pendingBattle={pendingBattle} pendingBattleDecision={pendingBattleDecision} canSpendInfamyOnPendingBattle={canSpendInfamyOnPendingBattle} retreatChoices={retreatChoices} setRetreatChoices={setRetreatChoices} />
         {error && <p role="alert">{error}</p>}

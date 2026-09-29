@@ -369,6 +369,8 @@ test("Gargantis resolves pending encounter Health before spending Mutation cards
   const afterChoice = applyCommand(encounterChoice, firstCommand!).state;
   assert.equal(afterChoice.monsters[actor]!.health, 13);
   assert.equal(afterChoice.players[actor]!.mutationCardIds.length, 6, "resolving the encounter should not spend Mutation cards");
+  assert.deepEqual(afterChoice.players[actor]!.mutationCardIds, encounterChoice.players[actor]!.mutationCardIds,
+    "the free Health reward must leave every Mutation card identity in hand");
 
   const healCommand = chooseBotCommand(afterChoice, new Set([actor]));
   assert.equal(healCommand?.type, "use-monster-ability", "Gargantis can heal after the pending encounter is resolved");

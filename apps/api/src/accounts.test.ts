@@ -53,6 +53,10 @@ function accountDatabase() {
       updateMany: async ({ where, data }: any) => { let count = 0; for (const row of stats.values()) if (row.userId === where.userId) { Object.assign(row, data); count += 1; } return { count }; },
     },
     gameResult: { updateMany: async ({ where, data }: any) => { let count = 0; for (const row of results.values()) if (row.winnerName === where.winnerName) { Object.assign(row, data); count += 1; } return { count }; } },
+    $queryRaw: async (_query: TemplateStringsArray, userId: string) => {
+      const user = users.get(userId);
+      return user ? [{ id: user.id, username: user.username }] : [];
+    },
     $transaction: async (operation: any) => typeof operation === "function" ? operation(db) : Promise.all(operation),
   };
   return { db, users, sessions, participants, stats, results };
@@ -132,7 +136,8 @@ test("account credentials stay private while verification, reset, username, logo
 
   await service.logout(verified.sessionToken!);
   assert.equal(await service.authenticate(verified.sessionToken!), null);
-  await service.deleteAccount(storedUser);
+  const deletedSeats = await service.deleteAccount(storedUser);
+  assert.deepEqual(deletedSeats, [{ participantId: "seat-1", roomCode: "ABCD" }]);
   assert.equal(fixture.users.has(storedUser.id), false);
   assert.equal(fixture.stats.size, 0);
   assert.equal(fixture.participants.get("seat-1")?.userId, null);
@@ -180,4 +185,44 @@ test("login accepts password hashes written by the previous synchronous scrypt i
   const result = await service.login(email, password);
   assert.equal(result.account?.username, "legacy-player");
   assert.ok(result.sessionToken);
+});
+
+test("account deletion locks the account row before reading and invalidating linked seats in one transaction", async () => {
+  const operations: string[] = [];
+  const transaction: any = {
+    $queryRaw: async (parts: TemplateStringsArray, ...values: unknown[]) => {
+      operations.push("lock-account");
+      assert.match(parts.join("?"), /SELECT "id", "username" FROM "UserAccount" WHERE "id" = \? FOR UPDATE/);
+      assert.deepEqual(values, ["user-1"], "account ID must be a bound SQL value");
+      return [{ id: "user-1", username: "current-name" }];
+    },
+    participant: {
+      findMany: async ({ where }: any) => {
+        operations.push("read-linked-seats");
+        assert.deepEqual(where, { userId: "user-1" });
+        return [{ id: "participant-1", room: { code: "ABCD" } }];
+      },
+      update: async ({ where, data }: any) => {
+        operations.push("invalidate-seat");
+        assert.equal(where.id, "participant-1");
+        assert.equal(data.userId, null);
+      },
+    },
+    gameResult: { updateMany: async ({ where }: any) => { operations.push("anonymize-result"); assert.equal(where.winnerName, "current-name"); } },
+    userAccount: { delete: async ({ where }: any) => { operations.push("delete-account"); assert.equal(where.id, "user-1"); } },
+  };
+  const database: any = {
+    $transaction: async (callback: any) => {
+      operations.push("begin-transaction");
+      const result = await callback(transaction);
+      operations.push("commit-transaction");
+      return result;
+    },
+  };
+  const service = new AccountService(database);
+
+  const affected = await service.deleteAccount({ id: "user-1", username: "stale-name" });
+
+  assert.deepEqual(operations, ["begin-transaction", "lock-account", "read-linked-seats", "invalidate-seat", "anonymize-result", "delete-account", "commit-transaction"]);
+  assert.deepEqual(affected, [{ participantId: "participant-1", roomCode: "ABCD" }]);
 });
