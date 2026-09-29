@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { boardForState, createGame, createMvpRoomGame, deploymentChoices, legalMovementNeighbors, locationIdToHexKey, movementPathAllowed, type HexKey, type MonsterMovement } from "./index.js";
-import { botTacticForPlayer, chooseBotCommand, chooseBotSetupAction, routeBlockScores, runBotActionWithExplanation } from "./bots.js";
+import { botTacticForPlayer, chooseBotCommand, chooseBotSetupAction, routeBlockScores, runBotActionWithExplanation, type BotResearchDrawGateBypass } from "./bots.js";
 import { chooseBranch, chooseLair, chooseMonster, createSetup } from "./setup.js";
 
 function referenceRouteBlockScores(state: ReturnType<typeof createGame>, actor: number, branch: "Army" | "Navy" | "Air Force" | "Marines") {
@@ -257,4 +257,42 @@ test("per-player tactic overrides isolate policy comparisons and preserve inferr
   const researchFirst = chooseBotCommand(state, bots, new Map([[1, "research-first"]]));
   assert.notEqual(forceFirst?.type, "draw-research", "force-first should use a legal deployment before optional Research");
   assert.equal(researchFirst?.type, "draw-research", "research-first should draw once a screen is in play and no objective route is urgent");
+});
+
+test("default bot command and wire shape are unchanged without a Research gate bypass", () => {
+  const state = createGame(2, 23, "bot-research-gate-default-parity");
+  state.currentPlayer = 1;
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 1 };
+  state.monsters.forEach((monster, index) => {
+    if (index !== 1) monster.health = 0;
+  });
+  const bots = new Set([1]);
+  const tactics = new Map([[1, "research-first" as const]]);
+  const defaultCommand = chooseBotCommand(state, bots, tactics);
+  const explicitEmptyBypass = chooseBotCommand(state, bots, tactics, undefined, undefined, new Map([[1, new Set<BotResearchDrawGateBypass>()]]));
+
+  assert.deepEqual(defaultCommand, explicitEmptyBypass, "an empty experimental bypass must preserve the command exactly");
+  assert.equal(defaultCommand?.type, "draw-research");
+  assert.deepEqual(Object.keys(defaultCommand ?? {}).sort(), ["type"], "experimental eligibility and diagnostics must stay out of the public command payload");
+  assert.equal("gates" in (defaultCommand ?? {}), false);
+  assert.equal("bypassedGates" in (defaultCommand ?? {}), false);
+});
+
+test("Research urgency bypasses do not bypass the active-screen requirement", () => {
+  const state = createGame(2, 23, "bot-research-gate-hard-gate");
+  state.currentPlayer = 1;
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: 1 };
+  state.monsters.forEach((monster, index) => {
+    if (index !== 1) monster.health = 0;
+  });
+  state.units.filter((unit) => unit.ownerPlayer === 1).forEach((unit) => { unit.location = "record-tile"; });
+  assert.ok(deploymentChoices(state).length > 0, "a legal deployment remains available despite having no screen in play");
+  const bypasses = new Map<number, ReadonlySet<BotResearchDrawGateBypass>>([
+    [1, new Set(["objectiveThreatAbsent", "blockerOpportunityAbsent"])],
+  ]);
+  const command = chooseBotCommand(state, new Set([1]), new Map([[1, "research-first" as const]]), undefined, undefined, bypasses);
+
+  assert.notEqual(command?.type, "draw-research", "the two urgency bypasses must not override the active military screen gate");
 });

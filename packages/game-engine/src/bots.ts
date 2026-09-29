@@ -30,6 +30,8 @@ export type BotBranch = typeof BRANCHES[number];
 export type BotTactic = "force-first" | "research-first";
 export type BotTacticOverrides = ReadonlyMap<number, BotTactic>;
 export type BotRouteBlockMultiplierOverrides = ReadonlyMap<number, number>;
+export type BotResearchDrawGateBypass = "objectiveThreatAbsent" | "blockerOpportunityAbsent";
+export type BotResearchDrawGateBypassOverrides = ReadonlyMap<number, ReadonlySet<BotResearchDrawGateBypass>>;
 
 export interface BotResearchDrawGateDiagnostics {
   researchDeckAvailable: boolean;
@@ -49,6 +51,8 @@ export interface BotDeployDecisionDiagnostics {
   selectedCommandType: GameCommand["type"];
   gates: BotResearchDrawGateDiagnostics | null;
   eligible: boolean | null;
+  /** Present only when an explicit controlled study bypasses a failed urgency gate. */
+  bypassedGates?: readonly BotResearchDrawGateBypass[];
 }
 
 export type BotDeployDecisionObserver = (diagnostics: BotDeployDecisionDiagnostics) => void;
@@ -534,7 +538,7 @@ function retreatCommand(state: GameState): GameCommand {
   return { type: "retreat", destinations };
 }
 
-function shouldDrawResearch(state: GameState, actor: number, branch: BotBranch, choices: ReturnType<typeof deploymentChoices>, routeScores: ReadonlyMap<HexKey, number>, tacticOverrides?: BotTacticOverrides): boolean {
+function shouldDrawResearch(state: GameState, actor: number, branch: BotBranch, choices: ReturnType<typeof deploymentChoices>, routeScores: ReadonlyMap<HexKey, number>, tacticOverrides?: BotTacticOverrides, gateBypasses?: ReadonlySet<BotResearchDrawGateBypass>): boolean {
   if (state.decks.research.exhausted || state.deploymentsThisTurn > 0) return false;
   const hand = state.players[actor]?.researchCardIds ?? [];
   if (hand.length >= 2) return false;
@@ -549,7 +553,9 @@ function shouldDrawResearch(state: GameState, actor: number, branch: BotBranch, 
   const blockerOpportunity = choices.some((choice) => choice.destinations.some((destination) => (routeScores.get(destination) ?? 0) >= 10));
   // Research-first bots draw once they have a screen in play; force-first bots
   // keep using every legal deployment before drawing any optional Research.
-  return units.length >= 1 && !objectiveThreat && !blockerOpportunity;
+  return units.length >= 1
+    && (!objectiveThreat || gateBypasses?.has("objectiveThreatAbsent") === true)
+    && (!blockerOpportunity || gateBypasses?.has("blockerOpportunityAbsent") === true);
 }
 
 /** Re-evaluate the optional Research gates for a diagnostic observer. The selector checks this against its own decision before reporting it. */
@@ -592,6 +598,7 @@ export function chooseBotCommand(
   tacticOverrides?: BotTacticOverrides,
   onDeployDecision?: BotDeployDecisionObserver,
   routeBlockMultiplierOverrides?: BotRouteBlockMultiplierOverrides,
+  researchDrawGateBypassOverrides?: BotResearchDrawGateBypassOverrides,
 ): GameCommand | undefined {
   const decision = state.pendingDecision;
   const actor = decision && "playerIndex" in decision ? decision.playerIndex : state.currentPlayer;
@@ -751,7 +758,8 @@ export function chooseBotCommand(
       return command;
     }
     const routeScores = routeBlockScores(state, actor, branch, tacticOverrides, routeBlockMultiplierOverrides?.get(actor));
-    const drawResearch = shouldDrawResearch(state, actor, branch, options, routeScores, tacticOverrides);
+    const gateBypasses = researchDrawGateBypassOverrides?.get(actor);
+    const drawResearch = shouldDrawResearch(state, actor, branch, options, routeScores, tacticOverrides, gateBypasses);
     let gates: BotResearchDrawGateDiagnostics | null = null;
     if (onDeployDecision) {
       gates = inspectResearchDrawGates(state, actor, branch, options, routeScores, tacticOverrides);
@@ -760,8 +768,8 @@ export function chooseBotCommand(
         && gates.researchHandBelowTwo
         && gates.researchFirstPolicy
         && gates.activeMilitaryScreen
-        && gates.objectiveThreatAbsent
-        && gates.blockerOpportunityAbsent;
+        && (gates.objectiveThreatAbsent || gateBypasses?.has("objectiveThreatAbsent") === true)
+        && (gates.blockerOpportunityAbsent || gateBypasses?.has("blockerOpportunityAbsent") === true);
       if (independentlyEvaluated !== drawResearch) {
         throw new Error("Research-draw diagnostics disagree with the selector's existing eligibility check.");
       }
@@ -776,6 +784,7 @@ export function chooseBotCommand(
         selectedCommandType: command.type,
         gates: gates!,
         eligible: true,
+        ...(gateBypasses ? { bypassedGates: [...gateBypasses].filter((gate) => !gates![gate]) } : {}),
       });
       return command;
     }
@@ -799,6 +808,7 @@ export function chooseBotCommand(
       selectedCommandType: command.type,
       gates: gates!,
       eligible: false,
+      ...(gateBypasses ? { bypassedGates: [...gateBypasses].filter((gate) => !gates![gate]) } : {}),
     });
     return command;
   }

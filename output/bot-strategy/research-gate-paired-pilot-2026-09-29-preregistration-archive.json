@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-09-29T00:18:19.730Z",
+  "status": "POST-RUN ARCHIVE EXPORT — not an independently timestamped preregistration file",
+  "protocol": {
+    "primaryOutcome": "Focal terminal score: win=1, draw=0.5, loss=0; paired estimand is urgency-gates-bypassed minus control.",
+    "minimumMeaningfulDifference": {
+      "absoluteScorePoints": 0.1,
+      "direction": "two-sided"
+    },
+    "alpha": 0.05,
+    "targetPower": 0.8,
+    "treatment": "Focal seat remains research-first. Opponents remain force-first. Treatment bypasses only objectiveThreatAbsent and blockerOpportunityAbsent on the optional Research draw path; factual gate values are retained. Control supplies no bypass. Route scores, setup actions, all other bot decisions, game rules, and command schema are identical.",
+    "retainedHardGates": [
+      "researchDeckAvailable",
+      "deploymentNotStarted",
+      "researchHandBelowTwo",
+      "researchFirstPolicy",
+      "activeMilitaryScreen",
+      "legal draw-research command available"
+    ],
+    "pairedSetup": "Within every pair both arms clone byte-identical completed setup state and start from the same engine seed/RNG cursor. Rotate focal seat through 3/4-seat games and cycle focal monster, branch, and available lair rank. Opponent tactics are pinned force-first in both arms.",
+    "executionOrder": "Randomized with a separate seeded xorshift32 stream from a balanced 1:1 list; arm sequence and order stream state/draw count are retained.",
+    "incompletePairHandling": "Retain every match and pair. Invalid action pairs are reported as implementation failures and excluded from terminal-score inference. Capped/nonterminal pairs are excluded from complete-pair estimates and included in worst-case [0,1] score-difference bounds; report both counts and bounds.",
+    "powerPlanning": "After this explicitly labeled pilot, estimate paired-difference sample variance and use a two-sided paired t-test target of alpha=.05 and 80% power for |delta|=.10. The pilot itself is not a confirmatory test; power planning from a small/noisy pilot is provisional and requires an independent confirmatory run.",
+    "decisionRule": "No policy change from pilot findings. Treat uncertainty intervals spanning both -0.10 and +0.10 as unresolved, not evidence of equivalence.",
+    "rngDivergence": "Record per-action actor/command hash and RNG cursor before/after. Compare aligned action traces and retain first divergence; same cursor after different actions is not common-random-number identity."
+  },
+  "preRunEvidence": {
+    "sourcePath": "output/bot-strategy/research-gate-paired-pilot-harness-at-run-2026-09-29.tsx",
+    "sourceSha256RecordedInRun": "097a4a3fc6417f032aa902fc51547482aa9a396e9eb28fee326e75d22299e8fd",
+    "archivedSourceHashVerified": true,
+    "evidenceLimit": "The archived harness contains the exact protocol bytes and matches the source hash retained in the raw run artifact. This companion JSON is emitted after the run; an independently timestamped pre-run JSON copy was not retained."
+  },
+  "rawArtifact": {
+    "path": "output/bot-strategy/research-gate-paired-pilot-2026-09-29.json",
+    "sha256": "1dd69ebd9adf1211e485cb0006d7b5bc93d0feb4b454436aa524dda2bb6e9695"
+  }
+}
