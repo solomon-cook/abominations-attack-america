@@ -65,6 +65,8 @@
   border:1px solid #b4b186; border-radius:8px; box-shadow:0 16px 60px #07120dbb;
 }
 .game-screen > .onboarding { z-index:49; }
+.game-screen > .settings-panel { z-index:60; }
+.game-screen > .settings-panel .settings-close { position:absolute; top:10px; right:12px; min-height:44px; padding:8px 12px; }
 .game-screen > .onboarding { display:block; padding:18px; }
 .game-screen > .onboarding h2,.game-screen > .onboarding p,.game-screen > .onboarding-grid { display:revert; }
 .game-screen > .onboarding .onboarding-grid { display:grid; }

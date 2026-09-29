@@ -1,0 +1,529 @@
+{
+  "generatedAt": "2026-09-29T11:05:41.050Z",
+  "status": "structural-online-contention-overlap-confirmed",
+  "purpose": "Check whether visible terrain upgrades interfere with one authenticated online room-state API response and a legal-destination UI selection while upgrades are active.",
+  "interpretation": "Local browser evidence only. It does not model hosted API compute, CDN routing, production database load, other users, or target devices.",
+  "order": "Per viewport, samples alternate AB then BA; each sample uses a fresh cache-disabled context and newly created in-memory room.",
+  "api": "Node MVP API on loopback with PERSISTENCE=memory, reached through the same API URL compiled into both production builds.",
+  "profile": {
+    "cpuThrottleRate": 4,
+    "networkRttMs": 150,
+    "downloadBytesPerSecond": 200000,
+    "uploadBytesPerSecond": 93750
+  },
+  "pairsPerViewport": 1,
+  "webOrigin": "http://127.0.0.1:4173/",
+  "apiOrigin": "http://localhost:8787",
+  "builds": {
+    "A": {
+      "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+      "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+      "terrainAssetFiles": 1253,
+      "fileCount": 1456
+    },
+    "B": {
+      "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+      "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+      "terrainAssetFiles": 1253,
+      "fileCount": 1456
+    }
+  },
+  "paired": [
+    {
+      "viewport": "desktop",
+      "sampleCountPerBuild": 1,
+      "apiMedianMs": {
+        "baseline": 400.5,
+        "candidate": 454.60000002384186
+      },
+      "interactionMedianMs": {
+        "baseline": 196.29999995231628,
+        "candidate": 206
+      },
+      "pairedDeltas": [
+        {
+          "pair": 1,
+          "apiDeltaMs": 54.10000002384186,
+          "interactionDeltaMs": 9.700000047683716,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          }
+        }
+      ],
+      "allProbesReturned200": true,
+      "allHadUpgradeRequestsInFlightAtProbe": false
+    },
+    {
+      "viewport": "phone",
+      "sampleCountPerBuild": 1,
+      "apiMedianMs": {
+        "baseline": 400.5,
+        "candidate": 393.89999997615814
+      },
+      "interactionMedianMs": {
+        "baseline": 267.10000002384186,
+        "candidate": 283.3000000715256
+      },
+      "pairedDeltas": [
+        {
+          "pair": 1,
+          "apiDeltaMs": -6.600000023841858,
+          "interactionDeltaMs": 16.200000047683716,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          }
+        }
+      ],
+      "allProbesReturned200": true,
+      "allHadUpgradeRequestsInFlightAtProbe": false
+    }
+  ],
+  "samples": [
+    {
+      "variant": "A",
+      "label": "A (baseline)",
+      "pair": 1,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "936B8D",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790679867822.8,
+          "startedAt": 15975.5,
+          "startedWallTime": 1790679883798,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790679867822.8,
+          "now": 17314.600000023842,
+          "wallTime": 1790679885137
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 400.5,
+          "start": {
+            "timeOrigin": 1790679867822.8,
+            "startedAt": 15975.5,
+            "startedWallTime": 1790679883798,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790679867822.8,
+            "endedAt": 16376,
+            "endedWallTime": 1790679884199
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 84,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790679867822.8,
+            "now": 17365.700000047684,
+            "wallTime": 1790679885188
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17562,
+            "wallTime": 1790679885384
+          },
+          "clickToConfirmMs": 196.29999995231628
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 141,
+        "initialPriorityCounts": {
+          "Low": 141
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 0,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 117
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "B (visible priority)",
+      "pair": 1,
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 720,
+        "deviceScaleFactor": 1
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "4AA9D5",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790679886766.1,
+          "startedAt": 15908.300000071526,
+          "startedWallTime": 1790679902677,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790679886766.1,
+          "now": 17145,
+          "wallTime": 1790679903911
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 454.60000002384186,
+          "start": {
+            "timeOrigin": 1790679886766.1,
+            "startedAt": 15908.300000071526,
+            "startedWallTime": 1790679902677,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790679886766.1,
+            "endedAt": 16362.900000095367,
+            "endedWallTime": 1790679903129
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 0,
+          "priorityUpgradeRequestsInflightAtResponse": 60,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 24,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 24
+        },
+        "interaction": {
+          "destination": "6,4",
+          "selectionStarted": {
+            "timeOrigin": 1790679886766.1,
+            "now": 17175.100000023842,
+            "wallTime": 1790679903941
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17381.100000023842,
+            "wallTime": 1790679904147
+          },
+          "clickToConfirmMs": 206
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 120,
+        "initialPriorityCounts": {
+          "High": 120
+        },
+        "completedBeforeApiProbeStartBytes": 0,
+        "completedByCaptureBytes": 42156,
+        "pendingAtCapture": 24,
+        "failedOrCanceledAtCapture": 89
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "A",
+      "label": "A (baseline)",
+      "pair": 1,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "612844130425e1f6b117841c8af65673fb14f2578883e6dea8125148c5fe63f0",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "B60683",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790679905186.2,
+          "startedAt": 16490.299999952316,
+          "startedWallTime": 1790679921676,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790679905186.2,
+          "now": 18629.599999904633,
+          "wallTime": 1790679923815
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 400.5,
+          "start": {
+            "timeOrigin": 1790679905186.2,
+            "startedAt": 16490.299999952316,
+            "startedWallTime": 1790679921676,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790679905186.2,
+            "endedAt": 16890.799999952316,
+            "endedWallTime": 1790679922077
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 413648,
+          "priorityUpgradeRequestsInflightAtResponse": 45,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 15,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 15
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790679905186.2,
+            "now": 18678.899999976158,
+            "wallTime": 1790679923865
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 18946,
+            "wallTime": 1790679924132
+          },
+          "clickToConfirmMs": 267.10000002384186
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "Low": 235
+        },
+        "completedBeforeApiProbeStartBytes": 413648,
+        "completedByCaptureBytes": 413648,
+        "pendingAtCapture": 15,
+        "failedOrCanceledAtCapture": 150
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "B (visible priority)",
+      "pair": 1,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "sha256": "a7f14ba551a0aa3cf1d317a4d8b8ca00d8dafafb263e6da956c4f4a20d11c605",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "E5E6BA",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790679925348.9,
+          "startedAt": 13043.900000095367,
+          "startedWallTime": 1790679938393,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790679925348.9,
+          "now": 15121.600000023842,
+          "wallTime": 1790679940470
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 393.89999997615814,
+          "start": {
+            "timeOrigin": 1790679925348.9,
+            "startedAt": 13043.900000095367,
+            "startedWallTime": 1790679938393,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790679925348.9,
+            "endedAt": 13437.800000071526,
+            "endedWallTime": 1790679938786
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 638716,
+          "priorityUpgradeRequestsInflightAtResponse": 40,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 3,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 0
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790679925348.9,
+            "now": 15154.600000023842,
+            "wallTime": 1790679940503
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 15437.900000095367,
+            "wallTime": 1790679940786
+          },
+          "clickToConfirmMs": 283.3000000715256
+        }
+      },
+      "terrainRequests": {
+        "countAtEnd": 230,
+        "initialPriorityCounts": {
+          "High": 230
+        },
+        "completedBeforeApiProbeStartBytes": 638716,
+        "completedByCaptureBytes": 859888,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 109
+      },
+      "pageErrors": []
+    }
+  ],
+  "limitations": [
+    "This isolates a room-state GET from the active online player session; game mutations use the existing WebSocket command channel and are not timed by this scenario.",
+    "Only the legal-tile selection and its Confirm control are timed on the interface; this does not cover every submenu, text/image resource, or production telemetry.",
+    "Results are a local in-memory API/load-shaping experiment, not proof of hosted API response time or behavior under production server contention."
+  ],
+  "harnessAssessment": {
+    "status": "structural-online-contention-overlap-confirmed",
+    "timingAssessment": "excluded-from-performance-comparison",
+    "reason": "This one-pair smoke ran while a concurrent CPU-intensive bot simulation was active. The runner at capture time classified overlap at request start, while the probe intentionally starts at the first camera resolution-change event; reassessment uses the response and UI interaction checkpoints, which are the contention endpoints this scenario measures.",
+    "samples": [
+      {
+        "variant": "A",
+        "viewport": "desktop",
+        "apiStatus": 200,
+        "terrainInFlightAtApiResponse": 84,
+        "terrainInFlightAtSelectionStart": 24,
+        "initialPriorities": {
+          "Low": 141
+        }
+      },
+      {
+        "variant": "B",
+        "viewport": "desktop",
+        "apiStatus": 200,
+        "terrainInFlightAtApiResponse": 60,
+        "terrainInFlightAtSelectionStart": 24,
+        "initialPriorities": {
+          "High": 120
+        }
+      },
+      {
+        "variant": "A",
+        "viewport": "phone",
+        "apiStatus": 200,
+        "terrainInFlightAtApiResponse": 45,
+        "terrainInFlightAtSelectionStart": 15,
+        "initialPriorities": {
+          "Low": 235
+        }
+      },
+      {
+        "variant": "B",
+        "viewport": "phone",
+        "apiStatus": 200,
+        "terrainInFlightAtApiResponse": 40,
+        "terrainInFlightAtSelectionStart": 3,
+        "initialPriorities": {
+          "High": 230
+        }
+      }
+    ]
+  }
+}

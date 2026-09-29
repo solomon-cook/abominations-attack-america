@@ -1,0 +1,493 @@
+{
+  "ok": true,
+  "evidence": {
+    "date": "2026-09-29",
+    "scenario": "Home room creation held pending, then returned a controlled 503",
+    "httpStatus": 503,
+    "pendingStatus": "Creating room…",
+    "ariaBusy": true,
+    "disabledControls": {
+      "homePlayerCount": true,
+      "displayName": true,
+      "lobbyPlayerCount": true,
+      "roomPrivacy": true,
+      "roomCode": true,
+      "create": true,
+      "join": true,
+      "spectate": true,
+      "publicRoomRefresh": true,
+      "publicRoomCandidate": true,
+      "localStart": true,
+      "soloStart": true,
+      "playAuditedBoard": true,
+      "reviewFullBoard": true,
+      "victoryTest": true
+    },
+    "ariaBusyAfterFailure": "false",
+    "recoveredDisabledControls": {
+      "homePlayerCount": false,
+      "displayName": false,
+      "lobbyPlayerCount": false,
+      "roomPrivacy": false,
+      "roomCode": false,
+      "create": false,
+      "join": false,
+      "spectate": false,
+      "publicRoomRefresh": false,
+      "publicRoomCandidate": false,
+      "localStart": false,
+      "soloStart": false,
+      "playAuditedBoard": false,
+      "reviewFullBoard": false,
+      "victoryTest": false
+    },
+    "sameTaskRepeatClicksIssuedRequests": 1,
+    "publicRoomCandidateDisabled": true,
+    "roomCodeBeforeCandidateClick": "ABC123",
+    "roomCodeAfterCandidateClick": "ABC123",
+    "failureRenderedAsAlert": "Room creation is unavailable in this Home fixture."
+  },
+  "checked": {
+    "howToPlay": "keyboard open and close",
+    "disclosures": [
+      "online: keyboard open and close",
+      "tactics: keyboard open and close",
+      "playtest tools: keyboard open and close"
+    ],
+    "homeRoomLoadingAndError": {
+      "pendingStatus": "Creating room…",
+      "disabledControls": {
+        "homePlayerCount": true,
+        "displayName": true,
+        "lobbyPlayerCount": true,
+        "roomPrivacy": true,
+        "roomCode": true,
+        "create": true,
+        "join": true,
+        "spectate": true,
+        "publicRoomRefresh": true,
+        "publicRoomCandidate": true,
+        "localStart": true,
+        "soloStart": true,
+        "playAuditedBoard": true,
+        "reviewFullBoard": true,
+        "victoryTest": true
+      },
+      "rapidRepeatSubmissionsPrevented": true,
+      "fixtureFailureShownAsAlert": true
+    },
+    "localSetupSeatCounts": [
+      {
+        "players": 2,
+        "rendered": "0/2 starting choices confirmed"
+      },
+      {
+        "players": 3,
+        "rendered": "0/3 starting choices confirmed"
+      },
+      {
+        "players": 4,
+        "rendered": "0/4 starting choices confirmed"
+      }
+    ],
+    "playAuditedBoard": {
+      "destination": "local setup",
+      "boardId": "human-audited-north-america"
+    },
+    "soloSetup": {
+      "setupChoices": [
+        "Zorb\n♥ 11 · Move 4 · Def 4\nSPECIAL ABILITY\nMay get 2 Infamy tokens instead of gaining health for stomping a city. If a health roll is needed, decide after rolling.\nHealth 11 · 3 attacks · 3 damage",
+        "Army\nLand control: tough tanks and missile launchers with an extra opening attack.\n5 × Tank\nMove 4 · Defense 5 · Damage 1\n3 × Missile Launcher\nMove 4 · Defense 3 · Damage 1\nChoose Army →",
+        "Lair 13,4",
+        "Draw Research"
+      ],
+      "phase": "Move",
+      "legalMoveVisible": true,
+      "opponentCardVisible": true
+    },
+    "firstMatchGuide": {
+      "freshProfileShowsGuide": true,
+      "dismissalPersisted": true,
+      "menuReopens": true,
+      "escapeRetainsFocus": true,
+      "returningProfileSuppressesAutoShow": true,
+      "returningSetupChoices": [
+        "Zorb\n♥ 11 · Move 4 · Def 4\nSPECIAL ABILITY\nMay get 2 Infamy tokens instead of gaining health for stomping a city. If a health roll is needed, decide after rolling.\nHealth 11 · 3 attacks · 3 damage",
+        "Army\nLand control: tough tanks and missile launchers with an extra opening attack.\n5 × Tank\nMove 4 · Defense 5 · Damage 1\n3 × Missile Launcher\nMove 4 · Defense 3 · Damage 1\nChoose Army →",
+        "Lair 13,4",
+        "Draw Research"
+      ],
+      "viewportChecks": [
+        {
+          "viewport": "1280x720",
+          "bounds": {
+            "x": 260,
+            "y": 140,
+            "width": 760,
+            "height": 299.46875
+          }
+        },
+        {
+          "viewport": "390x844",
+          "bounds": {
+            "x": 14,
+            "y": 165,
+            "width": 362,
+            "height": 554.265625
+          },
+          "dismissBounds": {
+            "x": 33,
+            "y": 662.265625,
+            "width": 324,
+            "height": 38
+          },
+          "dismissHitTarget": true,
+          "menuClosed": true,
+          "headingHitTarget": true,
+          "screenshot": "first-match-guide-390x844-2026-09-29.png"
+        },
+        {
+          "viewport": "320x740",
+          "bounds": {
+            "x": 14,
+            "y": 165,
+            "width": 292,
+            "height": 554.265625
+          },
+          "dismissBounds": {
+            "x": 33,
+            "y": 662.265625,
+            "width": 254,
+            "height": 38
+          },
+          "dismissHitTarget": true,
+          "menuClosed": true,
+          "headingHitTarget": true,
+          "screenshot": "first-match-guide-320x740-2026-09-29.png"
+        },
+        {
+          "viewport": "834x1112",
+          "bounds": {
+            "x": 37,
+            "y": 140,
+            "width": 760,
+            "height": 328.796875
+          },
+          "dismissBounds": {
+            "x": 613.734375,
+            "y": 411.796875,
+            "width": 164.265625,
+            "height": 38
+          },
+          "dismissHitTarget": true,
+          "menuClosed": true,
+          "headingHitTarget": true,
+          "screenshot": "first-match-guide-834x1112-2026-09-29.png"
+        },
+        {
+          "viewport": "1024x768",
+          "bounds": {
+            "x": 132,
+            "y": 140,
+            "width": 760,
+            "height": 299.46875
+          },
+          "dismissBounds": {
+            "x": 151,
+            "y": 382.46875,
+            "width": 722,
+            "height": 38
+          },
+          "dismissHitTarget": true,
+          "menuClosed": true,
+          "headingHitTarget": true,
+          "screenshot": "first-match-guide-1024x768-2026-09-29.png"
+        }
+      ]
+    },
+    "horizontalOverflow": [
+      {
+        "viewport": "1280x720",
+        "state": "all disclosures expanded",
+        "innerWidth": 1280,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "overflowers": []
+      },
+      {
+        "viewport": "768x1024",
+        "state": "all disclosures expanded",
+        "innerWidth": 768,
+        "documentWidth": 768,
+        "bodyWidth": 768,
+        "overflowers": []
+      },
+      {
+        "viewport": "390x844",
+        "state": "all disclosures expanded",
+        "innerWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "overflowers": []
+      },
+      {
+        "viewport": "320x740",
+        "state": "all disclosures expanded",
+        "innerWidth": 320,
+        "documentWidth": 320,
+        "bodyWidth": 320,
+        "overflowers": []
+      },
+      {
+        "viewport": "1280x720",
+        "state": "default Home state",
+        "innerWidth": 1280,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "overflowers": []
+      },
+      {
+        "viewport": "768x1024",
+        "state": "default Home state",
+        "innerWidth": 768,
+        "documentWidth": 768,
+        "bodyWidth": 768,
+        "overflowers": []
+      },
+      {
+        "viewport": "390x844",
+        "state": "default Home state",
+        "innerWidth": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "overflowers": []
+      },
+      {
+        "viewport": "320x740",
+        "state": "default Home state",
+        "innerWidth": 320,
+        "documentWidth": 320,
+        "bodyWidth": 320,
+        "overflowers": []
+      }
+    ],
+    "apiFixtureRequests": [
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/rooms/public"
+      },
+      {
+        "method": "POST",
+        "path": "/rooms"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      },
+      {
+        "method": "GET",
+        "path": "/accounts/me"
+      },
+      {
+        "method": "GET",
+        "path": "/leaderboard"
+      }
+    ]
+  }
+}

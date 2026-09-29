@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-28T23:12:02.060Z",
+  "generatedAt": "2026-09-29T10:57:52.643Z",
   "route": "production main app route served by Vite; API is an isolated local in-memory service",
   "cases": {
     "local": {

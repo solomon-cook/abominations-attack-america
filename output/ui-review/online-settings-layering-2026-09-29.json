@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2026-09-29T11:07:14.227Z",
+  "route": "full online game route served by Vite with local in-memory API",
+  "actor": "second",
+  "openedFromGameMenu": true,
+  "settingsTargetHitTest": {
+    "viewport": {
+      "width": 1280,
+      "height": 581
+    },
+    "target": "Confirm leave, concede, or disappear",
+    "bounds": {
+      "x": 645,
+      "y": 290,
+      "width": 354,
+      "height": 46
+    },
+    "hit": "Confirm leave, concede, or disappear",
+    "unobstructed": true
+  },
+  "pointerActivationChangedPreference": true,
+  "screenshot": "online-settings-layering-2026-09-29-1280x581.png",
+  "escapeDismissedAndReturnedFocus": true,
+  "pointerDismissedAndReturnedFocus": true
+}

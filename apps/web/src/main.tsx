@@ -164,6 +164,8 @@ function safeStoredNumber(key: string, fallback: number): number {
 
 function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
+  const guideOpenerRef = useRef<HTMLElement | null>(null);
+  const gameMenuRef = useRef<HTMLDetailsElement>(null);
   const commandChannelRef = useRef<RoomCommandChannel | null>(null);
   const intentionalRoomLeaveRef = useRef<string | null>(null);
   const completedRoomLeaveRef = useRef<string | null>(null);
@@ -583,7 +585,10 @@ function App() {
     return () => {
       window.removeEventListener("keydown", close);
       if (settingsVisible && settingsOpenerRef.current?.isConnected) settingsOpenerRef.current.focus({ preventScroll: true });
-      else if (previous?.isConnected && previous !== document.body) previous.focus({ preventScroll: true });
+      else if (onboardingVisible && guideOpenerRef.current?.isConnected) {
+        guideOpenerRef.current.focus({ preventScroll: true });
+        guideOpenerRef.current = null;
+      } else if (previous?.isConnected && previous !== document.body) previous.focus({ preventScroll: true });
       else if (onboardingVisible) actionHeadingRef.current?.focus({ preventScroll: true });
     };
   }, [settingsVisible, onboardingVisible]);
@@ -1498,7 +1503,7 @@ function App() {
         </div>
         <div className="header-actions">
           {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={playerRecordIndex} monster={playerRecordMonster} branch={playerRecordBranch} canAct={canAct} mobileCommandExpanded={mobileCommandExpanded} runCommand={runCommand} onDeploy={openMilitarySheet} onSelectDeployment={(choice) => { setDeploymentPieceId(choice.id); setFocusedHexKey(choice.destinations[0]); }} />}
-          <details className="hud-menu" onKeyDown={(event) => {
+          <details ref={gameMenuRef} className="hud-menu" onKeyDown={(event) => {
             if (event.key !== "Escape") return;
             event.preventDefault();
             const menu = event.currentTarget;
@@ -1509,7 +1514,12 @@ function App() {
             <div className="hud-menu-items">
               {online && <span className="room-hud-menu-status" role="status">{room?.code} · {connectionState}</span>}
               {online && <InviteLinkControl roomCode={room?.code ?? ""} buttonClassName="ghost" />}
-              <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>How to play</button>
+              <button className="ghost how-to-play-action" onClick={() => {
+                setSettingsOpen(false);
+                guideOpenerRef.current = gameMenuRef.current?.querySelector(":scope > summary") ?? null;
+                if (gameMenuRef.current) gameMenuRef.current.open = false;
+                setOnboardingOpen(true);
+              }}>How to play</button>
               <button className="ghost settings-action" onClick={(event) => { settingsOpenerRef.current = event.currentTarget; setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>Settings</button>
               <button className="ghost new-game-action" onClick={soloMode ? startSolo : resetLocal}>{soloMode ? "New solo game" : "New local game"}</button>
               {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
@@ -1548,7 +1558,7 @@ function App() {
         onLeaveRoom={leaveRoomSafely}
       />
       {settingsOpen && (
-        <SettingsPanel largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} masterVolume={masterVolume} musicVolume={musicVolume} effectsVolume={effectsVolume} muted={muted} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} setMasterVolume={(value) => setStoredVolume("abominations-master-volume", setMasterVolume, value)} setMusicVolume={(value) => setStoredVolume("abominations-music-volume", setMusicVolume, value)} setEffectsVolume={(value) => setStoredVolume("abominations-effects-volume", setEffectsVolume, value)} setMuted={setMuted} togglePreference={togglePreference} />
+        <SettingsPanel onClose={() => setSettingsOpen(false)} largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} masterVolume={masterVolume} musicVolume={musicVolume} effectsVolume={effectsVolume} muted={muted} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} setMasterVolume={(value) => setStoredVolume("abominations-master-volume", setMasterVolume, value)} setMusicVolume={(value) => setStoredVolume("abominations-music-volume", setMusicVolume, value)} setEffectsVolume={(value) => setStoredVolume("abominations-effects-volume", setEffectsVolume, value)} setMuted={setMuted} togglePreference={togglePreference} />
       )}
       {onboardingVisible && (
         <section className="onboarding" aria-label="First match guide">

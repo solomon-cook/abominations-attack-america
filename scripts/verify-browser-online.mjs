@@ -196,6 +196,7 @@ let disappearFirst;
 let disappearSecond;
 let disabledConfirmDisappearEvidence;
 let encounterResultEvidence;
+let settingsOverlayEvidence;
 try {
   if (ownsWebServer) {
     webServer = startServer({
@@ -688,16 +689,38 @@ try {
       await browser.waitFor(`!!document.querySelector(".settings-panel")`, `${label} Settings panel`);
       const confirmPreferenceBefore = await browser.evaluate(`(() => { const label = [...document.querySelectorAll(".settings-grid label")].find((node) => node.textContent.includes("Confirm leave, concede, or disappear")); const input = label?.querySelector("input"); return { checked: input?.checked, stored: localStorage.getItem("abominations-confirm-irreversible") }; })()`);
       if (confirmPreferenceBefore.checked !== true) throw new Error(`${label} player did not start the disabled-confirm audit with confirmation enabled: ${JSON.stringify(confirmPreferenceBefore)}`);
-      if (!await browser.clickSelector(".settings-panel .settings-grid label:nth-child(4)")) throw new Error(`${label} player could not disable confirmation from Settings.`);
+      if (!await browser.clickSelector(".settings-panel .settings-grid label:nth-child(4)")) {
+        const diagnostic = await browser.evaluate(`(() => { const panel = document.querySelector(".settings-panel"); const labels = [...(panel?.querySelectorAll(".settings-grid label") ?? [])].map((element) => { element.scrollIntoView({ block: "center", inline: "nearest" }); const rect = element.getBoundingClientRect(); const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2); return { text: element.textContent?.trim(), rect: { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height }, hit: hit?.outerHTML?.slice(0, 240), checked: element.querySelector("input")?.checked, visibility: getComputedStyle(element).visibility, display: getComputedStyle(element).display }; }); return { viewport: { width: innerWidth, height: innerHeight }, scroll: { x: scrollX, y: scrollY, documentHeight: document.documentElement.scrollHeight }, panel: panel && { rect: (() => { const rect = panel.getBoundingClientRect(); return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height }; })(), scrollTop: panel.scrollTop, scrollHeight: panel.scrollHeight }, labels }; })()`);
+        throw new Error(`${label} player could not disable confirmation from Settings: ${JSON.stringify(diagnostic)}`);
+      }
       const confirmPreferenceAfter = await browser.evaluate(`(() => { const label = [...document.querySelectorAll(".settings-grid label")].find((node) => node.textContent.includes("Confirm leave, concede, or disappear")); const input = label?.querySelector("input"); return { checked: input?.checked, stored: localStorage.getItem("abominations-confirm-irreversible") }; })()`);
       if (confirmPreferenceAfter.checked !== false || confirmPreferenceAfter.stored !== "0") throw new Error(`${label} player's disabled confirmation preference did not persist: ${JSON.stringify(confirmPreferenceAfter)}`);
+      const settingsHitTest = await browser.evaluate(`(() => { const target = [...document.querySelectorAll(".settings-panel .settings-grid label")].find((node) => node.textContent.includes("Confirm leave, concede, or disappear")); const rect = target?.getBoundingClientRect(); const hit = rect && document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2); return { viewport: { width: innerWidth, height: innerHeight }, target: target?.textContent?.trim(), bounds: rect && { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, hit: hit?.textContent?.trim(), unobstructed: Boolean(target && hit && (hit === target || target.contains(hit))) }; })()`);
+      if (!settingsHitTest.unobstructed) throw new Error(`${label} Settings confirmation control is occluded after opening Settings: ${JSON.stringify(settingsHitTest)}`);
+      settingsOverlayEvidence = {
+        route: "full online game route served by Vite with local in-memory API",
+        actor: label,
+        openedFromGameMenu: true,
+        settingsTargetHitTest: settingsHitTest,
+        pointerActivationChangedPreference: confirmPreferenceAfter.checked === false && confirmPreferenceAfter.stored === "0",
+        screenshot: "online-settings-layering-2026-09-29-1280x581.png",
+      };
       const evidenceDir = join(process.cwd(), "output/ui-review");
       await mkdir(evidenceDir, { recursive: true });
-      await writeFile(join(evidenceDir, "online-concede-confirm-disabled-settings-2026-09-28.png"), await browser.screenshot());
+      await writeFile(join(evidenceDir, settingsOverlayEvidence.screenshot), await browser.screenshot());
       await browser.pressKey("Escape");
       await browser.waitFor(`!document.querySelector(".settings-panel")`, `${label} closed Settings panel`);
       const settingsFocusRestored = await browser.evaluate(`document.querySelector(".hud-menu .settings-action") === document.activeElement`);
       if (!settingsFocusRestored) throw new Error(`${label} player did not regain focus on the Settings opener after Escape.`);
+      if (!await browser.clickSelector(".hud-menu .settings-action")) throw new Error(`${label} player could not reopen Settings from the game menu after Escape.`);
+      await browser.waitFor(`!!document.querySelector(".settings-panel")`, `${label} reopened Settings panel`);
+      if (!await browser.clickSelector(".settings-panel .settings-close")) throw new Error(`${label} player could not pointer-close Settings from its visible close control.`);
+      await browser.waitFor(`!document.querySelector(".settings-panel")`, `${label} pointer-closed Settings panel`);
+      const settingsCloseFocusRestored = await browser.evaluate(`document.querySelector(".hud-menu .settings-action") === document.activeElement`);
+      if (!settingsCloseFocusRestored) throw new Error(`${label} pointer-closing Settings did not restore focus to its opener.`);
+      settingsOverlayEvidence.escapeDismissedAndReturnedFocus = settingsFocusRestored;
+      settingsOverlayEvidence.pointerDismissedAndReturnedFocus = settingsCloseFocusRestored;
+      await writeFile(join(evidenceDir, "online-settings-layering-2026-09-29.json"), `${JSON.stringify({ generatedAt: new Date().toISOString(), ...settingsOverlayEvidence }, null, 2)}\n`);
       if (await browser.evaluate(`document.querySelector(".hud-menu")?.open === true`)
         && !await browser.clickSelector("details.hud-menu > summary")) throw new Error(`${label} player could not close the game menu before concession.`);
       const beforeConcession = await browser.evaluate(`(async () => {
@@ -899,18 +922,48 @@ try {
   await disappearSecond.waitFor("!document.querySelector('.setup-panel')", "disappearance second setup completion");
   if (!await disappearFirst.click("Ready") || !await disappearSecond.click("Ready")) throw new Error("Disappearance audit players did not expose Ready controls.");
   await Promise.all([disappearFirst, disappearSecond].map((browser) => browser.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "disappearance audit Move phase")));
-  const disappearActive = await disappearFirst.evaluate(`(async () => {
+  const readDisappearRoomState = () => disappearFirst.evaluate(`(async () => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
     const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${disappearRoomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
     const room = await response.json();
     const participant = room.participants?.find((entry) => entry.id === session.participantId);
-    return { status: response.status, roomVersion: room.version, participantId: session.participantId, participantRole: participant?.role,
+    const moveOptions = document.querySelector(".command-station .bottom-context-dock details.piece-context-tab");
+    const disappearControl = [...(moveOptions?.querySelectorAll("button") ?? [])].find((button) => button.textContent.trim() === "Disappear to lair");
+    return { status: response.status, roomStatus: room.status, roomVersion: room.version, participantId: session.participantId, participantRole: participant?.role,
       participantPlayerIndex: participant?.playerIndex, currentPlayer: room.state.currentPlayer,
       participants: room.participants?.map((entry) => ({ id: entry.id, role: entry.role, playerIndex: entry.playerIndex, connected: entry.connected })),
       phase: room.state.phase, pendingDecision: room.state.pendingDecision, movedPieceIds: room.state.movedPieceIds ?? [],
+      setupPhase: room.state.setupState?.phase, pendingChopperLift: room.state.pendingChopperLift,
       setupAssignments: room.state.setupAssignments, monsters: room.state.monsters.map((monster) => ({ id: monster.id, name: monster.name, location: monster.location })),
+      ui: { connection: document.querySelector(".connection")?.textContent?.trim(), heading: document.querySelector(".action-card h2")?.textContent?.trim(), settingsOpen: Boolean(document.querySelector(".settings-panel")), moveOptionsOpen: moveOptions?.open, disappearDisabled: disappearControl?.disabled, passMoveDisabled: [...(moveOptions?.querySelectorAll("button") ?? [])].find((button) => button.textContent.trim() === "End all movement →")?.disabled },
       eventIds: room.state.eventLog.map((event) => event.id), eventCount: room.state.eventLog.length };
   })()`);
+  let disappearActive;
+  let disappearProjection;
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    const roomState = await readDisappearRoomState();
+    const activeParticipant = roomState.participants?.find((entry) => entry.role === "player" && entry.playerIndex === roomState.currentPlayer);
+    if (roomState.status === 200 && roomState.roomStatus === "active" && roomState.phase === "move" && activeParticipant) {
+      const actingBrowser = activeParticipant.playerIndex === 0 ? disappearFirst : disappearSecond;
+      const projection = await actingBrowser.evaluate(`(() => ({
+        turnLabel: document.querySelector(".top-turn-summary .turn-hud-heading .label")?.textContent?.trim(),
+        heading: document.querySelector(".action-card h2")?.textContent?.trim(),
+        unavailableReason: document.querySelector(".unavailable-reason")?.textContent?.trim(),
+        connection: document.querySelector(".room-hud-menu-status")?.textContent?.trim(),
+        setupVisible: Boolean(document.querySelector(".setup-panel")),
+      }))()`);
+      disappearProjection = projection;
+      if (projection.heading === "Move" && projection.turnLabel?.includes(`YOUR TURN · PLAYER ${roomState.currentPlayer + 1}`)) {
+        disappearActive = { ...roomState, uiProjection: projection };
+        break;
+      }
+    }
+    await wait(100);
+  }
+  if (!disappearActive) {
+    const latestRoomState = await readDisappearRoomState();
+    throw new Error(`Disappearance audit did not reach an active participant Move projection before exercising Settings: ${JSON.stringify({ room: latestRoomState, uiProjection: disappearProjection })}`);
+  }
   if (disappearActive.status !== 200 || disappearActive.phase !== "move" || disappearActive.participantRole !== "player"
     || disappearActive.participantPlayerIndex !== disappearActive.currentPlayer
     || disappearActive.pendingDecision?.type !== "monster-movement") {
@@ -967,7 +1020,7 @@ try {
   const enabledDisappearControl = await disappearBrowser.evaluate(`(() => { const details = document.querySelector(".command-station .bottom-context-dock details.piece-context-tab"); const button = [...(details?.querySelectorAll("button") ?? [])].find((candidate) => candidate.textContent.trim() === "Disappear to lair"); if (!details?.open || !button || button.disabled) return null; button.scrollIntoView({ block: "center", inline: "nearest" }); const rect = button.getBoundingClientRect(); const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, visible: rect.width > 0 && rect.height > 0 && rect.x >= 0 && rect.y >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && (hit === button || button.contains(hit)), disabled: button.disabled }; })()`);
   if (!enabledDisappearControl?.visible || enabledDisappearControl.disabled) {
     const uiDiagnostic = await disappearBrowser.evaluate(`(() => { const details = document.querySelector(".command-station .bottom-context-dock details.piece-context-tab"); return { open: details?.open, summary: details?.querySelector("summary")?.textContent?.trim(), content: details?.textContent?.trim(), buttons: [...(details?.querySelectorAll("button") ?? [])].map((button) => ({ text: button.textContent.trim(), aria: button.getAttribute("aria-label"), disabled: button.disabled })), selectedUnitRecord: document.querySelector(".unit-command-record h3")?.textContent?.trim(), monsterRecord: document.querySelector(".monster-command-record h3")?.textContent?.trim() }; })()`);
-    throw new Error(`The production UI did not offer an enabled, visible disappearance control at the eligible Move step: ${JSON.stringify({ disappearControlBounds, enabledDisappearControl, uiDiagnostic })}`);
+    throw new Error(`The production UI did not offer an enabled, visible disappearance control at the eligible Move step: ${JSON.stringify({ disappearActive, disappearControlBounds, enabledDisappearControl, uiDiagnostic })}`);
   }
   await disappearBrowser.evaluate(`(() => {
     const originalSend = WebSocket.prototype.send;

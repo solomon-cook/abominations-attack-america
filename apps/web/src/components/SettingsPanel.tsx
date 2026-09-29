@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 
 interface SettingsPanelProps {
+  onClose: () => void;
   largeText: boolean;
   showBoardLabels: boolean;
   manualReducedMotion: boolean;
@@ -20,9 +21,10 @@ interface SettingsPanelProps {
   togglePreference: (key: string, setter: Dispatch<SetStateAction<boolean>>) => void;
 }
 
-export function SettingsPanel({ largeText, showBoardLabels, manualReducedMotion, confirmIrreversible, masterVolume, musicVolume, effectsVolume, muted, setLargeText, setShowBoardLabels, setManualReducedMotion, setConfirmIrreversible, setMasterVolume, setMusicVolume, setEffectsVolume, setMuted, togglePreference }: SettingsPanelProps) {
+export function SettingsPanel({ onClose, largeText, showBoardLabels, manualReducedMotion, confirmIrreversible, masterVolume, musicVolume, effectsVolume, muted, setLargeText, setShowBoardLabels, setManualReducedMotion, setConfirmIrreversible, setMasterVolume, setMusicVolume, setEffectsVolume, setMuted, togglePreference }: SettingsPanelProps) {
   return (
     <section className="settings-panel" aria-label="Play preferences">
+      <button className="ghost settings-close" type="button" aria-label="Close play preferences" onClick={onClose}>Close</button>
       <span className="label">PLAY PREFERENCES</span>
       <h2>Play preferences</h2>
       <div className="settings-grid">

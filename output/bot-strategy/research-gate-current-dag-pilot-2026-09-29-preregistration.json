@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "status": "PRE-RUN REGISTERED PILOT",
+  "registeredAt": "2026-09-29T11:00:34Z",
+  "source": {
+    "gitHead": "51eac793f0f2729d792befce6d5792883ba45ab8",
+    "botsTsSha256": "448d8b667783a498db84d892f2b39e45e1aabd60cc119801e37e5c41aea5298a",
+    "harnessPath": "scripts/verify-bot-research-gates-paired.tsx",
+    "harnessSha256": "c2616979f61a7f6a7010368a0d233717ec9b8d1c44eba3c4df440a1169858929"
+  },
+  "question": "On the current shortest-route DAG bot scorer, how does bypassing only the objectiveThreatAbsent and blockerOpportunityAbsent optional Research-draw gates affect terminal focal score for a research-first focal bot against force-first opponents?",
+  "stage": "Fresh current-source variance pilot only. Do not change default bot policy from this result. Use the observed paired variance to preregister a separate confirmatory sample size before any further outcome run.",
+  "primaryOutcome": "Focal terminal score: win=1, draw=0.5, loss=0; paired treatment-minus-control difference.",
+  "minimumMeaningfulDifference": 0.1,
+  "alpha": 0.05,
+  "targetPowerForPlanning": 0.8,
+  "configuration": {
+    "pairCount": 30,
+    "seedStart": 7300,
+    "seedEndInclusive": 7329,
+    "orderSeed": 20260930,
+    "maximumRoundsPerMatch": 12,
+    "actionSafetyCapPerMatch": 2000,
+    "playerCounts": [3, 4],
+    "focalTactic": "research-first",
+    "opponentTactic": "force-first",
+    "treatmentBypasses": ["objectiveThreatAbsent", "blockerOpportunityAbsent"],
+    "retainedHardGates": ["researchDeckAvailable", "deploymentNotStarted", "researchHandBelowTwo", "researchFirstPolicy", "activeMilitaryScreen", "legal draw-research command available"]
+  },
+  "pairing": "Each treatment pair clones the same completed legal setup and engine RNG seed/state. Rotate focal seat through 3/4-seat matches and focal monster, branch, and available lair rank. Randomize execution order from the separate seeded stream; retain every arm and pair, including capped or invalid outcomes.",
+  "analysis": "Recompute the complete-pair mean difference, paired t 95% interval, invalid/capped counts, and worst-case [0,1] score-difference bounds over all randomized pairs from arm evidence. Estimate the next sample size for a two-sided paired t target of alpha=.05, 80% power, and |delta|=.10 using this pilot's observed complete-pair variance; label that estimate provisional. Record command and RNG divergence, Research opportunities, selected/accepted draws, game length, and all terminal outcomes as diagnostics.",
+  "decisionRule": "No default policy change from this pilot, regardless of observed point estimate. Any later policy proposal requires a separately preregistered current-source confirmatory run; adopt the treatment only if its 95% paired interval supports a benefit exceeding +0.10 score points and command validity/termination guardrails pass.",
+  "rulesBoundary": "No printed rules, engine rules, or default bot policy change during this pilot. Physical-edition fidelity remains independently source-gated."
+}

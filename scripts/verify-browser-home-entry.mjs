@@ -391,17 +391,50 @@ try {
   await inGameHowToPlay.waitFor({ state: "visible" });
   await inGameHowToPlay.click();
   await firstRunGuide.waitFor({ state: "visible" });
-  const compactGuideBounds = [];
-  for (const [width, height] of [[390, 844], [320, 740]]) {
+  const guideViewportChecks = [];
+  for (const [width, height] of [[390, 844], [320, 740], [834, 1112], [1024, 768]]) {
     await soloPage.setViewportSize({ width, height });
     const bounds = await firstRunGuide.boundingBox();
     assert.ok(bounds && bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= width + 1 && bounds.y + bounds.height <= height + 1,
       `${width}x${height} first-match guide should stay within the viewport: ${JSON.stringify(bounds)}`);
-    compactGuideBounds.push({ viewport: `${width}x${height}`, bounds });
+    const dismissButton = firstRunGuide.getByRole("button", { name: "Got it · hide guide" });
+    const dismissBounds = await dismissButton.boundingBox();
+    assert.ok(dismissBounds && dismissBounds.width >= 1 && dismissBounds.height >= 1
+      && dismissBounds.x >= 0 && dismissBounds.y >= 0
+      && dismissBounds.x + dismissBounds.width <= width + 1
+      && dismissBounds.y + dismissBounds.height <= height + 1,
+    `${width}x${height} first-match guide dismiss action should remain in bounds: ${JSON.stringify(dismissBounds)}`);
+    const dismissHitTarget = await dismissButton.evaluate((button) => {
+      const rect = button.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return hit === button || button.contains(hit);
+    });
+    assert.equal(dismissHitTarget, true, `${width}x${height} first-match guide dismiss action should receive pointer input`);
+    const menuClosed = await gameMenuSummary.evaluate((summary) => !(summary.parentElement instanceof HTMLDetailsElement && summary.parentElement.open));
+    assert.equal(menuClosed, true, `${width}x${height} opening the guide should close its source menu`);
+    const headingHitTarget = await firstRunGuide.locator("h2").evaluate((heading) => {
+      const rect = heading.getBoundingClientRect();
+      return document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)?.closest(".onboarding") === heading.closest(".onboarding");
+    });
+    assert.equal(headingHitTarget, true, `${width}x${height} game menu should not cover the guide heading`);
+    const screenshot = `first-match-guide-${width}x${height}-2026-09-29.png`;
+    await soloPage.screenshot({ path: join(cwd, "output", "ui-review", screenshot) });
+    guideViewportChecks.push({ viewport: `${width}x${height}`, bounds, dismissBounds, dismissHitTarget, menuClosed, headingHitTarget, screenshot });
+    if (width === 834 || width === 1024) {
+      await dismissButton.focus();
+      await soloPage.keyboard.press("Enter");
+      await firstRunGuide.waitFor({ state: "detached" });
+      assert.equal(await gameMenuSummary.evaluate((node) => node === document.activeElement), true,
+        `${width}x${height} guide dismissal should return keyboard focus to the now-closed menu summary`);
+      await gameMenuSummary.press("Enter");
+      await inGameHowToPlay.waitFor({ state: "visible" });
+      await inGameHowToPlay.press("Enter");
+      await firstRunGuide.waitFor({ state: "visible" });
+    }
   }
   await soloPage.keyboard.press("Escape");
   await firstRunGuide.waitFor({ state: "detached" });
-  assert.equal(await inGameHowToPlay.evaluate((node) => node === document.activeElement), true, "Escape should close the guide without losing focus from its reopen control");
+  assert.equal(await gameMenuSummary.evaluate((node) => node === document.activeElement), true, "Escape should close the guide and return focus to its closed menu summary");
 
   await soloPage.reload({ waitUntil: "domcontentloaded" });
   await soloPage.locator(".home-screen").waitFor({ state: "visible" });
@@ -422,7 +455,7 @@ try {
   const report = {
     ok: true,
     evidence: {
-      date: "2026-09-28",
+      date: "2026-09-29",
       scenario: "Home room creation held pending, then returned a controlled 503",
       httpStatus: createFailureResponse.status(),
       pendingStatus: "Creating room…",
@@ -443,12 +476,12 @@ try {
       localSetupSeatCounts: setupSeats,
       playAuditedBoard: { destination: "local setup", boardId: auditedPlaytestDestination },
       soloSetup: { setupChoices: soloSetupChoices, phase: "Move", legalMoveVisible: true, opponentCardVisible: true },
-      firstMatchGuide: { freshProfileShowsGuide: true, dismissalPersisted: true, menuReopens: true, escapeRetainsFocus: true, returningProfileSuppressesAutoShow: true, returningSetupChoices, compactBounds: [{ viewport: "1280x720", bounds: guideBounds }, ...compactGuideBounds] },
+      firstMatchGuide: { freshProfileShowsGuide: true, dismissalPersisted: true, menuReopens: true, escapeRetainsFocus: true, returningProfileSuppressesAutoShow: true, returningSetupChoices, viewportChecks: [{ viewport: "1280x720", bounds: guideBounds }, ...guideViewportChecks] },
       horizontalOverflow: overflowReports,
       apiFixtureRequests: requests,
     },
   };
-  const artifactPath = join(cwd, "output", "ui-review", "home-loading-error-2026-09-28.json");
+  const artifactPath = join(cwd, "output", "ui-review", "home-entry-and-first-match-guide-2026-09-29.json");
   await mkdir(join(cwd, "output", "ui-review"), { recursive: true });
   await writeFile(artifactPath, `${JSON.stringify(report, null, 2)}\n`);
   console.log(JSON.stringify(report));

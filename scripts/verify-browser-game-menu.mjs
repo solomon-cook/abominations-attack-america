@@ -667,9 +667,11 @@ try {
   const evidenceDir = join(process.cwd(), "output/ui-review");
   await mkdir(evidenceDir, { recursive: true });
   await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-confirm-disabled-phone-2026-09-29.png") });
-  await phoneSettingsButton.tap();
+  await preferenceDisabledViewer.getByRole("button", { name: "Close play preferences" }).tap();
+  await preferenceDisabledViewer.locator(".settings-panel").waitFor({ state: "detached" });
   assert.equal(await preferenceDisabledViewer.locator(".settings-panel").count(), 0, "touching Settings closes its panel before Leave");
   assert.equal(await phoneMenuItems.isVisible(), true, "the phone menu remains open and usable after closing Settings");
+  assert.equal(await phoneSettingsButton.evaluate((node) => node === document.activeElement), true, "closing phone Settings restores focus to the Settings opener");
   await preferenceDisabledViewer.screenshot({ path: join(evidenceDir, "game-menu-open-phone-2026-09-29.png") });
   const phoneLeave = phoneMenu.locator(".leave-room-action");
   const phoneLeaveBounds = await phoneLeave.boundingBox();
