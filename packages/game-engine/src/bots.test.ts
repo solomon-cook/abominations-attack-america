@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { boardForState, createGame, createMvpRoomGame, deploymentChoices, legalMovementNeighbors, locationIdToHexKey, movementPathAllowed, type HexKey, type MonsterMovement } from "./index.js";
+import { applyCommand, boardForState, createGame, createMvpRoomGame, deploymentChoices, legalMovementNeighbors, locationIdToHexKey, movementPathAllowed, resolveEncounterResult, type HexKey, type MonsterMovement } from "./index.js";
 import { botTacticForPlayer, chooseBotCommand, chooseBotSetupAction, routeBlockScores, runBotActionWithExplanation, type BotResearchDrawGateBypass } from "./bots.js";
 import { botShortestRouteNodesToGoal, buildBotShortestRouteDag } from "./bot-routes.js";
 import { chooseBranch, chooseLair, chooseMonster, createSetup } from "./setup.js";
@@ -335,4 +335,63 @@ test("Research urgency bypasses do not bypass the active-screen requirement", ()
   const command = chooseBotCommand(state, new Set([1]), new Map([[1, "research-first" as const]]), undefined, undefined, bypasses);
 
   assert.notEqual(command?.type, "draw-research", "the two urgency bypasses must not override the active military screen gate");
+});
+
+test("Gargantis resolves pending encounter Health before spending Mutation cards to heal", () => {
+  const giveMutationCards = (game: ReturnType<typeof createGame>, actor: number, cards: string[]) => {
+    const deck = game.decks.mutation;
+    game.decks.mutation = {
+      ...deck,
+      order: [...cards, ...deck.order.filter((cardId) => !cards.includes(cardId))],
+      drawIndex: cards.length,
+      discard: [],
+    };
+    game.players[actor]!.mutationCardIds = [...cards];
+  };
+  const state = createGame(2, 1, "gargantis-encounter-before-heal");
+  const actor = 1;
+  const monster = state.monsters[actor]!;
+  monster.name = "Gargantis";
+  monster.health = 10;
+  monster.location = locationIdToHexKey("denver")!;
+  state.currentPlayer = actor;
+  state.phase = "encounter";
+  state.pendingDecision = { type: "encounter-resolution", playerIndex: actor };
+  giveMutationCards(state, actor, [
+    "Iron Stomach", "Berserk", "Son of a Monster", "High-Octane Blood", "Rampage", "Atomic Recovery",
+  ]);
+
+  const encounterChoice = resolveEncounterResult(state).state;
+  assert.equal(encounterChoice.pendingDecision?.type, "encounter-choice", "Iron Stomach at a base should create its sourced Health/Infamy choice");
+
+  const firstCommand = chooseBotCommand(encounterChoice, new Set([actor]));
+  assert.deepEqual(firstCommand, { type: "resolve-encounter", choice: "health" }, "take the free Health choice before the voluntary Mutation heal");
+  const afterChoice = applyCommand(encounterChoice, firstCommand!).state;
+  assert.equal(afterChoice.monsters[actor]!.health, 13);
+  assert.equal(afterChoice.players[actor]!.mutationCardIds.length, 6, "resolving the encounter should not spend Mutation cards");
+
+  const healCommand = chooseBotCommand(afterChoice, new Set([actor]));
+  assert.equal(healCommand?.type, "use-monster-ability", "Gargantis can heal after the pending encounter is resolved");
+  if (healCommand?.type !== "use-monster-ability") throw new Error("Expected Gargantis to heal after its Encounter.");
+  assert.equal(healCommand.mutationCardIds.length, 5, "the Health choice should reduce the Mutation cost by one card");
+  const healed = applyCommand(afterChoice, healCommand).state;
+  assert.equal(healed.monsters[actor]!.health, 28);
+  assert.equal(healed.players[actor]!.mutationCardIds.length, 1, "Gargantis should retain one Mutation card after healing");
+
+  const automaticHealth = createGame(2, 1, "gargantis-encounter-resolution-before-heal");
+  const automaticMonster = automaticHealth.monsters[actor]!;
+  automaticMonster.name = "Gargantis";
+  automaticMonster.health = 20;
+  automaticMonster.location = locationIdToHexKey("seattle")!;
+  automaticHealth.currentPlayer = actor;
+  automaticHealth.phase = "encounter";
+  automaticHealth.pendingDecision = { type: "encounter-resolution", playerIndex: actor };
+  giveMutationCards(automaticHealth, actor, ["Berserk", "Son of a Monster", "High-Octane Blood"]);
+
+  const resolveFirst = chooseBotCommand(automaticHealth, new Set([actor]));
+  assert.deepEqual(resolveFirst, { type: "resolve-encounter", choice: "infamy" }, "finish an automatic city-health Encounter before using a Mutation heal");
+  const afterAutomaticEncounter = applyCommand(automaticHealth, resolveFirst!).state;
+  assert.equal(afterAutomaticEncounter.monsters[actor]!.health, 21, "the city benefit should apply before voluntary healing");
+  const healAfterAutomaticEncounter = chooseBotCommand(afterAutomaticEncounter, new Set([actor]));
+  assert.equal(healAfterAutomaticEncounter?.type, "use-monster-ability", "Gargantis should still consider healing after the automatic benefit");
 });

@@ -1,0 +1,411 @@
+{
+  "started": "2026-09-29T14:35:31.931Z",
+  "scope": "production main.tsx route, two-player room backed by the development MemoryRoomStore, normal browser setup and live room commands; cancellation assertions use authoritative room version, event history, all materialized state.units locations, command.submit WebSocket frames, and rendered board highlights; the phone gesture case records and asserts the National Guard reserve row directly from its rendered accessible label, slots, and available controls (state.units does not contain the full off-record Guard roster); this is not production persistence or physical-rule evidence",
+  "setup": {
+    "startingDeployment": [
+      "two Navy fighters",
+      "one National Guard tank"
+    ],
+    "branches": {
+      "player1": "Navy",
+      "player2": "Army"
+    },
+    "normalSetupUi": true
+  },
+  "deployEntry": {
+    "path": "production Move context → Disappear to lair → production Deploy surface",
+    "command": "disappear-monster",
+    "currentPlayer": 0,
+    "roomVersion": 9,
+    "eventCount": 1,
+    "branch": "Navy",
+    "trackedStateUnits": {
+      "Army": {
+        "reserve": 8,
+        "deployed": 0,
+        "removed": 0
+      },
+      "Navy": {
+        "reserve": 6,
+        "deployed": 2,
+        "removed": 0
+      },
+      "Air Force": {
+        "reserve": 8,
+        "deployed": 0,
+        "removed": 0
+      },
+      "Marines": {
+        "reserve": 8,
+        "deployed": 0,
+        "removed": 0
+      },
+      "National Guard": {
+        "reserve": 0,
+        "deployed": 1,
+        "removed": 0
+      }
+    }
+  },
+  "scenarios": {
+    "deploy-phone-touch": {
+      "status": "passed",
+      "viewport": "390x844",
+      "input": "touch",
+      "action": "Deploy navy fighter piece 3",
+      "before": {
+        "roomVersion": 9,
+        "eventCount": 1,
+        "trackedStateUnits": {
+          "Army": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Navy": {
+            "reserve": 6,
+            "deployed": 2,
+            "removed": 0
+          },
+          "Air Force": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Marines": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "National Guard": {
+            "reserve": 0,
+            "deployed": 1,
+            "removed": 0
+          }
+        }
+      },
+      "during": {
+        "highlightedHexes": 8,
+        "cancelButtonVisibleAndInBounds": true
+      },
+      "after": {
+        "roomVersion": 9,
+        "eventCount": 1,
+        "commandSubmissions": 0,
+        "trackedStateUnits": {
+          "Army": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Navy": {
+            "reserve": 6,
+            "deployed": 2,
+            "removed": 0
+          },
+          "Air Force": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Marines": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "National Guard": {
+            "reserve": 0,
+            "deployed": 1,
+            "removed": 0
+          }
+        },
+        "positionsUnchanged": true,
+        "highlights": [],
+        "selectedChoiceRemainsAvailable": true
+      }
+    },
+    "deploy-tablet-keyboard": {
+      "status": "passed",
+      "viewport": "834x1112",
+      "input": "keyboard",
+      "action": "Deploy navy fighter piece 3",
+      "before": {
+        "roomVersion": 9,
+        "eventCount": 1,
+        "trackedStateUnits": {
+          "Army": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Navy": {
+            "reserve": 6,
+            "deployed": 2,
+            "removed": 0
+          },
+          "Air Force": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Marines": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "National Guard": {
+            "reserve": 0,
+            "deployed": 1,
+            "removed": 0
+          }
+        }
+      },
+      "during": {
+        "highlightedHexes": 8,
+        "cancelButtonVisibleAndInBounds": true
+      },
+      "after": {
+        "roomVersion": 9,
+        "eventCount": 1,
+        "commandSubmissions": 0,
+        "trackedStateUnits": {
+          "Army": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Navy": {
+            "reserve": 6,
+            "deployed": 2,
+            "removed": 0
+          },
+          "Air Force": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Marines": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "National Guard": {
+            "reserve": 0,
+            "deployed": 1,
+            "removed": 0
+          }
+        },
+        "positionsUnchanged": true,
+        "highlights": [],
+        "selectedChoiceRemainsAvailable": true
+      }
+    },
+    "redeploy-phone-keyboard": {
+      "status": "passed",
+      "viewport": "390x844",
+      "input": "keyboard",
+      "action": "Redeploy navy fighter piece 1",
+      "before": {
+        "roomVersion": 9,
+        "eventCount": 1,
+        "trackedStateUnits": {
+          "Army": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Navy": {
+            "reserve": 6,
+            "deployed": 2,
+            "removed": 0
+          },
+          "Air Force": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Marines": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "National Guard": {
+            "reserve": 0,
+            "deployed": 1,
+            "removed": 0
+          }
+        }
+      },
+      "during": {
+        "highlightedHexes": 8,
+        "cancelButtonVisibleAndInBounds": true
+      },
+      "after": {
+        "roomVersion": 9,
+        "eventCount": 1,
+        "commandSubmissions": 0,
+        "trackedStateUnits": {
+          "Army": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Navy": {
+            "reserve": 6,
+            "deployed": 2,
+            "removed": 0
+          },
+          "Air Force": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Marines": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "National Guard": {
+            "reserve": 0,
+            "deployed": 1,
+            "removed": 0
+          }
+        },
+        "positionsUnchanged": true,
+        "highlights": [],
+        "selectedChoiceRemainsAvailable": true
+      }
+    },
+    "redeploy-tablet-touch": {
+      "status": "passed",
+      "viewport": "834x1112",
+      "input": "touch",
+      "action": "Redeploy navy fighter piece 1",
+      "before": {
+        "roomVersion": 9,
+        "eventCount": 1,
+        "trackedStateUnits": {
+          "Army": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Navy": {
+            "reserve": 6,
+            "deployed": 2,
+            "removed": 0
+          },
+          "Air Force": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Marines": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "National Guard": {
+            "reserve": 0,
+            "deployed": 1,
+            "removed": 0
+          }
+        }
+      },
+      "during": {
+        "highlightedHexes": 8,
+        "cancelButtonVisibleAndInBounds": true
+      },
+      "after": {
+        "roomVersion": 9,
+        "eventCount": 1,
+        "commandSubmissions": 0,
+        "trackedStateUnits": {
+          "Army": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Navy": {
+            "reserve": 6,
+            "deployed": 2,
+            "removed": 0
+          },
+          "Air Force": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "Marines": {
+            "reserve": 8,
+            "deployed": 0,
+            "removed": 0
+          },
+          "National Guard": {
+            "reserve": 0,
+            "deployed": 1,
+            "removed": 0
+          }
+        },
+        "positionsUnchanged": true,
+        "highlights": [],
+        "selectedChoiceRemainsAvailable": true
+      }
+    },
+    "liveReserveSwipe": {
+      "status": "passed",
+      "route": "normal two-player production UI setup → Move → Disappear to lair → Deploy",
+      "viewport": "390x844 touch emulation",
+      "guardReserveRowFromRenderedUi": {
+        "accessibleRowLabel": "5 of 6 national guard tank pieces in reserve",
+        "visiblePieceSlots": 6,
+        "visibleReserveSlots": 5,
+        "availableReservePieceLabels": [
+          "Deploy national guard tank piece 2",
+          "Deploy national guard tank piece 3",
+          "Deploy national guard tank piece 4",
+          "Deploy national guard tank piece 5",
+          "Deploy national guard tank piece 6"
+        ]
+      },
+      "reserveRowBefore": {
+        "clientWidth": 264,
+        "scrollWidth": 349,
+        "scrollLeft": 0,
+        "rect": {
+          "x": 29,
+          "y": 625.546875,
+          "width": 264.1875,
+          "height": 84
+        }
+      },
+      "reserveSwipeAfter": {
+        "activeSheet": "National Guard",
+        "scrollLeft": 85
+      },
+      "deliberatePageSwipeStartHitTest": {
+        "start": {
+          "x": 328.8125,
+          "y": 518.5625
+        },
+        "textRect": {
+          "x": 29,
+          "y": 511.0625,
+          "width": 304.8125,
+          "height": 15
+        },
+        "hitTagName": "P",
+        "hitClassName": "deployment-instruction",
+        "hitIsInstruction": true
+      },
+      "deliberateSheetSwipe": "National Guard → Navy",
+      "roomVersionUnchanged": true,
+      "eventCountUnchanged": true,
+      "commandSubmissionsAfterDeployBaseline": 0
+    }
+  },
+  "runtimeErrors": [],
+  "commandSubmissionsAfterDeployBaseline": [],
+  "completed": "2026-09-29T14:35:55.880Z",
+  "status": "passed"
+}

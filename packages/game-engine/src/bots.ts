@@ -596,7 +596,7 @@ export function chooseBotCommand(
     }
   }
   if (!botPlayerIndices.has(actor) || state.phase === "game-over") return undefined;
-  const unresolvedChoice = ["mutation-choice", "stabilizer-ray-choice", "trophy-choice", "challenge-opponent", "challenge-resolution", "challenge-giant", "challenge-giant-resolution", "retreat", "attack-target", "chopper-lift-choice"].includes(decision?.type ?? "");
+  const unresolvedChoice = ["mutation-choice", "stabilizer-ray-choice", "trophy-choice", "encounter-choice", "encounter-resolution", "challenge-opponent", "challenge-resolution", "challenge-giant", "challenge-giant-resolution", "retreat", "attack-target", "chopper-lift-choice"].includes(decision?.type ?? "");
   if (actor === state.currentPlayer && !unresolvedChoice && state.phase !== "challenge" && activeMonster?.name === "Gargantis" && activeMonster.health <= activeMonster.maxHealth * 0.55) {
     const cards = state.players[actor]?.mutationCardIds ?? [];
     const needed = Math.ceil((activeMonster.maxHealth * 0.7 - activeMonster.health) / 3);

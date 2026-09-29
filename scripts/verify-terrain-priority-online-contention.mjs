@@ -141,6 +141,146 @@ const createPagePair = async ({ browser, viewport }) => {
       Object.defineProperty(navigator, "serviceWorker", { configurable: true, value: {
         addEventListener() {}, removeEventListener() {}, async register() { return { waiting: null, addEventListener() {}, removeEventListener() {} }; }, async getRegistration() { return undefined; },
       } });
+      const supportedEntryTypes = PerformanceObserver.supportedEntryTypes ?? [];
+      const observerStatus = {};
+      const observedEntries = { event: [], longtask: [], "long-animation-frame": [] };
+      const serializeAttribution = (item) => ({
+        name: item.name ?? null,
+        containerType: item.containerType ?? null,
+        containerName: item.containerName ?? null,
+        containerId: item.containerId ?? null,
+        containerSrc: item.containerSrc ?? null,
+      });
+      const serializeEntry = (type, entry) => {
+        const common = { name: entry.name, startTime: entry.startTime, duration: entry.duration };
+        if (type === "event") {
+          const processingStart = Number.isFinite(entry.processingStart) ? entry.processingStart : null;
+          const processingEnd = Number.isFinite(entry.processingEnd) ? entry.processingEnd : null;
+          return {
+            ...common,
+            interactionId: entry.interactionId ?? 0,
+            cancelable: entry.cancelable ?? null,
+            processingStart,
+            processingEnd,
+            inputDelayMs: processingStart === null ? null : Math.max(0, processingStart - entry.startTime),
+            handlerProcessingMs: processingStart === null || processingEnd === null ? null : Math.max(0, processingEnd - processingStart),
+            presentationDelayMs: processingEnd === null ? null : entry.duration - (processingEnd - entry.startTime),
+            phaseTimingConsistent: processingEnd === null ? null : entry.duration >= processingEnd - entry.startTime,
+          };
+        }
+        if (type === "longtask") {
+          return { ...common, attribution: [...(entry.attribution ?? [])].map(serializeAttribution) };
+        }
+        return {
+          ...common,
+          renderStart: entry.renderStart ?? null,
+          styleAndLayoutStart: entry.styleAndLayoutStart ?? null,
+          firstUIEventTimestamp: entry.firstUIEventTimestamp ?? null,
+          blockingDuration: entry.blockingDuration ?? null,
+          scripts: [...(entry.scripts ?? [])].map((script) => ({
+            invoker: script.invoker ?? null,
+            invokerType: script.invokerType ?? null,
+            sourceURL: script.sourceURL ?? null,
+            sourceFunctionName: script.sourceFunctionName ?? null,
+            executionStart: script.executionStart ?? null,
+            duration: script.duration ?? null,
+            forcedStyleAndLayoutDuration: script.forcedStyleAndLayoutDuration ?? null,
+          })),
+        };
+      };
+      for (const [type, options] of [
+        ["event", { type: "event", buffered: true, durationThreshold: 16 }],
+        ["longtask", { type: "longtask", buffered: true }],
+        ["long-animation-frame", { type: "long-animation-frame", buffered: true }],
+      ]) {
+        if (!supportedEntryTypes.includes(type)) {
+          observerStatus[type] = { supported: false, observing: false, error: null };
+          continue;
+        }
+        try {
+          const observer = new PerformanceObserver((list) => {
+            const entries = list.getEntries().map((entry) => serializeEntry(type, entry));
+            observedEntries[type].push(...entries);
+            if (observedEntries[type].length > 2000) observedEntries[type].splice(0, observedEntries[type].length - 2000);
+          });
+          observer.observe(options);
+          observerStatus[type] = { supported: true, observing: true, error: null };
+        } catch (error) {
+          observerStatus[type] = { supported: true, observing: false, error: String(error) };
+        }
+      }
+      window.__terrainPerformanceObservers = {
+        supportedEntryTypes: [...supportedEntryTypes],
+        observerStatus,
+        observedEntries,
+      };
+
+      const terrainSnapshotNodes = new Map();
+      const terrainSnapshotTimes = new Map();
+      window.__captureVisibleTerrainSnapshot = (label) => {
+        const startedAt = performance.now();
+        const images = [...document.querySelectorAll("img.audited-terrain")].map((image) => {
+          const rect = image.getBoundingClientRect();
+          const visibleWidth = Math.max(0, Math.min(rect.right, innerWidth) - Math.max(rect.left, 0));
+          const visibleHeight = Math.max(0, Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0));
+          if (!visibleWidth || !visibleHeight) return null;
+          const source = image.currentSrc || image.src;
+          const path = new URL(source, location.href).pathname;
+          const match = path.match(/\/assets\/board\/audited\/(256|512|1024)\//);
+          return {
+            element: image,
+            cell: image.dataset.artCell ?? null,
+            path,
+            requestedVariant: match ? Number(match[1]) : null,
+            complete: image.complete,
+            naturalWidth: image.naturalWidth,
+            naturalHeight: image.naturalHeight,
+            loadedAtRequestedVariant: Boolean(match && image.complete && image.naturalWidth >= Number(match[1])),
+            visibleWidth,
+            visibleHeight,
+          };
+        }).filter(Boolean);
+        terrainSnapshotTimes.set(label, startedAt);
+        terrainSnapshotNodes.set(label, images.map(({ element, path, cell, requestedVariant }) => ({ element, path, cell, requestedVariant })));
+        const byVariant = {};
+        for (const variant of [256, 512, 1024, "unknown"]) {
+          const matching = images.filter((image) => (image.requestedVariant ?? "unknown") === variant);
+          if (matching.length) byVariant[variant] = {
+            count: matching.length,
+            loadedCount: matching.filter((image) => image.complete && image.naturalWidth > 0).length,
+            loadedAtRequestedVariantCount: matching.filter((image) => image.loadedAtRequestedVariant).length,
+          };
+        }
+        return {
+          label,
+          capturedAt: startedAt,
+          imageDecodeInterpretation: "complete and naturalWidth are passive loaded-image signals; HTMLImageElement does not expose decode-ready state synchronously",
+          visibleImageCount: images.length,
+          byRequestedVariant: byVariant,
+          images: images.map(({ element: _element, ...image }) => image),
+        };
+      };
+      window.__verifyVisibleTerrainDecodeAfterConfirm = async () => {
+        const images = terrainSnapshotNodes.get("confirm") ?? [];
+        const probeStartedAt = performance.now();
+        const imageResults = await Promise.all(images.map(async ({ element, path, cell, requestedVariant }) => {
+          if (new URL(element.currentSrc || element.src, location.href).pathname !== path) {
+            return { cell, path, requestedVariant, status: "source-changed-after-confirm", waitMs: null };
+          }
+          try {
+            await element.decode();
+            return { cell, path, requestedVariant, status: "decoded-after-confirm", waitMs: performance.now() - probeStartedAt };
+          } catch (error) {
+            return { cell, path, requestedVariant, status: "decode-rejected-after-confirm", error: String(error), waitMs: performance.now() - probeStartedAt };
+          }
+        }));
+        return {
+          probeStartedAt,
+          delayAfterConfirmSnapshotMs: probeStartedAt - (terrainSnapshotTimes.get("confirm") ?? probeStartedAt),
+          interpretation: "decode() is invoked only after the Confirm endpoint has been recorded; this verifies readiness after the endpoint and does not represent decoded state at the endpoint",
+          images: imageResults,
+        };
+      };
       window.addEventListener("board-camera-change", (event) => {
         const requestedPx = event.detail.tilePixels * (window.devicePixelRatio || 1) * 2;
         const targetSize = requestedPx > 512 ? 1024 : requestedPx > 256 ? 512 : 256;
@@ -179,6 +319,8 @@ const createPagePair = async ({ browser, viewport }) => {
       variant: Number(variant),
       startMonotonicSec: event.timestamp,
       priority: event.request.initialPriority ?? null,
+      receivedBytes: 0,
+      receivedChunks: [],
       encodedBytes: null,
       failed: null,
     });
@@ -186,6 +328,14 @@ const createPagePair = async ({ browser, viewport }) => {
   session.on("Network.resourceChangedPriority", (event) => {
     const request = networkState.get(event.requestId);
     if (request) (request.priorityChanges ??= []).push({ timestampSec: event.timestamp, newPriority: event.newPriority });
+  });
+  session.on("Network.dataReceived", (event) => {
+    const request = networkState.get(event.requestId);
+    if (request) {
+      const encodedBytes = event.encodedDataLength ?? 0;
+      request.receivedBytes += encodedBytes;
+      request.receivedChunks.push({ timestampSec: event.timestamp, encodedBytes });
+    }
   });
   session.on("Network.loadingFinished", (event) => {
     const request = networkState.get(event.requestId);
@@ -350,6 +500,37 @@ const runInteractionAndApiProbe = async ({ page, networkState, wallMonoOffset, i
       && request.startMonotonicSec <= monotonicMoment
       && (request.endMonotonicSec === undefined || request.endMonotonicSec > monotonicMoment));
   };
+  const activeRequestSnapshotAt = (performanceMs, label) => {
+    const moment = probeStarted.timeOrigin / 1000 + performanceMs / 1000;
+    const monotonicMoment = moment - (wallMonoOffset ?? 0);
+    const requests = pendingAt(performanceMs).map((request) => ({
+      requestId: request.requestId,
+      path: request.path,
+      variant: request.variant,
+      priority: request.priorityChanges?.filter((change) => change.timestampSec <= monotonicMoment).at(-1)?.newPriority ?? request.priority,
+      initialPriority: request.priority,
+      startedAgoMs: Math.max(0, (monotonicMoment - request.startMonotonicSec) * 1000),
+      encodedBytesReceived: request.receivedChunks.filter((chunk) => chunk.timestampSec <= monotonicMoment).reduce((sum, chunk) => sum + chunk.encodedBytes, 0),
+    }));
+    const byVariant = {};
+    for (const request of requests) {
+      const key = String(request.variant);
+      const summary = byVariant[key] ??= { count: 0, encodedBytesReceived: 0, priorities: {} };
+      summary.count += 1;
+      summary.encodedBytesReceived += request.encodedBytesReceived;
+      const priority = request.priority ?? "unknown";
+      summary.priorities[priority] = (summary.priorities[priority] ?? 0) + 1;
+    }
+    return {
+      label,
+      timeOrigin: probeStarted.timeOrigin,
+      performanceTime: performanceMs,
+      activeCount: requests.length,
+      activeEncodedBytesReceived: requests.reduce((sum, request) => sum + request.encodedBytesReceived, 0),
+      byVariant,
+      requests,
+    };
+  };
   const upgradesAtApiStart = pendingAt(probeStarted.startedAt);
   const destination = await page.locator(".hex-tile.legal:not(:disabled)").evaluateAll((tiles) => tiles.map((tile) => {
     const rect = tile.getBoundingClientRect();
@@ -360,8 +541,10 @@ const runInteractionAndApiProbe = async ({ page, networkState, wallMonoOffset, i
   }).filter((entry) => entry.hit).sort((a, b) => a.distance - b.distance).map(({ tile, x, y }) => ({ key: tile.getAttribute("data-hex-key"), x, y }))[0] ?? null);
   assert.ok(destination, "the post-zoom online game has a visible hit-testable legal tile");
   const selectionStarted = await page.evaluate(() => {
+    const visibleTerrain = window.__captureVisibleTerrainSnapshot?.("tap") ?? null;
+    const now = performance.now();
     performance.mark("terrain-ui-selection-start");
-    return { timeOrigin: performance.timeOrigin, now: performance.now(), wallTime: Date.now() };
+    return { timeOrigin: performance.timeOrigin, now, wallTime: Date.now(), visibleTerrain };
   });
   if (isPhone) await page.touchscreen.tap(destination.x, destination.y);
   else await page.mouse.click(destination.x, destination.y);
@@ -370,9 +553,33 @@ const runInteractionAndApiProbe = async ({ page, networkState, wallMonoOffset, i
     if (!button || button.disabled) return false;
     const rect = button.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return false;
+    const visibleTerrain = window.__captureVisibleTerrainSnapshot?.("confirm") ?? null;
+    const confirmVisibleAt = performance.now();
     performance.mark("terrain-ui-confirm-visible");
-    return { confirmVisibleAt: performance.now(), wallTime: Date.now() };
+    return { confirmVisibleAt, wallTime: Date.now(), visibleTerrain };
   }, null, { polling: "raf", timeout: 12000 }).then((handle) => handle.jsonValue());
+  const browserPerformance = await page.evaluate(async ({ startTime, endTime }) => {
+    await new Promise((resolveFrame) => requestAnimationFrame(() => resolveFrame()));
+    await new Promise((resolveTask) => setTimeout(resolveTask, 0));
+    const state = window.__terrainPerformanceObservers;
+    if (!state) return { available: false, unsupportedObserverTypes: ["event", "longtask", "long-animation-frame"] };
+    const entries = Object.fromEntries(Object.entries(state.observedEntries).map(([type, records]) => [
+      type,
+      records.filter((entry) => type === "event"
+        ? entry.startTime >= startTime && entry.startTime <= endTime
+        : entry.startTime <= endTime && entry.startTime + entry.duration >= startTime),
+    ]));
+    return {
+      available: true,
+      timeOrigin: performance.timeOrigin,
+      selectionWindow: { startTime, endTime, durationMs: endTime - startTime },
+      supportedEntryTypes: state.supportedEntryTypes,
+      observerStatus: state.observerStatus,
+      unsupportedObserverTypes: Object.entries(state.observerStatus).filter(([, value]) => !value.supported || !value.observing).map(([type]) => type),
+      entries,
+    };
+  }, { startTime: selectionStarted.now, endTime: confirmation.confirmVisibleAt });
+  const decodeVerificationAfterConfirm = await page.evaluate(() => window.__verifyVisibleTerrainDecodeAfterConfirm?.() ?? []);
   const api = await page.evaluate(() => window.__terrainApiProbeResult ?? window.__terrainApiProbe);
   assert.equal(api.status, 200, "online authenticated room-state API probe succeeds during upgrades");
   assert.ok(api.body.state?.phase === "move", "API probe returns the authoritative unchanged Move state");
@@ -392,8 +599,17 @@ const runInteractionAndApiProbe = async ({ page, networkState, wallMonoOffset, i
       priorityUpgradeRequestsInflightAtResponse: upgradesAtApiEnd.length,
       priorityUpgradeRequestsInflightAtSelectionStart: upgradesAtSelectionStart.length,
       priorityUpgradeRequestsInflightAtConfirmVisible: upgradesAtConfirmation.length,
+      activeUpgradeRequestSnapshotAtTap: activeRequestSnapshotAt(selectionStarted.now, "tap"),
+      activeUpgradeRequestSnapshotAtConfirm: activeRequestSnapshotAt(confirmation.confirmVisibleAt, "confirm"),
     },
-    interaction: { destination: destination.key, selectionStarted, confirmVisible: confirmation, clickToConfirmMs: confirmation.confirmVisibleAt - selectionStarted.now },
+    interaction: {
+      destination: destination.key,
+      selectionStarted,
+      confirmVisible: confirmation,
+      clickToConfirmMs: confirmation.confirmVisibleAt - selectionStarted.now,
+      decodeVerificationAfterConfirm,
+    },
+    browserPerformance,
   };
 };
 

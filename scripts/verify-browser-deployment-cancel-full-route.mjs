@@ -23,6 +23,23 @@ const reservePort = (avoid = new Set()) => new Promise((resolve, reject) => {
   });
 });
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const dispatchTouchSwipe = async (page, start, end) => {
+  const session = await page.context().newCDPSession(page);
+  await session.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 });
+  try {
+    await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ id: 1, x: start.x, y: start.y }] });
+    for (let step = 1; step <= 8; step += 1) {
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ id: 1, x: start.x + (end.x - start.x) * step / 8, y: start.y + (end.y - start.y) * step / 8 }],
+      });
+      await wait(12);
+    }
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  } finally {
+    await session.detach();
+  }
+};
 const startServer = ({ command, args, cwd: serverCwd, env, name, ready }) => {
   const child = spawn(command, args, { cwd: serverCwd, env, stdio: ["ignore", "pipe", "pipe"] });
   let output = "";
@@ -59,7 +76,7 @@ const accessibleButton = async (page, name, method = "click") => {
   }
 };
 const readSession = async (page) => page.evaluate(() => JSON.parse(localStorage.getItem("abominations-session") ?? "{}"));
-const summarizeInventory = (state) => {
+const summarizeTrackedStateUnits = (state) => {
   const result = {};
   for (const unit of state.units) {
     const branch = unit.branch;
@@ -97,7 +114,7 @@ const apiServer = startServer({
 
 const report = {
   started: new Date().toISOString(),
-  scope: "production main.tsx route, two-player room backed by the development MemoryRoomStore, normal browser setup and live room commands; cancellation assertions use authoritative room version, event history, complete unit locations/inventory, command.submit WebSocket frames, and rendered board highlights; this is not production persistence or physical-rule evidence",
+  scope: "production main.tsx route, two-player room backed by the development MemoryRoomStore, normal browser setup and live room commands; cancellation assertions use authoritative room version, event history, all materialized state.units locations, command.submit WebSocket frames, and rendered board highlights; the phone gesture case records and asserts the National Guard reserve row directly from its rendered accessible label, slots, and available controls (state.units does not contain the full off-record Guard roster); this is not production persistence or physical-rule evidence",
   setup: {},
   deployEntry: {},
   scenarios: {},
@@ -287,7 +304,7 @@ try {
     roomVersion: deployBaseline.version,
     eventCount: deployBaseline.state.eventLog.length,
     branch: "Navy",
-    inventory: summarizeInventory(deployBaseline.state),
+    trackedStateUnits: summarizeTrackedStateUnits(deployBaseline.state),
   };
   console.log("Production Deploy entry established; running phone/tablet keyboard/touch cancel matrix.");
 
@@ -305,14 +322,14 @@ try {
   const commandCountAtDeploy = commandSubmissions.length;
   const entryPositions = positionSnapshot(deployBaseline.state);
   const entryEvents = eventSnapshot(deployBaseline.state);
-  const entryInventory = summarizeInventory(deployBaseline.state);
+  const entryTrackedStateUnits = summarizeTrackedStateUnits(deployBaseline.state);
   const snapshotMatchesDeployEntry = (room) => {
     assert.equal(room.version, deployBaseline.version, "cancellation does not change the room revision/version");
     assert.equal(room.state.phase, deployBaseline.state.phase, "cancellation leaves the phase unchanged");
     assert.equal(room.state.currentPlayer, deployBaseline.state.currentPlayer, "cancellation leaves the active player unchanged");
     assert.deepEqual(eventSnapshot(room.state), entryEvents, "cancellation appends no game event");
     assert.deepEqual(positionSnapshot(room.state), entryPositions, "cancellation leaves every unit position and ownership unchanged");
-    assert.deepEqual(summarizeInventory(room.state), entryInventory, "cancellation leaves branch reserve/deployed/removed inventory unchanged");
+    assert.deepEqual(summarizeTrackedStateUnits(room.state), entryTrackedStateUnits, "cancellation leaves each materialized state.units location unchanged");
     assert.equal(room.state.deploymentsThisTurn, deployBaseline.state.deploymentsThisTurn, "cancellation leaves the deployment allowance unchanged");
     assert.deepEqual(room.state.deploymentDestinations, deployBaseline.state.deploymentDestinations, "cancellation leaves completed deployment destinations unchanged");
     assert.deepEqual(room.state.pendingDecision, deployBaseline.state.pendingDecision, "cancellation leaves the pending decision unchanged");
@@ -372,9 +389,9 @@ try {
       viewport: `${width}x${height}`,
       input,
       action: selectedChoiceName,
-      before: { roomVersion: before.version, eventCount: before.state.eventLog.length, inventory: summarizeInventory(before.state) },
+      before: { roomVersion: before.version, eventCount: before.state.eventLog.length, trackedStateUnits: summarizeTrackedStateUnits(before.state) },
       during: { highlightedHexes: highlightKeys.length, cancelButtonVisibleAndInBounds: true },
-      after: { roomVersion: after.version, eventCount: after.state.eventLog.length, commandSubmissions: commandSubmissions.length - commandCountAtDeploy, inventory: summarizeInventory(after.state), positionsUnchanged: true, highlights: await legalHighlightKeys(), selectedChoiceRemainsAvailable: true },
+      after: { roomVersion: after.version, eventCount: after.state.eventLog.length, commandSubmissions: commandSubmissions.length - commandCountAtDeploy, trackedStateUnits: summarizeTrackedStateUnits(after.state), positionsUnchanged: true, highlights: await legalHighlightKeys(), selectedChoiceRemainsAvailable: true },
     };
   };
 
@@ -382,7 +399,107 @@ try {
   await runCancellation({ kind: "deploy", viewport: "tablet", width: 834, height: 1112, input: "keyboard" });
   await runCancellation({ kind: "redeploy", viewport: "phone", width: 390, height: 844, input: "keyboard" });
   await runCancellation({ kind: "redeploy", viewport: "tablet", width: 834, height: 1112, input: "touch" });
-  console.log("All four cancellation cases passed; writing full-route evidence.");
+
+  await firstPage.setViewportSize({ width: 390, height: 844 });
+  await firstPage.waitForFunction(() => innerWidth === 390 && innerHeight === 844);
+  const liveSwipeBaseline = await readRoom();
+  snapshotMatchesDeployEntry(liveSwipeBaseline);
+  const liveTray = firstPage.locator(".deployment-tray-shortcut");
+  const liveTrayLabel = await liveTray.getAttribute("aria-label");
+  assert.match(liveTrayLabel ?? "", /Open Navy military sheet/, "the live phone route exposes the current player's Navy tray");
+  await accessibleButton(firstPage, liveTrayLabel, "touch");
+  const liveDrawer = firstPage.locator(".military-drawer[role=dialog]");
+  await liveDrawer.waitFor({ state: "visible" });
+  await accessibleButton(firstPage, "National Guard", "touch");
+  const liveGuardRow = liveDrawer.locator('.record-reserve[aria-label*="national guard tank"]').first();
+  const liveGuardScroller = liveGuardRow.locator(".record-reserve-slots");
+  const liveGuardUi = await liveGuardRow.evaluate((row) => {
+    const slots = [...row.querySelectorAll(".record-piece-slot")];
+    const reserveSlots = slots.filter((slot) => slot.classList.contains("in-reserve"));
+    const availableReservePieces = slots
+      .filter((slot) => slot instanceof HTMLButtonElement && slot.matches(".selectable-record-piece.in-reserve"))
+      .map((slot) => slot.getAttribute("aria-label"));
+    return {
+      accessibleRowLabel: row.getAttribute("aria-label"),
+      visiblePieceSlots: slots.length,
+      visibleReserveSlots: reserveSlots.length,
+      availableReservePieceLabels: availableReservePieces,
+    };
+  });
+  const reserveLabelMatch = liveGuardUi.accessibleRowLabel?.match(/^(\d+) of (\d+) national guard tank pieces in reserve$/i);
+  assert.ok(reserveLabelMatch, `the live Guard row exposes its reserve count in its accessible label: ${JSON.stringify(liveGuardUi)}`);
+  assert.equal(liveGuardUi.visiblePieceSlots, Number(reserveLabelMatch[2]), "the live row renders all printed tank slots");
+  assert.equal(liveGuardUi.visibleReserveSlots, Number(reserveLabelMatch[1]), "the live reserve slot styling agrees with the row's accessible reserve count");
+  assert.equal(liveGuardUi.availableReservePieceLabels.length, liveGuardUi.visibleReserveSlots,
+    `every visible Guard reserve slot in this unobstructed Deploy state has an available control: ${JSON.stringify(liveGuardUi)}`);
+  assert.equal(new Set(liveGuardUi.availableReservePieceLabels).size, liveGuardUi.availableReservePieceLabels.length,
+    `each available Guard reserve control names a distinct piece: ${JSON.stringify(liveGuardUi)}`);
+  assert.ok(liveGuardUi.availableReservePieceLabels.every((label) => /^Deploy national guard tank piece \d+$/i.test(label ?? "")),
+    `available controls use the expected Guard-piece accessible names: ${JSON.stringify(liveGuardUi)}`);
+  const liveScrollerBefore = await liveGuardScroller.evaluate((node) => ({
+    clientWidth: node.clientWidth,
+    scrollWidth: node.scrollWidth,
+    scrollLeft: node.scrollLeft,
+    rect: (() => { const { x, y, width, height } = node.getBoundingClientRect(); return { x, y, width, height }; })(),
+  }));
+  assert.ok(liveScrollerBefore.scrollWidth > liveScrollerBefore.clientWidth + 1,
+    `the live National Guard reserve row must overflow horizontally at 390x844: ${JSON.stringify(liveScrollerBefore)}`);
+  assert.equal((await liveDrawer.locator(".military-sheet-tabs button[aria-pressed='true']").innerText()).trim(), "National Guard");
+  const liveSwipeStart = {
+    x: liveScrollerBefore.rect.x + liveScrollerBefore.rect.width - 12,
+    y: liveScrollerBefore.rect.y + liveScrollerBefore.rect.height / 2,
+  };
+  await dispatchTouchSwipe(firstPage, liveSwipeStart, { x: liveSwipeStart.x - 130, y: liveSwipeStart.y });
+  await wait(120);
+  const liveScrollerAfter = {
+    activeSheet: (await liveDrawer.locator(".military-sheet-tabs button[aria-pressed='true']").innerText()).trim(),
+    scrollLeft: await liveGuardScroller.evaluate((node) => node.scrollLeft),
+  };
+  assert.equal(liveScrollerAfter.activeSheet, "National Guard",
+    `a live reserve-row swipe must scroll pieces without paging the military sheet: ${JSON.stringify(liveScrollerAfter)}`);
+  assert.ok(liveScrollerAfter.scrollLeft > liveScrollerBefore.scrollLeft,
+    `the live reserve-row scroller must move horizontally: ${JSON.stringify(liveScrollerAfter)}`);
+  const liveInstruction = liveDrawer.locator(".deployment-instruction");
+  const liveInstructionTouch = await liveInstruction.evaluate((node) => {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const textRect = [...range.getClientRects()].find((rect) => rect.width > 120);
+    if (!textRect) return null;
+    const start = { x: textRect.right - 5, y: textRect.top + textRect.height / 2 };
+    const hit = document.elementFromPoint(start.x, start.y);
+    return {
+      start,
+      textRect: { x: textRect.x, y: textRect.y, width: textRect.width, height: textRect.height },
+      hitTagName: hit?.tagName ?? null,
+      hitClassName: typeof hit?.className === "string" ? hit.className : null,
+      hitIsInstruction: hit === node,
+    };
+  });
+  assert.ok(liveInstructionTouch, "the live instruction has a text line wide enough for a deliberate page swipe");
+  assert.equal(liveInstructionTouch.hitIsInstruction, true,
+    `the deliberate swipe must start on the inert deployment instruction itself: ${JSON.stringify(liveInstructionTouch)}`);
+  assert.equal(liveInstructionTouch.hitClassName, "deployment-instruction");
+  const livePageSwipeStart = liveInstructionTouch.start;
+  await dispatchTouchSwipe(firstPage, livePageSwipeStart, { x: livePageSwipeStart.x - 110, y: livePageSwipeStart.y });
+  await firstPage.waitForFunction(() => document.querySelector(".military-sheet-tabs button[aria-pressed='true']")?.textContent?.trim() === "Navy");
+  const liveSwipeAfter = await readRoom();
+  snapshotMatchesDeployEntry(liveSwipeAfter);
+  report.scenarios.liveReserveSwipe = {
+    status: "passed",
+    route: "normal two-player production UI setup → Move → Disappear to lair → Deploy",
+    viewport: "390x844 touch emulation",
+    guardReserveRowFromRenderedUi: liveGuardUi,
+    reserveRowBefore: liveScrollerBefore,
+    reserveSwipeAfter: liveScrollerAfter,
+    deliberatePageSwipeStartHitTest: liveInstructionTouch,
+    deliberateSheetSwipe: "National Guard → Navy",
+    roomVersionUnchanged: liveSwipeAfter.version === liveSwipeBaseline.version,
+    eventCountUnchanged: liveSwipeAfter.state.eventLog.length === liveSwipeBaseline.state.eventLog.length,
+    commandSubmissionsAfterDeployBaseline: commandSubmissions.length - commandCountAtDeploy,
+  };
+  await accessibleButton(firstPage, "Close military sheets", "touch");
+  await liveDrawer.waitFor({ state: "detached" });
+  console.log("All cancellation and live reserve-swipe cases passed; writing full-route evidence.");
 
   report.commandSubmissionsAfterDeployBaseline = commandSubmissions;
   assert.deepEqual(commandSubmissions, [], "neither cancel flow submits a command through the production room WebSocket");
