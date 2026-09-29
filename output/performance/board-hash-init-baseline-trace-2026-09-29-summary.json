@@ -1,0 +1,975 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-28T23:24:23.864Z",
+  "build": {
+    "sha256": "eca53feb6f5e12152280aae8c813663166feb668d70aa11c5b500335fe6df1dc",
+    "fileCount": 1456,
+    "totalBytes": 143511130,
+    "mainAssets": [
+      {
+        "path": "assets/BoardReview-ex59VowY.js",
+        "bytes": 5241
+      },
+      {
+        "path": "assets/index-3H4pdDuz.js",
+        "bytes": 750246
+      },
+      {
+        "path": "assets/index-sfpvsZa6.css",
+        "bytes": 263486
+      },
+      {
+        "path": "index.html",
+        "bytes": 704
+      }
+    ]
+  },
+  "browser": "140.0.7339.186",
+  "chromeExecutable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "preview": "Vite production preview from apps/web/dist on loopback and an ephemeral strict port",
+  "protocol": {
+    "freshContextPerTrace": true,
+    "cacheDisabled": true,
+    "serviceWorkers": "blocked",
+    "cpuThrottle": "4x",
+    "network": {
+      "rttMs": 150,
+      "downloadBytesPerSecond": 200000,
+      "uploadBytesPerSecond": 93750
+    },
+    "categories": [
+      "toplevel",
+      "blink.user_timing",
+      "blink.console",
+      "devtools.timeline",
+      "disabled-by-default-devtools.timeline",
+      "disabled-by-default-devtools.timeline.frame",
+      "disabled-by-default-v8.compile",
+      "v8",
+      "loading",
+      "netlog",
+      "cc"
+    ],
+    "coldHomeWait": "load, #home-title, Megaclaw hero image decode, document.fonts.ready, then 250 ms",
+    "firstSelection": "2-player local setup through visible UI choices; nearest visible legal tile passing center-point hit test; mouse at desktop, touch at phone; stop at Confirm move visible",
+    "boardCamera": "after local setup, wait until all currently visible terrain images decode, then run a 20-step mouse/touch drag pan; apply 10 desktop wheel zoom steps or a 16-step two-finger phone pinch; step waits request 16 ms but measured gesture intervals vary substantially; traces event, render, raster, image decode, and network intervals, then waits up to 30 seconds for every visible terrain image to switch to the requested 256/512/1024 variant and complete HTMLImageElement.decode(); phone device scale factor 2, desktop 1",
+    "boardCameraMutationCounts": "records map-canvas style attributes, board camera data attributes, terrain image src changes, and terrain element bounds within the existing 300 px observer margin; an injected React DevTools hook also records commit-root callbacks and TerrainArt fiber performed-work/update flags during camera gestures. The hook reports the renderer version and applies React 19.2.8 flag meanings (PerformedWork bit 1, Update bit 4, memo tag 15); treat these as build-specific attribution. The hook is profiling instrumentation and can perturb timings; use it for callback/render attribution, not uninstrumented latency comparisons",
+    "graphics": "production images and rendering resources served unchanged; no screenshots or image interception",
+    "traceFormat": "Chrome DevTools Protocol Tracing stream JSON, compressed with gzip level 9; each trace includes navigation through the named endpoint"
+  },
+  "traces": [
+    {
+      "name": "home-1280x720",
+      "scenario": "home",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "deviceScaleFactor": 1,
+      "tracePath": "output/performance/board-hash-init-baseline-trace-2026-09-29-home-1280x720.json.gz",
+      "traceEvents": 41986,
+      "rawTraceBytes": 8590820,
+      "compressedTraceBytes": 724647,
+      "rawTraceSha256": "4535f20ccd124632a27b6fe260e81eb4e554e04aeb6d1f6434320c07268717a0",
+      "compressedTraceSha256": "35ea262364d43d85d3967790e3300cfb231bae6ab04bde4303a06c03e7b2e4c2",
+      "phaseMarkers": {
+        "home": {
+          "timeOrigin": 1790637858216.9,
+          "readyMarkMs": 2265.8000000715256
+        },
+        "selectionStart": null,
+        "confirmVisible": null
+      },
+      "rendererMainThreads": [
+        {
+          "key": "45806:14582197",
+          "name": "CrRendererMain"
+        }
+      ],
+      "userTimingMarkers": [
+        {
+          "label": "audit-document-start",
+          "startMsFromTraceStart": 253.959,
+          "name": "audit-document-start",
+          "category": "blink.user_timing"
+        },
+        {
+          "label": "audit-home-ready",
+          "startMsFromTraceStart": 2326.16,
+          "name": "audit-home-ready",
+          "category": "blink.user_timing"
+        }
+      ],
+      "phases": {
+        "coldHomeStartup": {
+          "intervalMs": 2072.201,
+          "mainThreadLongTasksAtLeast50Ms": [
+            {
+              "startMsFromPhaseStart": 1364.932,
+              "durationMs": 153.902,
+              "thread": "CrRendererMain"
+            },
+            {
+              "startMsFromPhaseStart": 1584.907,
+              "durationMs": 118.485,
+              "thread": "CrRendererMain"
+            }
+          ],
+          "mainThreadLongTaskCount": 2,
+          "mainThreadLongTaskTotalMs": 272.387,
+          "scriptParseCompileEvaluateEvents": {
+            "v8.parseOnBackground · ThreadPoolForegroundWorker": {
+              "count": 1,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 1170.487,
+              "maxDurationMs": 1170.487
+            },
+            "V8.CompileIgnition · ThreadPoolForegroundWorker": {
+              "count": 13,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 0.4590000000000001,
+              "maxDurationMs": 0.267
+            },
+            "v8.evaluateModule · CrRendererMain": {
+              "count": 1,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 146.129,
+              "maxDurationMs": 146.129
+            },
+            "V8.CompileCode · CrRendererMain": {
+              "count": 599,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 50.292000000000066,
+              "maxDurationMs": 10.132
+            },
+            "V8.ParseFunction · CrRendererMain": {
+              "count": 568,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 21.91400000000002,
+              "maxDurationMs": 10.08
+            },
+            "V8.CompileIgnition · CrRendererMain": {
+              "count": 522,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 14.481999999999958,
+              "maxDurationMs": 1.847
+            },
+            "V8.CollectSourcePositions · CrRendererMain": {
+              "count": 15,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 37.395999999999994,
+              "maxDurationMs": 26.238
+            },
+            "V8.ParseProgram · CrRendererMain": {
+              "count": 26,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 44.71200000000001,
+              "maxDurationMs": 25.561
+            },
+            "v8.callFunction · CrRendererMain": {
+              "count": 14,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 62.577999999999996,
+              "maxDurationMs": 45.869
+            },
+            "EvaluateScript · CrRendererMain": {
+              "count": 4,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 27.96,
+              "maxDurationMs": 13.615
+            },
+            "V8.Compile · CrRendererMain": {
+              "count": 19,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 2.0279999999999996,
+              "maxDurationMs": 1.348
+            }
+          },
+          "mainThreadStyleLayoutPaintEvents": {
+            "UpdateLayoutTree": {
+              "count": 5,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 82.228,
+              "maxDurationMs": 58.356
+            },
+            "Layout": {
+              "count": 7,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 52.476,
+              "maxDurationMs": 39.238
+            },
+            "PrePaint": {
+              "count": 6,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 15.283,
+              "maxDurationMs": 13.291
+            },
+            "Paint": {
+              "count": 7,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 10.168000000000001,
+              "maxDurationMs": 4.655
+            }
+          },
+          "compositorFramePresentation": {
+            "framePresentedMarkers": 65,
+            "drawFrameCount": 4,
+            "drawFrameIntervalCount": 3,
+            "medianIntervalMs": 60.832,
+            "p95IntervalMs": 60.832,
+            "maxIntervalMs": 1029.754,
+            "droppedFrameMarkers": 0
+          },
+          "imageDecodeUploadEvents": [
+            {
+              "name": "GpuImageDecodeTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1758.633,
+              "durationMs": 0.964,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 10
+              }
+            },
+            {
+              "name": "ImageDecodeTask",
+              "startMsFromPhaseStart": 1758.788,
+              "durationMs": 0.801,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1254180011096
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::DecodeImage",
+              "startMsFromPhaseStart": 1758.79,
+              "durationMs": 0.799,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "paint_image_id": 2,
+                "speculative": false
+              }
+            },
+            {
+              "name": "Decode LazyPixelRef",
+              "startMsFromPhaseStart": 1759.017,
+              "durationMs": 0.57,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "LazyPixelRef": 2
+              }
+            },
+            {
+              "name": "Decode Image",
+              "startMsFromPhaseStart": 1759.14,
+              "durationMs": 0.205,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "imageType": "webp"
+              }
+            },
+            {
+              "name": "ImageUploadTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1759.6,
+              "durationMs": 0.102,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 10
+              }
+            },
+            {
+              "name": "ImageUploadTask",
+              "startMsFromPhaseStart": 1759.602,
+              "durationMs": 0.1,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1254180010456
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::UploadImage",
+              "startMsFromPhaseStart": 1759.603,
+              "durationMs": 0.098,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {}
+            },
+            {
+              "name": "GpuImageDecodeTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1817.105,
+              "durationMs": 1.955,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 0
+              }
+            },
+            {
+              "name": "ImageDecodeTask",
+              "startMsFromPhaseStart": 1817.107,
+              "durationMs": 1.945,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1254180011096
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::DecodeImage",
+              "startMsFromPhaseStart": 1817.109,
+              "durationMs": 1.943,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "paint_image_id": 2,
+                "speculative": false
+              }
+            },
+            {
+              "name": "Decode LazyPixelRef",
+              "startMsFromPhaseStart": 1817.115,
+              "durationMs": 1.935,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "LazyPixelRef": 2
+              }
+            },
+            {
+              "name": "Decode Image",
+              "startMsFromPhaseStart": 1817.122,
+              "durationMs": 1.825,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "imageType": "webp"
+              }
+            },
+            {
+              "name": "GpuImageDecodeTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1818.316,
+              "durationMs": 2.127,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 12
+              }
+            },
+            {
+              "name": "ImageDecodeTask",
+              "startMsFromPhaseStart": 1818.317,
+              "durationMs": 2.125,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1254143727832
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::DecodeImage",
+              "startMsFromPhaseStart": 1818.318,
+              "durationMs": 2.124,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "paint_image_id": 2,
+                "speculative": false
+              }
+            },
+            {
+              "name": "Decode LazyPixelRef",
+              "startMsFromPhaseStart": 1818.32,
+              "durationMs": 2.118,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "LazyPixelRef": 2
+              }
+            },
+            {
+              "name": "Decode Image",
+              "startMsFromPhaseStart": 1819.065,
+              "durationMs": 1.372,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "imageType": "webp"
+              }
+            },
+            {
+              "name": "ImageUploadTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1820.446,
+              "durationMs": 0.034,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 12
+              }
+            },
+            {
+              "name": "ImageUploadTask",
+              "startMsFromPhaseStart": 1820.446,
+              "durationMs": 0.034,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1254143703512
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::UploadImage",
+              "startMsFromPhaseStart": 1820.447,
+              "durationMs": 0.032,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {}
+            }
+          ],
+          "rasterTaskCountAcrossThreads": 148,
+          "rasterTaskTotalMsAcrossThreads": 29.167999999999992,
+          "networkRequests": [
+            {
+              "url": "http://127.0.0.1:51249/",
+              "resourceType": "Document",
+              "priority": "VeryHigh",
+              "mimeType": "text/html",
+              "statusCode": 200,
+              "startMsFromPhaseStart": -18.138,
+              "durationMs": 27.144,
+              "receivedEncodedBytes": 704,
+              "encodedDataLength": 954,
+              "decodedBodyLength": 704,
+              "didFail": false
+            },
+            {
+              "url": "http://127.0.0.1:51249/assets/index-3H4pdDuz.js",
+              "resourceType": "Script",
+              "priority": "High",
+              "mimeType": "text/javascript",
+              "statusCode": 200,
+              "startMsFromPhaseStart": -10.929,
+              "durationMs": 1372.871,
+              "receivedEncodedBytes": 750246,
+              "encodedDataLength": 188888,
+              "decodedBodyLength": 750246,
+              "didFail": false
+            },
+            {
+              "url": "http://127.0.0.1:51249/assets/index-sfpvsZa6.css",
+              "resourceType": "Stylesheet",
+              "priority": "VeryHigh",
+              "mimeType": "text/css",
+              "statusCode": 200,
+              "startMsFromPhaseStart": -8.498,
+              "durationMs": 677.324,
+              "receivedEncodedBytes": 263486,
+              "encodedDataLength": 49669,
+              "decodedBodyLength": 263486,
+              "didFail": false
+            },
+            {
+              "url": "http://127.0.0.1:51249/assets/monsters/megaclaw.webp",
+              "resourceType": "Image",
+              "priority": "Low",
+              "mimeType": "image/webp",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 1566.122,
+              "durationMs": 249.401,
+              "receivedEncodedBytes": 18050,
+              "encodedDataLength": 18318,
+              "decodedBodyLength": 18050,
+              "didFail": false
+            },
+            {
+              "url": "http://localhost:8787/accounts/me",
+              "resourceType": "Other",
+              "priority": "High",
+              "mimeType": "application/json",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 1706.521,
+              "durationMs": 65.335,
+              "receivedEncodedBytes": 16,
+              "encodedDataLength": 284,
+              "decodedBodyLength": 16,
+              "didFail": false
+            },
+            {
+              "url": "http://localhost:8787/leaderboard?category=wins",
+              "resourceType": "Other",
+              "priority": "High",
+              "mimeType": "application/json",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 1708.123,
+              "durationMs": 63.774,
+              "receivedEncodedBytes": 2,
+              "encodedDataLength": 269,
+              "decodedBodyLength": 2,
+              "didFail": false
+            },
+            {
+              "url": "http://127.0.0.1:51249/pwa-icon.svg",
+              "resourceType": "Other",
+              "priority": "High",
+              "mimeType": "image/svg+xml",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 1712.13,
+              "durationMs": 177.94,
+              "receivedEncodedBytes": 425,
+              "encodedDataLength": 692,
+              "decodedBodyLength": 425,
+              "didFail": false
+            }
+          ]
+        },
+        "localSetup": null,
+        "firstLegalSelection": null,
+        "boardCameraPan": null,
+        "boardCameraZoomGesture": null,
+        "boardCameraZoomAndTerrainUpgrade": null
+      },
+      "traceEventCount": 41986
+    },
+    {
+      "name": "home-390x844",
+      "scenario": "home",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "deviceScaleFactor": 1,
+      "tracePath": "output/performance/board-hash-init-baseline-trace-2026-09-29-home-390x844.json.gz",
+      "traceEvents": 42035,
+      "rawTraceBytes": 8607786,
+      "compressedTraceBytes": 735439,
+      "rawTraceSha256": "ca785683db45b0f700074b7e1c070957f0e3d8bf2864501ca95f94a704f9c20e",
+      "compressedTraceSha256": "7a41e5529ee0d61941d82296bfe3130f5f4c8ee0353ab9e8bc1f6a9db8f29b79",
+      "phaseMarkers": {
+        "home": {
+          "timeOrigin": 1790637861157.8,
+          "readyMarkMs": 2195.5
+        },
+        "selectionStart": null,
+        "confirmVisible": null
+      },
+      "rendererMainThreads": [
+        {
+          "key": "45810:14582280",
+          "name": "CrRendererMain"
+        }
+      ],
+      "userTimingMarkers": [
+        {
+          "label": "audit-document-start",
+          "startMsFromTraceStart": 231.432,
+          "name": "audit-document-start",
+          "category": "blink.user_timing"
+        },
+        {
+          "label": "audit-home-ready",
+          "startMsFromTraceStart": 2260.594,
+          "name": "audit-home-ready",
+          "category": "blink.user_timing"
+        }
+      ],
+      "phases": {
+        "coldHomeStartup": {
+          "intervalMs": 2029.162,
+          "mainThreadLongTasksAtLeast50Ms": [
+            {
+              "startMsFromPhaseStart": 1369.255,
+              "durationMs": 107.648,
+              "thread": "CrRendererMain"
+            }
+          ],
+          "mainThreadLongTaskCount": 1,
+          "mainThreadLongTaskTotalMs": 107.648,
+          "scriptParseCompileEvaluateEvents": {
+            "v8.parseOnBackground · ThreadPoolForegroundWorker": {
+              "count": 1,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 1169.487,
+              "maxDurationMs": 1169.487
+            },
+            "V8.CompileIgnition · ThreadPoolForegroundWorker": {
+              "count": 15,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 0.52,
+              "maxDurationMs": 0.319
+            },
+            "v8.evaluateModule · CrRendererMain": {
+              "count": 1,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 103.358,
+              "maxDurationMs": 103.358
+            },
+            "V8.CompileCode · CrRendererMain": {
+              "count": 599,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 54.81600000000007,
+              "maxDurationMs": 9.729
+            },
+            "V8.ParseFunction · CrRendererMain": {
+              "count": 567,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 30.55500000000007,
+              "maxDurationMs": 8.886
+            },
+            "V8.CompileIgnition · CrRendererMain": {
+              "count": 514,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 10.151999999999987,
+              "maxDurationMs": 1.474
+            },
+            "V8.CollectSourcePositions · CrRendererMain": {
+              "count": 15,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 34.412000000000006,
+              "maxDurationMs": 24.055
+            },
+            "V8.ParseProgram · CrRendererMain": {
+              "count": 26,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 42.34699999999999,
+              "maxDurationMs": 23.88
+            },
+            "v8.callFunction · CrRendererMain": {
+              "count": 14,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 48.23199999999999,
+              "maxDurationMs": 34.234
+            },
+            "EvaluateScript · CrRendererMain": {
+              "count": 4,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 25.468999999999998,
+              "maxDurationMs": 12.267
+            },
+            "V8.Compile · CrRendererMain": {
+              "count": 19,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 2.179,
+              "maxDurationMs": 1.256
+            }
+          },
+          "mainThreadStyleLayoutPaintEvents": {
+            "UpdateLayoutTree": {
+              "count": 5,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 32.91,
+              "maxDurationMs": 23.247
+            },
+            "Layout": {
+              "count": 7,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 27.302,
+              "maxDurationMs": 17.296
+            },
+            "PrePaint": {
+              "count": 8,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 4.551,
+              "maxDurationMs": 3.351
+            },
+            "Paint": {
+              "count": 8,
+              "summedDurationMsInclusiveAndPotentiallyOverlapping": 4.466,
+              "maxDurationMs": 3.212
+            }
+          },
+          "compositorFramePresentation": {
+            "framePresentedMarkers": 65,
+            "drawFrameCount": 4,
+            "drawFrameIntervalCount": 3,
+            "medianIntervalMs": 94.216,
+            "p95IntervalMs": 94.216,
+            "maxIntervalMs": 910.453,
+            "droppedFrameMarkers": 0
+          },
+          "imageDecodeUploadEvents": [
+            {
+              "name": "GpuImageDecodeTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1680.49,
+              "durationMs": 0.669,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 8
+              }
+            },
+            {
+              "name": "ImageDecodeTask",
+              "startMsFromPhaseStart": 1680.494,
+              "durationMs": 0.657,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1185424555736
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::DecodeImage",
+              "startMsFromPhaseStart": 1680.495,
+              "durationMs": 0.656,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "paint_image_id": 2,
+                "speculative": false
+              }
+            },
+            {
+              "name": "Decode LazyPixelRef",
+              "startMsFromPhaseStart": 1680.665,
+              "durationMs": 0.12,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "LazyPixelRef": 2
+              }
+            },
+            {
+              "name": "Decode Image",
+              "startMsFromPhaseStart": 1680.673,
+              "durationMs": 0.093,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "imageType": "webp"
+              }
+            },
+            {
+              "name": "ImageUploadTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1681.16,
+              "durationMs": 0.049,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 8
+              }
+            },
+            {
+              "name": "ImageUploadTask",
+              "startMsFromPhaseStart": 1681.161,
+              "durationMs": 0.048,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1185422799704
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::UploadImage",
+              "startMsFromPhaseStart": 1681.162,
+              "durationMs": 0.047,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {}
+            },
+            {
+              "name": "GpuImageDecodeTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1773.641,
+              "durationMs": 1.443,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 0
+              }
+            },
+            {
+              "name": "ImageDecodeTask",
+              "startMsFromPhaseStart": 1773.642,
+              "durationMs": 1.436,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1185422799704
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::DecodeImage",
+              "startMsFromPhaseStart": 1773.643,
+              "durationMs": 1.435,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "paint_image_id": 2,
+                "speculative": false
+              }
+            },
+            {
+              "name": "Decode LazyPixelRef",
+              "startMsFromPhaseStart": 1773.649,
+              "durationMs": 1.427,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "LazyPixelRef": 2
+              }
+            },
+            {
+              "name": "Decode Image",
+              "startMsFromPhaseStart": 1773.655,
+              "durationMs": 1.354,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "imageType": "webp"
+              }
+            },
+            {
+              "name": "GpuImageDecodeTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1774.684,
+              "durationMs": 1.804,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 10
+              }
+            },
+            {
+              "name": "ImageDecodeTask",
+              "startMsFromPhaseStart": 1774.686,
+              "durationMs": 1.801,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1185424603096
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::DecodeImage",
+              "startMsFromPhaseStart": 1774.687,
+              "durationMs": 1.799,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "paint_image_id": 2,
+                "speculative": false
+              }
+            },
+            {
+              "name": "Decode LazyPixelRef",
+              "startMsFromPhaseStart": 1774.691,
+              "durationMs": 1.792,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "LazyPixelRef": 2
+              }
+            },
+            {
+              "name": "Decode Image",
+              "startMsFromPhaseStart": 1775.086,
+              "durationMs": 1.396,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "imageType": "webp"
+              }
+            },
+            {
+              "name": "ImageUploadTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1776.49,
+              "durationMs": 0.087,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 10
+              }
+            },
+            {
+              "name": "ImageUploadTask",
+              "startMsFromPhaseStart": 1776.491,
+              "durationMs": 0.086,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {
+                "pixelRefId": 1185424541656
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::UploadImage",
+              "startMsFromPhaseStart": 1776.492,
+              "durationMs": 0.084,
+              "thread": "ThreadPoolForegroundWorker",
+              "args": {}
+            },
+            {
+              "name": "ImageUploadTaskImpl::RunOnWorkerThread",
+              "startMsFromPhaseStart": 1900.228,
+              "durationMs": 0.015,
+              "thread": "CompositorTileWorker1",
+              "args": {
+                "mode": "gpu",
+                "source_prepare_tiles_id": 106
+              }
+            },
+            {
+              "name": "ImageUploadTask",
+              "startMsFromPhaseStart": 1900.233,
+              "durationMs": 0.01,
+              "thread": "CompositorTileWorker1",
+              "args": {
+                "pixelRefId": 1151052621272
+              }
+            },
+            {
+              "name": "GpuImageDecodeCache::UploadImage",
+              "startMsFromPhaseStart": 1900.237,
+              "durationMs": 0.006,
+              "thread": "CompositorTileWorker1",
+              "args": {}
+            }
+          ],
+          "rasterTaskCountAcrossThreads": 152,
+          "rasterTaskTotalMsAcrossThreads": 23.526999999999997,
+          "networkRequests": [
+            {
+              "url": "http://127.0.0.1:51249/",
+              "resourceType": "Document",
+              "priority": "VeryHigh",
+              "mimeType": "text/html",
+              "statusCode": 200,
+              "startMsFromPhaseStart": -6.863,
+              "durationMs": 14.467,
+              "receivedEncodedBytes": 704,
+              "encodedDataLength": 954,
+              "decodedBodyLength": 704,
+              "didFail": false
+            },
+            {
+              "url": "http://127.0.0.1:51249/assets/index-3H4pdDuz.js",
+              "resourceType": "Script",
+              "priority": "High",
+              "mimeType": "text/javascript",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 5.068,
+              "durationMs": 1362.322,
+              "receivedEncodedBytes": 750246,
+              "encodedDataLength": 188888,
+              "decodedBodyLength": 750246,
+              "didFail": false
+            },
+            {
+              "url": "http://127.0.0.1:51249/assets/index-sfpvsZa6.css",
+              "resourceType": "Stylesheet",
+              "priority": "VeryHigh",
+              "mimeType": "text/css",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 5.194,
+              "durationMs": 668.904,
+              "receivedEncodedBytes": 263486,
+              "encodedDataLength": 49669,
+              "decodedBodyLength": 263486,
+              "didFail": false
+            },
+            {
+              "url": "http://127.0.0.1:51249/assets/monsters/megaclaw.webp",
+              "resourceType": "Image",
+              "priority": "Low",
+              "mimeType": "image/webp",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 1512.656,
+              "durationMs": 259.4,
+              "receivedEncodedBytes": 18050,
+              "encodedDataLength": 18318,
+              "decodedBodyLength": 18050,
+              "didFail": false
+            },
+            {
+              "url": "http://localhost:8787/accounts/me",
+              "resourceType": "Other",
+              "priority": "High",
+              "mimeType": "application/json",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 1531.372,
+              "durationMs": 64.422,
+              "receivedEncodedBytes": 16,
+              "encodedDataLength": 284,
+              "decodedBodyLength": 16,
+              "didFail": false
+            },
+            {
+              "url": "http://localhost:8787/leaderboard?category=wins",
+              "resourceType": "Other",
+              "priority": "High",
+              "mimeType": "application/json",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 1531.952,
+              "durationMs": 63.893,
+              "receivedEncodedBytes": 2,
+              "encodedDataLength": 269,
+              "decodedBodyLength": 2,
+              "didFail": false
+            },
+            {
+              "url": "http://127.0.0.1:51249/pwa-icon.svg",
+              "resourceType": "Other",
+              "priority": "High",
+              "mimeType": "image/svg+xml",
+              "statusCode": 200,
+              "startMsFromPhaseStart": 1535.118,
+              "durationMs": 162.746,
+              "receivedEncodedBytes": 425,
+              "encodedDataLength": 692,
+              "decodedBodyLength": 425,
+              "didFail": false
+            }
+          ]
+        },
+        "localSetup": null,
+        "firstLegalSelection": null,
+        "boardCameraPan": null,
+        "boardCameraZoomGesture": null,
+        "boardCameraZoomAndTerrainUpgrade": null
+      },
+      "traceEventCount": 42035
+    }
+  ]
+}

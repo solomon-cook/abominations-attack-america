@@ -3,9 +3,23 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { AUDITED_BOARD, AUDITED_CELLS, AUDIT_SOURCE_SHA256, AUDITED_ONE_SIDED_BARRIERS, auditedCellKey as key, auditedCoordinate, auditedRowColumn, AUDITED_EDGE_DIRECTIONS } from "./audited-board.js";
-import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, hexDistance, validateBoardDefinition } from "./board.js";
+import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, boardContentHash, hexDistance, validateBoardDefinition, type BoardDefinition } from "./board.js";
 import { applyCommand, applyCompletedSetup, auditedSetupDefinition, boardForState, createMvpRoomGame, createProvisionalPlaytestGame, migrateGameState, monsters, movementPathAllowed } from "./index.js";
 import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice } from "./setup.js";
+
+test("built-in board content hashes stay pinned to their definitions", () => {
+  const boards: BoardDefinition[] = [DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, PROVISIONAL_AUTHORITATIVE_BOARD, AUDITED_BOARD];
+  for (const board of boards) {
+    assert.equal(board.contentHash, boardContentHash({
+      id: board.id,
+      version: board.version,
+      name: board.name,
+      rulesetVersion: board.rulesetVersion,
+      hexes: board.hexes,
+      edges: board.edges,
+    }), `${board.id} content hash must match its current definition`);
+  }
+});
 
 test("board candidate matches its checked-in transcription and passes structural validation", () => {
   const source = readFileSync(new URL("../../../docs/authoritative-board-human-audit.md", import.meta.url), "utf8");

@@ -274,7 +274,8 @@ const developmentEdges = developmentEdgePairs.flatMap(([from, to]) => [from, to]
 }));
 
 const developmentCore = { id: "development-nine-location", version: 1, name: "Nine-location development fixture", rulesetVersion: "prototype-0.1", hexes: developmentHexes, edges: developmentEdges };
-export const DEVELOPMENT_BOARD: BoardDefinition = { ...developmentCore, contentHash: boardContentHash(developmentCore) };
+const DEVELOPMENT_BOARD_CONTENT_HASH = "fnv1a:89d56f63";
+export const DEVELOPMENT_BOARD: BoardDefinition = { ...developmentCore, contentHash: DEVELOPMENT_BOARD_CONTENT_HASH };
 
 /**
  * Complete coordinate shell inferred from the photographed board's visible
@@ -342,7 +343,8 @@ const fullHoneycombCore = {
 fullHoneycombCore.edges = fullHoneycombEdges(fullHoneycombCore.hexes);
 
 /** Full-board geometry candidate; production validation must reject it until source review completes. */
-export const FULL_HONEYCOMB_BOARD: BoardDefinition = { ...fullHoneycombCore, contentHash: boardContentHash(fullHoneycombCore) };
+const FULL_HONEYCOMB_BOARD_CONTENT_HASH = "fnv1a:0d0b2c17";
+export const FULL_HONEYCOMB_BOARD: BoardDefinition = { ...fullHoneycombCore, contentHash: FULL_HONEYCOMB_BOARD_CONTENT_HASH };
 
 /**
  * A separately pinned playtest board built from the current photographic
@@ -593,4 +595,5 @@ const provisionalBoardCore = {
   })),
 };
 
-export const PROVISIONAL_AUTHORITATIVE_BOARD: BoardDefinition = { ...provisionalBoardCore, contentHash: boardContentHash(provisionalBoardCore) };
+const PROVISIONAL_AUTHORITATIVE_BOARD_CONTENT_HASH = "fnv1a:747c5a9c";
+export const PROVISIONAL_AUTHORITATIVE_BOARD: BoardDefinition = { ...provisionalBoardCore, contentHash: PROVISIONAL_AUTHORITATIVE_BOARD_CONTENT_HASH };

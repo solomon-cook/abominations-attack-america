@@ -1,0 +1,3748 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-09-29T00:28:29.259Z",
+  "updatedAt": "2026-09-29T00:29:35.099Z",
+  "protocol": {
+    "scenario": "cold Home route only; no setup or game interaction",
+    "coldContextPerSample": true,
+    "cacheDisabled": "CDP Network.setCacheDisabled(true)",
+    "serviceWorkers": "blocked; an init-script inert container and inert registration are supplied for the benchmark context",
+    "cpuThrottle": "4x",
+    "network": {
+      "rttMs": 150,
+      "downloadBytesPerSecond": 200000,
+      "uploadBytesPerSecond": 93750
+    },
+    "readiness": "load, #home-title, home hero image decoded, document.fonts.ready, then 250 ms",
+    "viewports": [
+      {
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "width": 390,
+        "height": 844
+      }
+    ],
+    "pairsPerViewport": 7,
+    "orderSeed": 20260929,
+    "orderGeneration": "seeded xorshift32; each viewport has AB/BA counts balanced within one, then all pair tasks are deterministically shuffled",
+    "resourceAccounting": "same-origin Resource Timing entries except navigation document; per-resource values retained",
+    "lcp": "latest LCP candidate observed after the readiness wait; not asserted as a formal page-final value",
+    "graphics": "prebuilt production output served without asset interception, source or resolution changes",
+    "interpretation": "Measurement evidence only; this runner makes no performance-win decision."
+  },
+  "builds": {
+    "A": {
+      "label": "A",
+      "path": "/tmp/aaa-board-hash-build-baseline",
+      "sha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "fileCount": 1456,
+      "totalBytes": 143512136,
+      "mainAssets": [
+        {
+          "path": "assets/BoardReview-CzKwEB1H.js",
+          "bytes": 5241
+        },
+        {
+          "path": "assets/index-GMuE4-TC.css",
+          "bytes": 263972
+        },
+        {
+          "path": "assets/index-id06uMop.js",
+          "bytes": 750766
+        },
+        {
+          "path": "index.html",
+          "bytes": 704
+        }
+      ]
+    },
+    "B": {
+      "label": "B",
+      "path": "/tmp/aaa-board-hash-build-candidate",
+      "sha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "fileCount": 1456,
+      "totalBytes": 143512201,
+      "mainAssets": [
+        {
+          "path": "assets/BoardReview-NrIgC_zk.js",
+          "bytes": 5241
+        },
+        {
+          "path": "assets/index-DLg_FOAD.js",
+          "bytes": 750831
+        },
+        {
+          "path": "assets/index-GMuE4-TC.css",
+          "bytes": 263972
+        },
+        {
+          "path": "index.html",
+          "bytes": 704
+        }
+      ]
+    }
+  },
+  "identicalBuilds": false,
+  "schedule": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "pairIndex": 3,
+      "order": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pairIndex": 3,
+      "order": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pairIndex": 2,
+      "order": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "pairIndex": 4,
+      "order": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "pairIndex": 6,
+      "order": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pairIndex": 7,
+      "order": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "pairIndex": 5,
+      "order": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pairIndex": 4,
+      "order": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pairIndex": 6,
+      "order": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "pairIndex": 1,
+      "order": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pairIndex": 1,
+      "order": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "pairIndex": 2,
+      "order": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "pairIndex": 7,
+      "order": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "pairIndex": 5,
+      "order": [
+        "A",
+        "B"
+      ]
+    }
+  ],
+  "environment": {
+    "node": "v24.9.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "playwright": "1.63.0"
+  },
+  "browserVersion": "140.0.7339.186",
+  "samples": [
+    {
+      "sampleIndex": 1,
+      "orderIndex": 1,
+      "pairIndex": 3,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:30.399Z",
+      "completedAt": "2026-09-29T00:28:33.061Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1952,
+      "lcpMs": 2052,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 324,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1561.8999999761581,
+          "duration": 146,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "self",
+          "startTime": 1710.1999999284744,
+          "duration": 50,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        },
+        {
+          "name": "unknown",
+          "startTime": 1777.6999999284744,
+          "duration": 128,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1364.2000000476837
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 664.7999999523163
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 249.80000007152557
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 159.60000002384186
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 2,
+      "orderIndex": 2,
+      "pairIndex": 3,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:33.076Z",
+      "completedAt": "2026-09-29T00:28:35.345Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1736,
+      "lcpMs": 1920,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 61,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1538.5,
+          "duration": 61,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1361.7999999523163
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 663.6000000238419
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 254.10000002384186
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 163.20000004768372
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 3,
+      "orderIndex": 1,
+      "pairIndex": 3,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:35.353Z",
+      "completedAt": "2026-09-29T00:28:37.635Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1740,
+      "lcpMs": 1924,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 62,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1540.1000000238419,
+          "duration": 62,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1361.1999999284744
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 660.7000000476837
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 261.90000009536743
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 164.10000002384186
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 4,
+      "orderIndex": 2,
+      "pairIndex": 3,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:37.643Z",
+      "completedAt": "2026-09-29T00:28:39.974Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1784,
+      "lcpMs": 1984,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 115,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1539.3000000715256,
+          "duration": 115,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1354.3999999761581
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 654.5
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 263.5
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 164.39999997615814
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 5,
+      "orderIndex": 1,
+      "pairIndex": 2,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:39.983Z",
+      "completedAt": "2026-09-29T00:28:42.262Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1752,
+      "lcpMs": 1936,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 62,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1541.5,
+          "duration": 62,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1354.7999999523163
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 657
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 260.89999997615814
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 160.39999997615814
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 6,
+      "orderIndex": 2,
+      "pairIndex": 2,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:42.271Z",
+      "completedAt": "2026-09-29T00:28:44.586Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1776,
+      "lcpMs": 1956,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 100,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1538.2000000476837,
+          "duration": 100,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1357.5999999046326
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 659.7000000476837
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 263
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 158.79999995231628
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 7,
+      "orderIndex": 1,
+      "pairIndex": 4,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:44.594Z",
+      "completedAt": "2026-09-29T00:28:46.910Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1768,
+      "lcpMs": 1968,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 102,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1538.6000000238419,
+          "duration": 102,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 662.8999999761581
+        },
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1362.2000000476837
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 261
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 158.89999997615814
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 8,
+      "orderIndex": 2,
+      "pairIndex": 4,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:46.918Z",
+      "completedAt": "2026-09-29T00:28:49.162Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1720,
+      "lcpMs": 1904,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 61,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1528.1000000238419,
+          "duration": 61,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1358.7000000476837
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 661.6000000238419
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 251.39999997615814
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 162.5
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 9,
+      "orderIndex": 1,
+      "pairIndex": 6,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:49.171Z",
+      "completedAt": "2026-09-29T00:28:51.432Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1724,
+      "lcpMs": 1908,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 61,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1537,
+          "duration": 61,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1360.3000000715256
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 662.7000000476837
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 251
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 163
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 10,
+      "orderIndex": 2,
+      "pairIndex": 6,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:51.440Z",
+      "completedAt": "2026-09-29T00:28:53.746Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1760,
+      "lcpMs": 1960,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 100,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1538,
+          "duration": 100,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1360.8999999761581
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 661.9000000953674
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 256.5
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 163.20000004768372
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 11,
+      "orderIndex": 1,
+      "pairIndex": 7,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:53.754Z",
+      "completedAt": "2026-09-29T00:28:56.019Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1728,
+      "lcpMs": 1912,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 60,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1536,
+          "duration": 60,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1355
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 659
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 258.59999990463257
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 161
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 12,
+      "orderIndex": 2,
+      "pairIndex": 7,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:56.028Z",
+      "completedAt": "2026-09-29T00:28:58.351Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1768,
+      "lcpMs": 1968,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 100,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1544.6000000238419,
+          "duration": 100,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1361.7999999523163
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 665.1000000238419
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 266.90000009536743
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 162.89999997615814
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 13,
+      "orderIndex": 1,
+      "pairIndex": 5,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:28:58.361Z",
+      "completedAt": "2026-09-29T00:29:00.675Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1788,
+      "lcpMs": 1968,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 102,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1539.2999999523163,
+          "duration": 102,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1361.7000000476837
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 661.6000000238419
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 258.60000002384186
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 163.19999992847443
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 14,
+      "orderIndex": 2,
+      "pairIndex": 5,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:00.684Z",
+      "completedAt": "2026-09-29T00:29:02.944Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1720,
+      "lcpMs": 1920,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 59,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1538.5,
+          "duration": 59,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1360.2999999523163
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 661.7999999523163
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 259.1999999284744
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 167.30000007152557
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 15,
+      "orderIndex": 1,
+      "pairIndex": 4,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:02.952Z",
+      "completedAt": "2026-09-29T00:29:05.257Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1772,
+      "lcpMs": 1972,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 101,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1539.6999999284744,
+          "duration": 101,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1356.1000000238419
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 657
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 261.40000009536743
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 163.60000002384186
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 16,
+      "orderIndex": 2,
+      "pairIndex": 4,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:05.265Z",
+      "completedAt": "2026-09-29T00:29:07.517Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1720,
+      "lcpMs": 1900,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 60,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1531.2000000476837,
+          "duration": 60,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1357.2999999523163
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 659.6000000238419
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 251.79999995231628
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 164
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 17,
+      "orderIndex": 1,
+      "pairIndex": 6,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:07.526Z",
+      "completedAt": "2026-09-29T00:29:09.828Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1772,
+      "lcpMs": 1956,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 102,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1536.7000000476837,
+          "duration": 102,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1355.3999999761581
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 658.5
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 254.90000009536743
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 165.79999995231628
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 18,
+      "orderIndex": 2,
+      "pairIndex": 6,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:09.837Z",
+      "completedAt": "2026-09-29T00:29:12.104Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1728,
+      "lcpMs": 1912,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 61,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1538.6999999284744,
+          "duration": 61,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1357.0999999046326
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 656.9000000953674
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 256.90000009536743
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 160.79999995231628
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 19,
+      "orderIndex": 1,
+      "pairIndex": 1,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:12.113Z",
+      "completedAt": "2026-09-29T00:29:14.380Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1720,
+      "lcpMs": 1920,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 59,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1538.6000000238419,
+          "duration": 59,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1360.5999999046326
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 661.9000000953674
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 258.60000002384186
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 164
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 20,
+      "orderIndex": 2,
+      "pairIndex": 1,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:14.391Z",
+      "completedAt": "2026-09-29T00:29:16.691Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1756,
+      "lcpMs": 1956,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 102,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1535.2000000476837,
+          "duration": 102,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1360
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 662.6000000238419
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 253.39999997615814
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 165.5
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 21,
+      "orderIndex": 1,
+      "pairIndex": 1,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:16.699Z",
+      "completedAt": "2026-09-29T00:29:18.995Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1752,
+      "lcpMs": 1952,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 99,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1531.8999999761581,
+          "duration": 99,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1357.8000000715256
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 661.7000000476837
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 256.7999999523163
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 165.10000002384186
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 22,
+      "orderIndex": 2,
+      "pairIndex": 1,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:19.003Z",
+      "completedAt": "2026-09-29T00:29:21.266Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1732,
+      "lcpMs": 1916,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 59,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1539.2999999523163,
+          "duration": 59,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1356.3999999761581
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 657.7000000476837
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 257.5
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 159.59999990463257
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 23,
+      "orderIndex": 1,
+      "pairIndex": 2,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:21.275Z",
+      "completedAt": "2026-09-29T00:29:23.563Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1760,
+      "lcpMs": 1940,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 99,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1520.7999999523163,
+          "duration": 99,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 655.2999999523163
+        },
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1352.5
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 256.7000000476837
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 166.89999997615814
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 24,
+      "orderIndex": 2,
+      "pairIndex": 2,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:23.571Z",
+      "completedAt": "2026-09-29T00:29:25.845Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1724,
+      "lcpMs": 1924,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 65,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1536.1999999284744,
+          "duration": 65,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1360.1000000238419
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 663.7999999523163
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 262
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 162.39999997615814
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 25,
+      "orderIndex": 1,
+      "pairIndex": 7,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:25.854Z",
+      "completedAt": "2026-09-29T00:29:28.124Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1724,
+      "lcpMs": 1924,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 63,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1536.8999999761581,
+          "duration": 63,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1361.7999999523163
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 664.1000000238419
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 256.8000000715256
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 165.89999997615814
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 26,
+      "orderIndex": 2,
+      "pairIndex": 7,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:28.133Z",
+      "completedAt": "2026-09-29T00:29:30.429Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1768,
+      "lcpMs": 1952,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 101,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1530.2000000476837,
+          "duration": 101,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1361.7999999523163
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 663.7999999523163
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 256.10000002384186
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 166.10000002384186
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "sampleIndex": 27,
+      "orderIndex": 1,
+      "pairIndex": 5,
+      "variant": "A",
+      "buildSha256": "58d2f4e142b8661bb436a493872e7455c1e5872ef76533c2149a34d866c5a9c1",
+      "previewUrl": "http://127.0.0.1:55022/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:30.439Z",
+      "completedAt": "2026-09-29T00:29:32.746Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1756,
+      "lcpMs": 1956,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55022/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 100,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1536.5,
+          "duration": 100,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-id06uMop.js",
+          "initiatorType": "script",
+          "transferSize": 188865,
+          "encodedBodySize": 188565,
+          "decodedBodySize": 750766,
+          "durationMs": 1355
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 658.6000000238419
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 256.39999997615814
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 166.39999997615814
+        }
+      ],
+      "transferBytes": {
+        "js": 188865,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257569
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "sampleIndex": 28,
+      "orderIndex": 2,
+      "pairIndex": 5,
+      "variant": "B",
+      "buildSha256": "015f65735a0ed150c9f8f0d33bef084475555103b3193b17190ad57e64816221",
+      "previewUrl": "http://127.0.0.1:55026/",
+      "scenario": "cold-home",
+      "startedAt": "2026-09-29T00:29:32.754Z",
+      "completedAt": "2026-09-29T00:29:35.020Z",
+      "pageErrors": [],
+      "cacheDisabled": true,
+      "serviceWorkersBlocked": true,
+      "coldContext": true,
+      "cpuThrottleRate": 4,
+      "network": {
+        "rttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "fcpMs": 1728,
+      "lcpMs": 1912,
+      "lcpElement": {
+        "tagName": "IMG",
+        "id": "",
+        "className": "",
+        "src": "http://127.0.0.1:55026/assets/monsters/megaclaw.webp"
+      },
+      "longTaskTotalMs": 60,
+      "longTasks": [
+        {
+          "name": "self",
+          "startTime": 1539.1999999284744,
+          "duration": 60,
+          "renderTime": null,
+          "loadTime": null,
+          "size": null,
+          "element": null
+        }
+      ],
+      "observerSupport": [
+        "element",
+        "event",
+        "first-input",
+        "largest-contentful-paint",
+        "layout-shift",
+        "long-animation-frame",
+        "longtask",
+        "mark",
+        "measure",
+        "navigation",
+        "paint",
+        "resource",
+        "visibility-state"
+      ],
+      "resources": [
+        {
+          "name": "/assets/index-DLg_FOAD.js",
+          "initiatorType": "script",
+          "transferSize": 188906,
+          "encodedBodySize": 188606,
+          "decodedBodySize": 750831,
+          "durationMs": 1356.7000000476837
+        },
+        {
+          "name": "/assets/index-GMuE4-TC.css",
+          "initiatorType": "link",
+          "transferSize": 49629,
+          "encodedBodySize": 49329,
+          "decodedBodySize": 263972,
+          "durationMs": 656.6999999284744
+        },
+        {
+          "name": "/assets/monsters/megaclaw.webp",
+          "initiatorType": "img",
+          "transferSize": 18350,
+          "encodedBodySize": 18050,
+          "decodedBodySize": 18050,
+          "durationMs": 256
+        },
+        {
+          "name": "/pwa-icon.svg",
+          "initiatorType": "other",
+          "transferSize": 725,
+          "encodedBodySize": 425,
+          "decodedBodySize": 425,
+          "durationMs": 160.5
+        }
+      ],
+      "transferBytes": {
+        "js": 188906,
+        "css": 49629,
+        "images": 19075,
+        "other": 0,
+        "total": 257610
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "pairOrder": [
+        "A",
+        "B"
+      ]
+    }
+  ],
+  "pairedSummary": {
+    "completedPairCount": 14,
+    "pairs": [
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "pairIndex": 3,
+        "order": [
+          "A",
+          "B"
+        ],
+        "sampleIndices": {
+          "A": 1,
+          "B": 2
+        },
+        "deltaBMinusA": {
+          "fcpMs": -216,
+          "lcpMs": -132,
+          "longTaskTotalMs": -263
+        }
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "pairIndex": 3,
+        "order": [
+          "B",
+          "A"
+        ],
+        "sampleIndices": {
+          "A": 4,
+          "B": 3
+        },
+        "deltaBMinusA": {
+          "fcpMs": -44,
+          "lcpMs": -60,
+          "longTaskTotalMs": -53
+        }
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "pairIndex": 2,
+        "order": [
+          "B",
+          "A"
+        ],
+        "sampleIndices": {
+          "A": 6,
+          "B": 5
+        },
+        "deltaBMinusA": {
+          "fcpMs": -24,
+          "lcpMs": -20,
+          "longTaskTotalMs": -38
+        }
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "pairIndex": 4,
+        "order": [
+          "A",
+          "B"
+        ],
+        "sampleIndices": {
+          "A": 7,
+          "B": 8
+        },
+        "deltaBMinusA": {
+          "fcpMs": -48,
+          "lcpMs": -64,
+          "longTaskTotalMs": -41
+        }
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "pairIndex": 6,
+        "order": [
+          "B",
+          "A"
+        ],
+        "sampleIndices": {
+          "A": 10,
+          "B": 9
+        },
+        "deltaBMinusA": {
+          "fcpMs": -36,
+          "lcpMs": -52,
+          "longTaskTotalMs": -39
+        }
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "pairIndex": 7,
+        "order": [
+          "B",
+          "A"
+        ],
+        "sampleIndices": {
+          "A": 12,
+          "B": 11
+        },
+        "deltaBMinusA": {
+          "fcpMs": -40,
+          "lcpMs": -56,
+          "longTaskTotalMs": -40
+        }
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "pairIndex": 5,
+        "order": [
+          "A",
+          "B"
+        ],
+        "sampleIndices": {
+          "A": 13,
+          "B": 14
+        },
+        "deltaBMinusA": {
+          "fcpMs": -68,
+          "lcpMs": -48,
+          "longTaskTotalMs": -43
+        }
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "pairIndex": 4,
+        "order": [
+          "A",
+          "B"
+        ],
+        "sampleIndices": {
+          "A": 15,
+          "B": 16
+        },
+        "deltaBMinusA": {
+          "fcpMs": -52,
+          "lcpMs": -72,
+          "longTaskTotalMs": -41
+        }
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "pairIndex": 6,
+        "order": [
+          "A",
+          "B"
+        ],
+        "sampleIndices": {
+          "A": 17,
+          "B": 18
+        },
+        "deltaBMinusA": {
+          "fcpMs": -44,
+          "lcpMs": -44,
+          "longTaskTotalMs": -41
+        }
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "pairIndex": 1,
+        "order": [
+          "B",
+          "A"
+        ],
+        "sampleIndices": {
+          "A": 20,
+          "B": 19
+        },
+        "deltaBMinusA": {
+          "fcpMs": -36,
+          "lcpMs": -36,
+          "longTaskTotalMs": -43
+        }
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "pairIndex": 1,
+        "order": [
+          "A",
+          "B"
+        ],
+        "sampleIndices": {
+          "A": 21,
+          "B": 22
+        },
+        "deltaBMinusA": {
+          "fcpMs": -20,
+          "lcpMs": -36,
+          "longTaskTotalMs": -40
+        }
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "pairIndex": 2,
+        "order": [
+          "A",
+          "B"
+        ],
+        "sampleIndices": {
+          "A": 23,
+          "B": 24
+        },
+        "deltaBMinusA": {
+          "fcpMs": -36,
+          "lcpMs": -16,
+          "longTaskTotalMs": -34
+        }
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "pairIndex": 7,
+        "order": [
+          "B",
+          "A"
+        ],
+        "sampleIndices": {
+          "A": 26,
+          "B": 25
+        },
+        "deltaBMinusA": {
+          "fcpMs": -44,
+          "lcpMs": -28,
+          "longTaskTotalMs": -38
+        }
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "pairIndex": 5,
+        "order": [
+          "A",
+          "B"
+        ],
+        "sampleIndices": {
+          "A": 27,
+          "B": 28
+        },
+        "deltaBMinusA": {
+          "fcpMs": -28,
+          "lcpMs": -44,
+          "longTaskTotalMs": -40
+        }
+      }
+    ],
+    "viewports": {
+      "1280x720": {
+        "pairCount": 7,
+        "fcpMs": {
+          "A": {
+            "median": 1768,
+            "samples": 7
+          },
+          "B": {
+            "median": 1724,
+            "samples": 7
+          },
+          "pairedDeltaBMinusA": {
+            "median": -44,
+            "values": [
+              -216,
+              -48,
+              -36,
+              -68,
+              -36,
+              -36,
+              -44
+            ]
+          }
+        },
+        "lcpMs": {
+          "A": {
+            "median": 1960,
+            "samples": 7
+          },
+          "B": {
+            "median": 1920,
+            "samples": 7
+          },
+          "pairedDeltaBMinusA": {
+            "median": -48,
+            "values": [
+              -132,
+              -64,
+              -52,
+              -48,
+              -36,
+              -16,
+              -28
+            ]
+          }
+        },
+        "longTaskTotalMs": {
+          "A": {
+            "median": 102,
+            "samples": 7
+          },
+          "B": {
+            "median": 61,
+            "samples": 7
+          },
+          "pairedDeltaBMinusA": {
+            "median": -41,
+            "values": [
+              -263,
+              -41,
+              -39,
+              -43,
+              -43,
+              -34,
+              -38
+            ]
+          }
+        }
+      },
+      "390x844": {
+        "pairCount": 7,
+        "fcpMs": {
+          "A": {
+            "median": 1772,
+            "samples": 7
+          },
+          "B": {
+            "median": 1728,
+            "samples": 7
+          },
+          "pairedDeltaBMinusA": {
+            "median": -40,
+            "values": [
+              -44,
+              -24,
+              -40,
+              -52,
+              -44,
+              -20,
+              -28
+            ]
+          }
+        },
+        "lcpMs": {
+          "A": {
+            "median": 1956,
+            "samples": 7
+          },
+          "B": {
+            "median": 1912,
+            "samples": 7
+          },
+          "pairedDeltaBMinusA": {
+            "median": -44,
+            "values": [
+              -60,
+              -20,
+              -56,
+              -72,
+              -44,
+              -36,
+              -44
+            ]
+          }
+        },
+        "longTaskTotalMs": {
+          "A": {
+            "median": 100,
+            "samples": 7
+          },
+          "B": {
+            "median": 60,
+            "samples": 7
+          },
+          "pairedDeltaBMinusA": {
+            "median": -40,
+            "values": [
+              -53,
+              -38,
+              -40,
+              -41,
+              -41,
+              -40,
+              -40
+            ]
+          }
+        }
+      }
+    }
+  }
+}

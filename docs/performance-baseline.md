@@ -215,3 +215,43 @@ The hook observed `onCommitFiberRoot` callbacks from React DOM 19.2.8. It also r
 ## Solo-bot dynamic-import experiment
 
 A build-only probe tested loading `solo-bots` with `import()` when a Solo match starts, with the goal of reducing Home's initial JavaScript. The unmodified production build at HEAD `f23a4cd9e722945d20c0f7cbba355013f0d49c5b` has a 750,246 B main entry (187,938 B gzip level 9). The candidate build has a 760,461 B main entry (191,134 B gzip level 9) and a separate 4,699 B `solo-bots` chunk (2,024 B gzip level 9). Thus Home's entry grew by 10,215 B raw / 3,196 B gzip despite the new deferred chunk. The candidate passed web typecheck and production build, but failed the initial-transfer acceptance gate, so its application change was reverted before browser A/B runs. No browser-speed benefit is claimed. The baseline artifact records its source hashes, and both artifacts record their build entry hashes: [baseline](../output/performance/solo-bot-split-baseline-2026-09-28.json) and [comparison](../output/performance/solo-bot-split-comparison-2026-09-28.json). The next optimization needs a boundary that actually removes code from the Home entry before it merits user-facing latency measurements.
+
+## Built-in board hash initialization comparison
+
+At clean HEAD `3bb334433b0799b8e2508dd3704c7c45c388c3ad`, the four built-in board definitions computed their FNV content identities while their modules initialized. The unchanged-source baseline production build had a 750,246 B JavaScript entry and 263,486 B stylesheet. Its Home Chrome trace sampled the full application module evaluation. The browser profile script was also attempted on the unchanged baseline but failed before saving: in Playwright's blocked-service-worker context, `register()` fulfilled without a registration object. The successful trace driver uses an inert test-only service-worker container while still blocking actual service workers.
+
+The candidate pins the exact identities below at module scope in `board.ts` and `audited-board.ts`. Runtime `boardContentHash` and `validateBoardDefinition` remain available for dynamic definitions and explicit validation. A focused engine test recomputes each built-in hash so data edits cannot silently leave a stale identity.
+
+| Built-in board | Pinned hash |
+| --- | --- |
+| Development nine-location | `fnv1a:89d56f63` |
+| Full honeycomb candidate | `fnv1a:0d0b2c17` |
+| Provisional authoritative honeycomb | `fnv1a:747c5a9c` |
+| Human-audited North America | `fnv1a:995e83d9` |
+
+The before/after traces used the same production-preview capture script and throttling, with one sequential capture per viewport and variant. These are individual trace results, not randomized repetitions or medians.
+
+| Cold Home metric | Desktop baseline → candidate | Phone baseline → candidate |
+| --- | ---: | ---: |
+| `v8.evaluateModule` on renderer main thread | 146.1 → 100.2 ms (−45.9 ms) | 103.4 → 67.2 ms (−36.2 ms) |
+| First Contentful Paint from trace | 1,929.2 → 1,922.2 ms (−7.1 ms) | 1,788.4 → 1,752.1 ms (−36.3 ms) |
+| Largest Contentful Paint candidate from trace | 2,045.9 → 2,005.5 ms (−40.4 ms) | 1,971.8 → 1,935.4 ms (−36.3 ms) |
+| Home-ready mark | 2,265.8 → 2,237.9 ms (−27.9 ms) | 2,195.5 → 2,159.5 ms (−36.0 ms) |
+| Main-thread long tasks ≥50 ms | 2 / 272.4 ms → 3 / 294.4 ms | 1 / 107.6 ms → 1 / 70.1 ms |
+
+The candidate entry is 750,311 B raw, 65 B larger than baseline; its encoded JS response was 50 B larger. CSS stayed at 263,486 B raw / 49,669 B encoded, and the Megaclaw hero stayed at 18,318 B encoded in both captures. The source edits do not touch game-board geometry, terrain art, CSS, image source selection, or rendering; the requested graphics assets were served unchanged. No screenshot comparison was made for this CPU-only change.
+
+Raw trace summaries and compressed Chrome traces are retained for the [baseline](../output/performance/board-hash-init-baseline-trace-2026-09-29-summary.json) and [candidate](../output/performance/board-hash-init-candidate-trace-2026-09-29-summary.json); the compact metrics, build hashes, asset sizes, trace hashes, and limitations are in [the comparison record](../output/performance/board-hash-init-comparison-2026-09-29.json). The lower module-evaluation events are consistent with removing eager board hashing, but the cold-Home measurements are one run per viewport, the variants were captured sequentially, and desktop long-task count and total increased. These traces do not establish a repeatable user-visible speedup; use an alternating seven-pair unprofiled Home comparison before making that claim. The source-mapped profile driver limitation above also means there is no matched per-function V8 profile for this candidate.
+
+## Alternating seven-pair board-hash comparison
+
+On 2026-09-29, the new [`verify-browser-performance-ab.mjs`](../scripts/verify-browser-performance-ab.mjs) runner compared two clean production builds from the same worktree. Build A restored only the two built-in board source files from HEAD `3bb334433b0799b8e2508dd3704c7c45c388c3ad`; build B used the candidate's pinned built-in hashes. All other source, including the rest of the UI, was identical. Each build contained 1,456 files. The main JavaScript entry was 750,766 B for A and 750,831 B for B (+65 B); CSS was identical at 263,972 B and all source artwork was served without transformation or resolution changes.
+
+The runner collected seven paired cold Home samples at each viewport (14 pairs, 28 samples total), with seeded balanced AB/BA order, a fresh browser context and disabled cache per sample, 4× CPU throttling, 150 ms RTT and 200,000 B/s download. Home readiness waited for the title, decoded hero image, ready fonts, and 250 ms. The retained raw samples, exact build hashes, resource sizes and paired deltas are in [`board-hash-init-ab-seven-pair-2026-09-29.json`](../output/performance/board-hash-init-ab-seven-pair-2026-09-29.json).
+
+| Viewport | FCP median A → B | Paired median delta | LCP median A → B | Paired median delta | Long-task total median A → B | Paired median delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Desktop 1280×720 | 1,768 → 1,724 ms | −44 ms | 1,960 → 1,920 ms | −48 ms | 102 → 61 ms | −41 ms |
+| Phone 390×844 | 1,772 → 1,728 ms | −40 ms | 1,956 → 1,912 ms | −44 ms | 100 → 60 ms | −40 ms |
+
+All 14 paired deltas favored B on these metrics, though one desktop FCP/LCP/long-task pair was a much larger outlier than the others. The consistent median reduction supports a small cold-Home improvement in this local, throttled browser protocol. It does not establish hosted-device impact, complete gameplay responsiveness, or camera/rendering frame-time gains; LCP is the latest candidate observed after the readiness wait rather than a formal final-page LCP. The change preserves full-resolution art and unchanged CSS; the tradeoff is a 65 B larger main bundle. Retain the graphics and repeat this protocol on target devices before making a broader speed claim.

@@ -1,4 +1,4 @@
-import { boardContentHash, hexKey, type BoardDefinition, type BoardEdge, type BoardFeature, type BoardHex, type HexCoord, type HexKey, type WaterClass } from "./board.js";
+import { hexKey, type BoardDefinition, type BoardEdge, type BoardFeature, type BoardHex, type HexCoord, type HexKey, type WaterClass } from "./board.js";
 import { AUDITED_CELLS } from "./audited-board-data.js";
 export { AUDITED_CELLS, AUDIT_SOURCE_SHA256 } from "./audited-board-data.js";
 
@@ -94,4 +94,5 @@ const core = {
   rulesetVersion: "audited-1.0", hexes, edges,
 };
 /** Separate identity preserves all legacy saved-game coordinates and content hashes. */
-export const AUDITED_BOARD: BoardDefinition = { ...core, contentHash: boardContentHash(core) };
+const AUDITED_BOARD_CONTENT_HASH = "fnv1a:995e83d9";
+export const AUDITED_BOARD: BoardDefinition = { ...core, contentHash: AUDITED_BOARD_CONTENT_HASH };
