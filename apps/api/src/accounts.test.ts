@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { scryptSync } from "node:crypto";
 import test from "node:test";
 import { AccountService } from "./accounts.js";
 
@@ -138,4 +139,45 @@ test("account credentials stay private while verification, reset, username, logo
   assert.equal(fixture.participants.get("seat-1")?.botControlled, true);
   assert.equal(fixture.results.get("result-1")?.winnerName, "Deleted player");
   now = new Date("2026-09-28T10:00:00Z");
+});
+
+test("registration yields to the event loop while deriving a password hash", async () => {
+  const fixture = accountDatabase();
+  const email = "async-hash@example.test";
+  let eventLoopYielded = false;
+  const create = fixture.db.userAccount.create;
+  fixture.db.userAccount.findUnique = async ({ where }: any) => {
+    if (where.email === email) {
+      setImmediate(() => { eventLoopYielded = true; });
+      return null;
+    }
+    return null;
+  };
+  fixture.db.userAccount.create = async (args: any) => {
+    assert.equal(eventLoopYielded, true, "the event loop should run before account creation completes password hashing");
+    return create(args);
+  };
+
+  const service = new AccountService(fixture.db, async () => undefined, undefined, false);
+  await service.register(email, "correct horse battery staple");
+});
+
+test("login accepts password hashes written by the previous synchronous scrypt implementation", async () => {
+  const fixture = accountDatabase();
+  const email = "legacy-hash@example.test";
+  const password = "legacy correct horse battery";
+  const salt = Buffer.from("legacy-account-hash-salt");
+  const key = scryptSync(password, salt, 64, { N: 1 << 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+  fixture.users.set("legacy-user", {
+    id: "legacy-user",
+    username: "legacy-player",
+    email,
+    emailVerifiedAt: new Date("2026-09-27T10:00:00Z"),
+    passwordHash: `scrypt$32768$8$1$${salt.toString("base64url")}$${key.toString("base64url")}`,
+  });
+  const service = new AccountService(fixture.db, async () => undefined, undefined, false);
+
+  const result = await service.login(email, password);
+  assert.equal(result.account?.username, "legacy-player");
+  assert.ok(result.sessionToken);
 });

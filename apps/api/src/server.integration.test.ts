@@ -862,6 +862,43 @@ test("HTTP rate-limit responses retain CORS headers for the configured browser o
   }
 });
 
+test("account registration, sign-in, and recovery routes have a tighter per-address rate limit", async () => {
+  const port = 18400 + (process.pid % 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, ["--import", "tsx/esm", "src/server.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: { ...process.env, PORT: String(port), ALLOW_DEVELOPMENT_FIXTURE: "true", DEVELOPMENT_ACCOUNT_AUTH_RATE_LIMIT: "20" },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  try {
+    await waitForHealth(baseUrl);
+    const accountPaths = [
+      "/accounts/register",
+      "/accounts/login",
+      "/accounts/resend-verification",
+      "/accounts/password-reset",
+      "/accounts/password-reset/complete",
+    ];
+    const requestAccountPath = (path: string) => fetch(`${baseUrl}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "player@example.test", password: "correct horse battery staple", token: "fixture-token" }),
+    });
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const path = accountPaths[attempt % accountPaths.length]!;
+      const response = await requestAccountPath(path);
+      assert.equal(response.status, 503, `${path} request ${attempt + 1} should pass the auth-work limit before the persistence check`);
+    }
+    const limited = await requestAccountPath("/accounts/login");
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get("retry-after"), "60");
+    assert.deepEqual(await limited.json(), { error: "Too many requests. Try again shortly." });
+    assert.equal((await fetch(`${baseUrl}/health`)).status, 200, "the account-specific threshold should not block ordinary API routes");
+  } finally {
+    await stop(child);
+  }
+});
+
 test("WebSocket rejects a mismatched Origin before consuming its ticket and permits absent Origin", async () => {
   const port = 19300 + (process.pid % 1000);
   const baseUrl = `http://127.0.0.1:${port}`;

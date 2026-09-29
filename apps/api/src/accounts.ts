@@ -1,4 +1,4 @@
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import type { AccountGameSummary, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats } from "@abominations/shared";
 import type { RoomPrivacy as PrismaRoomPrivacy, RoomStatus as PrismaRoomStatus } from "../generated/prisma/enums.js";
 import type { AccountToken, Prisma, PrismaClient, UserAccount } from "../generated/prisma/client.js";
@@ -52,19 +52,28 @@ export interface AccountActionResult {
   developmentLink?: string;
 }
 
-function passwordHash(password: string): string {
+function deriveScrypt(password: string, salt: Buffer, keyLength: number, options: { N: number; r: number; p: number; maxmem: number }): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scrypt(password, salt, keyLength, options, (error, key) => {
+      if (error) reject(error);
+      else resolve(key);
+    });
+  });
+}
+
+async function passwordHash(password: string): Promise<string> {
   const salt = randomBytes(16);
-  const derived = scryptSync(password, salt, 64, { N: 1 << 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+  const derived = await deriveScrypt(password, salt, 64, { N: 1 << 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
   return `scrypt$32768$8$1$${salt.toString("base64url")}$${derived.toString("base64url")}`;
 }
 
-function passwordMatches(password: string, encoded: string): boolean {
+async function passwordMatches(password: string, encoded: string): Promise<boolean> {
   const [algorithm, n, r, p, saltText, keyText] = encoded.split("$");
   if (algorithm !== "scrypt" || !n || !r || !p || !saltText || !keyText) return false;
   try {
     const salt = Buffer.from(saltText, "base64url");
     const expected = Buffer.from(keyText, "base64url");
-    const actual = scryptSync(password, salt, expected.length, { N: Number(n), r: Number(r), p: Number(p), maxmem: 64 * 1024 * 1024 });
+    const actual = await deriveScrypt(password, salt, expected.length, { N: Number(n), r: Number(r), p: Number(p), maxmem: 64 * 1024 * 1024 });
     return actual.length === expected.length && timingSafeEqual(actual, expected);
   } catch {
     return false;
@@ -87,10 +96,13 @@ export class AccountService {
     const email = emailFrom(emailInput);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error("Enter a valid email address.");
     if (password.length < 12 || password.length > 128) throw new Error("Password must be between 12 and 128 characters.");
+    const existing = await this.prisma.userAccount.findUnique({ where: { email }, select: { id: true } });
+    if (existing) throw new Error("An account with that email already exists.");
+    const encodedPassword = await passwordHash(password);
     let user: UserAccount | undefined;
     for (let attempt = 0; attempt < 4; attempt += 1) {
       try {
-        user = await this.prisma.userAccount.create({ data: { email, passwordHash: passwordHash(password), username: usernameFrom() } });
+        user = await this.prisma.userAccount.create({ data: { email, passwordHash: encodedPassword, username: usernameFrom() } });
         break;
       } catch (error) {
         if ((error as { code?: string }).code !== "P2002") throw error;
@@ -106,7 +118,13 @@ export class AccountService {
   async login(emailInput: string, password: string): Promise<AccountActionResult> {
     const email = emailFrom(emailInput);
     const user = await this.prisma.userAccount.findUnique({ where: { email } });
-    if (!user || !passwordMatches(password, user.passwordHash)) throw new Error("Email or password is incorrect.");
+    if (!user) {
+      // Keep the unknown-account path close to the wrong-password cost without
+      // blocking the event loop; the public error remains the same.
+      await passwordHash(password);
+      throw new Error("Email or password is incorrect.");
+    }
+    if (!(await passwordMatches(password, user.passwordHash))) throw new Error("Email or password is incorrect.");
     if (!user.emailVerifiedAt) throw new Error("Verify your email before signing in.");
     return { account: publicAccount(user), sessionToken: await this.issueSession(user.id), message: "Signed in." };
   }
@@ -143,10 +161,11 @@ export class AccountService {
   async completePasswordReset(rawToken: string, newPassword: string): Promise<AccountActionResult> {
     if (newPassword.length < 12 || newPassword.length > 128) throw new Error("Password must be between 12 and 128 characters.");
     const record = await this.findActionToken(rawToken, "PASSWORD_RESET");
+    const encodedPassword = await passwordHash(newPassword);
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const consumed = await tx.accountToken.updateMany({ where: { id: record.id, consumedAt: null, expiresAt: { gt: this.now() } }, data: { consumedAt: this.now() } });
       if (consumed.count !== 1) throw new Error("This reset link is expired or has already been used.");
-      await tx.userAccount.update({ where: { id: record.userId }, data: { passwordHash: passwordHash(newPassword) } });
+      await tx.userAccount.update({ where: { id: record.userId }, data: { passwordHash: encodedPassword } });
       await tx.accountSession.updateMany({ where: { userId: record.userId, revokedAt: null }, data: { revokedAt: this.now() } });
     });
     return { message: "Password reset. Sign in with your new password." };

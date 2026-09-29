@@ -35,6 +35,7 @@ const configuredDevelopmentLimit = (name: string, fallback: number) => {
   return Number.isInteger(value) && value >= fallback ? value : fallback;
 };
 const RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_API_RATE_LIMIT", 120);
+const ACCOUNT_AUTH_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_ACCOUNT_AUTH_RATE_LIMIT", 20);
 const WEBSOCKET_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_WS_RATE_LIMIT", 30);
 const WEBSOCKET_UPGRADE_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_WS_UPGRADE_RATE_LIMIT", 30);
 const WEBSOCKET_COMMAND_RATE_LIMIT = configuredDevelopmentLimit("DEVELOPMENT_WS_COMMAND_RATE_LIMIT", 120);
@@ -48,6 +49,7 @@ const isLeaderboardCategory = (value: string): value is LeaderboardCategory => v
   || value === "health-gained"
   || value === "luck";
 const mutationRate = new Map<string, RateBucket>();
+const accountAuthRate = new Map<string, RateBucket>();
 const socketRate = new Map<string, RateBucket>();
 const socketUpgradeRate = new Map<string, RateBucket>();
 const socketCommandRate = new Map<string, RateBucket>();
@@ -332,6 +334,13 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
         || (parts.length === 5 && parts[1] === "me" && parts[2] === "games" && parts[4] === "resume");
       if (!exactAccountPath) return json(response, 404, { error: "Not found" });
       if (request.method !== "GET") assertSameOriginIfSupplied(request);
+      const accountAuthPath = request.method === "POST"
+        && ((parts.length === 2 && ["register", "login", "resend-verification", "password-reset"].includes(parts[1]!))
+          || (parts.length === 3 && parts[1] === "password-reset" && parts[2] === "complete"));
+      if (accountAuthPath && !withinRate(accountAuthRate, address, Date.now(), RATE_WINDOW_MS, ACCOUNT_AUTH_RATE_LIMIT)) {
+        metrics.requestFailure();
+        return rejectRate(response);
+      }
       if (!accountService) throw new HttpError(503, "Accounts require database persistence.");
       const input = request.method === "GET" ? {} : await body(request);
       const currentUser = async () => {
