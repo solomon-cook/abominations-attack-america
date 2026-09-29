@@ -22,7 +22,7 @@ const options = Object.fromEntries(process.argv.slice(2).map((argument) => {
 }));
 
 if (options.help) {
-  console.log("Usage: node scripts/verify-terrain-priority-online-contention.mjs [--a=baseline-dist] [--b=candidate-dist] [--pairs=7] [--output=output/performance/terrain-priority-online-contention.json]");
+  console.log("Usage: node scripts/verify-terrain-priority-online-contention.mjs [--a=baseline-dist] [--b=candidate-dist] [--pairs=7] [--phone-only] [--downgrade-a-high-terrain-priority] [--output=output/performance/terrain-priority-online-contention.json]");
   process.exit(0);
 }
 
@@ -32,11 +32,14 @@ const builds = {
 };
 const pairs = Number(options.pairs ?? 1);
 assert.ok(Number.isInteger(pairs) && pairs >= 1 && pairs <= 12, "--pairs must be an integer from 1 to 12");
+const phoneOnly = Boolean(options["phone-only"]);
+const downgradeAHighTerrainPriority = Boolean(options["downgrade-a-high-terrain-priority"]);
 const outputPath = resolve(root, String(options.output ?? "output/performance/terrain-priority-online-contention.json"));
 const viewportOptions = [
   { name: "desktop", width: 1280, height: 720, dpr: 1 },
   { name: "phone", width: 390, height: 844, dpr: 2 },
 ];
+const measuredViewports = phoneOnly ? viewportOptions.filter((viewport) => viewport.name === "phone") : viewportOptions;
 const webPort = 4173;
 const apiPort = 8787;
 const webUrl = `http://127.0.0.1:${webPort}/`;
@@ -64,7 +67,9 @@ const listFiles = async (directory) => {
 const digestBuild = async (directory) => {
   const hash = createHash("sha256");
   const terrainHash = createHash("sha256");
+  const artHash = createHash("sha256");
   let terrainFiles = 0;
+  let artFiles = 0;
   const files = await listFiles(directory);
   for (const path of files) {
     const name = relative(directory, path).split("\\").join("/");
@@ -78,8 +83,22 @@ const digestBuild = async (directory) => {
       terrainHash.update(bytes);
       terrainFiles += 1;
     }
+    if (name.startsWith("assets/") && /\.(?:avif|gif|jpe?g|png|svg|webp)$/i.test(name)) {
+      artHash.update(name);
+      artHash.update("\0");
+      artHash.update(bytes);
+      artFiles += 1;
+    }
   }
-  return { sha256: hash.digest("hex"), terrainAssetTreeSha256: terrainHash.digest("hex"), terrainAssetFiles: terrainFiles, fileCount: files.length };
+  return {
+    path: directory,
+    sha256: hash.digest("hex"),
+    terrainAssetTreeSha256: terrainHash.digest("hex"),
+    terrainAssetFiles: terrainFiles,
+    artAssetTreeSha256: artHash.digest("hex"),
+    artAssetFiles: artFiles,
+    fileCount: files.length,
+  };
 };
 
 const startProcess = async ({ command, args, cwd, env, label, ready }) => {
@@ -115,7 +134,7 @@ const startPreview = async (build) => startProcess({
   ready: async () => (await fetch(webUrl)).ok,
 });
 
-const createPagePair = async ({ browser, viewport }) => {
+const createPagePair = async ({ browser, viewport, downgradeHighTerrainPriority }) => {
   const contextOptions = {
     viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: viewport.dpr,
@@ -137,10 +156,46 @@ const createPagePair = async ({ browser, viewport }) => {
       const url = new URL(requestUrl);
       return url.origin === apiUrl && url.pathname === "/accounts/me";
     }, (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ account: null }) }));
-    await page.addInitScript(() => {
+    await page.addInitScript(({ downgradeHighTerrainPriority: downgradeHigh }) => {
       Object.defineProperty(navigator, "serviceWorker", { configurable: true, value: {
         addEventListener() {}, removeEventListener() {}, async register() { return { waiting: null, addEventListener() {}, removeEventListener() {} }; }, async getRegistration() { return undefined; },
       } });
+      const priorityOverride = {
+        requestedPolicy: downgradeHigh ? "audited-terrain fetchPriority high -> low; low/auto unchanged" : "production policy unchanged",
+        installed: false,
+        installErrors: [],
+        highAssignmentsSeen: 0,
+        highAssignmentsDowngraded: 0,
+        downgradeByMechanism: {},
+      };
+      if (downgradeHigh) {
+        const isAuditedTerrain = (element) => element instanceof HTMLImageElement && (
+          element.classList.contains("audited-terrain")
+          || /\/assets\/board\/audited\//.test(element.getAttribute("src") ?? "")
+        );
+        const downgrade = (element, name, value, mechanism) => {
+          if (String(name).toLowerCase() !== "fetchpriority" || String(value).toLowerCase() !== "high" || !isAuditedTerrain(element)) return value;
+          priorityOverride.highAssignmentsSeen += 1;
+          priorityOverride.highAssignmentsDowngraded += 1;
+          priorityOverride.downgradeByMechanism[mechanism] = (priorityOverride.downgradeByMechanism[mechanism] ?? 0) + 1;
+          return "low";
+        };
+        const imageDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "fetchPriority");
+        if (imageDescriptor?.configurable && typeof imageDescriptor.set === "function") {
+          Object.defineProperty(HTMLImageElement.prototype, "fetchPriority", {
+            ...imageDescriptor,
+            set(value) { imageDescriptor.set.call(this, downgrade(this, "fetchPriority", value, "HTMLImageElement.fetchPriority setter")); },
+          });
+        } else {
+          priorityOverride.installErrors.push("Could not wrap configurable HTMLImageElement.fetchPriority setter");
+        }
+        const nativeSetAttribute = Element.prototype.setAttribute;
+        Element.prototype.setAttribute = function(name, value) {
+          return nativeSetAttribute.call(this, name, downgrade(this, name, value, "Element.setAttribute"));
+        };
+        priorityOverride.installed = priorityOverride.installErrors.length === 0;
+      }
+      window.__terrainFetchPriorityOverride = priorityOverride;
       const supportedEntryTypes = PerformanceObserver.supportedEntryTypes ?? [];
       const observerStatus = {};
       const observedEntries = { event: [], longtask: [], "long-animation-frame": [] };
@@ -232,6 +287,8 @@ const createPagePair = async ({ browser, viewport }) => {
             cell: image.dataset.artCell ?? null,
             path,
             requestedVariant: match ? Number(match[1]) : null,
+            fetchPriority: image.fetchPriority ?? null,
+            fetchPriorityAttribute: image.getAttribute("fetchpriority"),
             complete: image.complete,
             naturalWidth: image.naturalWidth,
             naturalHeight: image.naturalHeight,
@@ -298,7 +355,7 @@ const createPagePair = async ({ browser, viewport }) => {
           return window.__terrainApiProbeResult;
         });
       });
-    });
+    }, { downgradeHighTerrainPriority });
   }
   const session = await context.newCDPSession(first);
   await session.send("Network.enable");
@@ -616,6 +673,11 @@ const runInteractionAndApiProbe = async ({ page, networkState, wallMonoOffset, i
 const buildDigests = {};
 for (const build of Object.values(builds)) buildDigests[build.key] = await digestBuild(build.path);
 assert.equal(buildDigests.A.terrainAssetTreeSha256, buildDigests.B.terrainAssetTreeSha256, "baseline and candidate terrain art bytes are identical");
+if (downgradeAHighTerrainPriority) {
+  assert.equal(builds.A.path, builds.B.path, "browser policy override comparison must use one exact distribution path for A and B");
+  assert.equal(buildDigests.A.sha256, buildDigests.B.sha256, "browser policy override comparison must use one exact app artifact for A and B");
+  assert.equal(buildDigests.A.artAssetTreeSha256, buildDigests.B.artAssetTreeSha256, "browser policy override comparison must use identical art assets for A and B");
+}
 
 let api;
 let activePreview;
@@ -635,14 +697,14 @@ try {
   });
   browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
   const schedule = [];
-  for (const viewport of viewportOptions) {
+  for (const viewport of measuredViewports) {
     const orders = Array.from({ length: pairs }, (_, index) => index % 2 === 0 ? ["A", "B"] : ["B", "A"]);
     for (let pairIndex = 0; pairIndex < pairs; pairIndex += 1) for (const key of orders[pairIndex]) schedule.push({ viewport, pair: pairIndex + 1, key });
   }
   for (const item of schedule) {
     const build = builds[item.key];
     activePreview = await startPreview(build);
-    const harness = await createPagePair({ browser, viewport: item.viewport });
+    const harness = await createPagePair({ browser, viewport: item.viewport, downgradeHighTerrainPriority: item.key === "A" && downgradeAHighTerrainPriority });
     try {
       const onlineSetup = await prepareOnlineGame(harness);
       await harness.first.evaluate((config) => { window.__terrainApiContentionConfig = config; }, { api: apiUrl, roomCode: onlineSetup.roomCode });
@@ -653,6 +715,17 @@ try {
         wallMonoOffset: harness.getWallMonoOffset(),
         isPhone: item.viewport.width <= 600,
       });
+      const fetchPriorityOverride = await harness.first.evaluate(() => ({ ...window.__terrainFetchPriorityOverride }));
+      const tapImages = contention.interaction.selectionStarted.visibleTerrain?.images ?? [];
+      if (item.key === "A" && downgradeAHighTerrainPriority) {
+        assert.ok(fetchPriorityOverride.installed, `A pair ${item.pair} ${item.viewport.name} installed the browser-side priority override`);
+        assert.ok(fetchPriorityOverride.highAssignmentsDowngraded > 0, `A pair ${item.pair} ${item.viewport.name} intercepted visible terrain High assignments`);
+        assert.ok(tapImages.length > 0, `A pair ${item.pair} ${item.viewport.name} recorded visible terrain at tap`);
+        assert.equal(tapImages.some((image) => image.fetchPriority === "high"), false, `A pair ${item.pair} ${item.viewport.name} has no visible terrain left at High priority at tap`);
+      }
+      if (item.key === "B" && downgradeAHighTerrainPriority) {
+        assert.ok(tapImages.some((image) => image.fetchPriority === "high"), `B pair ${item.pair} ${item.viewport.name} retains High priority on visible terrain at tap`);
+      }
       const allUpgradeRequests = [...harness.networkState.values()].filter((request) => request.variant >= 512);
       const sample = {
         variant: item.key,
@@ -663,7 +736,12 @@ try {
         onlineFlow: { localApi: "PERSISTENCE=memory", roomCode: onlineSetup.roomCode, initialVersion: onlineSetup.stateVersion, activePlayer: onlineSetup.activePlayer },
         profile: { coldBrowserContext: true, cacheDisabled: true, serviceWorkersBlocked: true, cpuThrottleRate: 4, networkRttMs: 150, downloadBytesPerSecond: 200000, uploadBytesPerSecond: 93750 },
         zoom,
+        fetchPriorityOverride,
         contention,
+        overlapAtTap: {
+          upgradedTerrainRequestsInFlight: contention.api.priorityUpgradeRequestsInflightAtSelectionStart,
+          complete: contention.api.priorityUpgradeRequestsInflightAtSelectionStart > 0,
+        },
         terrainRequests: {
           countAtEnd: allUpgradeRequests.length,
           initialPriorityCounts: allUpgradeRequests.reduce((counts, request) => { const key = request.priority ?? "unknown"; counts[key] = (counts[key] ?? 0) + 1; return counts; }, {}),
@@ -695,7 +773,7 @@ const median = (values) => {
   const sorted = [...values].sort((a, b) => a - b);
   return sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
 };
-const paired = viewportOptions.map((viewport) => {
+const paired = measuredViewports.map((viewport) => {
   const rows = Array.from({ length: pairs }, (_, index) => {
     const a = samples.find((sample) => sample.variant === "A" && sample.pair === index + 1 && sample.viewport.name === viewport.name);
     const b = samples.find((sample) => sample.variant === "B" && sample.pair === index + 1 && sample.viewport.name === viewport.name);
@@ -708,6 +786,8 @@ const paired = viewportOptions.map((viewport) => {
       apiStartStatus: { baseline: a.contention.api.status, candidate: b.contention.api.status },
       apiUpgradeRequestsInFlightAtResponse: { baseline: a.contention.api.priorityUpgradeRequestsInflightAtResponse, candidate: b.contention.api.priorityUpgradeRequestsInflightAtResponse },
       uiUpgradeRequestsInFlightAtSelection: { baseline: a.contention.api.priorityUpgradeRequestsInflightAtSelectionStart, candidate: b.contention.api.priorityUpgradeRequestsInflightAtSelectionStart },
+      uiOverlapCompleteAtTap: a.overlapAtTap.complete && b.overlapAtTap.complete,
+      apiOverlapCompleteAtResponse: a.contention.api.priorityUpgradeRequestsInflightAtResponse > 0 && b.contention.api.priorityUpgradeRequestsInflightAtResponse > 0,
     };
   });
   const aSamples = samples.filter((sample) => sample.variant === "A" && sample.viewport.name === viewport.name);
@@ -721,14 +801,25 @@ const paired = viewportOptions.map((viewport) => {
     allProbesReturned200: [...aSamples, ...bSamples].every((sample) => sample.contention.api.status === 200),
     allApiResponsesOverlappedTerrainUpgrades: [...aSamples, ...bSamples].every((sample) => sample.contention.api.priorityUpgradeRequestsInflightAtResponse > 0),
     allUiSelectionsStartedDuringTerrainUpgrades: [...aSamples, ...bSamples].every((sample) => sample.contention.api.priorityUpgradeRequestsInflightAtSelectionStart > 0),
+    completeUiOverlapPairs: rows.filter((row) => row.uiOverlapCompleteAtTap).length,
+    incompleteUiOverlapPairs: rows.filter((row) => !row.uiOverlapCompleteAtTap).map((row) => row.pair),
+    completeApiOverlapPairs: rows.filter((row) => row.apiOverlapCompleteAtResponse).length,
+    incompleteApiOverlapPairs: rows.filter((row) => !row.apiOverlapCompleteAtResponse).map((row) => row.pair),
   };
 });
 const result = {
   generatedAt: new Date().toISOString(),
-  status: paired.every((entry) => entry.allProbesReturned200 && entry.allApiResponsesOverlappedTerrainUpgrades && entry.allUiSelectionsStartedDuringTerrainUpgrades) ? "measured-local-contention" : "contention-overlap-incomplete",
+  status: paired.every((entry) => entry.allProbesReturned200 && entry.allUiSelectionsStartedDuringTerrainUpgrades) ? "measured-local-interaction" : "ui-selection-overlap-incomplete",
+  apiOverlapStatus: paired.every((entry) => entry.allProbesReturned200 && entry.allApiResponsesOverlappedTerrainUpgrades) ? "api-overlap-complete" : "api-overlap-incomplete",
   purpose: "Check whether visible terrain upgrades interfere with one authenticated online room-state API response and a legal-destination UI selection while upgrades are active.",
   interpretation: "Local browser evidence only. It does not model hosted API compute, CDN routing, production database load, other users, or target devices.",
   order: "Per viewport, samples alternate AB then BA; each sample uses a fresh cache-disabled context and newly created in-memory room.",
+  measuredViewports: measuredViewports.map(({ name, width, height, dpr }) => ({ name, width, height, deviceScaleFactor: dpr })),
+  policyComparison: downgradeAHighTerrainPriority ? {
+    A: "Same production artifact, browser-side test harness downgrades only audited-terrain fetchPriority=high assignments to low; existing low and auto assignments pass through unchanged.",
+    B: "Same production artifact, existing visible-high / nearby-low / otherwise-auto TerrainArt policy unchanged.",
+    overrideMechanism: "Pre-document-init wrappers on HTMLImageElement.fetchPriority and Element.setAttribute; per-sample interception counts, visible image priority attributes, CDP request priorities, and asset hashes are retained.",
+  } : null,
   api: "Node MVP API on loopback with PERSISTENCE=memory, reached through the same API URL compiled into both production builds.",
   profile: { cpuThrottleRate: 4, networkRttMs: 150, downloadBytesPerSecond: 200000, uploadBytesPerSecond: 93750 },
   pairsPerViewport: pairs,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
 import { createServer as createNetServer } from "node:net";
@@ -45,7 +45,7 @@ type RoomView = { code: string; status: string; version: number; state: GameStat
 
 const report: Record<string, unknown> = {
   started: new Date().toISOString(),
-  scope: "Production main.tsx route and local MemoryRoomStore API. The room reaches Challenge using ordinary legal setup/actions on its pinned playtest board; no Challenge state or pending decision is hand-written.",
+  scope: "Production main.tsx route and local MemoryRoomStore API. The room reaches Challenge using ordinary legal setup/actions on its pinned playtest board; no Challenge state or pending decision is hand-written. The active phone owner selects an eligible opponent and rolls one legal Challenge attack through the live UI; the spectator tablet receives the authoritative attack history read-only. Mutation and Infamy branches are not forced when absent from natural play.",
   preparation: {},
   scenarios: {},
   runtimeErrors: [],
@@ -459,12 +459,106 @@ try {
     assert.equal((submittedFrame.envelope?.command as Extract<GameCommand, { type: "challenge-opponent" }>).opponentMonsterId, chosenId);
     assert.equal(submittedFrame.envelope?.expectedRevision, expectedVersion);
     assert.equal(submittedFrame.envelope?.actorId, challenger.participantId);
+    const spectatorAfterOwnerChoice = await readRoom(code, spectator.token);
+    assert.equal(spectatorAfterOwnerChoice.version, expectedVersion + 1, "the spectator receives the owner's single accepted opponent-selection revision");
+    assert.equal(spectatorAfterOwnerChoice.state.eventLog.at(-1)?.id, selectionEvent.id, "the spectator projection contains the same opponent-selection event");
     const ownerLayout = await ownerPage.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
     assert.ok(ownerLayout.document <= ownerLayout.viewport + 1 && ownerLayout.body <= ownerLayout.viewport + 1, `the phone route has no horizontal overflow: ${JSON.stringify(ownerLayout)}`);
 
-    const spectatorAfterOwnerChoice = await readRoom(code, spectator.token);
-    assert.equal(spectatorAfterOwnerChoice.version, expectedVersion + 1, "the spectator receives the owner's single accepted revision");
-    assert.equal(spectatorAfterOwnerChoice.state.eventLog.at(-1)?.action, "challenge.opponent.selected", "the spectator projection receives the same authoritative result");
+    const attackBefore = ownerAfterChoice;
+    const attackDecision = attackBefore.state.pendingDecision;
+    assert.ok(attackDecision?.type === "challenge-resolution" || attackDecision?.type === "challenge-giant-resolution",
+      "the selected rival exposes the authoritative Challenge attack decision");
+    assert.equal(attackBefore.state.currentPlayer, challengerIndex,
+      "the naturally generated first Challenge attack is controlled by the phone owner who selected the opponent");
+    assert.equal(attackDecision.playerIndex, challengerIndex, "the current phone owner is authorized for this Challenge attack");
+    const attackerId = attackBefore.state.challenge?.turn?.attackerId;
+    assert.ok(attackerId, "the engine selected a first attacker for the Challenge turn");
+    const attacker = attackBefore.state.monsters.find((monster) => monster.id === attackerId)
+      ?? attackBefore.state.units.find((unit) => unit.id === attackerId);
+    const defender = attackBefore.state.monsters.find((monster) => monster.id !== attackerId && monster.id === chosenId)
+      ?? attackBefore.state.units.find((unit) => unit.id === chosenId);
+    assert.ok(attacker && defender, "the authoritative Challenge combatants are present");
+    const nameOf = (unit: typeof attacker) => unit && "name" in unit ? unit.name : unit?.unitTypeId?.replaceAll("-", " ") ?? "Opponent";
+    const defenderName = nameOf(defender);
+    const attackButton = ownerDialog.getByRole("button", { name: `Roll attack against ${defenderName}`, exact: true });
+    assert.equal(await attackButton.count(), 1, "the production phone arena offers exactly one roll action against the current defender");
+    assert.equal(await attackButton.isEnabled(), true, "the phone owner can legally resolve the generated attack");
+    const attackRevision = attackBefore.version;
+    const attackEventCount = attackBefore.state.eventLog.length;
+    await attackButton.click();
+    await ownerPage.waitForFunction(async ({ service, roomCode, token: accessToken, version }) => {
+      const response = await fetch(`${service}/rooms/${roomCode}/state?token=${encodeURIComponent(accessToken)}`);
+      const current = await response.json();
+      return current.version === version + 1 && current.state.eventLog.at(-1)?.action === "challenge.attack.rolled";
+    }, { service: apiUrl, roomCode: code, token: challenger.token, version: attackRevision });
+    const ownerAfterAttack = await readRoom(code, challenger.token);
+    assert.equal(ownerAfterAttack.version, attackRevision + 1, "one accepted Challenge attack advances exactly one room revision");
+    assert.equal(ownerAfterAttack.state.eventLog.length, attackEventCount + 1, "one accepted Challenge attack appends exactly one event");
+    const attackEvent = ownerAfterAttack.state.eventLog.at(-1)!;
+    assert.equal(attackEvent.action, "challenge.attack.rolled");
+    assert.equal(attackEvent.actorId, challenger.participantId, "the accepted attack is attributed to the phone owner's participant");
+    const attackDetails = attackEvent.detail.attacks as Array<Record<string, unknown>>;
+    assert.equal(attackDetails.length, 1, "the authoritative event contains exactly the newly rolled attack");
+    const resolvedAttack = attackDetails[0]!;
+    assert.equal(resolvedAttack.attackerId, attackerId);
+    assert.equal(resolvedAttack.targetId, defender.id);
+    assert.ok(Number.isInteger(resolvedAttack.roll) && Number(resolvedAttack.roll) >= 1 && Number(resolvedAttack.roll) <= 6,
+      "the authoritative attack records its d6 result");
+    assert.deepEqual(attackEvent.detail.rolls, [resolvedAttack.roll], "the event roll summary matches its attack record");
+    assert.deepEqual(ownerAfterAttack.state.challenge?.turn?.attacks.at(-1), resolvedAttack,
+      "the live Challenge turn history contains the exact authoritative attack");
+    assert.deepEqual(attackEvent.detail.healthBeforeAttack, {
+      [attackerId]: attackBefore.state.monsters.find((monster) => monster.id === attackerId)?.health ?? attackBefore.state.units.find((unit) => unit.id === attackerId)?.health,
+      [defender.id]: attackBefore.state.monsters.find((monster) => monster.id === defender.id)?.health ?? attackBefore.state.units.find((unit) => unit.id === defender.id)?.health,
+    }, "the attack event's before-Health snapshot matches the prior authoritative state");
+    assert.deepEqual(attackEvent.detail.healthAfterAttack, {
+      [attackerId]: ownerAfterAttack.state.monsters.find((monster) => monster.id === attackerId)?.health ?? ownerAfterAttack.state.units.find((unit) => unit.id === attackerId)?.health,
+      [defender.id]: ownerAfterAttack.state.monsters.find((monster) => monster.id === defender.id)?.health ?? ownerAfterAttack.state.units.find((unit) => unit.id === defender.id)?.health,
+    }, "the attack event's after-Health snapshot matches the resulting authoritative state");
+    assert.equal(commandFrames.length, 2, "the selected opponent and one Challenge attack submit exactly two commands");
+    const attackFrame = JSON.parse(commandFrames[1]!) as { type?: string; envelope?: { command?: GameCommand; expectedRevision?: number; actorId?: string } };
+    assert.equal(attackFrame.type, "command.submit");
+    assert.equal(attackFrame.envelope?.command?.type, "resolve-challenge");
+    assert.equal(attackFrame.envelope?.expectedRevision, attackRevision, "the attack submits against the accepted opponent-selection revision");
+    assert.equal(attackFrame.envelope?.actorId, challenger.participantId);
+
+    const spectatorAfterAttack = await readRoom(code, spectator.token);
+    assert.equal(spectatorAfterAttack.version, attackRevision + 1, "the spectator receives the accepted attack revision");
+    assert.equal(spectatorAfterAttack.state.eventLog.at(-1)?.id, attackEvent.id, "the spectator projection contains the same authoritative attack event");
+    assert.deepEqual(spectatorAfterAttack.state.challenge?.turn?.attacks.at(-1), resolvedAttack,
+      "the spectator projection receives the same attack history without revealing extra state");
+    const spectatorAttackControls = spectatorDialog.locator(".challenge-opponents button, .battle-target-actions button, .challenge-turn-actions button");
+    await spectatorAttackControls.first().waitFor({ state: "visible" });
+    const spectatorAttackControlStates = await spectatorAttackControls.evaluateAll((buttons) => buttons.map((button) => ({
+      label: button.getAttribute("aria-label") ?? button.textContent?.trim() ?? "",
+      disabled: (button as HTMLButtonElement).disabled,
+    })));
+    assert.ok(spectatorAttackControlStates.length > 0, "the spectator can see the current Challenge action state");
+    assert.ok(spectatorAttackControlStates.every((control) => control.disabled),
+      `all current Challenge actions remain read-only for the spectator: ${JSON.stringify(spectatorAttackControlStates)}`);
+    await spectatorDialog.locator(".battle-history summary").press("Space");
+    const expectedHistoryLine = `Round ${String(resolvedAttack.combatRound)} · ${nameOf(attacker)} · ⚄ ${String(resolvedAttack.roll)} · ${resolvedAttack.hit ? `${String(resolvedAttack.damage)} damage` : "Miss"}${Array.isArray(resolvedAttack.modifiers) && resolvedAttack.modifiers.length ? ` · ${(resolvedAttack.modifiers as string[]).join(" · ")}` : ""}`;
+    const spectatorHistoryLine = spectatorDialog.locator(".battle-history li").last();
+    await spectatorHistoryLine.waitFor({ state: "visible" });
+    assert.equal((await spectatorHistoryLine.innerText()).trim(), expectedHistoryLine,
+      "the read-only spectator arena renders the authoritative round, attacker, roll, outcome, and modifiers");
+    assert.deepEqual(spectatorCommandFrames, [], "the spectator receives the attack but sends no command-submit frame");
+    const ownerAttackBounds = await ownerDialog.boundingBox();
+    assert.ok(ownerAttackBounds && ownerAttackBounds.x >= -1 && ownerAttackBounds.y >= -1 && ownerAttackBounds.x + ownerAttackBounds.width <= ownerViewport.width + 1 && ownerAttackBounds.y + ownerAttackBounds.height <= ownerViewport.height + 1,
+      `the active attack arena fits the phone viewport: ${JSON.stringify(ownerAttackBounds)}`);
+    const ownerAttackLayout = await ownerPage.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
+    assert.ok(ownerAttackLayout.document <= ownerAttackLayout.viewport + 1 && ownerAttackLayout.body <= ownerAttackLayout.viewport + 1,
+      `the active phone attack has no horizontal overflow: ${JSON.stringify(ownerAttackLayout)}`);
+    const spectatorAttackBounds = await spectatorDialog.boundingBox();
+    assert.ok(spectatorAttackBounds && spectatorAttackBounds.x >= -1 && spectatorAttackBounds.y >= -1 && spectatorAttackBounds.x + spectatorAttackBounds.width <= spectatorViewport.width + 1 && spectatorAttackBounds.y + spectatorAttackBounds.height <= spectatorViewport.height + 1,
+      `the read-only spectator attack arena fits the tablet viewport: ${JSON.stringify(spectatorAttackBounds)}`);
+    const spectatorAttackLayout = await spectatorPage.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
+    assert.ok(spectatorAttackLayout.document <= spectatorAttackLayout.viewport + 1 && spectatorAttackLayout.body <= spectatorAttackLayout.viewport + 1,
+      `the spectator attack has no horizontal overflow: ${JSON.stringify(spectatorAttackLayout)}`);
+    await ownerPage.screenshot({ path: join(artifactDirectory, `challenge-full-route-owner-attack-${date}.png`), fullPage: true });
+    await spectatorPage.screenshot({ path: join(artifactDirectory, `challenge-full-route-spectator-attack-${date}.png`), fullPage: true });
+
     await spectatorPage.keyboard.press("Escape");
     await spectatorReopenedDialog.waitFor({ state: "detached" });
     await spectatorPage.waitForFunction(() => document.activeElement === document.querySelector('[aria-label="Watch Monster Challenge"]'));
@@ -484,6 +578,19 @@ try {
         acceptedRevision: ownerAfterChoice.version,
         acceptedEvent: selectionEvent,
         pendingDecisionAfterChoice: ownerAfterChoice.state.pendingDecision?.type,
+        acceptedAttack: {
+          viewport: ownerViewport,
+          actorId: challenger.participantId,
+          command: attackFrame.envelope?.command,
+          expectedRevision: attackFrame.envelope?.expectedRevision,
+          acceptedRevision: ownerAfterAttack.version,
+          event: attackEvent,
+          authoritativeAttack: resolvedAttack,
+          challengeHistoryCount: ownerAfterAttack.state.challenge?.turn?.attacks.length,
+          phoneBounds: ownerAttackBounds,
+          layout: ownerAttackLayout,
+          screenshot: `challenge-full-route-owner-attack-${date}.png`,
+        },
         autoOpenFocusAfterClose: ownerAutoOpenFocus,
         reopenFocusReturnedToActionDock: ownerReopenFocus,
         horizontalOverflow: ownerLayout.document > ownerLayout.viewport + 1 || ownerLayout.body > ownerLayout.viewport + 1,
@@ -505,6 +612,17 @@ try {
         bounds: spectatorBounds,
         screenshot: `challenge-full-route-spectator-${date}.png`,
         receivedOwnerResult: spectatorAfterOwnerChoice.state.eventLog.at(-1)?.action,
+        receivedAttack: {
+          acceptedRevision: spectatorAfterAttack.version,
+          eventId: spectatorAfterAttack.state.eventLog.at(-1)?.id,
+          authoritativeHistoryMatches: true,
+          visibleActionControls: spectatorAttackControlStates,
+          allActionControlsDisabled: spectatorAttackControlStates.every((control) => control.disabled),
+          commandsSubmitted: spectatorCommandFrames.length,
+          tabletBounds: spectatorAttackBounds,
+          layout: spectatorAttackLayout,
+          screenshot: `challenge-full-route-spectator-attack-${date}.png`,
+        },
         phoneReentry: {
           status: "passed",
           viewport: ownerViewport,
@@ -522,6 +640,7 @@ try {
     report.status = "passed";
     const artifact = join(artifactDirectory, `challenge-full-route-${date}.json`);
     await writeFile(artifact, `${JSON.stringify(report, null, 2)}\n`);
+    await unlink(join(artifactDirectory, `challenge-full-route-${date}-failed.json`)).catch(() => undefined);
     console.log(JSON.stringify({ ...report, artifact }, null, 2));
   } finally {
     await ownerContext.close();

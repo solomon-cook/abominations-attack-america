@@ -66,6 +66,7 @@
     "browser:challenge:full-route:verify": "tsx scripts/verify-browser-challenge-full-route.mts",
     "browser:challenge:mutations:verify": "node scripts/verify-browser-challenge-mutations.mjs",
     "browser:monster-sheet:mutation:verify": "node scripts/verify-browser-monster-sheet-mutation.mjs",
+    "browser:monster-sheet:held-card:verify": "tsx scripts/verify-browser-monster-sheet-held-card.mts",
     "browser:deployment-cancel:verify": "node scripts/verify-browser-deployment-cancel.mjs",
     "browser:deployment-cancel:full-route:verify": "node scripts/verify-browser-deployment-cancel-full-route.mjs",
     "browser:retreat-choice:verify": "node scripts/verify-browser-retreat-choice.mjs",

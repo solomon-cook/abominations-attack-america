@@ -1,0 +1,2264 @@
+{
+  "generatedAt": "2026-09-29T22:15:46.124Z",
+  "status": "measured-local-interaction",
+  "apiOverlapStatus": "api-overlap-complete",
+  "purpose": "Check whether visible terrain upgrades interfere with one authenticated online room-state API response and a legal-destination UI selection while upgrades are active.",
+  "interpretation": "Local browser evidence only. It does not model hosted API compute, CDN routing, production database load, other users, or target devices.",
+  "order": "Per viewport, samples alternate AB then BA; each sample uses a fresh cache-disabled context and newly created in-memory room.",
+  "measuredViewports": [
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 2
+    }
+  ],
+  "policyComparison": {
+    "A": "Same production artifact, browser-side test harness downgrades only audited-terrain fetchPriority=high assignments to low; existing low and auto assignments pass through unchanged.",
+    "B": "Same production artifact, existing visible-high / nearby-low / otherwise-auto TerrainArt policy unchanged.",
+    "overrideMechanism": "Pre-document-init wrappers on HTMLImageElement.fetchPriority and Element.setAttribute; per-sample interception counts, visible image priority attributes, CDP request priorities, and asset hashes are retained."
+  },
+  "api": "Node MVP API on loopback with PERSISTENCE=memory, reached through the same API URL compiled into both production builds.",
+  "profile": {
+    "cpuThrottleRate": 4,
+    "networkRttMs": 150,
+    "downloadBytesPerSecond": 200000,
+    "uploadBytesPerSecond": 93750
+  },
+  "pairsPerViewport": 1,
+  "webOrigin": "http://127.0.0.1:4173/",
+  "apiOrigin": "http://localhost:8787",
+  "builds": {
+    "A": {
+      "path": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/apps/web/dist",
+      "sha256": "3a3fe68a945725d05eb8785d0e4c0df4131c30909db681c86a5022553c17862e",
+      "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+      "terrainAssetFiles": 1253,
+      "artAssetTreeSha256": "173f9c9687936c4a45f1330494c35f6a1771b0e032df5609a3acc3b0c1731105",
+      "artAssetFiles": 1432,
+      "fileCount": 1456
+    },
+    "B": {
+      "path": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/apps/web/dist",
+      "sha256": "3a3fe68a945725d05eb8785d0e4c0df4131c30909db681c86a5022553c17862e",
+      "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+      "terrainAssetFiles": 1253,
+      "artAssetTreeSha256": "173f9c9687936c4a45f1330494c35f6a1771b0e032df5609a3acc3b0c1731105",
+      "artAssetFiles": 1432,
+      "fileCount": 1456
+    }
+  },
+  "paired": [
+    {
+      "viewport": "phone",
+      "sampleCountPerBuild": 1,
+      "apiMedianMs": {
+        "baseline": 262,
+        "candidate": 424.10000002384186
+      },
+      "interactionMedianMs": {
+        "baseline": 146,
+        "candidate": 149.09999990463257
+      },
+      "pairedDeltas": [
+        {
+          "pair": 1,
+          "apiDeltaMs": 162.10000002384186,
+          "interactionDeltaMs": 3.0999999046325684,
+          "apiInflightUpgrades": {
+            "baseline": 0,
+            "candidate": 0
+          },
+          "apiStartStatus": {
+            "baseline": 200,
+            "candidate": 200
+          },
+          "apiUpgradeRequestsInFlightAtResponse": {
+            "baseline": 40,
+            "candidate": 40
+          },
+          "uiUpgradeRequestsInFlightAtSelection": {
+            "baseline": 15,
+            "candidate": 9
+          },
+          "uiOverlapCompleteAtTap": true,
+          "apiOverlapCompleteAtResponse": true
+        }
+      ],
+      "allProbesReturned200": true,
+      "allApiResponsesOverlappedTerrainUpgrades": true,
+      "allUiSelectionsStartedDuringTerrainUpgrades": true,
+      "completeUiOverlapPairs": 1,
+      "incompleteUiOverlapPairs": [],
+      "completeApiOverlapPairs": 1,
+      "incompleteApiOverlapPairs": []
+    }
+  ],
+  "samples": [
+    {
+      "variant": "A",
+      "label": "Same dist; High->Low test override",
+      "pair": 1,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "path": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/apps/web/dist",
+        "sha256": "3a3fe68a945725d05eb8785d0e4c0df4131c30909db681c86a5022553c17862e",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "artAssetTreeSha256": "173f9c9687936c4a45f1330494c35f6a1771b0e032df5609a3acc3b0c1731105",
+        "artAssetFiles": 1432,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "1E3D9B",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790720110387.3,
+          "startedAt": 15845.800000071526,
+          "startedWallTime": 1790720126233,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790720110387.3,
+          "now": 17126.899999976158,
+          "wallTime": 1790720127513
+        }
+      },
+      "fetchPriorityOverride": {
+        "requestedPolicy": "audited-terrain fetchPriority high -> low; low/auto unchanged",
+        "installed": true,
+        "installErrors": [],
+        "highAssignmentsSeen": 288,
+        "highAssignmentsDowngraded": 288,
+        "downgradeByMechanism": {
+          "Element.setAttribute": 288
+        }
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 262,
+          "start": {
+            "timeOrigin": 1790720110387.3,
+            "startedAt": 15845.800000071526,
+            "startedWallTime": 1790720126233,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790720110387.3,
+            "endedAt": 16107.800000071526,
+            "endedWallTime": 1790720126494
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 413648,
+          "priorityUpgradeRequestsInflightAtResponse": 40,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 15,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 15,
+          "activeUpgradeRequestSnapshotAtTap": {
+            "label": "tap",
+            "timeOrigin": 1790720110387.3,
+            "performanceTime": 17152.100000023842,
+            "activeCount": 15,
+            "activeEncodedBytesReceived": 0,
+            "byVariant": {
+              "1024": {
+                "count": 15,
+                "encodedBytesReceived": 0,
+                "priorities": {
+                  "Low": 15
+                }
+              }
+            },
+            "requests": [
+              {
+                "requestId": "32872.1200",
+                "path": "/assets/board/audited/1024/continuous-r6-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1145.7911898614839,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1201",
+                "path": "/assets/board/audited/1024/continuous-r7-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1145.7691898103803,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1202",
+                "path": "/assets/board/audited/1024/continuous-r8-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1145.4471898032352,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1203",
+                "path": "/assets/board/audited/1024/continuous-r9-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1145.423189853318,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1204",
+                "path": "/assets/board/audited/1024/continuous-r10-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1145.4001897946,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1209",
+                "path": "/assets/board/audited/1024/continuous-r6-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1145.2821898274124,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1210",
+                "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1144.6151898708194,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1211",
+                "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1144.593189819716,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1212",
+                "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1144.5641898317263,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1213",
+                "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1144.5391898741946,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1218",
+                "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1143.806189764291,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1219",
+                "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1143.7831898219883,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1220",
+                "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1143.7511898111552,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1221",
+                "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1143.7281898688525,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1222",
+                "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1143.702189787291,
+                "encodedBytesReceived": 0
+              }
+            ]
+          },
+          "activeUpgradeRequestSnapshotAtConfirm": {
+            "label": "confirm",
+            "timeOrigin": 1790720110387.3,
+            "performanceTime": 17298.100000023842,
+            "activeCount": 15,
+            "activeEncodedBytesReceived": 0,
+            "byVariant": {
+              "1024": {
+                "count": 15,
+                "encodedBytesReceived": 0,
+                "priorities": {
+                  "Low": 15
+                }
+              }
+            },
+            "requests": [
+              {
+                "requestId": "32872.1200",
+                "path": "/assets/board/audited/1024/continuous-r6-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1291.7910983087495,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1201",
+                "path": "/assets/board/audited/1024/continuous-r7-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1291.769098257646,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1202",
+                "path": "/assets/board/audited/1024/continuous-r8-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1291.4470982505009,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1203",
+                "path": "/assets/board/audited/1024/continuous-r9-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1291.4230983005837,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1204",
+                "path": "/assets/board/audited/1024/continuous-r10-c4.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1291.4000982418656,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1209",
+                "path": "/assets/board/audited/1024/continuous-r6-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1291.282098274678,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1210",
+                "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1290.615098318085,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1211",
+                "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1290.5930982669815,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1212",
+                "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1290.5640982789919,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1213",
+                "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1290.5390983214602,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1218",
+                "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1289.8060982115567,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1219",
+                "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1289.783098269254,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1220",
+                "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1289.7510982584208,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1221",
+                "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1289.7280983161181,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32872.1222",
+                "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                "variant": 1024,
+                "priority": "Low",
+                "initialPriority": "Low",
+                "startedAgoMs": 1289.7020982345566,
+                "encodedBytesReceived": 0
+              }
+            ]
+          }
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790720110387.3,
+            "now": 17152.100000023842,
+            "wallTime": 1790720127539,
+            "visibleTerrain": {
+              "label": "tap",
+              "capturedAt": 17149.300000071526,
+              "imageDecodeInterpretation": "complete and naturalWidth are passive loaded-image signals; HTMLImageElement does not expose decode-ready state synchronously",
+              "visibleImageCount": 15,
+              "byRequestedVariant": {
+                "1024": {
+                  "count": 15,
+                  "loadedCount": 0,
+                  "loadedAtRequestedVariantCount": 0
+                }
+              },
+              "images": [
+                {
+                  "cell": "6/4",
+                  "path": "/assets/board/audited/1024/continuous-r6-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 14.8997802734375
+                },
+                {
+                  "cell": "7/4",
+                  "path": "/assets/board/audited/1024/continuous-r7-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/4",
+                  "path": "/assets/board/audited/1024/continuous-r8-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/4",
+                  "path": "/assets/board/audited/1024/continuous-r9-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/4",
+                  "path": "/assets/board/audited/1024/continuous-r10-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 130.6002197265625
+                },
+                {
+                  "cell": "6/5",
+                  "path": "/assets/board/audited/1024/continuous-r6-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 131.3216552734375
+                },
+                {
+                  "cell": "7/5",
+                  "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/5",
+                  "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/5",
+                  "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/5",
+                  "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 14.1939697265625
+                },
+                {
+                  "cell": "6/6",
+                  "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 14.8997802734375
+                },
+                {
+                  "cell": "7/6",
+                  "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/6",
+                  "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/6",
+                  "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/6",
+                  "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 130.6002197265625
+                }
+              ]
+            }
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 17298.100000023842,
+            "wallTime": 1790720127685,
+            "visibleTerrain": {
+              "label": "confirm",
+              "capturedAt": 17295.899999976158,
+              "imageDecodeInterpretation": "complete and naturalWidth are passive loaded-image signals; HTMLImageElement does not expose decode-ready state synchronously",
+              "visibleImageCount": 15,
+              "byRequestedVariant": {
+                "1024": {
+                  "count": 15,
+                  "loadedCount": 0,
+                  "loadedAtRequestedVariantCount": 0
+                }
+              },
+              "images": [
+                {
+                  "cell": "6/4",
+                  "path": "/assets/board/audited/1024/continuous-r6-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 14.8997802734375
+                },
+                {
+                  "cell": "7/4",
+                  "path": "/assets/board/audited/1024/continuous-r7-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/4",
+                  "path": "/assets/board/audited/1024/continuous-r8-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/4",
+                  "path": "/assets/board/audited/1024/continuous-r9-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/4",
+                  "path": "/assets/board/audited/1024/continuous-r10-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 130.6002197265625
+                },
+                {
+                  "cell": "6/5",
+                  "path": "/assets/board/audited/1024/continuous-r6-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 131.3216552734375
+                },
+                {
+                  "cell": "7/5",
+                  "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/5",
+                  "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/5",
+                  "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/5",
+                  "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 14.1939697265625
+                },
+                {
+                  "cell": "6/6",
+                  "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 14.8997802734375
+                },
+                {
+                  "cell": "7/6",
+                  "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/6",
+                  "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/6",
+                  "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/6",
+                  "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "low",
+                  "fetchPriorityAttribute": "low",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 130.6002197265625
+                }
+              ]
+            }
+          },
+          "clickToConfirmMs": 146,
+          "decodeVerificationAfterConfirm": {
+            "probeStartedAt": 17319.899999976158,
+            "delayAfterConfirmSnapshotMs": 24,
+            "interpretation": "decode() is invoked only after the Confirm endpoint has been recorded; this verifies readiness after the endpoint and does not represent decoded state at the endpoint",
+            "images": [
+              {
+                "cell": "6/4",
+                "path": "/assets/board/audited/1024/continuous-r6-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 2648.3000000715256
+              },
+              {
+                "cell": "7/4",
+                "path": "/assets/board/audited/1024/continuous-r7-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 2769.4000000953674
+              },
+              {
+                "cell": "8/4",
+                "path": "/assets/board/audited/1024/continuous-r8-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 2891.9000000953674
+              },
+              {
+                "cell": "9/4",
+                "path": "/assets/board/audited/1024/continuous-r9-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3048.4000000953674
+              },
+              {
+                "cell": "10/4",
+                "path": "/assets/board/audited/1024/continuous-r10-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3084.5
+              },
+              {
+                "cell": "6/5",
+                "path": "/assets/board/audited/1024/continuous-r6-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 2991.100000023842
+              },
+              {
+                "cell": "7/5",
+                "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3100.100000023842
+              },
+              {
+                "cell": "8/5",
+                "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3167.8000000715256
+              },
+              {
+                "cell": "9/5",
+                "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3226.8000000715256
+              },
+              {
+                "cell": "10/5",
+                "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3482.7000000476837
+              },
+              {
+                "cell": "6/6",
+                "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3453.4000000953674
+              },
+              {
+                "cell": "7/6",
+                "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3535.5
+              },
+              {
+                "cell": "8/6",
+                "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3550.2000000476837
+              },
+              {
+                "cell": "9/6",
+                "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3595.4000000953674
+              },
+              {
+                "cell": "10/6",
+                "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3617
+              }
+            ]
+          }
+        },
+        "browserPerformance": {
+          "available": true,
+          "timeOrigin": 1790720110387.3,
+          "selectionWindow": {
+            "startTime": 17152.100000023842,
+            "endTime": 17298.100000023842,
+            "durationMs": 146
+          },
+          "supportedEntryTypes": [
+            "element",
+            "event",
+            "first-input",
+            "largest-contentful-paint",
+            "layout-shift",
+            "long-animation-frame",
+            "longtask",
+            "mark",
+            "measure",
+            "navigation",
+            "paint",
+            "resource",
+            "visibility-state"
+          ],
+          "observerStatus": {
+            "event": {
+              "supported": true,
+              "observing": true,
+              "error": null
+            },
+            "longtask": {
+              "supported": true,
+              "observing": true,
+              "error": null
+            },
+            "long-animation-frame": {
+              "supported": true,
+              "observing": true,
+              "error": null
+            }
+          },
+          "unsupportedObserverTypes": [],
+          "entries": {
+            "event": [
+              {
+                "name": "mouseout",
+                "startTime": 17153.800000071526,
+                "duration": 144,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 17165,
+                "processingEnd": 17165.5,
+                "inputDelayMs": 11.199999928474426,
+                "handlerProcessingMs": 0.5,
+                "presentationDelayMs": 132.30000007152557,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mouseover",
+                "startTime": 17153.800000071526,
+                "duration": 144,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 17165.5,
+                "processingEnd": 17165.5,
+                "inputDelayMs": 11.699999928474426,
+                "handlerProcessingMs": 0,
+                "presentationDelayMs": 132.30000007152557,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mousedown",
+                "startTime": 17153.800000071526,
+                "duration": 144,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 17165.600000023842,
+                "processingEnd": 17165.600000023842,
+                "inputDelayMs": 11.799999952316284,
+                "handlerProcessingMs": 0,
+                "presentationDelayMs": 132.20000004768372,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mouseup",
+                "startTime": 17153.800000071526,
+                "duration": 144,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 17207.700000047684,
+                "processingEnd": 17208.200000047684,
+                "inputDelayMs": 53.89999997615814,
+                "handlerProcessingMs": 0.5,
+                "presentationDelayMs": 89.60000002384186,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "click",
+                "startTime": 17153.800000071526,
+                "duration": 144,
+                "interactionId": 6370,
+                "cancelable": true,
+                "processingStart": 17209.100000023842,
+                "processingEnd": 17223.600000023842,
+                "inputDelayMs": 55.299999952316284,
+                "handlerProcessingMs": 14.5,
+                "presentationDelayMs": 74.20000004768372,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mouseout",
+                "startTime": 17251.700000047684,
+                "duration": 48,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 17254.5,
+                "processingEnd": 17254.700000047684,
+                "inputDelayMs": 2.799999952316284,
+                "handlerProcessingMs": 0.20000004768371582,
+                "presentationDelayMs": 45,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mouseover",
+                "startTime": 17251.700000047684,
+                "duration": 48,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 17254.700000047684,
+                "processingEnd": 17254.700000047684,
+                "inputDelayMs": 3,
+                "handlerProcessingMs": 0,
+                "presentationDelayMs": 45,
+                "phaseTimingConsistent": true
+              }
+            ],
+            "longtask": [
+              {
+                "name": "self",
+                "startTime": 17156.399999976158,
+                "duration": 95,
+                "attribution": [
+                  {
+                    "name": "unknown",
+                    "containerType": "window",
+                    "containerName": "",
+                    "containerId": "",
+                    "containerSrc": ""
+                  }
+                ]
+              }
+            ],
+            "long-animation-frame": [
+              {
+                "name": "long-animation-frame",
+                "startTime": 17156.399999976158,
+                "duration": 98.90000009536743,
+                "renderStart": 17251.700000047684,
+                "styleAndLayoutStart": 17254.700000047684,
+                "firstUIEventTimestamp": 17153.800000071526,
+                "blockingDuration": 48.803,
+                "scripts": [
+                  {
+                    "invoker": "DIV#root.onfocusin",
+                    "invokerType": "event-listener",
+                    "sourceURL": "http://127.0.0.1:4173/assets/index-C16Pxhow.js",
+                    "sourceFunctionName": "cp",
+                    "executionStart": 17167,
+                    "duration": 13,
+                    "forcedStyleAndLayoutDuration": 0
+                  },
+                  {
+                    "invoker": "DIV#root.onclick",
+                    "invokerType": "event-listener",
+                    "sourceURL": "http://127.0.0.1:4173/assets/index-C16Pxhow.js",
+                    "sourceFunctionName": "cp",
+                    "executionStart": 17209.100000023842,
+                    "duration": 14,
+                    "forcedStyleAndLayoutDuration": 0
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "overlapAtTap": {
+        "upgradedTerrainRequestsInFlight": 15,
+        "complete": true
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "Low": 235
+        },
+        "completedBeforeApiProbeStartBytes": 413648,
+        "completedByCaptureBytes": 621284,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 150
+      },
+      "pageErrors": []
+    },
+    {
+      "variant": "B",
+      "label": "Same dist; production terrain priority",
+      "pair": 1,
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "build": {
+        "path": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/apps/web/dist",
+        "sha256": "3a3fe68a945725d05eb8785d0e4c0df4131c30909db681c86a5022553c17862e",
+        "terrainAssetTreeSha256": "727a61a5116edda0d9df97b7533168002d15f3706009033feaad27e496550238",
+        "terrainAssetFiles": 1253,
+        "artAssetTreeSha256": "173f9c9687936c4a45f1330494c35f6a1771b0e032df5609a3acc3b0c1731105",
+        "artAssetFiles": 1432,
+        "fileCount": 1456
+      },
+      "onlineFlow": {
+        "localApi": "PERSISTENCE=memory",
+        "roomCode": "53A0B3",
+        "initialVersion": 8,
+        "activePlayer": 0
+      },
+      "profile": {
+        "coldBrowserContext": true,
+        "cacheDisabled": true,
+        "serviceWorkersBlocked": true,
+        "cpuThrottleRate": 4,
+        "networkRttMs": 150,
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750
+      },
+      "zoom": {
+        "beforeZoom": 1.55,
+        "afterZoom": 4,
+        "targetSize": 1024,
+        "apiProbeStartedDuringGesture": {
+          "timeOrigin": 1790720132422.4,
+          "startedAt": 11695.200000047684,
+          "startedWallTime": 1790720144118,
+          "targetSize": 512
+        },
+        "gestureCompletedAt": {
+          "timeOrigin": 1790720132422.4,
+          "now": 12882.5,
+          "wallTime": 1790720145304
+        }
+      },
+      "fetchPriorityOverride": {
+        "requestedPolicy": "production policy unchanged",
+        "installed": false,
+        "installErrors": [],
+        "highAssignmentsSeen": 0,
+        "highAssignmentsDowngraded": 0,
+        "downgradeByMechanism": {}
+      },
+      "contention": {
+        "api": {
+          "status": 200,
+          "phase": "move",
+          "version": 8,
+          "durationMs": 424.10000002384186,
+          "start": {
+            "timeOrigin": 1790720132422.4,
+            "startedAt": 11695.200000047684,
+            "startedWallTime": 1790720144118,
+            "targetSize": 512
+          },
+          "response": {
+            "timeOrigin": 1790720132422.4,
+            "endedAt": 12119.300000071526,
+            "endedWallTime": 1790720144541
+          },
+          "priorityUpgradeRequestsInflightAtStart": 0,
+          "priorityUpgradeBytesCompletedAtStart": 485180,
+          "priorityUpgradeRequestsInflightAtResponse": 40,
+          "priorityUpgradeRequestsInflightAtSelectionStart": 9,
+          "priorityUpgradeRequestsInflightAtConfirmVisible": 9,
+          "activeUpgradeRequestSnapshotAtTap": {
+            "label": "tap",
+            "timeOrigin": 1790720132422.4,
+            "performanceTime": 12898.300000071526,
+            "activeCount": 9,
+            "activeEncodedBytesReceived": 3000,
+            "byVariant": {
+              "1024": {
+                "count": 9,
+                "encodedBytesReceived": 3000,
+                "priorities": {
+                  "High": 9
+                }
+              }
+            },
+            "requests": [
+              {
+                "requestId": "32953.1217",
+                "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 976.5779762528837,
+                "encodedBytesReceived": 1500
+              },
+              {
+                "requestId": "32953.1218",
+                "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 975.8269762387499,
+                "encodedBytesReceived": 1500
+              },
+              {
+                "requestId": "32953.1219",
+                "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 975.7929763291031,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1220",
+                "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 975.5509762326255,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1225",
+                "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 975.1359762158245,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1226",
+                "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 975.1119762659073,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1227",
+                "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 975.0889763236046,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1228",
+                "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 975.066976272501,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1229",
+                "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 975.045976229012,
+                "encodedBytesReceived": 0
+              }
+            ]
+          },
+          "activeUpgradeRequestSnapshotAtConfirm": {
+            "label": "confirm",
+            "timeOrigin": 1790720132422.4,
+            "performanceTime": 13047.399999976158,
+            "activeCount": 9,
+            "activeEncodedBytesReceived": 16656,
+            "byVariant": {
+              "1024": {
+                "count": 9,
+                "encodedBytesReceived": 16656,
+                "priorities": {
+                  "High": 9
+                }
+              }
+            },
+            "requests": [
+              {
+                "requestId": "32953.1217",
+                "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 1125.678041484207,
+                "encodedBytesReceived": 9828
+              },
+              {
+                "requestId": "32953.1218",
+                "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 1124.9270414700732,
+                "encodedBytesReceived": 3828
+              },
+              {
+                "requestId": "32953.1219",
+                "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 1124.8930415604264,
+                "encodedBytesReceived": 1500
+              },
+              {
+                "requestId": "32953.1220",
+                "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 1124.6510414639488,
+                "encodedBytesReceived": 1500
+              },
+              {
+                "requestId": "32953.1225",
+                "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 1124.2360414471477,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1226",
+                "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 1124.2120414972305,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1227",
+                "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 1124.1890415549278,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1228",
+                "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 1124.1670415038243,
+                "encodedBytesReceived": 0
+              },
+              {
+                "requestId": "32953.1229",
+                "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                "variant": 1024,
+                "priority": "High",
+                "initialPriority": "High",
+                "startedAgoMs": 1124.1460414603353,
+                "encodedBytesReceived": 0
+              }
+            ]
+          }
+        },
+        "interaction": {
+          "destination": "5,6",
+          "selectionStarted": {
+            "timeOrigin": 1790720132422.4,
+            "now": 12898.300000071526,
+            "wallTime": 1790720145320,
+            "visibleTerrain": {
+              "label": "tap",
+              "capturedAt": 12895.5,
+              "imageDecodeInterpretation": "complete and naturalWidth are passive loaded-image signals; HTMLImageElement does not expose decode-ready state synchronously",
+              "visibleImageCount": 15,
+              "byRequestedVariant": {
+                "1024": {
+                  "count": 15,
+                  "loadedCount": 6,
+                  "loadedAtRequestedVariantCount": 6
+                }
+              },
+              "images": [
+                {
+                  "cell": "6/4",
+                  "path": "/assets/board/audited/1024/continuous-r6-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 14.8997802734375
+                },
+                {
+                  "cell": "7/4",
+                  "path": "/assets/board/audited/1024/continuous-r7-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/4",
+                  "path": "/assets/board/audited/1024/continuous-r8-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/4",
+                  "path": "/assets/board/audited/1024/continuous-r9-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/4",
+                  "path": "/assets/board/audited/1024/continuous-r10-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 130.6002197265625
+                },
+                {
+                  "cell": "6/5",
+                  "path": "/assets/board/audited/1024/continuous-r6-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 131.3216552734375
+                },
+                {
+                  "cell": "7/5",
+                  "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/5",
+                  "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/5",
+                  "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/5",
+                  "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 14.1939697265625
+                },
+                {
+                  "cell": "6/6",
+                  "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 14.8997802734375
+                },
+                {
+                  "cell": "7/6",
+                  "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/6",
+                  "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/6",
+                  "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/6",
+                  "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 130.6002197265625
+                }
+              ]
+            }
+          },
+          "confirmVisible": {
+            "confirmVisibleAt": 13047.399999976158,
+            "wallTime": 1790720145469,
+            "visibleTerrain": {
+              "label": "confirm",
+              "capturedAt": 13044.5,
+              "imageDecodeInterpretation": "complete and naturalWidth are passive loaded-image signals; HTMLImageElement does not expose decode-ready state synchronously",
+              "visibleImageCount": 15,
+              "byRequestedVariant": {
+                "1024": {
+                  "count": 15,
+                  "loadedCount": 6,
+                  "loadedAtRequestedVariantCount": 6
+                }
+              },
+              "images": [
+                {
+                  "cell": "6/4",
+                  "path": "/assets/board/audited/1024/continuous-r6-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 14.8997802734375
+                },
+                {
+                  "cell": "7/4",
+                  "path": "/assets/board/audited/1024/continuous-r7-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/4",
+                  "path": "/assets/board/audited/1024/continuous-r8-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/4",
+                  "path": "/assets/board/audited/1024/continuous-r9-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/4",
+                  "path": "/assets/board/audited/1024/continuous-r10-c4.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 107.64996337890625,
+                  "visibleHeight": 130.6002197265625
+                },
+                {
+                  "cell": "6/5",
+                  "path": "/assets/board/audited/1024/continuous-r6-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": true,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": true,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 131.3216552734375
+                },
+                {
+                  "cell": "7/5",
+                  "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/5",
+                  "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/5",
+                  "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/5",
+                  "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 268.84375,
+                  "visibleHeight": 14.1939697265625
+                },
+                {
+                  "cell": "6/6",
+                  "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 1024,
+                  "naturalHeight": 887,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 14.8997802734375
+                },
+                {
+                  "cell": "7/6",
+                  "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "8/6",
+                  "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "9/6",
+                  "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 232.8125
+                },
+                {
+                  "cell": "10/6",
+                  "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                  "requestedVariant": 1024,
+                  "fetchPriority": "high",
+                  "fetchPriorityAttribute": "high",
+                  "complete": false,
+                  "naturalWidth": 0,
+                  "naturalHeight": 0,
+                  "loadedAtRequestedVariant": false,
+                  "visibleWidth": 147.92816162109375,
+                  "visibleHeight": 130.6002197265625
+                }
+              ]
+            }
+          },
+          "clickToConfirmMs": 149.09999990463257,
+          "decodeVerificationAfterConfirm": {
+            "probeStartedAt": 13061.700000047684,
+            "delayAfterConfirmSnapshotMs": 17.200000047683716,
+            "interpretation": "decode() is invoked only after the Confirm endpoint has been recorded; this verifies readiness after the endpoint and does not represent decoded state at the endpoint",
+            "images": [
+              {
+                "cell": "6/4",
+                "path": "/assets/board/audited/1024/continuous-r6-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 3.299999952316284
+              },
+              {
+                "cell": "7/4",
+                "path": "/assets/board/audited/1024/continuous-r7-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 7.5
+              },
+              {
+                "cell": "8/4",
+                "path": "/assets/board/audited/1024/continuous-r8-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 10.100000023841858
+              },
+              {
+                "cell": "9/4",
+                "path": "/assets/board/audited/1024/continuous-r9-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 41.10000002384186
+              },
+              {
+                "cell": "10/4",
+                "path": "/assets/board/audited/1024/continuous-r10-c4.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 41.10000002384186
+              },
+              {
+                "cell": "6/5",
+                "path": "/assets/board/audited/1024/continuous-r6-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 41.10000002384186
+              },
+              {
+                "cell": "7/5",
+                "path": "/assets/board/audited/1024/continuous-r7-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 41.10000002384186
+              },
+              {
+                "cell": "8/5",
+                "path": "/assets/board/audited/1024/continuous-r8-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 55.199999928474426
+              },
+              {
+                "cell": "9/5",
+                "path": "/assets/board/audited/1024/continuous-r9-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 75.29999995231628
+              },
+              {
+                "cell": "10/5",
+                "path": "/assets/board/audited/1024/continuous-r10-c5.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 231.29999995231628
+              },
+              {
+                "cell": "6/6",
+                "path": "/assets/board/audited/1024/continuous-r6-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 180.29999995231628
+              },
+              {
+                "cell": "7/6",
+                "path": "/assets/board/audited/1024/continuous-r7-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 202.19999992847443
+              },
+              {
+                "cell": "8/6",
+                "path": "/assets/board/audited/1024/continuous-r8-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 384.1999999284744
+              },
+              {
+                "cell": "9/6",
+                "path": "/assets/board/audited/1024/continuous-r9-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 433.1999999284744
+              },
+              {
+                "cell": "10/6",
+                "path": "/assets/board/audited/1024/continuous-r10-c6.webp",
+                "requestedVariant": 1024,
+                "status": "decoded-after-confirm",
+                "waitMs": 457.6999999284744
+              }
+            ]
+          }
+        },
+        "browserPerformance": {
+          "available": true,
+          "timeOrigin": 1790720132422.4,
+          "selectionWindow": {
+            "startTime": 12898.300000071526,
+            "endTime": 13047.399999976158,
+            "durationMs": 149.09999990463257
+          },
+          "supportedEntryTypes": [
+            "element",
+            "event",
+            "first-input",
+            "largest-contentful-paint",
+            "layout-shift",
+            "long-animation-frame",
+            "longtask",
+            "mark",
+            "measure",
+            "navigation",
+            "paint",
+            "resource",
+            "visibility-state"
+          ],
+          "observerStatus": {
+            "event": {
+              "supported": true,
+              "observing": true,
+              "error": null
+            },
+            "longtask": {
+              "supported": true,
+              "observing": true,
+              "error": null
+            },
+            "long-animation-frame": {
+              "supported": true,
+              "observing": true,
+              "error": null
+            }
+          },
+          "unsupportedObserverTypes": [],
+          "entries": {
+            "event": [
+              {
+                "name": "mouseout",
+                "startTime": 12901,
+                "duration": 144,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 12919,
+                "processingEnd": 12919.200000047684,
+                "inputDelayMs": 18,
+                "handlerProcessingMs": 0.20000004768371582,
+                "presentationDelayMs": 125.79999995231628,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mouseover",
+                "startTime": 12901,
+                "duration": 144,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 12919.200000047684,
+                "processingEnd": 12919.200000047684,
+                "inputDelayMs": 18.200000047683716,
+                "handlerProcessingMs": 0,
+                "presentationDelayMs": 125.79999995231628,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mousedown",
+                "startTime": 12901,
+                "duration": 144,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 12919.300000071526,
+                "processingEnd": 12920,
+                "inputDelayMs": 18.300000071525574,
+                "handlerProcessingMs": 0.6999999284744263,
+                "presentationDelayMs": 125,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mouseup",
+                "startTime": 12901,
+                "duration": 144,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 12960.100000023842,
+                "processingEnd": 12960.100000023842,
+                "inputDelayMs": 59.10000002384186,
+                "handlerProcessingMs": 0,
+                "presentationDelayMs": 84.89999997615814,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "click",
+                "startTime": 12901,
+                "duration": 144,
+                "interactionId": 2402,
+                "cancelable": true,
+                "processingStart": 12961.200000047684,
+                "processingEnd": 12979.5,
+                "inputDelayMs": 60.200000047683716,
+                "handlerProcessingMs": 18.299999952316284,
+                "presentationDelayMs": 65.5,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mouseout",
+                "startTime": 13006.399999976158,
+                "duration": 40,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 13010,
+                "processingEnd": 13011.200000047684,
+                "inputDelayMs": 3.600000023841858,
+                "handlerProcessingMs": 1.2000000476837158,
+                "presentationDelayMs": 35.199999928474426,
+                "phaseTimingConsistent": true
+              },
+              {
+                "name": "mouseover",
+                "startTime": 13006.399999976158,
+                "duration": 40,
+                "interactionId": 0,
+                "cancelable": true,
+                "processingStart": 13011.200000047684,
+                "processingEnd": 13011.200000047684,
+                "inputDelayMs": 4.800000071525574,
+                "handlerProcessingMs": 0,
+                "presentationDelayMs": 35.199999928474426,
+                "phaseTimingConsistent": true
+              }
+            ],
+            "longtask": [
+              {
+                "name": "self",
+                "startTime": 12918.700000047684,
+                "duration": 87,
+                "attribution": [
+                  {
+                    "name": "unknown",
+                    "containerType": "window",
+                    "containerName": "",
+                    "containerId": "",
+                    "containerSrc": ""
+                  }
+                ]
+              }
+            ],
+            "long-animation-frame": [
+              {
+                "name": "long-animation-frame",
+                "startTime": 12908.600000023842,
+                "duration": 102.60000002384186,
+                "renderStart": 13006.399999976158,
+                "styleAndLayoutStart": 13011.200000047684,
+                "firstUIEventTimestamp": 12901,
+                "blockingDuration": 42.466,
+                "scripts": [
+                  {
+                    "invoker": "DIV#root.onfocusin",
+                    "invokerType": "event-listener",
+                    "sourceURL": "http://127.0.0.1:4173/assets/index-C16Pxhow.js",
+                    "sourceFunctionName": "cp",
+                    "executionStart": 12920.899999976158,
+                    "duration": 12,
+                    "forcedStyleAndLayoutDuration": 0
+                  },
+                  {
+                    "invoker": "DIV#root.onclick",
+                    "invokerType": "event-listener",
+                    "sourceURL": "http://127.0.0.1:4173/assets/index-C16Pxhow.js",
+                    "sourceFunctionName": "cp",
+                    "executionStart": 12961.200000047684,
+                    "duration": 18,
+                    "forcedStyleAndLayoutDuration": 0
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "overlapAtTap": {
+        "upgradedTerrainRequestsInFlight": 9,
+        "complete": true
+      },
+      "terrainRequests": {
+        "countAtEnd": 235,
+        "initialPriorityCounts": {
+          "High": 235
+        },
+        "completedBeforeApiProbeStartBytes": 485180,
+        "completedByCaptureBytes": 692816,
+        "pendingAtCapture": 0,
+        "failedOrCanceledAtCapture": 140
+      },
+      "pageErrors": []
+    }
+  ],
+  "limitations": [
+    "This isolates a room-state GET from the active online player session; game mutations use the existing WebSocket command channel and are not timed by this scenario.",
+    "Only the legal-tile selection and its Confirm control are timed on the interface; this does not cover every submenu, text/image resource, or production telemetry.",
+    "Results are a local in-memory API/load-shaping experiment, not proof of hosted API response time or behavior under production server contention."
+  ]
+}

@@ -66,7 +66,11 @@ async function checkManifest(directory, manifestName = "manifest.json") {
 
 await checkManifest(join(assetRoot, "coast"));
 await checkManifest(join(assetRoot, "coastal-city"));
+const featureManifest = await readJson(join(assetRoot, "features", "manifest.json"));
 await checkManifest(join(assetRoot, "features"));
+if (!featureManifest.features?.some((feature) => feature.id === "hollywood" && feature.kind === "unused-concept-art")) {
+  throw new Error("Hollywood concept art must remain catalogued as unused artwork, not a rendered board feature");
+}
 await checkManifest(join(assetRoot, "tokens"));
 await assertFile(join(assetRoot, "original-game-hero.webp"), "Original hero artwork");
 await assertMissing(join(assetRoot, "full-board-top-down.webp"), "Internal board reference");

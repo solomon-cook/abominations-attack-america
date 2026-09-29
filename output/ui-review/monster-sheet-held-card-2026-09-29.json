@@ -1,0 +1,102 @@
+{
+  "started": "2026-09-29T22:40:49.086Z",
+  "scope": "Production main.tsx game route backed by the local MemoryRoomStore. A genuine Mutation card is acquired through the public room API, normal two-seat setup, a legal Gargantis move to a Mutation site on the pinned development-board candidate, and authoritative Encounter resolution. Browser inspection makes no gameplay command or physical-edition rule claim.",
+  "runtimeErrors": [],
+  "status": "passed",
+  "finished": "2026-09-29T22:40:52.955Z",
+  "acquisition": {
+    "roomCode": "380796",
+    "boardId": "human-audited-north-america",
+    "currentRevision": 10,
+    "activeSeat": 0,
+    "monster": "Gargantis",
+    "lair": "3,5",
+    "movePath": [
+      "3,5",
+      "4,4"
+    ],
+    "mutationSite": "4,4",
+    "acceptedMove": {
+      "revision": 9,
+      "eventId": "1:0",
+      "action": "monster.moved"
+    },
+    "encounter": {
+      "revision": 10,
+      "eventId": "1:1",
+      "action": "encounter.resolved",
+      "mutationDraw": {
+        "siteId": "mutation-6-4",
+        "cardDrawn": true,
+        "effectStatus": "implemented"
+      },
+      "heldCardIds": [
+        "High-Octane Blood"
+      ]
+    }
+  },
+  "phone": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "cardId": "High-Octane Blood",
+    "artworkLoaded": true,
+    "phoneBounds": {
+      "x": 20,
+      "y": 74.921875,
+      "width": 366,
+      "height": 694.140625
+    },
+    "layout": {
+      "viewport": 390,
+      "document": 390,
+      "body": 390
+    },
+    "keyboard": {
+      "workspaceScrollLeft": 406,
+      "focusedCard": true,
+      "cardBounds": {
+        "x": 98,
+        "y": 222.921875,
+        "width": 280,
+        "height": 516.140625
+      }
+    },
+    "touchScrollPositions": [
+      406
+    ],
+    "touchHitTarget": {
+      "x": 238,
+      "y": 261.3671875,
+      "cardContainsHit": true
+    },
+    "screenshot": "monster-sheet-held-card-phone-2026-09-29.png"
+  },
+  "tablet": {
+    "viewport": {
+      "width": 834,
+      "height": 1112
+    },
+    "cardId": "High-Octane Blood",
+    "bounds": {
+      "x": 20,
+      "y": 210.484375,
+      "width": 810,
+      "height": 691.03125
+    },
+    "layout": {
+      "viewport": 834,
+      "document": 834,
+      "body": 834
+    },
+    "keyboardFocused": true,
+    "screenshot": "monster-sheet-held-card-tablet-2026-09-29.png"
+  },
+  "inspection": {
+    "baselineRevision": 10,
+    "finalRevision": 10,
+    "completeStateUnchanged": true,
+    "commandSubmitFrames": 0
+  }
+}

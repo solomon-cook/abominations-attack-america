@@ -1,6 +1,6 @@
 {
-  "started": "2026-09-29T16:05:59.650Z",
-  "scope": "Production main.tsx route and local MemoryRoomStore API. The room reaches Challenge using ordinary legal setup/actions on its pinned playtest board; no Challenge state or pending decision is hand-written.",
+  "started": "2026-09-29T22:11:17.208Z",
+  "scope": "Production main.tsx route and local MemoryRoomStore API. The room reaches Challenge using ordinary legal setup/actions on its pinned playtest board; no Challenge state or pending decision is hand-written. The active phone owner selects an eligible opponent and rolls one legal Challenge attack through the live UI; the spectator tablet receives the authoritative attack history read-only. Mutation and Infamy branches are not forced when absent from natural play.",
   "preparation": {
     "status": "passed",
     "playtestBoardId": "human-audited-north-america",
@@ -15,7 +15,7 @@
     "initialStompMarkers": 14,
     "remainingStompMarkers": 0,
     "engineEvents": 47,
-    "elapsedMs": 134,
+    "elapsedMs": 76,
     "challenge": {
       "phase": "challenge",
       "pendingDecision": "challenge-opponent",
@@ -38,21 +38,100 @@
         "Tomanagi"
       ],
       "openingGameStateUnchanged": true,
-      "acceptedCommandFrames": 1,
+      "acceptedCommandFrames": 2,
       "acceptedRevision": 56,
       "acceptedEvent": {
         "id": "8:47",
-        "actorId": "4539b82171d3a5ef999b",
+        "actorId": "ec12b0edbbb2af77bdd5",
         "action": "challenge.opponent.selected",
         "outcome": "selected",
         "detail": {
           "challengerMonsterId": "monster-3",
           "opponentMonsterId": "monster-2",
-          "challengerWeighIn": 21,
-          "opponentWeighIn": 31
+          "challengerWeighIn": 18,
+          "opponentWeighIn": 23
         }
       },
       "pendingDecisionAfterChoice": "challenge-resolution",
+      "acceptedAttack": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "actorId": "ec12b0edbbb2af77bdd5",
+        "command": {
+          "type": "resolve-challenge"
+        },
+        "expectedRevision": 56,
+        "acceptedRevision": 57,
+        "event": {
+          "id": "8:48",
+          "actorId": "ec12b0edbbb2af77bdd5",
+          "action": "challenge.attack.rolled",
+          "outcome": "rolled",
+          "detail": {
+            "challengerMonsterId": "monster-3",
+            "opponentMonsterId": "monster-2",
+            "rolls": [
+              1
+            ],
+            "attacks": [
+              {
+                "attackerId": "monster-3",
+                "targetId": "monster-2",
+                "controllerPlayer": 1,
+                "roll": 1,
+                "hit": false,
+                "smash": false,
+                "damage": 0,
+                "targetDefense": 4,
+                "combatRound": 1,
+                "destroyed": false,
+                "targetHealthBefore": 23,
+                "targetHealthAfter": 23,
+                "modifiers": []
+              }
+            ],
+            "healthBeforeAttack": {
+              "monster-3": 18,
+              "monster-2": 23
+            },
+            "healthAfterAttack": {
+              "monster-3": 18,
+              "monster-2": 23
+            },
+            "nextPhase": "challenge"
+          }
+        },
+        "authoritativeAttack": {
+          "attackerId": "monster-3",
+          "targetId": "monster-2",
+          "controllerPlayer": 1,
+          "roll": 1,
+          "hit": false,
+          "smash": false,
+          "damage": 0,
+          "targetDefense": 4,
+          "combatRound": 1,
+          "destroyed": false,
+          "targetHealthBefore": 23,
+          "targetHealthAfter": 23,
+          "modifiers": []
+        },
+        "challengeHistoryCount": 1,
+        "phoneBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "layout": {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        "screenshot": "challenge-full-route-owner-attack-2026-09-29.png"
+      },
       "autoOpenFocusAfterClose": {
         "returnedToHeading": true,
         "tag": "H2",
@@ -101,6 +180,35 @@
       },
       "screenshot": "challenge-full-route-spectator-2026-09-29.png",
       "receivedOwnerResult": "challenge.opponent.selected",
+      "receivedAttack": {
+        "acceptedRevision": 57,
+        "eventId": "8:48",
+        "authoritativeHistoryMatches": true,
+        "visibleActionControls": [
+          {
+            "label": "Roll attack against Tomanagi",
+            "disabled": true
+          },
+          {
+            "label": "✦ 1 Infamy · target again",
+            "disabled": true
+          }
+        ],
+        "allActionControlsDisabled": true,
+        "commandsSubmitted": 0,
+        "tabletBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 834,
+          "height": 1112
+        },
+        "layout": {
+          "viewport": 834,
+          "document": 834,
+          "body": 834
+        },
+        "screenshot": "challenge-full-route-spectator-attack-2026-09-29.png"
+      },
       "phoneReentry": {
         "status": "passed",
         "viewport": {
@@ -123,6 +231,6 @@
   },
   "runtimeErrors": [],
   "findings": [],
-  "finished": "2026-09-29T16:06:09.169Z",
+  "finished": "2026-09-29T22:11:24.369Z",
   "status": "passed"
 }

@@ -7,7 +7,7 @@
     { "id": "mutation-site", "file": "mutation_site.png", "kind": "hex-feature" },
     { "id": "challenge-site", "file": "challenge_site.png", "kind": "hex-feature" },
     { "id": "lair", "file": "lair.png", "kind": "hex-feature" },
-    { "id": "hollywood", "file": "hollywood.png", "kind": "hex-feature" },
+    { "id": "hollywood", "file": "hollywood.png", "kind": "unused-concept-art" },
     { "id": "los-angeles", "file": "los_angeles.png", "kind": "hex-feature" }
   ]
 }
