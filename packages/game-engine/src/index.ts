@@ -571,7 +571,7 @@ export class GameDomainError extends Error {
 }
 
 /** Event names emitted by the current engine command boundary. Persisted event readers stay open for legacy names. */
-type EngineEventType =
+export type EngineEventType =
   | "match.conceded"
   | "research.chopper-lift.resolved"
   | "challenge.opponent.selected"

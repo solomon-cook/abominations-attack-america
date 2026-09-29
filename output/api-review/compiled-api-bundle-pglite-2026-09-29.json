@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-29T01:20:07.957Z",
+  "evidenceKind": "isolated build-prune compiled API runtime acceptance with sequential HTTP and PGlite query",
+  "artifact": "output/api-review/compiled-api-bundle-pglite-2026-09-29.json",
+  "scratchSource": [
+    "root package manifest and lockfile",
+    "apps/api source, package, Prisma schema/config/migrations and generated client",
+    "game-engine workspace",
+    "shared workspace",
+    "web package manifest and two API-imported helper modules"
+  ],
+  "runtime": {
+    "node": "24.9.0",
+    "npm": "11.6.0",
+    "esbuild": "0.28.2"
+  },
+  "commands": [
+    {
+      "command": "npm ci --include=dev",
+      "exitCode": 0,
+      "stdoutTail": "\nadded 286 packages, and audited 291 packages in 3s\n\n60 packages are looking for funding\n  run `npm fund` for details\n\n4 high severity vulnerabilities\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n\nRun `npm audit` for details.\n",
+      "stderrTail": ""
+    },
+    {
+      "command": "npm --workspace @abominations/api run prisma:generate",
+      "exitCode": 0,
+      "stdoutTail": "\n> @abominations/api@0.1.0 prisma:generate\n> prisma generate --config prisma.config.ts\n\n\n✔ Generated Prisma Client (7.9.1) to ./generated/prisma in 64ms\n\n",
+      "stderrTail": "Loaded Prisma config from prisma.config.ts.\n\nPrisma schema loaded from prisma/schema.prisma.\n"
+    },
+    {
+      "command": "npm run build:api",
+      "exitCode": 0,
+      "stdoutTail": "\n> build:api\n> npm --workspace @abominations/api run build\n\n\n> @abominations/api@0.1.0 build\n> tsc --outDir dist && node scripts/build-runtime.mjs\n\n",
+      "stderrTail": ""
+    },
+    {
+      "command": "npm prune --omit=dev --omit=optional --omit=peer",
+      "exitCode": 0,
+      "stdoutTail": "\nup to date, audited 50 packages in 711ms\n\n8 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n",
+      "stderrTail": ""
+    },
+    {
+      "command": "npm audit --omit=dev --omit=optional --omit=peer --json",
+      "exitCode": 0,
+      "stdoutTail": "{\n  \"auditReportVersion\": 2,\n  \"vulnerabilities\": {},\n  \"metadata\": {\n    \"vulnerabilities\": {\n      \"info\": 0,\n      \"low\": 0,\n      \"moderate\": 0,\n      \"high\": 0,\n      \"critical\": 0,\n      \"total\": 0\n    },\n    \"dependencies\": {\n      \"prod\": 182,\n      \"dev\": 61,\n      \"optional\": 102,\n      \"peer\": 0,\n      \"peerOptional\": 0,\n      \"total\": 290\n    }\n  }\n}\n",
+      "stderrTail": ""
+    }
+  ],
+  "build": {
+    "runtimeBundleEntry": "apps/api/dist/server.js",
+    "sourceApiTypeScriptBuild": "passed",
+    "runtimeBundleBytes": 632731,
+    "gameEnginePackageReferenceRemaining": false,
+    "gameDomainErrorBundled": true,
+    "runtimeStartScript": "npm --workspace @abominations/api run start"
+  },
+  "prune": {
+    "command": "npm prune --omit=dev --omit=optional --omit=peer",
+    "filteredAuditFindings": 0,
+    "removed": [
+      "esbuild",
+      "prisma",
+      "@prisma/config",
+      "deepmerge-ts",
+      "mysql2",
+      "@electric-sql/pglite"
+    ],
+    "retained": [
+      "@prisma/client",
+      "@prisma/adapter-pg",
+      "pg",
+      "ws",
+      "dotenv"
+    ]
+  },
+  "database": "in-memory PGlite over PostgreSQL wire protocol; checked-in migration SQL applied directly",
+  "migrationsApplied": [
+    "20260825105749_init",
+    "20260825130000_add_command_receipts",
+    "20260825143000_add_participant_ready",
+    "20260825160000_add_connection_lease",
+    "20260825163000_add_room_expiry",
+    "20260826120000_session_expiry",
+    "20260826150000_add_room_privacy",
+    "20260826173000_unique_player_seat",
+    "20260927100000_add_accounts_and_player_stats"
+  ],
+  "api": {
+    "startUnderNode24": true,
+    "health": {
+      "status": 200,
+      "persistence": "prisma"
+    },
+    "roomCreate": {
+      "status": 201,
+      "code": "B6A28F",
+      "version": 0
+    },
+    "roomRead": {
+      "status": 200,
+      "code": "B6A28F",
+      "version": 0
+    },
+    "sequentialDatabaseBackedCreateAndRead": true
+  },
+  "limits": [
+    "PGlite is not PostgreSQL and this does not establish PostgreSQL MVCC, row locks, rollback, durability, or Prisma Migrate bookkeeping.",
+    "API ran in development mode because the PGlite database uses loopback; production configuration validation was not exercised.",
+    "No production host, deployment manifest, hosted network path, proxy upgrade, or final deployment artifact was tested.",
+    "The API request path is sequential; concurrent transaction and multi-instance behavior are not established."
+  ],
+  "cleanup": {
+    "scratchTreeRemoved": true,
+    "pgliteAndApiProcessesStopped": true
+  }
+}

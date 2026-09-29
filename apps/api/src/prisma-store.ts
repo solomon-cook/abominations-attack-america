@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID, createHash } from "node:crypto";
 import type { Prisma } from "../generated/prisma/client.js";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import type { PublicRoomSummary, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
+import { knownRoomEventType, type PublicRoomSummary, type RoomEvent, type RoomPrivacy, type RoomView, type SessionResponse } from "@abominations/shared";
 import { completedMatchRows, emptyMatchCounters, updateMatchCounters } from "./player-stats.js";
 import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, cancelledConnectionId, cancelledPendingConnectionId, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketPrincipal, type RoomSocketTicket, type RoomStore } from "./store.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
@@ -370,7 +370,7 @@ export class PrismaRoomStore implements RoomStore {
         if (changed.count !== 1) throw new RoomSnapshotConflictError();
         const human = await tx.participant.updateMany({ where: humanWhere, data: { disconnectedAt: actor.disconnectedAt } });
         if (human.count !== 1) throw new Error("This room session was replaced. Reconnect before completing setup.");
-        await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: "setup.updated", payload: { phase: nextSetup.phase, action: action.type } } });
+        await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: knownRoomEventType("setup.updated"), payload: { phase: nextSetup.phase, action: action.type } } });
       });
     } catch (error) {
       if (error instanceof RoomSnapshotConflictError) throw await this.roomSnapshotConflict(room.id);
@@ -629,7 +629,7 @@ export class PrismaRoomStore implements RoomStore {
         const activityAt = this.nextRoomActivityAt(room);
         const changed = await tx.gameRoom.updateMany({ where: this.roomSnapshotWhere(room, activityAt), data: { state: result.state as unknown as Prisma.InputJsonValue, playerStats: counters as unknown as Prisma.InputJsonValue, version, lastActivityAt: activityAt, ...(terminal ? { status: "COMPLETED", completedAt: activityAt } : {}) } });
         if (changed.count !== 1) throw new RoomSnapshotConflictError();
-        await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: result.eventType, controlSource, payload: { ...result.eventPayload, receipt: result.receipt } as unknown as Prisma.InputJsonValue } });
+        await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: knownRoomEventType(result.eventType), controlSource, payload: { ...result.eventPayload, receipt: result.receipt } as unknown as Prisma.InputJsonValue } });
         await tx.commandReceipt.create({ data: { roomId: room.id, actionId: envelope.actionId, actorId: actor.id, version, eventType: result.eventType } });
         if (terminal) {
           const participants = await tx.participant.findMany({ where: { roomId: room.id, role: "PLAYER", userId: { not: null }, playerIndex: { not: null } }, include: { user: { select: { username: true } } } });
@@ -691,7 +691,7 @@ export class PrismaRoomStore implements RoomStore {
               const lease = await tx.participant.updateMany({ where: leaseWhere, data: { ready: true, disconnectedAt: actor.disconnectedAt } });
               if (lease.count !== 1) throw new Error("Bot control changed before setup was committed.");
             }
-            await tx.gameEvent.create({ data: { roomId: room.id, version: room.version + 1, actorId: actor.id, type: "setup.updated", controlSource: "bot", payload: { phase: nextSetup.phase, automated: true } } });
+            await tx.gameEvent.create({ data: { roomId: room.id, version: room.version + 1, actorId: actor.id, type: knownRoomEventType("setup.updated"), controlSource: "bot", payload: { phase: nextSetup.phase, automated: true } } });
           });
         } catch (error) {
           if (isExpectedBotActionRace(error)) return;
@@ -766,7 +766,7 @@ export class PrismaRoomStore implements RoomStore {
         const version = room.version + 1;
         const changed = await tx.gameRoom.updateMany({ where: this.roomSnapshotWhere(room, new Date()), data: { state: prepared as any, version } });
         if (changed.count !== 1) return false;
-        await tx.gameEvent.create({ data: { roomId, version, actorId: setupEvent.actorId, controlSource: setupEvent.controlSource, type: "setup.updated", payload: { phase: "complete", action: "legacy-active-materialization" } } });
+        await tx.gameEvent.create({ data: { roomId, version, actorId: setupEvent.actorId, controlSource: setupEvent.controlSource, type: knownRoomEventType("setup.updated"), payload: { phase: "complete", action: "legacy-active-materialization" } } });
         return true;
       });
       if (repaired) return;
@@ -908,7 +908,7 @@ export class PrismaRoomStore implements RoomStore {
           const setupEvent = await tx.gameEvent.findFirst({ where: { roomId, type: "setup.updated" }, orderBy: { version: "desc" }, select: { actorId: true, controlSource: true } });
           const changed = await tx.gameRoom.updateMany({ where: { id: roomId, status: room.status, version: room.version, lastActivityAt: room.lastActivityAt }, data: { status: nextStatus, state: prepared as any, version } });
           if (changed.count !== 1) return false;
-          await tx.gameEvent.create({ data: { roomId, version, actorId: setupEvent?.actorId ?? "setup-migration", controlSource: setupEvent?.controlSource ?? "human", type: "setup.updated", payload: { phase: "complete", action: "legacy-activation-materialization" } } });
+          await tx.gameEvent.create({ data: { roomId, version, actorId: setupEvent?.actorId ?? "setup-migration", controlSource: setupEvent?.controlSource ?? "human", type: knownRoomEventType("setup.updated"), payload: { phase: "complete", action: "legacy-activation-materialization" } } });
           return true;
         }
         const changed = await tx.gameRoom.updateMany({ where: { id: roomId, status: room.status, version: room.version, lastActivityAt: room.lastActivityAt }, data: { status: nextStatus } });

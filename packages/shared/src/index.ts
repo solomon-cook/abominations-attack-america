@@ -11,10 +11,20 @@ export interface RoomParticipant {
 
 import type { GameState } from "@abominations/game-engine";
 import type { GameCommandEnvelope } from "@abominations/game-engine";
+import type { EngineEventType } from "@abominations/game-engine";
 
 export type RoomStatus = "waiting" | "active" | "completed" | "abandoned" | "expired";
 export type RoomPrivacy = "private" | "public";
 export type ParticipantRole = "player" | "spectator";
+export type KnownRoomEventType = EngineEventType | "setup.updated";
+
+/** Type-checks event names created now while preserving open strings when reading persisted history. */
+export function knownRoomEventType<T extends KnownRoomEventType>(type: T): T {
+  return type;
+}
+
+type Assert<T extends true> = T;
+type UnknownRoomEventTypeIsRejected = Assert<"unknown.room.event" extends KnownRoomEventType ? false : true>;
 
 export interface RoomEvent {
   id: string;

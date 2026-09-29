@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupAction, createMvpRoomGame, createRoomGame, legalLaserFenceTargets, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import type { PublicRoomSummary, RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
+import { knownRoomEventType, type PublicRoomSummary, type RoomEvent, type RoomParticipantView, type RoomPrivacy, type RoomStatus, type RoomView, type SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { emptyMatchCounters, updateMatchCounters, type MatchCounters } from "./player-stats.js";
 
@@ -242,7 +242,7 @@ export class MemoryRoomStore implements RoomStore {
     room.state = nextSetup.phase === "complete" ? applyCompletedSetup(setupState) : setupState;
     this.touch(room);
     room.version += 1;
-    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: participant.id, type: "setup.updated", payload: { phase: nextSetup.phase, action: action.type }, createdAt: now() });
+    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: participant.id, type: knownRoomEventType("setup.updated"), payload: { phase: nextSetup.phase, action: action.type }, createdAt: now() });
     room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.refreshStatus(room);
     return this.view(room, 0, "player", participant.playerIndex);
@@ -399,7 +399,7 @@ export class MemoryRoomStore implements RoomStore {
           actor.ready = Boolean(seat?.startingChoice);
           this.touch(room);
           room.version += 1;
-          room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: "setup.updated", controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, createdAt: now() });
+          room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: knownRoomEventType("setup.updated"), controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, createdAt: now() });
           room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
           this.refreshStatus(room);
           updated.push(room.code);
@@ -441,7 +441,7 @@ export class MemoryRoomStore implements RoomStore {
     room.state = result.state;
     this.touch(room);
     room.version += 1;
-    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: result.eventType, controlSource, payload: { ...result.eventPayload, receipt: result.receipt }, createdAt: now() });
+    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: knownRoomEventType(result.eventType), controlSource, payload: { ...result.eventPayload, receipt: result.receipt }, createdAt: now() });
     room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.actionIds.add(`${room.id}:${envelope.actionId}`);
     if (room.state.phase === "game-over") room.status = "completed";
