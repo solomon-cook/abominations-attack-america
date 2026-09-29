@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-09-29",
+  "verifier": "npm run browser:online:verify",
+  "result": "failed at the bounded active-projection readiness gate before opening Settings or testing Disappear",
+  "failureLocation": "scripts/verify-browser-online.mjs:965",
+  "readinessWaitMs": 12000,
+  "apiSnapshot": {},
+  "activeParticipantUiProjection": {
+    "turnLabel": "ROUND 1 · CURRENT TURN · PLAYER 1",
+    "heading": "Move",
+    "unavailableReason": "Waiting for all players to press Ready.",
+    "connection": "F79D0A · online",
+    "setupVisible": false
+  },
+  "assessment": "The acting page remained on a Move screen but did not project an active player's turn within the verifier's bounded wait. The API snapshot was empty in the thrown diagnostic, so this run cannot distinguish an online state-read/setup race from a stale app projection. It does not establish that the Disappear action itself is incorrectly disabled.",
+  "productionChanges": false,
+  "rulesOrPersistedStateChanges": false
+}
