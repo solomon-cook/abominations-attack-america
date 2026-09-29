@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import { applySetupAction, createMvpRoomGame, createRoomGame, legalChopperLiftDestinations, legalMonsterPaths, locationIdToHexKey } from "@abominations/game-engine";
+import type { JsonValue } from "@abominations/shared";
 import { PrismaRoomStore } from "./prisma-store.js";
 import { persistentAdapter } from "./test-adapter.js";
 
@@ -200,6 +201,37 @@ test("Prisma-backed rooms authorize an off-turn defending monster Mutation owner
   const after = await store.submitAction(room.code, guestToken, envelope);
   assert.equal(after.state.pendingBattles[0]!.bonusMonsterAttacks, 5);
   assert.deepEqual(after.state.players[1]!.mutationCardIds, []);
+});
+
+test("Prisma room projection preserves legacy JSON roots and unknown event names", async () => {
+  const { adapter, room, events } = persistentAdapter();
+  const payloads: JsonValue[] = [
+    null,
+    false,
+    17,
+    "legacy scalar",
+    [{ label: "visible", cardId: "private-card", nested: [{ mutationCardId: "private-mutation", detail: "preserved" }] }],
+  ];
+  events.push(...payloads.map((payload, index) => ({
+    id: `legacy-json-${index}`,
+    roomId: room.id,
+    version: index + 1,
+    actorId: "legacy-actor",
+    type: `legacy.unknown.${index}`,
+    payload,
+    createdAt: new Date(),
+  })));
+
+  const view = await new PrismaRoomStore(adapter).getRoom(room.code, "token");
+
+  assert.deepEqual(view.events.map((event) => event.type), payloads.map((_payload, index) => `legacy.unknown.${index}`).reverse());
+  assert.deepEqual(view.events.map((event) => event.payload), [
+    [{ label: "visible", nested: [{ detail: "preserved" }] }],
+    "legacy scalar",
+    17,
+    false,
+    null,
+  ]);
 });
 
 test("concurrent account resume uses compare-and-set so only the winning session token is returned", async () => {

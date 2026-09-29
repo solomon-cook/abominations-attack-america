@@ -387,9 +387,11 @@
 .game-screen #turn-hud-body .board-context-tray .board-context-edges,
 .game-screen #turn-hud-body .board-context-tray .board-context-note { display:block; }
 @media(min-width:901px) {
-  /* Keep the expanded HUD disclosure clear of the fixed lower-right action dock. */
+  /* Keep the expanded HUD disclosure below the turn header and above the action dock. */
+  .game-screen { --turn-panel-top:max(82px,calc(env(safe-area-inset-top,0px) + 72px)); }
   .game-screen > .layout.panel-open > .game-side-panel:has(#turn-hud-body) {
+    top:var(--turn-panel-top);
     bottom:calc(var(--action-dock-bottom) + var(--action-dock-height) + 12px);
-    max-height:calc(100dvh - var(--action-dock-bottom) - var(--action-dock-height) - 24px);
+    max-height:calc(100dvh - var(--turn-panel-top) - var(--action-dock-bottom) - var(--action-dock-height) - 24px);
   }
 }

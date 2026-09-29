@@ -16,6 +16,7 @@ import type { EngineEventType } from "@abominations/game-engine";
 export type RoomStatus = "waiting" | "active" | "completed" | "abandoned" | "expired";
 export type RoomPrivacy = "private" | "public";
 export type ParticipantRole = "player" | "spectator";
+export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type KnownRoomEventType = EngineEventType | "setup.updated";
 
 /** Type-checks event names created now while preserving open strings when reading persisted history. */
@@ -33,7 +34,7 @@ export interface RoomEvent {
   actorId: string;
   type: string;
   controlSource?: "human" | "bot";
-  payload: Record<string, unknown>;
+  payload: JsonValue;
   createdAt: string;
 }
 

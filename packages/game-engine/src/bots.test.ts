@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { boardForState, createGame, createMvpRoomGame, deploymentChoices, legalMovementNeighbors, locationIdToHexKey, movementPathAllowed, type HexKey, type MonsterMovement } from "./index.js";
 import { botTacticForPlayer, chooseBotCommand, chooseBotSetupAction, routeBlockScores, runBotActionWithExplanation, type BotResearchDrawGateBypass } from "./bots.js";
+import { botShortestRouteNodesToGoal, buildBotShortestRouteDag } from "./bot-routes.js";
 import { chooseBranch, chooseLair, chooseMonster, createSetup } from "./setup.js";
 
 function referenceRouteBlockScores(state: ReturnType<typeof createGame>, actor: number, branch: "Army" | "Navy" | "Air Force" | "Marines") {
@@ -25,40 +26,56 @@ function referenceRouteBlockScores(state: ReturnType<typeof createGame>, actor: 
     if (monsterIndex === actor) continue;
     const start = monster.location as HexKey;
     if (monster.health <= 0 || !board.hexes[start]) continue;
+    const keys = Object.keys(board.hexes) as HexKey[];
+    const reverseNeighbours = new Map<HexKey, HexKey[]>(keys.map((key) => [key, []]));
+    for (const from of keys) {
+      for (const to of legalMovementNeighbors(board, monster.movement, from)) reverseNeighbours.get(to)?.push(from);
+    }
+    const distancesFromStart = new Map<HexKey, number>([[start, 0]]);
+    const startQueue: HexKey[] = [start];
+    for (let head = 0; head < startQueue.length; head += 1) {
+      const current = startQueue[head]!;
+      const steps = distancesFromStart.get(current)!;
+      if (steps >= 10) continue;
+      for (const next of legalMovementNeighbors(board, monster.movement, current)) {
+        if (distancesFromStart.has(next)) continue;
+        distancesFromStart.set(next, steps + 1);
+        startQueue.push(next);
+      }
+    }
     for (const goal of goals) {
       if (goal.key === start) continue;
-      const queue: HexKey[][] = [[start]];
-      const distance = new Map<HexKey, number>([[start, 0]]);
-      let shortest = Infinity;
-      while (queue.length) {
-        const path = queue.shift()!;
-        const current = path.at(-1)!;
-        const steps = path.length - 1;
-        if (current === goal.key) {
-          shortest = steps;
-          const city = goal.features.some((feature) => feature.kind === "city");
-          const ownBase = goal.features.some((feature) => feature.kind === "military-base" && feature.branch === branch);
-          const value = (city ? 13 : 0) + (ownBase ? 10 : goal.features.some((feature) => feature.kind === "military-base") ? 7 : 4);
-          const defenders = state.units.filter((unit) => unit.ownerPlayer === actor && unit.location !== "record-tile" && unit.location !== "permanently-removed" && distanceBetween(unit.location, goal.key) <= 1).length;
-          const coverage = defenders === 0 ? 1 : defenders === 1 ? 0.7 : 0.5;
-          const turnsAway = Math.ceil(steps / Math.max(1, monster.move));
-          const urgency = turnsAway <= 1 ? 1 : turnsAway === 2 ? 0.75 : 0.5;
-          path.slice(1).forEach((key, index) => {
-            const toGoal = steps - index - 1;
-            const approach = Math.max(0, 4 - toGoal) * 2;
-            const pressure = (value * urgency + approach) * coverage * (forceFirst ? 1.15 : 0.9);
-            scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
-          });
-          continue;
+      const steps = distancesFromStart.get(goal.key);
+      if (steps === undefined) continue;
+      const distancesToGoal = new Map<HexKey, number>([[goal.key, 0]]);
+      const goalQueue: HexKey[] = [goal.key];
+      for (let head = 0; head < goalQueue.length; head += 1) {
+        const current = goalQueue[head]!;
+        const distance = distancesToGoal.get(current)!;
+        if (distance >= steps) continue;
+        for (const previous of reverseNeighbours.get(current) ?? []) {
+          if (distancesToGoal.has(previous)) continue;
+          distancesToGoal.set(previous, distance + 1);
+          goalQueue.push(previous);
         }
-        if (steps >= shortest || steps >= 10) continue;
-        for (const edge of board.edges) {
-          if (!edge.enabled || edge.from !== current || distance.has(edge.to)) continue;
-          const nextPath = [...path, edge.to];
-          if (!movementPathAllowed(board, nextPath, monster.movement)) continue;
-          distance.set(edge.to, steps + 1);
-          queue.push(nextPath);
-        }
+      }
+      const routeNodes = keys.filter((key) => distancesFromStart.has(key)
+        && distancesToGoal.has(key)
+        && distancesFromStart.get(key)! + distancesToGoal.get(key)! === steps)
+        .sort((left, right) => distancesFromStart.get(left)! - distancesFromStart.get(right)! || left.localeCompare(right));
+      const city = goal.features.some((feature) => feature.kind === "city");
+      const ownBase = goal.features.some((feature) => feature.kind === "military-base" && feature.branch === branch);
+      const value = (city ? 13 : 0) + (ownBase ? 10 : goal.features.some((feature) => feature.kind === "military-base") ? 7 : 4);
+      const defenders = state.units.filter((unit) => unit.ownerPlayer === actor && unit.location !== "record-tile" && unit.location !== "permanently-removed" && distanceBetween(unit.location, goal.key) <= 1).length;
+      const coverage = defenders === 0 ? 1 : defenders === 1 ? 0.7 : 0.5;
+      const turnsAway = Math.ceil(steps / Math.max(1, monster.move));
+      const urgency = turnsAway <= 1 ? 1 : turnsAway === 2 ? 0.75 : 0.5;
+      for (const key of routeNodes) {
+        if (key === start) continue;
+        const toGoal = distancesToGoal.get(key)!;
+        const approach = Math.max(0, 4 - toGoal) * 2;
+        const pressure = (value * urgency + approach) * coverage * (forceFirst ? 1.15 : 0.9);
+        scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
       }
     }
   }
@@ -107,12 +124,35 @@ test("route defense still scores a living rival's path toward objectives for a n
   assert.ok(scores.size > 0, "the bot should retain defensive route scores for a living rival");
 });
 
-test("route-score traversal preserves exact scores and tie paths on the transcribed board", () => {
+test("route DAG scores both equal shortest branches independently of neighbour order", () => {
+  const start = "0,0" as HexKey;
+  const north = "0,1" as HexKey;
+  const east = "1,0" as HexKey;
+  const goal = "1,1" as HexKey;
+  const graph = new Map<HexKey, readonly HexKey[]>([
+    [start, [east, north]],
+    [north, [goal]],
+    [east, [goal]],
+    [goal, []],
+  ]);
+  const reverseGraph = new Map([...graph].map(([from, neighbours]) => [from, [...neighbours].reverse()] as const));
+  const forwardDag = buildBotShortestRouteDag(start, (from) => graph.get(from) ?? []);
+  const reverseDag = buildBotShortestRouteDag(start, (from) => reverseGraph.get(from) ?? []);
+  const expected = [goal, north, east, start];
+  const routeKeys = (dag: ReturnType<typeof buildBotShortestRouteDag>) => botShortestRouteNodesToGoal(dag, goal);
+
+  assert.deepEqual(routeKeys(forwardDag), expected);
+  assert.deepEqual(routeKeys(reverseDag), expected);
+  assert.deepEqual([...forwardDag.distances].sort(([left], [right]) => left.localeCompare(right)), [...reverseDag.distances].sort(([left], [right]) => left.localeCompare(right)));
+  assert.deepEqual([...forwardDag.predecessors].sort(([left], [right]) => left.localeCompare(right)), [...reverseDag.predecessors].sort(([left], [right]) => left.localeCompare(right)));
+});
+
+test("route-score traversal matches independently computed shortest-route scores on the transcribed board", () => {
   const state = createMvpRoomGame(4, 0, "route-score-parity");
   for (const [actor, branch] of [[0, "Army"], [1, "Navy"]] as const) {
     const actual = routeBlockScores(state, actor, branch);
     const reference = referenceRouteBlockScores(state, actor, branch);
-    assert.deepEqual([...actual], [...reference], `route scores and insertion order should match for seat ${actor}`);
+    assert.deepEqual([...actual].sort(([left], [right]) => left.localeCompare(right)), [...reference].sort(([left], [right]) => left.localeCompare(right)), `route scores should match for seat ${actor}`);
   }
 });
 

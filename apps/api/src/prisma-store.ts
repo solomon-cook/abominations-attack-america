@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID, createHash } from "node:crypto";
 import type { Prisma } from "../generated/prisma/client.js";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import { knownRoomEventType, type PublicRoomSummary, type RoomEvent, type RoomPrivacy, type RoomView, type SessionResponse } from "@abominations/shared";
+import { knownRoomEventType, type JsonValue, type PublicRoomSummary, type RoomEvent, type RoomPrivacy, type RoomView, type SessionResponse } from "@abominations/shared";
 import { completedMatchRows, emptyMatchCounters, updateMatchCounters } from "./player-stats.js";
 import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, cancelledConnectionId, cancelledPendingConnectionId, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketPrincipal, type RoomSocketTicket, type RoomStore } from "./store.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
@@ -922,7 +922,7 @@ export class PrismaRoomStore implements RoomStore {
   private async view(roomId: string, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number): Promise<RoomView> {
     const room = await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, include: { participants: { include: { user: { select: { username: true } } } }, events: { where: { version: { gt: afterVersion } }, orderBy: { version: "desc" }, take: MAX_RETAINED_ROOM_EVENTS } } });
     if (!room) throw new Error("Room not found.");
-    const events: RoomEvent[] = room.events.map((event: any) => ({ id: event.id, roomId: event.roomId, version: event.version, actorId: event.actorId, type: event.type, controlSource: event.controlSource === "bot" ? "bot" : "human", payload: redactCardIdentifiers(event.payload) as Record<string, unknown>, createdAt: event.createdAt.toISOString() }));
+    const events: RoomEvent[] = room.events.map((event) => ({ id: event.id, roomId: event.roomId, version: event.version, actorId: event.actorId, type: event.type, controlSource: event.controlSource === "bot" ? "bot" : "human", payload: redactCardIdentifiers(event.payload) as JsonValue, createdAt: event.createdAt.toISOString() }));
     return { id: room.id, code: room.code, status: room.status.toLowerCase() as RoomView["status"], privacy: room.privacy.toLowerCase() as RoomView["privacy"], version: room.version, state: projectState(room.state as unknown as GameState, audience, viewerPlayerIndex), participants: room.participants.map((participant: any) => ({ id: participant.id, displayName: participant.displayName, ...(participant.user?.username ? { username: participant.user.username } : {}), role: participant.role.toLowerCase(), playerIndex: participant.playerIndex ?? undefined, connected: Boolean(participant.connectedAt), ready: Boolean(participant.ready), botControlled: Boolean(participant.botControlled), botAssisted: Boolean(participant.botAssisted) })), events };
   }
 }

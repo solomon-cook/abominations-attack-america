@@ -24,6 +24,7 @@ import {
   type HexKey,
   type SetupState,
 } from "./index.js";
+import { botShortestRouteNodesToGoal, buildBotShortestRouteDag } from "./bot-routes.js";
 
 export const BRANCHES = ["Army", "Navy", "Air Force", "Marines"] as const;
 export type BotBranch = typeof BRANCHES[number];
@@ -455,34 +456,12 @@ export function routeBlockScores(
     if (monster.health <= 0 || !board.hexes[start]) continue;
     const movement = monster.movement;
     if (!legalMovementNeighbors(board, movement, start).length) continue;
-    const distance = new Map<HexKey, number>([[start, 0]]);
-    const previous = new Map<HexKey, HexKey>();
-    const queue: HexKey[] = [start];
-    for (let head = 0; head < queue.length; head += 1) {
-      const current = queue[head]!;
-      const steps = distance.get(current)!;
-      if (steps >= 10) continue;
-      for (const next of legalMovementNeighbors(board, movement, current)) {
-        if (distance.has(next)) continue;
-        distance.set(next, steps + 1);
-        previous.set(next, current);
-        queue.push(next);
-      }
-    }
+    const routes = buildBotShortestRouteDag(start, (key) => legalMovementNeighbors(board, movement, key), 10);
     for (const goal of goals) {
       if (goal.key === start) continue;
-      const steps = distance.get(goal.key);
+      const steps = routes.distances.get(goal.key);
       if (steps === undefined) continue;
-      const path: HexKey[] = [];
-      let current = goal.key;
-      while (current !== start) {
-        path.push(current);
-        const parent = previous.get(current);
-        if (!parent) break;
-        current = parent;
-      }
-      if (current !== start) continue;
-      path.reverse();
+      const routeNodes = botShortestRouteNodesToGoal(routes, goal.key);
       const city = goal.features.some((feature) => feature.kind === "city");
       const ownBase = goal.features.some((feature) => feature.kind === "military-base" && feature.branch === branch);
       const value = (city ? 13 : 0) + (ownBase ? 10 : goal.features.some((feature) => feature.kind === "military-base") ? 7 : 4);
@@ -490,12 +469,13 @@ export function routeBlockScores(
       const coverage = defenders === 0 ? 1 : defenders === 1 ? 0.7 : 0.5;
       const turnsAway = Math.ceil(steps / Math.max(1, monster.move));
       const urgency = turnsAway <= 1 ? 1 : turnsAway === 2 ? 0.75 : 0.5;
-      path.forEach((key, index) => {
-        const toGoal = steps - index - 1;
+      for (const key of routeNodes) {
+        if (key === start) continue;
+        const toGoal = steps - routes.distances.get(key)!;
         const approach = Math.max(0, 4 - toGoal) * 2;
         const pressure = (value * urgency + approach) * coverage * routeBlockMultiplier;
         scores.set(key, Math.max(scores.get(key) ?? 0, pressure));
-      });
+      }
     }
   }
   return scores;

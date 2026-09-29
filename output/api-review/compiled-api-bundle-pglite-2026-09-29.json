@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-09-29T01:20:07.957Z",
+  "capturedAt": "2026-09-29T09:04:57.990Z",
   "evidenceKind": "isolated build-prune compiled API runtime acceptance with sequential HTTP and PGlite query",
   "artifact": "output/api-review/compiled-api-bundle-pglite-2026-09-29.json",
   "scratchSource": [
@@ -19,13 +19,13 @@
     {
       "command": "npm ci --include=dev",
       "exitCode": 0,
-      "stdoutTail": "\nadded 286 packages, and audited 291 packages in 3s\n\n60 packages are looking for funding\n  run `npm fund` for details\n\n4 high severity vulnerabilities\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n\nRun `npm audit` for details.\n",
+      "stdoutTail": "\nadded 286 packages, and audited 291 packages in 14s\n\n60 packages are looking for funding\n  run `npm fund` for details\n\n4 high severity vulnerabilities\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n\nRun `npm audit` for details.\n",
       "stderrTail": ""
     },
     {
       "command": "npm --workspace @abominations/api run prisma:generate",
       "exitCode": 0,
-      "stdoutTail": "\n> @abominations/api@0.1.0 prisma:generate\n> prisma generate --config prisma.config.ts\n\n\n✔ Generated Prisma Client (7.9.1) to ./generated/prisma in 64ms\n\n",
+      "stdoutTail": "\n> @abominations/api@0.1.0 prisma:generate\n> prisma generate --config prisma.config.ts\n\n\n✔ Generated Prisma Client (7.9.1) to ./generated/prisma in 104ms\n\n",
       "stderrTail": "Loaded Prisma config from prisma.config.ts.\n\nPrisma schema loaded from prisma/schema.prisma.\n"
     },
     {
@@ -37,7 +37,7 @@
     {
       "command": "npm prune --omit=dev --omit=optional --omit=peer",
       "exitCode": 0,
-      "stdoutTail": "\nup to date, audited 50 packages in 711ms\n\n8 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n",
+      "stdoutTail": "\nup to date, audited 50 packages in 1s\n\n8 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n",
       "stderrTail": ""
     },
     {
@@ -50,7 +50,7 @@
   "build": {
     "runtimeBundleEntry": "apps/api/dist/server.js",
     "sourceApiTypeScriptBuild": "passed",
-    "runtimeBundleBytes": 632731,
+    "runtimeBundleBytes": 632738,
     "gameEnginePackageReferenceRemaining": false,
     "gameDomainErrorBundled": true,
     "runtimeStartScript": "npm --workspace @abominations/api run start"
@@ -94,13 +94,73 @@
     },
     "roomCreate": {
       "status": 201,
-      "code": "B6A28F",
+      "code": "297E75",
       "version": 0
     },
     "roomRead": {
       "status": 200,
-      "code": "B6A28F",
+      "code": "297E75",
       "version": 0
+    },
+    "legacyEventProjection": {
+      "status": 200,
+      "route": "GET /rooms/:code/state?afterVersion=N with the room token",
+      "insertedRows": [
+        {
+          "id": "legacy-payload-null",
+          "type": "legacy.payload.null-root",
+          "rootKind": "null"
+        },
+        {
+          "id": "legacy-payload-string",
+          "type": "future.payload.string-root",
+          "rootKind": "string"
+        },
+        {
+          "id": "legacy-payload-number",
+          "type": "future.payload.number-root",
+          "rootKind": "number"
+        },
+        {
+          "id": "legacy-payload-array",
+          "type": "future.payload.array-root",
+          "rootKind": "array"
+        },
+        {
+          "id": "legacy-payload-object",
+          "type": "future.payload.object-root",
+          "rootKind": "object"
+        }
+      ],
+      "returnedOrder": [
+        {
+          "version": 5,
+          "type": "future.payload.object-root",
+          "rootKind": "object"
+        },
+        {
+          "version": 4,
+          "type": "future.payload.array-root",
+          "rootKind": "array"
+        },
+        {
+          "version": 3,
+          "type": "future.payload.number-root",
+          "rootKind": "number"
+        },
+        {
+          "version": 2,
+          "type": "future.payload.string-root",
+          "rootKind": "string"
+        },
+        {
+          "version": 1,
+          "type": "legacy.payload.null-root",
+          "rootKind": "null"
+        }
+      ],
+      "unknownNamesPreserved": true,
+      "recursiveCardIdRedaction": true
     },
     "sequentialDatabaseBackedCreateAndRead": true
   },

@@ -78,7 +78,25 @@ for (const [width,height] of sizes) {
   const canvas=page.locator('.map-canvas'); const before=await canvas.getAttribute('style');
   await toggleDetails(page); await frame(page);
   assert.equal(await canvas.getAttribute('style'),before,'details drawer reframed map');
-  await toggleDetails(page); item.checks.push('details preserves camera');
+  await toggleDetails(page);
+  if(width>900) {
+   const expandTurnPanel=page.getByRole('button',{name:'Expand turn panel',exact:true});
+   if(await expandTurnPanel.count()) await expandTurnPanel.click();
+   await frame(page);
+   const panelGeometry=await page.evaluate(()=>{
+    const header=document.querySelector('.game-screen > header');
+    const panel=document.querySelector('.game-screen > .layout.panel-open > .game-side-panel');
+    const toggle=document.querySelector('.top-turn-summary .turn-hud-heading > button');
+    if(!header||!panel||!toggle) return null;
+    const headerRect=header.getBoundingClientRect(), panelRect=panel.getBoundingClientRect(), toggleRect=toggle.getBoundingClientRect();
+    const hit=document.elementFromPoint((toggleRect.left+toggleRect.right)/2,(toggleRect.top+toggleRect.bottom)/2);
+    return {headerBottom:headerRect.bottom,panelTop:panelRect.top,toggleReachable:hit===toggle||toggle.contains(hit)};
+   });
+   assert.ok(panelGeometry&&panelGeometry.panelTop>=panelGeometry.headerBottom,`expanded desktop turn panel should start below the turn header: ${JSON.stringify(panelGeometry)}`);
+   assert.ok(panelGeometry.toggleReachable,'turn-panel toggle center should remain the pointer hit target');
+   item.checks.push('expanded turn panel stays below desktop header and preserves toggle hit target');
+  }
+  item.checks.push('details preserves camera');
   const wheelPoint=await unobstructedMapPoint(page);
   assert.ok(wheelPoint,'board viewport should expose an unobstructed pointer target for camera input');
   await page.mouse.move(wheelPoint.x,wheelPoint.y); await page.mouse.wheel(0,-10000); await page.waitForTimeout(250);
@@ -153,25 +171,35 @@ for (const [width,height] of sizes) {
    await destinations.first().waitFor({state:'visible'});
    const inspectLocations=()=>destinations.evaluateAll(nodes=>nodes.map((node,index)=>{
     const rect=node.getBoundingClientRect();
-    const blockedBy=[...document.querySelectorAll('.game-screen > header,.opponent-portrait-rail,.map-controls,.board-action-bar,.board-event-playback,.deployment-prompt')].filter(overlay=>{
-     const other=overlay.getBoundingClientRect();
-     return !(rect.right<=other.left || rect.left>=other.right || rect.bottom<=other.top || rect.top>=other.bottom);
-    }).map(overlay=>overlay.className||overlay.tagName);
-    return {index,left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom,blockedBy};
+    const center={x:(rect.left+rect.right)/2,y:(rect.top+rect.bottom)/2};
+    const inViewport=center.x>=0&&center.y>=0&&center.x<innerWidth&&center.y<innerHeight;
+    const hit=inViewport?document.elementFromPoint(center.x,center.y):null;
+    const reachable=Boolean(hit?.closest('.hex-tile')===node);
+    return {index,left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom,center,inViewport,reachable,hit:hit?.className||hit?.tagName||null};
    }));
    let locations=await inspectLocations();
-   let available=locations.filter(rect=>rect.blockedBy.length===0&&rect.left>=0&&rect.top>=0&&rect.right<=width&&rect.bottom<=height);
+   let available=locations.filter(location=>location.inViewport&&location.reachable);
+   if(!available.length&&width===320&&height===740) {
+    const dragStart=await unobstructedMapPoint(page);
+    assert.ok(dragStart,'320px phone should retain an unobstructed point for panning the board during placement');
+    await page.mouse.move(dragStart.x,dragStart.y); await page.mouse.down();
+    await page.mouse.move(dragStart.x-80,dragStart.y,{steps:10}); await page.mouse.up();
+    await frame(page);
+    locations=await inspectLocations();
+    available=locations.filter(location=>location.inViewport&&location.reachable);
+    if(available.length) item.checks.push('panned a legal placement target so its center could be reached through browser hit testing');
+   }
    if(!available.length&&width===768&&height===600) {
     await page.mouse.move(width*.65,height*.45); await page.mouse.down();
     await page.mouse.move(width*.85,height*.22,{steps:10}); await page.mouse.up();
     locations=await inspectLocations();
-    available=locations.filter(rect=>rect.blockedBy.length===0&&rect.left>=0&&rect.top>=0&&rect.right<=width&&rect.bottom<=height);
+    available=locations.filter(location=>location.inViewport&&location.reachable);
    }
    if(!available.length&&width===2560&&height===1080) {
-    const target=locations.find(rect=>rect.left>=0&&rect.right<=width&&rect.bottom-rect.top<height);
+    const target=locations.find(location=>location.center.x>=0&&location.center.x<width&&location.bottom-location.top<height);
     assert.ok(target,'wide viewport should retain a legal deployment target within the board width');
-    const desiredTop=Math.min(Math.max(target.top,160),height-(target.bottom-target.top)-80);
-    const deltaY=Math.round(desiredTop-target.top);
+    const desiredTop=Math.min(Math.max(target.center.y,160),height-80);
+    const deltaY=Math.round(desiredTop-target.center.y);
     const dragStart=await page.locator('.board-viewport').evaluate((node,delta)=>{
      const rect=node.getBoundingClientRect();
      for(const y of [.25,.35,.45,.55,.65,.75,.15,.85]) for(const x of [.5,.35,.65,.2,.8]) {
@@ -187,7 +215,7 @@ for (const [width,height] of sizes) {
     await page.mouse.move(dragStart.x,dragStart.y+deltaY,{steps:Math.max(10,Math.ceil(Math.abs(deltaY)/30))}); await page.mouse.up();
     await frame(page);
     locations=await inspectLocations();
-    available=locations.filter(rect=>rect.blockedBy.length===0&&rect.left>=0&&rect.top>=0&&rect.right<=width&&rect.bottom<=height);
+    available=locations.filter(location=>location.inViewport&&location.reachable);
    }
    assert.ok(available.length,`${width}x${height} should expose a deployment location clear of the HUD; legal locations: ${JSON.stringify(locations)}`);
    const destination=destinations.nth(available[0].index);

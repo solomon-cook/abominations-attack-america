@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { COMMAND_PROTOCOL_VERSION, applyCommand, boardForState, legalChopperLiftDestinations, legalMonsterPaths, legalUnitPaths, locationIdToHexKey, militaryUnitStats, monsterCombatStats } from "@abominations/game-engine";
+import type { JsonValue, RoomEvent } from "@abominations/shared";
 import { MAX_RETAINED_ROOM_EVENTS, MemoryRoomStore } from "./store.js";
 import { AUDITED_BOARD } from "../../../packages/game-engine/src/audited-board.js";
 
@@ -1989,6 +1990,41 @@ test("room projections redact authoritative deck order for players and spectator
   assert.deepEqual(spectatorView.state.players.map((player) => player.researchCardIds), [[], []]);
   assert.equal(JSON.stringify(playerView.state.eventLog).includes("Guard Commander"), false);
   assert.equal(JSON.stringify(playerView.events).includes("Guard Commander"), false);
+});
+
+test("memory room event projection preserves legacy JSON root shapes and unknown names", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Legacy event reader");
+  const rooms = (store as unknown as { rooms: Map<string, { id: string; events: RoomEvent[] }> }).rooms;
+  const room = rooms.get(host.room.code)!;
+  const payloads: JsonValue[] = [
+    null,
+    false,
+    17,
+    "legacy scalar",
+    [{ label: "visible", cardId: "private-card", nested: [{ mutationCardId: "private-mutation", detail: "preserved" }] }],
+  ];
+  const legacyEvents = payloads.map((payload, index): RoomEvent => ({
+    id: `legacy-json-${index}`,
+    roomId: room.id,
+    version: index + 1,
+    actorId: "legacy-actor",
+    type: `legacy.unknown.${index}`,
+    payload,
+    createdAt: new Date().toISOString(),
+  }));
+  room.events.unshift(...legacyEvents.reverse());
+
+  const view = await store.getRoom(host.room.code, host.token);
+
+  assert.deepEqual(view.events.map((event) => event.type), payloads.map((_payload, index) => `legacy.unknown.${index}`).reverse());
+  assert.deepEqual(view.events.map((event) => event.payload), [
+    [{ label: "visible", nested: [{ detail: "preserved" }] }],
+    "legacy scalar",
+    17,
+    false,
+    null,
+  ]);
 });
 
 test("repeated action ids are idempotent", async () => {

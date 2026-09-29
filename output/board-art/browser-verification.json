@@ -1,5 +1,5 @@
 {
-  "started": "2026-09-28T21:12:26.265Z",
+  "started": "2026-09-29T09:18:08.559Z",
   "pendingArtAllowed": false,
   "viewports": [
     {
@@ -16,21 +16,21 @@
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 143,
-          "loadMs": 143
+          "domContentLoadedMs": 233,
+          "loadMs": 238
         },
         "terrain": {
           "measurement": "Cumulative after setup, camera interactions, movement, encounter and the selected follow-up action; viewport has a fresh browser context.",
-          "resourceCount": 635,
-          "uniqueResourceCount": 517,
-          "transferBytes": 1805058,
-          "encodedBodyBytes": 1776366,
-          "decodedBodyBytes": 1776366,
+          "resourceCount": 507,
+          "uniqueResourceCount": 507,
+          "transferBytes": 2009514,
+          "encodedBodyBytes": 1857414,
+          "decodedBodyBytes": 1857414,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 356,
-            "512": 279,
+            "256": 336,
+            "512": 171,
             "1024": 0
           }
         }
@@ -51,22 +51,22 @@
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 88,
-          "loadMs": 88
+          "domContentLoadedMs": 196,
+          "loadMs": 200
         },
         "terrain": {
           "measurement": "Cumulative after setup, camera interactions, movement, encounter and the selected follow-up action; viewport has a fresh browser context.",
-          "resourceCount": 730,
-          "uniqueResourceCount": 597,
-          "transferBytes": 2442468,
-          "encodedBodyBytes": 2593920,
-          "decodedBodyBytes": 2593920,
+          "resourceCount": 647,
+          "uniqueResourceCount": 581,
+          "transferBytes": 3014810,
+          "encodedBodyBytes": 3296556,
+          "decodedBodyBytes": 3296556,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 350,
-            "512": 257,
-            "1024": 123
+            "256": 351,
+            "512": 175,
+            "1024": 121
           }
         }
       },
@@ -86,21 +86,21 @@
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 89,
-          "loadMs": 90
+          "domContentLoadedMs": 191,
+          "loadMs": 193
         },
         "terrain": {
           "measurement": "Cumulative after setup, camera interactions, movement, encounter and the selected follow-up action; viewport has a fresh browser context.",
-          "resourceCount": 600,
+          "resourceCount": 451,
           "uniqueResourceCount": 451,
-          "transferBytes": 1305508,
-          "encodedBodyBytes": 1257486,
-          "decodedBodyBytes": 1257486,
+          "transferBytes": 1613678,
+          "encodedBodyBytes": 1478378,
+          "decodedBodyBytes": 1478378,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 365,
-            "512": 235,
+            "256": 336,
+            "512": 115,
             "1024": 0
           }
         }
@@ -121,22 +121,22 @@
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 90,
-          "loadMs": 90
+          "domContentLoadedMs": 173,
+          "loadMs": 176
         },
         "terrain": {
           "measurement": "Cumulative after setup, camera interactions, movement, encounter and the selected follow-up action; viewport has a fresh browser context.",
-          "resourceCount": 884,
+          "resourceCount": 700,
           "uniqueResourceCount": 663,
-          "transferBytes": 2692256,
-          "encodedBodyBytes": 2972712,
-          "decodedBodyBytes": 2972712,
+          "transferBytes": 3762962,
+          "encodedBodyBytes": 3659198,
+          "decodedBodyBytes": 3659198,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 354,
-            "512": 332,
-            "1024": 198
+            "256": 336,
+            "512": 251,
+            "1024": 113
           }
         }
       },
@@ -148,6 +148,7 @@
       "checks": [
         "first-match guide dismissed before board pointer input",
         "user setup completed; 336 cells",
+        "expanded turn panel stays below desktop header and preserves toggle hit target",
         "details preserves camera",
         "bounds/wheel/drag/minimap/keyboard/touch/resize",
         "movement confirmed; encounter resolved; legal unit deployed; deployment tray counts refreshed at 1024x768"
@@ -156,21 +157,21 @@
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 81,
-          "loadMs": 81
+          "domContentLoadedMs": 170,
+          "loadMs": 173
         },
         "terrain": {
           "measurement": "Cumulative after setup, camera interactions, movement, encounter and the selected follow-up action; viewport has a fresh browser context.",
-          "resourceCount": 1236,
+          "resourceCount": 672,
           "uniqueResourceCount": 672,
-          "transferBytes": 1933640,
-          "encodedBodyBytes": 2164634,
-          "decodedBodyBytes": 2164634,
+          "transferBytes": 3076522,
+          "encodedBodyBytes": 2874922,
+          "decodedBodyBytes": 2874922,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 351,
-            "512": 885,
+            "256": 336,
+            "512": 336,
             "1024": 0
           }
         }
@@ -183,6 +184,7 @@
       "checks": [
         "first-match guide dismissed before board pointer input",
         "user setup completed; 336 cells",
+        "expanded turn panel stays below desktop header and preserves toggle hit target",
         "details preserves camera",
         "bounds/wheel/drag/minimap/keyboard/touch/resize",
         "movement confirmed; encounter resolved; legal unit deployed; deployment tray counts refreshed at 1440x900"
@@ -191,22 +193,22 @@
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 80,
-          "loadMs": 80
+          "domContentLoadedMs": 162,
+          "loadMs": 164
         },
         "terrain": {
           "measurement": "Cumulative after setup, camera interactions, movement, encounter and the selected follow-up action; viewport has a fresh browser context.",
-          "resourceCount": 1316,
+          "resourceCount": 959,
           "uniqueResourceCount": 848,
-          "transferBytes": 3290800,
-          "encodedBodyBytes": 3278736,
-          "decodedBodyBytes": 3278736,
+          "transferBytes": 5465828,
+          "encodedBodyBytes": 5218636,
+          "decodedBodyBytes": 5218636,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 372,
-            "512": 583,
-            "1024": 361
+            "256": 336,
+            "512": 380,
+            "1024": 243
           }
         }
       },
@@ -218,6 +220,7 @@
       "checks": [
         "first-match guide dismissed before board pointer input",
         "user setup completed; 336 cells",
+        "expanded turn panel stays below desktop header and preserves toggle hit target",
         "details preserves camera",
         "bounds/wheel/drag/minimap/keyboard/touch/resize",
         "movement confirmed; encounter resolved; legal unit deployed; deployment tray counts refreshed at 2560x1080"
@@ -226,27 +229,27 @@
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 112,
-          "loadMs": 112
+          "domContentLoadedMs": 168,
+          "loadMs": 170
         },
         "terrain": {
           "measurement": "Cumulative after setup, camera interactions, movement, encounter and the selected follow-up action; viewport has a fresh browser context.",
-          "resourceCount": 1723,
+          "resourceCount": 1610,
           "uniqueResourceCount": 872,
-          "transferBytes": 4066772,
-          "encodedBodyBytes": 5501358,
-          "decodedBodyBytes": 5501358,
+          "transferBytes": 6304218,
+          "encodedBodyBytes": 8026680,
+          "decodedBodyBytes": 8026680,
           "currentDecodedImageCount": 336,
-          "estimatedCurrentBitmapBytes": 121257984,
+          "estimatedCurrentBitmapBytes": 125337600,
           "sizes": {
-            "256": 393,
-            "512": 721,
-            "1024": 609
+            "256": 618,
+            "512": 540,
+            "1024": 452
           }
         }
       },
       "passed": true
     }
   ],
-  "finished": "2026-09-28T21:13:51.683Z"
+  "finished": "2026-09-29T09:19:44.722Z"
 }

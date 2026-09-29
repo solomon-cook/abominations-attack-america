@@ -231,6 +231,66 @@ try {
   assert.equal(read.data?.code, created.data.room.code);
   assert.equal(read.data?.version, created.data.room.version);
 
+  const legacyEventCases = [
+    { suffix: "null", type: "legacy.payload.null-root", payload: null },
+    { suffix: "string", type: "future.payload.string-root", payload: "legacy scalar payload" },
+    { suffix: "number", type: "future.payload.number-root", payload: 37 },
+    {
+      suffix: "array",
+      type: "future.payload.array-root",
+      payload: ["kept array item", { cardId: "private-array-card", nested: { mutationCardId: "private-array-mutation", retained: true } }],
+    },
+    {
+      suffix: "object",
+      type: "future.payload.object-root",
+      payload: { retained: "visible", cardId: "private-object-card", nested: { mutationCardId: "private-object-mutation", retained: [1, { cardId: "private-deep-card", visible: true }] } },
+    },
+  ];
+  const firstLegacyEventVersion = created.data.room.version + 1;
+  for (const [index, eventCase] of legacyEventCases.entries()) {
+    await db.query(
+      'INSERT INTO "GameEvent" ("id", "roomId", "version", "actorId", "type", "payload") VALUES ($1, $2, $3, $4, $5, $6::jsonb)',
+      [
+        `legacy-payload-${eventCase.suffix}`,
+        created.data.room.id,
+        firstLegacyEventVersion + index,
+        created.data.participantId,
+        eventCase.type,
+        JSON.stringify(eventCase.payload),
+      ],
+    );
+  }
+  const latestLegacyEventVersion = firstLegacyEventVersion + legacyEventCases.length - 1;
+  await db.query('UPDATE "GameRoom" SET "version" = $2 WHERE "id" = $1', [created.data.room.id, latestLegacyEventVersion]);
+
+  const legacyRead = await requestJson(
+    baseUrl,
+    `/rooms/${created.data.room.code}/state?afterVersion=${created.data.room.version}`,
+    { roomToken: created.data.token },
+  );
+  assert.equal(legacyRead.status, 200, `legacy event room read failed: ${JSON.stringify(legacyRead.data)}`);
+  assert.equal(legacyRead.data?.version, latestLegacyEventVersion);
+  assert.deepEqual(
+    legacyRead.data?.events?.map(({ version, type, payload }) => ({ version, type, payload })),
+    [
+      {
+        version: firstLegacyEventVersion + 4,
+        type: "future.payload.object-root",
+        payload: { retained: "visible", nested: { retained: [1, { visible: true }] } },
+      },
+      {
+        version: firstLegacyEventVersion + 3,
+        type: "future.payload.array-root",
+        payload: ["kept array item", { nested: { retained: true } }],
+      },
+      { version: firstLegacyEventVersion + 2, type: "future.payload.number-root", payload: 37 },
+      { version: firstLegacyEventVersion + 1, type: "future.payload.string-root", payload: "legacy scalar payload" },
+      { version: firstLegacyEventVersion, type: "legacy.payload.null-root", payload: null },
+    ],
+    "unknown event names and every JSON root shape should round-trip newest-first, with only private card-ID keys redacted recursively",
+  );
+  assert.equal(JSON.stringify(legacyRead.data.events).includes("private-"), false, "no nested private card identifier should escape projection");
+
   evidence = {
     schemaVersion: 1,
     capturedAt: new Date().toISOString(),
@@ -260,6 +320,14 @@ try {
       health: { status: 200, persistence: health.persistence },
       roomCreate: { status: created.status, code: created.data.room.code, version: created.data.room.version },
       roomRead: { status: read.status, code: read.data.code, version: read.data.version },
+      legacyEventProjection: {
+        status: legacyRead.status,
+        route: "GET /rooms/:code/state?afterVersion=N with the room token",
+        insertedRows: legacyEventCases.map(({ suffix, type, payload }) => ({ id: `legacy-payload-${suffix}`, type, rootKind: payload === null ? "null" : Array.isArray(payload) ? "array" : typeof payload })),
+        returnedOrder: legacyRead.data.events.map(({ version, type, payload }) => ({ version, type, rootKind: payload === null ? "null" : Array.isArray(payload) ? "array" : typeof payload })),
+        unknownNamesPreserved: true,
+        recursiveCardIdRedaction: true,
+      },
       sequentialDatabaseBackedCreateAndRead: true,
     },
     limits: [

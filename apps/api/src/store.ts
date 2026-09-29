@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupAction, createMvpRoomGame, createRoomGame, legalLaserFenceTargets, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import { knownRoomEventType, type PublicRoomSummary, type RoomEvent, type RoomParticipantView, type RoomPrivacy, type RoomStatus, type RoomView, type SessionResponse } from "@abominations/shared";
+import { knownRoomEventType, type JsonValue, type PublicRoomSummary, type RoomEvent, type RoomParticipantView, type RoomPrivacy, type RoomStatus, type RoomView, type SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { emptyMatchCounters, updateMatchCounters, type MatchCounters } from "./player-stats.js";
 
@@ -441,7 +441,7 @@ export class MemoryRoomStore implements RoomStore {
     room.state = result.state;
     this.touch(room);
     room.version += 1;
-    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: knownRoomEventType(result.eventType), controlSource, payload: { ...result.eventPayload, receipt: result.receipt }, createdAt: now() });
+    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: knownRoomEventType(result.eventType), controlSource, payload: { ...result.eventPayload, receipt: { ...result.receipt } }, createdAt: now() });
     room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.actionIds.add(`${room.id}:${envelope.actionId}`);
     if (room.state.phase === "game-over") room.status = "completed";
@@ -492,6 +492,6 @@ export class MemoryRoomStore implements RoomStore {
   }
 
   private view(room: StoredRoom, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number): RoomView {
-    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map((participant) => ({ id: participant.id, displayName: participant.displayName, role: participant.role, playerIndex: participant.playerIndex, connected: participant.connected, ready: participant.ready, botControlled: participant.botControlled, botAssisted: participant.botAssisted })), events: room.events.filter((event) => event.version > afterVersion).map((event) => ({ ...event, payload: redactCardIdentifiers(event.payload) as Record<string, unknown> })) };
+    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map((participant) => ({ id: participant.id, displayName: participant.displayName, role: participant.role, playerIndex: participant.playerIndex, connected: participant.connected, ready: participant.ready, botControlled: participant.botControlled, botAssisted: participant.botAssisted })), events: room.events.filter((event) => event.version > afterVersion).map((event) => ({ ...event, payload: redactCardIdentifiers(event.payload) as JsonValue })) };
   }
 }
