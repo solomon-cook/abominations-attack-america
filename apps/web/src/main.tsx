@@ -48,6 +48,7 @@ import { boardForGame } from "./board-pin";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
 import { ActionDock } from "./components/ActionDock";
 import { LobbyPanel } from "./components/LobbyPanel";
+import { InviteLinkControl } from "./components/InviteLinkControl";
 import { LogPanel } from "./components/LogPanel";
 import { MatchStatus } from "./components/MatchStatus";
 import { PhaseActions } from "./components/PhaseActions";
@@ -1507,6 +1508,7 @@ function App() {
             <summary aria-label="Open game menu">☰ <span>Menu</span></summary>
             <div className="hud-menu-items">
               {online && <span className="room-hud-menu-status" role="status">{room?.code} · {connectionState}</span>}
+              {online && <InviteLinkControl roomCode={room?.code ?? ""} buttonClassName="ghost" />}
               <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>How to play</button>
               <button className="ghost settings-action" onClick={(event) => { settingsOpenerRef.current = event.currentTarget; setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>Settings</button>
               <button className="ghost new-game-action" onClick={soloMode ? startSolo : resetLocal}>{soloMode ? "New solo game" : "New local game"}</button>

@@ -76,6 +76,7 @@ Run the narrowest checks relevant to the change, then run the full CI gate befor
 | Local game browser flow and desktop/tablet/phone matrix | `npm run browser:local:verify` and `npm run browser:local:matrix` |
 | Keyboard navigation/settings and accessible game controls | `npm run browser:keyboard:verify` |
 | Multi-session online room/API smoke (local in-memory API by default) | `npm run browser:online:verify` |
+| Online lobby invite clipboard failure fallback (player keyboard and spectator touch) | `npm run browser:lobby-invite:verify` |
 | Deterministic two-player online Fight entry and resolution (local in-memory API) | `npm run browser:online:fight:verify` |
 | Encounter dialog focus, fallback, and ownership lifecycle (component fixture) | `npm run browser:encounter:focus:verify` |
 | Cutbacks Research-card action and projection privacy (component fixture) | `npm run browser:cutbacks:verify` |

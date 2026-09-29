@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-09-29T00:58:28.008Z",
+  "route": "Vite app route with local in-memory API",
+  "roomCode": "FE5539",
+  "player": {
+    "role": "player",
+    "viewport": "1280x720",
+    "clipboard": "stubbed writeText rejection",
+    "fallbackUrlCorrect": true,
+    "readOnly": true,
+    "keyboardTabReachable": true,
+    "focusSelectsWholeUrl": true,
+    "statusAssociatedWithField": true,
+    "menuStacksAboveSetup": true,
+    "fallbackReceivesPointer": true,
+    "successfulClipboardPathRetained": true
+  },
+  "spectator": {
+    "role": "spectator",
+    "viewport": "390x844 touch",
+    "clipboard": "stubbed writeText rejection",
+    "fallbackUrlCorrect": true,
+    "tapFocusesAndSelectsWholeUrl": true,
+    "fallbackBounds": {
+      "x": 23,
+      "y": 188,
+      "width": 344,
+      "height": 44
+    },
+    "menuStacksAboveSetup": true,
+    "fallbackReceivesPointer": true,
+    "documentWidth": 390,
+    "bodyWidth": 390,
+    "noHorizontalOverflow": true
+  },
+  "runtimeErrors": [],
+  "screenshots": [
+    "lobby-invite-fallback-player-2026-09-29.png",
+    "lobby-invite-fallback-spectator-phone-2026-09-29.png"
+  ]
+}

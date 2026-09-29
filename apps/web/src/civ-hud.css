@@ -14,6 +14,7 @@
 .top-turn-summary .turn-progress { display: none; }
 .game-screen > header .header-actions { min-width: max-content; margin-left: auto; align-items: center; }
 .room-hud-menu-status { display:block; padding:7px 9px; border-bottom:1px solid var(--hud-border); color:var(--civ-muted); font-size:.66rem; }
+.hud-menu-items > .invite-link-control { width:min(22rem, calc(100vw - 2rem)); padding:4px; }
 .game-screen > .status { top: 76px; left: auto; right: 14px; width: auto; max-width: 390px; padding: 5px 8px; gap: 3px; }
 .game-screen > .status div { flex: 0 0 auto; padding: 0 5px; }
 .game-screen > .status div:nth-child(2),
@@ -26,6 +27,7 @@
 .game-screen.setup-in-progress > .turn-progress { display: none; }
 .game-screen.setup-in-progress .top-turn-summary .turn-progress { display: none; }
 .hud-menu { position: relative; z-index: 50; }
+.game-screen > header:has(.hud-menu[open]) { z-index:55; }
 .hud-menu > summary { min-height: 36px; padding: 8px 11px; border: 1px solid var(--hud-border); border-radius: 5px; background: #263b37; color: var(--civ-ivory); cursor: pointer; list-style: none; font-size: .75rem; }
 .hud-menu > summary::-webkit-details-marker { display: none; }
 .hud-menu-items { position: absolute; top: calc(100% + 6px); right: 0; display: grid; min-width: 170px; padding: 6px; border: 1px solid var(--hud-border); border-radius: 6px; background: #172625; box-shadow: 0 8px 26px #0008; }

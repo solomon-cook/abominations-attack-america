@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { PublicRoomSummary, RoomView } from "@abominations/shared";
+import { InviteLinkControl } from "./InviteLinkControl";
 
 export type LobbyPanelProps = {
   online: boolean;
@@ -46,7 +47,6 @@ export function LobbyPanel({
   onRecoverConnection,
   onLeaveRoom,
 }: LobbyPanelProps) {
-  const [inviteStatus, setInviteStatus] = useState("");
   const [pendingSessionAction, setPendingSessionAction] = useState<"create" | "join" | "spectate" | null>(null);
   const pendingSessionActionRef = useRef<"create" | "join" | "spectate" | null>(null);
   const startSession = async (kind: "create" | "join" | "spectate") => {
@@ -65,17 +65,6 @@ export function LobbyPanel({
       ? "Joining room as spectator…"
       : `${pendingSessionAction === "create" ? "Creating" : "Joining"} room…`
     : "";
-  const copyInviteLink = async () => {
-    if (!room?.code) return;
-    const inviteUrl = new URL(window.location.href);
-    inviteUrl.search = `?room=${encodeURIComponent(room.code)}`;
-    try {
-      await navigator.clipboard.writeText(inviteUrl.toString());
-      setInviteStatus("Invite link copied");
-    } catch {
-      setInviteStatus(inviteUrl.toString());
-    }
-  };
   return (
     <section className="lobby" aria-label="Online room lobby">
       <div>
@@ -126,16 +115,14 @@ export function LobbyPanel({
           <button type="button" className="ready-button" disabled={!setupComplete} onClick={onToggleReady}>
             {participant.ready ? "Unready" : "Ready"}
           </button>
-          <button type="button" className="subtle" onClick={() => void copyInviteLink}>Copy invite link</button>
+          <InviteLinkControl roomCode={room?.code ?? ""} />
           <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>
-          {inviteStatus && <span className="invite-status" role="status">{inviteStatus}</span>}
         </div>
       )}
       {online && participant?.role === "spectator" && (
         <div className="lobby-actions">
-          <button type="button" className="subtle" onClick={() => void copyInviteLink}>Copy invite link</button>
+          <InviteLinkControl roomCode={room?.code ?? ""} />
           <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>
-          {inviteStatus && <span className="invite-status" role="status">{inviteStatus}</span>}
         </div>
       )}
       {online && connectionState === "stale" && (

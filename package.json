@@ -55,6 +55,7 @@
     "pwa:verify": "node scripts/verify-pwa.mjs",
     "pwa:browser:verify": "npm run build && node scripts/verify-browser-pwa-update.mjs",
     "browser:online:verify": "node scripts/verify-browser-online.mjs",
+    "browser:lobby-invite:verify": "node scripts/verify-browser-lobby-invite-fallback.mjs",
     "browser:online:fight:verify": "node scripts/verify-browser-online-fight.mjs",
     "browser:online:encounter-retry:verify": "node scripts/verify-browser-online-encounter-retry.mjs",
     "browser:military:tray:verify": "node scripts/verify-browser-military-tray.mjs",
