@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { acquireCheckpointLock, appendCheckpointPair, assertCheckpointCompatible, createCheckpoint, readCheckpoint, repairCheckpointTail, sha256, summarizeResearchGatePairs, validateConfirmatoryRegistration } from "./research-gate-checkpoint.mjs";
 import {
   applyCommand,
   applyCompletedSetup,
@@ -29,6 +30,7 @@ const DEFAULT_SEED_START = 7200;
 const DEFAULT_ORDER_SEED = 20260929;
 const DEFAULT_MAX_ROUNDS = 12;
 const ACTION_SAFETY_CAP = 2_000;
+const MAX_PAIR_COUNT = 1_000;
 const MMD = 0.10;
 const ROTATION_PLAN: ReadonlyArray<readonly [3 | 4, number]> = [
   [3, 0], [3, 1], [3, 2], [4, 0], [4, 1], [4, 2], [4, 3],
@@ -56,11 +58,33 @@ function readIntegerArg(name: string, fallback: number): number {
   return parsed;
 }
 
+function readStringArg(name: string, fallback?: string): string | undefined {
+  const prefix = `--${name}=`;
+  const matches = process.argv.filter((arg) => arg.startsWith(prefix));
+  if (matches.length > 1) throw new Error(`${name} may be specified only once`);
+  const value = matches[0]?.slice(prefix.length);
+  if (value === "") throw new Error(`${name} must not be empty`);
+  return value ?? fallback;
+}
+
+function hasFlag(name: string): boolean {
+  const flag = `--${name}`;
+  if (process.argv.filter((arg) => arg === flag).length > 1) throw new Error(`${name} may be specified only once`);
+  return process.argv.includes(flag);
+}
+
 const pairCount = readIntegerArg("pair-count", DEFAULT_PAIR_COUNT);
 const seedStart = readIntegerArg("seed-start", DEFAULT_SEED_START);
 const orderSeed = readIntegerArg("order-seed", DEFAULT_ORDER_SEED);
 const maxRounds = readIntegerArg("max-rounds", DEFAULT_MAX_ROUNDS);
-assert.ok(pairCount > 0 && pairCount <= 100, "pair-count must be between 1 and 100");
+const studyStage = readStringArg("study-stage", "pilot");
+assert.ok(studyStage === "pilot" || studyStage === "confirmatory", "study-stage must be pilot or confirmatory");
+const resume = hasFlag("resume");
+const planOnly = hasFlag("plan-only");
+const checkpointPath = resolve(readStringArg("checkpoint", `output/bot-strategy/research-gate-${seedStart}-${pairCount}-${orderSeed}.checkpoint.jsonl`)!);
+const outputPathArg = readStringArg("output");
+const outputPath = outputPathArg ? resolve(outputPathArg) : undefined;
+assert.ok(pairCount > 0 && pairCount <= MAX_PAIR_COUNT, `pair-count must be between 1 and ${MAX_PAIR_COUNT}`);
 assert.ok(maxRounds > 0 && maxRounds <= 100, "max-rounds must be between 1 and 100");
 assert.ok(seedStart + pairCount - 1 <= Number.MAX_SAFE_INTEGER, "seed range must stay within safe integers");
 
@@ -258,7 +282,7 @@ interface PairEvidence {
   pairedStatus: "complete-pair" | "incomplete-pair" | "invalid-pair";
 }
 
-function digest(value: string): string {
+function digest(value: string | Uint8Array): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
@@ -524,152 +548,179 @@ function pairedDivergence(control: MatchEvidence, treatment: MatchEvidence) {
 function shuffledArmOrders(pairCount: number, seed: number) {
   const random = seededRandom(seed);
   const orders: Treatment[] = Array.from({ length: Math.floor(pairCount / 2) }, () => "control");
-  orders.push(...Array.from({ length: Math.floor(pairCount / 2) }, () => "urgency-gates-bypassed"));
+  orders.push(...Array.from<Treatment, Treatment>({ length: Math.floor(pairCount / 2) }, () => "urgency-gates-bypassed"));
   if (pairCount % 2) orders.push(random.next() < 0.5 ? "control" : "urgency-gates-bypassed");
   const treatmentFirst = shuffled(orders, random);
   return { treatmentFirst, stream: random.snapshot() };
 }
 
-function tCritical975(df: number): number {
-  const z = 1.959963984540054;
-  return z
-    + (z ** 3 + z) / (4 * df)
-    + (5 * z ** 5 + 16 * z ** 3 + 3 * z) / (96 * df ** 2)
-    + (3 * z ** 7 + 19 * z ** 5 + 17 * z ** 3 - 15 * z) / (384 * df ** 3);
-}
-
-function median(values: number[]): number | null {
-  if (!values.length) return null;
-  values.sort((a, b) => a - b);
-  const midpoint = Math.floor(values.length / 2);
-  return values.length % 2 ? values[midpoint]! : (values[midpoint - 1]! + values[midpoint]!) / 2;
-}
-
-function summarize(pairs: PairEvidence[]) {
-  const complete = pairs.filter((pair) => pair.pairedStatus === "complete-pair");
-  const differences = complete.map((pair) => pair.scoreDifferenceTreatmentMinusControl!);
-  const mean = differences.length ? differences.reduce((sum, value) => sum + value, 0) / differences.length : null;
-  const variance = differences.length > 1 ? differences.reduce((sum, value) => sum + (value - mean!) ** 2, 0) / (differences.length - 1) : null;
-  const standardError = variance === null ? null : Math.sqrt(variance / differences.length);
-  const confidenceInterval = mean === null || differences.length < 2
-    ? null
-    : [mean - tCritical975(differences.length - 1) * standardError!, mean + tCritical975(differences.length - 1) * standardError!];
-  const outcomes = (arm: "control" | "treatment") => Object.fromEntries(([
-    "win", "draw", "loss", "incomplete", "invalid",
-  ] as const).map((result) => [result, pairs.filter((pair) => pair[arm].outcome === result).length]));
-  let worstCaseLower = 0;
-  let worstCaseUpper = 0;
-  for (const pair of pairs) {
-    const treatmentScore = pair.treatment.score;
-    const controlScore = pair.control.score;
-    worstCaseLower += (treatmentScore ?? 0) - (controlScore ?? 1);
-    worstCaseUpper += (treatmentScore ?? 1) - (controlScore ?? 0);
-  }
-  const focalCounts = (key: "focalMonster" | "focalBranch" | "focalLair") => pairs.reduce((counts, pair) => {
-    inc(counts, pair[key]);
-    return counts;
-  }, {} as Record<string, number>);
-  const lairSlotsByMonster = pairs.reduce((counts, pair) => {
-    counts[pair.focalMonster] ??= {};
-    inc(counts[pair.focalMonster]!, String(pair.focalLairSlot));
-    return counts;
-  }, {} as Record<string, Record<string, number>>);
-  const meanScore = (arm: "control" | "treatment") => {
-    const scores = pairs.flatMap((pair) => pair[arm].score === null ? [] : [pair[arm].score!]);
-    return scores.length ? scores.reduce((sum, value) => sum + value, 0) / scores.length : null;
-  };
-  const matchExecutionDiagnostics = {
-    control: {
-      invalidMatches: pairs.filter((pair) => pair.control.invalidActionEvidence !== null || pair.control.outcome === "invalid").length,
-      cappedMatches: pairs.filter((pair) => pair.control.termination === "round-cap" || pair.control.termination === "action-safety-cap").length,
-    },
-    treatment: {
-      invalidMatches: pairs.filter((pair) => pair.treatment.invalidActionEvidence !== null || pair.treatment.outcome === "invalid").length,
-      cappedMatches: pairs.filter((pair) => pair.treatment.termination === "round-cap" || pair.treatment.termination === "action-safety-cap").length,
-    },
-  };
-  const allSeatCounts = (key: "monster" | "branch" | "lair") => pairs.flatMap((pair) => pair.setupAssignments).reduce((counts, seat) => {
-    inc(counts, seat[key]);
-    return counts;
-  }, {} as Record<string, number>);
-  return {
-    pairCount: pairs.length,
-    pairDispositionCounts: Object.fromEntries(["complete-pair", "incomplete-pair", "invalid-pair"].map((status) => [status, pairs.filter((pair) => pair.pairedStatus === status).length])),
-    outcomesByArm: { control: outcomes("control"), treatment: outcomes("treatment") },
-    matchExecutionDiagnostics,
-    terminalMeanScoreByArm: { control: meanScore("control"), treatment: meanScore("treatment") },
-    pairedScore: {
-      estimand: "Mean focal score (urgency-gates-bypassed minus control); win=1, draw=0.5, loss=0.",
-      completeValidTerminalPairs: differences.length,
-      meanDifference: mean,
-      sampleVarianceOfPairedDifferences: variance,
-      standardError: standardError,
-      approximatePairedT95ConfidenceInterval: confidenceInterval,
-      discordantPairs: differences.filter((value) => value !== 0).length,
-      favoringTreatment: differences.filter((value) => value > 0).length,
-      favoringControl: differences.filter((value) => value < 0).length,
-      worstCaseMeanDifferenceBoundsAcrossEveryRandomizedPair: pairs.length ? [worstCaseLower / pairs.length, worstCaseUpper / pairs.length] : null,
-    },
-    setupComposition: {
-      playerCounts: Object.fromEntries([3, 4].map((count) => [String(count), pairs.filter((pair) => pair.playerCount === count).length])),
-      focalSeats: Object.fromEntries([...new Set(pairs.map((pair) => pair.focalSeat))].sort().map((seat) => [String(seat), pairs.filter((pair) => pair.focalSeat === seat).length])),
-      focalMonsters: focalCounts("focalMonster"),
-      focalBranches: focalCounts("focalBranch"),
-      focalLairs: focalCounts("focalLair"),
-      focalLairSlots: pairs.reduce((counts, pair) => { inc(counts, String(pair.focalLairSlot)); return counts; }, {} as Record<string, number>),
-      focalLairSlotsByMonster: lairSlotsByMonster,
-      allSeatMonsters: allSeatCounts("monster"),
-      allSeatBranches: allSeatCounts("branch"),
-      allSeatLairs: allSeatCounts("lair"),
-    },
-    executionDiagnostics: {
-      controlActions: pairs.reduce((sum, pair) => sum + pair.control.actions, 0),
-      treatmentActions: pairs.reduce((sum, pair) => sum + pair.treatment.actions, 0),
-      pairsWithCommandDivergence: pairs.filter((pair) => pair.firstCommandDivergenceAction !== null).length,
-      pairsWithRngCursorDivergence: pairs.filter((pair) => pair.firstRngCursorDivergenceAction !== null).length,
-      medianFirstCommandDivergenceAction: median(pairs.flatMap((pair) => pair.firstCommandDivergenceAction === null ? [] : [pair.firstCommandDivergenceAction])),
-      medianFirstRngCursorDivergenceAction: median(pairs.flatMap((pair) => pair.firstRngCursorDivergenceAction === null ? [] : [pair.firstRngCursorDivergenceAction])),
-    },
-    researchDrawDiagnosticsByArm: Object.fromEntries(([["control", "control"], ["treatment", "treatment"]] as const).map(([key, evidenceKey]) => {
-      const focal = pairs.map((pair) => pair[evidenceKey].seats[pair.focalSeat]!.researchDraw);
-      const totalStats = emptyResearchDrawDiagnostics();
-      for (const stats of focal) {
-        totalStats.deployWindows += stats.deployWindows;
-        totalStats.legalDrawOptions += stats.legalDrawOptions;
-        totalStats.legalDeploymentChoices += stats.legalDeploymentChoices;
-        for (const [count, windows] of Object.entries(stats.deploymentChoiceHistogram)) inc(totalStats.deploymentChoiceHistogram, count, windows);
-        totalStats.optionalGateEvaluations += stats.optionalGateEvaluations;
-        totalStats.effectiveEligibleOpportunities += stats.effectiveEligibleOpportunities;
-        totalStats.optionalDrawSelections += stats.optionalDrawSelections;
-        totalStats.noDeploymentChoiceDrawSelections += stats.noDeploymentChoiceDrawSelections;
-        totalStats.acceptedDraws += stats.acceptedDraws;
-        totalStats.rejectedDraws += stats.rejectedDraws;
-        totalStats.deployWindowsWithoutTrace += stats.deployWindowsWithoutTrace;
-        for (const gate of RESEARCH_GATES) {
-          totalStats.actualGatePassCounts[gate] += stats.actualGatePassCounts[gate];
-          totalStats.actualGateFailCounts[gate] += stats.actualGateFailCounts[gate];
-        }
-        for (const [path, count] of Object.entries(stats.selectorPathsSkipped)) inc(totalStats.selectorPathsSkipped, path, count);
-      }
-      return [key, { focalSeatMatches: focal.length, ...totalStats }];
-    })),
-  };
-}
-
 function sourceHashes(): Record<string, string> {
   const trackedEngineFiles = execFileSync("git", ["ls-files", "packages/game-engine/src"], { encoding: "utf8" })
     .split("\n").filter(Boolean).sort();
-  const paths = [...trackedEngineFiles, "scripts/verify-bot-research-gates-paired.tsx"];
+  const paths = [...trackedEngineFiles, "scripts/research-gate-checkpoint.mjs", "scripts/verify-bot-research-gates-paired.tsx"];
   return Object.fromEntries(paths.map((path) => [path, digest(readFileSync(resolve(process.cwd(), path)))]));
 }
 
-function run(): void {
-  const armRandom = shuffledArmOrders(pairCount, orderSeed);
+function buildRunProtocol(armRandom: ReturnType<typeof shuffledArmOrders>, gitHead: string, dirtyPaths: string[], sourceSha256: Record<string, string>) {
   const lowFirstCount = armRandom.treatmentFirst.filter((arm) => arm === "control").length;
   const treatmentFirstCount = pairCount - lowFirstCount;
   assert.ok(Math.abs(lowFirstCount - treatmentFirstCount) <= 1, "execution order must be randomized and balanced within one pair");
-  const pairs: PairEvidence[] = [];
-  for (let pairIndex = 0; pairIndex < pairCount; pairIndex += 1) {
+  const preregistration = {
+    stage: studyStage,
+    primaryOutcome: "Focal terminal score: win=1, draw=0.5, loss=0; paired estimand is urgency-gates-bypassed minus control.",
+    minimumMeaningfulDifference: { absoluteScorePoints: MMD, direction: "two-sided" },
+    alpha: 0.05,
+    targetPower: 0.80,
+    assignmentProtocol: "For pair index i from 0 through pairCount-1, use engine seed seedStart+i and the configured 3/4-player focal-seat rotation. Cycle focal monster and branch by pair index and cycle focal lair rank across repeated focal-monster slots. The full-block arm-order sequence is the balanced 1:1 shuffle generated by the registered orderSeed and retained in config.armOrderRandomStream.",
+    treatment: "Focal seat remains research-first. Opponents remain force-first. Treatment bypasses only objectiveThreatAbsent and blockerOpportunityAbsent on the optional Research draw path; factual gate values are retained. Control supplies no bypass. Route scores, setup actions, all other bot decisions, game rules, and command schema are identical.",
+    retainedHardGates: ["researchDeckAvailable", "deploymentNotStarted", "researchHandBelowTwo", "researchFirstPolicy", "activeMilitaryScreen", "legal draw-research command available"],
+    pairedSetup: "Within every pair both arms clone byte-identical completed setup state and start from the same engine seed/RNG cursor. Rotate focal seat through 3/4-seat games and cycle focal monster, branch, and available lair rank. Opponent tactics are pinned force-first in both arms.",
+    executionOrder: "Randomized with a separate seeded xorshift32 stream from a balanced 1:1 list; arm sequence and order stream state/draw count are retained for the entire preregistered block.",
+    incompletePairHandling: "Retain every match and pair. Invalid action pairs are reported as implementation failures and excluded from terminal-score inference. Capped/nonterminal pairs are excluded from complete-pair estimates and included in worst-case [0,1] score-difference bounds; report both counts and bounds.",
+    powerPlanning: studyStage === "pilot"
+      ? "Estimate paired-difference sample variance for a separately preregistered confirmatory block. This pilot is descriptive and does not authorize a policy change."
+      : "The target block and analysis are fixed before execution. Report all randomized pairs, paired score estimate and interval, invalid/cap counts, and worst-case bounds. Do not alter default policy unless the preregistered decision rule passes.",
+    decisionRule: studyStage === "pilot"
+      ? "No policy change from pilot findings. Treat uncertainty intervals spanning both -0.10 and +0.10 as unresolved, not evidence of equivalence."
+      : "No default policy change unless the preregistered confirmatory decision rule supports benefit above +0.10 score points and command validity/termination guardrails pass.",
+    rngDivergence: "Record per-action actor/command hash and RNG cursor before/after. Compare aligned action traces and retain first divergence; same cursor after different actions is not common-random-number identity.",
+  };
+  const config = {
+    pairCount,
+    seedStart,
+    orderSeed,
+    maximumRoundsPerMatch: maxRounds,
+    actionSafetyCapPerMatch: ACTION_SAFETY_CAP,
+    playerCounts: [3, 4],
+    rotationPlan: ROTATION_PLAN,
+    focalMonsterPlan: "cycle eligible monster IDs by pair index",
+    focalBranchPlan: "cycle eligible branches by pair index",
+    focalLairPlan: "cycle focal lair rank across repeated focal-monster slots; each configured lair index is exercised for each focal monster",
+    focalTactic: "research-first",
+    opponentTactic: "force-first",
+    studyStage,
+    armOrderCounts: { controlFirst: lowFirstCount, treatmentFirst: treatmentFirstCount },
+    armOrderRandomStream: { algorithm: "xorshift32", seed: orderSeed, finalState: armRandom.stream.state, draws: armRandom.stream.draws },
+    researchGateBypasses: GATE_BYPASSES,
+  };
+  const studyStatus = studyStage === "pilot"
+    ? "PILOT — descriptive and inconclusive; not a default-policy decision"
+    : "CONFIRMATORY — preregistered randomized block; inference pending independent analysis";
+  const identity = { gitHead, sourceSha256, preregistration, config, studyStatus };
+  const campaignIdentitySha256 = sha256(JSON.stringify(identity));
+  const snapshotPath = `output/bot-strategy/research-gate-${seedStart}-${pairCount}-${orderSeed}-${campaignIdentitySha256.slice(0, 12)}-harness-at-run.tsx`;
+  const runMetadata: { gitHead: string; dirtyPaths: string[]; sourceSha256: Record<string, string>; harnessSnapshotPath: string; startedAt: string; [key: string]: unknown } = {
+    gitHead, dirtyPaths, sourceSha256, harnessSnapshotPath: snapshotPath, startedAt: new Date().toISOString(),
+  };
+  runMetadata.campaignIdentitySha256 = campaignIdentitySha256;
+  return { preregistration, config, studyStatus, runMetadata, campaignIdentitySha256, snapshotPath };
+}
+
+function registerExternalPreregistration(protocol: ReturnType<typeof buildRunProtocol>): null | Record<string, unknown> {
+  const pathArg = readStringArg("preregistration");
+  if (studyStage === "confirmatory" && !planOnly) assert.ok(pathArg, "confirmatory runs require --preregistration=<pre-run registration.json>");
+  if (studyStage === "pilot") assert.ok(!pathArg, "--preregistration is reserved for confirmatory runs");
+  if (!pathArg) return null;
+  const path = resolve(pathArg);
+  const bytes = readFileSync(path);
+  const registration = JSON.parse(bytes.toString("utf8"));
+  if (studyStage === "confirmatory") {
+    const dirtyGameEnginePaths = execFileSync("git", ["status", "--porcelain", "--", "packages/game-engine/src"], { encoding: "utf8" })
+      .split("\n").filter(Boolean);
+    validateConfirmatoryRegistration(registration, { protocol, dirtyGameEnginePaths });
+  }
+  return { path: pathArg, sha256: sha256(bytes), registration };
+}
+
+function writeArtifact(path: string | undefined, evidence: unknown): void {
+  const serialized = `${JSON.stringify(evidence, null, 2)}\n`;
+  if (!path) {
+    process.stdout.write(serialized);
+    return;
+  }
+  mkdirSync(dirname(path), { recursive: true });
+  const temporaryPath = `${path}.tmp`;
+  writeFileSync(temporaryPath, serialized, { mode: 0o600 });
+  renameSync(temporaryPath, path);
+}
+
+async function run(): Promise<void> {
+  const armRandom = shuffledArmOrders(pairCount, orderSeed);
+  const gitHead = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const dirtyPaths = execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).split("\n").filter(Boolean);
+  const protocol = buildRunProtocol(armRandom, gitHead, dirtyPaths, sourceHashes());
+  const externalPreregistration = registerExternalPreregistration(protocol);
+  protocol.campaignIdentitySha256 = sha256(JSON.stringify({
+    gitHead,
+    sourceSha256: protocol.runMetadata.sourceSha256,
+    preregistration: protocol.preregistration,
+    config: protocol.config,
+    studyStatus: protocol.studyStatus,
+    externalPreregistration,
+  }));
+  protocol.runMetadata.campaignIdentitySha256 = protocol.campaignIdentitySha256;
+  protocol.snapshotPath = `output/bot-strategy/research-gate-${seedStart}-${pairCount}-${orderSeed}-${protocol.campaignIdentitySha256.slice(0, 12)}-harness-at-run.tsx`;
+  protocol.runMetadata.harnessSnapshotPath = protocol.snapshotPath;
+  if (planOnly) {
+    process.stdout.write(`${JSON.stringify({ status: "PLAN_ONLY — no matches or files created", campaignIdentitySha256: protocol.campaignIdentitySha256, gitHead, studyStatus: protocol.studyStatus, preregistration: protocol.preregistration, config: protocol.config, sourceSha256: protocol.runMetadata.sourceSha256 }, null, 2)}\n`);
+    return;
+  }
+  mkdirSync(dirname(checkpointPath), { recursive: true });
+  const checkpointLock = acquireCheckpointLock(checkpointPath);
+  try {
+  const snapshotPath = resolve(protocol.snapshotPath);
+  mkdirSync(dirname(snapshotPath), { recursive: true });
+  const helperSnapshotPath = snapshotPath.replace(/-harness-at-run\.tsx$/, "-checkpoint-at-run.mjs");
+  const sourceSnapshotPaths = {
+    "scripts/verify-bot-research-gates-paired.tsx": protocol.snapshotPath,
+    "scripts/research-gate-checkpoint.mjs": helperSnapshotPath.replace(`${process.cwd()}/`, ""),
+  };
+  const sourceSnapshotSha256: Record<string, string> = {};
+  for (const [sourcePath, destinationPath] of Object.entries(sourceSnapshotPaths)) {
+    const absoluteDestination = resolve(destinationPath);
+    const sourceBytes = readFileSync(resolve(process.cwd(), sourcePath));
+    sourceSnapshotSha256[sourcePath] = sha256(sourceBytes);
+    if (existsSync(absoluteDestination)) {
+      assert.equal(sha256(readFileSync(absoluteDestination)), sourceSnapshotSha256[sourcePath], `${sourcePath} snapshot must exactly match current source`);
+    } else {
+      writeFileSync(absoluteDestination, sourceBytes, { flag: "wx", mode: 0o600 });
+    }
+  }
+  protocol.runMetadata.harnessSnapshotSha256 = sourceSnapshotSha256["scripts/verify-bot-research-gates-paired.tsx"];
+  protocol.runMetadata.sourceSnapshotPaths = sourceSnapshotPaths;
+  protocol.runMetadata.sourceSnapshotSha256 = sourceSnapshotSha256;
+  const header = {
+    schemaVersion: 1,
+    targetPairCount: pairCount,
+    campaignIdentitySha256: protocol.campaignIdentitySha256,
+    studyStatus: protocol.studyStatus,
+    runMetadata: protocol.runMetadata,
+    preregistration: protocol.preregistration,
+    config: protocol.config,
+    externalPreregistration,
+  };
+  let pairs: PairEvidence[] = [];
+  if (resume) {
+    assert.ok(existsSync(checkpointPath), `--resume checkpoint does not exist: ${checkpointPath}`);
+    const checkpoint = readCheckpoint(checkpointPath, { repairTrailingPartialLine: true });
+    if (checkpoint.discardedByteLength) repairCheckpointTail(checkpointPath, checkpoint.validByteLength);
+    assertCheckpointCompatible(checkpoint.header, {
+      campaignIdentitySha256: protocol.campaignIdentitySha256,
+      config: protocol.config,
+      preregistration: protocol.preregistration,
+    });
+    assert.ok(checkpoint.pairs.length <= pairCount, "checkpoint cannot contain more pairs than preregistered");
+    pairs = checkpoint.pairs as PairEvidence[];
+    protocol.runMetadata = checkpoint.header.runMetadata;
+  } else {
+    assert.ok(!existsSync(checkpointPath), `checkpoint already exists; pass --resume to continue it: ${checkpointPath}`);
+    createCheckpoint(checkpointPath, header);
+  }
+  let requestedSignal: NodeJS.Signals | null = null;
+  const stop = (signal: NodeJS.Signals) => { requestedSignal = signal; };
+  process.on("SIGINT", stop);
+  process.on("SIGTERM", stop);
+  for (let pairIndex = pairs.length; pairIndex < pairCount && requestedSignal === null; pairIndex += 1) {
     const [playerCount, focalSeat] = ROTATION_PLAN[pairIndex % ROTATION_PLAN.length]!;
     const seed = seedStart + pairIndex;
     const { state: initialState, setupSeed, setupRandom } = completeRotatedSetup(playerCount, seed, pairIndex, focalSeat);
@@ -677,8 +728,8 @@ function run(): void {
     const setupAssignments = initialState.setupAssignments!.map((seat) => ({
       playerIndex: seat.playerIndex,
       monster: initialState.monsters[seat.playerIndex]?.name ?? "unknown",
-      branch: seat.branch,
-      lair: seat.lair,
+      branch: seat.branch!,
+      lair: seat.lair!,
     }));
     const initialStateSha256 = digest(JSON.stringify(initialState));
     const randomizedArmOrder = armRandom.treatmentFirst[pairIndex] === "control"
@@ -698,7 +749,7 @@ function run(): void {
       : control.score === null || treatment.score === null
         ? "incomplete-pair"
         : "complete-pair";
-    pairs.push({
+    const pair: PairEvidence = {
       pairIndex,
       playerCount,
       seed,
@@ -720,55 +771,33 @@ function run(): void {
       ...divergence,
       scoreDifferenceTreatmentMinusControl: control.score !== null && treatment.score !== null ? treatment.score - control.score : null,
       pairedStatus,
-    });
+    };
+    appendCheckpointPair(checkpointPath, pair);
+    pairs.push(pair);
+    await new Promise<void>((resolveNextPair) => setImmediate(resolveNextPair));
   }
-  const gitHead = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
-  const dirtyPaths = execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).split("\n").filter(Boolean);
   const evidence = {
     schemaVersion: 1,
-    studyStatus: "PILOT — descriptive and inconclusive; not a default-policy decision",
+    studyStatus: protocol.studyStatus,
+    artifactCompleteness: pairs.length === pairCount ? "complete-preregistered-block" : "partial-checkpoint-export",
+    completedPairCount: pairs.length,
     generatedAt: new Date().toISOString(),
-    runMetadata: {
-      gitHead,
-      dirtyPaths,
-      sourceSha256: sourceHashes(),
-    },
-    preregistration: {
-      primaryOutcome: "Focal terminal score: win=1, draw=0.5, loss=0; paired estimand is urgency-gates-bypassed minus control.",
-      minimumMeaningfulDifference: { absoluteScorePoints: MMD, direction: "two-sided" },
-      alpha: 0.05,
-      targetPower: 0.80,
-      treatment: "Focal seat remains research-first. Opponents remain force-first. Treatment bypasses only objectiveThreatAbsent and blockerOpportunityAbsent on the optional Research draw path; factual gate values are retained. Control supplies no bypass. Route scores, setup actions, all other bot decisions, game rules, and command schema are identical.",
-      retainedHardGates: ["researchDeckAvailable", "deploymentNotStarted", "researchHandBelowTwo", "researchFirstPolicy", "activeMilitaryScreen", "legal draw-research command available"],
-      pairedSetup: "Within every pair both arms clone byte-identical completed setup state and start from the same engine seed/RNG cursor. Rotate focal seat through 3/4-seat games and cycle focal monster, branch, and available lair rank. Opponent tactics are pinned force-first in both arms.",
-      executionOrder: "Randomized with a separate seeded xorshift32 stream from a balanced 1:1 list; arm sequence and order stream state/draw count are retained.",
-      incompletePairHandling: "Retain every match and pair. Invalid action pairs are reported as implementation failures and excluded from terminal-score inference. Capped/nonterminal pairs are excluded from complete-pair estimates and included in worst-case [0,1] score-difference bounds; report both counts and bounds.",
-      powerPlanning: "After this explicitly labeled pilot, estimate paired-difference sample variance and use a two-sided paired t-test target of alpha=.05 and 80% power for |delta|=.10. The pilot itself is not a confirmatory test; power planning from a small/noisy pilot is provisional and requires an independent confirmatory run.",
-      decisionRule: "No policy change from pilot findings. Treat uncertainty intervals spanning both -0.10 and +0.10 as unresolved, not evidence of equivalence.",
-      rngDivergence: "Record per-action actor/command hash and RNG cursor before/after. Compare aligned action traces and retain first divergence; same cursor after different actions is not common-random-number identity.",
-    },
-    config: {
-      pairCount,
-      seedStart,
-      orderSeed,
-      maximumRoundsPerMatch: maxRounds,
-      actionSafetyCapPerMatch: ACTION_SAFETY_CAP,
-      playerCounts: [3, 4],
-      rotationPlan: ROTATION_PLAN,
-      focalMonsterPlan: "cycle eligible monster IDs by pair index; 30-pair default assigns each of six monsters five focal pairs",
-      focalBranchPlan: "cycle eligible branches by pair index; 30-pair default distributes four branches 7–8 times",
-      focalLairPlan: "cycle focal lair rank across repeated focal-monster slots; each configured lair index is exercised for each focal monster",
-      focalTactic: "research-first",
-      opponentTactic: "force-first",
-      armOrderCounts: { controlFirst: lowFirstCount, treatmentFirst: treatmentFirstCount },
-      armOrderRandomStream: { algorithm: "xorshift32", seed: orderSeed, finalState: armRandom.stream.state, draws: armRandom.stream.draws },
-      researchGateBypasses: GATE_BYPASSES,
-    },
-    summary: summarize(pairs),
+    runMetadata: { ...protocol.runMetadata, checkpointPath: checkpointPath.replace(`${process.cwd()}/`, "") },
+    preregistration: protocol.preregistration,
+    config: protocol.config,
+    externalPreregistration,
+    summary: summarizeResearchGatePairs(pairs),
     pairs,
   };
-  process.stdout.write(`${JSON.stringify(evidence, null, 2)}\n`);
+  writeArtifact(outputPath, evidence);
+  if (requestedSignal) process.exitCode = requestedSignal === "SIGINT" ? 130 : 143;
   if (evidence.summary.outcomesByArm.control.invalid > 0 || evidence.summary.outcomesByArm.treatment.invalid > 0) process.exitCode = 1;
+  } finally {
+    checkpointLock.release();
+  }
 }
 
-run();
+run().catch((error) => {
+  process.stderr.write(`${error instanceof Error ? error.stack ?? error.message : String(error)}\n`);
+  process.exitCode = 1;
+});

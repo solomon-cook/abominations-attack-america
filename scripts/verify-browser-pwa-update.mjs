@@ -80,11 +80,12 @@ const server = createServer(async (request, response) => {
 const report = {
   started: new Date().toISOString(),
   environment: "production web build served over loopback with real browser service-worker lifecycle",
-  coverage: "first install, waiting update prompt, keyboard focus retention, user-triggered activation/reload, offline fallback",
+  coverage: "first install, Home update prompt, safe deferral during a phone match with usable Move action, phone layout and keyboard activation, offline fallback",
   scenarios: {},
   runtimeErrors: [],
 };
 let browser;
+let gameContext;
 try {
   await mkdir(artifactDirectory, { recursive: true });
   await new Promise((resolveListen, reject) => {
@@ -151,6 +152,54 @@ try {
   assert.equal(initial.waiting, false, "a first install should not leave a waiting update");
   assert.ok(initial.controlled, "the first install should control the current page");
 
+  gameContext = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "allow" });
+  await gameContext.route("http://localhost:8787/**", (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json; charset=utf-8",
+      body: pathname === "/leaderboard" ? "[]" : JSON.stringify({ account: null }),
+    });
+  });
+  await gameContext.addInitScript(() => localStorage.setItem("abominations-onboarding-seen", "1"));
+  const gamePage = await gameContext.newPage();
+  gamePage.setDefaultTimeout(12000);
+  gamePage.on("pageerror", (error) => report.runtimeErrors.push(error.message));
+  gamePage.on("console", (message) => { if (message.type() === "error") report.runtimeErrors.push(message.text()); });
+  gamePage.on("requestfailed", (request) => report.runtimeErrors.push(`${request.url()}: ${request.failure()?.errorText ?? "request failed"}`));
+  await gamePage.goto(url, { waitUntil: "domcontentloaded" });
+  await gamePage.getByRole("button", { name: "Start local game" }).waitFor({ state: "visible" });
+  await gamePage.waitForFunction(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    return Boolean(registration?.active && navigator.serviceWorker.controller);
+  });
+  await gamePage.getByRole("button", { name: "Start local game" }).click();
+  await gamePage.locator(".setup-panel").waitFor({ state: "visible" });
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    if (!(await gamePage.locator(".setup-panel").count())) break;
+    const lairs = gamePage.locator(".lair-selection-prompt details");
+    if (await lairs.count() && !(await lairs.evaluate((element) => element.open))) await lairs.locator("summary").click();
+    const choice = gamePage.locator(".setup-panel .setup-options button:visible:not(:disabled)").first();
+    await choice.waitFor({ state: "visible" });
+    await choice.click();
+    await gamePage.waitForTimeout(100);
+  }
+  await gamePage.locator(".setup-panel").waitFor({ state: "detached", timeout: 30000 });
+  await gamePage.waitForFunction(() => document.querySelector(".game-screen") && document.querySelector(".action-card h2")?.textContent?.trim().includes("Move"));
+  const gameInitialWorker = await gamePage.evaluate(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    return { activeState: registration?.active?.state ?? null, waiting: Boolean(registration?.waiting) };
+  });
+  assert.equal(gameInitialWorker.activeState, "activated", "the phone match starts under an active service worker");
+  assert.equal(gameInitialWorker.waiting, false, "the phone match has no update waiting before release");
+  report.scenarios.phoneMatchBootstrap = {
+    status: "passed",
+    viewport: "390x844",
+    phase: await gamePage.locator(".action-card h2").innerText(),
+    gameScreen: true,
+    serviceWorkerControlled: true,
+  };
+
   const focusTarget = page.getByRole("button", { name: "Start local game" });
   await focusTarget.focus();
   const focusBeforeUpdate = await page.evaluate(() => ({ tag: document.activeElement?.tagName, label: document.activeElement?.textContent?.trim() }));
@@ -172,10 +221,115 @@ try {
   });
   assert.equal(waiting.hasWaitingWorker, true, "a new version waits until the player chooses to reload");
   assert.equal(waiting.activeState, "activated", "the current version remains active while the update waits");
-  report.scenarios.prompt = { status: "passed", focusBeforeUpdate, focusAfterPrompt, promptBounds, waitingWorker: waiting.hasWaitingWorker };
+
+  await gamePage.evaluate(async () => (await navigator.serviceWorker.getRegistration())?.update());
+  await gamePage.waitForFunction(async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting));
+  await gamePage.waitForTimeout(150);
+  assert.equal(await gamePage.locator(".pwa-update-prompt").count(), 0, "the update notice is deferred while the fullscreen match is active");
+  const gameUpdateState = await gamePage.evaluate(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    return {
+      viewport: { width: innerWidth, height: innerHeight },
+      gameScreenVisible: Boolean(document.querySelector(".game-screen")),
+      phase: document.querySelector(".action-card h2")?.textContent?.trim() ?? null,
+      waitingUpdate: Boolean(registration?.waiting),
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
+  assert.ok(gameUpdateState.gameScreenVisible && /Move/.test(gameUpdateState.phase ?? ""), `the phone match remains in Move: ${JSON.stringify(gameUpdateState)}`);
+  assert.equal(gameUpdateState.waitingUpdate, true, "the new worker waits safely while the match remains open");
+  assert.ok(gameUpdateState.scrollWidth <= gameUpdateState.viewport.width, `the live match should not overflow horizontally: ${JSON.stringify(gameUpdateState)}`);
+  const gameAction = gamePage.locator(".board-action-bar .action-dock > button");
+  await gameAction.waitFor({ state: "visible" });
+  assert.equal(await gameAction.isEnabled(), true, "the current Move action stays enabled with an update waiting");
+  const gameActionHit = await gamePage.evaluate(() => {
+    const button = document.querySelector(".board-action-bar .action-dock > button");
+    const rect = button?.getBoundingClientRect();
+    const hit = rect ? document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) : null;
+    return {
+      button: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+      visible: Boolean(rect && rect.top >= 0 && rect.bottom <= innerHeight && rect.left >= 0 && rect.right <= innerWidth),
+      receivesHit: Boolean(button && hit && (hit === button || button.contains(hit))),
+    };
+  });
+  assert.ok(gameActionHit.visible && gameActionHit.receivesHit,
+    `the phone Move action remains visible and receives taps during the pending update: ${JSON.stringify(gameActionHit)}`);
+  await gamePage.screenshot({ path: resolve(artifactDirectory, `pwa-update-live-game-mobile-${date}.png`), fullPage: true });
+  const movePhaseBeforeAction = gameUpdateState.phase;
+  const gameActionLabel = await gameAction.getAttribute("aria-label");
+  await gameAction.click();
+  await gamePage.waitForTimeout(150);
+  assert.equal(await gamePage.locator(".game-screen").isVisible(), true, "the game remains mounted after the Move action receives a tap");
+  assert.equal(await gameAction.isVisible(), true, "the Move action remains present after its click handler runs");
+  assert.equal(await gamePage.locator(".pwa-update-prompt").count(), 0, "the prompt remains deferred after using a game action");
+  report.scenarios.liveGameMobile = {
+    status: "passed",
+    viewport: "390x844",
+    updateWorkerWaiting: gameUpdateState.waitingUpdate,
+    promptDeferred: true,
+    phaseBeforeAction: movePhaseBeforeAction,
+    actionLabel: gameActionLabel,
+    actionBounds: gameActionHit.button,
+    actionVisible: gameActionHit.visible,
+    actionReceivesPointer: gameActionHit.receivesHit,
+    actionClicked: true,
+    screenshot: `pwa-update-live-game-mobile-${date}.png`,
+  };
+  await gameContext.close();
+  gameContext = undefined;
+
+  await page.setViewportSize({ width: 320, height: 568 });
+  const mobilePromptBounds = await updatePrompt.boundingBox();
+  const mobileButtonBounds = await promptButton.boundingBox();
+  const homeAction = page.getByRole("button", { name: "Start local game" });
+  const homeActionBounds = await homeAction.boundingBox();
+  const mobileDocument = await page.evaluate(() => ({
+    width: innerWidth,
+    height: innerHeight,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  assert.ok(mobilePromptBounds && mobilePromptBounds.x >= 0 && mobilePromptBounds.y >= 0
+    && mobilePromptBounds.x + mobilePromptBounds.width <= mobileDocument.width
+    && mobilePromptBounds.y + mobilePromptBounds.height <= mobileDocument.height,
+  `the update notice should fit a 320x568 phone viewport: ${JSON.stringify({ mobileDocument, mobilePromptBounds })}`);
+  assert.ok(mobileButtonBounds && mobileButtonBounds.x >= mobilePromptBounds.x
+    && mobileButtonBounds.x + mobileButtonBounds.width <= mobilePromptBounds.x + mobilePromptBounds.width
+    && mobileButtonBounds.height >= 44,
+  `the update action should remain fully visible with a 44px touch target: ${JSON.stringify({ mobilePromptBounds, mobileButtonBounds })}`);
+  assert.ok(mobileDocument.scrollWidth <= mobileDocument.width,
+    `the update notice should not introduce horizontal overflow on mobile: ${JSON.stringify(mobileDocument)}`);
+  assert.ok(homeActionBounds && (homeActionBounds.y >= mobilePromptBounds.y + mobilePromptBounds.height
+    || mobilePromptBounds.y >= homeActionBounds.y + homeActionBounds.height),
+  `the update notice should not cover the Home screen start action: ${JSON.stringify({ mobilePromptBounds, homeActionBounds })}`);
+  await page.screenshot({ path: resolve(artifactDirectory, `pwa-update-prompt-mobile-${date}.png`), fullPage: true });
+  await homeAction.scrollIntoViewIfNeeded();
+  const homeActionHitTarget = await page.evaluate(() => {
+    const button = document.querySelector("button.home-start");
+    const rect = button?.getBoundingClientRect();
+    const hit = rect ? document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) : null;
+    return {
+      buttonBounds: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+      buttonVisible: Boolean(rect && rect.top >= 0 && rect.bottom <= innerHeight),
+      hitIsStartAction: Boolean(button && hit && (hit === button || button.contains(hit))),
+    };
+  });
+  assert.ok(homeActionHitTarget.buttonVisible && homeActionHitTarget.hitIsStartAction,
+    `the Home start action should receive a mobile pointer hit: ${JSON.stringify(homeActionHitTarget)}`);
+  report.scenarios.mobilePrompt = {
+    status: "passed",
+    viewport: "320x568",
+    document: mobileDocument,
+    promptBounds: mobilePromptBounds,
+    buttonBounds: mobileButtonBounds,
+    homeActionBounds: homeActionBounds,
+    homeActionHitTarget,
+    screenshot: `pwa-update-prompt-mobile-${date}.png`,
+  };
 
   const documentLoadsBeforeUpdate = await page.evaluate(() => Number(sessionStorage.getItem("pwa-update-test-document-loads") ?? "0"));
-  await promptButton.click();
+  await promptButton.focus();
+  assert.equal(await promptButton.evaluate((button) => document.activeElement === button), true, "the mobile update action should accept keyboard focus");
+  await page.keyboard.press("Enter");
   await page.waitForFunction((before) => Number(sessionStorage.getItem("pwa-update-test-document-loads") ?? "0") > before, documentLoadsBeforeUpdate);
   await page.waitForFunction(async () => {
     const registration = await navigator.serviceWorker.getRegistration();
@@ -194,7 +348,13 @@ try {
     promptPresent: Boolean(document.querySelector(".pwa-update-prompt")),
   }));
   assert.equal(updateAfter.promptPresent, false, "the update prompt clears after the new worker takes control");
-  report.scenarios.activation = { status: "passed", documentReloaded: updateAfter.documentLoads > documentLoadsBeforeUpdate, activeWorkerVersion: activeVersion, promptCleared: true };
+  report.scenarios.activation = {
+    status: "passed",
+    input: "Enter key while the update action is focused at 320x568",
+    documentReloaded: updateAfter.documentLoads > documentLoadsBeforeUpdate,
+    activeWorkerVersion: activeVersion,
+    promptCleared: true,
+  };
 
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
@@ -215,6 +375,7 @@ try {
   report.servedPaths = servedPaths;
   const artifact = resolve(artifactDirectory, `pwa-update-${date}.json`);
   await writeFile(artifact, `${JSON.stringify(report, null, 2)}\n`);
+  await gameContext?.close().catch(() => undefined);
   if (browser) await browser.close();
   await new Promise((resolveClose) => server.close(() => resolveClose()));
   console.log(JSON.stringify({ ...report, artifact }, null, 2));

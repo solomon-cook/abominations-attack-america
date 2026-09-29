@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "generatedAt": "2026-09-29T09:24:08.187Z",
+  "generatedAt": "2026-09-29T12:39:00.491Z",
   "harness": "node scripts/verify-account-api-pglite.mjs",
   "artifact": "output/api-review/account-api-pglite-2026-09-29.json",
   "database": "in-memory PGlite over PostgreSQL wire protocol",

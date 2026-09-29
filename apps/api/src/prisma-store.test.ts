@@ -392,6 +392,10 @@ test("Prisma room and creator seat are created in one transaction", async () => 
   ]);
   assert.equal(fixture.rooms.length, 1);
   assert.equal(fixture.participants.length, 1);
+  assert.deepEqual(fixture.rooms[0]?.playerStats, [
+    { stompedTiles: 0, damageTaken: 0, healthGained: 0, luckTotal: 0, luckRolls: 0 },
+    { stompedTiles: 0, damageTaken: 0, healthGained: 0, luckTotal: 0, luckRolls: 0 },
+  ]);
   assert.equal(fixture.participants[0]?.roomId, fixture.rooms[0]?.id);
   assert.equal(result.room.code, fixture.rooms[0]?.code);
   assert.equal(result.room.participants[0]?.displayName, "Room Host");

@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer as createNetServer } from "node:net";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
 import process from "node:process";
 import { createRequire } from "node:module";
 import { chromePath } from "./chrome-path.mjs";
@@ -21,6 +22,8 @@ const reservePort = () => new Promise((resolve, reject) => {
 const port = Number(process.env.BROWSER_SUPPORT_PORT ?? await reservePort());
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${port}/`;
 const ownsServer = !process.env.BROWSER_TEST_URL;
+const artifactDirectory = resolve(cwd, "output/ui-review");
+const date = new Date().toISOString().slice(0, 10);
 const server = ownsServer
   ? spawn(process.execPath, [join(cwd, "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(port), "--strictPort"], {
     cwd: join(cwd, "apps/web"), stdio: ["ignore", "pipe", "pipe"],
@@ -66,11 +69,45 @@ try {
   assert.equal(await page.locator(".home-screen, .game-screen, .setup-panel, .board-review-screen").count(), 0, "unsupported mode should not render Home, gameplay, setup, or board-review controls");
   assert.deepEqual(runtimeErrors, [], "the unsupported-browser page should render without runtime errors");
 
+  await page.setViewportSize({ width: 320, height: 568 });
+  const mobileBounds = await page.evaluate(() => {
+    const main = document.querySelector("main.unsupported-browser");
+    const heading = main?.querySelector("h1");
+    const instructions = main?.querySelector(".lede");
+    const bounds = (element) => {
+      const rect = element?.getBoundingClientRect();
+      return rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
+    };
+    return {
+      viewport: { width: innerWidth, height: innerHeight },
+      document: { scrollWidth: document.documentElement.scrollWidth, scrollHeight: document.documentElement.scrollHeight },
+      main: bounds(main), heading: bounds(heading), instructions: bounds(instructions),
+    };
+  });
+  assert.ok(mobileBounds.main && mobileBounds.heading && mobileBounds.instructions, "mobile fallback content should remain rendered");
+  assert.ok(mobileBounds.document.scrollWidth <= mobileBounds.viewport.width, `the fallback should not cause horizontal scrolling at 320px: ${JSON.stringify(mobileBounds)}`);
+  assert.ok(mobileBounds.heading.x >= 0 && mobileBounds.heading.x + mobileBounds.heading.width <= mobileBounds.viewport.width,
+    `the mobile heading should stay within the viewport: ${JSON.stringify(mobileBounds)}`);
+  assert.ok(mobileBounds.instructions.x >= 0 && mobileBounds.instructions.x + mobileBounds.instructions.width <= mobileBounds.viewport.width,
+    `the reload guidance should stay within the viewport: ${JSON.stringify(mobileBounds)}`);
+  await mkdir(artifactDirectory, { recursive: true });
+  const screenshot = resolve(artifactDirectory, `unsupported-browser-mobile-${date}.png`);
+  await page.screenshot({ path: screenshot, fullPage: true });
+  const artifact = resolve(artifactDirectory, `unsupported-browser-${date}.json`);
+  await writeFile(artifact, `${JSON.stringify({
+    ok: true,
+    mode: "unsupported-browser",
+    desktop: { viewport: "1280x720", checks: "support predicate, main landmark, heading, reload guidance, no-match message, no app/game controls, no runtime errors" },
+    mobile: { viewport: "320x568", checks: "no horizontal overflow; heading and reload guidance remain within viewport", bounds: mobileBounds, screenshot },
+    runtimeErrors,
+  }, null, 2)}\n`);
+
   console.log(JSON.stringify({
     ok: true,
     mode: "unsupported-browser",
-    viewport: "1280x720",
-    check: "required feature predicate forced false; main landmark, heading, reload guidance, no-match message, and absence of app/game controls verified",
+    viewports: ["1280x720", "320x568"],
+    check: "required feature predicate, fallback content and app-control absence, 320px mobile bounds and overflow verified",
+    artifact,
   }));
   await context.close();
 } finally {

@@ -162,7 +162,17 @@ function safeStoredNumber(key: string, fallback: number): number {
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 }
 
-function App() {
+function PwaUpdatePrompt({ onActivate }: { onActivate: () => void }) {
+  return (
+    <aside className="pwa-update-prompt" aria-live="polite" aria-label="Update available">
+      <strong>New version available</strong>
+      <span>Reload to use the latest playtest shell.</span>
+      <button onClick={onActivate}>Reload and update</button>
+    </aside>
+  );
+}
+
+function App({ updateAvailable, onActivatePwaUpdate }: { updateAvailable: boolean; onActivatePwaUpdate: () => void }) {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const guideOpenerRef = useRef<HTMLElement | null>(null);
   const gameMenuRef = useRef<HTMLDetailsElement>(null);
@@ -1434,6 +1444,8 @@ function App() {
   }
   if (!online && !localPlaytestStarted) {
     return (
+      <>
+      {updateAvailable && <PwaUpdatePrompt onActivate={onActivatePwaUpdate} />}
       <HomeScreen
         online={false}
         room={null}
@@ -1469,6 +1481,7 @@ function App() {
         onStartVictoryScenario={startTemporaryVictoryScenario}
         accountPanel={<AccountPanel account={account} session={session} onAccountChange={setAccount} onSessionChange={replaceOnlineSession} />}
       />
+      </>
     );
   }
 
@@ -1984,18 +1997,7 @@ function App() {
 function AppShell() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   useEffect(() => registerPwaServiceWorker(() => setUpdateAvailable(true)), []);
-  return (
-    <>
-      <App />
-      {updateAvailable && (
-        <aside className="pwa-update-prompt" aria-live="polite" aria-label="Update available">
-          <strong>New version available</strong>
-          <span>Reload to use the latest playtest shell.</span>
-          <button onClick={() => void activatePwaUpdate()}>Reload and update</button>
-        </aside>
-      )}
-    </>
-  );
+  return <App updateAvailable={updateAvailable} onActivatePwaUpdate={() => void activatePwaUpdate()} />;
 }
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

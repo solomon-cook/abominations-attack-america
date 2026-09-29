@@ -62,7 +62,8 @@ export class PrismaRoomStore implements RoomStore {
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`);
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
     const { room, participant } = await this.prismaClient.$transaction(async (tx: Prisma.TransactionClient) => {
-      const room = await tx.gameRoom.create({ data: { code: roomCode, maxPlayers, privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", state: state as any, playerStats: emptyMatchCounters(maxPlayers) as any, isTest: this.allowDevelopmentFixture } });
+      const playerStats = emptyMatchCounters(maxPlayers).map(({ stompedTiles, damageTaken, healthGained, luckTotal, luckRolls }) => ({ stompedTiles, damageTaken, healthGained, luckTotal, luckRolls }));
+      const room = await tx.gameRoom.create({ data: { code: roomCode, maxPlayers, privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", state: state as any, playerStats, isTest: this.allowDevelopmentFixture } });
       const participant = await tx.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
       return { room, participant };
     });

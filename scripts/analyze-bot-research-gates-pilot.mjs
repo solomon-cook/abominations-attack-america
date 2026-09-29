@@ -3,15 +3,71 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readCheckpoint, summarizeResearchGatePairs } from "./research-gate-checkpoint.mjs";
 
 const defaultArtifact = "output/bot-strategy/research-gate-paired-pilot-2026-09-29.json";
 const artifactPath = resolve(process.cwd(), process.argv[2] ?? defaultArtifact);
-const sidecarPath = artifactPath.replace(/\.json$/, "-analysis.json");
-const bytes = readFileSync(artifactPath);
-const artifact = JSON.parse(bytes.toString("utf8"));
-const sha256 = createHash("sha256").update(bytes).digest("hex");
+const sidecarPath = artifactPath.endsWith(".checkpoint.jsonl")
+  ? artifactPath.replace(/\.checkpoint\.jsonl$/, "-analysis.json")
+  : artifactPath.replace(/\.json$/, "-analysis.json");
 const digest = (value) => createHash("sha256").update(value).digest("hex");
+const bytes = readFileSync(artifactPath);
+let artifact;
+let checkpointCompleteness = null;
+if (artifactPath.endsWith(".checkpoint.jsonl")) {
+  const checkpoint = readCheckpoint(artifactPath, { repairTrailingPartialLine: true });
+  const targetPairCount = checkpoint.header.targetPairCount;
+  assert.equal(checkpoint.header.config.pairCount, targetPairCount, "checkpoint target and configuration pair counts must match");
+  assert.ok(checkpoint.pairs.length <= targetPairCount, "checkpoint cannot contain more pairs than its preregistered target");
+  checkpointCompleteness = {
+    complete: checkpoint.pairs.length === targetPairCount,
+    targetPairCount,
+    completedPairCount: checkpoint.pairs.length,
+    discardedTrailingBytes: checkpoint.discardedByteLength,
+    status: checkpoint.pairs.length === targetPairCount ? "complete-preregistered-block" : "partial-nonconfirmatory-checkpoint",
+  };
+  artifact = {
+    schemaVersion: 1,
+    studyStatus: checkpointCompleteness.complete
+      ? checkpoint.header.studyStatus
+      : `INCOMPLETE CHECKPOINT — ${checkpoint.header.studyStatus}`,
+    artifactCompleteness: checkpointCompleteness.status,
+    completedPairCount: checkpoint.pairs.length,
+    runMetadata: checkpoint.header.runMetadata,
+    preregistration: checkpoint.header.preregistration,
+    config: checkpoint.header.config,
+    externalPreregistration: checkpoint.header.externalPreregistration,
+    summary: summarizeResearchGatePairs(checkpoint.pairs),
+    pairs: checkpoint.pairs,
+  };
+  const identity = {
+    gitHead: checkpoint.header.runMetadata.gitHead,
+    sourceSha256: checkpoint.header.runMetadata.sourceSha256,
+    preregistration: checkpoint.header.preregistration,
+    config: checkpoint.header.config,
+    studyStatus: checkpoint.header.studyStatus,
+    externalPreregistration: checkpoint.header.externalPreregistration,
+  };
+  assert.equal(checkpoint.header.campaignIdentitySha256, digest(JSON.stringify(identity)), "checkpoint campaign identity must recompute from its retained source, protocol, and configuration");
+} else {
+  artifact = JSON.parse(bytes.toString("utf8"));
+  if (artifact.artifactCompleteness === "partial-checkpoint-export" || artifact.artifactCompleteness === "complete-preregistered-block") {
+    const complete = artifact.artifactCompleteness === "complete-preregistered-block";
+    checkpointCompleteness = {
+      complete,
+      targetPairCount: artifact.config.pairCount,
+      completedPairCount: artifact.completedPairCount ?? artifact.pairs.length,
+      discardedTrailingBytes: 0,
+      status: complete ? "complete-preregistered-block" : "partial-nonconfirmatory-checkpoint",
+    };
+    if (!complete && !artifact.studyStatus.startsWith("INCOMPLETE CHECKPOINT — ")) {
+      artifact.studyStatus = `INCOMPLETE CHECKPOINT — ${artifact.studyStatus}`;
+    }
+  }
+}
+const sha256 = createHash("sha256").update(bytes).digest("hex");
 const analyzerSha256 = digest(readFileSync(fileURLToPath(import.meta.url)));
+const studyStage = artifact.preregistration.stage ?? (artifact.studyStatus.includes("CONFIRMATORY") ? "confirmatory" : "pilot");
 const REQUIRED_BYPASSES = ["objectiveThreatAbsent", "blockerOpportunityAbsent"];
 const HARD_GATES = ["researchDeckAvailable", "deploymentNotStarted", "researchHandBelowTwo", "researchFirstPolicy", "activeMilitaryScreen"];
 const OUTCOMES = ["win", "draw", "loss", "incomplete", "invalid"];
@@ -69,21 +125,30 @@ function estimatePairsForPower(variance, delta, targetPower) {
   return null;
 }
 
-assert.equal(artifact.studyStatus, "PILOT — descriptive and inconclusive; not a default-policy decision");
+assert.ok(/^(PILOT|CONFIRMATORY|INCOMPLETE CHECKPOINT) — /.test(artifact.studyStatus), "study status must retain its preregistered stage");
 assert.equal(artifact.preregistration.minimumMeaningfulDifference.absoluteScorePoints, 0.10);
 assert.equal(artifact.preregistration.alpha, 0.05);
 assert.equal(artifact.preregistration.targetPower, 0.80);
 assert.equal(artifact.preregistration.treatment.match(/bypasses only ([^;]+)/)?.[1], "objectiveThreatAbsent and blockerOpportunityAbsent on the optional Research draw path");
 assert.deepEqual(artifact.config.researchGateBypasses, REQUIRED_BYPASSES);
+if (artifact.externalPreregistration) {
+  const externalBytes = readFileSync(resolve(process.cwd(), artifact.externalPreregistration.path));
+  assert.equal(digest(externalBytes), artifact.externalPreregistration.sha256, "external pre-run registration bytes must match their recorded checksum");
+  assert.deepEqual(JSON.parse(externalBytes.toString("utf8")), artifact.externalPreregistration.registration, "external pre-run registration content must match the retained copy");
+}
 
 const pairs = artifact.pairs;
-assert.equal(pairs.length, artifact.config.pairCount);
+assert.ok(pairs.length <= artifact.config.pairCount, "analyzed pairs must not exceed the preregistered target");
+if (!checkpointCompleteness && artifact.artifactCompleteness !== "partial-checkpoint-export") {
+  assert.equal(pairs.length, artifact.config.pairCount, "a finalized JSON artifact must include every preregistered pair");
+}
+assert.equal(artifact.completedPairCount ?? pairs.length, pairs.length, "completed-pair count must match retained rows");
 assert.equal(new Set(pairs.map((pair) => pair.seed)).size, pairs.length, "pair seeds must be unique");
 assert.equal(new Set(pairs.map((pair) => pair.initialStateSha256)).size, pairs.length, "initial setups must be unique across pairs");
 const random = seededRandom(artifact.config.orderSeed);
-const orderCandidates = Array.from({ length: Math.floor(pairs.length / 2) }, () => "control");
-orderCandidates.push(...Array.from({ length: Math.floor(pairs.length / 2) }, () => "urgency-gates-bypassed"));
-if (pairs.length % 2) orderCandidates.push(random.next() < 0.5 ? "control" : "urgency-gates-bypassed");
+const orderCandidates = Array.from({ length: Math.floor(artifact.config.pairCount / 2) }, () => "control");
+orderCandidates.push(...Array.from({ length: Math.floor(artifact.config.pairCount / 2) }, () => "urgency-gates-bypassed"));
+if (artifact.config.pairCount % 2) orderCandidates.push(random.next() < 0.5 ? "control" : "urgency-gates-bypassed");
 const expectedFirstArms = shuffled(orderCandidates, random);
 let optionalRows = 0;
 let bypassedRows = 0;
@@ -100,7 +165,8 @@ for (const pair of pairs) {
     lair: seat.lair,
   }));
   assert.deepEqual(setupRows, pair.setupAssignments, `pair ${pair.pairIndex} saved setup must match its snapshot`);
-  assert.equal(pair.randomizedArmOrder[0], expectedFirstArms[pair.pairIndex], `pair ${pair.pairIndex} execution order must be reproducible from its order stream`);
+  assert.equal(pair.pairIndex, pairs.indexOf(pair), "pairs must be a contiguous prefix in preregistered order");
+  assert.equal(pair.randomizedArmOrder[0], expectedFirstArms[pair.pairIndex], `pair ${pair.pairIndex} execution order must be reproducible from the full block order stream`);
   assert.equal(pair.randomizedArmOrder[1], pair.randomizedArmOrder[0] === "control" ? "urgency-gates-bypassed" : "control");
   assert.deepEqual(pair.control.initialRng, pair.initialRng);
   assert.deepEqual(pair.treatment.initialRng, pair.initialRng);
@@ -258,24 +324,44 @@ const currentSourceDiffs = Object.entries(artifact.runMetadata.sourceSha256).fla
     return [{ path, runHash, currentHash: null }];
   }
 });
-const archivedHarnessPath = "output/bot-strategy/research-gate-paired-pilot-harness-at-run-2026-09-29.tsx";
+const archivedHarnessPath = artifact.runMetadata.harnessSnapshotPath ?? "output/bot-strategy/research-gate-paired-pilot-harness-at-run-2026-09-29.tsx";
 const archivedHarnessSha256 = digest(readFileSync(resolve(process.cwd(), archivedHarnessPath)));
 const runRecordedHarnessSha256 = artifact.runMetadata.sourceSha256["scripts/verify-bot-research-gates-paired.tsx"];
 assert.equal(archivedHarnessSha256, runRecordedHarnessSha256, "archived harness source must match the hash recorded during the run");
+const archivedRunSources = Object.entries(artifact.runMetadata.sourceSnapshotPaths ?? {
+  "scripts/verify-bot-research-gates-paired.tsx": archivedHarnessPath,
+}).map(([sourcePath, snapshotPath]) => {
+  const archivedSha256 = digest(readFileSync(resolve(process.cwd(), snapshotPath)));
+  assert.equal(archivedSha256, artifact.runMetadata.sourceSha256[sourcePath], `${sourcePath} snapshot must match the hash recorded during the run`);
+  return { sourcePath, snapshotPath, archivedSha256, matchesRunMetadata: true };
+});
 const preregistrationExport = {
   schemaVersion: 1,
   exportedAt: new Date().toISOString(),
-  status: "POST-RUN ARCHIVE EXPORT — not an independently timestamped preregistration file",
+  status: artifact.externalPreregistration
+    ? "EXTERNAL PRE-RUN REGISTRATION VERIFIED — companion archive exported after the run"
+    : "POST-RUN ARCHIVE EXPORT — not an independently timestamped preregistration file",
   protocol: artifact.preregistration,
-  preRunEvidence: {
-    sourcePath: archivedHarnessPath,
-    sourceSha256RecordedInRun: runRecordedHarnessSha256 ?? null,
-    archivedSourceHashVerified: archivedHarnessSha256 === runRecordedHarnessSha256,
-    evidenceLimit: "The archived harness contains the exact protocol bytes and matches the source hash retained in the raw run artifact. This companion JSON is emitted after the run; an independently timestamped pre-run JSON copy was not retained.",
-  },
+  preRunEvidence: artifact.externalPreregistration
+    ? {
+      sourcePath: artifact.externalPreregistration.path,
+      sourceSha256: artifact.externalPreregistration.sha256,
+      checkpointHelperSha256: artifact.runMetadata.sourceSha256["scripts/research-gate-checkpoint.mjs"] ?? null,
+      sourceBytesVerifiedAgainstRun: true,
+      registeredAt: artifact.externalPreregistration.registration.registeredAt ?? null,
+      evidenceLimit: "The source registration is marked PRE-RUN and its exact bytes match the hash retained at run start. The analyzer does not independently establish the trustworthiness of the source timestamp.",
+    }
+    : {
+      sourcePath: archivedHarnessPath,
+      sourceSha256RecordedInRun: runRecordedHarnessSha256 ?? null,
+      archivedSourceHashVerified: archivedHarnessSha256 === runRecordedHarnessSha256,
+      evidenceLimit: "The archived harness contains the exact protocol bytes and matches the source hash retained in the raw run artifact. This companion JSON is emitted after the run; an independently timestamped pre-run JSON copy was not retained.",
+    },
   rawArtifact: { path: artifactPath.replace(`${process.cwd()}/`, ""), sha256 },
 };
-const preregistrationPath = artifactPath.replace(/\.json$/, "-preregistration-archive.json");
+const preregistrationPath = artifactPath.endsWith(".checkpoint.jsonl")
+  ? artifactPath.replace(/\.checkpoint\.jsonl$/, "-preregistration-archive.json")
+  : artifactPath.replace(/\.json$/, "-preregistration-archive.json");
 writeFileSync(preregistrationPath, `${JSON.stringify(preregistrationExport, null, 2)}\n`);
 
 const analysis = {
@@ -283,6 +369,12 @@ const analysis = {
   generatedAt: new Date().toISOString(),
   rawArtifact: { path: artifactPath.replace(`${process.cwd()}/`, ""), sha256, bytes: bytes.length, gitHead: artifact.runMetadata.gitHead },
   studyStatus: artifact.studyStatus,
+  checkpointCompleteness,
+  inferentialUse: checkpointCompleteness?.complete
+    ? "The checkpoint contains every preregistered pair; it is analyzable as the full randomized block, subject to the preregistered stage and decision rule."
+    : checkpointCompleteness
+      ? "Partial checkpoint only: interim descriptive variance and diagnostics; not confirmatory and not a policy decision. Resume the same checkpoint to reach the preregistered pair count."
+      : "Use is constrained by the preregistered study stage and decision rule.",
   preregistration: {
     outcome: "Focal terminal score W=1, D=0.5, L=0; treatment minus control.",
     minimumMeaningfulDifference: 0.10,
@@ -308,7 +400,7 @@ const analysis = {
     focalComposition: artifact.summary.setupComposition,
     pairedScoreRecomputed: { completePairs: differences.length, meanDifference: mean, sampleVariance: variance, sampleSD: variance === null ? null : Math.sqrt(variance), standardError, approximatePairedT95ConfidenceInterval: confidenceInterval },
   },
-  pilotPowerPlanning: {
+  pilotPowerPlanning: studyStage === "pilot" ? {
     method: "Normal approximation to a two-sided paired t test, using the observed sample variance of complete pilot paired differences and the registered 0.10 mean-score difference. Approximate t critical values are used; this is a planning estimate, not confirmatory inference.",
     estimatedPowerAtPilotNForMmd: variance === null ? null : estimatedPower(differences.length, variance, 0.10),
     estimatedRequiredPairsFor80PercentPower: requiredPairEstimate,
@@ -318,12 +410,22 @@ const analysis = {
         ? "Pilot is undersized for its estimated target; no policy claim or default change."
         : "The pilot reaches the variance-based numerical target, but remains explicitly a pilot and does not authorize a policy change.",
     caveat: "Variance from a small pilot is noisy and may underestimate future variance. Confirm with a separately randomized study of at least the planned pair count, including the same balanced setup blocks and cap policy.",
-  },
-  interpretation: "Descriptive gate-bypass pilot only. It estimates the bundled effect of removing both urgency gates for a research-first focal bot against force-first opponents; it cannot identify either gate's separate contribution or validate physical-edition rules.",
+  } : null,
+  confirmatoryDecisionStatus: studyStage === "confirmatory" ? {
+    status: checkpointCompleteness && !checkpointCompleteness.complete
+      ? "Incomplete checkpoint; interim diagnostics only. Resume the same preregistered block before a confirmatory decision."
+      : "Full preregistered block analyzed; inspect the reported confidence interval, retained cap/invalid evidence, and registered decision rule before any policy decision.",
+    registeredDecisionRule: artifact.externalPreregistration?.registration.decisionRule ?? artifact.preregistration.decisionRule,
+    defaultPolicyChanged: false,
+  } : null,
+  interpretation: studyStage === "pilot"
+    ? "Descriptive gate-bypass pilot only. It estimates the bundled effect of removing both urgency gates for a research-first focal bot against force-first opponents; it cannot identify either gate's separate contribution or validate physical-edition rules."
+    : "Gate-bypass confirmatory experiment. It estimates the bundled effect of removing both urgency gates for a research-first focal bot against force-first opponents; it cannot identify either gate's separate contribution or validate physical-edition rules.",
   provenance: {
     sourceHashesAtRun: artifact.runMetadata.sourceSha256,
     currentSourceComparison: { filesCompared: Object.keys(artifact.runMetadata.sourceSha256).length, changedSinceRun: currentSourceDiffs },
     archivedPreRunHarness: { path: archivedHarnessPath, sha256: archivedHarnessSha256, matchesRunMetadata: archivedHarnessSha256 === runRecordedHarnessSha256 },
+    archivedRunSources,
     runWindowSourceSnapshot: null,
     runWindowSourceSnapshotNote: "No ambient /tmp snapshot is loaded: provenance is tied to source hashes embedded in the raw run artifact, plus a direct comparison with current files.",
     preregistrationArchivePath: preregistrationPath.replace(`${process.cwd()}/`, ""),

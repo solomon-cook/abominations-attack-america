@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "mode": "unsupported-browser",
+  "desktop": {
+    "viewport": "1280x720",
+    "checks": "support predicate, main landmark, heading, reload guidance, no-match message, no app/game controls, no runtime errors"
+  },
+  "mobile": {
+    "viewport": "320x568",
+    "checks": "no horizontal overflow; heading and reload guidance remain within viewport",
+    "bounds": {
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "document": {
+        "scrollWidth": 320,
+        "scrollHeight": 568
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "heading": {
+        "x": 20,
+        "y": 197.859375,
+        "width": 280,
+        "height": 108.28125
+      },
+      "instructions": {
+        "x": 20,
+        "y": 346.140625,
+        "width": 280,
+        "height": 72
+      }
+    },
+    "screenshot": "/Users/solomon/Documents/abominations-attack-america/abominations-attack-america/output/ui-review/unsupported-browser-mobile-2026-09-29.png"
+  },
+  "runtimeErrors": []
+}
