@@ -4,6 +4,7 @@ import test from "node:test";
 import { applySetupAction, createMvpRoomGame, createRoomGame, legalChopperLiftDestinations, legalMonsterPaths, locationIdToHexKey } from "@abominations/game-engine";
 import type { JsonValue } from "@abominations/shared";
 import { PrismaRoomStore } from "./prisma-store.js";
+import { MAX_RETAINED_ROOM_EVENTS } from "./store.js";
 import { persistentAdapter } from "./test-adapter.js";
 
 const accessHash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -232,6 +233,33 @@ test("Prisma room projection preserves legacy JSON roots and unknown event names
     false,
     null,
   ]);
+});
+
+test("Prisma room projections distinguish an exact event cap from a truncated cursor range", async () => {
+  const { adapter, room, events } = persistentAdapter();
+  room.version = MAX_RETAINED_ROOM_EVENTS + 1;
+  events.push(...Array.from({ length: MAX_RETAINED_ROOM_EVENTS + 1 }, (_, index) => ({
+    id: `retained-${index + 1}`,
+    roomId: room.id,
+    version: index + 1,
+    actorId: "player-1",
+    type: "turn.passed",
+    payload: {},
+    createdAt: new Date(),
+  })));
+  const store = new PrismaRoomStore(adapter);
+
+  const exactlyAtLimit = await store.getRoom(room.code, "token", 1);
+  assert.equal(exactlyAtLimit.events.length, MAX_RETAINED_ROOM_EVENTS);
+  assert.equal(exactlyAtLimit.eventsTruncated, false, "256 events after the cursor fit without a gap");
+  assert.equal(exactlyAtLimit.events[0]?.version, MAX_RETAINED_ROOM_EVENTS + 1);
+  assert.equal(exactlyAtLimit.events.at(-1)?.version, 2);
+
+  const olderCursor = await store.getRoom(room.code, "token", 0);
+  assert.equal(olderCursor.events.length, MAX_RETAINED_ROOM_EVENTS, "the public event list remains capped at 256");
+  assert.equal(olderCursor.eventsTruncated, true, "a 257-event cursor range reports its omitted oldest event");
+  assert.equal(olderCursor.events[0]?.version, MAX_RETAINED_ROOM_EVENTS + 1);
+  assert.equal(olderCursor.events.at(-1)?.version, 2);
 });
 
 test("concurrent account resume uses compare-and-set so only the winning session token is returned", async () => {

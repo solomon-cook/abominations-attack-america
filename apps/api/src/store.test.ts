@@ -2151,11 +2151,33 @@ test("memory event history keeps the bounded recovery suffix", async () => {
   await completeDevelopmentSetup(store, [host, guest]);
   await store.setReady(host.room.code, host.token, true);
   const active = await store.setReady(host.room.code, guest.token, true);
-  const rooms = (store as unknown as { rooms: Map<string, { events: unknown[] }> }).rooms;
+  const rooms = (store as unknown as { rooms: Map<string, { id: string; version: number; events: RoomEvent[]; eventsPrunedThroughVersion: number }> }).rooms;
   const storedRoom = [...rooms.values()][0]!;
-  storedRoom.events = Array.from({ length: MAX_RETAINED_ROOM_EVENTS }, (_, index) => ({ version: index + 1 }));
-  await store.submitAction(host.room.code, host.token, { actionId: "retention-boundary", actorId: host.participantId, expectedRevision: active.version, protocolVersion: 1, command: { type: "pass-move" } });
+  storedRoom.version = MAX_RETAINED_ROOM_EVENTS;
+  storedRoom.eventsPrunedThroughVersion = 0;
+  storedRoom.events = Array.from({ length: MAX_RETAINED_ROOM_EVENTS }, (_, index) => ({
+    id: `retained-${index}`,
+    roomId: storedRoom.id,
+    version: MAX_RETAINED_ROOM_EVENTS - index,
+    actorId: host.participantId,
+    type: "turn.passed",
+    payload: {},
+    createdAt: new Date().toISOString(),
+  }));
+  const exactlyAtLimit = await store.getRoom(host.room.code, host.token, 0);
+  assert.equal(exactlyAtLimit.events.length, MAX_RETAINED_ROOM_EVENTS);
+  assert.equal(exactlyAtLimit.eventsTruncated, false, "exactly the retained range is not reported as truncated");
+
+  const advanced = await store.submitAction(host.room.code, host.token, { actionId: "retention-boundary", actorId: host.participantId, expectedRevision: MAX_RETAINED_ROOM_EVENTS, protocolVersion: 1, command: { type: "pass-move" } });
   assert.equal(storedRoom.events.length, MAX_RETAINED_ROOM_EVENTS);
+  assert.equal(advanced.eventsTruncated, true, "the original cursor missed the event that was pruned");
+  assert.equal(advanced.events.length, MAX_RETAINED_ROOM_EVENTS);
+
+  const exactlyAtPrunedBoundary = await store.getRoom(host.room.code, host.token, 1);
+  assert.equal(exactlyAtPrunedBoundary.events.length, MAX_RETAINED_ROOM_EVENTS);
+  assert.equal(exactlyAtPrunedBoundary.eventsTruncated, false, "a cursor at the pruned-through revision can read the complete retained suffix");
+  const staleCursor = await store.getRoom(host.room.code, host.token, 0);
+  assert.equal(staleCursor.eventsTruncated, true);
 });
 
 test("bounded concurrent room and spectator operations remain isolated", async () => {

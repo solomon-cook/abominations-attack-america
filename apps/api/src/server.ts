@@ -21,9 +21,17 @@ const runtimeConfig = validateRuntimeConfig();
 const allowedOrigin = runtimeConfig.allowedOrigin === "*" ? "http://localhost:5173" : runtimeConfig.allowedOrigin;
 const allowDevelopmentFixture = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEVELOPMENT_FIXTURE === "true";
 const usePrisma = Boolean(databaseUrl) && process.env.PERSISTENCE !== "memory" && (!allowDevelopmentFixture || process.env.PERSISTENCE === "prisma");
+const memoryRoomTestSeed = (() => {
+  if (process.env.NODE_ENV !== "test" || process.env.PERSISTENCE !== "memory") return undefined;
+  const configuredSeed = process.env.MEMORY_ROOM_TEST_SEED;
+  if (configuredSeed === undefined) return undefined;
+  const seed = Number(configuredSeed);
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff_ffff) throw new Error("MEMORY_ROOM_TEST_SEED must be an unsigned 32-bit integer.");
+  return seed;
+})();
 const store: RoomStore = usePrisma
   ? new PrismaRoomStore(undefined, allowDevelopmentFixture)
-  : new MemoryRoomStore(allowDevelopmentFixture);
+  : new MemoryRoomStore(allowDevelopmentFixture, memoryRoomTestSeed);
 const accountService = prisma && usePrisma ? new AccountService(prisma) : undefined;
 type SocketLease = { participantId: string; connectionId: string; sessionHash: string };
 const sockets = new Map<string, Map<WebSocket, SocketLease>>();

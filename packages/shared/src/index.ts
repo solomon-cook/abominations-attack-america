@@ -104,6 +104,8 @@ export interface RoomView {
   state: GameState;
   participants: RoomParticipantView[];
   events: RoomEvent[];
+  /** True when older events after the requested cursor were omitted by a store's history limit. */
+  eventsTruncated?: boolean;
 }
 
 export type RoomSocketClientMessage = {

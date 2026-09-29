@@ -11,6 +11,9 @@ import { chromePath } from "./chrome-path.mjs";
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const cwd = process.cwd();
+const memoryRoomTestSeed = Number(process.env.BROWSER_ONLINE_FIGHT_GAME_SEED ?? 0);
+assert.ok(Number.isInteger(memoryRoomTestSeed) && memoryRoomTestSeed >= 0 && memoryRoomTestSeed <= 0xffff_ffff,
+  "BROWSER_ONLINE_FIGHT_GAME_SEED must be an unsigned 32-bit integer");
 const reservePort = () => new Promise((resolve, reject) => {
   const server = createNetServer();
   server.once("error", reject);
@@ -106,7 +109,7 @@ try {
     command: process.execPath,
     args: ["--import", "tsx/esm", "src/server.ts"],
     cwd: join(cwd, "apps/api"),
-    env: { ...process.env, PORT: String(apiPort), PERSISTENCE: "memory", ALLOWED_ORIGIN: new URL(url).origin },
+    env: { ...process.env, NODE_ENV: "test", PORT: String(apiPort), PERSISTENCE: "memory", MEMORY_ROOM_TEST_SEED: String(memoryRoomTestSeed), ALLOWED_ORIGIN: new URL(url).origin },
     label: "Memory API",
   });
   await apiServer.ready(async () => (await fetch(`${apiUrl}/health`)).ok);
@@ -252,6 +255,9 @@ try {
   assert.equal(queuedFights.state.pendingBattles.length, 2, "the monster move adds a second battle to the Fight queue");
   assert.ok(queuedFights.state.pendingBattles.some((battle) => battle.id === fighterBattleId), "the earlier Navy Fighter battle remains queued");
   const ownMonsterName = queuedFights.state.monsters[activePlayerIndex]?.name;
+  const fighterBattle = queuedFights.state.pendingBattles.find((battle) => battle.id === fighterBattleId);
+  const fighterBattleMonsterName = queuedFights.state.monsters.find((monster) => monster.id === fighterBattle?.monsterId)?.name;
+  assert.ok(fighterBattle && fighterBattleMonsterName, "the Navy Fighter battle has a named opposing monster");
   const ownMonsterBattle = queuedFights.state.pendingBattles.find((battle) => battle.monsterId === queuedFights.state.monsters[activePlayerIndex]?.id);
   assert.ok(ownMonsterBattle?.militaryUnitIds.includes("1-1"), "the monster's attack queues the other battle against the deployed Navy Submarine");
 
@@ -358,11 +364,11 @@ try {
       const chooserButtons = chooser.locator("button");
       assert.equal(await chooserButtons.count(), 2, "the Fight dialog offers one chooser button for each pending battle");
       assert.equal(await chooser.locator('button[aria-pressed="true"]').count(), 1, "exactly one pending battle is exposed as selected");
-      const submarineBattleChoice = chooser.locator("button").filter({ hasText: ownMonsterName });
-      assert.equal(await submarineBattleChoice.count(), 1, `the current monster's submarine battle has one chooser entry (${ownMonsterName})`);
+      const firstBattleChoice = chooser.locator("button").filter({ hasText: ownMonsterName });
+      assert.equal(await firstBattleChoice.count(), 1, `the own-monster/Submarine battle has one chooser entry (${ownMonsterName})`);
       const roomVersionBeforeSelection = authoritative.version;
-      await submarineBattleChoice.click();
-      assert.equal(await submarineBattleChoice.getAttribute("aria-pressed"), "true", "selecting a battle updates the chooser's aria-pressed state");
+      await firstBattleChoice.click();
+      assert.equal(await firstBattleChoice.getAttribute("aria-pressed"), "true", "selecting a battle updates the chooser's aria-pressed state");
       assert.equal((await fightDialog.locator(".battle-monster h3").textContent())?.trim(), ownMonsterName, "the selected battle's monster is shown in the Fight dialog");
       const roomVersionAfterSelection = await activePage.evaluate(async ({ service, code }) => {
         const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
@@ -415,7 +421,7 @@ try {
       assert.equal(afterFirstBattle.state.phase, "fight", "resolving one battle keeps the room in Fight");
       assert.equal(afterFirstBattle.state.pendingBattles.length, 1, "the other battle remains pending after resolving the first");
       const remainingBattle = afterFirstBattle.state.pendingBattles[0];
-      assert.notEqual(remainingBattle.id, ownMonsterBattle.id, "the still-pending battle is the separate Navy Fighter battle");
+      assert.equal(remainingBattle.id, fighterBattleId, "the still-pending battle is the separate Navy Fighter battle");
       const remainingMonsterName = afterFirstBattle.state.monsters.find((monster) => monster.id === remainingBattle.monsterId)?.name;
       await continueToNextBattle.click();
       await activePage.waitForFunction((name) => document.querySelector("dialog.resolution-fight[open] .battle-monster h3")?.textContent?.trim() === name, remainingMonsterName);
@@ -444,7 +450,7 @@ try {
       if (firstBattleEvent) {
         assert.equal(afterDecision.state.phase, "fight", "finishing the selected first battle leaves the other battle in Fight");
         assert.equal(afterDecision.state.pendingBattles.length, 1, "only the other queued battle remains after the selected battle resolves");
-        assert.equal(afterDecision.state.pendingBattles[0]?.id, fighterBattleId, "the original Navy Fighter battle remains for playback after the submarine battle");
+        assert.equal(afterDecision.state.pendingBattles[0]?.id, fighterBattleId, "the Navy Fighter battle remains after the own-monster/Submarine battle");
         firstQueuedBattleResolved = true;
       }
     }
@@ -456,8 +462,17 @@ try {
       version: room.version,
       phase: room.state.phase,
       pendingBattles: room.state.pendingBattles.length,
+      fightEvents: room.state.eventLog.filter((event) => event.action === "fight.resolved").map((event) => ({
+        id: event.id,
+        battleId: event.detail.battleId,
+        attacks: Array.isArray(event.detail.attacks) ? event.detail.attacks.map((attack) => ({
+          attackerId: attack.attackerId,
+          targetId: attack.targetId,
+          roll: attack.roll,
+          combatRound: attack.combatRound,
+        })) : [],
+      })),
       fightBattleIds: room.state.eventLog.filter((event) => event.action === "fight.resolved").map((event) => event.detail.battleId),
-      fightEvents: room.state.eventLog.filter((event) => event.action === "fight.resolved").length,
       destination: room.state.monsters[room.state.currentPlayer]?.location,
       navySubmarine: (() => {
         const submarine = room.state.units.find((unit) => unit.id === "1-1");
@@ -472,9 +487,9 @@ try {
   assert.ok(fightControls.length > 0, "Fight required a visible legal UI decision");
   assert.equal(submarineLaunchVerified, true, "the browser flow exercised the optional Navy submarine choice");
   assert.equal(multiBattleChooserVerified, true, "the Fight UI exposed both pending battles and updated selection semantics");
-  assert.equal(firstQueuedBattleResolved, true, "the selected submarine battle resolved while the second battle remained pending");
+  assert.equal(firstQueuedBattleResolved, true, "the own-monster/Submarine battle resolved while the Navy Fighter battle remained pending");
   assert.equal(continueToSecondBattleVerified, true, "the Fight UI continued to the remaining battle before resolving it");
-  assert.equal(completed.fightEvents, 2, "server recorded one fight.resolved event for each of the two queued battles");
+  assert.equal(completed.fightEvents.length, 2, "server recorded one fight.resolved event for each of the two queued battles");
   assert.deepEqual(new Set(completed.fightBattleIds), new Set([fighterBattleId, ownMonsterBattle.id]), "the event log records resolution for both distinct queued battle ids");
   assert.equal(completed.pendingBattles, 0, "the online Fight queue is resolved");
   assert.equal(completed.phase, "encounter", "online match progressed from Fight to Encounter");
@@ -504,27 +519,117 @@ try {
   assert.ok(returnedBattlePieces >= 1, "at least one reusable Navy piece returns to its military record after combat");
   assert.equal(deploymentTrayAfterFight.deployed, deploymentTrayBeforeFight.deployed - returnedBattlePieces, "the visible branch tray removes all returned battle pieces from its deployed count");
   assert.equal(deploymentTrayAfterFight.reserve, deploymentTrayBeforeFight.reserve + returnedBattlePieces, "the visible branch tray adds all returned battle pieces to its reserve count");
-  const attackHistory = activePage.locator("dialog.resolution-fight[open] details.battle-history");
+  await activePage.setViewportSize({ width: 390, height: 844 });
+  const fightDialogForHistory = activePage.locator("dialog.resolution-fight[open]");
+  const attackHistory = fightDialogForHistory.locator("details.battle-history");
   await attackHistory.waitFor({ state: "visible" });
   const historySummary = attackHistory.locator("summary");
-  await historySummary.click();
   const historyRows = attackHistory.locator("button");
-  assert.ok(await historyRows.count() > 0, "Fight playback exposes recorded attack history");
-  const versionBeforePlayback = completed.version;
-  const firstRecordedAttack = attackHistory.locator("button").first();
-  const selectedHistoryText = await firstRecordedAttack.textContent();
-  const selectedRoll = selectedHistoryText?.match(/⚄\s*(\d)/)?.[1];
-  assert.ok(selectedRoll, `selected history row includes its recorded die face: ${selectedHistoryText}`);
-  await firstRecordedAttack.click();
-  await activePage.waitForFunction((roll) => document.querySelector("dialog.resolution-fight[open] .battle-roll .combat-die")?.getAttribute("aria-label")?.endsWith(`rolls ${roll}`), selectedRoll);
-  const selectedHistoryState = await firstRecordedAttack.getAttribute("aria-current");
-  assert.equal(selectedHistoryState, "step", "selected attack history row is exposed as the current playback step");
-  const versionAfterPlayback = await activePage.evaluate(async ({ service, code }) => {
-    const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
-    const room = await (await fetch(`${service}/rooms/${code}/state?token=${encodeURIComponent(session.token ?? "")}`)).json();
-    return room.version;
-  }, { service: apiUrl, code: roomCode });
+  const historyCount = await historyRows.count();
+  const authoritativeBeforePlayback = await readBrowserRoom(activePage, roomCode);
+  assert.equal(authoritativeBeforePlayback.status, 200, "the active seat can read the authoritative room before browsing attack history");
+  const playbackEvent = [...authoritativeBeforePlayback.body.state.eventLog].reverse().find((entry) => entry.action === "fight.resolved");
+  assert.ok(playbackEvent, "the online route has an authoritative resolved Fight event to browse");
+  const authoritativeAttacks = Array.isArray(playbackEvent.detail.attacks) ? playbackEvent.detail.attacks : [];
+  assert.ok(authoritativeAttacks.length >= 2, `the latest production Fight event records enough real attacks to exercise first and last entries: ${authoritativeAttacks.length}; resolved events=${JSON.stringify(completed.fightEvents.map((event) => ({ id: event.id, battleId: event.battleId, count: event.attacks.length, rolls: event.attacks.map((attack) => attack.roll) })))}`);
+  assert.equal(historyCount, authoritativeAttacks.length, "the production Fight history renders each recorded attack exactly once");
+  assert.equal(playbackEvent.id, completed.fightEvents.at(-1)?.id, "the displayed attack list belongs to the latest authoritative Fight result");
+  assert.equal(playbackEvent.detail.battleId, fighterBattleId, "the latest authoritative Fight result is the Navy Fighter battle selected to provide a two-attack playback history");
+  const versionBeforePlayback = authoritativeBeforePlayback.body.version;
+  const previousResult = fightDialogForHistory.locator(".battle-playback-controls > button");
+  await historySummary.focus();
+  await activePage.keyboard.press("Enter");
+  assert.equal(await attackHistory.evaluate((details) => details.open), true, "Enter opens the attack-history disclosure");
+  const initialHistoryState = await historyRows.evaluateAll((rows) => rows.map((row) => ({ current: row.getAttribute("aria-current"), text: row.textContent?.trim() })));
+  const initiallySelectedHistoryIndex = initialHistoryState.findIndex((row) => row.current === "step");
+  assert.ok(initiallySelectedHistoryIndex >= 0, `the recorded playback identifies a current attack: ${JSON.stringify(initialHistoryState)}`);
+  assert.equal(initialHistoryState.filter((row) => row.current === "step").length, 1, `exactly one recorded attack is current: ${JSON.stringify(initialHistoryState)}`);
+  await activePage.keyboard.press("Tab");
+  const keyboardOrder = [];
+  const selectedHistoryRolls = [];
+  const selectedHistoryTextForFirst = await historyRows.first().textContent();
+  const selectedRoll = selectedHistoryTextForFirst?.match(/⚄\s*(\d)/)?.[1];
+  assert.ok(selectedRoll, `first history row includes its recorded die face: ${selectedHistoryTextForFirst}`);
+  assert.equal(await historyRows.evaluateAll((rows) => rows.findIndex((row) => row === document.activeElement)), 0, "Tab from the disclosure reaches the first recorded attack");
+  await activePage.keyboard.press("Enter");
+  await activePage.waitForFunction((expectedRoll) => {
+    const dialog = document.querySelector("dialog.resolution-fight[open]");
+    const selected = dialog?.querySelector('details.battle-history button[aria-current="step"]');
+    const die = dialog?.querySelector(".battle-roll .combat-die");
+    return selected === dialog?.querySelector("details.battle-history button:first-of-type")
+      && die?.getAttribute("aria-label")?.endsWith(`rolls ${expectedRoll}`);
+  }, String(selectedRoll));
+  assert.equal(await previousResult.isDisabled(), true, "Previous result is disabled at the first attack boundary");
+  for (let index = 0; index < historyCount; index += 1) {
+    const focusedIndex = await historyRows.evaluateAll((rows) => rows.findIndex((row) => row === document.activeElement));
+    assert.equal(focusedIndex, index, `Tab reaches recorded attack ${index + 1} in list order`);
+    const row = historyRows.nth(index);
+    const rowText = await row.textContent();
+    const roll = rowText?.match(/⚄\s*(\d)/)?.[1];
+    assert.ok(roll, `history row ${index + 1} exposes its recorded die face: ${rowText}`);
+    await activePage.keyboard.press("Enter");
+    await activePage.waitForFunction(({ selectedIndex, selectedRoll: expectedRoll }) => {
+      const dialog = document.querySelector("dialog.resolution-fight[open]");
+      const selected = dialog?.querySelectorAll("details.battle-history button")[selectedIndex];
+      const die = dialog?.querySelector(".battle-roll .combat-die");
+      return selected?.getAttribute("aria-current") === "step" && die?.getAttribute("aria-label")?.endsWith(`rolls ${expectedRoll}`);
+    }, { selectedIndex: index, selectedRoll: roll });
+    keyboardOrder.push(index);
+    selectedHistoryRolls.push(Number(roll));
+    if (index + 1 < historyCount) await activePage.keyboard.press("Tab");
+  }
+  assert.deepEqual(selectedHistoryRolls, authoritativeAttacks.map((attack) => attack.roll), "keyboard-selected row rolls match the authoritative fight.resolved attack order");
+  assert.equal(await historyRows.nth(historyCount - 1).getAttribute("aria-current"), "step", "keyboard activation reaches the last attack in the recording");
+  assert.equal(await previousResult.isEnabled(), true, "Previous result is enabled after leaving the first attack boundary");
+  await previousResult.focus();
+  await activePage.keyboard.press("Enter");
+  assert.equal(await historyRows.nth(historyCount - 2).getAttribute("aria-current"), "step", "keyboard activation of Previous result steps back from the final attack");
+  await historyRows.first().focus();
+  await activePage.keyboard.press("Enter");
+  assert.equal(await historyRows.first().getAttribute("aria-current"), "step", "the first attack remains directly reachable after browsing the whole list");
+  assert.equal(await previousResult.isDisabled(), true, "returning to the first attack restores its disabled Previous result boundary");
+  await historyRows.nth(historyCount - 1).focus();
+  await historyRows.nth(historyCount - 1).scrollIntoViewIfNeeded();
+  await activePage.keyboard.press("Enter");
+  await activePage.waitForFunction((expectedRoll) => document.querySelector("dialog.resolution-fight[open] .battle-roll .combat-die")?.getAttribute("aria-label")?.endsWith(`rolls ${expectedRoll}`), String(authoritativeAttacks.at(-1)?.roll));
+  await historyRows.nth(historyCount - 1).scrollIntoViewIfNeeded();
+  await activePage.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const phoneHistoryLayout = await activePage.evaluate(() => {
+    const dialog = document.querySelector("dialog.resolution-fight[open]");
+    const list = dialog?.querySelector("details.battle-history");
+    const rows = [...(list?.querySelectorAll("button") ?? [])];
+    const rect = (element) => {
+      const bounds = element.getBoundingClientRect();
+      return { left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom, width: bounds.width, height: bounds.height };
+    };
+    const last = rows.at(-1);
+    return {
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      dialog: dialog ? rect(dialog) : null,
+      document: { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth },
+      list: list ? { open: list.open, scrollHeight: list.scrollHeight, clientHeight: list.clientHeight, scrollTop: list.scrollTop } : null,
+      rows: rows.map(rect),
+      lastRowFocused: last === document.activeElement,
+      lastRowInViewport: Boolean(last && last.getBoundingClientRect().top >= 0 && last.getBoundingClientRect().bottom <= window.innerHeight),
+    };
+  });
+  assert.equal(phoneHistoryLayout.viewport.width, 390, "attack history reachability is checked at phone width");
+  assert.ok(phoneHistoryLayout.dialog && phoneHistoryLayout.dialog.left >= -1 && phoneHistoryLayout.dialog.right <= 391,
+    `the Fight dialog stays within the phone viewport: ${JSON.stringify(phoneHistoryLayout.dialog)}`);
+  assert.ok(phoneHistoryLayout.document.scrollWidth <= phoneHistoryLayout.document.clientWidth, "phone attack-history playback has no horizontal document overflow");
+  assert.ok(phoneHistoryLayout.rows.every((row) => row.left >= -1 && row.right <= 391 && row.height >= 44),
+    `every phone history row stays horizontally in bounds and meets the 44px target: ${JSON.stringify(phoneHistoryLayout.rows)}`);
+  assert.equal(phoneHistoryLayout.lastRowFocused, true, "the last history row is keyboard reachable on phone");
+  assert.equal(phoneHistoryLayout.lastRowInViewport, true, `the final history row stays in the phone viewport after keyboard selection: ${JSON.stringify(phoneHistoryLayout)}`);
+  const outputDirectory = join(cwd, "output", "ui-review");
+  await mkdir(outputDirectory, { recursive: true });
+  const historyScreenshot = join(outputDirectory, `online-fight-attack-history-phone-${new Date().toISOString().slice(0, 10)}.png`);
+  await activePage.screenshot({ path: historyScreenshot });
+  const authoritativeAfterPlayback = await readBrowserRoom(activePage, roomCode);
+  const versionAfterPlayback = authoritativeAfterPlayback.body.version;
   assert.equal(versionAfterPlayback, versionBeforePlayback, "browsing recorded combat playback does not submit a game command or change the room revision");
+  assert.deepEqual(authoritativeAfterPlayback.body.state, authoritativeBeforePlayback.body.state, "history navigation leaves the complete authoritative game state unchanged");
+  assert.deepEqual(authoritativeAfterPlayback.body.state.eventLog.map((entry) => entry.id), authoritativeBeforePlayback.body.state.eventLog.map((entry) => entry.id), "history navigation preserves authoritative event IDs");
 
   const fixtureUrl = new URL("fight-resolution-harness.html", url).toString();
   const infamyPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -603,8 +708,7 @@ try {
   assert.equal(await spectatorInfamyControls.evaluateAll((buttons) => buttons.every((button) => button.disabled)), true, "read-only Infamy fixture cannot spend a token");
 
   assert.deepEqual(runtimeErrors, [], "online Fight browser pages should not report browser console or runtime errors");
-  const report = { ok: true, date: new Date().toISOString().slice(0, 10), roomCode, setupActions: setupActions.length, activePlayerIndex, selectedMonster: assignedMonsterId, targetHex: combatDestination, setupDeployedUnit: occupiedUnit.id, onlineFight: "entered-and-resolved", multiplePendingBattles: "chooser-selected-one-remaining-continue-resolve", optionalChoice: "navy-submarine-launched-and-persisted", readOnlyFightViews: [waitingPlayerView, spectatorFightView], spectatorProjection: "current-battles-visible-private-hands-and-decks-redacted-rejected-command-no-revision-change", spectatorRemotePhaseFocus: "encounter-heading-focus-fallback", infamy: { scenario: "component-fixture-with-applyCommand", availableControl: true, zeroTokenControlHidden: true, readOnlyControlDisabled: true, spent: 1, remaining: infamyState.monsterInfamy, firstRoundMonsterAttacks: infamyState.pendingCombat.attacks.filter((attack) => attack.attackerId === "monster-1" && attack.combatRound === 1).length, zeroInfamyFirstRoundAttacks: zeroInfamyState.pendingCombat.attacks.filter((attack) => attack.attackerId === "monster-1" && attack.combatRound === 1).length }, deploymentTrayBeforeFight, returnedSubmarine: completed.navySubmarine, returnedFighter: completed.navyFighter, deploymentTrayAfterFight, fightPlayback: "recorded-history-selection-without-room-mutation", fightDialogKeyboard: "focus-entry-escape-focus-return", fightDialogViewport: "390x844-bounded", fightControls, fightEvents: completed.fightEvents, pendingBattles: completed.pendingBattles, resultingPhase: completed.phase, runtimeErrors };
-  const outputDirectory = join(cwd, "output", "ui-review");
+  const report = { ok: true, date: new Date().toISOString().slice(0, 10), memoryRoomTestSeed, roomCode, setupActions: setupActions.length, activePlayerIndex, selectedMonster: assignedMonsterId, targetHex: combatDestination, setupDeployedUnit: occupiedUnit.id, onlineFight: "entered-and-resolved", multiplePendingBattles: "chooser-selected-one-remaining-continue-resolve", optionalChoice: "navy-submarine-launched-and-persisted", readOnlyFightViews: [waitingPlayerView, spectatorFightView], spectatorProjection: "current-battles-visible-private-hands-and-decks-redacted-rejected-command-no-revision-change", spectatorRemotePhaseFocus: "encounter-heading-focus-fallback", infamy: { scenario: "component-fixture-with-applyCommand", availableControl: true, zeroTokenControlHidden: true, readOnlyControlDisabled: true, spent: 1, remaining: infamyState.monsterInfamy, firstRoundMonsterAttacks: infamyState.pendingCombat.attacks.filter((attack) => attack.attackerId === "monster-1" && attack.combatRound === 1).length, zeroInfamyFirstRoundAttacks: zeroInfamyState.pendingCombat.attacks.filter((attack) => attack.attackerId === "monster-1" && attack.combatRound === 1).length }, deploymentTrayBeforeFight, returnedSubmarine: completed.navySubmarine, returnedFighter: completed.navyFighter, deploymentTrayAfterFight, fightPlayback: "production-memory-room-recorded-attack-history", attackHistory: { eventId: playbackEvent.id, battleId: playbackEvent.detail.battleId, source: "authoritative-fight.resolved-detail.attacks", attackCount: authoritativeAttacks.length, attackRolls: authoritativeAttacks.map((attack) => attack.roll), initiallySelectedHistoryIndex, keyboardOrder, selectedHistoryRolls, previousDisabledAtFirst: true, previousEnabledAfterLast: true, previousKeyboardStepBack: true, compactPhone: phoneHistoryLayout, authoritativeStateUnchanged: true, screenshot: historyScreenshot }, fightDialogKeyboard: "focus-entry-escape-focus-return", fightDialogViewport: "390x844-bounded", fightControls, fightEvents: completed.fightEvents.length, fightEventIds: completed.fightEvents.map((event) => event.id), fightAttackCounts: completed.fightEvents.map((event) => ({ eventId: event.id, battleId: event.battleId, count: event.attacks.length })), pendingBattles: completed.pendingBattles, resultingPhase: completed.phase, runtimeErrors };
   await mkdir(outputDirectory, { recursive: true });
   const artifactPath = join(outputDirectory, `online-fight-${report.date}.json`);
   await writeFile(artifactPath, `${JSON.stringify(report, null, 2)}\n`);

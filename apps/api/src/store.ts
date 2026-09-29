@@ -5,7 +5,7 @@ import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { emptyMatchCounters, updateMatchCounters, type MatchCounters } from "./player-stats.js";
 
 type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string; disconnectedAt?: number };
-type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
+type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; eventsPrunedThroughVersion: number; playerStats: MatchCounters[]; lastActivityAt: number };
 export interface RoomSocketPrincipal { roomCode: string; participantId: string; sessionHash: string; connectionId: string }
 export interface RoomSocketTicket { ticket: string; connectionId: string }
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
@@ -106,7 +106,11 @@ export class MemoryRoomStore implements RoomStore {
   private actionIds = new Set<string>();
   private socketTickets = new Map<string, { roomCode: string; participantId: string; sessionHash: string; connectionId: string; expiresAt: number }>();
 
-  constructor(private readonly allowDevelopmentFixture = false) {}
+  constructor(private readonly allowDevelopmentFixture = false, private readonly testGameSeed?: number) {
+    if (testGameSeed !== undefined && (!Number.isInteger(testGameSeed) || testGameSeed < 0 || testGameSeed > 0xffff_ffff)) {
+      throw new Error("MemoryRoomStore test game seed must be an unsigned 32-bit integer.");
+    }
+  }
 
   async close(): Promise<void> {}
 
@@ -115,12 +119,12 @@ export class MemoryRoomStore implements RoomStore {
   async createRoom(maxPlayers: number, displayName = "Player 1", privacy: RoomPrivacy = "private"): Promise<SessionResponse> {
     const id = randomBytes(12).toString("hex");
     const roomCode = code();
-    const seed = gameSeed();
+    const seed = this.testGameSeed ?? gameSeed();
     const state = this.allowDevelopmentFixture
       ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`)
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`);
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
-    const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, participants: [], events: [], playerStats: emptyMatchCounters(maxPlayers), lastActivityAt: Date.now() };
+    const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, participants: [], events: [], eventsPrunedThroughVersion: 0, playerStats: emptyMatchCounters(maxPlayers), lastActivityAt: Date.now() };
     this.rooms.set(room.code, room);
     return this.addParticipant(room, displayName, "player", 0);
   }
@@ -242,8 +246,7 @@ export class MemoryRoomStore implements RoomStore {
     room.state = nextSetup.phase === "complete" ? applyCompletedSetup(setupState) : setupState;
     this.touch(room);
     room.version += 1;
-    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: participant.id, type: knownRoomEventType("setup.updated"), payload: { phase: nextSetup.phase, action: action.type }, createdAt: now() });
-    room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
+    this.appendEvent(room, { id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: participant.id, type: knownRoomEventType("setup.updated"), payload: { phase: nextSetup.phase, action: action.type }, createdAt: now() });
     this.refreshStatus(room);
     return this.view(room, 0, "player", participant.playerIndex);
   }
@@ -399,8 +402,7 @@ export class MemoryRoomStore implements RoomStore {
           actor.ready = Boolean(seat?.startingChoice);
           this.touch(room);
           room.version += 1;
-          room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: knownRoomEventType("setup.updated"), controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, createdAt: now() });
-          room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
+          this.appendEvent(room, { id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: knownRoomEventType("setup.updated"), controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, createdAt: now() });
           this.refreshStatus(room);
           updated.push(room.code);
           continue;
@@ -441,8 +443,7 @@ export class MemoryRoomStore implements RoomStore {
     room.state = result.state;
     this.touch(room);
     room.version += 1;
-    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: knownRoomEventType(result.eventType), controlSource, payload: { ...result.eventPayload, receipt: { ...result.receipt } }, createdAt: now() });
-    room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
+    this.appendEvent(room, { id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: knownRoomEventType(result.eventType), controlSource, payload: { ...result.eventPayload, receipt: { ...result.receipt } }, createdAt: now() });
     this.actionIds.add(`${room.id}:${envelope.actionId}`);
     if (room.state.phase === "game-over") room.status = "completed";
     return this.view(room, 0, "player", actor.playerIndex);
@@ -492,6 +493,14 @@ export class MemoryRoomStore implements RoomStore {
   }
 
   private view(room: StoredRoom, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number): RoomView {
-    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map((participant) => ({ id: participant.id, displayName: participant.displayName, role: participant.role, playerIndex: participant.playerIndex, connected: participant.connected, ready: participant.ready, botControlled: participant.botControlled, botAssisted: participant.botAssisted })), events: room.events.filter((event) => event.version > afterVersion).map((event) => ({ ...event, payload: redactCardIdentifiers(event.payload) as JsonValue })) };
+    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map((participant) => ({ id: participant.id, displayName: participant.displayName, role: participant.role, playerIndex: participant.playerIndex, connected: participant.connected, ready: participant.ready, botControlled: participant.botControlled, botAssisted: participant.botAssisted })), eventsTruncated: afterVersion < room.eventsPrunedThroughVersion, events: room.events.filter((event) => event.version > afterVersion).map((event) => ({ ...event, payload: redactCardIdentifiers(event.payload) as JsonValue })) };
+  }
+
+  private appendEvent(room: StoredRoom, event: RoomEvent) {
+    room.events.unshift(event);
+    while (room.events.length > MAX_RETAINED_ROOM_EVENTS) {
+      const removed = room.events.pop()!;
+      room.eventsPrunedThroughVersion = Math.max(room.eventsPrunedThroughVersion, removed.version);
+    }
   }
 }

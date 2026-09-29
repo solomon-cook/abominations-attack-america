@@ -202,7 +202,9 @@ test("state afterVersion accepts only non-negative safe integer cursors", async 
     assert.ok(created.room && created.token);
 
     const stateUrl = `${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`;
-    assert.equal((await fetch(stateUrl)).status, 200, "an omitted cursor defaults to zero");
+    const initialStateResponse = await fetch(stateUrl);
+    assert.equal(initialStateResponse.status, 200, "an omitted cursor defaults to zero");
+    assert.equal((await initialStateResponse.json() as RoomPayload & { eventsTruncated?: boolean }).eventsTruncated, false, "the HTTP projection exposes the additive history-gap flag");
     assert.equal((await fetch(`${stateUrl}&afterVersion=0`)).status, 200);
     assert.equal((await fetch(`${stateUrl}&afterVersion=0003`)).status, 200, "decimal digits with leading zeroes are valid");
 

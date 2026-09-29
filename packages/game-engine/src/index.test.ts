@@ -2721,6 +2721,40 @@ test("a defeated monster goes to Hollywood and recovers at the start of its next
   assert.equal(nextTurnResult.eventPayload.recoveryReleased, nextTurn.monsters[0].location !== "hollywood");
 });
 
+test("Hollywood recovery stays below 5 Health and releases at the exact threshold", () => {
+  const makeRecoveryTurn = (health: number) => {
+    // Seed 5 produces a first recovery roll of 1, covering the 4-to-5 boundary.
+    const state = createGame(2, 5);
+    state.monsters[0]!.health = health;
+    state.monsters[0]!.location = "hollywood";
+    state.currentPlayer = 1;
+    state.phase = "deploy";
+    state.pendingDecision = { type: "deployment", playerIndex: 1 };
+    return state;
+  };
+
+  const belowThreshold = applyCommand(makeRecoveryTurn(3), { type: "pass-deploy" });
+  assert.equal(belowThreshold.eventPayload.recoveryRoll, 1);
+  assert.equal(belowThreshold.state.monsters[0]!.health, 4);
+  assert.equal(belowThreshold.state.monsters[0]!.location, "hollywood");
+  assert.equal(belowThreshold.eventPayload.recoveryReleased, false);
+
+  const atThreshold = applyCommand(makeRecoveryTurn(4), { type: "pass-deploy" });
+  assert.equal(atThreshold.eventPayload.recoveryRoll, 1);
+  assert.equal(atThreshold.state.monsters[0]!.health, 5);
+  assert.equal(atThreshold.state.monsters[0]!.location, K("los-angeles"));
+  assert.equal(atThreshold.eventPayload.recoveryReleased, true);
+
+  const occupiedLosAngeles = makeRecoveryTurn(4);
+  occupiedLosAngeles.monsters[1]!.location = K("los-angeles");
+  occupiedLosAngeles.setupAssignments = [{ playerIndex: 0, monsterId: "monster-1", lair: K("denver"), ready: true }];
+  const fallback = applyCommand(occupiedLosAngeles, { type: "pass-deploy" });
+  assert.equal(fallback.eventPayload.recoveryRoll, 1);
+  assert.equal(fallback.state.monsters[0]!.health, 5);
+  assert.equal(fallback.state.monsters[0]!.location, K("denver"));
+  assert.equal(fallback.eventPayload.recoveryReleased, true);
+});
+
 test("Atomic Recovery restores a monster to starting Health at the start of its turn", () => {
   const state = createGame(2);
   state.phase = "deploy";
