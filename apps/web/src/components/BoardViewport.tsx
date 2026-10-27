@@ -31,7 +31,14 @@ export function BoardViewport({ board, boardId, boardContentHash, children, over
     const target = cells.find(({ hex }) => hex.key === focusHexKey);
     if (!target) return;
     setCamera((current) => {
-      const zoom = Math.max(current.zoom, 1.55);
+      // The strategic board fit is width-limited on phones, leaving less than
+      // half the portrait viewport occupied by cells. Follow the active piece
+      // at a height-aware tactical scale while preserving the full-board reset.
+      const fitHeight = viewport.width * world.height / world.width;
+      const portraitFocusZoom = viewport.width <= 600 && viewport.height > viewport.width
+        ? Math.min(4, Math.max(1.55, viewport.height * 0.82 / fitHeight))
+        : 1.55;
+      const zoom = Math.max(current.zoom, portraitFocusZoom);
       // Keep the focused piece clear of the turn HUD and leave room above the
       // fixed bottom action tray on phones, including tall portrait viewports.
       const safeX = Math.min(.12, viewport.width > 700 ? .08 : .02) * viewport.width / cameraScale({ ...current, zoom }, viewport, world);

@@ -103,9 +103,9 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation =
     );
   };
   return (
-    <div className="card revealed-card-panel" aria-label={`Private hand for Player ${playerIndex + 1}`}>
-      <span className="label">YOUR HAND</span>
-      <p className="card-privacy-note">Your held cards are shown here. Hidden deck order and other players' hands are never rendered.</p>
+    <div className="card revealed-card-panel" aria-label={`Card actions for Player ${playerIndex + 1}`}>
+      <span className="label">YOUR CARD ACTIONS</span>
+      <p className="card-privacy-note">Your held cards and available actions are shown here. Drawn cards are face up for everyone; deck order and discard contents stay hidden.</p>
       <div className="revealed-card-group">
         <strong><span className="metric-icon" aria-hidden="true">▤</span> Monster Mutation · {revealedMutationCards.length}</strong>
         {revealedMutationCards.length ? (

@@ -6,6 +6,15 @@
 .audited-features .hex-lower-bases{position:absolute;left:20%;right:20%;top:63%;height:24%;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:3%;overflow:hidden}
 .audited-features .hex-base-star{display:block;width:22%;min-width:0;height:100%;object-fit:contain}
 
+/* At phone fit zoom, keep printed feature marks as the strongest readable
+   signal; full names and exact benefits remain in the focused-cell tray. */
+@media(max-width:600px){
+  .audited-features .hex-upper-features{left:7%;right:7%;top:3%;height:43%}
+  .audited-features .hex-feature-symbol{filter:drop-shadow(0 1px 1px #101a12) drop-shadow(0 0 1px #fff4ce)}
+  .audited-features .hex-lower-bases{left:14%;right:14%;top:62%;height:27%;gap:1%}
+  .audited-features .hex-base-star{width:30%;filter:drop-shadow(0 1px 1px #101a12) drop-shadow(0 0 1px #fff4ce)}
+}
+
 /* Printed site marks remain subordinate to physical game pieces. */
 .audited-features .hex-challenge-overlay,.audited-features .hex-lair-overlay{opacity:.48;filter:saturate(.45)}
 .audited-grid .hex-tile[data-occupied="true"] .hex-lair-overlay{opacity:.2}

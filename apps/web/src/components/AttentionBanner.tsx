@@ -50,11 +50,10 @@ export function AttentionBanner({ game, action, canAct, online }: Props) {
   }
   const pending = game.pendingDecision;
   if (pending) {
-    const owner = pending.type === "trophy-choice" ? pending.playerIndex : game.currentPlayer;
     return (
       <div className={`attention-banner ${canAct ? "action-needed" : "waiting"}`} role="status" aria-live="polite">
         <span className="metric-icon" aria-hidden="true">{canAct ? "!" : "…"}</span>
-        <strong>{canAct ? "Your decision" : `Waiting for Player ${owner + 1}`}</strong>
+        <strong>{canAct ? "Your decision" : `Waiting for Player ${pending.playerIndex + 1}`}</strong>
         <span>{readableDecision(pending.type)} · use the highlighted controls.</span>
       </div>
     );

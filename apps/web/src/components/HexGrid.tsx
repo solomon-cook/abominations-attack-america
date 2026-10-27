@@ -20,6 +20,7 @@ import { boardForGame } from "../board-pin";
 import { TerrainArt, FeatureMarkers, BoardGridLines } from "./BoardTerrain";
 import { StompedMarker } from "./BoardFeatureOverlays";
 import { monsterAssetSlug } from "../monster-assets";
+import { boardHexFeatureLabel } from "../board-feature-label";
 import "../board-pieces.css";
 
 function displayHexesForBoard(board: BoardDefinition | undefined) {
@@ -138,6 +139,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
   const peekCards = peekMonster ? (game.players[game.monsters.indexOf(peekMonster)]?.mutationCardIds ?? []).filter(id=>cardDefinition(id)) : [];
   const board = boardForGame(game);
   const audited = board?.id === AUDITED_BOARD.id;
+  const keyboardNavigable = Boolean(board);
   const boardHexes = useMemo(() => displayHexesForBoard(board), [board]);
   const gridRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -258,7 +260,8 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
         const unitLegal = canAct && game.phase === "move" && legalUnitDestinations.has(placeKey);
         const inspectableUnit = unitsHere[0];
         const selectableUnit = canAct ? unitsHere.find((unit) => selectableUnitIds.has(unit.id)) : undefined;
-        const featureText = hex.features.map((feature) => feature.kind).join(", ");
+        const featureText = boardHexFeatureLabel(hex);
+        const auditCellText = hex.audit ? `physical cell ${hex.audit.row}, ${hex.audit.column}` : undefined;
         const neighbourText = (boardIndex?.neighbours[placeKey] ?? [])
           .map((neighbourKey) => board?.hexes[neighbourKey]?.label ?? neighbourKey)
           .join(", ");
@@ -290,7 +293,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
         const tooltipText = [
           `${displayName || `Hex ${hex.key}`} · ${hex.key}`,
           `${hex.waterClass} water class`,
-          featureText || "No recorded feature",
+          featureText,
           neighbourText ? `Neighbours: ${neighbourText}` : "No recorded neighbours",
           occupantText ? `Occupants: ${occupantText}` : "Unoccupied",
           selectedPathCost !== undefined && selectedPathCost > 0 ? `Movement cost: ${selectedPathCost}` : "Movement cost: not recorded for this hex",
@@ -310,7 +313,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
         const trophySelectableUnit = trophyChoice ? unitsHere.find((unit) => trophyUnitIds.has(unit.id)) : undefined;
         const actionUnavailable = !deploymentLegal && !retreatLegal && !inspectableUnit && (!canAct || game.phase !== "move" || (!monsterLegal && !unitLegal && !selectableUnit));
         const moveFocus = (direction: "left" | "right" | "up" | "down") => {
-          if (!provisionalBoard) return;
+          if (!keyboardNavigable) return;
           const origin = displayByKey.get(placeKey);
           if (!origin) return;
           const neighbours = (boardIndex?.neighbours[placeKey] ?? [])
@@ -322,10 +325,10 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
               const dx = candidate.point.left - origin.left;
               const dy = candidate.point.top - origin.top;
               const forward = dx * directionVector[0] + dy * directionVector[1];
-              return { ...candidate, forward, distance: Math.abs(dx) + Math.abs(dy) };
+              return { ...candidate, forward, distance: Math.hypot(dx, dy) };
             })
             .filter((candidate) => candidate.forward > 0)
-            .sort((a, b) => b.forward - a.forward || a.distance - b.distance);
+            .sort((a, b) => a.distance - b.distance || b.forward - a.forward);
           const next = ordered[0];
           if (!next) return;
           onFocusHex(next.key);
@@ -334,15 +337,17 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
         return (
           <button
             key={hex.key}
-            aria-label={`${displayName}${stomped ? ", stomped" : ""}${locationMeta ? `, ${locationMeta}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText || "no recorded feature"}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${setupLegal ? "choose starting location" : deploymentLegal ? "legal deployment location" : selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+            aria-label={`${displayName}${stomped ? ", stomped" : ""}${locationMeta ? `, ${locationMeta}` : ""}${auditCellText ? `, ${auditCellText}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${setupLegal ? "choose starting location" : deploymentLegal ? "legal deployment location" : selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+            data-feature-description={featureText}
             data-hex-key={hex.key}
+            data-neighbours={(boardIndex?.neighbours[placeKey] ?? []).join(" ")}
             data-location-name={place?.name ?? hex.label}
             data-audit-cell={hex.audit ? `${hex.audit.row}/${hex.audit.column}` : undefined}
             data-stack-count={occupantCount || undefined}
             title={tooltipText}
             aria-disabled={actionUnavailable || (!place && !provisionalBoard) ? true : undefined}
-            disabled={(!place && !provisionalBoard) || (!provisionalBoard && actionUnavailable)}
-            tabIndex={provisionalBoard ? (placeKey === (focusedHexKey ?? (isHexKey(activePlayer?.location ?? "") ? activePlayer?.location : undefined)) ? 0 : -1) : undefined}
+            disabled={(!place && !provisionalBoard) || (!provisionalBoard && actionUnavailable && !keyboardNavigable)}
+            tabIndex={keyboardNavigable ? (placeKey === (focusedHexKey ?? (isHexKey(activePlayer?.location ?? "") ? activePlayer?.location : undefined)) ? 0 : -1) : undefined}
             data-stomped={stomped || undefined}
             data-occupied={occupantCount > 0 || undefined}
             className={`hex-tile ${place?.kind ?? (audited ? "audited-tile" : "unresolved")} ${hex.waterClass === "land" || hex.waterClass === "lakeshore" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${deploymentLegal ? "deployment-legal" : ""} ${retreatLegal ? "retreat-legal" : ""} ${trophySelectableUnit ? "deployment-legal trophy-legal" : deploymentLegal || retreatLegal || monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}

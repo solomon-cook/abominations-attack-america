@@ -10,6 +10,7 @@ import {
   createDevelopmentVictoryGame,
   createMvpRoomGame,
   applyCompletedSetup,
+  applySetupAction,
   setupDeploymentState,
   AUDITED_BOARD,
   FULL_HONEYCOMB_BOARD,
@@ -40,6 +41,7 @@ import {
   setReady,
   spectateRoom,
   websocketUrl,
+  websocketTransportEnabled,
 } from "./api";
 import { createCompletedDevelopmentSetup, createDevelopmentSetup } from "./development-setup";
 import { boardForGame } from "./board-pin";
@@ -72,7 +74,7 @@ import { MilitaryReference } from "./components/SheetReference";
 import { BoardViewport } from "./components/BoardViewport";
 import { HomeScreen } from "./components/HomeScreen";
 import { AccountPanel } from "./components/AccountPanel";
-import { botActionDelayMs, botStrategyHint, botTacticForPlayer, chooseBotSetupAction, hasBotLaserFenceReaction, runBotActionWithExplanation } from "./solo-bots";
+import { botActionDelayMs, botStrategyHint, botTacticForPlayer, chooseBotSetupAction, hasBotLaserFenceReaction, runBotActionWithExplanation, type BotDifficulty } from "./solo-bots";
 import { BoardReview } from "./components/BoardReview";
 import { EncounterResultPanel } from "./components/EncounterResultPanel";
 import { CardReveal, ResolutionStage } from "./components/ResolutionStage";
@@ -83,8 +85,9 @@ import { ChallengeArena } from "./components/ChallengeArena";
 import { DieCube } from "./components/DieCube";
 import { ChallengeDuelPanel } from "./components/ChallengeDuelPanel";
 import { FightResolutionPanel } from "./components/FightResolutionPanel";
+import { ReplayViewer } from "./components/ReplayViewer";
 import { ActionResolutionFeedback } from "./components/ActionResolutionFeedback";
-import { playSound, type SoundCategory } from "./audio";
+import { playSound, setAmbientMusicPreferences, type SoundCategory } from "./audio";
 import { monsterAssetSlug } from "./monster-assets";
 import { BRANCH_MARK } from "./player-visuals";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
@@ -150,12 +153,21 @@ function safeStoredNumber(key: string, fallback: number): number {
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 }
 
+type BoardTheme = "classic" | "moonlit" | "desert";
+
+function safeStoredBoardTheme(): BoardTheme {
+  const theme = safeStorageGet("abominations-board-theme");
+  return theme === "moonlit" || theme === "desert" ? theme : "classic";
+}
+
 function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const commandChannelRef = useRef<RoomCommandChannel | null>(null);
   const [game, setGame] = useState<GameState>(() => createGame(2));
   const [localPlaytestStarted, setLocalPlaytestStarted] = useState(false);
   const [soloMode, setSoloMode] = useState(false);
+  const [soloScenarioMode, setSoloScenarioMode] = useState(false);
+  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>("standard");
   const [botThinking, setBotThinking] = useState(false);
   const [botExplanation, setBotExplanation] = useState("");
   const botTurnRunning = useRef(false);
@@ -176,6 +188,8 @@ function App() {
   );
   const [error, setError] = useState("");
   const [pendingAction, setPendingAction] = useState(false);
+  const [setupActionPending, setSetupActionPending] = useState(false);
+  const setupActionPendingRef = useRef(false);
   const [selectedPath, setSelectedPath] = useState<HexKey[]>([]);
   const [hoveredPath, setHoveredPath] = useState<HexKey[]>([]);
   const [militaryInitialSheet, setMilitaryInitialSheet] = useState<string | undefined>();
@@ -212,6 +226,7 @@ function App() {
   const [mobileCommandExpanded, setMobileCommandExpanded] = useState(false);
   const [followBotTurns, setFollowBotTurns] = useState(false);
   const [largeText, setLargeText] = useState(() => safeStorageGet("abominations-large-text") === "1");
+  const [boardTheme, setBoardTheme] = useState<BoardTheme>(safeStoredBoardTheme);
   const [showBoardLabels, setShowBoardLabels] = useState(() => safeStorageGet("abominations-board-labels") !== "0");
   const [manualReducedMotion, setManualReducedMotion] = useState(() => safeStorageGet("abominations-reduced-motion") === "1");
   const [confirmIrreversible, setConfirmIrreversible] = useState(() => safeStorageGet("abominations-confirm-irreversible") !== "0");
@@ -410,11 +425,20 @@ function App() {
   const activeSetup = online ? activeGame.setupState : localSetup;
   const localSetupComplete = localSetup.phase === "complete";
   const setupComplete = !activeSetup || activeSetup.phase === "complete";
-  const decisionPlayer = activeGame.pendingDecision?.type === "trophy-choice" || activeGame.pendingDecision?.type === "mutation-choice"
-    ? activeGame.pendingDecision.playerIndex
-    : activeGame.currentPlayer;
+  const decisionPlayer = activeGame.pendingDecision?.playerIndex ?? activeGame.currentPlayer;
   const soloBotTurn = localSolo && activeGame.phase !== "game-over" && decisionPlayer !== 0;
   const soloOtherPlayerTurn = localSolo && activeGame.currentPlayer !== 0;
+  const soloScenarioComplete = soloScenarioMode && setupComplete && activeGame.phase !== "game-over" && activeGame.round > 1 && activeGame.currentPlayer === 0;
+  const soloScenarioGuidance = !soloScenarioMode ? undefined
+    : !setupComplete ? "First-turn scenario · complete setup for both seats, then take your first turn."
+      : activeGame.phase === "game-over" ? "The match ended before the first-turn objective. Start the scenario again to practise the complete turn."
+        : soloScenarioComplete ? "First-turn scenario complete · you moved through a full turn and returned to your next turn. You can keep playing."
+          : soloOtherPlayerTurn ? `Bot turn · watch ${activePlayer.name} resolve the same phase before your next turn.`
+            : activeGame.phase === "move" ? "Your objective · resolve Move. Choose legal destinations for your monster and units, then confirm or hold."
+              : activeGame.phase === "fight" ? "Your objective · resolve Fight. Review each battle and choose a legal action when prompted."
+                : activeGame.phase === "encounter" ? "Your objective · resolve Encounter. Choose a legal reward or response when prompted."
+                  : activeGame.phase === "deploy" ? "Your objective · resolve Deploy. Place a branch unit or draw Research."
+                    : "Your objective · follow the on-screen Monster Challenge decisions.";
   const commandMedallionPlayer = localSolo ? playerRecordMonster : activePlayer;
   const commandMedallionBranch = localSolo ? playerRecordBranch : activeBranch;
   const commandMedallionHealthPercent = Math.round(commandMedallionPlayer.health / commandMedallionPlayer.maxHealth * 100);
@@ -488,7 +512,9 @@ function App() {
     setHoveredPath([]);
     if (isHexKey(nextUnit.location)) setFocusedHexKey(nextUnit.location);
   };
-  const actionDock = activeGame.phase === "move"
+  const actionDock = activeGame.pendingDecision?.type === "giant-placement"
+    ? { label: "Choose a base", command: undefined }
+    : activeGame.phase === "move"
     ? selectedUnitPath.length > 1
       ? { label: "Confirm unit move", command: { type: "move-unit", unitId: selectedUnitId!, path: selectedUnitPath } as GameCommand }
       : selectedPath.length > 1
@@ -503,7 +529,9 @@ function App() {
                 ? { label: `Hold ${activePlayer.name}`, command: { type: "stay-piece", pieceId: activePlayer.id } as GameCommand }
                 : { label: "Next piece", command: undefined }
     : activeGame.phase === "fight"
-      ? pendingBattle && !pendingAttackTarget && !activeGame.pendingDecision?.type?.includes("retreat") && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length === 1
+      ? activeGame.pendingBattles.length === 0
+        ? { label: "Continue to Encounter", command: { type: "advance" } as GameCommand }
+        : pendingBattle && !pendingAttackTarget && !activeGame.pendingDecision?.type?.includes("retreat") && !canSpendInfamyOnPendingBattle && activeGame.pendingBattles.length === 1
         ? { label: "Resolve fight", command: { type: "resolve-fight", battleId: pendingBattle.id } as GameCommand }
         : { label: pendingAttackTarget ? "Choose attack target" : "Continue to Fight", command: undefined }
       : activeGame.phase === "encounter"
@@ -547,6 +575,8 @@ function App() {
         ? [...activeSetup.seats]
             .sort((a, b) => b.playerIndex - a.playerIndex)
             .find((seat) => !seat.branch)
+        : activeSetup?.phase === "unused-branch-placement"
+          ? activeSetup.seats.find((seat) => seat.playerIndex === activeSetup.definition.playerCount - 1)
         : (activeSetup?.seats.find(
             (seat) => !seat.lair && activeSetup.phase === "lair-selection",
           ) ??
@@ -652,26 +682,43 @@ function App() {
     let commandChannel: RoomCommandChannel | undefined;
     let polling: ReturnType<typeof setInterval> | undefined;
     let disconnected = false;
+    let needsReconnect = true;
     let cancelled = false;
     const markOffline = () => {
       if (disconnected) return;
       disconnected = true;
+      needsReconnect = true;
       void markDisconnected(room.code, session.token).catch(() => undefined);
+    };
+    const pollRoom = () => {
+      if (cancelled) return;
+      void readRoom(room.code, session.token, room.version).then((nextRoom) => {
+        setRoom(nextRoom);
+        if (!needsReconnect) {
+          setConnectionState("online");
+          return;
+        }
+        return markReconnected(room.code, session.token).then((reconnectedRoom) => {
+          if (cancelled) return;
+          setRoom(reconnectedRoom);
+          disconnected = false;
+          needsReconnect = false;
+          setConnectionState("online");
+        });
+      }).catch(() => {
+        needsReconnect = true;
+        setConnectionState("stale");
+      });
     };
     const startPolling = () => {
       if (polling) return;
       setConnectionState("reconnecting");
-      polling = setInterval(() => {
-        readRoom(room.code, session.token, room.version)
-          .then((nextRoom) => markReconnected(room.code, session.token).then((reconnectedRoom) => {
-            setRoom(reconnectedRoom ?? nextRoom);
-            disconnected = false;
-            setConnectionState("online");
-          }))
-          .catch(() => setConnectionState("stale"));
-      }, 2000);
+      polling = setInterval(pollRoom, Number(import.meta.env.VITE_ROOM_POLL_INTERVAL_MS ?? 5000));
+      pollRoom();
     };
-    void createWebSocketTicket(room.code, session.token).then(({ ticket }) => {
+    if (!websocketTransportEnabled) {
+      startPolling();
+    } else void createWebSocketTicket(room.code, session.token).then(({ ticket }) => {
       if (cancelled) return;
       socket = new WebSocket(websocketUrl(room.code, ticket));
       commandChannel = new RoomCommandChannel(socket);
@@ -881,12 +928,15 @@ function App() {
   const toggleReady = async () => {
     if (!session || !room || !participant || participant.role !== "player")
       return;
+    setPendingAction(true);
     try {
       setRoom(await setReady(room.code, session.token, !participant.ready));
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Could not update readiness",
       );
+    } finally {
+      setPendingAction(false);
     }
   };
 
@@ -903,6 +953,8 @@ function App() {
         ? next.seats.find((candidate) => !candidate.monsterId)
         : next.phase === "branch-selection"
           ? [...next.seats].sort((a, b) => b.playerIndex - a.playerIndex).find((candidate) => !candidate.branch)
+          : next.phase === "unused-branch-placement"
+            ? next.seats.find((candidate) => candidate.playerIndex === next.definition.playerCount - 1)
           : next.phase === "lair-selection"
             ? next.seats.find((candidate) => !candidate.lair)
             : next.phase === "starting-choice"
@@ -931,7 +983,7 @@ function App() {
     setBotThinking(true);
     const currentGame = activeGame;
     const timer = window.setTimeout(() => {
-      const result = runBotActionWithExplanation(currentGame);
+      const result = runBotActionWithExplanation(currentGame, botDifficulty);
       let nextState = result.state;
       let command = result.command;
       let explanation = result.explanation;
@@ -1008,6 +1060,9 @@ function App() {
     )
       return;
     if (online && session && room) {
+      if (setupActionPendingRef.current) return;
+      setupActionPendingRef.current = true;
+      setSetupActionPending(true);
       try {
         setRoom(
           await sendSetupAction(
@@ -1028,6 +1083,9 @@ function App() {
         setError(
           caught instanceof Error ? caught.message : "Could not update setup",
         );
+      } finally {
+        setupActionPendingRef.current = false;
+        setSetupActionPending(false);
       }
       return;
     }
@@ -1054,6 +1112,9 @@ function App() {
       return;
     const startingChoice = kind === "research" ? { kind } as const : { kind, placements: setupPlacements } as const;
     if (online && session && room) {
+      if (setupActionPendingRef.current) return;
+      setupActionPendingRef.current = true;
+      setSetupActionPending(true);
       try {
         setRoom(
           await sendSetupAction(room.code, session.token, room.version, {
@@ -1065,6 +1126,9 @@ function App() {
         setError(
           caught instanceof Error ? caught.message : "Could not update setup",
         );
+      } finally {
+        setupActionPendingRef.current = false;
+        setSetupActionPending(false);
       }
       return;
     }
@@ -1080,6 +1144,7 @@ function App() {
   };
   const resetLocal = () => {
     setSoloMode(false);
+    setSoloScenarioMode(false);
     setBotThinking(false);
     setBotExplanation("");
     setLocalPlaytestStarted(true);
@@ -1094,8 +1159,9 @@ function App() {
     setGame(next);
     localStorage.removeItem("abominations-session");
   };
-  const startSolo = () => {
+  const startSolo = (guidedScenario = false) => {
     setSoloMode(true);
+    setSoloScenarioMode(guidedScenario);
     setBotThinking(false);
     setBotExplanation("");
     botTurnRunning.current = false;
@@ -1106,12 +1172,16 @@ function App() {
     setSession(null);
     setRoom(null);
     setError("");
-    const next = createMvpRoomGame(playerCount, randomGameSeed());
+    const soloPlayerCount = guidedScenario ? 2 : playerCount;
+    if (guidedScenario) setPlayerCount(2);
+    const next = createMvpRoomGame(soloPlayerCount, randomGameSeed());
     setLocalSetup(next.setupState!);
     setGame(next);
     localStorage.removeItem("abominations-session");
   };
   const startTemporaryVictoryScenario = () => {
+    setSoloMode(false);
+    setSoloScenarioMode(false);
     setLocalPlaytestStarted(true);
     setOnboardingOpen(false);
     setGamePanelOpen(true);
@@ -1148,6 +1218,10 @@ function App() {
     setter(value);
     localStorage.setItem(key, String(value));
   };
+  const updateBoardTheme = (theme: BoardTheme) => {
+    setBoardTheme(theme);
+    try { localStorage.setItem("abominations-board-theme", theme); } catch { /* Keep the choice for this session. */ }
+  };
   const runIrreversibleAction = (actionToRun: () => void, message: string) => {
     if (!confirmIrreversible || window.confirm(message)) actionToRun();
   };
@@ -1169,6 +1243,9 @@ function App() {
   );
   const latestEvent = activeGame.eventLog.at(-1);
   useEffect(() => {
+    setAmbientMusicPreferences({ masterVolume, musicVolume, muted });
+  }, [masterVolume, musicVolume, muted]);
+  useEffect(() => {
     if (!latestEvent?.id) return;
     if (lastSoundEventRef.current === latestEvent.id) return;
     const category: SoundCategory = latestEvent.action === "fight.resolved" || ["challenge.resolved", "challenge.giant.resolved", "challenge.attack.rolled"].includes(latestEvent.action)
@@ -1185,7 +1262,9 @@ function App() {
     playSound(category, { masterVolume, musicVolume, effectsVolume, muted });
     lastSoundEventRef.current = latestEvent.id;
   }, [activeGame.eventLog, activeGame.phase, effectsVolume, latestEvent, masterVolume, musicVolume, muted]);
-  const baseTurnDescription = activeGame.phase === "move"
+  const baseTurnDescription = activeGame.pendingDecision?.type === "giant-placement"
+    ? `Choose one of your bases for ${activeGame.pendingDecision.cardId}. The giant enters play immediately.`
+    : activeGame.phase === "move"
     ? selectedUnitId
       ? selectedUnitPath.length > 1
         ? `${selectedUnitPath.map((id) => getLocation(id)?.name ?? id).join(" → ")} · ${selectedUnitPath.length - 1} movement ${selectedUnitPath.length - 1 === 1 ? "space" : "spaces"}`
@@ -1217,7 +1296,9 @@ function App() {
           ? "The development match is complete. Further commands are disabled."
           : `Place a legal military unit, then pass Deploy.${activeGame.deploymentsThisTurn ? ` ${activeGame.deploymentsThisTurn} placed this step.` : ""}`;
   const turnDescription = researchLurePrompt ? `${baseTurnDescription} ${researchLurePrompt}` : baseTurnDescription;
-  const rulesHelp = activeGame.phase === "move"
+  const rulesHelp = activeGame.pendingDecision?.type === "giant-placement"
+    ? { title: "Place giant unit", body: `Choose one of your bases for ${activeGame.pendingDecision.cardId}. This immediate Research effect does not use your normal Deploy allowance.` }
+    : activeGame.phase === "move"
     ? { title: "Move", body: `Select a highlighted monster or an owned or authorised unit, choose a connected legal destination, then confirm the previewed path. ${researchLurePrompt ?? "Pass Move when no further movement is required."}` }
     : activeGame.phase === "fight"
       ? activeGame.pendingDecision?.type === "attack-target"
@@ -1274,7 +1355,7 @@ function App() {
   }
   if (!online && !localPlaytestStarted) {
     return (
-      <HomeScreen
+    <HomeScreen
         online={false}
         room={null}
         participant={undefined}
@@ -1297,11 +1378,14 @@ function App() {
         rulesOpen={homeRulesOpen}
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
         onStartLocal={resetLocal}
-        onStartSolo={startSolo}
+        onStartSolo={() => startSolo()}
+        onStartSoloScenario={() => startSolo(true)}
+        botDifficulty={botDifficulty}
+        onBotDifficultyChange={setBotDifficulty}
         onStartProvisionalPlaytest={startProvisionalPlaytest}
         onOpenBoardReview={() => setBoardReviewOpen(true)}
         onStartVictoryScenario={startTemporaryVictoryScenario}
-        accountPanel={<AccountPanel account={account} session={session} onAccountChange={setAccount} onSessionChange={replaceOnlineSession} />}
+        accountPanel={<AccountPanel compact account={account} session={session} onAccountChange={setAccount} onSessionChange={replaceOnlineSession} />}
       />
     );
   }
@@ -1309,19 +1393,21 @@ function App() {
   const renderedBoard = boardForGame(activeGame);
   const fullBoardVerified = (renderedBoard?.id === AUDITED_BOARD.id || renderedBoard?.id === FULL_HONEYCOMB_BOARD.id)
     && Object.values(renderedBoard.hexes).every((hex) => hex.verification === "verified");
+  const auditedBoard = fullBoardVerified && renderedBoard?.id === AUDITED_BOARD.id;
   const boardDescription = fullBoardVerified
     ? "The complete 336-cell human-audited North America board is active. Movement follows its printed features and water barriers."
     : renderedBoard?.id === FULL_HONEYCOMB_BOARD.id
-      ? "The full honeycomb coordinate shell is unresolved review tooling and is not a playable board. Physical cell data is still being transcribed."
+      ? "The full honeycomb coordinate shell is unresolved review tooling and is not a playable board. The separate 336-cell physical-board transcription is checked and signed off."
       : renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
         ? "The provisional honeycomb board is a playtest guess. Its labels, terrain, barriers, and features are not verified."
       : renderedBoard
-      ? "This match uses the nine-space development board. Physical-board data is still being transcribed."
+      ? "This match uses the nine-space development board. The 336-cell physical-board data is checked and signed off; this fixture remains development-only."
       : "This match references an unavailable board version, so board interaction is disabled until the matching definition is loaded.";
 
   return (
     <main
       className={`game-screen ${!setupComplete ? "setup-in-progress" : ""} ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}
+      data-board-theme={boardTheme}
       data-board-id={renderedBoard?.id ?? ""}
       data-board-version={renderedBoard?.version ?? ""}
       data-board-content-hash={renderedBoard?.contentHash ?? ""}
@@ -1343,7 +1429,7 @@ function App() {
               {online && <span className="room-hud-menu-status" role="status">{room?.code} · {connectionState}</span>}
               <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>How to play</button>
               <button className="ghost settings-action" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>Settings</button>
-              <button className="ghost new-game-action" onClick={soloMode ? startSolo : resetLocal}>{soloMode ? "New solo game" : "New local game"}</button>
+              <button className="ghost new-game-action" onClick={soloMode ? () => startSolo(soloScenarioMode) : resetLocal}>{soloScenarioMode ? "Restart scenario" : soloMode ? "New solo game" : "New local game"}</button>
               {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
               {online && <button className="ghost leave-room-action" onClick={leaveRoomSafely}>Leave room</button>}
               <AccountPanel account={account} session={session} onAccountChange={setAccount} onSessionChange={replaceOnlineSession} />
@@ -1351,12 +1437,25 @@ function App() {
           </details>
         </div>
       </header>
+      {activeGame.pendingDecision?.type === "giant-placement" && <section className="giant-placement-choice" aria-labelledby="giant-placement-title" aria-live="polite">
+        <h2 id="giant-placement-title">Place {activeGame.pendingDecision.cardId}</h2>
+        <p>{canAct ? "Choose one of your bases." : `Waiting for Player ${activeGame.pendingDecision.playerIndex + 1} to choose a base.`}</p>
+        <div className="giant-placement-options">
+          {activeGame.pendingDecision.destinations.map((destination) => {
+            const label = activeBoard?.hexes[destination]?.label;
+            return <button key={destination} type="button" disabled={!canAct || pendingAction} onClick={() => void runCommand({ type: "place-giant", destination })}>{label ? `${label} (${destination})` : `Base (${destination})`}</button>;
+          })}
+          {!activeGame.pendingDecision.destinations.length && <p role="alert">No verified base is available for this placement. The placement needs review.</p>}
+        </div>
+      </section>}
+      <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} className="board-context-tray-focus" />
       <details className="board-map-controls">
         <summary aria-label="Open map view controls" title="Map controls">⌖</summary>
         <div className="map-control-slot" />
       </details>
       {error && <p className="error global-game-error" role="alert">{error}</p>}
-      {soloMode && setupComplete && (decisionPlayer !== 0 || botExplanation || botThinking) && <aside className="bot-turn-guidance" role="status"><strong>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Bot is reacting" : "Bot is planning" : decisionPlayer !== 0 ? `${activePlayer.name} bot` : "Bot plan"}</strong><span>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Checking whether to force a retreat or make the monster spend Infamy." : botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army", decisionPlayer > 0 ? botTacticForPlayer(activeGame, decisionPlayer) : undefined) : decisionPlayer !== 0 ? botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army", botTacticForPlayer(activeGame, decisionPlayer)) : botExplanation}</span></aside>}
+      {soloMode && setupComplete && (decisionPlayer !== 0 || botExplanation || botThinking) && <aside className="bot-turn-guidance" role="status"><strong>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Bot is reacting" : "Bot is planning" : decisionPlayer !== 0 ? `${activePlayer.name} · ${botDifficulty} bot` : "Bot plan"}</strong><span>{botThinking ? decisionPlayer === 0 && hasBotLaserFenceReaction(activeGame) ? "Checking whether to force a retreat or make the monster spend Infamy." : botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army", decisionPlayer > 0 ? botTacticForPlayer(activeGame, decisionPlayer, botDifficulty) : undefined, botDifficulty) : decisionPlayer !== 0 ? botStrategyHint(activePlayer.name, activeGame.setupAssignments?.[decisionPlayer]?.branch ?? "Army", botTacticForPlayer(activeGame, decisionPlayer, botDifficulty), botDifficulty) : botExplanation}</span></aside>}
+      {soloScenarioMode && !soloBotTurn && <aside className="bot-turn-guidance solo-scenario-guidance" role="status"><strong>{soloScenarioComplete ? "Scenario complete" : "First-turn scenario"}</strong><span>{soloScenarioGuidance}</span></aside>}
       <LobbyPanel
         online={online}
         room={room}
@@ -1379,7 +1478,7 @@ function App() {
         onLeaveRoom={leaveRoomSafely}
       />
       {settingsOpen && (
-        <SettingsPanel largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} masterVolume={masterVolume} musicVolume={musicVolume} effectsVolume={effectsVolume} muted={muted} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} setMasterVolume={(value) => setStoredVolume("abominations-master-volume", setMasterVolume, value)} setMusicVolume={(value) => setStoredVolume("abominations-music-volume", setMusicVolume, value)} setEffectsVolume={(value) => setStoredVolume("abominations-effects-volume", setEffectsVolume, value)} setMuted={setMuted} togglePreference={togglePreference} />
+        <SettingsPanel boardTheme={boardTheme} setBoardTheme={updateBoardTheme} largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} masterVolume={masterVolume} musicVolume={musicVolume} effectsVolume={effectsVolume} muted={muted} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} setMasterVolume={(value) => setStoredVolume("abominations-master-volume", setMasterVolume, value)} setMusicVolume={(value) => { setStoredVolume("abominations-music-volume", setMusicVolume, value); setAmbientMusicPreferences({ masterVolume, musicVolume: value, muted }, true); }} setEffectsVolume={(value) => setStoredVolume("abominations-effects-volume", setEffectsVolume, value)} setMuted={setMuted} togglePreference={togglePreference} />
       )}
       {onboardingOpen && (
         <section className="onboarding" aria-label="First match guide">
@@ -1406,9 +1505,32 @@ function App() {
           board={renderedBoard}
           setupSeat={setupSeat}
           online={online}
+          showSetupSummary={room?.status === "waiting"}
           playerIndex={participant?.playerIndex}
           participants={room?.participants ?? []}
+          participantReady={Boolean(participant?.ready)}
+          canToggleReady={online && participant?.role === "player" && room?.status === "waiting" && connectionState === "online"}
+          readinessPending={pendingAction}
+          setupActionPending={setupActionPending}
+          onToggleReady={() => void toggleReady()}
           onChooseOption={(value) => void chooseSetupOption(value)}
+          onPlaceUnusedBranches={(placements) => {
+            if (!setupSeat || !activeSetup || (online && participant?.playerIndex !== setupSeat.playerIndex)) return;
+            const action = { type: "place-unused-branches", placements } as const;
+            if (online && session && room) {
+              if (setupActionPendingRef.current) return;
+              setupActionPendingRef.current = true;
+              setSetupActionPending(true);
+              void sendSetupAction(room.code, session.token, room.version, action)
+                .then(setRoom)
+                .catch((caught) => setError(caught instanceof Error ? caught.message : "Could not place unused branch units"))
+                .finally(() => {
+                  setupActionPendingRef.current = false;
+                  setSetupActionPending(false);
+                });
+            }
+            else applyLocalSetup(applySetupAction(localSetup, setupSeat.playerIndex, action));
+          }}
           deploymentCount={setupPlacements.length}
           hasAvailableDeploymentOptions={setupChoices.length > 0}
           selectingDeployment={setupDeploying}
@@ -1418,12 +1540,14 @@ function App() {
           onChooseStartingChoice={(kind) => { if (kind === "deploy") { setSetupPlacementPlayer(setupSeat?.playerIndex ?? null); setSetupDeploying(true); setSetupSheetOpen(true); } else void chooseSetupStartingChoice(kind); }}
         />
       )}
-      <section className="development-notice" aria-label="Development ruleset notice">
-        <span className="label">{renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id ? "PROVISIONAL HONEYCOMB PLAYTEST · NOT VERIFIED" : "DEVELOPMENT RULESET · PROTOTYPE 0.1"}</span>
+      <section className="development-notice" aria-label={auditedBoard ? "Board and ruleset status" : "Development ruleset notice"}>
+        <span className="label">{auditedBoard ? "HUMAN-AUDITED NORTH AMERICA BOARD · 336 CELLS" : renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id ? "PROVISIONAL HONEYCOMB PLAYTEST · NOT VERIFIED" : "DEVELOPMENT RULESET · PROTOTYPE 0.1"}</span>
         <p>
-          {renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
+          {auditedBoard
+            ? "This match uses the human-audited 336-cell board. Full monster, combat, card, National Guard, and Monster Challenge rules are still in development."
+            : renderedBoard?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id
             ? "This playtest uses a provisional 336-cell honeycomb board. Its labels, terrain, barriers, and features are not verified."
-            : "This playtest uses a nine-space development board. The unresolved physical-board shell is not rendered as playable topology. The physical board, full combat, card effects, National Guard rules, and Monster Challenge are still under review."}
+            : "This playtest uses a nine-space development board. The unresolved coordinate shell is not rendered as playable topology. Board data is checked and signed off; full combat, card effects, National Guard rules, and Monster Challenge remain in development."}
         </p>
       </section>
       <section className={`layout ${gamePanelOpen ? "panel-open" : "panel-closed"}`}>
@@ -1431,7 +1555,7 @@ function App() {
           <div className="panel-heading">
             <div>
               <span className="label">
-                TACTICAL MAP · RULE SPACE RECONSTRUCTION
+                {auditedBoard ? "HUMAN-AUDITED TACTICAL MAP" : "TACTICAL MAP · RULE SPACE RECONSTRUCTION"}
               </span>
               <h2>{activeLocation?.name ?? activeBoardHex?.label ?? "Board position"}</h2>
             </div>
@@ -1508,11 +1632,16 @@ function App() {
               onClearPreview={() => setHoveredPath((current) => current.length ? [] : current)}
             />
           </BoardViewport>
-          {choosingSubmarineTarget && <div className="deployment-prompt" role="status">Choose a glowing monster to launch the cruise missile. <button onClick={() => setSubmarineTargetingId(null)}>Cancel</button></div>}
-          {activeGame.phase === "deploy" && deploymentPiece && <div className="deployment-prompt" role="status">
-            Place {deploymentPiece.typeId.replaceAll("-", " ")} · Select a glowing location.
-            <button onClick={() => setDeploymentPieceId(null)}>Cancel placement</button>
+          {selectedStackKey && <div className="board-stack-inspector">
+            <PieceStackInspector
+              game={activeGame}
+              viewerPlayerIndex={online ? participant?.playerIndex : soloMode ? 0 : activeGame.currentPlayer}
+              selectedStackKey={selectedStackKey}
+              onSelect={setSelectedStackKey}
+              onClear={() => setSelectedStackKey(null)}
+            />
           </div>}
+          {choosingSubmarineTarget && <div className="deployment-prompt" role="status">Choose a glowing monster to launch the cruise missile. <button onClick={() => setSubmarineTargetingId(null)}>Cancel</button></div>}
           {activeGame.phase === "fight" && activeGame.pendingRetreat?.monsterId && <div className="deployment-prompt retreat-prompt" role="status">
             {activeGame.monsters.find((monster) => monster.id === activeGame.pendingRetreat?.monsterId)?.name ?? "Monster"} retreats · Select a glowing adjacent hex.
           </div>}
@@ -1533,13 +1662,6 @@ function App() {
                     : `Select a highlighted reachable space to preview a path for ${activePlayer.name}.`
                 : "Waiting for the active player."}
             </p>
-            <PieceStackInspector
-              game={activeGame}
-              activeMonsterId={activePlayer.id}
-              selectedStackKey={selectedStackKey}
-              onSelect={setSelectedStackKey}
-              onClear={() => setSelectedStackKey(null)}
-            />
           </div>
         </div>
         {setupComplete && <>
@@ -1569,7 +1691,7 @@ function App() {
             {soloBotTurn ? <ActionDock
               label={followBotTurns ? "Stop following" : "Follow bot"}
               contextLabel="BOT TURN"
-              guidance={followBotTurns ? `Camera follows ${activePlayer.name} until your turn.` : `The board stays on your monster. Follow ${activePlayer.name} if you want.`}
+              guidance={soloScenarioGuidance ?? (followBotTurns ? `Camera follows ${activePlayer.name} until your turn.` : `The board stays on your monster. Follow ${activePlayer.name} if you want.`)}
               onPrimary={() => setFollowBotTurns((following) => !following)}
               canAct
               pressed={followBotTurns}
@@ -1577,13 +1699,15 @@ function App() {
             /> : activeGame.phase === "move" ? <ActionDock
               label={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Confirm move" : actionDock.label}
               contextLabel={`Move · ${remainingMovementOrders} ${remainingMovementOrders === 1 ? "order" : "orders"} remaining`}
-              guidance={actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Route ready to confirm." : actionDock.label === "Next piece" ? "Select a military piece or continue." : actionDock.command?.type === "pass-move" ? "All movement orders are resolved." : "Choose a destination or hold."}
+              guidance={soloScenarioGuidance ?? (actionDock.command?.type === "move" || actionDock.command?.type === "move-unit" ? "Route ready to confirm." : actionDock.label === "Next piece" ? "Select a military piece or continue." : actionDock.command?.type === "pass-move" ? "All movement orders are resolved." : "Choose a destination or hold.")}
               command={actionDock.command ?? (actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? undefined : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
               onPrimary={actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? selectNextMovableUnit : undefined}
               canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
-            /> : <ActionDock contextLabel={activeGame.phase} guidance={activeGame.phase === "deploy" ? "Choose a military action." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab."}
+            /> : <ActionDock contextLabel={activeGame.phase} guidance={soloScenarioGuidance ?? (activeGame.phase === "deploy" ? deploymentPiece ? `Place ${deploymentPiece.typeId.replaceAll("-", " ")} on a highlighted legal location.` : "Choose a military action." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab.")}
               onPrimary={!actionDock.command ? () => { if (activeGame.phase === "deploy") { openMilitarySheet(); return; } if (activeGame.phase === "fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } if (activeGame.phase === "move" && selectableUnitIds.size) { selectNextMovableUnit(); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
-              label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction} />}
+              label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction}
+              secondaryLabel={activeGame.phase === "deploy" && deploymentPiece ? "Cancel placement" : undefined}
+              onSecondary={activeGame.phase === "deploy" && deploymentPiece ? () => setDeploymentPieceId(null) : undefined} />}
           </div>
           <div id="mobile-command-details" className="bottom-context-dock">
           {activeGame.pendingDecision?.type === "trophy-choice" && <MilitaryReference
@@ -1592,7 +1716,7 @@ function App() {
             trophyUnitIds={activeGame.pendingDecision.unitIds.filter((id) => activeGame.units.some((unit) => unit.id === id && unit.location === "record-tile"))}
             onTrophy={(unitId) => void runCommand({ type: "resolve-encounter", trophyUnitId: unitId })}
           />}
-          {activeGame.phase === "deploy" ? null : activeGame.phase === "move" ? <details className="piece-context-tab" key={selectedUnitId ?? activePlayer.id}>
+          {activeGame.phase === "move" ? <details className="piece-context-tab" key={selectedUnitId ?? activePlayer.id}>
             <summary><span>{selectedUnitId ? (activeGame.units.find(unit => unit.id === selectedUnitId)?.unitTypeId ?? "Unit").replaceAll("-", " ") : activePlayer.name}</span><small>Details & options <span aria-hidden="true">⌃</span></small></summary>
             <div className="context-tab-body">
           <SelectedPieceTray
@@ -1614,10 +1738,10 @@ function App() {
                 <button disabled={!canAct} onClick={() => void runCommand({ type: "pass-move" })}>End all movement →</button>
               </div>
             </div>
-          </details> : <details id="phase-command-context" className="piece-context-tab" key={activeGame.phase}>
+          </details> : <details id="phase-command-context" className="piece-context-tab" key={activeGame.phase} open={activeGame.phase === "game-over"}>
             <summary><span>{activeGame.phase} options</span><small>Open <span aria-hidden="true">⌃</span></small></summary>
             <div className="context-tab-body">
-            {activeGame.phase === "fight" || activeGame.phase === "encounter" ? (
+            {activeGame.phase === "fight" || activeGame.phase === "encounter" || activeGame.phase === "deploy" ? (
               <PhaseActions
                 activeGame={activeGame}
                 onOpenMilitarySheet={openMilitarySheet}
@@ -1800,10 +1924,11 @@ function App() {
 
 function AppShell() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const replayCode = new URLSearchParams(window.location.search).get("replay")?.trim().toUpperCase().slice(0, 6) ?? "";
   useEffect(() => registerPwaServiceWorker(() => setUpdateAvailable(true)), []);
   return (
     <>
-      <App />
+      {replayCode ? <ReplayViewer code={replayCode} /> : <App />}
       {updateAvailable && (
         <aside className="pwa-update-prompt" aria-live="polite" aria-label="Update available">
           <strong>New version available</strong>

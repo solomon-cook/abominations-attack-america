@@ -41,9 +41,9 @@ export function sheetCardActions(game: GameState, cardId: string): CardAction[] 
   // A dry run validates timing and targets using authoritative rules. Its cloned
   // result is discarded; the real command still goes through the normal dispatcher.
   return candidates.filter(({ command }) => {
-    // Opponent Research hands are hidden in player projections even though their
-    // face-up cards are public, so Cutbacks targets must be validated from that
-    // public projection instead of a dry-run against the redacted state.
+    // Opponent Research owner arrays are redacted even though their face-up
+    // cards are public, so Cutbacks targets must be validated from that public
+    // projection instead of a dry-run against the redacted raw array.
     if (cardId === "Cutbacks" && command.type === "use-research") {
       return game.phase === "move" || game.phase === "fight" || game.phase === "encounter" || game.phase === "deploy";
     }

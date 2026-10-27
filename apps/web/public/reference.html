@@ -14,13 +14,49 @@
       <div class="notice"><strong>Development boundary:</strong> this reference explains the current digital playtest flow. The physical board, full ruleset, and source-gated effects are not approved production data.</div>
       <h2>Goal</h2>
       <p>Move your monster and military forces across the board, fight compulsory battles, resolve the space where your monster ends, and deploy forces. The development fixture ends with its temporary authoritative victory condition.</p>
-      <h2>Turn order</h2>
+      <h2 id="turn-order">Turn order</h2>
       <ol>
         <li><strong>Move:</strong> select a highlighted monster or authorised unit, choose a connected legal destination, confirm the path, or pass.</li>
         <li><strong>Fight:</strong> resolve every compulsory battle created by movement, including target and retreat decisions.</li>
         <li><strong>Encounter:</strong> resolve the space where the monster ended, including any displayed reward or trophy choice.</li>
         <li><strong>Deploy:</strong> place legal military forces, draw Research when available, or pass to begin the next turn.</li>
       </ol>
+      <h2 id="monster-movement">Monster movement</h2>
+      <ul>
+        <li>A monster may move up to its printed Move value. It Encounters only its final space, never a space it merely passes through.</li>
+        <li>A monster stops immediately when it enters a space containing any military unit, including a unit from its own branch.</li>
+        <li>Movement abilities control water barriers: Fly crosses any barrier; Lake crosses inland-water barriers; Sea crosses sea barriers.</li>
+      </ul>
+      <h2 id="attack-resolution">Attack resolution</h2>
+      <ul>
+        <li>An attack hits when its die result is at least the target's Defense.</li>
+        <li>A natural roll of 6 is a smash and deals 1 extra damage when an attack hits a monster.</li>
+        <li>Before the Monster Challenge, monsters may attack military units only.</li>
+      </ul>
+      <h2 id="stomping-a-city">Stomping a city</h2>
+      <ul>
+        <li>Stomp an unstomped space with a city, base, or Infamy site when your monster ends there.</li>
+        <li>A `1hp` city gives 1 Health; `1d`, `2d`, and `3d` cities grant the total of that many dice. Monster Health cannot exceed 40.</li>
+        <li>Resolve each city, military-base, and Infamy benefit printed in the space.</li>
+      </ul>
+      <h2 id="deploying">Deploying or drawing Research</h2>
+      <ul>
+        <li>During Deploy, the active player may place legal units within the branch allowance.</li>
+        <li>Alternatively, draw one Military Research card instead of deploying any units. Place it face up and resolve any immediate instruction.</li>
+      </ul>
+      <h2 id="retreating-after-normal-battle">Retreating after a normal battle</h2>
+      <ul>
+        <li>If at least one military unit survives both rounds, the monster retreats to an adjacent space. Military units never retreat.</li>
+        <li>The monster does not Encounter the battle space it left or its retreat destination.</li>
+        <li>A monster with no legal retreat space disappears.</li>
+        <li>If your units force an opponent monster to retreat, you choose its legal retreat space and draw one Military Research card.</li>
+      </ul>
+      <h2 id="monster-challenge">The Monster Challenge</h2>
+      <ul>
+        <li>The monster whose player takes the final marker from the active Stomp stack becomes the challenger.</li>
+        <li>The challenger fights eligible monsters first. Any giant military units still in play are challenged last; if both giants remain, the challenger chooses their order.</li>
+        <li>If a giant defeats the challenger, the giant's controller wins immediately. If a giant is still standing at the end of the Challenge, its controller wins by saving America.</li>
+      </ul>
       <h2>Controls</h2>
       <p>Use Fit / reset and pan or zoom controls to inspect the board. Highlighted destinations come from the authoritative engine. Disabled candidate-shell faces are review cells, not playable physical-board spaces.</p>
       <h2>Connection</h2>

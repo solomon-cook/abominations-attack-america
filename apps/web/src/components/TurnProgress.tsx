@@ -24,10 +24,14 @@ export function TurnProgress({ game }: Props) {
                 ? "Choose Toxicor Mutation"
               : game.pendingDecision?.type === "stabilizer-ray-choice"
                 ? "Choose Mutation to discard"
+              : game.pendingDecision?.type === "chopper-lift-choice"
+                ? `Chopper Lift: choose a monster and destination (roll ${game.pendingDecision.roll})`
               : game.pendingDecision?.type === "trophy-choice"
                 ? "Choose trophy"
-                : game.pendingDecision?.type === "deployment"
+              : game.pendingDecision?.type === "deployment"
                   ? "Deploy or pass"
+                  : game.pendingDecision?.type === "giant-placement"
+                    ? `Place ${game.pendingDecision.cardId} on a base`
                   : game.pendingDecision?.type === "challenge-opponent"
                     ? "Choose Challenge opponent"
                     : game.pendingDecision?.type === "challenge-resolution"

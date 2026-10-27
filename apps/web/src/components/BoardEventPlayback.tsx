@@ -80,6 +80,10 @@ function battleOutcome(attack: BattleAttack): { kind: string; label: string } {
   return { kind: attack.destroyed ? "is-destroyed" : "is-hit", label: `−${attack.damage}${attack.destroyed ? " · DESTROYED" : " DAMAGE"}` };
 }
 
+export function battleImpactClass(kind: string | undefined): "impact-is-hit" | "impact-is-destroyed" | undefined {
+  return kind === "is-hit" ? "impact-is-hit" : kind === "is-destroyed" ? "impact-is-destroyed" : undefined;
+}
+
 export function BoardEventPlayback({ matchId, events, monsters, units, board, enabled, botPlayback = false, spectator, viewerPlayerIndex, reducedMotion, routineStomp, canResolveRoutineStomp = false, onResolveRoutineStomp, onResolveRoutineStompChoice }: Props) {
   const initialized = useRef(false);
   const initializedMatch = useRef(matchId);
@@ -201,17 +205,49 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
       const tiles = document.querySelectorAll<HTMLElement>(".hex-tile[data-hex-key]");
       const tile = [...tiles].find((candidate) => candidate.dataset.hexKey === presentationLocationKey);
       const rect = tile?.getBoundingClientRect();
+      const boardRect = tile?.closest<HTMLElement>(".board-viewport")?.getBoundingClientRect();
       if (!rect || rect.width === 0 || rect.height === 0) {
         frame = requestAnimationFrame(place);
         return;
       }
+      const bounds = boardRect ?? { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
       const width = playbackRef.current?.getBoundingClientRect().width || Math.min(286, window.innerWidth - 20);
       const height = playbackRef.current?.getBoundingClientRect().height || (routineStomp ? 170 : 140);
-      const x = Math.max(width / 2 + 10, Math.min(window.innerWidth - width / 2 - 10, rect.left + rect.width / 2));
-      const above = rect.bottom + height + 16 > window.innerHeight - 72;
-      const y = above ? Math.max(58, rect.top - 8) : rect.bottom + 8;
-      const next = { x, y, above };
-      const signature = `${Math.round(x)}:${Math.round(y)}:${above}`;
+      const x = Math.max(bounds.left + width / 2 + 8, Math.min(bounds.right - width / 2 - 8, rect.left + rect.width / 2));
+      const headerBottom = document.querySelector<HTMLElement>(".game-screen > header")?.getBoundingClientRect().bottom ?? bounds.top;
+      const topBound = Math.max(bounds.top + 8, headerBottom + 8);
+      const bottomBound = bounds.bottom - 8;
+      const belowSpace = bottomBound - rect.bottom - 8;
+      const prefersAbove = belowSpace < height && rect.top - topBound > belowSpace;
+      const anchorY = prefersAbove ? rect.top - height - 8 : rect.bottom + 8;
+      const clampX = (candidateX: number) => Math.max(bounds.left + width / 2 + 8, Math.min(bounds.right - width / 2 - 8, candidateX));
+      const clampY = (candidateY: number) => Math.max(topBound, Math.min(bottomBound - height, candidateY));
+      const candidates = [
+        { x, y: anchorY, above: prefersAbove },
+        { x: rect.left - width / 2 - 8, y: rect.top + rect.height / 2 - height / 2, above: true },
+        { x: rect.right + width / 2 + 8, y: rect.top + rect.height / 2 - height / 2, above: false },
+        ...[0.18, 0.32, 0.5, 0.68, 0.82].flatMap((horizontal) => [topBound, (topBound + bottomBound - height) / 2, bottomBound - height].map((vertical) => ({
+          x: bounds.left + (bounds.right - bounds.left) * horizontal,
+          y: vertical,
+          above: vertical > rect.top,
+        }))),
+      ].map((candidate) => ({ ...candidate, x: clampX(candidate.x), y: clampY(candidate.y) }));
+      const blockers = [...document.querySelectorAll<HTMLElement>(
+        ".game-screen > header, .game-screen .movement-checklist, .game-screen .board-action-bar, .game-screen .map-controls, .game-screen .persistent-record, .game-screen .opponent-portrait-rail, .game-screen .board-minimap, .game-screen .board-context-tray",
+      )].filter((element) => {
+        const style = getComputedStyle(element);
+        const blockerRect = element.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && blockerRect.width > 0 && blockerRect.height > 0;
+      }).map((element) => element.getBoundingClientRect());
+      const selected = candidates.map((candidate) => {
+        const candidateRect = { left: candidate.x - width / 2, top: candidate.y, right: candidate.x + width / 2, bottom: candidate.y + height };
+        const overlap = blockers.reduce((total, blocker) => total + Math.max(0, Math.min(candidateRect.right, blocker.right) - Math.max(candidateRect.left, blocker.left))
+          * Math.max(0, Math.min(candidateRect.bottom, blocker.bottom) - Math.max(candidateRect.top, blocker.top)), 0);
+        const distance = Math.abs(candidate.x - (rect.left + rect.width / 2)) + Math.abs(candidate.y - anchorY);
+        return { ...candidate, overlap, distance };
+      }).sort((first, second) => first.overlap - second.overlap || first.distance - second.distance)[0]!;
+      const next = { x: selected.x, y: selected.y, above: selected.above };
+      const signature = `${Math.round(next.x)}:${Math.round(next.y)}:${next.above}`;
       if (signature !== previous) {
         previous = signature;
         setPosition(next);
@@ -263,7 +299,7 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
       {isFightPlayback && currentAttack && attacker && target && <div key={`${current.id}-${shownAttackIndex}`} className="board-battle-step" role="group" aria-label={`Attack ${shownAttackIndex + 1} of ${attacks.length}`} data-attack-index={shownAttackIndex}>
         <BattleActor actor={attacker} side="attacker" />
         <div className="board-battle-roll"><small>ATTACK</small><span aria-hidden="true">⚄</span><DieCube value={currentAttack.roll} label={`Attack roll ${currentAttack.roll}`} /></div>
-        <BattleActor actor={target} side="target" />
+        <BattleActor actor={target} side="target" impact={currentAttackOutcome?.kind} />
         {currentAttackOutcome && <p className={`board-battle-result ${currentAttackOutcome.kind}`}>{currentAttackOutcome.label}</p>}
       </div>}
       {!isFightPlayback && rolls.length > 0 && <div className="board-event-dice" aria-label={`${shownDice} of ${rolls.length} dice revealed`}>
@@ -284,9 +320,10 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
   </div>, document.body);
 }
 
-function BattleActor({ actor, side }: { actor: { name: string; image?: string; kind: "monster" | "unit" | "unknown" }; side: "attacker" | "target" }) {
+function BattleActor({ actor, side, impact }: { actor: { name: string; image?: string; kind: "monster" | "unit" | "unknown" }; side: "attacker" | "target"; impact?: string }) {
+  const impactClass = side === "target" ? battleImpactClass(impact) : undefined;
   return <div className={`board-battle-actor ${actor.kind} ${side}`}>
-    <span className="board-battle-avatar">{actor.image ? <img src={actor.image} alt="" /> : <span aria-hidden="true">{actor.kind === "monster" ? "◉" : "⚔"}</span>}</span>
+    <span className={`board-battle-avatar${impactClass ? ` ${impactClass}` : ""}`}>{actor.image ? <img src={actor.image} alt="" /> : <span aria-hidden="true">{actor.kind === "monster" ? "◉" : "⚔"}</span>}</span>
     <strong>{actor.name}</strong>
   </div>;
 }
