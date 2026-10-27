@@ -97,6 +97,7 @@ try {
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board")`, "home board-review control");
   await evaluate(`([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board"))?.click()`);
   await waitFor(`document.querySelectorAll(".board-review-hex").length === 336`, "336 board-review faces");
+  await waitFor(`[...document.querySelectorAll(".board-review-hex img.audited-terrain")].filter((image) => { const rect = image.getBoundingClientRect(); return rect.bottom >= 0 && rect.top <= innerHeight && rect.right >= 0 && rect.left <= innerWidth; }).every((image) => image.complete && image.naturalWidth > 0)`, "visible audited cell artwork");
   await waitFor(`document.querySelectorAll(".board-review-source img").length === 2 && [...document.querySelectorAll(".board-review-source img")].every((image) => image.complete && image.naturalWidth > 0)`, "reference board photographs");
   await waitFor(`document.querySelectorAll('.dense-stack-fixture').length === 8`, "dense stack fixtures");
   await evaluate(`document.querySelectorAll(".board-review-hex")[42]?.click()`);
@@ -106,6 +107,13 @@ try {
     const tops = new Set(cells.map((cell) => cell.style.top));
     const columnCounts = [...new Set(cells.map((cell) => Math.round(cell.getBoundingClientRect().left * 100)))].map((left) => cells.filter((cell) => Math.round(cell.getBoundingClientRect().left * 100) === left).length);
     const style = getComputedStyle(cells[0]);
+    const terrainImages = cells.map((cell) => cell.querySelector("img.audited-terrain"));
+    const terrainCellIds = terrainImages.map((image) => image?.dataset.artCell ?? "");
+    const visibleTerrainImages = terrainImages.filter((image) => {
+      if (!image) return false;
+      const rect = image.getBoundingClientRect();
+      return rect.bottom >= 0 && rect.top <= innerHeight && rect.right >= 0 && rect.left <= innerWidth;
+    });
     const references = [...document.querySelectorAll(".board-review-source img")];
     const canvasRect = document.querySelector(".board-review-canvas").getBoundingClientRect();
     const visible = cells.every((cell) => { const rect = cell.getBoundingClientRect(); return rect.width > 0 && rect.height > 0; });
@@ -117,7 +125,14 @@ try {
       rows: tops.size,
       columnCounts,
       aspectRatio: style.aspectRatio,
-      creamFace: style.backgroundImage.includes("linear-gradient"),
+      terrainArtAssignments: terrainImages.length === 336
+        && terrainImages.every((image, index) => {
+          const cellId = cells[index].getAttribute("aria-label")?.match(/^Review cell ([^:]+):/)?.[1];
+          return image && cellId && image.dataset.artCell === cellId && image.getAttribute("src")?.startsWith("/assets/board/audited/");
+        })
+        && new Set(terrainCellIds).size === 336,
+      visibleTerrainImages: visibleTerrainImages.length,
+      visibleTerrainImagesLoaded: visibleTerrainImages.every((image) => image.complete && image.naturalWidth > 0),
       visible,
       contained,
       minimumSameRowGap: Math.min(...rowGaps),
@@ -132,9 +147,11 @@ try {
       denseStackCounts: [...document.querySelectorAll('.dense-stack-fixture')].map((fixture) => Number(fixture.dataset.stackCount)),
       denseStackImagesLoaded: [...document.querySelectorAll('.dense-stack-fixture img')].every((piece) => piece.complete && piece.naturalWidth > 0),
       denseStackContained: [...document.querySelectorAll('.dense-stack-fixture')].every((fixture) => [...fixture.querySelectorAll('img')].every((piece) => { const outer = fixture.getBoundingClientRect(); const inner = piece.getBoundingClientRect(); return inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom; })),
+      denseStackHasNoOverlap: [...document.querySelectorAll('.dense-stack-fixture')].every((fixture) => { const pieces = [...fixture.querySelectorAll('img')]; return pieces.every((piece, index) => pieces.slice(index + 1).every((other) => { const a = piece.getBoundingClientRect(); const b = other.getBoundingClientRect(); return a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom; })); }),
+      denseStackOddTailsCentered: [...document.querySelectorAll('.dense-stack-fixture.stack-count-3,.dense-stack-fixture.stack-count-5,.dense-stack-fixture.stack-count-7')].every((fixture) => { const outer = fixture.getBoundingClientRect(); const last = fixture.querySelector('img:last-child')?.getBoundingClientRect(); return Boolean(last && Math.abs((last.left + last.right) / 2 - (outer.left + outer.right) / 2) <= 1); }),
     };
   })()`);
-  if (!result || result.count !== 336 || result.rows !== 28 || JSON.stringify(result.columnCounts) !== JSON.stringify(Array.from({ length: 24 }, () => 14)) || result.minimumSameRowGap <= 0 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.creamFace || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0 || JSON.stringify(result.denseStackCounts) !== JSON.stringify([1,2,3,4,5,6,7,8]) || !result.denseStackImagesLoaded || !result.denseStackContained) {
+  if (!result || result.count !== 336 || result.rows !== 28 || JSON.stringify(result.columnCounts) !== JSON.stringify(Array.from({ length: 24 }, () => 14)) || result.minimumSameRowGap <= 0 || !/^1\.1547( \/ 1)?$/.test(result.aspectRatio) || !result.terrainArtAssignments || result.visibleTerrainImages < 1 || !result.visibleTerrainImagesLoaded || !result.visible || !result.contained || result.selectedCells !== 1 || !result.inspector || result.referenceImages !== 2 || result.referenceImagesLoaded !== 2 || !result.referenceOnlyCaptions || result.horizontalOverflow || result.playableTiles !== 0 || result.unresolvedLabels !== 0 || JSON.stringify(result.denseStackCounts) !== JSON.stringify([1,2,3,4,5,6,7,8]) || !result.denseStackImagesLoaded || !result.denseStackContained || !result.denseStackHasNoOverlap || !result.denseStackOddTailsCentered) {
     throw new Error(`Board review browser contract failed: ${JSON.stringify(result)}`);
   }
   if (screenshotPath) {

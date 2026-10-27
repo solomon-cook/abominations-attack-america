@@ -1,9 +1,10 @@
 import { readFile } from "node:fs/promises";
 
-const [stylesheet, hudStyles, hexGrid] = await Promise.all([
-  Promise.all(["styles.css", "encounter-command.css", "combat-stage.css", "dice.css"].map(file => readFile(new URL(`../apps/web/src/${file}`, import.meta.url), "utf8"))).then(files => files.join("\n")),
+const [stylesheet, hudStyles, hexGrid, boardPlayback] = await Promise.all([
+  Promise.all(["styles.css", "encounter-command.css", "combat-stage.css", "dice.css", "board-event-playback.css"].map(file => readFile(new URL(`../apps/web/src/${file}`, import.meta.url), "utf8"))).then(files => files.join("\n")),
   readFile(new URL("../apps/web/src/civ-hud.css", import.meta.url), "utf8"),
   readFile(new URL("../apps/web/src/components/HexGrid.tsx", import.meta.url), "utf8"),
+  readFile(new URL("../apps/web/src/components/BoardEventPlayback.tsx", import.meta.url), "utf8"),
 ]);
 const failures = [];
 
@@ -24,6 +25,10 @@ if (!/\.accepted-path polyline[\s\S]*animation:accepted-path-in/.test(stylesheet
 if (!/\.accepted-arrival[\s\S]*animation:accepted-arrival-in/.test(stylesheet) || !/@keyframes accepted-arrival-in[\s\S]*100%\{[^}]*opacity:1/.test(stylesheet)) failures.push("accepted-arrival animation does not settle");
 if (!/travelling-piece\$\{militaryUnit \? " travelling-military-unit"/.test(hexGrid) || !/travelling-military-unit\s*\{\s*filter:drop-shadow/.test(hudStyles)) failures.push("military movement traveller has no clear board-side visual cue");
 if (!/animationDuration:\s*`\$\{\(acceptedPath\.length - 1\) \* 400 \+ 200\}ms`/.test(hexGrid)) failures.push("military movement route does not remain visible for the full travel duration");
+if (!/board-battle-avatar\.impact-is-hit::after/.test(stylesheet) || !/board-battle-avatar\.impact-is-destroyed::after/.test(stylesheet)) failures.push("authoritative battle hits and destruction have no distinct impact treatment");
+if (!/@keyframes board-battle-impact-flash[\s\S]*100%\{filter:brightness\(1\);scale:1\}/.test(stylesheet) || !/@keyframes board-battle-impact-ring[\s\S]*100%\{opacity:0;scale:1\.4\}/.test(stylesheet)) failures.push("battle impact effects do not settle to a clean final state");
+if (!/prefers-reduced-motion:reduce\)[\s\S]*board-battle-avatar\.impact-is-hit::after[\s\S]*animation:none/.test(stylesheet) || !/\.reduced-motion \.board-battle-avatar\.impact-is-hit::after[\s\S]*animation:none/.test(stylesheet)) failures.push("battle impact effects ignore system or manual reduced-motion settings");
+if (!/BattleActor actor=\{target\} side="target" impact=\{currentAttackOutcome\?\.kind\}/.test(boardPlayback) || !/return kind === "is-hit" \? "impact-is-hit" : kind === "is-destroyed" \? "impact-is-destroyed" : undefined/.test(boardPlayback)) failures.push("battle impact feedback is not tied to the authoritative target outcome");
 
 if (failures.length) {
   console.error(`Web motion contract failed:\n- ${failures.join("\n- ")}`);

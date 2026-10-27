@@ -15,9 +15,9 @@ const cardIds = ["Fins and Gills", "Rampage"] as const;
 game.pendingMutationChoice = { playerIndex: 0, monsterId: monster.id, cardIds, source: "mutation-site", siteId: site.features.find((feature) => feature.kind === "mutation-site")!.siteId };
 game.pendingDecision = { type: "mutation-choice", playerIndex: 0, monsterId: monster.id, cardIds, siteId: game.pendingMutationChoice.siteId };
 
-const render = (state: typeof game, viewer: number) => renderToStaticMarkup(React.createElement(ToxicorMutationControls, {
-  game: projectState(state, "player", viewer),
-  canAct: viewer === 0,
+const render = (state: typeof game, viewer: number, audience: "player" | "spectator" = "player") => renderToStaticMarkup(React.createElement(ToxicorMutationControls, {
+  game: audience === "spectator" ? projectState(state, "spectator") : projectState(state, "player", viewer),
+  canAct: audience === "player" && viewer === 0,
   runCommand: () => undefined,
 }));
 
@@ -27,7 +27,13 @@ assert.match(ownerHtml, /Keep Fins and Gills/);
 assert.match(ownerHtml, /Keep Rampage/);
 assert.doesNotMatch(ownerHtml, /disabled=""/);
 const opponentHtml = render(game, 1);
-assert.doesNotMatch(opponentHtml, /Keep Fins and Gills|Keep Rampage/);
+assert.match(opponentHtml, /Keep Fins and Gills/);
+assert.match(opponentHtml, /Keep Rampage/);
+assert.match(opponentHtml, /disabled=""/);
+const spectatorHtml = render(game, -1, "spectator");
+assert.match(spectatorHtml, /Keep Fins and Gills/);
+assert.match(spectatorHtml, /Keep Rampage/);
+assert.match(spectatorHtml, /disabled=""/);
 
 const battleGame = structuredClone(game);
 battleGame.phase = "fight";
@@ -36,4 +42,4 @@ battleGame.pendingDecision = { type: "mutation-choice", playerIndex: 0, monsterI
 const battleHtml = render(battleGame, 0);
 assert.match(battleHtml, /Keep Fins and Gills/);
 assert.match(battleHtml, /Keep Rampage/);
-console.log("Toxicor's Mutation-site and in-battle projections render two enabled Keep choices to the owner and hide card names from the opponent.");
+console.log("Toxicor's Mutation-site and in-battle views show both public card faces to every audience and enable the choice only for its owner.");

@@ -8,7 +8,7 @@ import { isRoutineCityStompEvent, pendingRoutineCityStomp } from "../apps/web/sr
 const require = createRequire(import.meta.url);
 require.extensions[".css"] = () => undefined;
 const { EncounterOverlay } = require("../apps/web/src/components/EncounterOverlay.tsx") as typeof import("../apps/web/src/components/EncounterOverlay");
-const { isCompactBotBattle, newBattleAttacks } = require("../apps/web/src/components/BoardEventPlayback.tsx") as typeof import("../apps/web/src/components/BoardEventPlayback");
+const { battleImpactClass, isCompactBotBattle, newBattleAttacks } = require("../apps/web/src/components/BoardEventPlayback.tsx") as typeof import("../apps/web/src/components/BoardEventPlayback");
 const base = {
   open: true,
   canAct: true,
@@ -74,6 +74,9 @@ const loggedAttack = { attackerId: "bot-monster", targetId: "unit", controllerPl
 const firstBotStrike: GameLogEntry = { ...botFight, id: "bot-strike-1", action: "battle.target-required", detail: { ...botFight.detail, battleId: "queued-battle", attacks: [loggedAttack] } };
 const secondBotStrike: GameLogEntry = { ...firstBotStrike, id: "bot-strike-2", detail: { ...firstBotStrike.detail, attacks: [loggedAttack, { ...loggedAttack, roll: 2 }] } };
 assert.deepEqual(newBattleAttacks(secondBotStrike, [firstBotStrike, secondBotStrike]).map((attack) => attack.roll), [2], "each target step should animate only its newly resolved attack");
+assert.equal(battleImpactClass("is-hit"), "impact-is-hit", "a recorded hit should show the target impact treatment");
+assert.equal(battleImpactClass("is-destroyed"), "impact-is-destroyed", "a recorded destruction should show its distinct target impact treatment");
+assert.equal(battleImpactClass("is-miss"), undefined, "a miss should not flash the target");
 assert.equal(isRoutineCityStompEvent(stompEvent, [fightBeforeStomp, stompEvent], AUDITED_BOARD), false, "a city stomp after a fight should keep the Encounter panel");
 stompGame.eventLog.push(fightBeforeStomp);
 assert.equal(pendingRoutineCityStomp(stompGame, AUDITED_BOARD), undefined, "a city stomp following a fight should not open the compact prompt");

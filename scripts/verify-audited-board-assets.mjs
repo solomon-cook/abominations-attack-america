@@ -9,8 +9,14 @@ const read = async file => JSON.parse(await fs.readFile(path.join(root,file),'ut
 const geometry = await read('output/board-art/manifest.json');
 const runtime = await read('apps/web/src/board-art-manifest.json');
 const delivery = await read('apps/web/public/assets/board/audited/manifest.json');
+const compiledSource = await fs.readFile(path.join(root,'packages/game-engine/src/audited-board-data.ts'),'utf8');
+const observations = JSON.parse(compiledSource.match(/AUDITED_CELLS = ([\s\S]*) as const;/)?.[1] ?? 'null');
+assert.ok(Array.isArray(observations),'compiled human-audit observations are missing');
+const sourceRefByCell = new Map(observations.map(cell=>[`${cell.row}/${cell.column}`,cell.sourceRef]));
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
-assert.equal(runtime.sourceSha256,digest(await fs.readFile(path.join(root,'docs/authoritative-board-human-audit.md'))));
+const auditDigest = digest(await fs.readFile(path.join(root,'docs/authoritative-board-human-audit.md')));
+assert.equal(runtime.sourceSha256,auditDigest,'runtime art manifest is stale against the source board audit');
+assert.equal(geometry.sourceSha256,auditDigest,'board art geometry is stale against the source board audit');
 assert.equal(runtime.boardId,'human-audited-north-america');
 assert.deepEqual(delivery.cells,runtime.cells);
 assert.equal(Object.keys(runtime.cells).length,336);
@@ -23,6 +29,7 @@ for(const cell of Object.values(geometry.cells)) {
   const art = runtime.cells[key];
   assert.equal(art.cellId,cell.id);
   assert.equal(art.unique,cell.uniqueArt);
+  assert.deepEqual(delivery.assets[art.asset]?.sourceRefs,[sourceRefByCell.get(`${cell.row}/${cell.column}`)],`stale board audit reference ${cell.id}`);
   assert.ok(delivery.assets[art.asset],`missing ${art.asset}`);
   if(delivery.assembly) {
     assert.deepEqual(delivery.assets[art.asset].crop,{x:cell.center[0]-geometry.width/2,y:cell.center[1]-geometry.height/2,width:geometry.width,height:geometry.height},`misaligned crop ${cell.id}`);

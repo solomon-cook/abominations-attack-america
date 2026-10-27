@@ -13,8 +13,7 @@ function runCase(testCase) {
       cwd: process.cwd(),
       env: {
         ...process.env,
-        BROWSER_TEST_WIDTH: String(testCase.width),
-        BROWSER_TEST_HEIGHT: String(testCase.height),
+        BROWSER_LOCAL_VIEWPORTS: `${testCase.width}x${testCase.height}`,
       },
       stdio: ["ignore", "pipe", "pipe"],
     });

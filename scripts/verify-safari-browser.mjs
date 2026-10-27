@@ -25,11 +25,16 @@ web.stderr.on("data", (chunk) => { webOutput += chunk.toString(); });
 
 const driver = spawn(driverCommand, ["--port", String(driverPort)], { stdio: ["ignore", "pipe", "pipe"] });
 let driverOutput = "";
+let driverSpawnError;
+driver.on("error", (error) => {
+  driverSpawnError = error;
+  driverOutput += `${error.message}\n`;
+});
 driver.stdout.on("data", (chunk) => { driverOutput += chunk.toString(); });
 driver.stderr.on("data", (chunk) => { driverOutput += chunk.toString(); });
 
 const stop = (child) => new Promise((resolve) => {
-  if (child.exitCode !== null) {
+  if (child.exitCode !== null || child.pid === undefined) {
     resolve();
     return;
   }
@@ -56,6 +61,7 @@ const request = async (port, path, init, requestTimeoutMs = timeoutMs) => {
 
 const waitFor = async (check, description) => {
   for (let attempt = 0; attempt < 200; attempt += 1) {
+    if (driverSpawnError) throw driverSpawnError;
     try {
       if (await check()) return;
     } catch {

@@ -23,6 +23,8 @@ assert.match(offline, /authoritative rooms and actions require a live connection
 assert.match(offline, /offline playtest reference/);
 assert.match(reference, /Development boundary/);
 assert.match(reference, /Turn order/);
+assert.match(reference, /id="retreating-after-normal-battle"/);
+assert.match(reference, /no legal retreat space disappears/i);
 assert.match(icon, /<svg/);
 assert.match(main, /New version available/);
 assert.match(main, /activatePwaUpdate/);
