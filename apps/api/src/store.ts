@@ -1,11 +1,14 @@
 import { createHash, randomBytes } from "node:crypto";
-import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupAction, createMvpRoomGame, createRoomGame, legalLaserFenceTargets, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import type { PublicRoomSummary, RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
+import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupActionWithRecord, createMvpRoomGame, createRoomGame, legalLaserFenceTargets, projectState, type GameCommand, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
+import type { PublicReplayExport, PublicReplayPage, PublicRoomSummary, ReplayFrame, RoomEvent, RoomParticipantView, RoomPrivacy, RoomStatus, RoomView, SessionResponse } from "@abominations/shared";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { emptyMatchCounters, updateMatchCounters, type MatchCounters } from "./player-stats.js";
+import { cacheReplayFrames, getCachedReplayFrames, MAX_REPLAY_EXPORT_BYTES, MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, reconstructReplay, type ReplayCommandRecord, type ReplaySourceEvent } from "./replay.js";
+export { MAX_REPLAY_EXPORT_BYTES, MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS } from "./replay.js";
+export type { ReplayCommandRecord } from "./replay.js";
 
 type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string; disconnectedAt?: number };
-type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
+type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; initialReplayState: GameState; replayCommands: Array<{ version: number; eventType: string; record: ReplayCommandRecord }>; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
 export interface RoomSocketPrincipal { roomCode: string; participantId: string; sessionHash: string }
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
@@ -77,6 +80,8 @@ export interface RoomStore {
   setReady(code: string, token: string, ready: boolean): Promise<RoomView>;
   setupAction(code: string, token: string, action: SetupAction, expectedRevision: number): Promise<RoomView>;
   getRoom(code: string, token: string, afterVersion?: number): Promise<RoomView>;
+  getPublicReplay(code: string, fromVersion: number, limit: number): Promise<PublicReplayPage>;
+  getPublicReplayExport(code: string): Promise<PublicReplayExport>;
   submitAction(code: string, token: string, envelope: GameCommandEnvelope): Promise<RoomView>;
   createSocketTicket(code: string, token: string): Promise<string>;
   consumeSocketTicket(code: string, ticket: string): Promise<RoomSocketPrincipal>;
@@ -92,13 +97,14 @@ const token = () => randomBytes(24).toString("base64url");
 const code = () => randomBytes(3).toString("hex").toUpperCase();
 const now = () => new Date().toISOString();
 const gameSeed = () => randomBytes(4).readUInt32LE(0);
+const privateGameSeed = () => randomBytes(32).toString("hex");
 
 export class MemoryRoomStore implements RoomStore {
   private rooms = new Map<string, StoredRoom>();
   private actionIds = new Set<string>();
   private socketTickets = new Map<string, { roomCode: string; participantId: string; sessionHash: string; expiresAt: number }>();
 
-  constructor(private readonly allowDevelopmentFixture = false) {}
+  constructor(private readonly allowDevelopmentFixture = false, private readonly testRoomSeed?: number) {}
 
   async close(): Promise<void> {}
 
@@ -107,12 +113,13 @@ export class MemoryRoomStore implements RoomStore {
   async createRoom(maxPlayers: number, displayName = "Player 1", privacy: RoomPrivacy = "private"): Promise<SessionResponse> {
     const id = randomBytes(12).toString("hex");
     const roomCode = code();
-    const seed = gameSeed();
+    const seed = this.testRoomSeed ?? gameSeed();
+    const secretSeed = !this.allowDevelopmentFixture && this.testRoomSeed === undefined ? privateGameSeed() : undefined;
     const state = this.allowDevelopmentFixture
-      ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`)
-      : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`);
+      ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`, secretSeed)
+      : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`, secretSeed);
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
-    const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, participants: [], events: [], playerStats: emptyMatchCounters(maxPlayers), lastActivityAt: Date.now() };
+    const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, initialReplayState: structuredClone(state), replayCommands: [], participants: [], events: [], playerStats: emptyMatchCounters(maxPlayers), lastActivityAt: Date.now() };
     this.rooms.set(room.code, room);
     return this.addParticipant(room, displayName, "player", 0);
   }
@@ -201,8 +208,7 @@ export class MemoryRoomStore implements RoomStore {
     this.touch(room);
     this.refreshStatus(room);
     if ((room.status as RoomStatus) === "active" && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
-      room.state = applyCompletedSetup(room.state);
-      room.version += 1;
+      this.applySetupCompletion(room, participant.id, "human");
     }
     return this.view(room, 0, "player", participant.playerIndex);
   }
@@ -223,6 +229,7 @@ export class MemoryRoomStore implements RoomStore {
     room.state = { ...room.state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
     this.touch(room);
     room.version += 1;
+    room.replayCommands.push({ version: room.version, eventType: "setup.updated", record: { kind: "setup", playerIndex: participant.playerIndex, action: structuredClone(action) } });
     room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: participant.id, type: "setup.updated", payload: { phase: nextSetup.phase, action: action.type }, createdAt: now() });
     room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.refreshStatus(room);
@@ -233,6 +240,69 @@ export class MemoryRoomStore implements RoomStore {
     const room = this.authorize(roomCode, accessToken);
     const viewer = room.participants.find((participant) => participant.tokenHash === hash(accessToken));
     return this.view(room, afterVersion, viewer?.role === "player" ? "player" : "spectator", viewer?.playerIndex);
+  }
+
+  async getPublicReplay(roomCode: string, fromVersion: number, requestedLimit: number): Promise<PublicReplayPage> {
+    const room = this.requireRoom(roomCode);
+    if (room.privacy !== "public") return { replayable: false, reason: "not-found" };
+    if (room.status !== "completed") return { replayable: false, reason: "not-completed" };
+    if (!Number.isInteger(fromVersion) || fromVersion < 0 || fromVersion > room.version
+      || !Number.isInteger(requestedLimit) || requestedLimit < 1) throw new Error("Replay pagination is invalid.");
+    const limit = Math.min(requestedLimit, MAX_REPLAY_PAGE_FRAMES);
+    const pageFor = (base: ReplayFrame, candidate: ReplayFrame[], nextFromVersion?: number): PublicReplayPage => ({ replayable: true, roomCode: room.code, terminalVersion: room.version, boardId: room.initialReplayState.boardId, boardVersion: room.initialReplayState.boardVersion, boardContentHash: room.initialReplayState.boardContentHash, rulesetVersion: room.initialReplayState.rulesetVersion, base, frames: candidate, ...(nextFromVersion === undefined ? {} : { nextFromVersion }) });
+    const events: ReplaySourceEvent[] = room.replayCommands.map((entry) => ({ ...entry })).sort((left, right) => left.version - right.version);
+    const cacheKey = `memory:${room.id}`;
+    let frames = getCachedReplayFrames(cacheKey, room.version);
+    if (!frames) {
+      frames = [];
+      const result = reconstructReplay(room.initialReplayState, events, room.state, room.version, (frame) => frames!.push(frame));
+      if (result !== "ok") return { replayable: false, reason: result };
+      cacheReplayFrames(cacheKey, room.version, frames);
+    }
+    const cachedBase = frames[fromVersion];
+    if (!cachedBase || cachedBase.version !== fromVersion) return { replayable: false, reason: "history-incomplete" };
+    const base = structuredClone(cachedBase);
+    const selected: ReplayFrame[] = [];
+    for (const frame of frames.slice(fromVersion + 1, fromVersion + limit + 1)) {
+      const candidate = [...selected, frame];
+      if (Buffer.byteLength(JSON.stringify(pageFor(base, candidate))) > MAX_REPLAY_PAGE_BYTES) break;
+      selected.push(structuredClone(frame));
+    }
+    if (!selected.length && fromVersion < room.version
+      && Buffer.byteLength(JSON.stringify(pageFor(base, [frames[fromVersion + 1]!]))) > MAX_REPLAY_PAGE_BYTES) return { replayable: false, reason: "frame-too-large" };
+    const lastVersion = selected.at(-1)?.version ?? base.version;
+    const nextFromVersion = lastVersion < room.version ? lastVersion : undefined;
+    const page = pageFor(base, selected, nextFromVersion);
+    if (Buffer.byteLength(JSON.stringify(page)) > MAX_REPLAY_PAGE_BYTES) return { replayable: false, reason: "frame-too-large" };
+    return page;
+  }
+
+  async getPublicReplayExport(roomCode: string): Promise<PublicReplayExport> {
+    const room = this.requireRoom(roomCode);
+    if (room.privacy !== "public") return { replayable: false, reason: "not-found" };
+    if (room.status !== "completed") return { replayable: false, reason: "not-completed" };
+    const result: PublicReplayExport & { replayable: true } = {
+      replayable: true,
+      formatVersion: 1,
+      roomCode: room.code,
+      terminalVersion: room.version,
+      boardId: room.initialReplayState.boardId,
+      boardVersion: room.initialReplayState.boardVersion,
+      boardContentHash: room.initialReplayState.boardContentHash,
+      rulesetVersion: room.initialReplayState.rulesetVersion,
+      frames: [],
+    };
+    let frames = getCachedReplayFrames(`memory:${room.id}`, room.version);
+    if (!frames) {
+      const events: ReplaySourceEvent[] = room.replayCommands.map((entry) => ({ ...entry })).sort((left, right) => left.version - right.version);
+      frames = [];
+      const status = reconstructReplay(room.initialReplayState, events, room.state, room.version, (frame) => frames!.push(frame));
+      if (status !== "ok") return { replayable: false, reason: status };
+      cacheReplayFrames(`memory:${room.id}`, room.version, frames);
+    }
+    result.frames = structuredClone(frames);
+    if (Buffer.byteLength(JSON.stringify(result)) > MAX_REPLAY_EXPORT_BYTES) return { replayable: false, reason: "export-too-large" };
+    return result;
   }
 
   async submitAction(roomCode: string, accessToken: string, envelope: GameCommandEnvelope) {
@@ -331,20 +401,21 @@ export class MemoryRoomStore implements RoomStore {
           const setupPlayer = this.nextSetupPlayer(setup);
           const actor = room.participants.find((candidate) => candidate.playerIndex === setupPlayer && candidate.role === "player");
           if (!actor?.botControlled) break;
-          const nextSetup = chooseBotSetupAction(room.state, setup, setupPlayer);
+          const { setup: nextSetup, action } = chooseBotSetupActionWithRecord(room.state, setup, setupPlayer);
           if (nextSetup === setup) break;
+          if (!action) throw new Error("The room bot produced a setup transition without a replayable action.");
           const seat = nextSetup.seats.find((candidate) => candidate.playerIndex === setupPlayer);
           if (seat?.startingChoice?.kind === "deploy") setupDeploymentState({ ...room.state, setupState: nextSetup }, setupPlayer, "placements" in seat.startingChoice ? seat.startingChoice.placements : [seat.startingChoice]);
           room.state = { ...room.state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
           actor.ready = Boolean(seat?.startingChoice);
           this.touch(room);
           room.version += 1;
+          room.replayCommands.push({ version: room.version, eventType: "setup.updated", record: { kind: "setup", playerIndex: setupPlayer, action } });
           room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: "setup.updated", controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, createdAt: now() });
           room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
           this.refreshStatus(room);
           if (room.status === "active" && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
-            room.state = applyCompletedSetup(room.state);
-            room.version += 1;
+            this.applySetupCompletion(room, actor.id, "bot");
           }
           updated.push(room.code);
           continue;
@@ -374,6 +445,7 @@ export class MemoryRoomStore implements RoomStore {
   }
 
   private nextSetupPlayer(setup: NonNullable<GameState["setupState"]>): number {
+    if (setup.phase === "unused-branch-placement") return setup.definition.playerCount - 1;
     const field = setup.phase === "monster-selection" ? "monsterId" : setup.phase === "branch-selection" ? "branch" : setup.phase === "lair-selection" ? "lair" : "startingChoice";
     const seats = [...setup.seats].sort((left, right) => setup.phase === "branch-selection" ? right.playerIndex - left.playerIndex : left.playerIndex - right.playerIndex);
     return seats.find((seat) => seat[field] === undefined)?.playerIndex ?? -1;
@@ -385,11 +457,20 @@ export class MemoryRoomStore implements RoomStore {
     room.state = result.state;
     this.touch(room);
     room.version += 1;
+    room.replayCommands.push({ version: room.version, eventType: result.eventType, record: { kind: "command", playerIndex: actor.playerIndex ?? 0, command: structuredClone(envelope.command) } });
     room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: result.eventType, controlSource, payload: { ...result.eventPayload, receipt: result.receipt }, createdAt: now() });
     room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.actionIds.add(`${room.id}:${envelope.actionId}`);
     if (room.state.phase === "game-over") room.status = "completed";
     return this.view(room, 0, "player", actor.playerIndex);
+  }
+
+  private applySetupCompletion(room: StoredRoom, actorId: string, controlSource: "human" | "bot"): void {
+    room.state = applyCompletedSetup(room.state);
+    room.version += 1;
+    room.replayCommands.push({ version: room.version, eventType: "match.started", record: { kind: "start" } });
+    room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId, type: "match.started", controlSource, payload: { phase: room.state.phase, currentPlayer: room.state.currentPlayer }, createdAt: now() });
+    room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
   }
 
   private addParticipant(room: StoredRoom, displayName: string, role: "player" | "spectator", playerIndex?: number): SessionResponse {
@@ -435,6 +516,6 @@ export class MemoryRoomStore implements RoomStore {
   }
 
   private view(room: StoredRoom, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number): RoomView {
-    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map((participant) => ({ id: participant.id, displayName: participant.displayName, role: participant.role, playerIndex: participant.playerIndex, connected: participant.connected, ready: participant.ready, botControlled: participant.botControlled, botAssisted: participant.botAssisted })), events: room.events.filter((event) => event.version > afterVersion).map((event) => ({ ...event, payload: redactCardIdentifiers(event.payload) as Record<string, unknown> })) };
+    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map((participant) => ({ id: participant.id, displayName: participant.displayName, role: participant.role, playerIndex: participant.playerIndex, connected: participant.connected, ready: participant.ready, botControlled: participant.botControlled, botAssisted: participant.botAssisted })), events: room.events.filter((event) => event.version > afterVersion).reverse() };
   }
 }

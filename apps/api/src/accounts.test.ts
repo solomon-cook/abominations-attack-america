@@ -15,7 +15,7 @@ function accountDatabase() {
     userAccount: {
       create: async ({ data }: any) => {
         if ([...users.values()].some((user) => user.email === data.email || user.username === data.username)) throw duplicate();
-        const user = { id: `user-${++sequence}`, createdAt: new Date(), ...data };
+        const user = { id: `user-${++sequence}`, createdAt: new Date(), publicStatsEnabled: true, ...data };
         users.set(user.id, user);
         return user;
       },
@@ -31,6 +31,9 @@ function accountDatabase() {
         Object.assign(user, data);
         return user;
       },
+      findMany: async ({ where }: any) => [...users.values()]
+        .filter((user) => where?.publicStatsEnabled === undefined || user.publicStatsEnabled === where.publicStatsEnabled)
+        .map((user) => ({ ...user, matchStats: [...stats.values()].filter((row) => row.userId === user.id) })),
       delete: async ({ where }: any) => { const user = users.get(where.id); users.delete(where.id); for (const [id, row] of stats) if (row.userId === where.id) stats.delete(id); return user; },
     },
     accountToken: {
@@ -49,6 +52,7 @@ function accountDatabase() {
       updateMany: async ({ where, data }: any) => { let count = 0; for (const row of participants.values()) if (row.userId === where.userId) { Object.assign(row, data); count += 1; } return { count }; },
     },
     playerMatchStat: {
+      findMany: async ({ where }: any) => [...stats.values()].filter((row) => row.userId === where.userId),
       updateMany: async ({ where, data }: any) => { let count = 0; for (const row of stats.values()) if (row.userId === where.userId) { Object.assign(row, data); count += 1; } return { count }; },
     },
     gameResult: { updateMany: async ({ where, data }: any) => { let count = 0; for (const row of results.values()) if (row.winnerName === where.winnerName) { Object.assign(row, data); count += 1; } return { count }; } },
@@ -94,6 +98,15 @@ test("account credentials stay private while verification, reset, username, logo
   assert.equal(renamed.username, "new_public_name");
   assert.equal(fixture.participants.get("seat-1")?.displayName, "new_public_name");
   assert.equal(fixture.results.get("result-1")?.winnerName, "new_public_name");
+
+  assert.deepEqual(await service.getPrivacySettings(storedUser.id), { publicStatsEnabled: true });
+  await service.updatePrivacySettings(storedUser.id, false);
+  assert.deepEqual(await service.getPrivacySettings(storedUser.id), { publicStatsEnabled: false });
+  await assert.rejects(() => service.publicProfile("new_public_name"), /Player not found/);
+  assert.equal((await service.leaderboard("wins")).some((entry) => entry.username === "new_public_name"), false);
+  await service.updatePrivacySettings(storedUser.id, true);
+  assert.equal((await service.publicProfile("new_public_name")).username, "new_public_name");
+  assert.equal((await service.leaderboard("wins")).some((entry) => entry.username === "new_public_name"), true);
 
   const reset = await service.requestPasswordReset(email);
   const resetToken = new URL(reset.developmentLink!).searchParams.get("reset-password")!;

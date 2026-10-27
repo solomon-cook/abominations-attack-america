@@ -13,13 +13,104 @@ async function completeDevelopmentSetup(store: MemoryRoomStore, sessions: Array<
   for (let playerIndex = playerCount - 1; playerIndex >= 0; playerIndex -= 1) revision = (await store.setupAction(code, sessions[playerIndex].token, { type: "choose-branch", branch: branches[playerIndex] }, revision)).version;
   const lairs = ["los-angeles", "chicago", "san-francisco", "denver"];
   for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) revision = (await store.setupAction(code, sessions[playerIndex].token, { type: "choose-lair", lair: lairs[playerIndex] }, revision)).version;
+  // Keep generic API room fixtures out of random immediate giant-placement
+  // decisions; dedicated tests exercise those decisions through the public path.
+  const stored = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms.get(code)!;
+  stored.state.decks.research = { order: ["Defense Satellites", "Cutbacks", "Anti-Mutagen", "Scientific Analysis"], drawIndex: 0, discard: [], exhausted: false };
   for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) revision = (await store.setupAction(code, sessions[playerIndex].token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, revision)).version;
 }
 
+test("memory room replay inputs preserve the initial state and accepted actions without entering room views", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host", "public");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState; initialReplayState: import("@abominations/game-engine").GameState; replayCommands: Array<{ version: number; record: unknown }> }> }).rooms;
+  const room = rooms.get(host.room.code)!;
+  const initialReplayState = structuredClone(room.initialReplayState);
+  assert.deepEqual(room.initialReplayState, room.state);
+  assert.equal(JSON.stringify(host.room).includes("initialReplayState"), false);
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  const active = await store.setReady(host.room.code, guest.token, true);
+  assert.ok(JSON.stringify(room.replayCommands).includes('"kind":"start"'));
+  const actingSeat = active.state.currentPlayer;
+  const actor = active.participants.find((participant) => participant.playerIndex === actingSeat)!;
+  const actorSession = actingSeat === 0 ? host : guest;
+  const result = await store.submitAction(host.room.code, actorSession.token, {
+    actionId: "replay-source-pass-move",
+    actorId: actor.id,
+    expectedRevision: active.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "pass-move" },
+  });
+  assert.deepEqual(room.initialReplayState, initialReplayState, "later accepted actions must not mutate the immutable starting state");
+  assert.ok(room.replayCommands.some(({ record }) => JSON.stringify(record).includes('"kind":"setup"')));
+  assert.deepEqual(room.replayCommands.at(-1)?.record, { kind: "command", playerIndex: actingSeat, command: { type: "pass-move" } });
+  assert.equal(JSON.stringify(result).includes("replayCommands"), false);
+  assert.equal(result.events.some((event) => Object.hasOwn(event, "replayCommand")), false);
+});
+
+test("public memory replay is paged, reconstructs the terminal state, and rejects private or live rooms", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host", "public");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState; initialReplayState: import("@abominations/game-engine").GameState }> }).rooms;
+  const stored = rooms.get(host.room.code)!;
+  stored.initialReplayState.decks.research = { order: ["Defense Satellites", "Cutbacks", "Anti-Mutagen", "Scientific Analysis"], drawIndex: 0, discard: [], exhausted: false };
+  assert.deepEqual(await store.getPublicReplay(host.room.code, 0, 8), { replayable: false, reason: "not-completed" });
+  await completeDevelopmentSetup(store, [host, guest]);
+  await store.setReady(host.room.code, host.token, true);
+  const active = await store.setReady(host.room.code, guest.token, true);
+  const completed = await store.submitAction(host.room.code, host.token, {
+    actionId: "public-replay-concede",
+    actorId: host.participantId,
+    expectedRevision: active.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "concede" },
+  });
+  assert.equal(completed.status, "completed");
+
+  const firstPage = await store.getPublicReplay(host.room.code, 0, 3);
+  assert.equal(firstPage.replayable, true);
+  if (!firstPage.replayable) return;
+  assert.deepEqual(firstPage.frames.map((frame) => frame.version), [1, 2, 3]);
+  assert.equal(firstPage.base.state.matchId, "public-replay");
+  assert.deepEqual(firstPage.base.state.rng, { seed: 0, cursor: 0 });
+  assert.deepEqual(firstPage.base.state.decks.research.order, []);
+  assert.deepEqual(firstPage.base.state.eventLog, []);
+  assert.equal(firstPage.nextFromVersion, 3);
+
+  const finalPage = await store.getPublicReplay(host.room.code, firstPage.nextFromVersion, 20);
+  assert.equal(finalPage.replayable, true);
+  if (!finalPage.replayable) return;
+  assert.equal(finalPage.base.version, 3);
+  assert.equal(finalPage.frames.at(-1)?.version, completed.version);
+  assert.equal(finalPage.frames.at(-1)?.state.victoryType, "concession");
+  const exported = await store.getPublicReplayExport(host.room.code);
+  assert.equal(exported.replayable, true);
+  if (!exported.replayable) return;
+  assert.equal(exported.formatVersion, 1);
+  assert.equal(exported.frames.length, completed.version + 1);
+  assert.equal(exported.frames.at(-1)?.state.victoryType, "concession");
+  assert.equal(JSON.stringify(exported).includes("secretSeed"), false);
+  assert.equal(JSON.stringify(exported).includes("replayCommand"), false);
+  assert.equal(JSON.stringify(exported).includes(host.token), false);
+  assert.equal(JSON.stringify(exported).includes(guest.token), false);
+  assert.ok(exported.frames.every((frame) => frame.state.eventLog.length === 0
+    && frame.state.decks.mutation.order.length === 0 && frame.state.decks.research.order.length === 0
+    && frame.state.players.every((player) => player.mutationCardIds.length === 0 && player.researchCardIds.length === 0)
+    && !Object.hasOwn(frame.state.rng, "secretSeed")));
+
+  const privateRoom = await store.createRoom(2, "Private host", "private");
+  assert.deepEqual(await store.getPublicReplay(privateRoom.room.code, 0, 8), { replayable: false, reason: "not-found" });
+  assert.deepEqual(await store.getPublicReplayExport(privateRoom.room.code), { replayable: false, reason: "not-found" });
+});
+
 test("authenticated room projections retain Fins and Gills' conditional Defense across refresh", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2, "Host");
+  const host = await store.createRoom(2, "Host", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
+  const spectator = await store.spectateRoom(host.room.code, "Watcher");
   await completeDevelopmentSetup(store, [host, guest]);
   await store.setReady(host.room.code, host.token, true);
   await store.setReady(host.room.code, guest.token, true);
@@ -659,6 +750,7 @@ test("authenticated Defense Satellites owner can play in the open Fight window a
 
   const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
   const game = rooms.get(host.room.code)!.state;
+  const priorResearchDiscards = [...game.decks.research.discard];
   game.currentPlayer = 0;
   game.phase = "fight";
   game.players[0]!.researchCardIds = ["Defense Satellites"];
@@ -684,7 +776,7 @@ test("authenticated Defense Satellites owner can play in the open Fight window a
   assert.equal(used.state.pendingBattles[0]?.id, battleId);
   assert.equal(used.state.pendingDecision?.type, "battle-resolution");
   assert.deepEqual(used.state.players[0]!.researchCardIds, []);
-  assert.deepEqual(rooms.get(host.room.code)!.state.decks.research.discard, ["Defense Satellites"]);
+  assert.deepEqual(rooms.get(host.room.code)!.state.decks.research.discard, [...priorResearchDiscards, "Defense Satellites"]);
   const event = used.state.eventLog.at(-1)!;
   assert.equal(event.action, "research.used");
   assert.equal((event.detail.rolls as number[]).length, 2);
@@ -747,8 +839,9 @@ test("authenticated battle projection shows Radiation Field destroying a roll-on
 
 test("authenticated Toxicor Mutation-site choice shows two options and keeps the selected card after refresh", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2, "Host");
+  const host = await store.createRoom(2, "Host", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
+  const spectator = await store.spectateRoom(host.room.code, "Watcher");
   await completeDevelopmentSetup(store, [host, guest]);
   await store.setReady(host.room.code, host.token, true);
   await store.setReady(host.room.code, guest.token, true);
@@ -780,7 +873,10 @@ test("authenticated Toxicor Mutation-site choice shows two options and keeps the
   assert.equal(refreshed.state.pendingDecision?.type, "mutation-choice");
   assert.deepEqual(refreshed.state.pendingDecision?.type === "mutation-choice" ? refreshed.state.pendingDecision.cardIds : [], ["Fins and Gills", "Rampage"]);
   const opponentView = await store.getRoom(host.room.code, guest.token);
-  assert.deepEqual(opponentView.state.pendingDecision?.type === "mutation-choice" ? opponentView.state.pendingDecision.cardIds : [], []);
+  assert.deepEqual(opponentView.state.pendingDecision?.type === "mutation-choice" ? opponentView.state.pendingDecision.cardIds : [], ["Fins and Gills", "Rampage"]);
+  assert.deepEqual(opponentView.state.pendingMutationChoice?.cardIds, ["Fins and Gills", "Rampage"]);
+  const spectatorView = await store.getRoom(host.room.code, spectator.token);
+  assert.deepEqual(spectatorView.state.pendingDecision?.type === "mutation-choice" ? spectatorView.state.pendingDecision.cardIds : [], ["Fins and Gills", "Rampage"]);
   await assert.rejects(() => store.submitAction(host.room.code, guest.token, {
     actionId: "wrong-seat-toxicor-choice",
     actorId: guestParticipant.id,
@@ -808,8 +904,9 @@ test("authenticated Toxicor Mutation-site choice shows two options and keeps the
 
 test("authenticated off-turn Toxicor owner chooses a combat Mutation and resumes the saved battle", async () => {
   const store = new MemoryRoomStore(true);
-  const host = await store.createRoom(2, "Host");
+  const host = await store.createRoom(2, "Host", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
+  const spectator = await store.spectateRoom(host.room.code, "Watcher");
   await completeDevelopmentSetup(store, [host, guest]);
   await store.setReady(host.room.code, host.token, true);
   await store.setReady(host.room.code, guest.token, true);
@@ -841,8 +938,10 @@ test("authenticated off-turn Toxicor owner chooses a combat Mutation and resumes
 
   const hostView = await store.getRoom(host.room.code, host.token);
   const guestView = await store.getRoom(host.room.code, guest.token);
-  assert.deepEqual(hostView.state.pendingDecision?.type === "mutation-choice" ? hostView.state.pendingDecision.cardIds : [], []);
+  assert.deepEqual(hostView.state.pendingDecision?.type === "mutation-choice" ? hostView.state.pendingDecision.cardIds : [], ["War Spikes", "Atomic Breath"]);
   assert.deepEqual(guestView.state.pendingDecision?.type === "mutation-choice" ? guestView.state.pendingDecision.cardIds : [], ["War Spikes", "Atomic Breath"]);
+  const spectatorView = await store.getRoom(host.room.code, spectator.token);
+  assert.deepEqual(spectatorView.state.pendingDecision?.type === "mutation-choice" ? spectatorView.state.pendingDecision.cardIds : [], ["War Spikes", "Atomic Breath"]);
   const hostParticipant = hostView.participants.find((participant) => participant.playerIndex === 0)!;
   const guestParticipant = guestView.participants.find((participant) => participant.playerIndex === 1)!;
   await assert.rejects(() => store.submitAction(host.room.code, host.token, {
@@ -879,15 +978,50 @@ test("players can create, join, and read a room", async () => {
   assert.equal(active.status, "active");
   assert.equal(active.state.setupState?.phase, "complete");
   assert.equal(active.state.setupApplied, true);
+  assert.equal(active.events.at(-1)?.type, "match.started");
+  assert.equal(active.events.at(-1)?.version, active.version);
+  assert.deepEqual((await store.getRoom(host.room.code, host.token, active.version - 1)).events.map((event) => event.type), ["match.started"]);
   const hostView = await store.getRoom(host.room.code, host.token);
-  assert.equal(hostView.state.players[0]?.researchCardIds.length, 1);
-  assert.equal(active.state.players[1]?.researchCardIds.length, 1);
+  const hostImmediateGiant = hostView.state.units.some((unit) => unit.ownerPlayer === 0
+    && (unit.unitTypeId === "mecha-monster" || unit.unitTypeId === "captain-colossal"));
+  const guestImmediateGiant = active.state.units.some((unit) => unit.ownerPlayer === 1
+    && (unit.unitTypeId === "mecha-monster" || unit.unitTypeId === "captain-colossal"));
+  assert.equal(hostView.state.players[0]!.researchCardIds.length + Number(hostImmediateGiant), 1);
+  assert.equal(active.state.players[1]!.researchCardIds.length + Number(guestImmediateGiant), 1);
   assert.equal(active.state.matchId, `room-${host.room.code}`);
   assert.deepEqual(active.state.players.map((player) => player.id), ["player-1", "player-2"]);
   assert.deepEqual(active.state.setupAssignments?.map((seat) => seat.monsterId), ["monster-1", "monster-2"]);
   await assert.rejects(() => store.setupAction(host.room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, active.version - 1), /Expected revision/);
   const state = await store.getRoom(host.room.code, host.token);
   assert.equal(state.participants.length, 2);
+});
+
+test("bot-completed setup records chronological setup and match-start events", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  let room = host.room;
+  room = await store.setupAction(room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, room.version);
+  room = await store.setupAction(room.code, guest.token, { type: "choose-monster", monsterId: "monster-2" }, room.version);
+  room = await store.setupAction(room.code, guest.token, { type: "choose-branch", branch: "Navy" }, room.version);
+  room = await store.setupAction(room.code, host.token, { type: "choose-branch", branch: "Army" }, room.version);
+  room = await store.setupAction(room.code, host.token, { type: "choose-lair", lair: "los-angeles" }, room.version);
+  room = await store.setupAction(room.code, guest.token, { type: "choose-lair", lair: "chicago" }, room.version);
+  room = await store.setupAction(room.code, host.token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, room.version);
+  await store.setReady(room.code, host.token, true);
+  await store.disconnect(room.code, guest.token);
+
+  const updated = await store.processBotTakeovers(Date.now() + 4 * 60_000 + 1);
+  const started = await store.getRoom(room.code, host.token);
+
+  assert.deepEqual(updated, [room.code]);
+  assert.equal(started.status, "active");
+  assert.equal(started.state.setupApplied, true);
+  assert.deepEqual(started.events.slice(-2).map(({ version, type, controlSource }) => ({ version, type, controlSource })), [
+    { version: room.version + 1, type: "setup.updated", controlSource: "bot" },
+    { version: room.version + 2, type: "match.started", controlSource: "bot" },
+  ]);
+  await store.close();
 });
 
 test("an authenticated active player can play Molecular Cannon through the online room command path", async () => {
@@ -925,7 +1059,7 @@ test("an authenticated active player can play Molecular Cannon through the onlin
   assert.equal(after.state.monsters[0]!.location, locationIdToHexKey("seattle"));
   assert.deepEqual(after.state.players[0]!.researchCardIds, []);
   assert.equal(after.state.pendingBattles.length, 0);
-  assert.equal(after.events[0]!.type, "research.used");
+  assert.equal(after.events.at(-1)!.type, "research.used");
   const refreshed = await store.getRoom(host.room.code, host.token);
   assert.equal(refreshed.state.monsters[0]!.location, locationIdToHexKey("seattle"));
   assert.equal(refreshed.version, after.version);
@@ -1062,14 +1196,29 @@ test("authenticated Mecha-Monster draw places the unit at the active base and pe
   };
   await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...command, actorId: guestParticipant.id, actionId: "wrong-online-mecha-monster-draw" }), /It is not your turn/);
   const drawn = await store.submitAction(host.room.code, host.token, command);
-  const unit = drawn.state.units.find((candidate) => candidate.unitTypeId === "mecha-monster")!;
-  assert.equal(unit.location, locationIdToHexKey("denver"));
+  assert.equal(drawn.state.pendingDecision?.type, "giant-placement");
+  assert.deepEqual(drawn.state.players[0]!.researchCardIds.includes("Mecha-Monster"), true);
+  const pendingRefresh = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(pendingRefresh.state.pendingDecision, drawn.state.pendingDecision);
+  assert.equal(pendingRefresh.version, drawn.version);
+  const placement = pendingRefresh.state.pendingDecision;
+  if (placement?.type !== "giant-placement") throw new Error("Expected a pending Mecha-Monster placement choice.");
+  const destination = placement.destinations[0]!;
+  const placed = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-mecha-monster-place",
+    actorId: hostParticipant.id,
+    expectedRevision: pendingRefresh.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "place-giant", destination },
+  });
+  const unit = placed.state.units.find((candidate) => candidate.unitTypeId === "mecha-monster")!;
+  assert.equal(unit.location, destination);
   assert.equal(unit.ownerPlayer, 0);
   assert.equal(unit.health, 6);
-  assert.equal(drawn.state.players[0]!.researchCardIds.includes("Mecha-Monster"), false);
+  assert.equal(placed.state.players[0]!.researchCardIds.includes("Mecha-Monster"), false);
   const refreshed = await store.getRoom(host.room.code, host.token);
-  assert.equal(refreshed.state.units.find((candidate) => candidate.id === unit.id)!.location, locationIdToHexKey("denver"));
-  assert.equal(refreshed.version, drawn.version);
+  assert.equal(refreshed.state.units.find((candidate) => candidate.id === unit.id)!.location, destination);
+  assert.equal(refreshed.version, placed.version);
 });
 
 test("authenticated Captain Colossal draw places the giant, consumes the card and persists after refresh", async () => {
@@ -1097,14 +1246,28 @@ test("authenticated Captain Colossal draw places the giant, consumes the card an
   };
   await assert.rejects(() => store.submitAction(host.room.code, guest.token, { ...command, actorId: guestParticipant.id, actionId: "wrong-online-captain-colossal-draw" }), /It is not your turn/);
   const drawn = await store.submitAction(host.room.code, host.token, command);
-  const unit = drawn.state.units.find((candidate) => candidate.unitTypeId === "captain-colossal")!;
-  assert.equal(unit.location, locationIdToHexKey("denver"));
+  assert.equal(drawn.state.pendingDecision?.type, "giant-placement");
+  const pendingRefresh = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(pendingRefresh.state.pendingDecision, drawn.state.pendingDecision);
+  assert.equal(pendingRefresh.version, drawn.version);
+  const placement = pendingRefresh.state.pendingDecision;
+  if (placement?.type !== "giant-placement") throw new Error("Expected a pending Captain Colossal placement choice.");
+  const destination = placement.destinations[0]!;
+  const placed = await store.submitAction(host.room.code, host.token, {
+    actionId: "online-captain-colossal-place",
+    actorId: hostParticipant.id,
+    expectedRevision: pendingRefresh.version,
+    protocolVersion: COMMAND_PROTOCOL_VERSION,
+    command: { type: "place-giant", destination },
+  });
+  const unit = placed.state.units.find((candidate) => candidate.unitTypeId === "captain-colossal")!;
+  assert.equal(unit.location, destination);
   assert.equal(unit.ownerPlayer, 0);
   assert.equal(unit.health, 8);
-  assert.equal(drawn.state.players[0]!.researchCardIds.includes("Captain Colossal"), false);
+  assert.equal(placed.state.players[0]!.researchCardIds.includes("Captain Colossal"), false);
   const refreshed = await store.getRoom(host.room.code, host.token);
-  assert.equal(refreshed.state.units.find((candidate) => candidate.id === unit.id)!.location, locationIdToHexKey("denver"));
-  assert.equal(refreshed.version, drawn.version);
+  assert.equal(refreshed.state.units.find((candidate) => candidate.id === unit.id)!.location, destination);
+  assert.equal(refreshed.version, placed.version);
 });
 
 test("authenticated X-Fighters deployment uses one branch slot and remains in the owner's Research hand", async () => {
@@ -1419,7 +1582,7 @@ test("authenticated Cutbacks use can remove an opponent's public face-up Researc
   assert.deepEqual(after.state.players[0]!.researchCardIds, []);
   assert.deepEqual(after.state.players[1]!.visibleResearchCardIds, []);
   assert.deepEqual(after.state.removedResearchCardIds, ["Guard Commander"]);
-  assert.equal(after.events[0]!.type, "research.used");
+  assert.equal(after.events.at(-1)!.type, "research.used");
   const refreshed = await store.getRoom(host.room.code, host.token);
   assert.deepEqual(refreshed.state.players[1]!.researchCardIds, []);
   assert.deepEqual(refreshed.state.removedResearchCardIds, ["Guard Commander"]);
@@ -1501,6 +1664,7 @@ test("authenticated off-turn Laser Fence holder can resolve a post-move reaction
   await store.setReady(host.room.code, guest.token, true);
   const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
   const game = rooms.get(host.room.code)!.state;
+  const priorResearchDiscards = [...game.decks.research.discard];
   game.currentPlayer = 0;
   game.phase = "move";
   game.players[1]!.researchCardIds = ["Laser Fence"];
@@ -1522,8 +1686,8 @@ test("authenticated off-turn Laser Fence holder can resolve a post-move reaction
   const after = await store.submitAction(host.room.code, guest.token, command);
   assert.equal(after.state.monsters[0]!.infamy, 1);
   assert.deepEqual(after.state.players[1]!.researchCardIds, []);
-  assert.deepEqual(rooms.get(host.room.code)!.state.decks.research.discard, ["Laser Fence"]);
-  assert.equal(after.events[0]!.type, "research.used");
+  assert.deepEqual(rooms.get(host.room.code)!.state.decks.research.discard, [...priorResearchDiscards, "Laser Fence"]);
+  assert.equal(after.events.at(-1)!.type, "research.used");
   const refreshed = await store.getRoom(host.room.code, guest.token);
   assert.equal(refreshed.state.monsters[0]!.infamy, 1);
   assert.equal(refreshed.version, after.version);
@@ -1574,7 +1738,7 @@ test("authenticated Chopper Lift preserves its roll and destination choice throu
   assert.equal(completed.state.monsters[0]!.location, destination);
   assert.equal(completed.state.monsters[0]!.infamy, 1);
   assert.equal(completed.state.pendingChopperLift, undefined);
-  assert.equal(completed.events[0]!.type, "research.chopper-lift.resolved");
+  assert.equal(completed.events.at(-1)!.type, "research.chopper-lift.resolved");
   assert.equal(rooms.get(host.room.code)!.state.decks.research.discard.includes("Chopper Lift"), true);
   assert.equal((await store.getRoom(host.room.code, host.token)).version, completed.version);
 });
@@ -1629,9 +1793,13 @@ test("memory store health reports its persistence boundary", async () => {
 });
 
 test("MVP room creation uses the full human-audited board", async () => {
-  const created = await new MemoryRoomStore().createRoom(2);
+  const store = new MemoryRoomStore();
+  const created = await store.createRoom(2);
   assert.equal(created.room?.state.boardId, "human-audited-north-america");
   assert.equal(created.room?.state.setupState?.phase, "monster-selection");
+  assert.deepEqual(created.room?.state.rng, { seed: 0, cursor: 0 });
+  const internalRooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  assert.match(internalRooms.get(created.room.code)!.state.rng.secretSeed ?? "", /^[\da-f]{64}$/);
 });
 
 test("room state uses the requested supported player count and rejects invalid counts", async () => {
@@ -1793,7 +1961,7 @@ test("voluntary concession persists a terminal result through refresh and projec
   assert.equal(completed.state.phase, "game-over");
   assert.equal(completed.state.winnerPlayer, 1);
   assert.equal(completed.state.victoryType, "concession");
-  assert.equal(completed.events[0]?.type, "match.conceded");
+  assert.equal(completed.events.at(-1)?.type, "match.conceded");
   const refreshed = await store.getRoom(host.room.code, guest.token);
   assert.equal(refreshed.state.victoryType, "concession");
   assert.equal(refreshed.state.winnerPlayer, 1);
@@ -1831,15 +1999,30 @@ test("room projections redact authoritative deck order for players and spectator
   const playerView = await store.getRoom(host.room.code, host.token);
   const guestView = await store.getRoom(host.room.code, guest.token);
   const spectatorView = await store.getRoom(host.room.code, spectator.token);
+  const reconnectedPlayerView = await store.reconnect(host.room.code, host.token, "private-rng-review");
   assert.deepEqual(playerView.state.decks.mutation.order, []);
   assert.deepEqual(spectatorView.state.decks.research.order, []);
+  assert.deepEqual(playerView.state.rng, { seed: 0, cursor: 0 });
+  assert.deepEqual(guestView.state.rng, { seed: 0, cursor: 0 });
+  assert.deepEqual(spectatorView.state.rng, { seed: 0, cursor: 0 });
   assert.deepEqual(playerView.state.players[0].researchCardIds, ["Guard Commander"]);
   assert.deepEqual(playerView.state.players[1].mutationCardIds, []);
+  assert.deepEqual(playerView.state.players[1].visibleMutationCardIds, ["Rampage"]);
   assert.deepEqual(guestView.state.players[0].researchCardIds, []);
+  assert.deepEqual(guestView.state.players[0].visibleResearchCardIds, ["Guard Commander"]);
   assert.deepEqual(guestView.state.players[1].mutationCardIds, ["Rampage"]);
   assert.deepEqual(spectatorView.state.players.map((player) => player.researchCardIds), [[], []]);
-  assert.equal(JSON.stringify(playerView.state.eventLog).includes("Guard Commander"), false);
-  assert.equal(JSON.stringify(playerView.events).includes("Guard Commander"), false);
+  assert.deepEqual(spectatorView.state.players[0].visibleResearchCardIds, ["Guard Commander"]);
+  assert.deepEqual(spectatorView.state.players[1].visibleMutationCardIds, ["Rampage"]);
+  assert.equal(JSON.stringify(playerView.state.eventLog).includes("Guard Commander"), true);
+  assert.equal(JSON.stringify(guestView.state.eventLog).includes("Guard Commander"), true);
+  assert.equal(JSON.stringify(spectatorView.state.eventLog).includes("Guard Commander"), true);
+  assert.equal(JSON.stringify(playerView.events).includes("Guard Commander"), true);
+  assert.equal(JSON.stringify(guestView.events).includes("Guard Commander"), true);
+  assert.equal(JSON.stringify(spectatorView.events).includes("Guard Commander"), true);
+  for (const view of [playerView, guestView, spectatorView]) assert.equal(JSON.stringify(view).includes("secretSeed"), false);
+  assert.deepEqual(reconnectedPlayerView.state.rng, { seed: 0, cursor: 0 });
+  assert.equal(JSON.stringify(reconnectedPlayerView).includes("secretSeed"), false);
 });
 
 test("repeated action ids are idempotent", async () => {
@@ -2015,6 +2198,33 @@ test("setup rejects illegal starting placements without locking in the choice", 
   assert.equal(unchanged.state.setupState?.seats[0]?.startingChoice, undefined);
   const corrected = await store.setupAction(code, host.token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, revision);
   assert.equal(corrected.state.setupState?.seats[0]?.ready, true);
+});
+
+test("production setup lets the last monster picker place each unused branch on its own audited bases", async () => {
+  const store = new MemoryRoomStore();
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  let room = host.room;
+  room = await store.setupAction(room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, room.version);
+  room = await store.setupAction(room.code, guest.token, { type: "choose-monster", monsterId: "monster-2" }, room.version);
+  room = await store.setupAction(room.code, guest.token, { type: "choose-branch", branch: "Navy" }, room.version);
+  room = await store.setupAction(room.code, host.token, { type: "choose-branch", branch: "Army" }, room.version);
+  const setup = room.state.setupState!;
+  assert.equal(setup.phase, "unused-branch-placement");
+  const catalogue = setup.definition.unusedBranchPlacements!;
+  const branches = ["Air Force", "Marines"] as const;
+  const placements = branches.flatMap((branch) => (catalogue.unitIdsByBranch[branch] ?? []).map((unitId, index) => ({ unitId, destination: catalogue.basesByBranch[branch]![index]! })));
+  await assert.rejects(() => store.setupAction(room.code, host.token, { type: "place-unused-branches", placements }, room.version), /player who chose a monster last/i);
+  room = await store.setupAction(room.code, guest.token, { type: "place-unused-branches", placements }, room.version);
+  assert.equal(room.state.setupState?.unusedBranchPlacements?.length, placements.length);
+  room = await store.setupAction(room.code, host.token, { type: "choose-lair", lair: room.state.setupState!.definition.lairsByMonster["monster-1"]![0]! }, room.version);
+  room = await store.setupAction(room.code, guest.token, { type: "choose-lair", lair: room.state.setupState!.definition.lairsByMonster["monster-2"]![0]! }, room.version);
+  room = await store.setupAction(room.code, host.token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, room.version);
+  room = await store.setupAction(room.code, guest.token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, room.version);
+  await store.setReady(room.code, host.token, true);
+  const active = await store.setReady(room.code, guest.token, true);
+  for (const placement of placements) assert.equal(active.state.units.find((unit) => unit.id === placement.unitId)?.location, placement.destination);
+  await store.close();
 });
 
 test("Challenge roll ownership switches online and reconnect preserves the infamy decision", async () => {

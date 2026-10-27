@@ -12,6 +12,7 @@ export { MONSTER_DEFINITIONS, monsterDefinition, type MonsterDefinition, type Mo
 export { UNIT_DEFINITIONS, GIANT_UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, BRANCH_DEPLOYMENT_DEFINITIONS, type UnitDefinition, type GiantUnitDefinition, type NationalGuardDefinition, type BranchDeploymentDefinition, type UnitBranch, type UnitMovement } from "./units.js";
 import { createSetup, developmentSetupDefinition, validateSetup, type SetupDefinition, type SetupSeat, type SetupState } from "./setup.js";
 import { composeContinuousEffects, type ContinuousEffectAccumulator } from "./effects.js";
+import { chacha20Word, PRIVATE_RANDOM_COUNTERS } from "./random.js";
 export { EFFECT_BOUNDARIES, assertEffectPlanAvailable, composeContinuousEffects, composeEffectPlan, type ComposedEffectPlan, type ContinuousEffectAccumulator, type ContinuousEffectContribution, type EffectAvailability, type EffectBoundary, type EffectCategory, type EffectInstance, type EffectInstanceBase } from "./effects.js";
 export { CARD_STACKING_RULES, cardStackingRule, type CardStackingPolicy, type CardStackingRule } from "./cards.js";
 
@@ -69,9 +70,9 @@ export interface MilitaryUnit {
 }
 
 /**
- * Neutral National Guard record inventory is explicit; statistics, placement,
- * and redeployment remain source-gated. Guard Commander control is the one
- * source-backed card exception implemented at the command boundary.
+ * Neutral National Guard inventory is explicit. Printed statistics live in
+ * the source catalogue; ordinary Guard deployment is implemented, while the
+ * complete Guard Commander movement/redeployment lifecycle remains gated.
  */
 export interface NationalGuardInventory {
   readonly branch: "National Guard";
@@ -94,7 +95,7 @@ function expectedNationalGuardUnitIds(): string[] {
   return NATIONAL_GUARD_DEFINITIONS.flatMap((definition) => Array.from({ length: definition.quantity }, (_, index) => `${definition.id}-${index + 1}`));
 }
 
-/** Validate the source-backed neutral Guard record inventory without enabling its rules effects. */
+/** Validate the source-backed neutral Guard record inventory and stable IDs. */
 export function sourceNationalGuardInventoryErrors(inventory: Pick<NationalGuardInventory, "quantity" | "unitIds">): string[] {
   const expected = expectedNationalGuardUnitIds();
   const actual = [...inventory.unitIds];
@@ -148,7 +149,7 @@ export interface GameState {
   stompedLocations: HexKey[];
   winnerPlayer?: number;
   victoryType?: "development-stomp-exhaustion" | "development-board-exhaustion" | "monster-challenge" | "america-saved" | "concession";
-  rng: { seed: number; cursor: number };
+  rng: { seed: number; cursor: number; /** Server-only 256-bit ChaCha20 key for production randomness. */ secretSeed?: string };
   /** Raw d6 outcomes, retained so match statistics can calculate luck exactly. */
   dieRollHistory?: number[];
   nextUnitSequence: number;
@@ -156,12 +157,14 @@ export interface GameState {
   pendingBattles: PendingBattle[];
   /** The authoritative decision currently required before the next phase transition. */
   pendingDecision?: PendingDecision;
+  /** Immediate giant Research cards waiting for their owner to choose a base. */
+  pendingGiantPlacements?: PendingGiantPlacement[];
   /** Target choice awaiting the active monster player before a multi-target battle resolves. */
   pendingAttackTarget?: PendingAttackTarget;
   /** Resumable normal-battle sequence used while later multi-target attacks await a choice. */
   pendingCombat?: PendingCombat;
   pendingEncounterChoice?: PendingEncounterChoice;
-  /** Toxicor's two-card Mutation choice, shown only to the monster's owner. */
+  /** Toxicor's two face-up Mutation draws; only the monster's owner may choose one. */
   pendingMutationChoice?: PendingMutationChoice;
   /** Additional Toxicor draws created before the previous two-card choice is answered. */
   pendingMutationChoiceQueue?: PendingMutationChoice[];
@@ -276,6 +279,7 @@ export type PendingDecision =
   | Readonly<{ type: "chopper-lift-choice"; playerIndex: number; roll: number }>
   | Readonly<{ type: "trophy-choice"; playerIndex: number; location: HexKey; branch: Branch; unitIds: readonly string[] }>
   | Readonly<{ type: "deployment"; playerIndex: number }>
+  | Readonly<{ type: "giant-placement"; playerIndex: number; cardId: "Mecha-Monster" | "Captain Colossal"; destinations: readonly HexKey[] }>
   | Readonly<{ type: "challenge-opponent"; playerIndex: number; challengerMonsterId: string; opponentIds: readonly string[] }>
   | Readonly<{ type: "challenge-resolution"; playerIndex: number; challengerMonsterId: string; opponentMonsterId: string }>
   | Readonly<{ type: "challenge-giant"; playerIndex: number; challengerMonsterId: string; giantUnitIds: readonly string[] }>
@@ -303,6 +307,14 @@ export interface PendingStabilizerRayChoice {
   readonly cardIds: readonly string[];
   readonly resumePhase: Phase;
   readonly resumeDecision?: PendingDecision;
+}
+
+export interface PendingGiantPlacement {
+  readonly playerIndex: number;
+  readonly cardId: "Mecha-Monster" | "Captain Colossal";
+  readonly resumePhase: Phase;
+  readonly resumePlayerIndex: number;
+  readonly captureResumeAfterCommand?: boolean;
 }
 
 export interface PendingAttackTarget {
@@ -352,8 +364,8 @@ export interface SpaceOccupants {
 
 /**
  * Validate conservation and cross-reference invariants for the source-counted
- * regular catalogue. National Guard record quantities are explicit, while
- * giant quantities and Guard control/placement remain source-gated.
+ * regular catalogue. Giant quantities and Guard control are source-backed;
+ * their placement edge cases remain separately gated where noted.
  */
 export function validateInventoryAccounting(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "monsters" | "units" | "nationalGuard" | "removedUnitIds" | "pendingBattles" | "movedPieceIds" | "laserFenceWindowMonsterIds" | "pendingAttackTarget" | "pendingCombat">): string[] {
   const errors: string[] = [];
@@ -466,17 +478,11 @@ export function discardCardFromGame(state: GameState, deckName: GameCardDeck, ca
 
 export type StateAudience = "internal" | "player" | "spectator";
 
-/** Remove card identifiers from event details before they cross a projection boundary. */
-export function redactCardIdentifiers(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(redactCardIdentifiers);
-  if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(Object.entries(value).filter(([key]) => key !== "cardId" && key !== "mutationCardId").map(([key, entry]) => [key, redactCardIdentifiers(entry)]));
-}
-
-/** Client projections never expose authoritative deck order or another player's hand. */
+/** Client projections keep deck order, private random state, and another player's owner arrays private. */
 export function projectState(state: GameState, audience: StateAudience, viewerPlayerIndex?: number): GameState {
   if (audience === "internal") return structuredClone(state);
   const projected = structuredClone(state);
+  projected.rng = { seed: 0, cursor: 0 };
   const setupPlayer = state.setupState?.phase === "starting-choice" ? state.setupState.seats.find((seat) => !seat.startingChoice)?.playerIndex : undefined;
   const permissionState = setupPlayer === undefined ? state : setupDeploymentState(state, setupPlayer);
   projected.nationalGuard = { ...projected.nationalGuard, deploymentPlayerIndices: state.players.flatMap((_, index) => canDeployNationalGuard(permissionState, index) ? [index] : []) };
@@ -485,30 +491,22 @@ export function projectState(state: GameState, audience: StateAudience, viewerPl
   projected.players = projected.players.map((player, index) => audience === "player" && index === viewerPlayerIndex
     ? player
     : { ...player, visibleMutationCardIds: [...player.mutationCardIds], visibleResearchCardIds: [...player.researchCardIds], mutationCardIds: [], researchCardIds: [] });
-  if (projected.pendingMutationChoice && viewerPlayerIndex !== projected.pendingMutationChoice.playerIndex) {
-    projected.pendingMutationChoice = { ...projected.pendingMutationChoice, cardIds: [] };
-    if (projected.pendingDecision?.type === "mutation-choice") projected.pendingDecision = { ...projected.pendingDecision, cardIds: [] };
-  }
-  if (projected.pendingMutationChoiceQueue && viewerPlayerIndex !== projected.pendingMutationChoice?.playerIndex) {
-    projected.pendingMutationChoiceQueue = projected.pendingMutationChoiceQueue.map((choice) => ({ ...choice, cardIds: [] }));
-  }
-  if (projected.pendingStabilizerRayChoice?.resumeDecision?.type === "mutation-choice"
-    && viewerPlayerIndex !== projected.pendingStabilizerRayChoice.resumeDecision.playerIndex) {
-    projected.pendingStabilizerRayChoice = {
-      ...projected.pendingStabilizerRayChoice,
-      resumeDecision: { ...projected.pendingStabilizerRayChoice.resumeDecision, cardIds: [] },
-    };
-  }
-  projected.eventLog = projected.eventLog.map((entry) => ({ ...entry, detail: redactCardIdentifiers(entry.detail) as Record<string, unknown> }));
   return projected;
 }
 
-function shuffledDeck(ids: readonly string[], seed: number): string[] {
+function shuffledDeck(ids: readonly string[], seed: number, secretSeed?: string, streamBase = 0): string[] {
   const deck = [...ids];
   let value = seed >>> 0;
+  let privateCounter = 0;
   for (let index = deck.length - 1; index > 0; index -= 1) {
-    value = (Math.imul(value ^ (value >>> 16), 1664525) + 1013904223) >>> 0;
-    const swapIndex = value % (index + 1);
+    let randomValue: number;
+    if (secretSeed) {
+      randomValue = chacha20Word(secretSeed, streamBase + privateCounter++);
+    } else {
+      value = (Math.imul(value ^ (value >>> 16), 1664525) + 1013904223) >>> 0;
+      randomValue = value;
+    }
+    const swapIndex = randomValue % (index + 1);
     [deck[index], deck[swapIndex]] = [deck[swapIndex], deck[index]];
   }
   return deck;
@@ -532,6 +530,7 @@ export type GameCommand =
   | { type: "retreat"; destinations: Record<string, HexKey | "disappeared"> }
   | { type: "resolve-encounter"; choice?: "health" | "infamy"; trophyUnitId?: string }
   | { type: "deploy"; unitId?: string; destination?: HexKey }
+  | { type: "place-giant"; destination: HexKey }
   | { type: "redeploy"; unitId: string; destination?: HexKey }
   | { type: "draw-research" }
   | { type: "pass-deploy" }
@@ -594,6 +593,7 @@ export function migrateGameState(input: GameState): GameState {
   if (typeof state.deploymentsThisTurn !== "number") state.deploymentsThisTurn = 0;
   if (!Array.isArray(state.deploymentDestinations)) state.deploymentDestinations = [];
   if (!Array.isArray(state.pendingBattles)) state.pendingBattles = [];
+  if (!Array.isArray(state.pendingGiantPlacements)) state.pendingGiantPlacements = [];
   if (state.challenge && (!Array.isArray(state.challenge.defeatedMonsterIds) || (state.challenge.challengerMonsterId !== undefined && typeof state.challenge.challengerMonsterId !== "string"))) state.challenge = undefined;
   if (!state.mutationSiteUses || typeof state.mutationSiteUses !== "object") state.mutationSiteUses = {};
   if (typeof state.encounterSuppressed !== "boolean") state.encounterSuppressed = false;
@@ -628,7 +628,14 @@ export function migrateGameState(input: GameState): GameState {
   return state;
 }
 
-function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer" | "monsters" | "units" | "pendingBattles" | "winnerPlayer" | "victoryType" | "pendingRetreat" | "pendingEncounterChoice" | "pendingTrophyChoice" | "pendingMutationChoice" | "pendingStabilizerRayChoice" | "pendingChopperLift" | "pendingAttackTarget" | "challenge">): PendingDecision | undefined {
+function pendingDecisionForState(state: Pick<GameState, "phase" | "currentPlayer" | "monsters" | "units" | "pendingBattles" | "winnerPlayer" | "victoryType" | "pendingRetreat" | "pendingEncounterChoice" | "pendingTrophyChoice" | "pendingMutationChoice" | "pendingStabilizerRayChoice" | "pendingChopperLift" | "pendingAttackTarget" | "challenge" | "pendingGiantPlacements" | "setupAssignments" | "boardId" | "boardVersion" | "boardContentHash">): PendingDecision | undefined {
+  const giantPlacement = state.pendingGiantPlacements?.[0];
+  if (giantPlacement) return {
+    type: "giant-placement",
+    playerIndex: giantPlacement.playerIndex,
+    cardId: giantPlacement.cardId,
+    destinations: legalGiantPlacementDestinations({ ...state, currentPlayer: giantPlacement.playerIndex }),
+  };
   if (state.pendingStabilizerRayChoice) return {
     type: "stabilizer-ray-choice",
     playerIndex: state.pendingStabilizerRayChoice.playerIndex,
@@ -773,15 +780,18 @@ export function sourceUnitInventoryErrors(units: readonly Pick<MilitaryUnit, "un
   });
 }
 
-export function createGame(playerCount = 2, seed = 0, matchId = `development-match-${playerCount}-${seed >>> 0}`): GameState {
+export function createGame(playerCount = 2, seed = 0, matchId = `development-match-${playerCount}-${seed >>> 0}`, secretSeed?: string): GameState {
   const stompMarkers = stompMarkerCount(playerCount);
   const active = monsters.slice(0, Math.max(2, Math.min(playerCount, 4))).map((monster, i) => ({ ...monster, location: developmentKey(i === 0 ? "los-angeles" : "seattle") }));
   const state: GameState = {
     schemaVersion: MATCH_STATE_SCHEMA_VERSION, matchId, boardId: DEVELOPMENT_BOARD.id, boardVersion: DEVELOPMENT_BOARD.version, boardContentHash: DEVELOPMENT_BOARD.contentHash, rulesetVersion: DEVELOPMENT_BOARD.rulesetVersion,
     currentPlayer: (seed >>> 0) % active.length, players: active.map((_, seat) => ({ id: `player-${seat + 1}`, seat, mutationCardIds: [], researchCardIds: [] })), phase: "move", round: 1, stompMarkers, stompedLocations: [],
-    rng: { seed: seed >>> 0, cursor: 0 }, nextUnitSequence: developmentUnitRoster.length,
-    decks: { mutation: createCardDeckState(shuffledDeck(MONSTER_MUTATION_CARD_IDS, seed ^ 0x4d555441)), research: createCardDeckState(shuffledDeck(MILITARY_RESEARCH_CARD_IDS, seed ^ 0x52455345)) },
-    pendingBattles: [], pendingDecision: { type: "monster-movement", playerIndex: (seed >>> 0) % active.length, pieceId: active[(seed >>> 0) % active.length].id }, encounterSuppressed: false, movedPieceIds: [], laserFenceWindowMonsterIds: [], deploymentsThisTurn: 0, deploymentDestinations: [], mutationSiteUses: {},
+    rng: { seed: seed >>> 0, cursor: 0, ...(secretSeed ? { secretSeed } : {}) }, nextUnitSequence: developmentUnitRoster.length,
+    decks: {
+      mutation: createCardDeckState(shuffledDeck(MONSTER_MUTATION_CARD_IDS, seed ^ 0x4d555441, secretSeed, PRIVATE_RANDOM_COUNTERS.mutationShuffle)),
+      research: createCardDeckState(shuffledDeck(MILITARY_RESEARCH_CARD_IDS, seed ^ 0x52455345, secretSeed, PRIVATE_RANDOM_COUNTERS.researchShuffle)),
+    },
+    pendingBattles: [], pendingDecision: { type: "monster-movement", playerIndex: (seed >>> 0) % active.length, pieceId: active[(seed >>> 0) % active.length].id }, pendingGiantPlacements: [], encounterSuppressed: false, movedPieceIds: [], laserFenceWindowMonsterIds: [], deploymentsThisTurn: 0, deploymentDestinations: [], mutationSiteUses: {},
     monsters: active,
     nationalGuard: createNationalGuardInventory(),
     units: developmentUnitRoster.map(({ branch, definition, location }, index) => ({
@@ -849,8 +859,8 @@ export function createDevelopmentVictoryGame(seed = 0, matchId = `development-vi
 }
 
 /** Create a room snapshot with the explicit development setup state attached. */
-export function createRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `development-room-${playerCount}-${seed >>> 0}`): GameState {
-  const state = createGame(playerCount, seed, matchId);
+export function createRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `development-room-${playerCount}-${seed >>> 0}`, secretSeed?: string): GameState {
+  const state = createGame(playerCount, seed, matchId, secretSeed);
   state.setupState = createSetup(developmentSetupDefinition(playerCount));
   return state;
 }
@@ -862,19 +872,33 @@ export function assertMvpBoardReady(): void {
 }
 
 export function auditedSetupDefinition(playerCount: 2 | 3 | 4): SetupDefinition {
+  const branches = ["Army", "Navy", "Air Force", "Marines"] as const;
+  const unitIdsByBranch = Object.fromEntries(branches.map((branch) => [branch,
+    developmentUnitRoster.flatMap(({ branch: unitBranch }, index) => unitBranch === branch ? [`${Math.floor(index / 2)}-${index % 2}`] : []),
+  ]));
+  const unitTypeById = Object.fromEntries(developmentUnitRoster.map(({ definition }, index) => [`${Math.floor(index / 2)}-${index % 2}`, definition.id]));
+  const basesByBranch = Object.fromEntries(branches.map((branch) => [branch,
+    Object.values(AUDITED_BOARD.hexes).filter((hex) => hex.features.some((feature) => feature.kind === "military-base" && feature.branch === branch)).map((hex) => hex.key),
+  ]));
   return {
     playerCount,
     monsterIds: monsters.map((monster) => monster.id),
     eligibleBranches: ["Army", "Navy", "Air Force", "Marines"],
-    lairsByMonster: Object.fromEntries(monsters.map((monster) => [monster.id,
-      Object.values(AUDITED_BOARD.hexes).filter((hex) => hex.features.some((feature) => feature.kind === "lair" && feature.monsterId === monster.name.toLowerCase())).map((hex) => hex.key),
-    ])),
+    lairsByMonster: Object.fromEntries(monsters.map((monster) => {
+      const definition = monsterDefinition(monster.name.toLowerCase());
+      if (!definition) throw new Error(`Monster ${monster.name} is missing its reviewed lair catalogue.`);
+      if (definition.lairs.some((lair) => !AUDITED_BOARD.hexes[lair]?.features.some((feature) => feature.kind === "lair" && feature.monsterId === monster.name.toLowerCase()))) {
+        throw new Error(`Monster ${monster.name} lair catalogue does not match the audited board features.`);
+      }
+      return [monster.id, definition.lairs];
+    })),
+    unusedBranchPlacements: { unitIdsByBranch, basesByBranch, unitTypeById },
   };
 }
 
-export function createMvpRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `mvp-room-${playerCount}-${seed >>> 0}`): GameState {
+export function createMvpRoomGame(playerCount: 2 | 3 | 4, seed = 0, matchId = `mvp-room-${playerCount}-${seed >>> 0}`, secretSeed?: string): GameState {
   assertMvpBoardReady();
-  const state = createGame(playerCount, seed, matchId);
+  const state = createGame(playerCount, seed, matchId, secretSeed);
   state.boardId = AUDITED_BOARD.id;
   state.boardVersion = AUDITED_BOARD.version;
   state.boardContentHash = AUDITED_BOARD.contentHash;
@@ -927,6 +951,12 @@ function prepareSetupPositions(state: GameState): GameState {
     next.units = next.units.map((unit) => ({ ...unit,
       ownerPlayer: next.setupAssignments!.find((assignment) => assignment.branch === unit.branch)?.playerIndex ?? unit.ownerPlayer,
     }));
+    for (const placement of completedSetup.unusedBranchPlacements ?? []) {
+      const unit = next.units.find((candidate) => candidate.id === placement.unitId);
+      if (!unit || !isHexKey(placement.destination) || !board.hexes[placement.destination]) throw new GameDomainError("ILLEGAL_COMMAND", "Unused branch setup placement is not on the active audited board.");
+      if (unit.location !== "record-tile") throw new GameDomainError("ILLEGAL_COMMAND", `Unused branch unit ${unit.id} has already left its record tile.`);
+      unit.location = placement.destination;
+    }
   }
   const normalizeLocation = (value: string): HexKey => {
     if (isHexKey(value) && board.hexes[value]) return value;
@@ -957,7 +987,10 @@ export function setupDeploymentState(state: GameState, playerIndex: number, plac
       if (next.decks.research.order.length) {
         const drawn = drawCardFromDeck(next.decks.research);
         next.decks.research = drawn.state;
-        if (drawn.cardId) next.players[assignment.playerIndex].researchCardIds.push(drawn.cardId);
+        if (drawn.cardId) {
+          next.players[assignment.playerIndex].researchCardIds.push(drawn.cardId);
+          resolveImmediateResearchDraw(next, assignment.playerIndex, drawn.cardId);
+        }
       }
       continue;
     }
@@ -1000,6 +1033,7 @@ export function applyCompletedSetup(state: GameState): GameState {
       next.decks.research = drawn.state;
       player.researchCardIds.push(drawn.cardId);
       next.log.push(`Player ${assignment.playerIndex + 1} drew ${drawn.cardId} as their starting Research card.`);
+      resolveImmediateResearchDraw(next, assignment.playerIndex, drawn.cardId);
       continue;
     }
 
@@ -1020,9 +1054,11 @@ export function applyCompletedSetup(state: GameState): GameState {
 
   next.setupApplied = true;
   next.phase = "move";
-  next.currentPlayer = 0;
-  next.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: next.monsters[0]!.id };
-  next.log.unshift("Setup choices applied. The match is ready for Move.");
+  next.currentPlayer = next.pendingGiantPlacements?.[0]?.playerIndex ?? 0;
+  next.pendingDecision = pendingDecisionForState(next);
+  next.log.unshift(next.pendingGiantPlacements?.length
+    ? "Setup choices applied. Resolve each immediate giant placement before Move."
+    : "Setup choices applied. The match is ready for Move.");
   assertInventoryAccounting(next);
   return next;
 }
@@ -1220,6 +1256,48 @@ export function legalGiantPlacementDestinations(state: Pick<GameState, "boardId"
     .sort();
 }
 
+/** Materialize Research effects whose printed text applies immediately when drawn. */
+function resolveImmediateResearchDraw(state: GameState, playerIndex: number, cardId: string, source: "starting-choice" | "deployment-draw" | "deferred-draw" = "starting-choice"): { unitId?: string; destination?: HexKey } {
+  if (cardId === "X-Fighters") {
+    for (let index = 1; index <= 2; index += 1) {
+      const id = `x-fighter-${playerIndex + 1}-${index}`;
+      if (state.units.some((unit) => unit.id === id)) continue;
+      state.units.push({
+        id, branch: "Giant", unitTypeId: "x-fighter", move: 6, movement: "fly", attacks: 1,
+        damage: 2, ownerPlayer: playerIndex, health: 1, defense: 5, location: "record-tile",
+      });
+    }
+    state.log.push(`Player ${playerIndex + 1} drew X-Fighters${source === "starting-choice" ? " as a starting Research card" : ""}; both black X-Fighters are now available in place of branch deployments.`);
+    return {};
+  }
+  if (cardId !== "Mecha-Monster" && cardId !== "Captain Colossal") return {};
+
+  const definition = GIANT_UNIT_DEFINITIONS.find((candidate) => candidate.id === (cardId === "Mecha-Monster" ? "mecha-monster" : "captain-colossal"));
+  if (!definition) throw new GameDomainError("ILLEGAL_COMMAND", `No verified definition exists for ${cardId}.`);
+  if (state.units.some((unit) => unit.unitTypeId === definition.id && unit.location !== "permanently-removed")) {
+    throw new GameDomainError("ILLEGAL_COMMAND", `${cardId} is already in play.`);
+  }
+
+  const priorPlayer = state.currentPlayer;
+  state.currentPlayer = playerIndex;
+  const destinations = legalGiantPlacementDestinations(state);
+  state.currentPlayer = priorPlayer;
+  if (!destinations.length) {
+    state.log.push(`${cardId} was drawn, but no branch base is available on this board to resolve its immediate placement.`);
+    return {};
+  }
+  state.pendingGiantPlacements ??= [];
+  state.pendingGiantPlacements.push({
+    playerIndex,
+    cardId,
+    resumePhase: source === "starting-choice" ? "move" : state.phase,
+    resumePlayerIndex: source === "starting-choice" ? 0 : state.currentPlayer,
+    ...(source === "deferred-draw" ? { captureResumeAfterCommand: true } : {}),
+  });
+  state.log.push(`${cardId} was drawn; its owner must choose which of their bases receives ${definition.name}.`);
+  return {};
+}
+
 /** Return legal unstomped bases for one active player's ordinary branch unit. */
 export function legalOwnedRedeploymentDestinations(state: Pick<GameState, "boardId" | "boardVersion" | "boardContentHash" | "stompedLocations" | "deploymentDestinations" | "setupAssignments" | "currentPlayer" | "units" | "removedUnitIds"> & Partial<Pick<GameState, "players">>, unitId: string): HexKey[] {
   const board = boardForState(state);
@@ -1367,7 +1445,9 @@ export interface BattleAttack {
 function insertMutationBackIntoDeck(state: GameState, cardId: string): void {
   const deck = state.decks.mutation;
   const remaining = deck.order.length - deck.drawIndex;
-  const value = (state.rng.seed + Math.imul(state.rng.cursor + 1, 0x9e3779b9)) >>> 0;
+  const value = state.rng.secretSeed
+    ? chacha20Word(state.rng.secretSeed, PRIVATE_RANDOM_COUNTERS.mutationReinsert + state.rng.cursor)
+    : (state.rng.seed + Math.imul(state.rng.cursor + 1, 0x9e3779b9)) >>> 0;
   state.rng.cursor += 1;
   const offset = remaining === 0 ? 0 : value % (remaining + 1);
   const order = [...deck.order];
@@ -1416,6 +1496,7 @@ function drawResearchCardForPlayer(state: GameState, playerIndex: number): strin
   state.decks.research = result.state;
   if (!result.cardId) return undefined;
   player.researchCardIds.push(result.cardId);
+  resolveImmediateResearchDraw(state, playerIndex, result.cardId, "deferred-draw");
   return result.cardId;
 }
 
@@ -1590,10 +1671,15 @@ function awardHollywoodResearch(state: GameState, controllerPlayer: number | und
 }
 
 function nextD6(state: GameState): number {
-  let value = (state.rng.seed + Math.imul(state.rng.cursor + 1, 0x9e3779b9)) >>> 0;
-  value ^= value >>> 16;
-  value = Math.imul(value, 0x85ebca6b) >>> 0;
-  value ^= value >>> 13;
+  let value: number;
+  if (state.rng.secretSeed) {
+    value = chacha20Word(state.rng.secretSeed, PRIVATE_RANDOM_COUNTERS.game + state.rng.cursor);
+  } else {
+    value = (state.rng.seed + Math.imul(state.rng.cursor + 1, 0x9e3779b9)) >>> 0;
+    value ^= value >>> 16;
+    value = Math.imul(value, 0x85ebca6b) >>> 0;
+    value ^= value >>> 13;
+  }
   state.rng.cursor += 1;
   const roll = ((value % 6) + 6) % 6 + 1;
   (state.dieRollHistory ??= []).push(roll);
@@ -1836,7 +1922,7 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
   const survivingUnitIds = next.units.filter((unit) => pending.militaryUnitIds.includes(unit.id) && unit.location === pending.location).map((unit) => unit.id);
   next.pendingCombat = undefined;
   next.pendingAttackTarget = undefined;
-  if (survivingUnitIds.length > 0) {
+  if (monster.health > 0 && survivingUnitIds.length > 0) {
     pending.militaryUnitIds = survivingUnitIds;
     next.pendingRetreat = { battleId: pending.id, monsterId: monster.id, unitIds: [monster.id], options: developmentRetreatOptions(next, pending, [monster.id], true), researchPlayerIndex: retreatResearchPlayer(next, pending.militaryUnitIds) };
     next.phase = "fight";
@@ -1989,7 +2075,7 @@ function resolveFightResult(state: GameState, battleId?: string, spendInfamy = 0
   const survivingUnitIds = pending
     ? next.units.filter((unit) => targetIds.includes(unit.id) && unit.location === monster.location).map((unit) => unit.id)
     : [];
-  if (pending && survivingUnitIds.length > 0) {
+  if (pending && monster.health > 0 && survivingUnitIds.length > 0) {
     pending.militaryUnitIds = survivingUnitIds;
     next.pendingRetreat = { battleId: pending.id, monsterId: monster.id, unitIds: [monster.id], options: developmentRetreatOptions(next, pending, [monster.id], true), researchPlayerIndex: retreatResearchPlayer(next, pending.militaryUnitIds) };
     next.phase = "fight";
@@ -2127,7 +2213,8 @@ export function legalMolecularCannonTargets(state: GameState): Array<{ battleId:
 export function legalLaserFenceTargets(state: GameState): Array<{ targetMonsterId: string; location: HexKey; infamy: number; retreatDestinations: HexKey[] }> {
   const windowOpen = (state.phase === "move" && state.pendingDecision?.type === "monster-movement")
     || (state.phase === "fight" && state.pendingDecision?.type === "battle-resolution" && !state.pendingCombat && !state.pendingAttackTarget)
-    || (state.phase === "encounter" && state.pendingDecision?.type === "encounter-resolution");
+    || (state.phase === "encounter" && state.pendingDecision?.type === "encounter-resolution")
+    || (state.phase === "deploy" && state.pendingDecision?.type === "deployment");
   if (!windowOpen || state.pendingRetreat || state.phase === "challenge" || state.phase === "game-over") return [];
   const boardIndex = buildBoardIndex(boardForState(state));
   const movedMonsterIds = new Set(state.laserFenceWindowMonsterIds ?? []);
@@ -2215,6 +2302,7 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
         target.location = "hollywood";
         target.infamy = 0;
         clearPendingChallengerIfLost(next, target.id);
+        if (target.id === next.monsters[next.currentPlayer]?.id) next.encounterSuppressed = true;
       }
       next.pendingBattles = next.pendingBattles.filter((battle) => battle.monsterId !== target.id);
       finishBattleQueue(next);
@@ -2254,16 +2342,8 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
       defense: definition.defense, location: placement,
     });
     next.log.push(`${definition.name} entered play at ${placement}; placing a giant does not consume the normal Deploy allowance.`);
-    const monster = next.monsters.find((candidate) => candidate.location === placement);
-    if (monster) {
-      const battleId = `${monster.id}:${next.round}:${placement}:giant`;
-      next.pendingBattles.push({ id: battleId, monsterId: monster.id, location: placement, militaryUnitIds: [unitId] });
-      next.phase = "fight";
-      next.pendingDecision = { type: "battle-resolution", playerIndex: next.currentPlayer, battleId };
-    } else {
-      next.phase = "deploy";
-      next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
-    }
+    next.phase = "deploy";
+    next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
     return { state: next, cardId, rolls: [], damagedMonsterIds: [], defeatedMonsterIds: [], unitId, destination: placement };
   }
   if (cardId === "Antimatter") {
@@ -2315,10 +2395,13 @@ function useResearchCard(state: GameState, cardId: "Defense Satellites" | "Antim
       if (!destination) throw new GameDomainError("ILLEGAL_COMMAND", "Choose a legal adjacent destination to retreat through Laser Fence.");
       nextMonster.location = destination;
       next.pendingBattles = next.pendingBattles.filter((candidate) => candidate.monsterId !== nextMonster.id);
-      next.encounterSuppressed = true;
+      const activeMonsterId = next.monsters[next.currentPlayer]?.id;
+      const suppressCurrentEncounter = activeMonsterId === nextMonster.id
+        && (next.phase === "move" || next.phase === "fight" || next.phase === "encounter");
+      next.encounterSuppressed = suppressCurrentEncounter;
       next.log.push(`${nextMonster.name} retreated through the Laser Fence to ${destination}; it will not Encounter that space.`);
       if (next.phase === "fight") finishBattleQueue(next);
-      else if (next.phase === "encounter") {
+      else if (next.phase === "encounter" && suppressCurrentEncounter) {
         next.phase = "deploy";
         next.deploymentsThisTurn = 0;
         next.deploymentDestinations = [];
@@ -2696,18 +2779,8 @@ export function deployUnitResult(state: GameState, requested?: { unitId?: string
   next.deploymentsThisTurn += 1;
   next.deploymentDestinations.push(destination);
   next.log.push(`${guardDeployment ? "National Guard" : xFighterDeployment ? "X-Fighter" : branch} deployed ${unit.unitTypeId ?? unit.id} to ${board.hexes[destination]?.label ?? destination}.`);
-  const occupyingMonster = next.monsters.find((candidate) => candidate.location === destination);
-  if (occupyingMonster) {
-    const existingBattle = next.pendingBattles.find((battle) => battle.monsterId === occupyingMonster.id && battle.location === destination);
-    if (existingBattle) existingBattle.militaryUnitIds = [...new Set([...existingBattle.militaryUnitIds, unitId])];
-    else next.pendingBattles.push({ id: `${occupyingMonster.id}:${next.round}:${destination}:deployment`, monsterId: occupyingMonster.id, location: destination, militaryUnitIds: [unitId] });
-    next.phase = "fight";
-    next.pendingDecision = { type: "battle-resolution", playerIndex: next.currentPlayer, battleId: next.pendingBattles.at(-1)!.id };
-    next.log.push(`${occupyingMonster.name} must fight the newly deployed unit at ${board.hexes[destination]?.label ?? destination}.`);
-  } else {
-    next.phase = "deploy";
-    next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
-  }
+  next.phase = "deploy";
+  next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
   return { state: next, unitId, branch: guardDeployment ? "National Guard" : branch, destination };
 }
 
@@ -2736,17 +2809,8 @@ export function redeployUnitResult(state: GameState, requested: { unitId: string
   next.deploymentsThisTurn += 1;
   next.deploymentDestinations.push(destination);
   next.log.push(`${guardRedeployment ? "National Guard" : branch} redeployed ${unit.unitTypeId ?? unit.id} from the board to ${board.hexes[destination]?.label ?? destination}.`);
-  const occupyingMonster = next.monsters.find((candidate) => candidate.location === destination);
-  if (occupyingMonster) {
-    const existingBattle = next.pendingBattles.find((battle) => battle.monsterId === occupyingMonster.id && battle.location === destination);
-    if (existingBattle) existingBattle.militaryUnitIds = [...new Set([...existingBattle.militaryUnitIds, unit.id])];
-    else next.pendingBattles.push({ id: `${occupyingMonster.id}:${next.round}:${destination}:redeployment`, monsterId: occupyingMonster.id, location: destination, militaryUnitIds: [unit.id] });
-    next.phase = "fight";
-    next.pendingDecision = { type: "battle-resolution", playerIndex: next.currentPlayer, battleId: next.pendingBattles.at(-1)!.id };
-  } else {
-    next.phase = "deploy";
-    next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
-  }
+  next.phase = "deploy";
+  next.pendingDecision = { type: "deployment", playerIndex: next.currentPlayer };
   return { state: next, unitId: unit.id, branch, destination };
 }
 
@@ -3011,21 +3075,20 @@ export function drawResearchForDeployment(state: GameState): ResearchDrawResolut
   const player = next.players[next.currentPlayer];
   if (!player) throw new GameDomainError("ILLEGAL_COMMAND", "The active player has no Research-card hand.");
   player.researchCardIds.push(result.cardId);
+  const pendingPlacementsBeforeDraw = next.pendingGiantPlacements?.length ?? 0;
+  resolveImmediateResearchDraw(next, next.currentPlayer, result.cardId, "deployment-draw");
   if (result.cardId === "X-Fighters") {
-    for (let index = 1; index <= 2; index += 1) {
-      next.units.push({
-        id: `x-fighter-${next.currentPlayer + 1}-${index}`, branch: "Giant", unitTypeId: "x-fighter",
-        move: 6, movement: "fly", attacks: 1, damage: 2, ownerPlayer: next.currentPlayer,
-        health: 1, defense: 5, location: "record-tile",
-      });
-    }
-    next.log.push(`Player ${next.currentPlayer + 1} drew X-Fighters; both black X-Fighters are now available in place of branch deployments.`);
     const recovery = advanceAfterDeployment(next);
     return { state: next, cardId: result.cardId, ...recovery };
   }
   if (result.cardId === "Mecha-Monster" || result.cardId === "Captain Colossal") {
-    const placed = useResearchCard(next, result.cardId);
-    return { state: placed.state, cardId: result.cardId, unitId: placed.unitId, destination: placed.destination };
+    if ((next.pendingGiantPlacements?.length ?? 0) > pendingPlacementsBeforeDraw) {
+      next.pendingDecision = pendingDecisionForState(next);
+      return { state: next, cardId: result.cardId };
+    }
+    next.log.push(`Player ${next.currentPlayer + 1} drew a Military Research card instead of deploying.`);
+    const recovery = advanceAfterDeployment(next);
+    return { state: next, cardId: result.cardId, ...recovery };
   }
   next.log.push(`Player ${next.currentPlayer + 1} drew a Military Research card instead of deploying.`);
   const recovery = advanceAfterDeployment(next);
@@ -3104,6 +3167,38 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       throw new Error(`The authoritative pending decision is not ${type}.`);
     }
   };
+  if (state.pendingGiantPlacements?.length && command.type !== "place-giant") {
+    throw new GameDomainError("ILLEGAL_COMMAND", "Choose a base for the immediate giant placement before continuing.");
+  }
+  if (command.type === "place-giant") {
+    requireDecision("giant-placement");
+    const pending = state.pendingGiantPlacements?.[0];
+    const definition = pending && GIANT_UNIT_DEFINITIONS.find((candidate) => candidate.name === pending.cardId);
+    if (!pending || pending.playerIndex !== state.currentPlayer || !definition || !legalGiantPlacementDestinations(state).includes(command.destination)) {
+      throw new GameDomainError("ILLEGAL_COMMAND", "Choose one of your bases for the immediate giant placement.");
+    }
+    const unitId = `${definition.id}-${pending.playerIndex + 1}`;
+    if (state.units.some((unit) => unit.id === unitId && unit.location !== "permanently-removed")) {
+      throw new GameDomainError("ILLEGAL_COMMAND", `${pending.cardId} is already in play.`);
+    }
+    const next = structuredClone(state);
+    discardResearchFromHand(next, pending.playerIndex, pending.cardId);
+    next.units.push({
+      id: unitId, branch: "Giant", unitTypeId: definition.id, move: definition.move, movement: definition.movement,
+      attacks: definition.attacks, damage: definition.damage, ownerPlayer: pending.playerIndex, health: definition.health,
+      defense: definition.defense, location: command.destination,
+    });
+    next.pendingGiantPlacements = (next.pendingGiantPlacements ?? []).slice(1);
+    if (next.pendingGiantPlacements.length) next.currentPlayer = next.pendingGiantPlacements[0]!.playerIndex;
+    else {
+      next.currentPlayer = pending.resumePlayerIndex;
+      next.phase = pending.resumePhase;
+    }
+    next.pendingDecision = pendingDecisionForState(next);
+    next.log.push(`${definition.name} entered play at ${command.destination}, chosen by Player ${pending.playerIndex + 1}.`);
+    const eventPayload = { cardId: pending.cardId, unitId, playerIndex: pending.playerIndex, destination: command.destination, nextDecision: next.pendingDecision, nextPhase: next.phase };
+    return { state: appendEvent(next, "research.giant.placed", eventPayload), eventType: "research.giant.placed", eventPayload };
+  }
   if (command.type === "resolve-chopper-lift") {
     requireDecision("chopper-lift-choice");
     const pending = state.pendingChopperLift;
@@ -3117,6 +3212,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     next.pendingChopperLift = undefined;
     nextTarget.location = command.destination;
     nextTarget.infamy = Math.max(0, nextTarget.infamy - 1);
+    next.laserFenceWindowMonsterIds = [...new Set([...(next.laserFenceWindowMonsterIds ?? []), target.id])];
     const beforeBattleCount = next.pendingBattles.length;
     next.pendingBattles = next.pendingBattles.filter((battle) => battle.monsterId !== target.id);
     next.log.push(`Chopper Lift moved ${target.name} from ${origin} to ${command.destination} (roll ${pending.roll}) and removed 1 Infamy.`);
@@ -3251,16 +3347,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     if (!alreadyMoved) next.movedPieceIds = [...(next.movedPieceIds ?? []), monsterId];
     if (!alreadyMoved) next.laserFenceWindowMonsterIds = [...new Set([...(next.laserFenceWindowMonsterIds ?? []), monsterId])];
     if (next.activeResearchLure?.monsterId === monsterId) next.activeResearchLure = undefined;
-    next.phase = next.encounterSuppressed ? "deploy" : next.pendingBattles.length > 0 ? "fight" : "encounter";
-    if (next.phase === "deploy") {
-      next.deploymentsThisTurn = 0;
-      next.deploymentDestinations = [];
-    }
-    next.pendingDecision = next.pendingBattles[0]
-      ? { type: "battle-resolution", playerIndex: next.currentPlayer, battleId: next.pendingBattles[0].id }
-      : next.phase === "encounter"
-        ? { type: "encounter-resolution", playerIndex: next.currentPlayer, location: next.monsters[next.currentPlayer].location as HexKey }
-        : { type: "deployment", playerIndex: next.currentPlayer };
+    finishBattleQueue(next);
     next.log.push(alreadyMoved ? "Movement finished; proceed to the next phase." : next.phase === "deploy" ? `${next.monsters[next.currentPlayer].name} has no Encounter after returning to its lair.` : `${next.monsters[next.currentPlayer].name} stays in place; resolve the Encounter step.`);
     const eventPayload = { location: next.monsters[next.currentPlayer].location };
     return { state: appendEvent(next, "monster.stayed", eventPayload), eventType: "monster.stayed", eventPayload };
@@ -3499,6 +3586,15 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
 
 function appendEvent(state: GameState, eventType: string, detail: Record<string, unknown>, actorId?: string): GameState {
   const next = structuredClone(state);
+  const giantPlacement = next.pendingGiantPlacements?.[0];
+  if (giantPlacement?.captureResumeAfterCommand) {
+    next.pendingGiantPlacements = [
+      { ...giantPlacement, resumePhase: next.phase, resumePlayerIndex: next.currentPlayer, captureResumeAfterCommand: false },
+      ...(next.pendingGiantPlacements ?? []).slice(1),
+    ];
+    next.currentPlayer = giantPlacement.playerIndex;
+    next.pendingDecision = pendingDecisionForState(next);
+  }
   for (const unit of next.units) {
     if (unit.unitTypeId === "navy-nuclear-submarine-missile" && unit.location === "record-tile") {
       Object.assign(unit, { unitTypeId: "navy-nuclear-submarine", move: 4, movement: "sea-seacoast-or-fly", defense: 5, damage: 1 });
@@ -3509,7 +3605,7 @@ function appendEvent(state: GameState, eventType: string, detail: Record<string,
   // that was valid only at its input boundary.
   assertInventoryAccounting(next);
   if (!Array.isArray(next.eventLog)) next.eventLog = [];
-  next.eventLog.push({ id: `${next.round}:${next.eventLog.length}`, actorId, action: eventType, outcome: eventType.split(".").at(-1) ?? eventType, detail });
+  next.eventLog.push({ id: `${next.round}:${next.eventLog.length}`, actorId, action: eventType, outcome: eventType.split(".").at(-1) ?? eventType, detail: next.pendingGiantPlacements?.length ? { ...detail, nextDecision: next.pendingDecision } : detail });
   return next;
 }
 

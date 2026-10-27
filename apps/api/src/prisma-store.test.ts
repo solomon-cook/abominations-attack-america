@@ -1,12 +1,51 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
-import { createMvpRoomGame, createRoomGame, legalChopperLiftDestinations } from "@abominations/game-engine";
+import { applyCommandEnvelope, applyCompletedSetup, applySetupAction, createMvpRoomGame, createRoomGame, legalChopperLiftDestinations } from "@abominations/game-engine";
 import { PrismaRoomStore } from "./prisma-store.js";
+import { MAX_RETAINED_ROOM_EVENTS } from "./store.js";
 import { persistentAdapter } from "./test-adapter.js";
 
+function completedDevelopmentSetupGame() {
+  const game = createRoomGame(2);
+  let setup = game.setupState!;
+  setup = applySetupAction(setup, 0, { type: "choose-monster", monsterId: "monster-1" });
+  setup = applySetupAction(setup, 1, { type: "choose-monster", monsterId: "monster-2" });
+  setup = applySetupAction(setup, 1, { type: "choose-branch", branch: "Navy" });
+  setup = applySetupAction(setup, 0, { type: "choose-branch", branch: "Army" });
+  setup = applySetupAction(setup, 0, { type: "choose-lair", lair: "los-angeles" });
+  setup = applySetupAction(setup, 1, { type: "choose-lair", lair: "chicago" });
+  setup = applySetupAction(setup, 0, { type: "choose-starting-choice", startingChoice: { kind: "research" } });
+  setup = applySetupAction(setup, 1, { type: "choose-starting-choice", startingChoice: { kind: "research" } });
+  game.setupState = setup;
+  game.setupAssignments = setup.seats;
+  return game;
+}
+
+test("Prisma room start commits the prepared snapshot and its matching event atomically", async () => {
+  const { adapter, room, participant, events } = persistentAdapter();
+  room.status = "WAITING";
+  room.state = completedDevelopmentSetupGame();
+  participant.ready = false;
+  room.participants.push({
+    id: "player-2", displayName: "Player 2", role: "PLAYER", playerIndex: 1, userId: null,
+    tokenHash: "unused-guest-token-hash", sessionExpiresAt: new Date(Date.now() + 60_000),
+    connectedAt: new Date(), disconnectedAt: null, connectionId: null, botControlled: false, botAssisted: false, ready: true,
+  });
+
+  const started = await new PrismaRoomStore(adapter).setReady(room.code, "token", true);
+
+  assert.equal(started.status, "active");
+  assert.equal(started.state.setupApplied, true);
+  assert.equal(started.version, 1);
+  assert.deepEqual(started.events.map(({ version, type }) => ({ version, type })), [{ version: 1, type: "match.started" }]);
+  assert.deepEqual(events[0]?.replayCommand, { kind: "start" });
+  assert.equal("replayCommand" in started.events[0]!, false);
+  assert.deepEqual((await new PrismaRoomStore(adapter).getRoom(room.code, "token", 0)).events, started.events);
+});
+
 test("durable receipt makes the same action idempotent across store instances", async () => {
-  const { adapter, room, receipts } = persistentAdapter();
+  const { adapter, room, receipts, events } = persistentAdapter();
   const firstStore = new PrismaRoomStore(adapter);
   const secondStore = new PrismaRoomStore(adapter);
   const envelope = { actionId: "restart-safe", actorId: "player-1", expectedRevision: 0, protocolVersion: 1 as const, command: { type: "move" as const, path: ["los-angeles", "denver"] } };
@@ -16,6 +55,150 @@ test("durable receipt makes the same action idempotent across store instances", 
   assert.equal(second.version, 1);
   assert.equal(receipts.size, 1);
   assert.equal(second.events.length, 1);
+  assert.deepEqual(events[0]?.replayCommand, { kind: "command", playerIndex: 0, command: envelope.command });
+  assert.equal("replayCommand" in second.events[0]!, false);
+});
+
+test("Prisma room creation stores a private initial replay snapshot", async () => {
+  const { adapter, room } = persistentAdapter();
+  const created = await new PrismaRoomStore(adapter, true).createRoom(2, "Replay owner", "public");
+
+  assert.ok((room as any).initialReplayState);
+  assert.notEqual((room as any).initialReplayState, room.state);
+  assert.deepEqual((room as any).initialReplayState, room.state);
+  assert.equal("initialReplayState" in created.room, false);
+});
+
+test("Prisma public replay reconstructs a completed match with a spectator-safe projection", async () => {
+  const { adapter, room, events } = persistentAdapter();
+  const initial = completedDevelopmentSetupGame();
+  (room as any).initialReplayState = structuredClone(initial);
+  const started = applyCompletedSetup(initial);
+  const terminal = applyCommandEnvelope(started, { actionId: "terminal", actorId: "player-1", expectedRevision: 1, protocolVersion: 1, command: { type: "concede" } }, 1);
+  room.state = terminal.state;
+  room.status = "COMPLETED";
+  room.version = 2;
+  events.push(
+    { roomId: room.id, version: 1, type: "match.started", replayCommand: { kind: "start" } },
+    { roomId: room.id, version: 2, type: terminal.eventType, replayCommand: { kind: "command", playerIndex: 0, command: { type: "concede" } } },
+  );
+
+  const page = await new PrismaRoomStore(adapter).getPublicReplay(room.code, 0, 8);
+  assert.equal(page.replayable, true);
+  if (!page.replayable) return;
+  assert.equal(page.base.version, 0);
+  assert.deepEqual(page.frames.map((frame) => frame.version), [1, 2]);
+  assert.equal(page.frames.at(-1)?.state.victoryType, "concession");
+  assert.deepEqual(page.frames[0]?.state.rng, { seed: 0, cursor: 0 });
+  assert.deepEqual(page.frames[0]?.state.decks.research.order, []);
+  assert.equal(page.frames[0]?.state.matchId, "public-replay");
+  assert.deepEqual(page.frames[0]?.state.eventLog, []);
+  const exported = await new PrismaRoomStore(adapter).getPublicReplayExport(room.code);
+  assert.equal(exported.replayable, true);
+  if (!exported.replayable) return;
+  assert.equal(exported.frames.length, 3);
+  assert.equal(JSON.stringify(exported).includes("secretSeed"), false);
+  assert.equal(JSON.stringify(exported).includes("replayCommand"), false);
+  assert.ok(exported.frames.every((frame) => frame.state.eventLog.length === 0
+    && frame.state.decks.mutation.order.length === 0 && frame.state.decks.research.order.length === 0
+    && frame.state.players.every((player) => player.mutationCardIds.length === 0 && player.researchCardIds.length === 0)
+    && !Object.hasOwn(frame.state.rng, "secretSeed")));
+  room.privacy = "PRIVATE";
+  assert.deepEqual(await new PrismaRoomStore(adapter).getPublicReplay(room.code, 0, 8), { replayable: false, reason: "not-found" });
+  assert.deepEqual(await new PrismaRoomStore(adapter).getPublicReplayExport(room.code), { replayable: false, reason: "not-found" });
+});
+
+test("Prisma public replay identifies completed legacy rows without replay sources", async () => {
+  const { adapter, room, events } = persistentAdapter();
+  room.status = "COMPLETED";
+  room.version = 1;
+  events.push({ roomId: room.id, version: 1, type: "match.conceded", replayCommand: null });
+  assert.deepEqual(await new PrismaRoomStore(adapter).getPublicReplay(room.code, 0, 8), { replayable: false, reason: "history-incomplete" });
+});
+
+test("concurrent Prisma retries of the same action return its single committed result", async () => {
+  const { adapter, room, receipts, events } = persistentAdapter();
+  const firstStore = new PrismaRoomStore(adapter);
+  const secondStore = new PrismaRoomStore(adapter);
+  const envelope = { actionId: "concurrent-retry", actorId: "player-1", expectedRevision: 0, protocolVersion: 1 as const, command: { type: "move" as const, path: ["los-angeles", "denver"] } };
+
+  const [first, second] = await Promise.all([
+    firstStore.submitAction(room.code, "token", envelope),
+    secondStore.submitAction(room.code, "token", envelope),
+  ]);
+
+  assert.equal(first.version, 1);
+  assert.equal(second.version, 1);
+  assert.equal(receipts.size, 1);
+  assert.equal(events.length, 1);
+});
+
+test("Prisma room event deltas stay chronological after selecting the newest retained rows", async () => {
+  const { adapter, room } = persistentAdapter();
+  room.state.stompMarkers = 2;
+  const store = new PrismaRoomStore(adapter);
+  const moved = await store.submitAction(room.code, "token", {
+    actionId: "ordered-event-move",
+    actorId: "player-1",
+    expectedRevision: 0,
+    protocolVersion: 1,
+    command: { type: "move", path: ["los-angeles", "san-francisco"] },
+  });
+  const encountered = await store.submitAction(room.code, "token", {
+    actionId: "ordered-event-encounter",
+    actorId: "player-1",
+    expectedRevision: moved.version,
+    protocolVersion: 1,
+    command: { type: "resolve-encounter", choice: "health" },
+  });
+
+  assert.deepEqual(encountered.events.map((event) => event.version), [1, 2]);
+  assert.deepEqual((await store.getRoom(room.code, "token", 1)).events.map((event) => event.version), [2]);
+});
+
+test("Prisma room snapshots retain the newest bounded event suffix in chronological order", async () => {
+  const { adapter, room, events } = persistentAdapter();
+  room.version = 300;
+  for (let version = 1; version <= room.version; version += 1) {
+    events.push({ id: `event-${version}`, roomId: room.id, version, actorId: "player-1", type: `event.${version}`, controlSource: "human", payload: {}, createdAt: new Date(version) });
+  }
+
+  const view = await new PrismaRoomStore(adapter).getRoom(room.code, "token");
+  const versions = view.events.map((event) => event.version);
+  assert.equal(versions.length, MAX_RETAINED_ROOM_EVENTS);
+  assert.equal(versions[0], 300 - MAX_RETAINED_ROOM_EVENTS + 1);
+  assert.equal(versions.at(-1), 300);
+  assert.deepEqual(versions, [...versions].sort((left, right) => left - right));
+});
+
+test("Prisma room reads report snapshot-event revision gaps once and still return the snapshot", async () => {
+  const { adapter, room, events } = persistentAdapter();
+  room.version = 4;
+  for (const version of [1, 2, 4]) {
+    events.push({ id: `event-${version}`, roomId: room.id, version, actorId: "player-1", type: `event.${version}`, controlSource: "human", payload: {}, createdAt: new Date(version) });
+  }
+  const issues: Array<{ roomCode: string; snapshotVersion: number; latestEventVersion: number | null; missingVersionCount: number }> = [];
+  const store = new PrismaRoomStore(adapter, false, (issue) => issues.push(issue));
+
+  const snapshot = await store.getRoom(room.code, "token");
+  const delta = await store.getRoom(room.code, "token", 2);
+
+  assert.equal(snapshot.version, 4);
+  assert.deepEqual(snapshot.events.map((event) => event.version), [1, 2, 4]);
+  assert.deepEqual(delta.events.map((event) => event.version), [4]);
+  assert.deepEqual(issues, [{ roomCode: room.code, snapshotVersion: 4, latestEventVersion: 4, missingVersionCount: 1 }]);
+});
+
+test("a new version-zero Prisma room without match events is not reported as divergent", async () => {
+  const { adapter, room } = persistentAdapter();
+  const issues: unknown[] = [];
+  const store = new PrismaRoomStore(adapter, false, (issue) => issues.push(issue));
+
+  const snapshot = await store.getRoom(room.code, "token");
+
+  assert.equal(snapshot.version, 0);
+  assert.deepEqual(snapshot.events, []);
+  assert.deepEqual(issues, []);
 });
 
 test("Prisma-backed rooms authorize an off-turn defending monster Mutation owner", async () => {
@@ -33,7 +216,7 @@ test("Prisma-backed rooms authorize an off-turn defending monster Mutation owner
   const guestHash = createHash("sha256").update(guestToken).digest("hex");
   const guest = { id: "player-2", role: "PLAYER", playerIndex: 1, sessionExpiresAt: new Date(Date.now() + 60_000) };
   const originalFindFirst = adapter.participant.findFirst;
-  adapter.participant.findFirst = async ({ where }: any = {}) => where?.tokenHash === guestHash ? guest : originalFindFirst({ where });
+  adapter.participant.findFirst = async ({ where, include }: any = {}) => where?.tokenHash === guestHash ? { ...guest, ...(include?.room ? { room: { ...room, participants: room.participants, events: [] } } : {}) } : originalFindFirst({ where, include });
   const store = new PrismaRoomStore(adapter);
   const envelope = { actionId: "prisma-off-turn-berserk", actorId: guest.id, expectedRevision: room.version, protocolVersion: 1 as const, command: { type: "use-mutation" as const, cardId: "Berserk" as const, battleId } };
   await assert.rejects(() => store.submitAction(room.code, "token", { ...envelope, actorId: "player-1", actionId: "prisma-wrong-owner" }), /It is not your turn/);
@@ -57,7 +240,7 @@ test("Prisma-backed Toxicor Mutation choices belong to the monster owner and sur
   const guestHash = createHash("sha256").update(guestToken).digest("hex");
   const guest = { id: "player-2", role: "PLAYER", playerIndex: 1, sessionExpiresAt: new Date(Date.now() + 60_000) };
   const originalFindFirst = adapter.participant.findFirst;
-  adapter.participant.findFirst = async ({ where }: any = {}) => where?.tokenHash === guestHash ? guest : originalFindFirst({ where });
+  adapter.participant.findFirst = async ({ where, include }: any = {}) => where?.tokenHash === guestHash ? { ...guest, ...(include?.room ? { room: { ...room, participants: room.participants, events: [] } } : {}) } : originalFindFirst({ where, include });
   const store = new PrismaRoomStore(adapter);
   const before = await store.getRoom(room.code, guestToken);
   assert.deepEqual(before.state.pendingDecision?.type === "mutation-choice" ? before.state.pendingDecision.cardIds : [], ["War Spikes", "Atomic Breath"]);
@@ -93,7 +276,7 @@ test("Prisma-backed rooms authorize the off-turn Laser Fence cardholder", async 
   const guestHash = createHash("sha256").update(guestToken).digest("hex");
   const guest = { id: "player-2", role: "PLAYER", playerIndex: 1, sessionExpiresAt: new Date(Date.now() + 60_000) };
   const originalFindFirst = adapter.participant.findFirst;
-  adapter.participant.findFirst = async ({ where }: any = {}) => where?.tokenHash === guestHash ? guest : originalFindFirst({ where });
+  adapter.participant.findFirst = async ({ where, include }: any = {}) => where?.tokenHash === guestHash ? { ...guest, ...(include?.room ? { room: { ...room, participants: room.participants, events: [] } } : {}) } : originalFindFirst({ where, include });
   const store = new PrismaRoomStore(adapter);
   const envelope = { actionId: "prisma-off-turn-laser-fence", actorId: guest.id, expectedRevision: room.version, protocolVersion: 1 as const, command: { type: "use-research" as const, cardId: "Laser Fence" as const, targetMonsterId: "monster-1", choice: "infamy" as const } };
   await assert.rejects(() => store.submitAction(room.code, "token", { ...envelope, actorId: "player-1", actionId: "prisma-wrong-laser-fence-owner" }), /It is not your turn/);
@@ -172,6 +355,22 @@ test("Prisma store health proves the database adapter is reachable", async () =>
   assert.deepEqual(await new PrismaRoomStore(adapter).health(), { persistence: "prisma" });
 });
 
+test("Prisma room polling reads an authorized room in one client query", async () => {
+  const { adapter, room } = persistentAdapter();
+  let participantReads = 0;
+  let roomReads = 0;
+  const findParticipant = adapter.participant.findFirst;
+  const findRoom = adapter.gameRoom.findUnique;
+  adapter.participant.findFirst = async (input: any) => { participantReads += 1; return findParticipant(input); };
+  adapter.gameRoom.findUnique = async (input: any) => { roomReads += 1; return findRoom(input); };
+
+  const view = await new PrismaRoomStore(adapter).getRoom(room.code, "token");
+
+  assert.equal(view.code, room.code);
+  assert.equal(participantReads, 1);
+  assert.equal(roomReads, 0);
+});
+
 test("Prisma session rotation preserves the participant and revokes the old token", async () => {
   const { adapter, room } = persistentAdapter();
   const store = new PrismaRoomStore(adapter);
@@ -204,6 +403,7 @@ test("Prisma reconnect leases ignore stale tab disconnects", async () => {
 
 test("Prisma projections redact another player's hand and deck order", async () => {
   const { adapter, room } = persistentAdapter();
+  room.state.rng.secretSeed = "aa".repeat(32);
   room.state.players[0].researchCardIds = ["Guard Commander"];
   room.state.players[1].mutationCardIds = ["Rampage"];
   const store = new PrismaRoomStore(adapter);
@@ -212,6 +412,9 @@ test("Prisma projections redact another player's hand and deck order", async () 
   assert.deepEqual(playerView.state.players[1].mutationCardIds, []);
   assert.deepEqual(playerView.state.decks.research.order, []);
   assert.deepEqual(playerView.state.decks.mutation.discard, []);
+  assert.deepEqual(playerView.state.rng, { seed: 0, cursor: 0 });
+  assert.equal(JSON.stringify(playerView).includes("secretSeed"), false);
+  assert.equal(room.state.rng.secretSeed, "aa".repeat(32), "projection redaction does not mutate the persisted private key");
 });
 
 test("terminal command persists completed room status and winner result atomically", async () => {
@@ -266,12 +469,14 @@ test("terminal transaction writes one public stat row for each linked account se
 });
 
 test("Prisma setup actions persist the shared state and reject stale revisions", async () => {
-  const { adapter, room } = persistentAdapter();
+  const { adapter, room, events } = persistentAdapter();
   room.state = createRoomGame(2);
   const store = new PrismaRoomStore(adapter);
   const first = await store.setupAction(room.code, "token", { type: "choose-monster", monsterId: "monster-1" }, 0);
   assert.equal(first.version, 1);
   assert.equal((first.state.setupState as any).seats[0].monsterId, "monster-1");
+  assert.deepEqual(events[0]?.replayCommand, { kind: "setup", playerIndex: 0, action: { type: "choose-monster", monsterId: "monster-1" } });
+  assert.equal("replayCommand" in first.events[0]!, false);
   await assert.rejects(() => store.setupAction(room.code, "token", { type: "choose-monster", monsterId: "monster-2" }, 0), /Expected revision/);
 });
 

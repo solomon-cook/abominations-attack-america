@@ -1,6 +1,11 @@
 import type { Branch } from "./index.js";
 
 export type SetupPlacement = Readonly<{ unitId: string; destination: string }>;
+export type UnusedBranchPlacements = Readonly<{
+  readonly unitIdsByBranch: Readonly<Partial<Record<Exclude<Branch, "National Guard">, readonly string[]>>>;
+  readonly basesByBranch: Readonly<Partial<Record<Exclude<Branch, "National Guard">, readonly string[]>>>;
+  readonly unitTypeById: Readonly<Record<string, string>>;
+}>;
 
 export type SetupStartingChoice =
   | Readonly<{ kind: "research" }>
@@ -10,6 +15,7 @@ export type SetupStartingChoice =
 export type SetupAction =
   | Readonly<{ type: "choose-monster"; monsterId: string }>
   | Readonly<{ type: "choose-branch"; branch: Branch }>
+  | Readonly<{ type: "place-unused-branches"; placements: readonly SetupPlacement[] }>
   | Readonly<{ type: "choose-lair"; lair: string }>
   | Readonly<{ type: "choose-starting-choice"; startingChoice: SetupStartingChoice }>;
 
@@ -21,6 +27,8 @@ export interface SetupDefinition {
   readonly eligibleBranches: readonly Branch[];
   /** Supplied by the verified board definition. */
   readonly lairsByMonster: Readonly<Record<string, readonly string[]>>;
+  /** Audited branch inventories and bases used for fewer-than-four-player setup. */
+  readonly unusedBranchPlacements?: UnusedBranchPlacements;
 }
 
 export interface SetupSeat {
@@ -35,7 +43,8 @@ export interface SetupSeat {
 export interface SetupState {
   readonly definition: SetupDefinition;
   readonly seats: readonly SetupSeat[];
-  readonly phase: "monster-selection" | "branch-selection" | "lair-selection" | "starting-choice" | "complete";
+  readonly unusedBranchPlacements?: readonly SetupPlacement[];
+  readonly phase: "monster-selection" | "branch-selection" | "unused-branch-placement" | "lair-selection" | "starting-choice" | "complete";
 }
 
 /** Explicit fixture used by local/online development play only. */
@@ -81,6 +90,18 @@ export function createSetup(definition: SetupDefinition): SetupState {
   if (definition.monsterIds.length < definition.playerCount) throw new Error("The verified monster catalogue has too few entries for this match.");
   if (new Set(definition.monsterIds).size !== definition.monsterIds.length) throw new Error("The setup monster catalogue contains duplicates.");
   if (new Set(definition.eligibleBranches).size !== definition.eligibleBranches.length) throw new Error("The setup branch catalogue contains duplicates.");
+  if (definition.unusedBranchPlacements) {
+    const config = definition.unusedBranchPlacements;
+    const allUnits = Object.values(config.unitIdsByBranch).flatMap((ids) => ids ?? []);
+    if (new Set(allUnits).size !== allUnits.length) throw new Error("The unused-branch catalogue contains duplicate units.");
+    for (const branch of definition.eligibleBranches) {
+      const units = config.unitIdsByBranch[branch] ?? [];
+      const bases = config.basesByBranch[branch] ?? [];
+      if (units.length !== bases.length) throw new Error(`Unused branch ${branch} must have matching audited units and bases.`);
+      if (new Set(bases).size !== bases.length) throw new Error(`Unused branch ${branch} contains duplicate bases.`);
+      if (units.some((id) => !config.unitTypeById[id])) throw new Error(`Unused branch ${branch} is missing a unit type for a piece.`);
+    }
+  }
   for (const monsterId of definition.monsterIds) {
     const lairs = definition.lairsByMonster[monsterId] ?? [];
     if (lairs.length !== 3 || new Set(lairs).size !== 3) throw new Error(`Monster ${monsterId} must have exactly three distinct verified lairs.`);
@@ -107,7 +128,45 @@ export function chooseBranch(state: SetupState, playerIndex: number, branch: Bra
   if (!state.definition.eligibleBranches.includes(branch)) throw new Error(`Branch ${branch} is not eligible for player selection.`);
   if (state.seats.some((candidate) => candidate.branch === branch)) throw new Error(`Branch ${branch} has already been claimed.`);
   const next = replaceSeat(state, { ...seat(state, playerIndex), branch });
-  return nextUnassigned(next, "branch", true) ? next : { ...next, phase: "lair-selection" };
+  if (nextUnassigned(next, "branch", true)) return next;
+  const unused = state.definition.eligibleBranches.filter((candidate) => !next.seats.some((candidateSeat) => candidateSeat.branch === candidate));
+  return unused.length > 0 && state.definition.unusedBranchPlacements ? { ...next, phase: "unused-branch-placement" } : { ...next, phase: "lair-selection" };
+}
+
+/** The player who made the final monster pick places every unused branch. */
+export function unusedBranchPlacementPlayer(state: SetupState): number | undefined {
+  return state.phase === "unused-branch-placement" ? state.definition.playerCount - 1 : undefined;
+}
+
+function validateUnusedPlacements(config: UnusedBranchPlacements, unused: readonly Exclude<Branch, "National Guard">[], placements: readonly SetupPlacement[]): void {
+  const expectedUnits = unused.flatMap((branch) => config.unitIdsByBranch[branch] ?? []);
+  if (unused.some((branch) => !config.unitIdsByBranch[branch]?.length || !config.basesByBranch[branch]?.length || config.unitIdsByBranch[branch]!.length !== config.basesByBranch[branch]!.length)) {
+    throw new Error("Every unused branch needs matching audited units and bases.");
+  }
+  if (placements.length !== expectedUnits.length || new Set(placements.map((placement) => placement.unitId)).size !== placements.length) {
+    throw new Error("Place every unused branch unit exactly once on a distinct base.");
+  }
+  const expectedUnitSet = new Set(expectedUnits);
+  const remainingBases = new Map(unused.map((branch) => [branch, new Set(config.basesByBranch[branch] ?? [])]));
+  for (const placement of placements) {
+    if (!expectedUnitSet.has(placement.unitId)) throw new Error(`Unit ${placement.unitId} does not belong to an unused branch.`);
+    const branch = unused.find((candidate) => config.unitIdsByBranch[candidate]?.includes(placement.unitId));
+    const branchBases = branch ? remainingBases.get(branch) : undefined;
+    if (!branch || !branchBases?.has(placement.destination)) throw new Error(`Unit ${placement.unitId} must be placed on a distinct base belonging to ${branch ?? "its unused branch"}.`);
+    expectedUnitSet.delete(placement.unitId);
+    branchBases.delete(placement.destination);
+  }
+  if (expectedUnitSet.size || [...remainingBases.values()].some((bases) => bases.size)) throw new Error("Place every unused branch unit on every audited base exactly once.");
+}
+
+export function placeUnusedBranches(state: SetupState, playerIndex: number, placements: readonly SetupPlacement[]): SetupState {
+  if (state.phase !== "unused-branch-placement") throw new Error("Unused branch placement is not the current setup step.");
+  if (playerIndex !== unusedBranchPlacementPlayer(state)) throw new Error("The player who chose a monster last places unused branches.");
+  const config = state.definition.unusedBranchPlacements;
+  if (!config) throw new Error("This setup has no verified unused-branch base catalogue.");
+  const unused = state.definition.eligibleBranches.filter((branch) => !state.seats.some((candidate) => candidate.branch === branch));
+  validateUnusedPlacements(config, unused, placements);
+  return { ...state, unusedBranchPlacements: placements.map((placement) => ({ ...placement })), phase: "lair-selection" };
 }
 
 export function chooseLair(state: SetupState, playerIndex: number, lair: string): SetupState {
@@ -136,6 +195,12 @@ export function validateSetup(state: SetupState): void {
   const lairs = state.seats.map((candidate) => candidate.lair);
   if (monsterIds.some((value) => !value) || new Set(monsterIds).size !== state.seats.length) throw new Error("Every player needs one distinct monster.");
   if (branches.some((value) => !value) || new Set(branches).size !== state.seats.length) throw new Error("Every player needs one distinct eligible branch.");
+  if (state.definition.unusedBranchPlacements) {
+    const unused = state.definition.eligibleBranches.filter((branch) => !branches.includes(branch));
+    const expectedCount = unused.reduce((total, branch) => total + (state.definition.unusedBranchPlacements?.unitIdsByBranch[branch]?.length ?? 0), 0);
+    if (expectedCount > 0) validateUnusedPlacements(state.definition.unusedBranchPlacements, unused, state.unusedBranchPlacements?.length ? state.unusedBranchPlacements : []);
+    else if (state.unusedBranchPlacements?.length) throw new Error("Four-player setup cannot place unused branches.");
+  }
   if (lairs.some((value) => !value) || new Set(lairs).size !== state.seats.length) throw new Error("Every player needs one distinct lair.");
   if (state.seats.some((candidate) => !candidate.startingChoice || !candidate.ready)) throw new Error("Every player must confirm a starting choice.");
 }
@@ -143,6 +208,7 @@ export function validateSetup(state: SetupState): void {
 export function applySetupAction(state: SetupState, playerIndex: number, action: SetupAction): SetupState {
   if (action.type === "choose-monster") return chooseMonster(state, playerIndex, action.monsterId);
   if (action.type === "choose-branch") return chooseBranch(state, playerIndex, action.branch);
+  if (action.type === "place-unused-branches") return placeUnusedBranches(state, playerIndex, action.placements);
   if (action.type === "choose-lair") return chooseLair(state, playerIndex, action.lair);
   return chooseStartingChoice(state, playerIndex, action.startingChoice);
 }
