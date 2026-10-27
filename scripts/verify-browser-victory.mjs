@@ -73,10 +73,11 @@ const waitFor = async (expression, label) => {
     if (await evaluate(expression)) return;
     await wait(100);
   }
-  throw new Error(`Timed out waiting for ${label}.`);
+  const state = await evaluate(`JSON.stringify({ phase: document.querySelector(".action-card h2")?.textContent?.trim(), action: document.querySelector(".action-dock button")?.textContent?.trim(), status: document.querySelector(".action-dock-status")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim() })`);
+  throw new Error(`Timed out waiting for ${label}. Browser state: ${state}`);
 };
 const clickButton = async (label) => evaluate(`(() => {
-  const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled);
+  const button = [...document.querySelectorAll("button")].find((candidate) => (candidate.textContent.trim() === ${JSON.stringify(label)} || candidate.textContent.trim().startsWith(${JSON.stringify(label)})) && !candidate.disabled);
   if (!button) return false;
   button.click();
   return true;
@@ -84,8 +85,8 @@ const clickButton = async (label) => evaluate(`(() => {
 const phase = () => evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() ?? ""`);
 
 try {
-  await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Run temporary victory test")`, "home screen");
-  await clickButton("Run temporary victory test");
+  await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Victory test")`, "home screen");
+  await clickButton("Victory test");
   await waitFor(`!document.querySelector(".setup-panel") && document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "temporary victory scenario");
   const route = ["San Francisco", "Denver", "Seattle", "Chicago", "Infamy Site", "New York", "Los Angeles"];
   for (const destination of route) {
@@ -95,30 +96,71 @@ try {
       tile?.click();
       return Boolean(tile);
     })()`);
-    if (!selected) throw new Error(`No legal rendered destination for ${destination}.`);
-    await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm path")`, `${destination} path confirmation`);
-    await clickButton("Confirm path");
-    await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${destination} movement result`);
+    if (!selected) {
+      const state = await evaluate(`JSON.stringify({ phase: document.querySelector(".action-card h2")?.textContent?.trim(), legalDestinations: [...document.querySelectorAll(".hex-tile.legal:not(:disabled)")].map((tile) => tile.getAttribute("data-location-name")), status: document.querySelector(".action-dock-status")?.textContent?.trim() })`);
+      throw new Error(`No legal rendered destination for ${destination}. Browser state: ${state}`);
+    }
+    await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirm move")`, `${destination} path confirmation`);
+    const movementCount = await evaluate(`document.querySelectorAll(".movement-piece.completed").length`);
+    await clickButton("Confirm move");
+    await waitFor(`document.querySelectorAll(".movement-piece.completed").length > ${movementCount}`, `${destination} movement result`);
+    if (await phase() === "Move") {
+      const ended = await evaluate(`(() => { const button = document.querySelector(".end-movement:not(:disabled)"); button?.click(); return Boolean(button); })()`);
+      if (!ended) throw new Error(`${destination} movement exposed no enabled End movement control.`);
+      await waitFor(`["Fight", "Encounter"].includes(document.querySelector(".action-card h2")?.textContent?.trim())`, `${destination} post-movement phase`);
+    }
+    if (await phase() === "Fight") {
+      if (await evaluate(`document.querySelectorAll(".hex-tile.battle:not(:disabled)").length > 0`)) throw new Error(`${destination} unexpectedly created a battle in the no-units victory fixture.`);
+      if (!await clickButton("Continue to Encounter")) throw new Error(`${destination} Fight did not expose Continue to Encounter.`);
+      await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Encounter"`, `${destination} Encounter phase`);
+    }
     if (await phase() === "Encounter") {
-      for (let attempt = 0; attempt < 4 && await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Encounter"`); attempt += 1) {
-        const resolved = await evaluate(`(() => {
-          const buttons = [...document.querySelectorAll(".action-card button")].filter((button) => !button.disabled);
-          const preferred = buttons.find((button) => /^(Resolve encounter|Take the city Health benefit|Take 2 Infamy instead|Take )/.test(button.textContent.trim()));
-          const button = preferred ?? buttons[0];
-          button?.click();
-          return Boolean(button);
-        })()`);
-        if (!resolved) throw new Error(`${destination} Encounter exposed no enabled control.`);
-        await waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${destination} Encounter result`);
+      const pendingChoice = await evaluate(`document.querySelector(".action-dock button")?.textContent?.trim() === "Choose encounter option"`);
+      const routineRoll = await evaluate(`document.querySelector(".action-dock button")?.textContent?.trim().startsWith("Roll all")`);
+      if (pendingChoice) {
+        if (!await clickButton("Choose encounter option")) throw new Error(`${destination} encounter reward choice was not exposed.`);
+        const reward = await evaluate(`([...document.querySelectorAll("button:not(:disabled)")].find((button) => /^Take .* Health|^Take 2 Infamy/.test(button.textContent.trim()))?.textContent ?? "").trim()`);
+        if (!reward || !await clickButton(reward)) throw new Error(`${destination} encounter has no legal reward choice.`);
+        await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Deploy" || /^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${destination} encounter choice`);
+      } else if (routineRoll) {
+        const rollLabel = await evaluate(`document.querySelector(".action-dock button")?.textContent?.trim()`);
+        if (!rollLabel || !await clickButton(rollLabel)) throw new Error(`${destination} could not resolve its city stomp roll.`);
+        await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Deploy" || /^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "") || document.querySelector(".action-dock button")?.textContent?.trim() === "Choose encounter option"`, `${destination} city stomp result`);
+        if (await evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Encounter"`)) {
+          if (!await clickButton("Choose encounter option")) throw new Error(`${destination} city reward choice was not exposed.`);
+          const reward = await evaluate(`([...document.querySelectorAll("button:not(:disabled)")].find((button) => /^Take .* Health|^Take 2 Infamy/.test(button.textContent.trim()))?.textContent ?? "").trim()`);
+          if (!reward || !await clickButton(reward)) throw new Error(`${destination} city reward has no legal choice.`);
+          await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Deploy" || /^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${destination} city reward resolution`);
+        }
+      } else {
+        if (!await clickButton("Resolve encounter")) throw new Error(`${destination} Encounter exposed no Resolve encounter action.`);
+        await waitFor(`!!document.querySelector(".cinema-intro button") || document.querySelector(".action-dock button")?.textContent?.trim() === "Choose encounter option" || document.querySelector(".action-card h2")?.textContent?.trim() === "Deploy" || /^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${destination} encounter resolution prompt`);
+        if (await evaluate(`document.querySelector(".action-dock button")?.textContent?.trim() === "Choose encounter option"`)) {
+          await clickButton("Choose encounter option");
+          const reward = await evaluate(`([...document.querySelectorAll("button:not(:disabled)")].find((button) => /^Take .* Health|^Take 2 Infamy/.test(button.textContent.trim()))?.textContent ?? "").trim()`);
+          if (!reward || !await clickButton(reward)) throw new Error(`${destination} encounter has no legal reward choice.`);
+          await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Deploy" || /^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${destination} encounter choice`);
+        } else if (await evaluate(`!!document.querySelector(".cinema-intro button")`)) {
+          if (!await clickButton("Reveal encounter")) throw new Error(`${destination} encounter reveal action was unavailable.`);
+          const remainingRolls = await evaluate(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Reveal remaining rolls")`);
+          if (remainingRolls) await clickButton("Reveal remaining rolls");
+          const choice = await evaluate(`document.querySelector(".cinema-choice button")?.textContent?.trim()`);
+          if (choice && !await clickButton(choice)) throw new Error(`${destination} could not choose its encounter reward.`);
+          await waitFor(`!!document.querySelector(".cinema-primary") && ([...document.querySelectorAll(".cinema-primary")].some((button) => button.textContent.includes("Return to board")) || !["Encounter", "Waiting for server…"].includes(document.querySelector(".action-card h2")?.textContent?.trim()))`, `${destination} encounter resolution`);
+          if (await evaluate(`!![...document.querySelectorAll("button")].find((button) => button.textContent.includes("Return to board"))`)) await clickButton("Return to board →");
+        }
       }
     }
     if (await phase() === "Deploy") {
-      if (!await clickButton("Pass deployment")) throw new Error(`${destination} Deploy exposed no pass control.`);
+      if (!await clickButton("Pass deployment")) {
+        const opened = await evaluate(`(() => { const details = document.querySelector("#phase-command-context"); if (!details) return false; details.open = true; return true; })()`);
+        if (!opened || !await clickButton("Pass deployment")) throw new Error(`${destination} Deploy exposed no pass control.`);
+      }
       await waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, `${destination} next Move phase`);
     }
   }
   await waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "temporary victory terminal phase");
-  const terminal = await evaluate(`Boolean(document.querySelector(".victory-summary")) && /temporary|development/i.test(document.body.textContent ?? "")`);
+  const terminal = await evaluate(`(() => { const summary = document.querySelector(".victory-summary")?.textContent ?? ""; return summary.includes("development-board-exhaustion") && /^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? ""); })()`);
   if (!terminal) throw new Error("Temporary victory did not expose its terminal summary.");
   console.log(JSON.stringify({ ok: true, url, scenario: "temporary-victory", route, terminal: "verified" }));
 } finally {

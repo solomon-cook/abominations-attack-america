@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { performance } from "node:perf_hooks";
 import {
   applyCommand,
   applyCompletedSetup,
@@ -26,6 +27,7 @@ function createSoloMatch(humanMonsterId: string): GameState {
   const botBranch = setup.seats[1]!.branch!;
   const humanBranch = setup.definition.eligibleBranches.find((branch) => branch !== botBranch)!;
   setup = chooseBranch(setup, 0, humanBranch);
+  if (setup.phase === "unused-branch-placement") setup = chooseBotSetupAction({ ...game, setupState: setup }, setup, 1);
   setup = chooseLair(setup, 0, setup.definition.lairsByMonster[setup.seats[0]!.monsterId!]![0]!);
   setup = chooseBotSetupAction({ ...game, setupState: setup }, setup, 1);
   setup = chooseStartingChoice(setup, 0, { kind: "research" });
@@ -210,10 +212,18 @@ const safeHex = Object.values(researchBoard.hexes).sort((a, b) => {
 researchState.monsters[0]!.location = safeHex.key;
 researchState.monsters[0]!.infamy = 0;
 researchState.monsters.forEach((monster) => { monster.health = 0; });
+const deployedBotUnits = researchState.units.filter((unit) => unit.ownerPlayer === 1 && unit.location !== "record-tile" && unit.location !== "permanently-removed");
+deployedBotUnits.slice(1).forEach((unit) => { unit.location = "record-tile"; });
 const forceFirstState = stateWithTactic(researchState, "force-first");
-assert.notEqual(chooseBotCommand(forceFirstState)?.type, "draw-research", "force-first bots should field more units before taking optional Research");
+const forceFirstStartedAt = performance.now();
+const forceFirstCommand = chooseBotCommand(forceFirstState);
+const forceFirstDecisionMs = performance.now() - forceFirstStartedAt;
+assert.notEqual(forceFirstCommand?.type, "draw-research", "force-first bots should field more units before taking optional Research");
 const researchFirstState = stateWithTactic(researchState, "research-first");
-assert.equal(chooseBotCommand(researchFirstState)?.type, "draw-research", "research-first bots should draw early once a screen is deployed");
+const researchFirstStartedAt = performance.now();
+const researchFirstCommand = chooseBotCommand(researchFirstState);
+const researchFirstDecisionMs = performance.now() - researchFirstStartedAt;
+assert.equal(researchFirstCommand?.type, "draw-research", "research-first bots should draw early once a screen is deployed");
 const deployedAtStart = researchState.units.filter((unit) => unit.ownerPlayer === 1 && unit.location !== "record-tile" && unit.location !== "permanently-removed").length;
 assert.ok(deployedAtStart < 3, "the scenario should begin below the bot's three-unit attack group threshold");
 assert.notEqual(chooseBotCommand(researchState)?.type, "draw-research", "the bot should deploy its force before taking optional Research");
@@ -338,6 +348,7 @@ const routeState = beginBotMove(konkMatch);
 routeState.setupAssignments![1]!.branch = "Army";
 const routes = legalMonsterPaths(routeState, konkMatch.monsters[0]!.id);
 assert.ok(routes.length > 0, "the enemy monster should have legal routes for blocker evaluation");
+const routeScoringStartedAt = performance.now();
 for (const branch of ["Army", "Navy", "Air Force", "Marines"] as const) {
   routeState.setupAssignments![1]!.branch = branch;
   const defenseScores = routeBlockScores(routeState, 1, branch);
@@ -345,4 +356,6 @@ for (const branch of ["Army", "Navy", "Air Force", "Marines"] as const) {
   assert.ok([...defenseScores.keys()].some((key) => boardForState(routeState).hexes[key]?.features.some((feature) => feature.kind === "city")), `${branch} should cover 3D city spaces`);
   assert.ok([...defenseScores.keys()].some((key) => boardForState(routeState).hexes[key]?.features.some((feature) => feature.kind === "military-base")), `${branch} should cover military base spaces`);
 }
-console.log("Solo bots vary their tactics, protect city and base routes, coordinate attacks, and use monster-specific challenge plans.");
+const routeScoringMs = performance.now() - routeScoringStartedAt;
+console.log(`Solo bot profiles retain legal choices; force-first deploy ${forceFirstDecisionMs.toFixed(1)} ms, research-first deploy ${researchFirstDecisionMs.toFixed(1)} ms; route scores for four branches ${routeScoringMs.toFixed(1)} ms on the audited-board fixture.`);
+console.log("Solo bots protect city and base routes, coordinate attacks, and use monster-specific challenge plans.");

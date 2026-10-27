@@ -11,8 +11,18 @@ const source = [
   await readFile(resolve(root, "apps/web/src/board-camera.ts"), "utf8"),
   ...(await Promise.all(componentFiles.map((file) => readFile(file, "utf8")))),
 ].join("\n");
-const styles = (await Promise.all(["styles.css", "dice.css", "combat-stage.css", "fullscreen-shell.css", "civ-hud.css", "command-panels.css", "encounter-command.css", "physical-sheets.css"].map(file => readFile(resolve(root, "apps/web/src", file), "utf8")))).join("\n");
+const styles = (await Promise.all(["styles.css", "dice.css", "combat-stage.css", "fullscreen-shell.css", "civ-hud.css", "command-panels.css", "encounter-command.css", "physical-sheets.css", "board-terrain.css"].map(file => readFile(resolve(root, "apps/web/src", file), "utf8")))).join("\n");
+const boardMarkerText = await Promise.all([
+  ["city-health.svg", 26], ["city-1d.svg", 26], ["city-2d.svg", 26], ["city-3d.svg", 26],
+  ["infamy-site.svg", 26], ["mutation-site.svg", 26], ["challenge-site.svg", 17],
+  ["lair-gargantis.svg", 18], ["lair-konk.svg", 18], ["lair-megaclaw.svg", 18],
+  ["lair-tomanagi.svg", 18], ["lair-toxicor.svg", 18], ["lair-zorb.svg", 18],
+].map(async ([file, minimum]) => ({ file, minimum, source: await readFile(resolve(root, "apps/web/public/assets/board/overlays", file), "utf8") })));
 const failures = [];
+for (const { file, minimum, source: svg } of boardMarkerText) {
+  const textSizes = [...svg.matchAll(/<text\b[^>]*font-size="([\d.]+)"[^>]*>[^<]+<\/text>/g)].map((match) => Number(match[1]));
+  if (!textSizes.some((size) => size >= minimum)) failures.push(`board marker label is below its fit-zoom size floor: ${file}`);
+}
 
 const requiredSourceMarkers = [
   ["main landmark", /<main\b/],
@@ -20,8 +30,10 @@ const requiredSourceMarkers = [
   ["unsupported browser fallback", /className="unsupported-browser" role="main"[\s\S]*This browser cannot run the playtest[\s\S]*No match state has been started/],
   ["named map group", /aria-label=\"Board coordinate shell\"/],
   ["resolved board description requires verified cells", /const fullBoardVerified = \(renderedBoard\?\.id === AUDITED_BOARD\.id[\s\S]*every\(\(hex\) => hex\.verification === "verified"\)/],
+  ["audited board status is distinct from development rules", /const auditedBoard = fullBoardVerified[\s\S]*ruleset status[\s\S]*HUMAN-AUDITED NORTH AMERICA BOARD[\s\S]*Full monster, combat, card, National Guard, and Monster Challenge rules are still in development/],
+  ["audited board is identified in the map heading and accessible description", /complete 336-cell human-audited North America board is active[\s\S]*HUMAN-AUDITED TACTICAL MAP/],
   ["unresolved full shell disclosure", /full honeycomb coordinate shell is unresolved review tooling and is not a playable board/],
-  ["development board disclosure", /unresolved physical-board shell is not rendered as playable topology/],
+  ["development board disclosure", /unresolved coordinate shell is not rendered as playable topology/],
   ["hex accessible names", /aria-label=\{`[\s\S]*\$\{displayName\}[\s\S]*hex \$\{hex\.key\}/],
   ["live match status", /aria-live=\"polite\" aria-label=\"Match status\"/],
   ["persistent active player and phase status", /ACTIVE PLAYER[\s\S]*PHASE[\s\S]*CHALLENGE/],
@@ -56,14 +68,17 @@ const requiredSourceMarkers = [
   ["contextual decision rules help", /className="decision-rules-help"><summary>Rules for this step/],
   ["development fixture overlay", /development-fixture/],
   ["canonical adjacency styling", /activeNeighbours\.has\(placeKey\)/],
-  ["contextual board feature and edge details", /function featureLabel\(hex: BoardHex\)[\s\S]*Recorded edge barriers/],
+  ["contextual board feature and edge details", /boardHexFeatureLabel\(hex\)[\s\S]*Recorded edge barriers/],
+  ["board inspection tray remains outside the collapsible controls panel", /<header>[\s\S]*<BoardContextTray[^>]*className="board-context-tray-focus"/],
+  ["full accessible board feature descriptions", /const featureText = boardHexFeatureLabel\(hex\)[\s\S]*aria-label=\{`[\s\S]*\$\{featureText\}[\s\S]*data-feature-description=\{featureText\}/],
+  ["audited coordinate accessible detail", /const auditCellText = hex\.audit \? `physical cell \$\{hex\.audit\.row\}, \$\{hex\.audit\.column\}`[\s\S]*\$\{auditCellText \? `, \$\{auditCellText\}`/],
   ["selected piece contextual tray", /className="piece-detail-tray monster-command-record" aria-label="Selected piece details"/],
   ["hex hover and focus explanations", /title=\{tooltipText\}/],
   ["consistent metric icon treatment", /className="metric-icon"[\s\S]*aria-hidden="true"/],
   ["viewport-fitted gameplay shell", /className=\{`game-screen/],
   ["on-demand game details toggle", /aria-controls="turn-hud-body" aria-label=\{gamePanelOpen/],
   ["named game controls panel", /id="game-side-panel" className="game-side-panel" aria-label="Game controls and information"/],
-  ["private hand details", /aria-label=\{`Private hand for Player/],
+  ["player card-action details", /aria-label=\{`Card actions for Player/],
   ["apostrophe-safe card artwork slugs", /replaceAll\("'", ""\)/],
   ["card rule metadata", /aria-label=\{`\$\{cardId\} rule metadata`/],
   ["card source and target boundaries", /Target and confirmation:[\s\S]*Source:/],
@@ -73,6 +88,7 @@ const requiredSourceMarkers = [
   ["encounter resolution action", /activeGame\.pendingDecision\?\.type === "encounter-resolution"[\s\S]*Resolve encounter/],
   ["audio feedback categories", /playSound\(category/],
   ["persisted audio settings", /type="range" min="0" max="1"/],
+  ["named local board theme selector", /aria-label="Board theme"[\s\S]*option value="classic"[\s\S]*option value="moonlit"[\s\S]*option value="desert"/],
 ];
 for (const [label, marker] of requiredSourceMarkers) if (!marker.test(source)) failures.push(`missing ${label}`);
 if (/className="map-copy"|className="region-label/.test(source)) {
@@ -105,6 +121,9 @@ const requiredStyleMarkers = [
   ["eight-piece live stack classes", /stack-count-7[^}]*stack-count-8/],
   ["legal path above board layers", /\.path-preview\{[^}]*z-index:6/],
   ["audio range controls", /\.settings-audio input\[type="range"\]/],
+  ["board themes affect terrain artwork only", /data-board-theme="moonlit"[^\n]*audited-terrain[\s\S]*data-board-theme="desert"[^\n]*audited-terrain/],
+  ["audited city labels respond to larger-text preference", /\.large-text \.audited-grid \.hex-tile \.audited-city-name\{font-size:clamp\(/],
+  ["focused board inspection opens its contextual tray", /\.game-screen\.game-panel-closed:has\(\.hex-tile:focus\) \.board-context-tray-focus \{ display:grid; \}/],
 ];
 for (const [label, marker] of requiredStyleMarkers) if (!marker.test(styles)) failures.push(`missing ${label}`);
 

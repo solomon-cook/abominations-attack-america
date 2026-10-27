@@ -10,7 +10,7 @@ if (SOURCED_CARD_RULES.length !== CARD_DEFINITIONS.length) {
 }
 for (const card of CARD_DEFINITIONS) {
   const rule = sourcedCardRule(card.id);
-  if (!rule || rule.id !== card.id || !rule.transcription.trim() || !rule.timing.trim() || !rule.duration.trim() || rule.sourceRefs.length === 0 || !rule.effectsImplementation) {
+  if (!rule || rule.id !== card.id || !rule.transcription.trim() || !rule.timing.trim() || !rule.duration.trim() || rule.sourceRefs.length === 0 || !rule.effectsImplementation || card.visibility !== "face-up-public") {
     throw new Error(`Card ${card.id} is missing complete source-backed rule metadata.`);
   }
 }
@@ -27,9 +27,11 @@ const lines = [
   "",
   "## Available cards",
   "",
-  "| Deck | Card | Classification | Stacking policy | Effect status |",
-  "| --- | --- | --- | --- | --- |",
-  ...available.map((card) => `| ${card.deck} | ${card.id} | ${sourcedCardRule(card.id)?.classification ?? "not catalogued"} | ${cardStackingRule(card.id)?.policy ?? "source-gated"} | implemented |`),
+  "Drawn cards are public face up under the original rulebook (p. 13); deck order and discard contents remain private.",
+  "",
+  "| Deck | Card | Classification | Visibility | Stacking policy | Effect status |",
+  "| --- | --- | --- | --- | --- | --- |",
+  ...available.map((card) => `| ${card.deck} | ${card.id} | ${sourcedCardRule(card.id)?.classification ?? "not catalogued"} | face-up public | ${cardStackingRule(card.id)?.policy ?? "source-gated"} | implemented |`),
   "",
   "## Source-gated cards",
   "",

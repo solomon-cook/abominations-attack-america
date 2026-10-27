@@ -14,6 +14,9 @@ const destination = candidateOnly ? path.join(base,'candidate-delivery') : publi
 const sourceArgument = process.argv.find(argument=>argument.startsWith('--source='))?.slice(9);
 const source = sourceArgument ? path.resolve(root,sourceArgument) : path.join(base, 'seamless-board-candidate.png');
 const geometry = JSON.parse(await fs.readFile(path.join(base, 'manifest.json')));
+const auditSource = path.join(root, 'docs/authoritative-board-human-audit.md');
+const auditSha256 = crypto.createHash('sha256').update(await fs.readFile(auditSource)).digest('hex');
+if (geometry.sourceSha256 !== auditSha256) throw new Error('Board art geometry is stale; run scripts/build-board-art-guides.mjs first.');
 const originalPath = path.join(base, 'original-delivery-manifest.json');
 try { await fs.access(originalPath); } catch { await fs.copyFile(path.join(published, 'manifest.json'), originalPath); }
 const original = JSON.parse(await fs.readFile(originalPath));
@@ -43,7 +46,7 @@ for (const cell of Object.values(geometry.cells)) {
   assets[asset] = {source:path.relative(root,source),sha256,crop,sourceAsset:previous.asset,sourceMaster:original.assets[previous.asset].source,derivatives};
 }
 await sharp(buffer).webp({quality:85,effort:0}).toFile(path.join(destination,'overview.webp'));
-const runtime = {version:2,boardId:original.boardId,sourceSha256:original.sourceSha256,cells};
+const runtime = {version:2,boardId:original.boardId,sourceSha256:auditSha256,cells};
 const manifest = {...runtime,encoding:'continuous-webp-q82-e0-v2',status:'assembled-edit-awaiting-final-review',missing:[],assets,sourceMasters:original.assets,
   assembly:{source:path.relative(root,source),sha256,width:metadata.width,height:metadata.height,tool:'image_gen',note:'Whole-map seam correction derived from all 81 generated masters. Delivery sizes are resampled from this assembly; they do not add native source detail.'},
   overview:'/assets/board/audited/overview.webp',sizes:[256,512,1024],totals:Object.fromEntries([256,512,1024].map(size=>[`${size}Bytes`,Object.values(assets).reduce((n,r)=>n+r.derivatives[size].bytes,0)]))};

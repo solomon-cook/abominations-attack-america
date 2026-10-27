@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
+import { mkdir } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { createServer as createNetServer } from "node:net";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import process from "node:process";
 import { createRequire } from "node:module";
 import { chromePath } from "./chrome-path.mjs";
@@ -70,8 +71,24 @@ const checkSetup = async (page) => {
   assert.ok(abilities.length >= 6, "monster selection should show every monster ability");
   assert.ok(abilities.every((ability) => ability.visible && (ability.lineClamp === "none" || ability.lineClamp === "0") && ability.textOverflow === "visible" && !ability.textClipped && !ability.abilityClipped), `all monster ability text should remain readable without hover: ${JSON.stringify(abilities)}`);
   const { width, height } = page.viewportSize();
-  await page.screenshot({ path: `output/board-art/setup-monsters-${width}x${height}.png` });
   for (let attempt = 0; attempt < 16 && await page.locator(".setup-panel").count(); attempt += 1) {
+    const setupHeading = (await page.locator(".setup-panel h2").textContent().catch(() => ""))?.trim();
+    if (setupHeading === "Place unused branches") {
+      const placedBases = new Map();
+      for (const select of await page.locator(".unused-branch-placement select").all()) {
+        const label = await select.getAttribute("aria-label") ?? "";
+        const branch = /^(Army|Navy|Air Force|Marines) /.exec(label)?.[1];
+        assert.ok(branch, `unused-branch placement should identify its branch: ${label}`);
+        const usedByBranch = placedBases.get(branch) ?? new Set();
+        const option = await select.locator('option:not([disabled])[value]:not([value=""])').evaluateAll((options, used) => options.find((candidate) => !used.includes(candidate.value))?.value, [...usedByBranch]);
+        assert.ok(option, `${await select.getAttribute("aria-label")} should have an available audited base`);
+        await select.selectOption(option);
+        usedByBranch.add(option);
+        placedBases.set(branch, usedByBranch);
+      }
+      await page.getByRole("button", { name: "Place units and continue", exact: true }).click();
+      continue;
+    }
     const list = page.locator(".lair-selection-prompt details");
     if (await list.count() && !(await list.evaluate((node) => node.open))) await list.locator("summary").click();
     const choices = page.locator(".setup-panel .setup-options button:visible:not(:disabled)");
@@ -141,12 +158,56 @@ const inspectTrophyBadge = async (page) => page.evaluate(() => {
 });
 
 try {
-  for (const [width, height] of [[1280, 720], [390, 844], [320, 740]]) {
-    const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, isMobile: width <= 600, hasTouch: width <= 600 });
+  const visualCapture = Boolean(process.env.BROWSER_TEST_SCREENSHOT_PATH);
+  const viewportCases = process.env.BROWSER_LOCAL_VIEWPORTS
+    ? process.env.BROWSER_LOCAL_VIEWPORTS.split(",").map((size) => size.split("x").map(Number))
+    : [[1280, 720], [390, 844], [320, 740]];
+  assert.ok(viewportCases.every(([width, height]) => Number.isInteger(width) && Number.isInteger(height) && width > 0 && height > 0), "BROWSER_LOCAL_VIEWPORTS must use comma-separated WIDTHxHEIGHT values");
+  for (const [width, height] of viewportCases) {
+    const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, isMobile: width <= 600, hasTouch: width <= 600, ...(process.env.BROWSER_TEST_REDUCED_MOTION === "1" ? { reducedMotion: "reduce" } : {}) });
     const page = await context.newPage();
     page.on("pageerror", (error) => failures.push(`${width}x${height}: ${error.message}`));
+    if (visualCapture) {
+      await page.addInitScript(() => {
+        const nativeGetRandomValues = crypto.getRandomValues.bind(crypto);
+        Object.defineProperty(crypto, "getRandomValues", { configurable: true, value: (array) => {
+          if (array instanceof Uint32Array && array.length === 1) { array[0] = 1; return array; }
+          return nativeGetRandomValues(array);
+        } });
+      });
+    }
     await page.goto(url, { waitUntil: "domcontentloaded" });
+    const difficultyPicker = page.getByRole("combobox", { name: "Bot difficulty" });
+    assert.equal(await difficultyPicker.isVisible(), true, `${width}x${height} home screen should expose bot difficulty`);
+    assert.deepEqual(await difficultyPicker.locator("option").allTextContents(), [
+      "Casual · relaxed defense, more Research",
+      "Tactical · mixed match-seeded strategy",
+      "Challenging · force-first route blocking",
+    ], "solo bot levels should be clearly labelled");
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, `${width}x${height} home screen should not gain horizontal overflow`);
+    const difficultyBounds = await difficultyPicker.boundingBox();
+    assert.ok(difficultyBounds && difficultyBounds.x >= 0 && difficultyBounds.x + difficultyBounds.width <= width, `${width}x${height} bot difficulty should fit horizontally`);
     await checkSetup(page);
+    if (visualCapture) {
+      await page.evaluate(async () => { await document.fonts.ready; });
+      await page.waitForFunction(() => {
+        const viewport = document.querySelector(".board-viewport");
+        if (!viewport) return false;
+        const bounds = viewport.getBoundingClientRect();
+        const visibleTerrain = [...viewport.querySelectorAll(".audited-terrain")].filter((image) => {
+          const rect = image.getBoundingClientRect();
+          return rect.right > bounds.left && rect.left < bounds.right && rect.bottom > bounds.top && rect.top < bounds.bottom;
+        });
+        return visibleTerrain.length > 0 && visibleTerrain.every((image) => image.complete && image.naturalWidth > 0);
+      }, null, { timeout: 30000 });
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      await mkdir(dirname(process.env.BROWSER_TEST_SCREENSHOT_PATH), { recursive: true });
+      await page.screenshot({ path: process.env.BROWSER_TEST_SCREENSHOT_PATH, animations: "disabled" });
+      assert.deepEqual(failures.splice(0), [], "the browser should not report runtime errors");
+      console.log(JSON.stringify({ ok: true, viewport: `${width}x${height}`, board: "human-audited-north-america", cells: 336, checkpoint: "post-setup" }));
+      await context.close();
+      continue;
+    }
     if (width > 700) {
       for (const [testWidth, testHeight] of width === 1280 ? [[1280, 720], [768, 1024]] : [[width, height]]) {
         if (testWidth !== width || testHeight !== height) await page.setViewportSize({ width: testWidth, height: testHeight });
@@ -175,8 +236,15 @@ try {
     if (width > 700) {
       assert.ok(await page.locator(".movement-piece").first().isVisible(), "desktop order cards should be visible");
       const queue = await page.locator(".movement-checklist").boundingBox();
+      const orderCount = await page.locator(".movement-piece").count();
       assert.ok(queue && Math.abs(queue.x + queue.width / 2 - width / 2) <= 2, `desktop orders should be horizontally centered: ${JSON.stringify(queue)}`);
-      assert.ok(queue.width < 360, `short rosters should not leave a wide empty order panel: ${JSON.stringify(queue)}`);
+      const overlaps = (a, b) => a && b && a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+      assert.equal(overlaps(layout.queue, layout.command), false, `${width}x${height} movement orders overlap the active command dock`);
+      const expectedQueueWidth = Math.min(720, Math.max(184, orderCount * 97 + 30));
+      assert.ok(queue.width <= expectedQueueWidth + 2, `movement orders should size to the current roster or the 720px scrollable cap: count=${orderCount} queue=${JSON.stringify(queue)}`);
+      if (orderCount * 97 + 30 > expectedQueueWidth) {
+        assert.ok(await page.locator(".movement-piece-list").evaluate((node) => node.scrollWidth > node.clientWidth), `long movement rosters should scroll within the bounded order panel: count=${orderCount} queue=${JSON.stringify(queue)}`);
+      }
       if (width === 1280) {
         await page.setViewportSize({ width: 2048, height: 400 });
         const panoramicQueue = await page.locator(".movement-checklist").boundingBox();
@@ -227,6 +295,7 @@ try {
       const overlaps = (a, b) => a && b && a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
       assert.equal(overlaps(layout.minimap, layout.queue), false, `${width}x${height} minimap overlaps movement queue`);
       assert.equal(overlaps(layout.minimap, layout.command), false, `${width}x${height} minimap overlaps command sheet`);
+      assert.equal(overlaps(layout.queue, layout.record), false, `${width}x${height} movement orders overlap the open player record`);
       await page.screenshot({ path: `output/board-art/ui-minimap-${width}x${height}.png` });
       await page.getByRole("button", { name: "Minimize monster, military and map record" }).click();
       layout = await inspectLayout(page, width, height);
@@ -282,6 +351,7 @@ try {
     await context.close();
   }
 
+  if (!visualCapture) {
   const soloContext = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   const soloPage = await soloContext.newPage();
   soloPage.setDefaultTimeout(10000);
@@ -294,9 +364,61 @@ try {
     } });
   });
   await soloPage.goto(url, { waitUntil: "domcontentloaded" });
-  await soloPage.getByRole("button", { name: "Play solo vs bots", exact: true }).click();
+  const rulesChallenge = soloPage.locator(".rules-challenge");
+  await rulesChallenge.locator("summary").press("Enter");
+  await soloPage.getByRole("heading", { name: "What comes immediately after the Move phase?" }).waitFor({ state: "visible" });
+  await soloPage.getByRole("button", { name: "Fight", exact: true }).focus();
+  await soloPage.keyboard.press("Enter");
+  await soloPage.getByRole("status").filter({ hasText: "Correct." }).waitFor({ state: "visible" });
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "Take another Move", exact: true }).click();
+  await soloPage.getByRole("status").filter({ hasText: "Not quite." }).waitFor({ state: "visible" });
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "After Fight", exact: true }).click();
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("heading", { name: /After a monster retreats from a normal battle/ }).waitFor({ state: "visible" });
+  await soloPage.getByRole("button", { name: "Neither the battle space nor its destination" }).click();
+  await soloPage.getByRole("status").filter({ hasText: "Correct." }).waitFor({ state: "visible" });
+  assert.equal(await soloPage.getByRole("link", { name: "Review this rule" }).getAttribute("href"), "/reference.html#retreating-after-normal-battle");
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "It disappears" }).click();
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "The active player chooses, then draws Military Research" }).click();
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "Only the space where it stopped" }).click();
+  assert.equal(await soloPage.getByRole("link", { name: "Review this rule" }).getAttribute("href"), "/reference.html#monster-movement");
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "Fly", exact: true }).click();
+  assert.equal(await soloPage.getByRole("link", { name: "Review this rule" }).getAttribute("href"), "/reference.html#monster-movement");
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "Roll two dice and gain their total, up to 40 Health" }).click();
+  assert.equal(await soloPage.getByRole("link", { name: "Review this rule" }).getAttribute("href"), "/reference.html#stomping-a-city");
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "No units; Research replaces deployment" }).click();
+  assert.equal(await soloPage.getByRole("link", { name: "Review this rule" }).getAttribute("href"), "/reference.html#deploying");
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "The monster whose player took the final marker" }).click();
+  assert.equal(await soloPage.getByRole("link", { name: "Review this rule" }).getAttribute("href"), "/reference.html#monster-challenge");
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "After all eligible monster opponents are defeated" }).click();
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "The giant unit's controller" }).click();
+  assert.equal(await soloPage.getByRole("link", { name: "Review this rule" }).getAttribute("href"), "/reference.html#monster-challenge");
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "One additional point of damage" }).click();
+  assert.equal(await soloPage.getByRole("link", { name: "Review this rule" }).getAttribute("href"), "/reference.html#attack-resolution");
+  await soloPage.getByRole("button", { name: "Next question" }).click();
+  await soloPage.getByRole("button", { name: "Military units only" }).click();
+  assert.equal(await soloPage.getByRole("link", { name: "Review this rule" }).getAttribute("href"), "/reference.html#attack-resolution");
+  await soloPage.getByRole("button", { name: "See result" }).click();
+  await soloPage.getByRole("status").filter({ hasText: "14 of 15 correct" }).waitFor({ state: "visible" });
+  await soloPage.getByRole("button", { name: "Try again" }).click();
+  assert.equal(await soloPage.locator(".game-screen").count(), 0, "rules practice must not create or change a match");
+  await soloPage.getByRole("combobox", { name: "Number of players" }).selectOption("4");
+  await soloPage.getByRole("combobox", { name: "Bot difficulty" }).selectOption("casual");
+  await soloPage.getByRole("button", { name: "Guided first-turn scenario", exact: true }).click();
   await soloPage.locator(".setup-panel").waitFor({ state: "visible" });
-  for (let attempt = 0; attempt < 16 && await soloPage.locator(".setup-panel").count(); attempt += 1) {
+  for (let attempt = 0; attempt < 32 && await soloPage.locator(".setup-panel").count(); attempt += 1) {
     const list = soloPage.locator(".lair-selection-prompt details");
     if (await list.count() && !(await list.evaluate((node) => node.open))) await list.locator("summary").click();
     const konk = soloPage.getByRole("button", { name: /^Choose Konk\./ });
@@ -308,17 +430,44 @@ try {
   }
   await soloPage.locator(".setup-panel").waitFor({ state: "detached" });
   await soloPage.waitForFunction(() => document.querySelector(".action-card h2")?.textContent?.includes("Move"));
+  const scenarioGuidance = await soloPage.locator(".solo-scenario-guidance").innerText();
+  assert.match(scenarioGuidance, /FIRST-TURN SCENARIO/i);
+  assert.match(scenarioGuidance, /Your objective · resolve Move/);
+  assert.equal(await soloPage.locator("main.game-screen").getAttribute("data-board-id"), "human-audited-north-america");
 
   const playerOneName = (await soloPage.locator(".persistent-record .record-preview strong").textContent())?.trim();
   assert.ok(playerOneName, "the solo player's monster record should be present before the first turn");
   assert.equal(playerOneName, "Konk", "the city-stomp fixture should use a monster without a forced city choice");
-  const legalCity = soloPage.locator(".hex-tile.legal[aria-label*='city,']").first();
-  assert.ok(await legalCity.count(), "Konk should be able to reach a city from the selected audited-board lair");
+  const legalCity = soloPage.locator(".hex-tile.legal[data-audit-cell='5/1']");
+  assert.ok(await legalCity.count(), "Konk should be able to reach the audited San Francisco space from the selected lair");
   await legalCity.click();
   await soloPage.getByRole("button", { name: "Confirm move", exact: true }).first().click();
-  const continueFromMove = soloPage.getByRole("button", { name: "Continue to Fight", exact: true });
-  if (await continueFromMove.isVisible().catch(() => false)) await continueFromMove.click();
-  await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("Encounter"));
+  for (let step = 0; step < 48; step += 1) {
+    if ((await soloPage.locator(".action-card h2").textContent())?.trim() !== "Move") break;
+    const hold = soloPage.locator(".action-dock button").filter({ hasText: /^(Hold this unit|Hold .+|Continue to Fight)$/ }).first();
+    if (await hold.isVisible().catch(() => false)) {
+      await hold.click();
+      continue;
+    }
+    const nextOrder = soloPage.locator(".movement-piece:not(.completed)").first();
+    if (await nextOrder.count()) {
+      await nextOrder.click();
+      continue;
+    }
+    break;
+  }
+  try {
+    await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("Encounter"));
+  } catch (error) {
+    const state = await soloPage.evaluate(() => ({
+      turnSummary: document.querySelector(".top-turn-summary")?.textContent?.trim(),
+      action: document.querySelector(".action-card h2")?.textContent?.trim(),
+      prompt: document.querySelector(".deployment-prompt")?.textContent?.trim(),
+      playback: [...document.querySelectorAll(".board-event-playback")].map((node) => ({ action: node.dataset.eventAction, title: node.textContent?.trim().slice(0, 100) })),
+    }));
+    throw new Error(`San Francisco move did not enter Encounter: ${JSON.stringify(state)}; ${error instanceof Error ? error.message : String(error)}`);
+  }
+  assert.match(await soloPage.locator(".solo-scenario-guidance").innerText(), /Your objective · resolve Encounter/);
   const routineStompButton = soloPage.locator(".board-event-playback.is-interactive .board-event-roll-all");
   await routineStompButton.waitFor({ state: "visible" });
   assert.match((await routineStompButton.textContent()) ?? "", /Roll all 2 dice/, "the two-die San Francisco benefit should offer one all-dice action");
@@ -347,6 +496,7 @@ try {
     }
   }
   await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("Deploy"));
+  assert.match(await soloPage.locator(".solo-scenario-guidance").innerText(), /Your objective · resolve Deploy/);
   await soloPage.locator(".board-action-bar .action-dock > button").click();
   await soloPage.getByRole("button", { name: /Military research/ }).last().click();
   await soloPage.getByRole("button", { name: "Draw a Military Research card instead of deploying a unit" }).click();
@@ -357,6 +507,7 @@ try {
   if (await militaryClose.isVisible().catch(() => false)) await militaryClose.click();
 
   await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("BOT TURN"));
+  await soloPage.waitForFunction(() => document.querySelector(".bot-turn-guidance")?.textContent?.includes("Casual opponent."));
   const botCamera = await soloPage.locator(".map-canvas").getAttribute("style");
   assert.equal(botCamera, humanCamera, "a solo bot turn should leave the camera on the player's board view");
   const followBot = soloPage.getByRole("button", { name: "Follow bot", exact: true });
@@ -391,9 +542,13 @@ try {
     return { foreground: style.color, background: style.backgroundColor };
   });
   assert.ok(contrastRatio(followColors.foreground, followColors.background) >= 4.5, `the selected follow control should retain AA text contrast: ${JSON.stringify(followColors)}`);
+  await soloPage.waitForFunction(() => document.querySelector(".solo-scenario-guidance")?.textContent?.includes("Scenario complete"), undefined, { timeout: 180000 });
+  assert.match(await soloPage.locator(".solo-scenario-guidance").innerText(), /returned to your next turn/i);
+  assert.equal(await soloPage.locator(".board-action-bar .action-dock > button").isDisabled(), false, "the completed scenario should leave the normal next turn playable");
   assert.deepEqual(failures.splice(0), [], "the solo browser flow should not report runtime errors");
-  console.log(JSON.stringify({ ok: true, mode: "solo", check: "routine city dice play inline; player record stays interactive; camera follow is opt-in" }));
+  console.log(JSON.stringify({ ok: true, mode: "solo", check: "guided first turn completes; routine city dice play inline; player record stays interactive; camera follow is opt-in" }));
   await soloContext.close();
+  }
 } finally {
   await browser.close();
   if (server && server.exitCode === null) {

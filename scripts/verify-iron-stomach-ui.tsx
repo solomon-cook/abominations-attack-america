@@ -10,6 +10,7 @@ const { EncounterOverlay } = require("../apps/web/src/components/EncounterOverla
 const html = renderToStaticMarkup(React.createElement(EncounterOverlay, {
   open: true,
   canAct: true,
+  pendingChoice: true,
   monsterName: "Zorb",
   locationName: "Denver Military Base",
   eventId: "iron-stomach-choice",

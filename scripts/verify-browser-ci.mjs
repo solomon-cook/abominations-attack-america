@@ -3,14 +3,6 @@ import process from "node:process";
 import { join } from "node:path";
 import { createServer as createNetServer } from "node:net";
 
-const port = Number(process.env.BROWSER_CI_PORT ?? 5190);
-const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${port}/`;
-const parseJsonRecord = (output) => JSON.parse(output.trim().split(/\r?\n/).filter((line) => line.trim().startsWith("{")).at(-1));
-const server = spawn(process.execPath, [join(process.cwd(), "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(port)], { cwd: join(process.cwd(), "apps/web"), stdio: ["ignore", "pipe", "pipe"] });
-let serverOutput = "";
-server.stdout.on("data", (chunk) => { serverOutput += chunk.toString(); });
-server.stderr.on("data", (chunk) => { serverOutput += chunk.toString(); });
-
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const freePort = () => new Promise((resolve, reject) => {
   const probe = createNetServer();
@@ -25,8 +17,18 @@ const freePort = () => new Promise((resolve, reject) => {
     probe.close((error) => error ? reject(error) : resolve(address.port));
   });
 });
+const port = Number(process.env.BROWSER_CI_PORT ?? await freePort());
+const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${port}/`;
+const parseJsonRecord = (output) => JSON.parse(output.trim().split(/\r?\n/).filter((line) => line.trim().startsWith("{")).at(-1));
+const ownsServer = !process.env.BROWSER_TEST_URL;
+const server = ownsServer
+  ? spawn(process.execPath, [join(process.cwd(), "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1", "--port", String(port)], { cwd: join(process.cwd(), "apps/web"), stdio: ["ignore", "pipe", "pipe"] })
+  : undefined;
+let serverOutput = "";
+server?.stdout.on("data", (chunk) => { serverOutput += chunk.toString(); });
+server?.stderr.on("data", (chunk) => { serverOutput += chunk.toString(); });
 const stopServer = () => new Promise((resolve) => {
-  if (server.exitCode !== null) {
+  if (!server || server.exitCode !== null) {
     resolve();
     return;
   }
@@ -41,6 +43,11 @@ const stopServer = () => new Promise((resolve) => {
   server.kill("SIGTERM");
 });
 const waitForServer = async () => {
+  if (!server) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Browser test URL returned ${response.status}: ${url}`);
+    return;
+  }
   for (let attempt = 0; attempt < 120; attempt += 1) {
     try {
       await fetch(url);
