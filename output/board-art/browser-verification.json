@@ -1,75 +1,98 @@
 {
-  "started": "2026-09-26T17:00:43.519Z",
+  "started": "2026-10-11T15:26:18.411Z",
   "pendingArtAllowed": false,
+  "inspectionOnly": false,
   "viewports": [
     {
-      "width": 1280,
-      "height": 720,
+      "width": 320,
+      "height": 740,
       "checks": [
         "user setup completed; 336 cells",
+        "compact phone player control shows the full active monster name",
+        "all 336 accessible names include cell identity and full feature detail; city benefits and base branches are explicit; phone fit suppresses city microtext while focused inspection provides readable names and benefits",
+        "movement-order names wrap without clipping and expose full accessible labels",
+        "portrait gameplay uses a height-aware tactical board scale",
         "details preserves camera",
-        "bounds/wheel/drag/minimap/keyboard/touch/resize",
-        "movement confirmed; encounter resolved; research alternative used"
+        "wheel zoom changes scale",
+        "one-finger touch pan changes camera without issuing a tile action",
+        "two-finger touch pinch changes camera zoom",
+        "bounds/wheel/drag/touch/resize/full-board-fit",
+        "movement confirmed; encounter resolved; legal unit deployed on the board"
       ],
       "errors": [],
+      "fullBoardFit": {
+        "zoom": 1,
+        "cellCount": 336,
+        "allCellsInsideViewport": true
+      },
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 186,
-          "loadMs": 188
+          "domContentLoadedMs": 139,
+          "loadMs": 140
         },
         "terrain": {
           "measurement": "Cumulative after setup, camera interactions, movement, encounter and research alternative; viewport has a fresh browser context.",
-          "resourceCount": 820,
-          "uniqueResourceCount": 788,
-          "transferBytes": 4050004,
-          "encodedBodyBytes": 3928686,
-          "decodedBodyBytes": 3928686,
+          "resourceCount": 336,
+          "uniqueResourceCount": 336,
+          "transferBytes": 954300,
+          "encodedBodyBytes": 853500,
+          "decodedBodyBytes": 853500,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 363,
-            "512": 317,
-            "1024": 140
+            "256": 336,
+            "512": 0,
+            "1024": 0
           }
         }
       },
       "passed": true
     },
     {
-      "width": 390,
-      "height": 844,
+      "width": 844,
+      "height": 390,
       "checks": [
         "user setup completed; 336 cells",
+        "all 336 accessible names include cell identity and full feature detail; city benefits and base branches are explicit; visible city labels fit without clipping and honor larger-text preference; focused hex opens visible feature inspection",
+        "movement-order names wrap without clipping and expose full accessible labels",
         "details preserves camera",
-        "bounds/wheel/drag/touch/resize",
+        "wheel zoom changes scale",
+        "one-finger touch pan changes camera without issuing a tile action",
+        "two-finger touch pinch changes camera zoom",
+        "bounds/wheel/drag/touch/resize/full-board-fit",
         "movement confirmed; encounter resolved; research alternative used"
       ],
       "errors": [],
+      "fullBoardFit": {
+        "zoom": 1,
+        "cellCount": 336,
+        "allCellsInsideViewport": true
+      },
       "brokenImages": [],
       "resources": {
         "navigation": {
-          "domContentLoadedMs": 173,
-          "loadMs": 175
+          "domContentLoadedMs": 135,
+          "loadMs": 137
         },
         "terrain": {
           "measurement": "Cumulative after setup, camera interactions, movement, encounter and research alternative; viewport has a fresh browser context.",
-          "resourceCount": 610,
-          "uniqueResourceCount": 577,
-          "transferBytes": 3004528,
-          "encodedBodyBytes": 2903698,
-          "decodedBodyBytes": 2903698,
+          "resourceCount": 336,
+          "uniqueResourceCount": 336,
+          "transferBytes": 954300,
+          "encodedBodyBytes": 853500,
+          "decodedBodyBytes": 853500,
           "currentDecodedImageCount": 336,
           "estimatedCurrentBitmapBytes": 76382208,
           "sizes": {
-            "256": 369,
-            "512": 168,
-            "1024": 73
+            "256": 336,
+            "512": 0,
+            "1024": 0
           }
         }
       },
       "passed": true
     }
   ],
-  "finished": "2026-09-26T17:01:01.991Z"
+  "finished": "2026-10-11T15:29:45.619Z"
 }

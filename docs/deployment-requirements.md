@@ -8,14 +8,14 @@ This document records infrastructure requirements before a hosting provider is s
 | --- | --- | --- |
 | Web | Static asset delivery with SPA fallback, HTTPS, compressed JS/CSS/WebP, cache invalidation | Vite production build and optimized board assets pass locally |
 | API | Durable compute for HTTP room commands, WebSocket broadcasts, polling fallback, bounded request bodies, structured logs | Node API server implements HTTP/WebSocket/polling paths locally |
-| Database | Managed Postgres with Prisma migrations, transactions, backups, restore, least-privilege runtime credentials | Prisma schema/migrations and fake-adapter contract exist; no live production database is configured |
+| Database | Postgres with Prisma migrations, transactions, backups, restore, least-privilege runtime credentials, and separate pooled application/direct migration-notification connection strings where required | Prisma schema/migrations and fake-adapter contract exist; `DATABASE_URL` is used for Prisma queries and `DIRECT_URL` for CLI migrations and room `LISTEN/NOTIFY`; no live production database is configured |
 | Realtime | WSS support, idle connection limits, proxy upgrade support, reconnect-safe routing | Local WebSocket path and browser polling fallback exist; no hosted proxy has been verified |
-| Secrets | Separate web/API environment values, database URL, allowed origin, and operational credentials | Local environment configuration is documented in code; `ERROR_ALERT_URL` is an optional redacted threshold-alert destination; secret manager and rotation remain outstanding |
+| Secrets | Separate web/API environment values, database URL, allowed origin, and operational credentials | Local environment configuration is documented in code; `ERROR_ALERT_URL` is optional, HTTPS-only, and sends bounded category/count metadata; secret manager and rotation remain outstanding |
 | Observability | Health checks, token-free metrics, structured logs, external dashboards and alerts | `/health`, `/metrics`, and redacted operational logs exist locally |
 
 ## Environment separation
 
-Staging and production must have separate URLs, databases, secrets, allowed origins, rate-limit policy, logs, and alert destinations. A deployment must not point a test build at production data or reuse production credentials in CI.
+Staging and production must have separate URLs, databases, `DATABASE_URL` and `DIRECT_URL` values, allowed origins, rate-limit policy, logs, and alert destinations. A deployment must not point a test build at production data or reuse production credentials in CI.
 
 ## Release safeguards
 
@@ -26,7 +26,7 @@ Staging and production must have separate URLs, databases, secrets, allowed orig
 5. Run real browser create/join/play/reconnect/spectate smoke tests.
 6. Promote only after board, rules, accessibility, content/IP, privacy, and security sign-offs are recorded.
 
-The current repository is at the local foundation stage: no provider, staging URL, production URL, live Postgres instance, backup drill, or external alert sink is claimed here.
+The current repository has a Vercel-hosted web frontend, but not a verified hosted game API. The production page responds, but the served client targets `http://localhost:8787` and the domain's `/health` and `/metrics` routes return 404; the read-only deployment probe fails at `/health`. The Vercel project lists encrypted Postgres environment variables for both Production and Preview, but the values and database separation were not inspected. No database-health, persistence, backup/restore, or external-alert evidence is recorded. See [`config/hosting-observation.json`](../config/hosting-observation.json) for the dated snapshot.
 
 ## Read-only deployment probe
 

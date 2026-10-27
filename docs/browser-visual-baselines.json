@@ -2,67 +2,37 @@
   "desktop": {
     "width": 1280,
     "height": 720,
-    "sha256": "a699cd255f15be9da29b5a6fc96b7c11a05d5573d3d51a85d79d74012e733b8b",
+    "sha256": "af3e3eb9eb45bd3dec0677f911a8b3d63b854803c65107db946bd5bcc0970799",
     "smoke": {
       "ok": true,
       "viewport": "1280x720",
-      "setup": "complete",
-      "accessibleControls": "verified",
-      "touchTargets": "verified",
-      "invalidAction": "disabled-unreachable-destination",
-      "loadingState": "verified",
-      "pathCancel": "verified",
-      "pathConfirmation": "verified",
-      "fight": "verified",
-      "fightSurface": "verified",
-      "encounter": "verified",
-      "deployment": "verified",
-      "concessionTerminal": "verified",
-      "nextPhase": "Move"
+      "board": "human-audited-north-america",
+      "cells": 336,
+      "checkpoint": "post-setup"
     }
   },
   "tablet": {
     "width": 834,
     "height": 1112,
-    "sha256": "6645f28aa55d1463f7c35b06252f90d701e0c4982f8872bc5f2e486ea4383c13",
+    "sha256": "c14eaf7584d31e52c000300129cc178e408a18cf64d316285cc964981310780b",
     "smoke": {
       "ok": true,
       "viewport": "834x1112",
-      "setup": "complete",
-      "accessibleControls": "verified",
-      "touchTargets": "verified",
-      "invalidAction": "disabled-unreachable-destination",
-      "loadingState": "verified",
-      "pathCancel": "verified",
-      "pathConfirmation": "verified",
-      "fight": "verified",
-      "fightSurface": "verified",
-      "encounter": "verified",
-      "deployment": "verified",
-      "concessionTerminal": "verified",
-      "nextPhase": "Move"
+      "board": "human-audited-north-america",
+      "cells": 336,
+      "checkpoint": "post-setup"
     }
   },
   "mobile": {
     "width": 390,
     "height": 844,
-    "sha256": "f253069deecbf1bba8570bee5399bf6c11e1687674c5c3741f548ed2f4821912",
+    "sha256": "38dcd24a3631848d4649f12b6c6d65d187de676f472bcd7f1580d4f67f983254",
     "smoke": {
       "ok": true,
       "viewport": "390x844",
-      "setup": "complete",
-      "accessibleControls": "verified",
-      "touchTargets": "verified",
-      "invalidAction": "disabled-unreachable-destination",
-      "loadingState": "verified",
-      "pathCancel": "verified",
-      "pathConfirmation": "verified",
-      "fight": "verified",
-      "fightSurface": "verified",
-      "encounter": "verified",
-      "deployment": "verified",
-      "concessionTerminal": "verified",
-      "nextPhase": "Move"
+      "board": "human-audited-north-america",
+      "cells": 336,
+      "checkpoint": "post-setup"
     }
   }
 }

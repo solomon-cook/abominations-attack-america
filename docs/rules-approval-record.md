@@ -17,7 +17,7 @@ This is not production source sign-off. The following remain fail-closed and are
 - unresolved stacking/conflict or component-dependent exceptions;
 - managed persistence, deployment, security, accessibility, and release acceptance.
 
-The approval authorizes the current best-guess board and rules behavior to be used as an explicitly provisional production release. It does not convert guessed board data or source-gated rules into source-faithful production data, and it does not replace the second-reviewer and release-sign-off requirements in [`docs/review-signoff.md`](review-signoff.md). Future verified board data must be released as a new immutable board version; existing matches remain pinned to this version.
+This 2026-08-26 approval records the then-current labelled playtest rules behavior. Board data status has since changed: new MVP matches use `AUDITED_BOARD`, whose 336-cell data received user-authorized sign-off on 2026-10-08 (`docs/board-promotion-signoff.md`). That data approval does not close the independent review, same-scale visual, source-gated rules, or overall release-sign-off requirements in [`docs/review-signoff.md`](review-signoff.md). Existing match identities remain pinned to their original board version.
 
 ## Evidence
 

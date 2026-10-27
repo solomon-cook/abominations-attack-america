@@ -46,3 +46,11 @@ The player aid does not resolve:
 ## Disposition
 
 No remaining source-gated category is closed solely from this PDF. The fewer-than-four-player setup sub-rule is already confirmed and tracked separately in `TODO.md`; its exact board placement remains dependent on verified base coordinates. The PDF should be retained as corroborating rules evidence, not promoted to board or card authority.
+
+## Status update — 7 October 2026
+
+The Cutbacks lifecycle has since been verified from the original Military
+Research card photo and implemented with a regression. Molecular Cannon and
+Chopper Lift also received separate component-backed placement/target
+resolutions; remaining cross-card interaction policies are listed in the
+[`unresolved-rules-inventory.md`](unresolved-rules-inventory.md).

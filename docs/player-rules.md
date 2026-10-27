@@ -19,7 +19,7 @@ The active player follows the visible four-step prompt:
 - **Encounter:** resolve the current development site reward or displayed choice.
 - **Deploy:** place an available development unit, draw Research where allowed, or pass deployment.
 
-The board photograph and 336-cell overlay are review references only. The development playtest renders and uses the explicitly labelled nine-space fixture; the unresolved physical board is not rendered as playable topology until it is fully transcribed and signed off.
+The 336-cell physical-board data is transcribed and signed off for new MVP rooms; independent visual, rules/gameplay, and release reviews remain open. This local development playtest still renders and uses only the explicitly labelled nine-space fixture. It does not use the reviewed physical-board topology for gameplay. New MVP rooms use the pinned `AUDITED_BOARD`; the board photograph and overlay remain review references, not gameplay art.
 
 ## End a match
 
@@ -27,4 +27,4 @@ The current development playtest can end when its temporary Stomp or board-exhau
 
 ## Information and connection
 
-The server is authoritative for commands, revisions, dice outcomes, and projections. Opponent hands and deck order are not shown. If a connection drops, the client retries through WebSocket or polling and refreshes the authoritative snapshot before another action.
+The server is authoritative for commands, revisions, dice outcomes, and projections. Mutation and Research cards are placed face up when drawn, so all players can inspect them; deck order and discard contents are not shown. If a connection drops, the client retries through WebSocket or polling and refreshes the authoritative snapshot before another action.

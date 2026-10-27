@@ -9,8 +9,8 @@ for this audit.
 
 - Coordinates are written as `row/column`.
 - `0/0` is the top-left cell.
-- The audit is being completed one column at a time, from row `0` through row
-  `13`.
+- All 336 cells across 24 columns (rows `0`–`13`) were reviewed; the project
+  owner approved the data on 8 October 2026. Independent review remains separate.
 - Sea borders are recorded by the hex edge on which the printed border appears.
 - Nothing should be inferred for a cell beyond what is recorded during the
   human inspection.

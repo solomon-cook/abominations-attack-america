@@ -17,6 +17,10 @@ The first seated player is the room creator but is not a privileged host after c
 
 The web client's **Leave room** action is a safe local exit: it attempts to mark the participant disconnected, clears the browser's stored session token, and returns to the lobby even if the network is already unavailable. It does not concede, delete, or mutate the match. Concede and rematch remain separate product decisions.
 
+When setup is complete and every seat is ready, the stores apply the selected setup and advance the room revision with a matching `match.started` event. Prisma commits the prepared snapshot, new revision, and event in one transaction. Both Memory and Prisma return event deltas in chronological version order, including when a caller requests events after a known revision.
+
+Prisma room reads inspect the newest retained event suffix before applying the requested event cursor. If the latest event revision differs from the snapshot or retained versions contain a gap, the API reports a redacted divergence metric and alert event once per room/revision while continuing to return the authoritative snapshot. This keeps pre-existing rooms readable while making their event-history gaps visible to operations.
+
 The expiry window is an operational policy, not a game rule: `ROOM_IDLE_TIMEOUT_MS` is 24 hours, and meaningful room activity refreshes the deadline. Disconnect/reconnect does not bypass an expired room.
 
 ## Session and access policy

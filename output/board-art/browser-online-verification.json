@@ -1,0 +1,81 @@
+{
+  "ok": true,
+  "url": "http://127.0.0.1:59095/",
+  "roomCode": "75268D",
+  "setupClicks": 9,
+  "boardCells": 336,
+  "boardIdentity": "shared-pinned-human-audit",
+  "spectatorSetup": "no-act",
+  "spectatorMove": "no-act",
+  "startingGiantPlacement": "resolved-by-owner-ui",
+  "startingGiantPlacementRefresh": "not-needed",
+  "disconnect": "websocket-process-restart",
+  "reconnect": "online",
+  "reconnectRecovery": "verified",
+  "forgedCommand": "rejected-without-state-change",
+  "malformedCommand": "rejected-without-state-change",
+  "synchronizedPhase": "Move",
+  "reloadRecovery": "verified",
+  "onlineMovement": "verified",
+  "liveGameplayStack": {
+    "destination": "7,5",
+    "unitCount": 5,
+    "unitDetailCount": 5,
+    "monsterCanJoin": true,
+    "mixedStackAfterMonster": {
+      "count": 6,
+      "expectedAtLeast": 6,
+      "monsters": 1,
+      "units": 5,
+      "contained": true,
+      "noOverlap": true,
+      "location": "7,5"
+    },
+    "roomRevisionUnchangedDuringInspection": true
+  },
+  "onlineFight": "verified",
+  "stackInspection": "6-piece-visible-battle-stack-artwork-contained-no-overlap-inspected-no-state-change-4-viewports",
+  "stackArtworkGeometry": {
+    "measuredPieceCount": 6,
+    "settledBeforeMeasurement": true,
+    "initiallyContained": true,
+    "initiallyNoOverlap": true,
+    "responsive": [
+      {
+        "width": 320,
+        "height": 740,
+        "contained": true,
+        "noOverlap": true
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "contained": true,
+        "noOverlap": true
+      },
+      {
+        "width": 844,
+        "height": 390,
+        "contained": true,
+        "noOverlap": true
+      },
+      {
+        "width": 768,
+        "height": 1024,
+        "contained": true,
+        "noOverlap": true
+      }
+    ]
+  },
+  "onlineEncounter": "verified",
+  "onlineDeploy": "verified",
+  "onlineResearchDraw": "verified",
+  "onlineVictory": {
+    "type": "monster-challenge",
+    "winnerPlayer": 1,
+    "round": 9
+  },
+  "terminalProjection": "players-and-spectator",
+  "terminalReloadRecovery": "verified",
+  "nextPhase": "Fight"
+}

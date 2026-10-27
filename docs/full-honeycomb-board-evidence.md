@@ -1,6 +1,6 @@
 # Full honeycomb board evidence pack
 
-This pack is the review boundary for promoting the photographed board into the MVP ruleset. It separates the visible board extent and coordinate shell from printed rule data that has not yet been independently transcribed.
+This pack preserves the earlier evidence for the provisional `FULL_HONEYCOMB_BOARD` candidate. The 336-cell physical-board data was transcribed into `AUDITED_BOARD` on 2026-10-07 and approved by the user on 2026-10-08; new MVP matches use that audited definition. The unresolved findings below apply to the legacy candidate and the remaining visual/independent-review gate, not to the approved board-data transcription. See [`board-promotion-signoff.md`](board-promotion-signoff.md) for current status.
 
 ## Source photographs
 
@@ -16,7 +16,7 @@ This pack is the review boundary for promoting the photographed board into the M
 - [Generated independent top-down cross-check overlay](board-top-down-overlay.svg)
 - [Full-board promotion sign-off template](board-promotion-signoff.md)
 
-## Current provisional transcription status
+## Historical provisional transcription status (2026-08-26)
 
 The fitted flat-top shell is now a complete 24-column by 14-row rectangle of
 336 faces. The candidate pass records 45 legible city panels with printed
@@ -32,6 +32,22 @@ sequence, base branch, lair identity, and fold/shore boundary details remain
 explicitly unresolved.
 
 ## Supplementary public-source reconnaissance
+
+### Follow-up scan search — 2026-10-07
+
+A refreshed search for an unobstructed, aligned board scan or printable map did
+not surface a new board-wide transcription source. It did surface [BoardGameGeek
+image 270861](https://boardgamegeek.com/image/270861/monsters-menace-america),
+listed at 2592 × 1944 with the caption “Zorb terrorizes the West Coast!” The
+listing describes a gameplay photograph rather than a clean board scan; its
+image was not admitted as cell-level evidence without direct visual review.
+The available rulebook scan remains a partial, oblique board photograph.
+
+Accordingly, the 2026-10-08 owner sign-off continues to establish the 336-cell
+board-data review, while the separate requirement for two unobstructed
+references per feature, coast/lake cell, and exceptional boundary remains open.
+Do not treat a second search result or a broad visual match as cross-reference
+evidence until the image can be inspected and the relevant cells are legible.
 
 On 2026-08-26, additional publicly accessible setup photographs were reviewed as
 cross-checks, not as replacement rule authority:
@@ -184,7 +200,15 @@ The supplied browser comparison image is useful as a failure report, but not as 
 
 Its geometry problem must be fixed as a layout-system issue: all cells need one flat-top orientation; horizontal centre pitch must be three quarters of the face width; vertical pitch must equal the flat-top face height; and alternate columns must be staggered once at column level. Per-cell rotation followed by a compensating whole-board rotation, negative margins, or independent hand-tuned offsets can make the bounding boxes overlap and the columns stack incorrectly. The acceptance comparison must therefore check the same fit state and aspect ratio for shared edges, column pitch, tile containment, label/piece containment, and absence of unintended intersections.
 
-## Promotion checklist
+## Historical checklist for the legacy candidate
+
+The checklist below records the promotion requirements for the earlier
+`FULL_HONEYCOMB_BOARD` candidate. It is superseded for current MVP board data by
+the completed `AUDITED_BOARD` review in
+[`board-promotion-signoff.md`](board-promotion-signoff.md) and
+[`authoritative-board-human-audit.md`](authoritative-board-human-audit.md).
+Same-scale visual acceptance, independent review, rules/gameplay review, and
+durable database acceptance remain open release gates.
 
 - [ ] Assign every photographed cell a reviewed label or an explicit blank-space classification.
 - [ ] Assign every cell its reviewed land, lake, sea, or seacoast class, keeping the thick blue printed line as the authoritative water-barrier boundary.
@@ -195,4 +219,7 @@ Its geometry problem must be fixed as a layout-system issue: all cells need one 
 - [ ] Regenerate the board content hash and require production validation to report zero unresolved rule-bearing fields.
 - [ ] Wire the promoted board version into engine, API, browser, and MVP match fixtures.
 
-Until every item is checked, this pack is evidence of the board reconstruction work—not approval to treat the candidate as a production or MVP board.
+These unchecked historical items do not describe the current `AUDITED_BOARD`
+data approval. The legacy candidate remains unsuitable as the current board;
+consult the current sign-off record for the status of the audited board and its
+remaining release gates.

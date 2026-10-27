@@ -1,0 +1,32 @@
+{
+  "benchmark": "audited-board-solo-profile-round-robin",
+  "candidate": "casual-healthy-opponent-targeting",
+  "seeds": [17, 29, 41, 53],
+  "seatSwapped": true,
+  "boardId": "human-audited-north-america",
+  "boardHexCount": 336,
+  "matchesCompleted": 8,
+  "pairwise": {
+    "casual:challenging": {
+      "matchesCompleted": 8,
+      "casualWins": 4,
+      "challengingWins": 4,
+      "unfinished": 0
+    }
+  },
+  "matches": [
+    { "seed": 17, "profiles": ["casual", "challenging"], "commands": 297, "rounds": 10, "winnerProfile": "challenging", "victoryType": "monster-challenge" },
+    { "seed": 17, "profiles": ["challenging", "casual"], "commands": 396, "rounds": 12, "winnerProfile": "challenging", "victoryType": "monster-challenge" },
+    { "seed": 29, "profiles": ["casual", "challenging"], "commands": 328, "rounds": 9, "winnerProfile": "challenging", "victoryType": "monster-challenge" },
+    { "seed": 29, "profiles": ["challenging", "casual"], "commands": 311, "rounds": 9, "winnerProfile": "casual", "victoryType": "monster-challenge" },
+    { "seed": 41, "profiles": ["casual", "challenging"], "commands": 330, "rounds": 10, "winnerProfile": "casual", "victoryType": "monster-challenge" },
+    { "seed": 41, "profiles": ["challenging", "casual"], "commands": 297, "rounds": 9, "winnerProfile": "casual", "victoryType": "monster-challenge" },
+    { "seed": 53, "profiles": ["casual", "challenging"], "commands": 376, "rounds": 12, "winnerProfile": "casual", "victoryType": "monster-challenge" },
+    { "seed": 53, "profiles": ["challenging", "casual"], "commands": 312, "rounds": 9, "winnerProfile": "challenging", "victoryType": "monster-challenge" }
+  ],
+  "limitations": [
+    "This is an 8-match candidate sample, not the 50-seed full round-robin.",
+    "Bot self-play does not measure player-perceived difficulty.",
+    "Tactical was not included in this focused comparison."
+  ]
+}

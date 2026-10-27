@@ -1,0 +1,1596 @@
+{
+  "benchmark": "audited-board-solo-profile-round-robin",
+  "seeds": [
+    17,
+    29,
+    41,
+    53,
+    67,
+    79,
+    83,
+    97,
+    113,
+    149,
+    157,
+    163,
+    173,
+    181,
+    191,
+    199,
+    211,
+    223,
+    229,
+    233,
+    241,
+    251,
+    257,
+    263,
+    269,
+    271,
+    277,
+    281,
+    283,
+    293,
+    307,
+    311,
+    313,
+    317,
+    331,
+    337,
+    347,
+    349,
+    353,
+    359,
+    367,
+    373,
+    379,
+    383,
+    389,
+    397,
+    401,
+    409,
+    419,
+    421
+  ],
+  "seatSwapped": true,
+  "profiles": [
+    "casual",
+    "tactical",
+    "challenging"
+  ],
+  "maxCommandsPerMatch": 1000,
+  "matchesCompleted": 100,
+  "pairwise": {
+    "casual:tactical": {
+      "matchesCompleted": 0,
+      "firstProfileWins": 0,
+      "secondProfileWins": 0,
+      "unfinished": 0
+    },
+    "casual:challenging": {
+      "matchesCompleted": 100,
+      "firstProfileWins": 51,
+      "secondProfileWins": 49,
+      "unfinished": 0
+    },
+    "tactical:challenging": {
+      "matchesCompleted": 0,
+      "firstProfileWins": 0,
+      "secondProfileWins": 0,
+      "unfinished": 0
+    }
+  },
+  "matches": [
+    {
+      "seed": 17,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 297,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 17,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 396,
+      "rounds": 12,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 29,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 328,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 29,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 311,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 41,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 330,
+      "rounds": 10,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 41,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 297,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 53,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 376,
+      "rounds": 12,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 53,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 312,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 67,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 294,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 67,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 352,
+      "rounds": 11,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 79,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 436,
+      "rounds": 13,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 79,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 371,
+      "rounds": 11,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 83,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 376,
+      "rounds": 12,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 83,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 305,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 97,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 290,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 97,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 314,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 113,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 310,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 113,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 311,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 149,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 322,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 149,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 338,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 157,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 280,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 157,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 287,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 163,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 345,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 163,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 290,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 173,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 300,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 173,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 339,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 181,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 312,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 181,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 322,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 191,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 337,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 191,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 393,
+      "rounds": 13,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 199,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 300,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 199,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 288,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 211,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 300,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 211,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 339,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 223,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 333,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 223,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 293,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 229,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 355,
+      "rounds": 12,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 229,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 307,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 233,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 408,
+      "rounds": 13,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 233,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 304,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 241,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 300,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 241,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 300,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 251,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 287,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 251,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 277,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 257,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 325,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 257,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 309,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 263,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 347,
+      "rounds": 12,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 263,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 377,
+      "rounds": 12,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 269,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 339,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 269,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 294,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 271,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 319,
+      "rounds": 10,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 271,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 304,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 277,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 337,
+      "rounds": 11,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 277,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 334,
+      "rounds": 11,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 281,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 315,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 281,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 330,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 283,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 295,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 283,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 338,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 293,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 287,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 293,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 301,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 307,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 378,
+      "rounds": 12,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 307,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 453,
+      "rounds": 15,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 311,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 304,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 311,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 304,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 313,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 343,
+      "rounds": 12,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 313,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 337,
+      "rounds": 11,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 317,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 354,
+      "rounds": 12,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 317,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 287,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 331,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 314,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 331,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 339,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 337,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 316,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 337,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 302,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 347,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 302,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 347,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 298,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 349,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 341,
+      "rounds": 10,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 349,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 322,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 353,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 318,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 353,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 298,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 359,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 379,
+      "rounds": 12,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 359,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 333,
+      "rounds": 10,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 367,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 301,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 367,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 293,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 373,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 318,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 373,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 311,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 379,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 308,
+      "rounds": 10,
+      "winnerPlayer": 0,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 379,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 366,
+      "rounds": 12,
+      "winnerPlayer": 0,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 383,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 312,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 383,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 283,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 389,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 281,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 389,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 294,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 397,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 298,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 397,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 344,
+      "rounds": 11,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 401,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 293,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 401,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 354,
+      "rounds": 11,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 409,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 370,
+      "rounds": 11,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 409,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 366,
+      "rounds": 11,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 419,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 340,
+      "rounds": 12,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 419,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 313,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 421,
+      "profiles": [
+        "casual",
+        "challenging"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 294,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 421,
+      "profiles": [
+        "challenging",
+        "casual"
+      ],
+      "boardId": "human-audited-north-america",
+      "commands": 298,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerProfile": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    }
+  ],
+  "candidate": "casual-healthy-opponent-targeting",
+  "comparisonBaseline": "docs/ai-opponent-profile-round-robin-2026-10-10.json",
+  "comparison": {
+    "matchesCompared": 100,
+    "sameSeedAndSeatOrder": true,
+    "winnerOutcomesChanged": 0
+  },
+  "limitations": [
+    "This candidate report compares Casual with Challenging only; updated Casual versus Tactical is not measured.",
+    "Bot self-play does not establish player-perceived difficulty."
+  ]
+}

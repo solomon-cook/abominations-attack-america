@@ -1,8 +1,8 @@
 # First-playable browser evidence
 
-This checklist records browser evidence separately from engine, build, and source-data verification. It is currently an evidence-in-progress artifact for the best-guess MVP, not a verified-release sign-off. The development fixture is not the MVP board: first-playable acceptance uses the fully filled provisional honeycomb board.
+This checklist records browser evidence separately from engine, build, and source-data verification. It is currently an evidence-in-progress artifact for the human-audited MVP board, not a full-rules release sign-off. The development fixture is not the MVP board: first-playable acceptance uses the fully filled 336-cell audited honeycomb.
 
-MVP and provisional production room creation now use `createMvpRoomGame` with the pinned 336-cell `PROVISIONAL_AUTHORITATIVE_BOARD`; both Memory and Prisma room stores use that constructor unless a test explicitly opts into `allowDevelopmentFixture`. The browser labels the board as a best-guess provisional release while physical source transcription remains incomplete. Strict verified-board validation still rejects provisional content.
+New local and online MVP matches use `createMvpRoomGame` with the pinned `AUDITED_BOARD`; both Memory and Prisma room stores use that constructor unless a test explicitly opts into `allowDevelopmentFixture`. The separately versioned provisional board remains available for explicit playtests and old pinned saves. The audited board passes strict production board validation; independent release review, the full-rules scope, and complete browser acceptance remain open.
 
 ## Exit criteria
 
@@ -24,12 +24,13 @@ substitute for a browser, source-data, or production proof row.
 
 | Requirement | Required proof | Current status |
 | --- | --- | --- |
-| Authoritative board | Reviewed full-board transcription, stable IDs/coordinates, water and edge data, validation output, and human sign-off | Blocked: source transcription is incomplete |
-| Shared match board | Engine, API, and browser record the same board ID and content hash; provisional production room creation succeeds only for that pinned board | Verified for provisional promotion; source-faithful board remains blocked |
-| Two-player setup and turn loop | Clean supported-browser run covers setup, Move, Fight, Encounter, Deploy, cancellation, invalid/stale recovery, and victory | Partial: development-fixture evidence exists; full-board run is unavailable |
-| Refresh and reconnect | Browser evidence shows the pending decision and terminal result survive refresh/disconnect/reconnect without duplicate actions | Partial: the three-session development harness verifies browser-process reconnect, reload recovery, and terminal reload; full-board production evidence remains unavailable |
-| Two-browser online play | Two independent supported-browser sessions complete a match and observe the same revisions, decisions, and winner | Partial: the three-session development harness verifies synchronized Move, Fight, Encounter, Deploy, concession, and terminal projection; full-rules victory and production-board evidence remain open |
-| Mobile interaction | The same required decisions complete at each supported mobile viewport with no hidden required controls or overflow | Partial: the development matrix passes 1280×720, 834×1112, and 390×844; full-board and manual accessibility acceptance remain open |
+| Authoritative board | Reviewed full-board transcription, stable IDs/coordinates, water and edge data, validation output, and human sign-off | Verified: 336-cell audit source, strict production validation, and user-authorized human data sign-off; independent review remains open |
+| Shared match board | Engine, API, and browser record the same board ID and content hash; production room creation pins the audited board | Engine/API fixtures pin `AUDITED_BOARD`; the latest 7/7 local Chrome matrix confirms the browser board ID and rendered hash match; online persistence identity remains separate |
+| Two-player setup and turn loop | Clean supported-browser run covers setup, Move, Fight, Encounter, Deploy, cancellation, invalid/stale recovery, and victory | Partial: 7/7 local viewports cover setup, camera interactions, movement, encounter, and deployment. The 2026-10-07 three-session online run completes setup and its opening turn through the browser UI, then drives both authenticated seats through legal API commands to a real audited-board Monster Challenge victory while player and spectator browsers observe the same terminal result. Human completion of the full route, UI control coverage for every later decision, and every cancellation remain open |
+| Refresh and reconnect | Browser evidence shows the pending decision and terminal result survive refresh/disconnect/reconnect without duplicate actions | Partial: the 2026-10-07 audited-board three-session harness verifies browser-process reconnect, reload recovery, and terminal reload with the memory API; durable production persistence remains open |
+| Two-browser online play | Two independent supported-browser sessions complete a match and observe the same revisions, decisions, and winner | Partial: the 2026-10-07 run verifies audited-board room creation, two-player join, spectator projection, setup, synchronized movement, Fight, Encounter, Deploy, reconnection, and terminal recovery after a bot-driven Monster Challenge victory. The remaining gap is a human playthrough of the complete route and deployed-browser acceptance |
+| Mobile interaction | The same required decisions complete at each supported mobile viewport with no hidden required controls or overflow | Partial: the 8 October 2026 audited-board Chrome run passes at 320×740, 390×844, and 844×390; manual device and accessibility acceptance remain open |
+| Automated browser-decision coverage | Setup, movement/cancel/confirm, invalid and stale actions, loading, Fight, Encounter, Deploy, terminal states, reconnect, and victory are reachable and observable | Verified by the 2026-10-07 Chrome CI matrix, three-session online harness, temporary-victory route, and keyboard suite. The online victory harness selects later legal commands through authenticated browser-session requests; human completion of the full route remains separate and open |
 | Accessibility and visual acceptance | Keyboard/screen-reader playthrough, contrast/focus/target review, responsive visual review, and reviewer sign-off | Open: automated source contracts pass; manual review is outstanding |
 | Release evidence | `npm run verify`, deployment health, durable persistence/restart, monitoring, and production smoke evidence | Blocked: deployment and human release evidence remain open |
 
@@ -38,6 +39,8 @@ The checklist is intentionally evidence-based: rows may move from **Blocked** or
 its linked source artifact.
 
 ## Current local browser run
+
+The fresh 8 October 2026 `npm run browser:audited:verify` run passed all seven supported board viewports: 320×740, 390×844, 844×390, 768×1024, 1024×768, 1440×900, and 2560×1080. Every viewport completed ordered setup, board pin/render checks for all 336 cells, full-board fit, accessibility-name and feature-detail checks, camera pan/zoom/resize and touch pinch, movement, Encounter, and Deploy. The run reported no page errors, broken images, document overflow, or clipped controls; see `output/board-art/browser-verification.json`. This is automated local-browser evidence and does not close same-scale visual acceptance, independent board review, human full-route acceptance, or manual accessibility review.
 
 | Check | Result | Evidence or limitation |
 | --- | --- | --- |
@@ -56,7 +59,7 @@ its linked source artifact.
 | Full cancellation matrix | Not yet verified | One path cancellation and every invalid-action/loading case still need a dedicated run. |
 | Refresh/reconnect | Not yet verified in this run | Engine/store coverage exists; browser proof remains separate. |
 | Two-browser online play | Not yet verified | Requires two live room participants and WebSocket/polling exercise. |
-| Mobile viewport | Partial pass | A fresh 390×844 runtime completed setup and exposed `Confirm path`/`Cancel`; the document remained exactly 390px wide with no page or horizontal overflow. This is development-fixture evidence, not the full supported-browser matrix or accessibility sign-off. |
+| Mobile viewport | Scripted viewport pass; human acceptance open | The 320×740, 390×844, and 844×390 audited-board Chrome runs completed setup, camera interactions, movement, encounter, and deployment with no overflow or clipped controls/playback. This is not manual device, browser-engine, or accessibility sign-off. |
 
 ## Latest local renderer regression check
 
@@ -66,7 +69,7 @@ On 2026-08-26, `npm run browser:local:verify` drove a fresh headless Chrome sess
 
 On 2026-08-25, the board-first gameplay shell was checked at 1280×720 after completing the local development setup. With the controls panel closed, the layout measured 1,240px wide and the map surface measured 1,190×405px; the secondary information panel and turn-progress strip were hidden. Opening **Open controls** restored the 340px information panel, turn-progress strip, card/decision controls, and bounded scrolling. This verifies the intended map-first hierarchy for the development fixture only.
 
-The same run opened the private hand surface from the controls panel. Held cards remained visible only to the current player, and expandable entries exposed implemented/source-gated status plus transcribed timing text where available. This is UI evidence; it does not prove that every source-inventoried card is implemented or that production card timing is complete.
+The same run opened the owner's card-action surface from the controls panel. Card action controls are owner-only, while the drawn cards themselves are face up and public under the rulebook. Expandable entries exposed implemented/source-gated status plus transcribed timing text where available. This is UI evidence; it does not prove that every source-inventoried card interaction is production-complete.
 
 On 2026-08-25, a clean local browser session completed the two-player development setup and verified the pinned-board renderer: the development board remains authoritative for rules and legal movement, while the visual surface now includes the separated 336-cell candidate shell with nine canonical development overlays and no second lattice. Three legal movement destinations were exposed for the active monster; selecting one showed the authoritative path preview and enabled **Confirm monster move**, while **Cancel** cleared both the path and preview. No browser console errors or page alerts were observed. This remains development-fixture evidence, not MVP board or production acceptance.
 
@@ -94,7 +97,7 @@ The same harness was rerun from a clean ephemeral-server start on 2026-08-26 and
 
 The mixed-choice rerun also covered one player choosing **Development Deploy** and one choosing **Draw Research**. Setup now materializes the selected lairs, starting Research hand, and valid branch-base deployment before the shared Move phase; the board and rule data remain explicitly provisional.
 
-On 2026-08-26, `npm run browser:victory:verify` opened the explicit **Run temporary victory test** development scenario and drove the rendered route `San Francisco -> Denver -> Seattle -> Chicago -> Infamy Site -> New York -> Los Angeles`. The fixture uses one marker per stompable development space and no military collisions, while the normal supported-player marker-count helper remains unchanged. The browser selected and confirmed each legal path, resolved each Encounter, passed Deploy, and rendered the authoritative terminal Victory summary. This is valid development-fixture victory evidence, not full-board MVP or production-ruleset evidence.
+On 2026-10-07, `npm run browser:victory:verify` passed from a fresh headless Chrome session at `http://127.0.0.1:5183/`. It opened the explicit **Run temporary victory test** development scenario and drove the rendered route `San Francisco -> Denver -> Seattle -> Chicago -> Infamy Site -> New York -> Los Angeles`. The fixture uses one marker per stompable development space and no military collisions, while the normal supported-player marker-count helper remains unchanged. The browser selected and confirmed each legal path, resolved each Encounter, passed Deploy, and rendered the authoritative `development-board-exhaustion` terminal summary. This is valid development-fixture victory evidence, not two-player online victory, full-board acceptance, or production-ruleset evidence.
 
 On 2026-08-25, two fresh browser tabs connected to the local API, created and joined room `8A132F`, completed the ordered two-player setup independently, and both reached the setup-complete Move surface. Reloading the second tab restored the same room and retained setup completion without developer-tool intervention. A subsequent Move attempt did not produce a clean observed phase transition in the second tab, so this is partial online setup/reconnect evidence only; the full two-browser play, refresh, disconnect, reconnect, and winner acceptance remains open.
 
@@ -102,13 +105,25 @@ The live development smoke pass then exercised the first complete decision chain
 
 The same local browser smoke now exposes a board-adjacent **Normal Fight** surface when the Denver combat fixture is reached. It groups the participating military units and opposing monster, places recorded dice in the centre, shows the current attack decision, and hands legal target/resolve controls to the existing authoritative phase actions. This is presentation evidence only; the engine remains responsible for attack order, targets, rolls, modifiers, damage, smash, destruction, mutation, and subsequent decisions.
 
-A two-tab online smoke pass on 2026-08-25 initially left the movement transition unverified. The later three-session harness run on 2026-08-26 supersedes that limitation for the local development path: synchronized legal movement, Encounter, Deploy, concession, terminal projection, and reload recovery all passed. Fight progression, a full-rules victory route, process-restart persistence, production-board promotion, and deployed-browser acceptance remain open.
+An earlier two-tab online smoke pass on 2026-08-25 left the movement transition unverified. The 2026-08-26 three-session development run later verified synchronized movement, Encounter, Deploy, concession, terminal projection, and reload recovery, but had not yet reached Fight. The audited-board run on 2026-10-07, recorded below, supersedes that Fight gap and now proves automated online reachability of a Monster Challenge victory. Human full-route playthrough, process-restart persistence, and deployed-browser acceptance remain open.
 
 ## Full-board rendering check
 
-The browser selects its authoritative rules renderer from the active match's immutable board ID and content hash. An MVP room uses the complete provisional honeycomb board for legal actions, features, and adjacency, with its provisional status visible in the notice and board metadata. A development playtest still uses only `DEVELOPMENT_BOARD`, while the future verified release will use a separately versioned physically reviewed board. The provisional board is playable for MVP testing but remains excluded from verified-release sign-off.
+The browser selects its authoritative rules renderer from the active match's immutable board ID and content hash. A new MVP room uses `AUDITED_BOARD` for legal actions, features, and adjacency; the board status notice identifies the 336-cell human-audited definition. Existing provisional match identities remain resolvable for saved matches and explicit playtests. A development playtest still uses only `DEVELOPMENT_BOARD`. The project owner accepted the same-scale board visual review on 11 October 2026; independent board review, full-rules acceptance, two-player online acceptance on the audited identity, and final release sign-off remain open.
 
-On 2026-08-26, `npm run browser:online:verify` completed a fresh three-session Chrome run against the normal online MVP room path. It verified public room creation, second-player join, spectator no-act projection, ordered mixed setup with initial deployment and Research, Ready, the pinned full-board room state, identical board ID/version/content/rendered hashes across both players and the spectator, exactly 336 rendered `.hex-tile` elements with no visible `Unresolved` labels in each session, WebSocket-process restart and reconnect, forged and malformed command rejection without state change, synchronized movement into the deployed unit’s space, Fight, Encounter, Deploy, concession, player/spectator terminal projection, and terminal reload recovery. Its result reported `onlineFight: verified`. This is desktop Chrome evidence for the best-guess MVP board; mobile support, manual acceptance, physically verified board data, and final release sign-off remain open.
+On 2026-10-08, `npm run browser:audited:verify` passed at 320×740, 390×844, 844×390, 768×1024, 1024×768, 1440×900, and 2560×1080. The verifier starts a fresh Vite server on an available loopback port unless `BROWSER_TEST_URL` is explicitly supplied. Every viewport asserted the `human-audited-north-america` board pin and matching rendered content hash, completed setup across all 336 cells, exercised camera bounds/zoom/drag/touch/resize (plus minimap and keyboard controls on wider layouts), and completed movement, encounter, and deployment. No page errors, broken images, overflow, clipped controls, or clipped board playback were reported. The report is recorded at `output/board-art/browser-verification.json`. This is local Chrome evidence, not cross-browser, two-player online, manual device, or full release acceptance.
+
+On 2026-10-08, `npm run browser:online:verify` passed with three fresh Chrome sessions and the memory API. It confirmed the same audited board ID, version, and content hash in both players and the spectator; 336 rendered cells; two-player setup and readiness; spectator no-act rules; synchronized movement; browser-process reconnect and Move recovery; malformed and forged command rejection; Fight (`onlineFight: verified`); selection of the actual two-piece battle hex, with both monster and opponent unit shown in the visible, in-map stack inspector without covering the action dock/map controls or changing the room revision at 320×740, 390×844, 844×390, and 768×1024; Encounter playback on the non-acting player's board; Deploy; and a Research draw. The test then used each browser session's own participant token to drive legal engine-selected commands through the API until the audited-board room reached `monster-challenge` victory (winner seat 1, round 9); both players and the spectator rendered the same terminal type, and a player reload retained it. Encounter playback is checked against the authoritative event payload, requiring dice playback when that payload contains rolls. This is automated online-match evidence, not a human full-route playthrough or deployed-browser acceptance; durable database restart recovery remains open. Concession is separately covered by the local browser and API/store checks.
+
+On 2026-10-11, a fresh `npm run browser:online:verify` passed against the current checkout with three new Chrome profiles and the memory API. It confirmed all three sessions share the pinned `human-audited-north-america` board identity and render 336 cells; both players completed setup and readiness, while the spectator remained no-act. The harness recovered a starting giant-placement choice after owner-page refresh, restarted a browser process and recovered the WebSocket session, rejected forged and malformed commands without changing state, restored a refreshed player session, and resolved movement into a six-piece mixed battle stack whose piece artwork remained contained without overlap at 320×740, 390×844, 844×390, and 768×1024 without changing the room revision during inspection. It then reached and synchronized Fight, Encounter, Deploy, a Research draw, and a round-9 Monster Challenge victory across both players and the spectator; terminal reload recovery passed. The later legal commands are still driven by the deterministic test harness. This fresh run strengthens automated online-flow evidence only; human full-route playtesting, managed-database durability, and deployed-browser acceptance remain open. Machine-readable output: `output/board-art/browser-online-verification.json`.
+
+On 2026-10-08, `npm run browser:ci:verify`, `npm run browser:keyboard:verify`, and `npm run browser:victory:verify` passed against the local web app. The CI suite checked the 336-cell review surface, 1–8-piece stack geometry, and interaction flow at desktop, tablet, and mobile sizes; keyboard checks completed ordered setup, board navigation, and the temporary-victory route; the victory run reached its authoritative terminal result. These automated runs do not replace the human full-route, visual, assistive-technology, or deployed-browser acceptance gates.
+
+The current-checkout rerun of `npm run browser:ci:verify` passed after the landscape event-panel placement correction. The read-only board surface exposed and loaded all 336 coordinate-matched images, both reference images, and contained 1–8-piece stacks at 1280×720, 834×1112, and 390×844; the interactive matrix also passed its desktop, tablet, and mobile checks. All three review sizes reported no horizontal overflow or playable controls on the read-only surface. This is automated Chrome evidence and does not close same-scale physical-board acceptance or manual visual/accessibility review.
+
+The current-checkout rerun of `npm run browser:victory:verify` also passed: the browser followed the temporary-victory route from San Francisco through Denver, Seattle, Chicago, the Infamy Site, New York, and Los Angeles, then reported the terminal state verified. The automated temporary-victory fixture remains distinct from a human two-player match.
+
+On 2026-08-26, `npm run browser:online:verify` completed a fresh three-session Chrome run against the normal online MVP room path using the then-current provisional board. It verified public room creation, second-player join, spectator no-act projection, ordered mixed setup, readiness, shared provisional board identity, 336 rendered cells, reconnect/reload recovery, malformed and forged command rejection, synchronized movement, Fight, Encounter, Deploy, concession, and terminal reload. This historical run predates the audited-board promotion; see the 2026-10-07 audited-board online run above for current board identity evidence.
 
 The board notice and accessible tile descriptions identify the nine-space development fixture and its unresolved physical-board cells. Those disclosures do not substitute for verified board data or full-rules browser coverage, and this fixture cannot be used to sign off the MVP playable-game board requirement.
 
@@ -121,3 +136,103 @@ After reviewing the supplied comparison image and the responsive-grid reference,
 ## Preference and no-audio check
 
 In the updated local browser run, opening **Settings** exposed four persisted preferences: Larger text, Show board labels, Reduce motion, and Confirm disappearance. Toggling Larger text, hiding labels, and enabling Reduce motion changed the root presentation classes and hid only the visual label span while retaining the accessible tile name. The panel also states that no audio dependency exists; required outcomes remain textual. This is UI evidence, not a WCAG AA sign-off or production release approval.
+
+## Keyboard-only full temporary-victory route
+
+On 2026-10-08, `npm run browser:keyboard:verify` passed from fresh local Chrome sessions. The first session completed audited-board setup, unused-branch base choices, menu and settings access, record-tab arrow navigation, map panning, roving-focus board navigation, and a legal move confirmation. A second keyboard-only session opened the Playtest tools disclosure, ran the explicit temporary-victory fixture, and used hex-neighbour arrows, Enter, and Tab/Enter for the route `San Francisco -> Denver -> Seattle -> Chicago -> Infamy Site -> New York -> Los Angeles`. The route completed Fight, Encounter, Deploy, and the authoritative `Victory · Zorb` state. Accessible role/name checks covered the move confirmation, Fight continuation, Deploy pass, victory heading, and **Start another local playtest** control; the verifier returned `ok: true`. The run is development-fixture evidence only. Human screen-reader/assistive-technology review, full-rules two-player victory, supported mobile keyboard acceptance, and production evidence remain open.
+
+The same keyboard-only suite passed again in the current checkout after the 8 October landscape event-panel placement correction. Chrome returned `ok: true`, the same legal route, the expected `Hold this unit` follow-up, and the accessible victory/restart controls; this revalidation adds no screen-reader or human acceptance evidence.
+
+On 2026-10-07, `npm run browser:ci:verify` passed from a fresh Vite server. Its board-review sessions at 1280×720, 834×1112, and 390×844 confirmed 336 coordinate-matched audited terrain-art assignments, all visible cell images and both physical reference images loaded, all cells contained in the board frame, a working cell inspector, contained 1–8 occupant fixtures, and no playable controls, unresolved labels, or horizontal overflow. Its local interaction sessions completed setup and the tested Move, Fight, Encounter, Deploy, and terminal-control flow at desktop, tablet, and mobile sizes. Combined with the online and keyboard runs recorded above, this closes the automated first-playable decision-coverage item. It does not close human full-route, independent board review, screen-reader, or deployment acceptance.
+
+The run exposed and corrected two keyboard barriers: known development-board cells now participate in the same roving focus model as the audited board, with arrow navigation choosing the nearest neighbour in the requested direction; and terminal options automatically expand at game end so the restart action is reachable. Unknown, non-playable board shells remain disabled.
+
+## Consolidated verification
+
+On 2026-10-08, `npm run verify` passed the catalogue, source traceability, board validation and overlays, release evidence, PWA, accessibility, API-origin, responsive layout, API-load, dependency audit, documentation, Prisma schema, 242 engine tests, 112 API tests, typechecks, and production web build gates. The audited-board engine route test completes source-backed setup and verifies Move, Fight, Encounter, and Deploy, consumes the original Stomp markers, activates the delayed Monster Challenge, and resolves a terminal result for each of 2, 3, and 4 players. Starting Research draws now also resolve immediate X-Fighters and giant effects on the audited board, with regressions for the reserve units, giant ownership, base placement, and card discard. Separately, an in-memory API integration route completes the same legal phase sequence and terminal Challenge for three- and four-player rooms through accepted room commands. These are automated engine/API checks, not human browser acceptance or durable-store recovery. Vite reported the existing bundle-size advisory: the minified JavaScript entry is 780.41 kB, above its 500 kB threshold. This consolidated local check does not close independent board review, human visual/assistive-technology acceptance, hosted persistence, or production release gates.
+
+The full `npm run verify` gate passed again on 2026-10-08 after adding the Blonde Lure/Molecular Cannon and Atomic Breath/Berserk timing regressions and the portrait-focused camera adjustment: 246 engine tests and 112 API tests passed, along with source/board/release contracts, typechecks, Prisma validation, dependency audit, docs verification, and production build. The minified JavaScript entry was 781.84 kB and retained the existing 500 kB advisory. `git diff --check` is clean. This current-checkout run still does not close the human, hosted-persistence, or production-release gates listed above.
+
+The 2026-10-08 audited-board browser matrix passed again at 320×740, 390×844,
+844×390, 768×1024, 1024×768, 1440×900, and 2560×1080 after fixing city-stomp
+playback overlap with the active-hex context tray. The contract now checks that
+playback avoids that tray alongside the fixed gameplay controls during the
+setup, movement, encounter, and deployment route. All seven runs completed with
+no browser errors, broken images, or clipped playback; the refreshed 320×740
+capture was visually reviewed. The subsequent full `npm run verify` passed
+with 246 engine tests and 112 API tests, typechecks, docs and source/board
+contracts, and production build. The minified JavaScript entry was 781.87 kB,
+retaining the existing 500 kB advisory; `git diff --check` is clean. Human
+visual, assistive-technology, independent board, hosted-persistence, and
+production-release acceptance remain open.
+
+The latest board-data regressions verify all 48 signed-off city benefits map to
+the correct fixed +1 Health or one-, two-, or three-die result and resolve
+through `AUDITED_BOARD`; they also verify all 32 branch bases map to the
+reviewed owners across 30 cells, preserving the two co-located spaces. The new
+special-site regression checks all 16 Infamy sites, four Mutation sites, four
+Challenge sites, 18 lairs, and the single Los Angeles return feature at the
+reviewed physical cells. The full `npm run verify` passed with 249 engine and
+112 API tests, source/board/release and documentation contracts, typechecks,
+Prisma validation, dependency audit, and production build. The minified
+JavaScript entry remains 781.87 kB with the existing 500 kB advisory;
+`git diff --check` is clean. Independent board review and visual acceptance,
+managed persistence, and release deployment remain open.
+
+The audited-board online smoke was rerun on 2026-10-07 from fresh ephemeral
+services. The output in
+[`output/board-art/browser-online-verification.json`](../output/board-art/browser-online-verification.json)
+reports `ok=true`, 336 rendered cells, one shared human-audited board identity,
+spectator no-act projections, reconnect and reload recovery, forged/malformed
+command rejection without state changes, synchronized movement/Fight/Encounter/
+Deploy, Research draw, and an authoritative Monster Challenge victory shown to
+both players and the spectator. The test driver selected legal commands after
+UI setup, so this remains automated local evidence; human full-route play and
+deployed durable-database recovery remain open.
+
+On 2026-10-08, the online harness also passed the source-backed retreat
+destination branch and the immediate-giant Research draw continuation. It
+measures the live mixed battle stack after movement emphasis settles and
+records contained, non-overlapping artwork at 320×740, 390×844, 844×390, and
+768×1024 in the same JSON result. The full room flow again reached a shared
+Monster Challenge victory and terminal reload recovery. These are automated
+local checks; full human gameplay and durable production recovery remain open.
+
+The online harness now checks the authoritative startup decision after both
+players are ready. For this run, the test-only memory API seed was set to `8`,
+which places Mecha-Monster first in the Military Research deck. The assigned
+player selected a legal base through their own browser, then all three sessions
+completed the remaining online route through a shared Monster Challenge
+victory and terminal reload recovery. The JSON records
+`startingGiantPlacement: resolved-by-owner-ui`. The seed override is accepted
+only when the API runs in test mode with memory persistence; it does not change
+room seeding in production or durable-store runs.
+
+On 2026-10-08, the three-session harness was extended to move five military
+units through accepted room commands into a shared empty hex, open that live
+stack with the in-game inspection gesture, and verify player-relative
+ownership, branch, Health, and movement status without changing the room
+revision. The active monster then joins the same hex through the browser UI,
+producing a six-piece battle stack whose artwork remains inside its cell
+without overlap at 320×740, 390×844, 844×390, and 768×1024. The run also
+completes the online route through shared Monster Challenge victory and
+terminal reload recovery. This is automated local gameplay evidence; human
+visual acceptance and a human full-route playthrough remain open.
+
+An additional 2026-10-08 rerun exposed a transient ordering in the terminal
+assertion: the phase heading could be observed just before the summary panel
+was mounted. The harness now waits for the authoritative `Victory type:` panel
+after the heading and emits page/panel diagnostics if it is absent. The
+adjusted three-session run passed, including the 4-piece live stack at all four
+viewports, Research placement, reconnect, and the shared terminal result. This
+hardens the automated check; a subsequent run advances the live-stack size as
+recorded below. Full human acceptance remains open.
+
+The subsequent 2026-10-08 run exercised the larger stack requirement directly:
+five military units and their monster reached one hex through legal room
+commands. After the accepted-movement emphasis settled, the six rendered pieces
+were all contained and pairwise non-overlapping in the live battle stack at all
+four viewports. Every piece appeared in the board inspector, and inspection
+left the room revision unchanged. The result is recorded in
+`liveGameplayStack.mixedStackAfterMonster` and `stackArtworkGeometry` in the
+online verification JSON. Human visual acceptance remains separate.

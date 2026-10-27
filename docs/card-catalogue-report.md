@@ -9,40 +9,42 @@ This report is generated from `packages/game-engine/src/cards.ts`. All inventori
 
 ## Available cards
 
-| Deck | Card | Classification | Stacking policy | Effect status |
-| --- | --- | --- | --- | --- |
-| mutation | Fins and Gills | persistent | additive | implemented |
-| mutation | Rampage | persistent | source-gated | implemented |
-| mutation | Radiation Field | persistent | source-gated | implemented |
-| mutation | Atomic Recovery | persistent | source-gated | implemented |
-| mutation | Berserk | one-use/discard | source-gated | implemented |
-| mutation | War Spikes | persistent | replacement | implemented |
-| mutation | Atomic Breath | persistent | additive | implemented |
-| mutation | Iron Stomach | persistent | source-gated | implemented |
-| mutation | Whip Tentacles | persistent | source-gated | implemented |
-| mutation | High-Octane Blood | persistent | additive | implemented |
-| mutation | Son of a Monster | one-use/discard | source-gated | implemented |
-| mutation | Winged Horror | persistent | additive | implemented |
-| mutation | Kinda Friendly | persistent | source-gated | implemented |
-| mutation | Laser Beam Eyes | persistent | source-gated | implemented |
-| mutation | Armored Scales | persistent | additive | implemented |
-| mutation | It's a Robot! | persistent | source-gated | implemented |
-| research | Mecha-Monster | one-use/discard | source-gated | implemented |
-| research | Cutbacks | one-use/discard | source-gated | implemented |
-| research | Laser Fence | one-use/discard | source-gated | implemented |
-| research | Guard Commander | persistent | permission-or | implemented |
-| research | Defense Satellites | one-use/discard | source-gated | implemented |
-| research | Stabilizer Ray | one-use/discard | source-gated | implemented |
-| research | Fusion Cells | persistent | additive | implemented |
-| research | X-Fighters | persistent | source-gated | implemented |
-| research | Molecular Cannon | one-use/discard | source-gated | implemented |
-| research | 2nd Generation | persistent | additive | implemented |
-| research | Blonde Lure | one-use/discard | source-gated | implemented |
-| research | Anti-Mutagen | conditional | source-gated | implemented |
-| research | Antimatter | one-use/discard | source-gated | implemented |
-| research | Scientific Analysis | conditional | source-gated | implemented |
-| research | Chopper Lift | one-use/discard | source-gated | implemented |
-| research | Captain Colossal | one-use/discard | source-gated | implemented |
+Drawn cards are public face up under the original rulebook (p. 13); deck order and discard contents remain private.
+
+| Deck | Card | Classification | Visibility | Stacking policy | Effect status |
+| --- | --- | --- | --- | --- | --- |
+| mutation | Fins and Gills | persistent | face-up public | additive | implemented |
+| mutation | Rampage | persistent | face-up public | permission-or | implemented |
+| mutation | Radiation Field | persistent | face-up public | source-gated | implemented |
+| mutation | Atomic Recovery | persistent | face-up public | replacement | implemented |
+| mutation | Berserk | one-use/discard | face-up public | additive | implemented |
+| mutation | War Spikes | persistent | face-up public | replacement | implemented |
+| mutation | Atomic Breath | persistent | face-up public | additive | implemented |
+| mutation | Iron Stomach | persistent | face-up public | replacement | implemented |
+| mutation | Whip Tentacles | persistent | face-up public | additive | implemented |
+| mutation | High-Octane Blood | persistent | face-up public | additive | implemented |
+| mutation | Son of a Monster | one-use/discard | face-up public | additive | implemented |
+| mutation | Winged Horror | persistent | face-up public | additive | implemented |
+| mutation | Kinda Friendly | persistent | face-up public | permission-or | implemented |
+| mutation | Laser Beam Eyes | persistent | face-up public | additive | implemented |
+| mutation | Armored Scales | persistent | face-up public | additive | implemented |
+| mutation | It's a Robot! | persistent | face-up public | source-gated | implemented |
+| research | Mecha-Monster | one-use/discard | face-up public | source-gated | implemented |
+| research | Cutbacks | one-use/discard | face-up public | remove-from-play | implemented |
+| research | Laser Fence | one-use/discard | face-up public | source-gated | implemented |
+| research | Guard Commander | persistent | face-up public | permission-or | implemented |
+| research | Defense Satellites | one-use/discard | face-up public | source-gated | implemented |
+| research | Stabilizer Ray | one-use/discard | face-up public | source-gated | implemented |
+| research | Fusion Cells | persistent | face-up public | additive | implemented |
+| research | X-Fighters | persistent | face-up public | replacement | implemented |
+| research | Molecular Cannon | one-use/discard | face-up public | source-gated | implemented |
+| research | 2nd Generation | persistent | face-up public | additive | implemented |
+| research | Blonde Lure | one-use/discard | face-up public | source-gated | implemented |
+| research | Anti-Mutagen | conditional | face-up public | additive | implemented |
+| research | Antimatter | one-use/discard | face-up public | source-gated | implemented |
+| research | Scientific Analysis | conditional | face-up public | additive | implemented |
+| research | Chopper Lift | one-use/discard | face-up public | source-gated | implemented |
+| research | Captain Colossal | one-use/discard | face-up public | source-gated | implemented |
 
 ## Source-gated cards
 

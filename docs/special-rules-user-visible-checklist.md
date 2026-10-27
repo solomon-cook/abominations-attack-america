@@ -14,7 +14,7 @@ provisional rulesets.
 - [x] Gargantis — discard Mutation cards for Health: `use-monster-ability`, held-card action, and Gargantis fixture.
 - [x] Megaclaw — three Infamy at an Infamy site: encounter resolver/result panel and Megaclaw fixture.
 - [x] Konk — +1 to hit fighters: attack modifier/event detail and Konk fixture.
-- [x] Toxicor — two Mutation cards at a Mutation site: persisted `mutation-choice`, labeled “Keep …” buttons, projection redaction, and Toxicor fixture.
+- [x] Toxicor — two face-up Mutation cards at a Mutation site: persisted `mutation-choice`, public card identities in every audience, labeled “Keep …” buttons enabled only for Toxicor's owner, and Toxicor fixture.
 - [x] Toxicor — in-flight cruise-missile mutation: automatic combat timing, mutation draw/event detail, and cruise-missile fixtures. This remains automatic because pausing inside an already-running attack sequence would create a hidden intermediate combat state.
 - [x] Disappear instead of Move: legal Move-context button, confirmation, return-to-lair state, and disappearance fixtures.
 
@@ -71,5 +71,5 @@ provisional rulesets.
 - [x] Every manual choice has a native button or select element with descriptive visible text.
 - [x] Toxicor’s choice is announced by the phase label, action dock, attention banner, and labeled buttons.
 - [x] Automatic effects are shown through the authoritative event log/result panels and card rule text.
-- [x] Other players’ Mutation choice card IDs are redacted from projected state.
+- [x] Other players can inspect public Mutation choice cards and event history, but cannot submit the owner-only choice; private owner arrays remain redacted.
 - [x] Card rules remain readable from the accessible record/hand surfaces even when no action is currently legal.

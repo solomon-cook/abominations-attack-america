@@ -30,6 +30,11 @@ are confirmed for this implementation:
   Monster Challenge, but not to finish its move there.
 - A battle is compulsory when movement creates one, including a battle between
   a player's monster and military branch. Both sides make their full attacks.
+- Deploy-step placement does not itself start an immediate battle. The Fight
+  rules define battle starts from movement (page 7), while page 14 allows a
+  unit to be deployed into a monster's space. This timing reading applies to
+  normal deployment, redeployment, and a giant card's placement instruction;
+  later movement that creates a battle still follows the normal Fight rules.
 - Each branch's owner resolves the attacks and decisions for that branch's
   defending units, even outside that owner's turn.
 - The National Guard is neutral by default. When its units participate in a
@@ -410,6 +415,12 @@ units. Place the card face up immediately and apply any immediate instruction.
 
 Captain Colossal and Mecha-Monster enter play through Military Research cards.
 They follow these rules in addition to their card and record-tile rules:
+
+- When either immediate card is drawn, its owner chooses one of their bases for
+  placement before the match continues. This card placement may use an owned
+  base that has already been stomped: the card says “one of your bases,” and
+  giant placement is expressly not a deployment. This exception does not permit
+  ordinary units to deploy on a stomped base; see [`giant-placement-audit.md`](giant-placement-audit.md).
 
 - They have Health and take damage in the same general manner as monsters.
 - Captain Colossal can make two attacks per combat round.

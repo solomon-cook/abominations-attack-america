@@ -1,0 +1,114 @@
+{
+  "benchmark": "audited-board-casual-vs-challenging",
+  "seeds": [
+    17,
+    29,
+    41,
+    53
+  ],
+  "seatSwapped": true,
+  "maxCommandsPerMatch": 1000,
+  "matchesCompleted": 8,
+  "wins": {
+    "casual": 4,
+    "challenging": 4
+  },
+  "matches": [
+    {
+      "seed": 17,
+      "casualSeat": 0,
+      "boardId": "human-audited-north-america",
+      "commands": 297,
+      "rounds": 10,
+      "winnerPlayer": 1,
+      "winnerDifficulty": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 17,
+      "casualSeat": 1,
+      "boardId": "human-audited-north-america",
+      "commands": 396,
+      "rounds": 12,
+      "winnerPlayer": 0,
+      "winnerDifficulty": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 29,
+      "casualSeat": 0,
+      "boardId": "human-audited-north-america",
+      "commands": 328,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerDifficulty": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 29,
+      "casualSeat": 1,
+      "boardId": "human-audited-north-america",
+      "commands": 311,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerDifficulty": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 41,
+      "casualSeat": 0,
+      "boardId": "human-audited-north-america",
+      "commands": 330,
+      "rounds": 10,
+      "winnerPlayer": 0,
+      "winnerDifficulty": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 41,
+      "casualSeat": 1,
+      "boardId": "human-audited-north-america",
+      "commands": 297,
+      "rounds": 9,
+      "winnerPlayer": 1,
+      "winnerDifficulty": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 53,
+      "casualSeat": 0,
+      "boardId": "human-audited-north-america",
+      "commands": 376,
+      "rounds": 12,
+      "winnerPlayer": 0,
+      "winnerDifficulty": "casual",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    },
+    {
+      "seed": 53,
+      "casualSeat": 1,
+      "boardId": "human-audited-north-america",
+      "commands": 312,
+      "rounds": 9,
+      "winnerPlayer": 0,
+      "winnerDifficulty": "challenging",
+      "victoryType": "monster-challenge",
+      "completed": true,
+      "stuck": null
+    }
+  ]
+}

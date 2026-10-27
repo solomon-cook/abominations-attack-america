@@ -1,0 +1,26 @@
+{
+  "benchmark": "audited-board-casual-low-deployment-screen",
+  "date": "2026-10-10",
+  "boardId": "human-audited-north-america",
+  "opponentProfile": "tactical",
+  "seedCount": 10,
+  "seatSwappedMatches": 20,
+  "seeds": [17, 29, 41, 53, 67, 79, 83, 97, 113, 149],
+  "commandLimitPerMatch": 1000,
+  "candidate": {
+    "casualWins": 11,
+    "tacticalWins": 9,
+    "unfinished": 0,
+    "totalCommands": 7071,
+    "outcomesChangedAgainstSameSeedBaseline": 8
+  },
+  "sameSeedBaseline": {
+    "casualWins": 11,
+    "tacticalWins": 9,
+    "unfinished": 0,
+    "totalCommands": 6676
+  },
+  "candidatePolicy": "Casual selected the lowest-scored legal deployment instead of the median-ranked legal deployment.",
+  "decision": "rejected",
+  "reason": "The screen did not shift aggregate relative strength, changed individual winners without a net result improvement, and increased command count by about 5.9%; one candidate match took 105.9 seconds for 418 commands. The previous policy is restored. This screen is bot self-play, not human difficulty acceptance."
+}

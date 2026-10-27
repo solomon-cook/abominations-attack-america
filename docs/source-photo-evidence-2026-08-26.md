@@ -243,3 +243,12 @@ The overlay count is explicit: it contains 14 staggered rendered rows with
 with 14 faces in every column. The photograph crops some top and bottom faces
 and some edge faces are empty or sea, but those cells remain in the rectangle
 and must not be removed from the transcription model.
+
+## Status update — 7 October 2026
+
+The August disposition above records the review state at that time. The board's
+336-cell physical data has since received owner sign-off; same-scale visual
+acceptance and independent review remain open in
+[`board-promotion-signoff.md`](board-promotion-signoff.md). Guard Commander
+control and removal lifecycle have since been source-audited and resolved in
+[`national-guard-control-audit.md`](national-guard-control-audit.md).

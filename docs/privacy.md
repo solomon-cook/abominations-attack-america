@@ -1,9 +1,11 @@
-# Privacy information — development playtest
+# Privacy information — playtest and optional accounts
 
-The current playtest supports guest room access and does not require an authenticated profile. A room stores the display name supplied for the session, a random participant token (stored hashed by the server), room presence, commands, events, and the match snapshot needed to reconnect.
+Guest room access does not require an account. Optional accounts add email, a salted password hash, a public username, an HttpOnly account-session cookie, linked player seats, and per-match statistics. The account panel supports verification, password reset, username changes, linked-match history/resume, public profiles and rankings, sign-out, and account deletion. Signed-in players can hide their username and stats from public profile lookup and rankings using the account privacy checkbox; `PATCH /accounts/me/privacy` updates this preference and `GET /accounts/me/privacy` reads it. Hiding the public profile does not hide the account owner's match history or stats from them while signed in. Public visibility remains enabled by default to preserve the existing profile behavior; players can change the setting at any time. Room-only guests can continue to create, join, and spectate without signing in.
 
-The client stores its session token and preferences in browser storage so the same tab can reconnect. Clear site storage or use **Leave room** to remove the local session. Do not share a room token.
+A room stores the display name supplied for the session, a random participant token (stored hashed by the server), room presence, commands, events, and the match snapshot needed to reconnect. A linked account can associate its public username with a player seat and the resulting match statistics. Public profiles and rankings expose usernames and game statistics; they do not expose account email addresses or password hashes. Account deletion removes account statistics and credentials, unlinks retained match participants, and anonymizes retained result names.
 
-Spectators receive a projection that excludes player hands and authoritative deck order. Tokens are excluded from structured logs and error responses. The current repository has no analytics, advertising, profile system, or configured production data-retention policy.
+The client stores its room-session token and preferences in browser storage so the same tab can reconnect. Clear site storage or use **Leave room** to remove the local room session. Do not share a room token. Account sessions use an HttpOnly cookie; verification and password-reset tokens are single-use and stored hashed by the server.
 
-Before public release, the project still needs a reviewed privacy notice, retention/deletion policy, deployed transport/security review, and an operator contact route.
+Spectators receive a projection that excludes player hands and authoritative deck order. Tokens are excluded from structured logs and error responses. The current repository has no analytics or advertising, and no configured production data-retention policy.
+
+Before public release, the project still needs a reviewed privacy notice, retention/deletion policy, deployed transport/security review, and an operator contact route. Account registration also requires configured transactional email delivery in production.
