@@ -194,9 +194,11 @@ export function PhaseActions({
     const deploymentStarted = activeGame.deploymentsThisTurn > 0;
     const canDeployMore = deploymentChoices(activeGame).length > 0;
     return <div className="path-controls">
+      {laserFenceControls}
       {defenseSatellitesButton}
       <button disabled={!canAct || !canDeployMore} onClick={onOpenMilitarySheet}>{canDeployMore ? "Deploy military" : "No legal deployments remaining"}</button>
       {!deploymentStarted && <button disabled={!canAct || !canDeployMore || activeGame.decks.research.exhausted} onClick={() => void runCommand({ type: "draw-research" })}>{activeGame.decks.research.exhausted ? "Military Research exhausted" : !canDeployMore ? "No deployment options remaining" : "Draw Military Research instead"}</button>}
+      <button disabled={!canAct} onClick={() => void runCommand({ type: "pass-deploy" })}>Pass deployment</button>
       {canDeployMore && <p className="path-status">{deploymentStarted ? "Choose another unit to deploy." : "Deploy or draw Military Research to continue."}</p>}
     </div>;
   }

@@ -2,13 +2,15 @@ import { getLocation, type GameState, type HexKey } from "@abominations/game-eng
 
 type Props = {
   game: GameState;
-  activeMonsterId: string;
+  /** Player whose perspective should define "your" and "opponent" labels.
+   * Omit for a spectator, who sees explicit player numbers instead. */
+  viewerPlayerIndex?: number;
   selectedStackKey: HexKey | null;
   onSelect: (key: HexKey) => void;
   onClear: () => void;
 };
 
-export function PieceStackInspector({ game, activeMonsterId, selectedStackKey, onSelect, onClear }: Props) {
+export function PieceStackInspector({ game, viewerPlayerIndex, selectedStackKey, onSelect, onClear }: Props) {
   const occupiedStackKeys = [...new Set([
     ...game.monsters.filter((monster) => typeof monster.location === "string" && monster.location.includes(",")).map((monster) => monster.location as HexKey),
     ...game.units.filter((unit) => typeof unit.location === "string" && unit.location.includes(",")).map((unit) => unit.location as HexKey),
@@ -17,14 +19,14 @@ export function PieceStackInspector({ game, activeMonsterId, selectedStackKey, o
   const units = selectedStackKey ? game.units.filter((unit) => unit.location === selectedStackKey) : [];
 
   return (
-    <section className="stack-inspector" aria-label="Piece stack inspector">
+    <section className={`stack-inspector${selectedStackKey ? " has-selection" : ""}`} aria-label="Piece stack inspector">
       <div className="stack-inspector-heading">
         <div><span className="label">PIECE STACKS</span><p>Select an occupied hex to inspect its pieces.</p></div>
         {selectedStackKey && <button type="button" className="stack-clear" onClick={onClear}>Clear</button>}
       </div>
       <div className="stack-location-list">
         {occupiedStackKeys.length === 0 ? <span className="empty-card-state">No pieces on the board.</span> : occupiedStackKeys.map((key) => (
-          <button type="button" key={key} className={selectedStackKey === key ? "selected-choice" : ""} onClick={() => onSelect(key)}>
+          <button type="button" key={key} aria-pressed={selectedStackKey === key} className={selectedStackKey === key ? "selected-choice" : ""} onClick={() => onSelect(key)}>
             {getLocation(key)?.name ?? `Hex ${key}`} · {game.monsters.filter((monster) => monster.location === key).length + game.units.filter((unit) => unit.location === key).length} piece(s)
           </button>
         ))}
@@ -35,8 +37,21 @@ export function PieceStackInspector({ game, activeMonsterId, selectedStackKey, o
       {selectedStackKey && <div className="stack-details" aria-live="polite">
         <strong>{getLocation(selectedStackKey)?.name ?? `Hex ${selectedStackKey}`}</strong>
         {[
-          ...monsters.map((monster) => ({ id: monster.id, role: monster.id === activeMonsterId ? "Own monster" : "Enemy monster", title: monster.name, detail: `${monster.health}/${monster.maxHealth} Health · ${monster.infamy} Infamy · ${monster.location === "hollywood" ? "Hollywood" : "on board"}` })),
-          ...units.map((unit) => ({ id: unit.id, role: unit.ownerPlayer === undefined ? "Neutral unit" : unit.ownerPlayer === game.currentPlayer ? "Own unit" : "Enemy unit", title: unit.unitTypeId ?? unit.branch, detail: `${unit.branch} · ${unit.ownerPlayer === undefined ? "Neutral" : `Player ${unit.ownerPlayer + 1}`} · ${unit.health === undefined ? "Health not tracked" : `${unit.health} Health`} · ${game.movedPieceIds.includes(unit.id) ? "moved" : "available"}` })),
+          ...monsters.map((monster) => {
+            const ownerPlayer = game.monsters.findIndex((candidate) => candidate.id === monster.id);
+            const role = viewerPlayerIndex === undefined
+              ? `Player ${ownerPlayer + 1} monster`
+              : ownerPlayer === viewerPlayerIndex ? "Your monster" : "Opponent monster";
+            return { id: monster.id, role, title: monster.name, detail: `${monster.health}/${monster.maxHealth} Health · ${monster.infamy} Infamy · ${monster.location === "hollywood" ? "Hollywood" : "on board"}` };
+          }),
+          ...units.map((unit) => {
+            const role = unit.ownerPlayer === undefined
+              ? "Neutral unit"
+              : viewerPlayerIndex === undefined
+                ? `Player ${unit.ownerPlayer + 1} unit`
+                : unit.ownerPlayer === viewerPlayerIndex ? "Your unit" : "Opponent unit";
+            return { id: unit.id, role, title: unit.unitTypeId ?? unit.branch, detail: `${unit.branch} · ${unit.ownerPlayer === undefined ? "Neutral" : `Player ${unit.ownerPlayer + 1}`} · ${unit.health === undefined ? "Health not tracked" : `${unit.health} Health`} · ${game.movedPieceIds.includes(unit.id) ? "moved" : "available"}` };
+          }),
         ].map((piece) => <div key={piece.id}><span>{piece.role} · {piece.title}</span><small>{piece.detail}</small></div>)}
       </div>}
     </section>

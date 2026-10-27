@@ -1,7 +1,8 @@
 import { COMMAND_PROTOCOL_VERSION, type GameCommand, type GameCommandEnvelope, type SetupAction } from "@abominations/game-engine";
-import type { AccountGameSummary, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, PublicRoomSummary, RoomPrivacy, RoomSocketServerMessage, RoomView, SessionResponse } from "@abominations/shared";
+import type { AccountGameSummary, AccountPrivacySettings, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, PublicReplayExport, PublicReplayPage, PublicRoomSummary, RoomPrivacy, RoomSocketServerMessage, RoomView, SessionResponse, SocialSummary } from "@abominations/shared";
+import { resolveApiBaseUrl } from "./api-origin";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8787";
+const API_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL, import.meta.env.DEV ? "http://localhost:8787" : `${window.location.origin}/api`);
 const connectionId = () => {
   const key = "abominations-connection-id";
   const existing = sessionStorage.getItem(key);
@@ -40,11 +41,26 @@ export const updateAccountUsername = (username: string) => request<{ account: Ac
 export const deleteAccount = () => request<{ message: string }>("/accounts/me", { method: "DELETE" });
 export const getAccountGames = () => request<AccountGameSummary[]>("/accounts/me/games");
 export const getAccountStats = () => request<PlayerStats>("/accounts/me/stats");
+export const getAccountPrivacySettings = () => request<AccountPrivacySettings>("/accounts/me/privacy");
+export const updateAccountPrivacySettings = (publicStatsEnabled: boolean) => request<AccountPrivacySettings>("/accounts/me/privacy", { method: "PATCH", body: JSON.stringify({ publicStatsEnabled }) });
+export const getSocialSummary = () => request<SocialSummary>("/accounts/me/social");
+export const sendFriendInvitation = (username: string) => request<{ message: string }>("/accounts/me/friends/invitations", { method: "POST", body: JSON.stringify({ username }) });
+export const respondToFriendInvitation = (id: string, action: "accept" | "decline" | "revoke") => request<{ message: string }>(`/accounts/me/friends/invitations/${encodeURIComponent(id)}/${action}`, { method: "POST", body: "{}" });
+export const removeFriend = (username: string) => request<{ message: string }>(`/accounts/me/friends/${encodeURIComponent(username)}`, { method: "DELETE" });
+export const saveOpponent = (username: string) => request<{ message: string }>(`/accounts/me/saved-opponents/${encodeURIComponent(username)}`, { method: "POST", body: "{}" });
+export const removeSavedOpponent = (username: string) => request<{ message: string }>(`/accounts/me/saved-opponents/${encodeURIComponent(username)}`, { method: "DELETE" });
+export const setPresence = (enabled: boolean) => request<{ message: string }>("/accounts/me/presence", { method: "PATCH", body: JSON.stringify({ enabled }) });
+export const refreshPresence = () => request<{ message: string }>("/accounts/me/presence/heartbeat", { method: "POST", body: "{}" });
+export const createFriendInviteLink = () => request<{ id: string; url: string; expiresAt: string }>("/accounts/me/friend-invite-links", { method: "POST", body: "{}" });
+export const acceptFriendInviteLink = (token: string) => request<{ message: string }>("/accounts/me/friend-invite-links/accept", { method: "POST", body: JSON.stringify({ token }) });
+export const revokeFriendInviteLink = (id: string) => request<{ message: string }>(`/accounts/me/friend-invite-links/${encodeURIComponent(id)}`, { method: "DELETE" });
 export const getPlayerProfile = (username: string) => request<PlayerStats & { botAssistedMatches: number }>(`/players/${encodeURIComponent(username)}`);
 export const getLeaderboard = (category: LeaderboardCategory) => request<LeaderboardEntry[]>(`/leaderboard?category=${encodeURIComponent(category)}`);
 export const setReady = (code: string, token: string, ready: boolean) => request<RoomView>(`/rooms/${code.toUpperCase()}/ready`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ ready }) });
 export const sendSetupAction = (code: string, token: string, expectedRevision: number, action: SetupAction) => request<RoomView>(`/rooms/${code.toUpperCase()}/setup`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ expectedRevision, action }) });
 export const readRoom = (code: string, token: string, afterVersion = 0) => request<RoomView>(`/rooms/${code}/state?token=${encodeURIComponent(token)}&afterVersion=${afterVersion}`);
+export const readPublicReplay = (code: string, fromVersion = 0, limit = 8) => request<PublicReplayPage>(`/rooms/${code.toUpperCase()}/replay?fromVersion=${fromVersion}&limit=${limit}`);
+export const exportPublicReplay = (code: string) => request<PublicReplayExport>(`/rooms/${code.toUpperCase()}/replay/export`);
 export class SocketUnavailableError extends Error {}
 
 export class RoomCommandChannel {
@@ -146,3 +162,4 @@ export const sendCommand = async (
   return request<RoomView>(`/rooms/${code}/actions`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ envelope }) });
 };
 export const websocketUrl = (code: string, ticket: string) => `${API_URL.replace(/^http/, "ws")}/ws?code=${encodeURIComponent(code)}&ticket=${encodeURIComponent(ticket)}`;
+export const websocketTransportEnabled = import.meta.env.VITE_ENABLE_WEBSOCKETS !== "false";

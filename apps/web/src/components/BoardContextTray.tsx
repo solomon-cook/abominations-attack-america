@@ -1,29 +1,15 @@
 import { buildBoardIndex, type BoardDefinition, type BoardHex, type GameState } from "@abominations/game-engine";
+import { boardHexFeatureLabel } from "../board-feature-label";
 
 type Props = {
   game: GameState;
   board?: BoardDefinition;
   hex?: BoardHex;
+  className?: string;
 };
 
-function featureLabel(hex: BoardHex): string {
-  if (hex.features.length === 0) return "No recorded feature";
-  return hex.features.map((feature) => {
-    switch (feature.kind) {
-      case "city":
-        return feature.benefit.kind === "health"
-          ? `city · +${feature.benefit.amount} Health`
-          : `city · ${feature.benefit.dice}d6 Health`;
-      case "military-base": return `${feature.branch} base`;
-      case "mutation-site": return `Mutation site · ${feature.siteId}`;
-      case "lair": return `lair · ${feature.monsterId}`;
-      default: return feature.kind;
-    }
-  }).join(", ");
-}
-
 /** Compact, board-adjacent context for the active hex; never invents unresolved data. */
-export function BoardContextTray({ game, board, hex }: Props) {
+export function BoardContextTray({ game, board, hex, className }: Props) {
   if (!hex) return null;
   const neighbours = board ? buildBoardIndex(board).neighbours[hex.key] ?? [] : [];
   const edgeDetails = board
@@ -43,7 +29,7 @@ export function BoardContextTray({ game, board, hex }: Props) {
   const title = hex.label ?? (hex.audit ? `Cell ${hex.audit.row}/${hex.audit.column}` : `Hex ${hex.key}`);
 
   return (
-    <section className="board-context-tray" aria-label="Active board hex details" aria-live="polite">
+    <section className={`board-context-tray${className ? ` ${className}` : ""}`} aria-label="Active board hex details" aria-live="polite">
       <div className="board-context-heading">
         <span className="label">ACTIVE HEX</span>
         <h3>{title}</h3>
@@ -51,7 +37,7 @@ export function BoardContextTray({ game, board, hex }: Props) {
       </div>
       <div className="board-context-facts">
         <span><b>{hex.waterClass === "seacoast" ? "Coast" : hex.waterClass}</b></span>
-        <span><b>{featureLabel(hex)}</b></span>
+        <span><b>{boardHexFeatureLabel(hex)}</b></span>
         <span><b>{occupants.length ? occupants.join(", ") : "Empty"}</b></span>
         <span><b>{neighbours.length}</b> neighbours</span>
       </div>
@@ -71,7 +57,7 @@ export function BoardContextTray({ game, board, hex }: Props) {
       )}
       <p className="board-context-note">
         {unresolved
-          ? "Physical details are still being transcribed."
+          ? "This development or provisional hex has no approved physical-board detail."
           : "Details and actions come from the game board."}
       </p>
     </section>

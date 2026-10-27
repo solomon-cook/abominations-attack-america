@@ -106,6 +106,18 @@
   max-width:min(620px,80vw); width:max-content; margin:0; padding:8px 12px;
   background:var(--hud-bg); border-radius:6px; pointer-events:auto;
 }
+.game-screen .board-stack-inspector {
+  position:absolute; z-index:24; top:12px; right:12px;
+  width:min(340px,calc(100% - 24px)); max-height:34vh;
+  overflow:auto; overscroll-behavior:contain; pointer-events:auto;
+  border:1px solid var(--hud-border); border-radius:8px;
+  background:var(--hud-bg); box-shadow:0 8px 28px #06131188;
+}
+.game-screen .board-stack-inspector .stack-inspector { margin:0; padding:10px; border:0; }
+.game-screen .board-stack-inspector .stack-inspector.has-selection .stack-location-list,
+.game-screen .board-stack-inspector .stack-inspector.has-selection .piece-legend { display:none; }
+.game-screen .board-stack-inspector .stack-location-list { max-height:76px; overflow:auto; }
+.game-screen .board-stack-inspector .stack-details { max-height:18vh; overflow:auto; }
 .game-screen .piece-detail-tray { position:absolute; z-index:17; right:14px; bottom:140px; width:min(330px,32vw); max-height:35vh; overflow:auto; pointer-events:auto; background:var(--hud-bg); }
 .game-screen > .layout.panel-open > .game-side-panel {
   position:absolute; inset:140px 14px 110px auto; display:block;
@@ -139,8 +151,13 @@
   .game-screen .map-controls button { min-width:36px; min-height:44px; }
   .game-screen .map-zoom { min-width:37px; }
   .game-screen .board-action-bar { right:8px; bottom:82px; width:calc(100% - 136px); }
-  .game-screen .board-context-tray { left:8px; bottom:190px; width:190px; max-height:95px; padding:7px; }
+  .game-screen .board-context-tray { left:8px; bottom:190px; width:190px; max-height:115px; padding:7px; }
+  .game-screen .board-stack-inspector { top:8px; right:8px; left:66px; width:auto; max-height:30vh; }
+  .game-screen .board-stack-inspector .stack-location-list { max-height:54px; }
+  .game-screen .board-stack-inspector .stack-details { max-height:16vh; }
   .game-screen .board-context-tray .board-context-facts { display:none; }
+  .game-screen .board-context-tray .board-context-facts { display:block; }
+  .game-screen .board-context-tray .board-context-facts span:not(:nth-child(2)) { display:none; }
   .game-screen .piece-detail-tray { right:8px; bottom:202px; width:calc(100% - 24px); }
   .game-screen > .layout.panel-open > .game-side-panel { inset:205px 8px 82px; width:auto; }
   .game-screen > .settings-panel,.game-screen > .onboarding,.game-screen > .setup-panel,.game-screen > .setup-summary { top:165px; max-height:calc(100dvh - 185px); }
@@ -167,6 +184,14 @@
 .game-screen .map-controls button{min-width:44px;min-height:44px}
 @media(max-width:600px){.game-screen .map-controls{gap:1px;padding:3px}.game-screen .map-controls .map-reset{padding-inline:4px}.game-screen .map-zoom{min-width:32px}.game-screen.online-game>header h1{font-size:.9rem}.game-screen.online-game>header .header-actions{gap:3px}.game-screen.online-game>header .ghost{font-size:.58rem;padding:5px}.game-screen.online-game>header .room-hud-status{font-size:.55rem}.game-screen .global-game-error{top:166px}}
 @media(max-width:420px){.game-screen .map-controls button:nth-child(-n+4){display:none}.game-screen .map-controls{justify-content:center}}
+
+.giant-placement-choice{position:absolute;z-index:32;top:148px;left:50%;width:min(460px,calc(100vw - 24px));max-height:42dvh;transform:translateX(-50%);overflow:auto;overscroll-behavior:contain;padding:14px 16px;border:1px solid #d1b97699;border-radius:9px;background:var(--hud-bg);box-shadow:0 8px 30px #06131177;pointer-events:auto}
+.giant-placement-choice h2{margin:0;color:#f1d995;font-size:1.05rem}
+.giant-placement-choice p{margin:6px 0 10px;color:#e1ddc9;font-size:.82rem}
+.giant-placement-options{display:flex;flex-wrap:wrap;gap:7px}
+.giant-placement-options button{min-height:44px;margin:0;padding:8px 11px;border:1px solid #c3ab6e77;background:#293a31;color:#f4edda}
+.giant-placement-options button:focus-visible{outline:2px solid #ffe69d;outline-offset:2px}
+@media(max-width:600px){.giant-placement-choice{top:170px;width:calc(100vw - 16px);padding:10px;max-height:38dvh}.giant-placement-choice h2{font-size:.92rem}.giant-placement-options{display:grid;grid-template-columns:1fr 1fr}.giant-placement-options button{min-width:0;padding:7px;font-size:.72rem}}
 
 /* A persistent turn panel keeps decisions beside the board, even when minimized. */
 .game-screen > .layout.panel-open > .game-side-panel,
@@ -248,6 +273,9 @@
   .game-screen.setup-in-progress > .setup-panel { right:8px; top:170px; width:240px; max-height:calc(100dvh - 260px); padding:12px; }
 }
 .game-screen.setup-in-progress .board-context-tray { display:none; }
+.game-screen .board-context-tray-focus { display:none; }
+.game-screen .board-context-tray-focus { grid-template-columns:minmax(0,1fr); }
+.game-screen.game-panel-closed:has(.hex-tile:focus) .board-context-tray-focus { display:grid; }
 
 /* Turn actions occupy the lower-right corner; the center edge is for sheets. */
 .game-screen > .layout.panel-open > .game-side-panel,

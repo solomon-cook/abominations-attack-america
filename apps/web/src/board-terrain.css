@@ -4,6 +4,8 @@
 .audited-grid .hex-tile::before{display:none}
 .audited-grid .hex-tile:hover:not(:disabled),.audited-grid .hex-tile:focus-visible{transform:translate(-50%,-50%);filter:none}
 .audited-grid .hex-tile .audited-terrain{inset:0;width:100%;height:100%;opacity:1;object-fit:fill;pointer-events:none}
+.game-screen[data-board-theme="moonlit"] .audited-grid .hex-tile .audited-terrain{filter:hue-rotate(158deg) saturate(.7) brightness(.8) contrast(1.06)}
+.game-screen[data-board-theme="desert"] .audited-grid .hex-tile .audited-terrain{filter:sepia(.42) saturate(1.12) hue-rotate(338deg) brightness(.9) contrast(1.04)}
 .audited-grid .hex-highlight{position:absolute;inset:0;width:100%;height:100%;z-index:7;pointer-events:none;fill:transparent;stroke:transparent;stroke-width:3;stroke-linejoin:round}
 .audited-grid .hex-tile.legal .hex-highlight{fill:#f1eab51a;stroke:#d0c68a}
 .audited-grid .hex-tile.selected .hex-highlight,.audited-grid .hex-tile.path-selected .hex-highlight{fill:#ffd07833;stroke:#ffdd84}
@@ -15,7 +17,10 @@
 .terrain-barriers .barrier-lake{stroke:#286e91}
 .audited-grid .hex-tile .tile-content{z-index:4;width:86%;max-width:86%;max-height:93%;font-size:3px;gap:1px;background:transparent;padding:0;color:#fff7dc;text-shadow:0 1px 2px #132522,0 0 3px #132522;overflow:visible}
 .audited-grid .hex-tile .tile-name{font-size:4px;line-height:1.1;letter-spacing:0;max-width:100%;font-weight:800;background:#172821b8;border-radius:2px;padding:1px 2px}
-.audited-grid .hex-tile .audited-city-name{position:absolute;top:46%;left:8%;width:84%;z-index:4;font-size:4.5px;line-height:1.15;color:#fff8df;text-align:center;font-weight:700;letter-spacing:.02px;text-shadow:none;background:#18372fee;border-radius:1px;padding:.6px .4px;pointer-events:none;white-space:normal;overflow-wrap:normal}
+.audited-grid .hex-tile{container-type:inline-size}
+.audited-grid .hex-tile .audited-city-name{position:absolute;top:46%;left:2%;width:96%;z-index:4;font-size:clamp(4.5px,11.5cqw,8.5px);line-height:1.15;color:#fff8df;text-align:center;font-weight:700;letter-spacing:.02px;text-shadow:0 1px 1px #132522;background:#18372fee;border-radius:1px;padding:.8px .5px;pointer-events:none;white-space:normal;overflow-wrap:normal}
+.large-text .audited-grid .hex-tile .audited-city-name{font-size:clamp(5px,13cqw,9.5px);line-height:1.12;overflow-wrap:normal}
+@media(max-width:600px){.audited-grid .hex-tile .audited-city-name{display:none}}
 .board-labels-hidden .audited-city-name{display:none}
 .audited-grid .hex-tile .tile-occupants{width:70%;max-width:30px;gap:0}
 .audited-grid .hex-tile .tile-occupant{width:100%;max-width:24px;max-height:24px}

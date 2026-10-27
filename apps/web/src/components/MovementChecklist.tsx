@@ -36,8 +36,12 @@ export function MovementChecklist({ game, canAct, selectedUnitId, movableUnitIds
     <div ref={pieceListRef} className="movement-piece-list">
       {pieces.map((piece) => {
         const moved = game.movedPieceIds.includes(piece.id);
-        return <button type="button" key={piece.id} className={`movement-piece ${piece.selected && (piece.unitId !== null || piece.movable) ? "selected" : ""} ${moved ? "completed" : ""}`}
-          aria-pressed={piece.selected && (piece.unitId !== null || piece.movable)} disabled={piece.unitId === null && (!canAct || !piece.movable)} onClick={() => onSelect(piece.unitId)}>
+        const movementStatus = moved ? "done" : piece.movable ? "available to move" : "held";
+        const selected = piece.selected && (piece.unitId !== null || piece.movable);
+        const accessibleName = `${piece.name}, ${piece.kind}, ${movementStatus}${selected ? ", selected" : ""}`;
+        return <button type="button" key={piece.id} className={`movement-piece ${selected ? "selected" : ""} ${moved ? "completed" : ""}`}
+          aria-label={accessibleName} title={accessibleName}
+          aria-pressed={selected} disabled={piece.unitId === null && (!canAct || !piece.movable)} onClick={() => onSelect(piece.unitId)}>
           <span className="movement-piece-portrait"><img src={piece.image} alt="" /><i aria-hidden="true">{moved ? "✓" : piece.movable ? "→" : "—"}</i></span>
           <span className="movement-piece-label"><strong>{piece.name}</strong><small>{piece.kind}</small></span>
           <span className="movement-piece-status">{moved ? "Done" : piece.movable ? "Move" : "Held"}</span>

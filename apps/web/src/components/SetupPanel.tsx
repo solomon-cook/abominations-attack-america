@@ -1,4 +1,5 @@
-import { monsterDefinition, monsters, UNIT_DEFINITIONS, type BoardDefinition, type SetupState } from "@abominations/game-engine";
+import { useEffect, useMemo, useState } from "react";
+import { monsterDefinition, monsters, UNIT_DEFINITIONS, type BoardDefinition, type HexKey, type SetupPlacement, type SetupState } from "@abominations/game-engine";
 import { setupLairLabel } from "./setup-location-label";
 import type { RoomView } from "@abominations/shared";
 import { monsterAssetSlug } from "../monster-assets";
@@ -8,9 +9,16 @@ type Props = {
   board?: BoardDefinition;
   setupSeat?: SetupState["seats"][number];
   online: boolean;
+  showSetupSummary?: boolean;
   playerIndex?: number;
   participants: RoomView["participants"];
+  participantReady: boolean;
+  canToggleReady: boolean;
+  readinessPending: boolean;
+  setupActionPending: boolean;
+  onToggleReady: () => void;
   onChooseOption: (value: string) => void;
+  onPlaceUnusedBranches: (placements: readonly SetupPlacement[]) => void;
   deploymentCount: number;
   hasAvailableDeploymentOptions: boolean;
   selectingDeployment: boolean;
@@ -20,11 +28,22 @@ type Props = {
   onChooseStartingChoice: (kind: "research" | "deploy") => void;
 };
 
-export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex, participants, onChooseOption, onChooseStartingChoice, deploymentCount, hasAvailableDeploymentOptions, selectingDeployment, selectedPiece, onFinishDeployment, onUndoDeployment }: Props) {
+export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSummary = true, playerIndex, participants, participantReady, canToggleReady, readinessPending, setupActionPending, onToggleReady, onChooseOption, onPlaceUnusedBranches, onChooseStartingChoice, deploymentCount, hasAvailableDeploymentOptions, selectingDeployment, selectedPiece, onFinishDeployment, onUndoDeployment }: Props) {
+  const [unusedPlacements, setUnusedPlacements] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (activeSetup.phase === "unused-branch-placement") setUnusedPlacements({});
+  }, [activeSetup.phase]);
   const waiting = online && playerIndex !== setupSeat?.playerIndex;
-  const disabled = Boolean(waiting);
-  const setupSteps = ["Monster", "Branch", "Lair", "Starting choice"];
-  const activeStep = ({ "monster-selection": 0, "branch-selection": 1, "lair-selection": 2, "starting-choice": 3 } as const)[activeSetup.phase as "monster-selection" | "branch-selection" | "lair-selection" | "starting-choice"] ?? 3;
+  const disabled = Boolean(waiting || setupActionPending);
+  const unusedBranches = useMemo(() => activeSetup.definition.eligibleBranches.filter((branch) => !activeSetup.seats.some((seat) => seat.branch === branch)), [activeSetup]);
+  const setupSteps = ["Monster", "Branch", ...(activeSetup.definition.unusedBranchPlacements && (activeSetup.phase === "branch-selection" || unusedBranches.length > 0) ? ["Unused branches"] : []), "Lair", "Starting choice"];
+  const activeStep = activeSetup.phase === "monster-selection" ? 0 : activeSetup.phase === "branch-selection" ? 1 : activeSetup.phase === "unused-branch-placement" ? 2 : activeSetup.phase === "lair-selection" ? setupSteps.length - 2 : setupSteps.length - 1;
+  const unusedUnitIds = activeSetup.definition.unusedBranchPlacements ? unusedBranches.flatMap((branch) => activeSetup.definition.unusedBranchPlacements?.unitIdsByBranch[branch] ?? []) : [];
+  const completeUnusedPlacements = unusedUnitIds.length > 0 && unusedBranches.every((branch) => {
+    const ids = activeSetup.definition.unusedBranchPlacements?.unitIdsByBranch[branch] ?? [];
+    const destinations = ids.map((id) => unusedPlacements[id]);
+    return destinations.every(Boolean) && new Set(destinations).size === destinations.length;
+  });
   const lairLabel = (key?: string, monsterId = setupSeat?.monsterId) => key && monsterId ? setupLairLabel(activeSetup, board, monsterId, key) : "Not selected";
   if (activeSetup.phase === "lair-selection") {
     const lairs = setupSeat?.monsterId
@@ -37,6 +56,31 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
         <summary>Choose from list</summary>
         <div className="setup-options">{lairs.map((lair) => <button key={lair} disabled={disabled} onClick={() => onChooseOption(lair)}>{lairLabel(lair)}</button>)}</div>
       </details>
+    </section>;
+  }
+  if (activeSetup.phase === "unused-branch-placement") {
+    return <section className="setup-panel unused-branch-placement" aria-label="Place unused branch units">
+      <ol className="setup-step-track" aria-label="Setup progress">{setupSteps.map((step, index) => <li key={step} className={index < activeStep ? "complete" : index === activeStep ? "current" : "upcoming"}>{step}</li>)}</ol>
+      <span className="label">GAME SETUP</span>
+      <h2>Place unused branches</h2>
+      <p>The player who chose a monster last places each unused branch’s units, one on each of that branch’s bases.</p>
+      <p className="setup-turn">{waiting ? `Waiting for Player ${(setupSeat?.playerIndex ?? 0) + 1}` : `Player ${(setupSeat?.playerIndex ?? 0) + 1} · Place the units`}</p>
+      {unusedBranches.map((branch) => {
+        const units = activeSetup.definition.unusedBranchPlacements?.unitIdsByBranch[branch] ?? [];
+        const bases = activeSetup.definition.unusedBranchPlacements?.basesByBranch[branch] ?? [];
+        return <fieldset className="setup-unused-branch" key={branch} disabled={disabled}>
+          <legend>{branch} · {bases.length} bases</legend>
+          {units.map((unitId) => {
+            const unit = UNIT_DEFINITIONS.find((candidate) => candidate.id === activeSetup.definition.unusedBranchPlacements?.unitTypeById[unitId]);
+            const assignedElsewhere = new Set(Object.entries(unusedPlacements).filter(([id]) => units.includes(id)).map(([, destination]) => destination));
+            return <label key={unitId}>{unit?.name ?? unitId}<select aria-label={`${branch} ${unit?.name ?? unitId} base`} value={unusedPlacements[unitId] ?? ""} onChange={(event) => setUnusedPlacements((current) => ({ ...current, [unitId]: event.target.value }))}>
+              <option value="">Choose a base</option>
+              {bases.map((base) => <option key={base} value={base} disabled={assignedElsewhere.has(base) && unusedPlacements[unitId] !== base}>{board?.hexes[base as HexKey]?.label ?? base}</option>)}
+            </select></label>;
+          })}
+        </fieldset>;
+      })}
+      <button disabled={disabled || !completeUnusedPlacements} onClick={() => onPlaceUnusedBranches(unusedUnitIds.map((unitId) => ({ unitId, destination: unusedPlacements[unitId]! })))}>Place units and continue</button>
     </section>;
   }
   return (
@@ -110,11 +154,11 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
           <p className="setup-progress">{activeSetup.seats.filter((seat) => seat.ready).length}/{activeSetup.seats.length} starting choices confirmed</p>
         </section>
       )}
-      {online && activeSetup.phase === "complete" && (
+      {online && showSetupSummary && activeSetup.phase === "complete" && (
         <section className="setup-summary" aria-label="Setup summary">
           <span className="label">SETUP LOCKED</span>
           <h2>Match configuration</h2>
-          <p>Assignments are set. Each player must press Ready to begin.</p>
+          <p>Assignments are set. Each player must confirm they are ready to begin.</p>
           <div className="setup-summary-grid">
             {activeSetup.seats.map((seat) => (
               <div key={seat.playerIndex}>
@@ -125,6 +169,9 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, playerIndex,
               </div>
             ))}
           </div>
+          {canToggleReady && <button className="setup-ready-toggle" type="button" aria-pressed={participantReady} disabled={readinessPending} onClick={onToggleReady}>
+            {readinessPending ? "Updating readiness…" : participantReady ? "Not ready" : "Ready to begin"}
+          </button>}
         </section>
       )}
     </>

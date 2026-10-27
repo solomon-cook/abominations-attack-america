@@ -1,4 +1,4 @@
-const CACHE_NAME = "abominations-shell-audited-v3";
+const CACHE_NAME = "abominations-shell-audited-v8";
 const SHELL = ["/", "/offline.html", "/reference.html", "/manifest.webmanifest", "/pwa-icon.svg"];
 
 self.addEventListener("install", (event) => {

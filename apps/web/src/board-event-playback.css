@@ -1,6 +1,6 @@
 .board-event-playback{position:fixed;z-index:86;display:grid;gap:6px;width:max-content;min-width:154px;max-width:min(286px,calc(100vw - 20px));padding:8px 10px;border:1px solid #d9bd7a;border-radius:8px;background:linear-gradient(145deg,#26372ff5,#12201ef7);box-shadow:0 8px 22px #07110f9c;color:#f2ecd7;pointer-events:none;transform:translate(-50%,0);animation:board-event-arrive .32s cubic-bezier(.18,.8,.25,1) both}
 .board-event-playback.is-interactive{pointer-events:auto}
-.board-event-playback.is-above{transform:translate(-50%,-100%)}
+.board-event-playback.is-above{transform:translate(-50%,0)}
 .board-event-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
 .board-event-heading>span{display:grid;gap:1px;min-width:0}
 .board-event-heading small{color:#e3cc8a;font-size:8px;font-weight:900;letter-spacing:.12em}
@@ -40,8 +40,11 @@
 .board-event-playback[data-event-action="fight.resolved"],.board-event-playback[data-event-action="battle.target-required"]{min-width:230px;max-width:min(286px,calc(100vw - 20px));gap:5px;padding:8px 9px}
 .board-battle-step{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);align-items:center;gap:4px;min-width:0;padding:3px 0 1px}
 .board-battle-actor{display:grid;justify-items:center;gap:3px;min-width:0;text-align:center}
-.board-battle-avatar{display:grid;place-items:center;width:38px;height:38px;overflow:hidden;border:1px solid #d9bd7a99;border-radius:50%;background:radial-gradient(circle at 35% 28%,#6c7b60,#25332d 72%);box-shadow:0 2px 6px #0008}
-.board-battle-avatar img{width:100%;height:100%;object-fit:contain;animation:board-event-die-pop .3s ease both}
+.board-battle-avatar{position:relative;display:grid;place-items:center;width:38px;height:38px;overflow:visible;border:1px solid #d9bd7a99;border-radius:50%;background:radial-gradient(circle at 35% 28%,#6c7b60,#25332d 72%);box-shadow:0 2px 6px #0008}
+.board-battle-avatar.impact-is-hit,.board-battle-avatar.impact-is-destroyed{animation:board-battle-impact-flash .46s ease-out both}
+.board-battle-avatar.impact-is-hit::after,.board-battle-avatar.impact-is-destroyed::after{position:absolute;inset:-4px;border:2px solid #ff8b6b;border-radius:50%;box-shadow:0 0 12px #ff674fcc;content:"";pointer-events:none;animation:board-battle-impact-ring .46s ease-out both}
+.board-battle-avatar.impact-is-destroyed::after{border-color:#ffd27a;box-shadow:0 0 15px #ff9f42}
+.board-battle-avatar img{width:100%;height:100%;border-radius:50%;object-fit:contain;animation:board-event-die-pop .3s ease both}
 .board-battle-actor strong{width:100%;overflow:hidden;color:#eee7d3;font-size:9px;font-weight:850;line-height:1.15;text-overflow:ellipsis;text-transform:capitalize;white-space:nowrap}
 .board-battle-roll{display:grid;justify-items:center;gap:0;color:#e7d28e}
 .board-battle-roll>small{font-size:7px;font-weight:900;letter-spacing:.12em}
@@ -55,6 +58,8 @@
 @keyframes board-event-die-pop{from{opacity:0;translate:0 -12px;rotate:-10deg}to{opacity:1;translate:0 0;rotate:0}}
 @keyframes board-event-outcome-in{from{opacity:0;translate:0 7px}to{opacity:1;translate:0 0}}
 @keyframes board-event-card-in{from{opacity:0;rotateY:85deg;translate:0 6px}to{opacity:1;rotateY:0;translate:0 0}}
+@keyframes board-battle-impact-flash{0%,100%{filter:brightness(1);scale:1}38%{filter:brightness(1.8);scale:1.12}}
+@keyframes board-battle-impact-ring{0%{opacity:.95;scale:.55}100%{opacity:0;scale:1.4}}
 @media(max-width:700px){.board-event-playback{gap:5px;padding:7px 8px}.board-event-heading strong{font-size:12px}.board-event-dice{min-height:38px}.board-event-die{width:36px;height:36px}.board-event-die .combat-die[data-die]{width:32px;height:32px}}
-@media(prefers-reduced-motion:reduce){.board-event-playback,.board-event-die,.board-event-outcome,.board-event-card,.board-battle-avatar img,.board-battle-roll .combat-die,.board-battle-result{animation:none}}
-.reduced-motion .board-battle-avatar img,.reduced-motion .board-battle-roll .combat-die,.reduced-motion .board-battle-result,.manual-reduced-motion .board-event-playback,.manual-reduced-motion .board-event-die,.manual-reduced-motion .board-event-outcome,.manual-reduced-motion .board-event-card,.manual-reduced-motion .board-battle-avatar img,.manual-reduced-motion .board-battle-roll .combat-die,.manual-reduced-motion .board-battle-result{animation:none}
+@media(prefers-reduced-motion:reduce){.board-event-playback,.board-event-die,.board-event-outcome,.board-event-card,.board-battle-avatar img,.board-battle-avatar.impact-is-hit,.board-battle-avatar.impact-is-destroyed,.board-battle-avatar.impact-is-hit::after,.board-battle-avatar.impact-is-destroyed::after,.board-battle-roll .combat-die,.board-battle-result{animation:none}}
+.reduced-motion .board-battle-avatar img,.reduced-motion .board-battle-avatar.impact-is-hit,.reduced-motion .board-battle-avatar.impact-is-destroyed,.reduced-motion .board-battle-avatar.impact-is-hit::after,.reduced-motion .board-battle-avatar.impact-is-destroyed::after,.reduced-motion .board-battle-roll .combat-die,.reduced-motion .board-battle-result,.manual-reduced-motion .board-event-playback,.manual-reduced-motion .board-event-die,.manual-reduced-motion .board-event-outcome,.manual-reduced-motion .board-event-card,.manual-reduced-motion .board-battle-avatar img,.manual-reduced-motion .board-battle-avatar.impact-is-hit,.manual-reduced-motion .board-battle-avatar.impact-is-destroyed,.manual-reduced-motion .board-battle-avatar.impact-is-hit::after,.manual-reduced-motion .board-battle-avatar.impact-is-destroyed::after,.manual-reduced-motion .board-battle-roll .combat-die,.manual-reduced-motion .board-battle-result{animation:none}

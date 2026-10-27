@@ -106,13 +106,13 @@
 .game-screen .movement-checklist-heading { display: flex; align-items: center; justify-content: space-between; padding: 0 10px 7px; color: var(--civ-ivory); font-size: .76rem; }
 .game-screen .movement-checklist-heading span { color: var(--civ-brass); font-variant-numeric: tabular-nums; }
 .game-screen .movement-piece-list { display: flex; width: max-content; max-width: 100%; gap: 5px; overflow-x: auto; padding: 4px 9px 8px; }
-.game-screen .movement-piece { display: grid; grid-template-rows: 48px auto; justify-items: center; gap: 3px; flex: 0 0 68px; min-height: 80px; padding: 3px; border: 1px solid transparent; border-radius: 7px; background: #263934; color: var(--civ-ivory); }
+.game-screen .movement-piece { display: grid; grid-template-rows: 48px minmax(30px,auto); justify-items: center; gap: 3px; flex: 0 0 92px; min-height: 84px; padding: 4px; border: 1px solid transparent; border-radius: 7px; background: #263934; color: var(--civ-ivory); }
 .game-screen .movement-piece.selected { border-color: #e4ca79; background: #394b3d; }
 .game-screen .movement-piece-portrait { position: relative; display: grid; width: 46px; height: 46px; place-items: center; border: 1px solid #82917e; border-radius: 50%; background: #142321; }
 .game-screen .movement-piece-portrait img { width: 40px; height: 40px; object-fit: contain; }
 .game-screen .movement-piece-portrait i { position: absolute; right: -4px; bottom: -3px; min-width: 17px; height: 17px; border-radius: 50%; background: #d9c47d; color: #172523; font-size: 11px; font-style: normal; font-weight: 800; text-align: center; }
-.game-screen .movement-piece-label { max-width: 64px; overflow: hidden; text-align: center; }
-.game-screen .movement-piece-label strong { display: block; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .56rem; }
+.game-screen .movement-piece-label { max-width: 84px; text-align: center; }
+.game-screen .movement-piece-label strong { display: block; max-width: 84px; overflow-wrap: anywhere; font-size: .62rem; line-height: 1.15; }
 .game-screen .movement-piece-label small, .game-screen .movement-piece-status { display: none; }
 .game-screen .movement-checklist .movement-context { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .game-screen .command-station > .movement-checklist { position: absolute; right: calc(100% + 10px); bottom: 0; width: max-content; max-width: min(520px, calc(100vw - 500px)); max-height: 136px; overflow: hidden; pointer-events: auto; border: 1px solid var(--hud-border); border-radius: 7px; background: #172625ed; box-shadow: 0 8px 24px #07111270; }
@@ -287,9 +287,11 @@
   .game-screen .command-station > .movement-checklist { left: 0; right: 0; bottom: calc(118px + min(42dvh, 330px)); width: 100%; max-height: 110px; }
   .game-screen .command-station > .bottom-context-dock { bottom: 118px; max-height: min(42dvh, 330px); overflow-y: auto; border: 1px solid var(--hud-border); border-radius: 7px; background: #172625f5; }
   .game-screen .command-station .context-tab-body { max-height: min(42dvh, 330px); }
-  .game-screen .movement-piece { flex-basis: 60px; grid-template-rows: 42px auto; min-height: 72px; }
+  .game-screen .movement-piece { flex-basis: 88px; grid-template-rows: 42px minmax(28px,auto); min-height: 72px; }
   .game-screen .movement-piece-portrait { width: 40px; height: 40px; }
   .game-screen .movement-piece-portrait img { width: 35px; height: 35px; }
+  .game-screen .movement-piece-label { max-width: 80px; }
+  .game-screen .movement-piece-label strong { max-width: 80px; font-size: .6rem; }
   .cinema-reveal-all { margin: 8px 0 0; }
 }
 @media (max-width: 360px) {
@@ -332,6 +334,15 @@
   .game-screen .command-station.mobile-command-expanded > .board-action-bar .action-dock { border-radius: 0 0 7px 7px; }
   .game-screen .player-sheet-peeks { display: none; }
 }
+@media (min-width:320px) and (max-width:700px) {
+  .game-screen .command-station > .mobile-command-toggle { width:128px; }
+  .game-screen .command-station > .board-action-bar { left:128px; }
+  .game-screen .mobile-command-toggle strong { white-space:normal; overflow-wrap:anywhere; text-overflow:clip; }
+}
+@media (min-width:320px) and (max-width:380px) {
+  .game-screen .command-station > .board-action-bar .action-dock { grid-template-columns:minmax(0,1fr) 116px; }
+  .game-screen .command-station > .board-action-bar .action-dock > button { width:116px; }
+}
 @media(max-height:540px) and (min-width:601px) {
   .game-screen .map-controls { top: 92px; bottom: auto; left: 12px; right: auto; }
 }
@@ -342,18 +353,24 @@
 .game-screen > header .top-turn-summary .turn-progress { display:none; }
 .game-screen > header .header-actions { width:auto; max-width:none; flex:0 0 auto; order:0; justify-content:flex-end; }
 .game-screen > .board-map-controls { top:calc(max(12px,env(safe-area-inset-top)) + 64px); }
-.game-screen:has(.persistent-record[data-record-tab="map"]) .board-minimap { top:190px; bottom:auto; left:max(14px,env(safe-area-inset-left)); width:min(260px,calc(100vw - 40px)); height:auto; max-height:140px; }
-.game-screen:has(.persistent-record[data-record-tab="map"]) .board-minimap svg { height:100px; }
+.game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .board-minimap { display:block; top:190px; bottom:auto; left:max(14px,env(safe-area-inset-left)); width:min(260px,calc(100vw - 40px)); height:auto; max-height:140px; }
+.game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .board-minimap svg { height:100px; }
 .game-screen #turn-hud-body > .turn-progress { display:block; margin:0 0 10px; padding:8px; border:1px solid var(--hud-border); border-radius:6px; background:#172625; }
 .game-screen #turn-hud-body > .status { position:static; display:grid; grid-template-columns:repeat(auto-fit,minmax(115px,1fr)); width:auto; max-width:none; max-height:none; margin:8px 0; padding:8px; overflow:visible; border:1px solid var(--hud-border); background:#172625; }
 .game-screen #turn-hud-body > .status div { min-width:0; }
 
 /* The desktop order strip sits centered just above the fixed action dock. */
-.game-screen .command-station > .movement-checklist { position:fixed; z-index:42; right:auto; bottom:calc(16px + 84px + 12px); left:50%; width:max-content; max-width:min(720px,calc(100vw - 48px)); max-height:136px; overflow:hidden; transform:translateX(-50%); }
+.game-screen .command-station > .movement-checklist { position:fixed; z-index:42; right:auto; bottom:calc(16px + 84px + 12px); left:50%; width:max-content; max-width:min(360px,calc(100vw - 48px)); max-height:112px; overflow:hidden; transform:translateX(-50%); }
 .game-screen .movement-piece-list { box-sizing:border-box; width:max-content; max-width:100%; overflow-x:auto; overflow-y:hidden; padding-right:14px; padding-left:14px; scroll-padding-inline:14px; scroll-snap-type:x proximity; scrollbar-width:thin; overscroll-behavior-x:contain; }
 .game-screen .movement-piece { scroll-snap-align:center; }
+@media (min-width:701px) and (max-width:900px) {
+  .game-screen .command-station > .movement-checklist { bottom:300px; }
+}
 @media (max-height:540px) and (min-width:1640px) {
   .game-screen .command-station > .movement-checklist { bottom:max(16px,env(safe-area-inset-bottom)); margin:0; }
+}
+@media (max-height:540px) and (min-width:601px) and (max-width:1100px) {
+  .game-screen .command-station > .movement-checklist { top:max(64px,calc(env(safe-area-inset-top) + 56px)); right:max(12px,env(safe-area-inset-right)); bottom:auto; left:160px; max-width:calc(100vw - 172px); transform:none; }
 }
 
 /* Player identity badges sit outside the portrait artwork and remain labeled. */

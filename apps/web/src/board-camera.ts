@@ -4,20 +4,28 @@ export type BoardCamera = { center: Point; zoom: number };
 export const MIN_BOARD_ZOOM = 1;
 export const MAX_BOARD_ZOOM = 4;
 /** Presentation-only ocean margin, allowing edge/coastal spaces to center. */
-export const BOARD_EDGE_PADDING = 500;
+export const BOARD_EDGE_PADDING = 1000;
 
 export function cameraScale(camera: BoardCamera, viewport: Size, world: Size): number {
-  return Math.max(viewport.width / world.width, viewport.height / world.height) * camera.zoom;
+  return Math.min(viewport.width / world.width, viewport.height / world.height) * camera.zoom;
 }
 
 export function clampCamera(camera: BoardCamera, viewport: Size, world: Size): BoardCamera {
   const zoom = Math.max(MIN_BOARD_ZOOM, Math.min(MAX_BOARD_ZOOM, camera.zoom));
   const scale = cameraScale({ ...camera, zoom }, viewport, world);
-  const halfWidth = Math.min(world.width / 2, viewport.width / scale / 2);
-  const halfHeight = Math.min(world.height / 2, viewport.height / scale / 2);
+  const halfWidth = viewport.width / scale / 2;
+  const halfHeight = viewport.height / scale / 2;
+  const bounds = (length: number, halfView: number): readonly [number, number] => {
+    if (zoom === MIN_BOARD_ZOOM) return [length / 2, length / 2];
+    const minimum = -BOARD_EDGE_PADDING + halfView;
+    const maximum = length + BOARD_EDGE_PADDING - halfView;
+    return minimum <= maximum ? [minimum, maximum] : [length / 2, length / 2];
+  };
+  const [minX, maxX] = bounds(world.width, halfWidth);
+  const [minY, maxY] = bounds(world.height, halfHeight);
   return { zoom, center: {
-    x: Math.max(halfWidth - BOARD_EDGE_PADDING, Math.min(world.width - halfWidth + BOARD_EDGE_PADDING, camera.center.x)),
-    y: Math.max(halfHeight - BOARD_EDGE_PADDING, Math.min(world.height - halfHeight + BOARD_EDGE_PADDING, camera.center.y)),
+    x: Math.max(minX, Math.min(maxX, camera.center.x)),
+    y: Math.max(minY, Math.min(maxY, camera.center.y)),
   } };
 }
 
