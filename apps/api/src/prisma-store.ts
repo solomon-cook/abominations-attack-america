@@ -1,8 +1,9 @@
 import { randomBytes, createHash } from "node:crypto";
-import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupAction, createMvpRoomGame, createRoomGame, projectState, redactCardIdentifiers, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
-import type { PublicRoomSummary, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
+import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupActionWithRecord, createMvpRoomGame, createRoomGame, projectState, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
+import type { PublicReplayExport, PublicReplayPage, PublicRoomSummary, ReplayFrame, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 import { completedMatchRows, emptyMatchCounters, updateMatchCounters } from "./player-stats.js";
-import { MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketPrincipal, type RoomStore } from "./store.js";
+import { MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketPrincipal, type RoomStore } from "./store.js";
+import { cacheReplayFrames, getCachedReplayFrames, MAX_REPLAY_EXPORT_BYTES, reconstructReplay, type ReplayCommandRecord, type ReplaySourceEvent } from "./replay.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
 
@@ -10,6 +11,13 @@ const hash = (value: string) => createHash("sha256").update(value).digest("hex")
 const token = () => randomBytes(24).toString("base64url");
 const code = () => randomBytes(3).toString("hex").toUpperCase();
 const gameSeed = () => randomBytes(4).readUInt32LE(0);
+const privateGameSeed = () => randomBytes(32).toString("hex");
+export type RoomEventDivergence = Readonly<{
+  roomCode: string;
+  snapshotVersion: number;
+  latestEventVersion: number | null;
+  missingVersionCount: number;
+}>;
 const getPrisma = () => {
   if (!prisma) throw new Error("DATABASE_URL is required to initialize Prisma.");
   return prisma;
@@ -17,7 +25,14 @@ const getPrisma = () => {
 
 /** Prisma-backed store. The HTTP server selects this when DATABASE_URL is configured. */
 export class PrismaRoomStore implements RoomStore {
-  constructor(private readonly prismaClient = getPrisma(), private readonly allowDevelopmentFixture = false) {}
+  private readonly reportedEventDivergences = new Set<string>();
+
+  constructor(
+    private readonly prismaClient = getPrisma(),
+    private readonly allowDevelopmentFixture = false,
+    private readonly onEventDivergence?: (issue: RoomEventDivergence) => void,
+    private readonly testRoomSeed?: number,
+  ) {}
 
   async close(): Promise<void> {
     await this.prismaClient.$disconnect();
@@ -31,12 +46,13 @@ export class PrismaRoomStore implements RoomStore {
   async createRoom(maxPlayers: number, displayName = "Player 1", privacy: RoomPrivacy = "private"): Promise<SessionResponse> {
     const accessToken = token();
     const roomCode = code();
-    const seed = gameSeed();
+    const seed = this.testRoomSeed ?? gameSeed();
+    const secretSeed = this.allowDevelopmentFixture || this.testRoomSeed !== undefined ? undefined : privateGameSeed();
     const state = this.allowDevelopmentFixture
-      ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`)
-      : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`);
+      ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`, secretSeed)
+      : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`, secretSeed);
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
-    const room = await this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", state: state as any, playerStats: emptyMatchCounters(maxPlayers) as any, isTest: this.allowDevelopmentFixture } });
+    const room = await this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", state: state as any, initialReplayState: structuredClone(state) as any, playerStats: emptyMatchCounters(maxPlayers) as any, isTest: this.allowDevelopmentFixture } });
     const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
     return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };
   }
@@ -159,8 +175,7 @@ export class PrismaRoomStore implements RoomStore {
     await this.refreshStatus(room.id, room.maxPlayers, room.state as unknown as GameState);
     const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { status: true, state: true, version: true } });
     if (activated?.status === "ACTIVE" && (activated.state as unknown as GameState).setupState?.phase === "complete" && !(activated.state as unknown as GameState).setupApplied) {
-      const nextState = applyCompletedSetup(activated.state as unknown as GameState);
-      await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { state: nextState as any, version: activated.version + 1 } });
+      await this.commitSetupCompletion(room.id, participant.id, activated.version, activated.state as unknown as GameState, "human");
     }
     return this.view(room.id, 0, "player", participant.playerIndex ?? undefined);
   }
@@ -170,6 +185,7 @@ export class PrismaRoomStore implements RoomStore {
     if (room.version !== expectedRevision) throw new Error(`Expected revision ${expectedRevision}, current revision is ${room.version}.`);
     const actor = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
     if (!actor || actor.role !== "PLAYER" || actor.playerIndex === null) throw new Error("Only seated players can complete setup.");
+    const playerIndex = actor.playerIndex;
     if (actor.botControlled) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
     const state = room.state as unknown as GameState;
     if (!state.setupState) throw new Error("This room has no setup state.");
@@ -186,16 +202,118 @@ export class PrismaRoomStore implements RoomStore {
       if (human.count !== 1) throw new Error("This room session was replaced. Reconnect before completing setup.");
       const changed = await tx.gameRoom.updateMany({ where: { id: room.id, version: room.version }, data: { state: nextState as any, version, lastActivityAt: new Date() } });
       if (changed.count !== 1) throw new Error("The room changed before setup was committed. Refresh and try again.");
-      await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: "setup.updated", payload: { phase: nextState.setupState.phase, action: action.type } } });
+      const replayCommand: ReplayCommandRecord = { kind: "setup", playerIndex, action: structuredClone(action) };
+      await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: "setup.updated", payload: { phase: nextState.setupState.phase, action: action.type }, replayCommand: replayCommand as any } });
     });
     await this.refreshStatus(room.id, room.maxPlayers, nextState);
     return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
   }
 
   async getRoom(roomCode: string, accessToken: string, afterVersion = 0) {
-    const room = await this.authorize(roomCode, accessToken);
-    const viewer = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
-    return this.view(room.id, afterVersion, viewer?.role === "PLAYER" ? "player" : "spectator", viewer?.playerIndex ?? undefined);
+    const participant = await this.prismaClient.participant.findFirst({
+      relationLoadStrategy: "join",
+      where: { room: { code: roomCode.toUpperCase() }, tokenHash: hash(accessToken) },
+      include: {
+        room: {
+          include: {
+            participants: { include: { user: { select: { username: true } } } },
+            events: { orderBy: { version: "desc" }, take: MAX_RETAINED_ROOM_EVENTS },
+          },
+        },
+      },
+    });
+    if (!participant) {
+      const roomExists = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() }, select: { id: true } });
+      throw new Error(roomExists ? "Invalid room token." : "Room not found.");
+    }
+    const room = participant.room;
+    if (isSessionExpired(participant.sessionExpiresAt)) throw new Error("Session token has expired.");
+    const linkedActive = room.status === "ACTIVE" && room.participants.some((candidate: any) => candidate.role === "PLAYER" && candidate.userId !== null);
+    const lastActivityAt = room.lastActivityAt?.getTime?.() ?? Date.now();
+    if (room.status !== "COMPLETED" && !linkedActive && Date.now() - lastActivityAt >= ROOM_IDLE_TIMEOUT_MS) {
+      await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { status: "EXPIRED" } });
+      throw new Error("This room has expired.");
+    }
+    return this.view(room.id, afterVersion, participant.role === "PLAYER" ? "player" : "spectator", participant.playerIndex ?? undefined, room);
+  }
+
+  async getPublicReplay(roomCode: string, fromVersion: number, requestedLimit: number): Promise<PublicReplayPage> {
+    const room = await this.prismaClient.gameRoom.findUnique({
+      where: { code: roomCode.toUpperCase() },
+      select: { id: true, code: true, privacy: true, status: true, version: true, initialReplayState: true, state: true },
+    });
+    if (!room || room.privacy !== "PUBLIC") return { replayable: false, reason: "not-found" };
+    if (room.status !== "COMPLETED") return { replayable: false, reason: "not-completed" };
+    if (!Number.isInteger(fromVersion) || fromVersion < 0 || fromVersion > room.version
+      || !Number.isInteger(requestedLimit) || requestedLimit < 1) throw new Error("Replay pagination is invalid.");
+    if (!room.initialReplayState) return { replayable: false, reason: "history-incomplete" };
+    const initial = room.initialReplayState as unknown as GameState;
+    const limit = Math.min(requestedLimit, MAX_REPLAY_PAGE_FRAMES);
+    const pageFor = (base: ReplayFrame, candidate: ReplayFrame[], nextFromVersion?: number): PublicReplayPage => ({ replayable: true, roomCode: room.code, terminalVersion: room.version, boardId: initial.boardId, boardVersion: initial.boardVersion, boardContentHash: initial.boardContentHash, rulesetVersion: initial.rulesetVersion, base, frames: candidate, ...(nextFromVersion === undefined ? {} : { nextFromVersion }) });
+    const cacheKey = `prisma:${room.id}`;
+    let frames = getCachedReplayFrames(cacheKey, room.version);
+    if (!frames) {
+      const events = await this.prismaClient.gameEvent.findMany({ where: { roomId: room.id }, orderBy: { version: "asc" }, take: MAX_REPLAY_VERSIONS + 1, select: { version: true, type: true, replayCommand: true } });
+      if (events.length > MAX_REPLAY_VERSIONS) return { replayable: false, reason: "history-too-large" };
+      if (events.length !== room.version || events.some((event: any) => !event.replayCommand)) return { replayable: false, reason: "history-incomplete" };
+      const sources: ReplaySourceEvent[] = (events as any[]).map((event) => ({ version: event.version, eventType: event.type, record: event.replayCommand as ReplayCommandRecord }));
+      frames = [];
+      const status = reconstructReplay(initial, sources, room.state as unknown as GameState, room.version, (frame) => frames!.push(frame));
+      if (status !== "ok") return { replayable: false, reason: status };
+      cacheReplayFrames(cacheKey, room.version, frames);
+    }
+    const cachedBase = frames[fromVersion];
+    if (!cachedBase || cachedBase.version !== fromVersion) return { replayable: false, reason: "history-incomplete" };
+    const base = structuredClone(cachedBase);
+    const selected: ReplayFrame[] = [];
+    for (const frame of frames.slice(fromVersion + 1, fromVersion + limit + 1)) {
+      const candidate = [...selected, frame];
+      if (Buffer.byteLength(JSON.stringify(pageFor(base, candidate))) > MAX_REPLAY_PAGE_BYTES) break;
+      selected.push(structuredClone(frame));
+    }
+    if (!selected.length && fromVersion < room.version
+      && Buffer.byteLength(JSON.stringify(pageFor(base, [frames[fromVersion + 1]!]))) > MAX_REPLAY_PAGE_BYTES) return { replayable: false, reason: "frame-too-large" };
+    const lastVersion = selected.at(-1)?.version ?? base.version;
+    const page = pageFor(base, selected, lastVersion < room.version ? lastVersion : undefined);
+    if (Buffer.byteLength(JSON.stringify(page)) > MAX_REPLAY_PAGE_BYTES) return { replayable: false, reason: "frame-too-large" };
+    return page;
+  }
+
+  async getPublicReplayExport(roomCode: string): Promise<PublicReplayExport> {
+    const room = await this.prismaClient.gameRoom.findUnique({
+      where: { code: roomCode.toUpperCase() },
+      select: { id: true, code: true, privacy: true, status: true, version: true, initialReplayState: true, state: true },
+    });
+    if (!room || room.privacy !== "PUBLIC") return { replayable: false, reason: "not-found" };
+    if (room.status !== "COMPLETED") return { replayable: false, reason: "not-completed" };
+    if (!room.initialReplayState) return { replayable: false, reason: "history-incomplete" };
+    const initial = room.initialReplayState as unknown as GameState;
+    const result: PublicReplayExport & { replayable: true } = {
+      replayable: true,
+      formatVersion: 1,
+      roomCode: room.code,
+      terminalVersion: room.version,
+      boardId: initial.boardId,
+      boardVersion: initial.boardVersion,
+      boardContentHash: initial.boardContentHash,
+      rulesetVersion: initial.rulesetVersion,
+      frames: [],
+    };
+    const cacheKey = `prisma:${room.id}`;
+    let frames = getCachedReplayFrames(cacheKey, room.version);
+    if (!frames) {
+      const events = await this.prismaClient.gameEvent.findMany({ where: { roomId: room.id }, orderBy: { version: "asc" }, take: MAX_REPLAY_VERSIONS + 1, select: { version: true, type: true, replayCommand: true } });
+      if (events.length > MAX_REPLAY_VERSIONS) return { replayable: false, reason: "history-too-large" };
+      if (events.length !== room.version || events.some((event: any) => !event.replayCommand)) return { replayable: false, reason: "history-incomplete" };
+      const sources: ReplaySourceEvent[] = (events as any[]).map((event) => ({ version: event.version, eventType: event.type, record: event.replayCommand as ReplayCommandRecord }));
+      frames = [];
+      const status = reconstructReplay(initial, sources, room.state as unknown as GameState, room.version, (frame) => frames!.push(frame));
+      if (status !== "ok") return { replayable: false, reason: status };
+      cacheReplayFrames(cacheKey, room.version, frames);
+    }
+    result.frames = structuredClone(frames);
+    if (Buffer.byteLength(JSON.stringify(result)) > MAX_REPLAY_EXPORT_BYTES) return { replayable: false, reason: "export-too-large" };
+    return result;
   }
 
   async submitAction(roomCode: string, accessToken: string, envelope: GameCommandEnvelope) {
@@ -210,7 +328,16 @@ export class PrismaRoomStore implements RoomStore {
     const gameState = room.state as unknown as GameState;
     const requiredPlayer = this.requiredPlayer(gameState, envelope);
     if (actor.playerIndex !== requiredPlayer) throw new Error("It is not your turn.");
-    await this.commitCommand(room, actor, envelope, "human", { tokenHash: hash(accessToken) });
+    try {
+      await this.commitCommand(room, actor, envelope, "human", { tokenHash: hash(accessToken) });
+    } catch (error) {
+      // A concurrent retry can lose the room-version compare-and-swap after
+      // another process commits this same action. Return the durable result
+      // only when the winning receipt belongs to this authenticated actor.
+      const concurrentReceipt = await this.prismaClient.commandReceipt.findUnique({ where: { roomId_actionId: { roomId: room.id, actionId: envelope.actionId } } });
+      if (concurrentReceipt?.actorId === actor.id) return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
+      throw error;
+    }
     return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
   }
 
@@ -314,7 +441,8 @@ export class PrismaRoomStore implements RoomStore {
       }
       const changed = await tx.gameRoom.updateMany({ where: { id: room.id, version: room.version, status: "ACTIVE" }, data: { state: result.state as any, playerStats: counters as any, version, lastActivityAt: new Date(), ...(terminal ? { status: "COMPLETED", completedAt: new Date() } : {}) } });
       if (changed.count !== 1) throw new Error("The game changed before this action was committed. Refresh and try again.");
-      await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: result.eventType, controlSource, payload: { ...result.eventPayload, receipt: result.receipt } } });
+      const replayCommand: ReplayCommandRecord = { kind: "command", playerIndex: actor.playerIndex ?? 0, command: structuredClone(envelope.command) };
+      await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: result.eventType, controlSource, payload: { ...result.eventPayload, receipt: result.receipt }, replayCommand: replayCommand as any } });
       await tx.commandReceipt.create({ data: { roomId: room.id, actionId: envelope.actionId, actorId: actor.id, version, eventType: result.eventType } });
       if (terminal) {
         const participants = await tx.participant.findMany({ where: { roomId: room.id, role: "PLAYER", userId: { not: null }, playerIndex: { not: null } }, include: { user: { select: { username: true } } } });
@@ -341,11 +469,12 @@ export class PrismaRoomStore implements RoomStore {
       if (state.setupState && state.setupState.phase !== "complete") {
         const field = state.setupState.phase === "monster-selection" ? "monsterId" : state.setupState.phase === "branch-selection" ? "branch" : state.setupState.phase === "lair-selection" ? "lair" : "startingChoice";
         const seats = [...state.setupState.seats].sort((left, right) => state.setupState?.phase === "branch-selection" ? right.playerIndex - left.playerIndex : left.playerIndex - right.playerIndex);
-        const playerIndex = seats.find((seat) => (seat as any)[field] === undefined)?.playerIndex;
+        const playerIndex = state.setupState.phase === "unused-branch-placement" ? state.setupState.definition.playerCount - 1 : seats.find((seat) => (seat as any)[field] === undefined)?.playerIndex;
         const actor = participants.find((participant: any) => participant.playerIndex === playerIndex);
         if (playerIndex === undefined || !actor?.botControlled) return;
-        const nextSetup = chooseBotSetupAction(state, state.setupState, playerIndex);
+        const { setup: nextSetup, action } = chooseBotSetupActionWithRecord(state, state.setupState, playerIndex);
         if (nextSetup === state.setupState) return;
+        if (!action) throw new Error("The room bot produced a setup transition without a replayable action.");
         const seat = nextSetup.seats.find((candidate) => candidate.playerIndex === playerIndex);
         if (seat?.startingChoice?.kind === "deploy") setupDeploymentState({ ...state, setupState: nextSetup }, playerIndex, "placements" in seat.startingChoice ? seat.startingChoice.placements : [seat.startingChoice]);
         const nextState = { ...state, setupState: nextSetup, ...(nextSetup.phase === "complete" ? { setupAssignments: nextSetup.seats } : {}) };
@@ -354,14 +483,14 @@ export class PrismaRoomStore implements RoomStore {
           if (lease.count !== 1) throw new Error("Bot control changed before setup was committed.");
           const changed = await tx.gameRoom.updateMany({ where: { id: room.id, version: room.version, status: room.status }, data: { state: nextState as any, version: room.version + 1, lastActivityAt: new Date() } });
           if (changed.count !== 1) throw new Error("Bot setup became stale.");
-          await tx.gameEvent.create({ data: { roomId: room.id, version: room.version + 1, actorId: actor.id, type: "setup.updated", controlSource: "bot", payload: { phase: nextSetup.phase, automated: true } } });
+          const replayCommand: ReplayCommandRecord = { kind: "setup", playerIndex, action };
+          await tx.gameEvent.create({ data: { roomId: room.id, version: room.version + 1, actorId: actor.id, type: "setup.updated", controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, replayCommand: replayCommand as any } });
         }).catch(() => undefined);
         await this.refreshStatus(room.id, room.maxPlayers, nextState);
         const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { status: true, state: true, version: true } });
         const activatedState = activated?.state as unknown as GameState | undefined;
         if (activated?.status === "ACTIVE" && activatedState?.setupState?.phase === "complete" && !activatedState.setupApplied) {
-          const prepared = applyCompletedSetup(activatedState);
-          await this.prismaClient.gameRoom.updateMany({ where: { id: room.id, version: activated.version, status: "ACTIVE" }, data: { state: prepared as any, version: activated.version + 1 } });
+          await this.commitSetupCompletion(room.id, actor.id, activated.version, activatedState, "bot").catch(() => false);
         }
         continue;
       }
@@ -415,10 +544,49 @@ export class PrismaRoomStore implements RoomStore {
     await this.prismaClient.gameRoom.update({ where: { id: roomId }, data: { status: nextStatus } });
   }
 
-  private async view(roomId: string, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number): Promise<RoomView> {
-    const room = await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, include: { participants: { include: { user: { select: { username: true } } } }, events: { where: { version: { gt: afterVersion } }, orderBy: { version: "desc" }, take: MAX_RETAINED_ROOM_EVENTS } } });
+  private async commitSetupCompletion(roomId: string, actorId: string, expectedVersion: number, state: GameState, controlSource: "human" | "bot"): Promise<boolean> {
+    const nextState = applyCompletedSetup(state);
+    const version = expectedVersion + 1;
+    return this.prismaClient.$transaction(async (tx: any) => {
+      const changed = await tx.gameRoom.updateMany({ where: { id: roomId, version: expectedVersion, status: "ACTIVE" }, data: { state: nextState as any, version } });
+      if (changed.count !== 1) return false;
+      const replayCommand: ReplayCommandRecord = { kind: "start" };
+      await tx.gameEvent.create({ data: { roomId, version, actorId, type: "match.started", controlSource, payload: { phase: nextState.phase, currentPlayer: nextState.currentPlayer }, replayCommand: replayCommand as any } });
+      return true;
+    });
+  }
+
+  private async view(roomId: string, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number, loadedRoom?: any): Promise<RoomView> {
+    const room = loadedRoom ?? await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, include: { participants: { include: { user: { select: { username: true } } } }, events: { orderBy: { version: "desc" }, take: MAX_RETAINED_ROOM_EVENTS } } });
     if (!room) throw new Error("Room not found.");
-    const events: RoomEvent[] = room.events.map((event: any) => ({ id: event.id, roomId: event.roomId, version: event.version, actorId: event.actorId, type: event.type, controlSource: event.controlSource === "bot" ? "bot" : "human", payload: redactCardIdentifiers(event.payload) as Record<string, unknown>, createdAt: event.createdAt.toISOString() }));
+    const newestEvents = room.events ?? [];
+    this.inspectEventHistory(room, newestEvents);
+    // Read the newest bounded suffix, then restore chronological order and
+    // apply the caller's cursor so the snapshot can also be checked for gaps.
+    const events = newestEvents.map((event: any): RoomEvent => ({ id: event.id, roomId: event.roomId, version: event.version, actorId: event.actorId, type: event.type, controlSource: event.controlSource === "bot" ? "bot" : "human", payload: event.payload as Record<string, unknown>, createdAt: event.createdAt.toISOString() })).reverse().filter((event: RoomEvent) => event.version > afterVersion);
     return { id: room.id, code: room.code, status: room.status.toLowerCase() as RoomView["status"], privacy: room.privacy.toLowerCase() as RoomView["privacy"], version: room.version, state: projectState(room.state as unknown as GameState, audience, viewerPlayerIndex), participants: room.participants.map((participant: any) => ({ id: participant.id, displayName: participant.displayName, ...(participant.user?.username ? { username: participant.user.username } : {}), role: participant.role.toLowerCase(), playerIndex: participant.playerIndex ?? undefined, connected: Boolean(participant.connectedAt), ready: Boolean(participant.ready), botControlled: Boolean(participant.botControlled), botAssisted: Boolean(participant.botAssisted) })), events };
+  }
+
+  private inspectEventHistory(room: { id: string; code: string; version: number }, newestEvents: readonly { version: number }[]): void {
+    if (!this.onEventDivergence) return;
+    if (room.version === 0 && newestEvents.length === 0) return;
+    let missingVersionCount = 0;
+    for (let index = 0; index < newestEvents.length - 1; index += 1) {
+      missingVersionCount += Math.max(0, newestEvents[index]!.version - newestEvents[index + 1]!.version - 1);
+    }
+    const latestEventVersion = newestEvents[0]?.version ?? null;
+    if (latestEventVersion === null) missingVersionCount += room.version;
+    else if (latestEventVersion < room.version) missingVersionCount += room.version - latestEventVersion;
+    if (latestEventVersion === room.version && missingVersionCount === 0) return;
+
+    const fingerprint = `${room.id}:${room.version}`;
+    if (this.reportedEventDivergences.has(fingerprint)) return;
+    if (this.reportedEventDivergences.size >= 1024) this.reportedEventDivergences.clear();
+    this.reportedEventDivergences.add(fingerprint);
+    try {
+      this.onEventDivergence({ roomCode: room.code, snapshotVersion: room.version, latestEventVersion, missingVersionCount });
+    } catch {
+      // Monitoring callbacks must never make an otherwise readable room fail.
+    }
   }
 }

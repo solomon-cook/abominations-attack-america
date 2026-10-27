@@ -1,4 +1,4 @@
-/** Versioned source-inventory metadata. Mechanics remain disabled until independently verified. */
+/** Versioned source-cited card metadata; production interaction and promotion gates are tracked separately. */
 export const CARD_DATA_VERSION = 1 as const;
 
 export type CardDeck = "mutation" | "research";
@@ -44,7 +44,7 @@ export interface CardDefinition {
   readonly sourceCatalogue: string;
   readonly owner: "unknown";
   readonly zone: "deck";
-  readonly visibility: "unknown";
+  readonly visibility: "face-up-public";
   readonly duration: "unknown";
   readonly uses: "unknown";
   readonly targets: "unknown";
@@ -61,7 +61,7 @@ export interface SourcedCardRule {
   readonly effectsImplementation: CardAvailability;
 }
 
-export type CardStackingPolicy = "additive" | "replacement" | "permission-or" | "source-gated";
+export type CardStackingPolicy = "additive" | "replacement" | "permission-or" | "remove-from-play" | "source-gated";
 
 export interface CardStackingRule {
   readonly cardId: string;
@@ -69,6 +69,13 @@ export interface CardStackingRule {
   readonly policy: CardStackingPolicy;
   readonly sourceRefs: readonly string[];
   readonly rationale: string;
+}
+
+export interface CardInteractionRule {
+  readonly cardIds: readonly [string, string];
+  readonly policy: "additive" | "independent-windows" | "explicitly-excluded";
+  readonly rationale: string;
+  readonly sourceRefs: readonly string[];
 }
 
 const catalogue = "references/monsters-menace-america/component-rules-catalogue.json";
@@ -94,8 +101,8 @@ const implementedCardIds = new Set<string>([
 export const MONSTER_MUTATION_CARD_IDS = mutationIds;
 export const MILITARY_RESEARCH_CARD_IDS = researchIds;
 export const CARD_DEFINITIONS: readonly CardDefinition[] = [
-  ...mutationIds.map((id) => ({ id, deck: "mutation" as const, availability: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const, presentationKey: id, sourceCatalogue: catalogue, owner: "unknown" as const, zone: "deck" as const, visibility: "unknown" as const, duration: "unknown" as const, uses: "unknown" as const, targets: "unknown" as const, lifecycle: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const })),
-  ...researchIds.map((id) => ({ id, deck: "research" as const, availability: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const, presentationKey: id, sourceCatalogue: catalogue, owner: "unknown" as const, zone: "deck" as const, visibility: "unknown" as const, duration: "unknown" as const, uses: "unknown" as const, targets: "unknown" as const, lifecycle: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const })),
+  ...mutationIds.map((id) => ({ id, deck: "mutation" as const, availability: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const, presentationKey: id, sourceCatalogue: catalogue, owner: "unknown" as const, zone: "deck" as const, visibility: "face-up-public" as const, duration: "unknown" as const, uses: "unknown" as const, targets: "unknown" as const, lifecycle: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const })),
+  ...researchIds.map((id) => ({ id, deck: "research" as const, availability: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const, presentationKey: id, sourceCatalogue: catalogue, owner: "unknown" as const, zone: "deck" as const, visibility: "face-up-public" as const, duration: "unknown" as const, uses: "unknown" as const, targets: "unknown" as const, lifecycle: implementedCardIds.has(id) ? "implemented" as const : "source-gated" as const })),
 ];
 
 /** Exact component text promoted from the cited catalogue with implementation status. */
@@ -408,15 +415,27 @@ export function assertCardsAvailable(cardIds: readonly string[]): void {
 }
 
 const explicitStackingPolicies: Readonly<Record<string, Pick<CardStackingRule, "effectKey" | "policy" | "rationale">>> = {
+  "Rampage": { effectKey: "post-lair-move-permission", policy: "permission-or", rationale: "The card explicitly permits a Move on the turn the monster emerges from a lair; it grants that timing permission without adding movement distance." },
+  "Atomic Recovery": { effectKey: "starting-health-reset", policy: "replacement", rationale: "The card explicitly restores Health to its starting value when current Health is lower; the named timing remains the owner's turn start." },
+  "Iron Stomach": { effectKey: "base-stomp-encounter-reward", policy: "replacement", rationale: "The card explicitly offers 3 Health instead of the base-stomp reward of 1 Infamy." },
+  "Kinda Friendly": { effectKey: "move-through-national-guard", policy: "permission-or", rationale: "The card explicitly permits movement through National Guard spaces and returns Guard at the endpoint without fighting." },
+  "Laser Beam Eyes": { effectKey: "hit-bonus-vs-cruise-missiles", policy: "additive", rationale: "The card explicitly adds +2 to this monster's hit value against cruise missiles; the modifier is limited to that target class." },
   "High-Octane Blood": { effectKey: "moveBonus", policy: "additive", rationale: "The sourced +1 Move modifier composes with other sourced Move modifiers." },
   "Winged Horror": { effectKey: "moveBonus", policy: "additive", rationale: "The sourced +1 Move modifier composes with other sourced Move modifiers." },
   "Armored Scales": { effectKey: "moveBonus/defenseBonus", policy: "additive", rationale: "The sourced -1 Move and +1 Defense values are independent numeric modifiers." },
   "Fins and Gills": { effectKey: "waterBarrierDefenseBonus", policy: "additive", rationale: "The sourced conditional +1 Defense is an additive modifier at a water barrier." },
   "War Spikes": { effectKey: "damagePerHit", policy: "replacement", rationale: "The sourced text replaces the ordinary hit damage value with 4." },
   "Atomic Breath": { effectKey: "firstRoundAttackBonus", policy: "additive", rationale: "The sourced extra attack is added to the first-round allowance." },
+  "Whip Tentacles": { effectKey: "firstRoundAttackBonus/triggeredExtraAttack", policy: "additive", rationale: "Its sourced immediate attack after a natural six adds to other battle attack grants." },
+  "Berserk": { effectKey: "bonusMonsterAttacks", policy: "additive", rationale: "Its five battle attacks add to other separately granted attacks in that battle." },
+  "Son of a Monster": { effectKey: "bonusMonsterAttacks/health", policy: "additive", rationale: "Its two battle attacks and Health gain resolve alongside independent battle effects." },
+  "Anti-Mutagen": { effectKey: "battleStartHealthLoss", policy: "additive", rationale: "Its sourced battle-start Health loss composes with Scientific Analysis's separate battle-start Health loss." },
+  "Scientific Analysis": { effectKey: "battleStartHealthLoss", policy: "additive", rationale: "Its sourced battle-start Health loss composes with Anti-Mutagen's separate battle-start Health loss." },
   "Fusion Cells": { effectKey: "moveBonus", policy: "additive", rationale: "The sourced +1 Move applies to the holder's unit values." },
+  "X-Fighters": { effectKey: "branch-unit-deployment-substitution", policy: "replacement", rationale: "The card explicitly permits an X-Fighter to replace a branch unit deployment and explicitly excludes National Guard units." },
   "2nd Generation": { effectKey: "extraDeployments", policy: "additive", rationale: "The sourced extra deployment is added to the normal allowance." },
   "Guard Commander": { effectKey: "nationalGuardControl", policy: "permission-or", rationale: "The sourced control permission is a boolean command capability, not a numeric modifier." },
+  "Cutbacks": { effectKey: "publicResearchCardLifecycle", policy: "remove-from-play", rationale: "The card explicitly removes a face-up Research card from play; its implemented lifecycle removes the target from its owner's active cards and ends its persistent effect." },
 };
 
 /**
@@ -434,4 +453,212 @@ export const CARD_STACKING_RULES: readonly CardStackingRule[] = CARD_DEFINITIONS
 
 export function cardStackingRule(cardId: string): CardStackingRule | undefined {
   return CARD_STACKING_RULES.find((rule) => rule.cardId === cardId);
+}
+
+/** Pairwise rulings are recorded only where the cited card text establishes both windows. */
+function sourcedPair(
+  cardIds: readonly [string, string],
+  policy: CardInteractionRule["policy"],
+  rationale: string,
+  additionalSources: readonly string[] = [],
+): CardInteractionRule {
+  return {
+    cardIds,
+    policy,
+    rationale,
+    sourceRefs: [...new Set([...cardIds.flatMap((id) => sourcedCardRule(id)?.sourceRefs ?? []), ...additionalSources])],
+  };
+}
+
+export const CARD_INTERACTION_RULES: readonly CardInteractionRule[] = [
+  sourcedPair(
+    ["Defense Satellites", "Mecha-Monster"],
+    "explicitly-excluded",
+    "Defense Satellites explicitly says it does not affect Mecha-Monster; the giant takes no damage from this card's roll.",
+  ),
+  sourcedPair(
+    ["Defense Satellites", "Captain Colossal"],
+    "explicitly-excluded",
+    "Defense Satellites explicitly says it does not affect Captain Colossal; the giant takes no damage from this card's roll.",
+  ),
+  sourcedPair(
+    ["High-Octane Blood", "Winged Horror"],
+    "additive",
+    "Each Mutation independently grants its printed +1 Move modifier while active, so a monster holding both receives +2 Move; the modifier is reflected in the shared effective-stat and legal-path calculation.",
+  ),
+  sourcedPair(
+    ["High-Octane Blood", "Armored Scales"],
+    "additive",
+    "High-Octane Blood adds one Move while Armored Scales subtracts one Move and adds one Defense. The printed Move modifiers offset to the monster's unmodified Move, while the independent Defense bonus remains active.",
+  ),
+  sourcedPair(
+    ["Anti-Mutagen", "Scientific Analysis"],
+    "additive",
+    "Both cards independently remove their printed Health amount at the start of a qualifying battle, so both losses resolve before ordinary attacks.",
+  ),
+  sourcedPair(
+    ["Anti-Mutagen", "Radiation Field"],
+    "independent-windows",
+    "Anti-Mutagen removes Health at battle start based on the monster's Mutation count; Radiation Field separately destroys a military attacker after its natural-one roll.",
+  ),
+  sourcedPair(
+    ["Antimatter", "Radiation Field"],
+    "independent-windows",
+    "Antimatter doubles military damage on first-round hits; Radiation Field destroys a military unit after its natural-one attack roll. If a natural one meets the target's Defense, the attack still hits and receives Antimatter's doubled damage and Mutation roll before the attacker is destroyed; otherwise it misses and deals no Antimatter damage.",
+  ),
+  sourcedPair(
+    ["Radiation Field", "Stabilizer Ray"],
+    "independent-windows",
+    "Radiation Field destroys a military unit after its natural-one attack roll; if that roll meets the monster's Defense and damages it, Stabilizer Ray also opens its post-damage choice to discard one of that monster's Mutation cards. Both effects resolve from the same attack result.",
+  ),
+  sourcedPair(
+    ["Radiation Field", "Whip Tentacles"],
+    "independent-windows",
+    "Radiation Field destroys an opposing military unit after its natural-one attack roll against the monster; Whip Tentacles grants the monster an immediate extra attack after its natural-six roll. Both independent roll-trigger windows resolve when their respective rolls occur in the same battle.",
+  ),
+  sourcedPair(
+    ["Atomic Recovery", "Anti-Mutagen"],
+    "independent-windows",
+    "Atomic Recovery restores a monster's Health at the beginning of its turn; Anti-Mutagen later removes Health at the start of a battle involving the opposing player's units.",
+  ),
+  sourcedPair(
+    ["Berserk", "Son of a Monster"],
+    "additive",
+    "Each one-use card independently grants its printed extra attacks during the battle; using both adds five and two attacks, respectively.",
+  ),
+  sourcedPair(
+    ["Berserk", "Whip Tentacles"],
+    "additive",
+    "Berserk grants its five extra attacks, and Whip Tentacles adds an immediate attack after each natural six; both attack sources apply during the same battle.",
+  ),
+  sourcedPair(
+    ["Son of a Monster", "Whip Tentacles"],
+    "additive",
+    "Son of a Monster grants its two extra attacks, and Whip Tentacles adds an immediate attack after each natural six; both attack sources apply during the same battle.",
+  ),
+  sourcedPair(
+    ["War Spikes", "Berserk"],
+    "additive",
+    "War Spikes applies its 4-damage value to every monster hit, including any of the five attacks granted by Berserk during the battle.",
+  ),
+  sourcedPair(
+    ["War Spikes", "Son of a Monster"],
+    "additive",
+    "War Spikes applies its 4-damage value to every monster hit, including either of the two attacks granted by Son of a Monster during the battle.",
+  ),
+  sourcedPair(
+    ["War Spikes", "Atomic Breath"],
+    "additive",
+    "War Spikes applies its 4-damage value to every monster hit, including Atomic Breath's additional first-round attack.",
+  ),
+  sourcedPair(
+    ["War Spikes", "Whip Tentacles"],
+    "additive",
+    "War Spikes applies its 4-damage value to every monster hit, including the immediate extra attack Whip Tentacles grants after a natural six.",
+  ),
+  sourcedPair(
+    ["Atomic Breath", "Whip Tentacles"],
+    "additive",
+    "Atomic Breath grants one first-round attack; Whip Tentacles grants a separate immediate attack after each natural six. Both triggers apply when their conditions occur.",
+  ),
+  sourcedPair(
+    ["Atomic Breath", "Berserk"],
+    "additive",
+    "Atomic Breath adds one attack to the first combat round of every battle, and Berserk grants five extra attacks when discarded during that battle. When Berserk is used before the first round resolves, both printed grants apply to that battle.",
+  ),
+  sourcedPair(
+    ["Atomic Breath", "Son of a Monster"],
+    "additive",
+    "Atomic Breath adds one attack to the first combat round of every battle, and Son of a Monster grants two extra attacks when discarded during that battle. When it is used before the first round resolves, both printed grants apply to that battle.",
+  ),
+  sourcedPair(
+    ["Fins and Gills", "Armored Scales"],
+    "additive",
+    "Armored Scales grants its persistent Defense point in every space, and Fins and Gills adds a separate conditional Defense point at a water barrier.",
+  ),
+  sourcedPair(
+    ["Fins and Gills", "Winged Horror"],
+    "additive",
+    "Winged Horror grants its printed flight and Move bonus; Fins and Gills independently grants its conditional Defense bonus at a water barrier, which remains active while the monster flies.",
+  ),
+  sourcedPair(
+    ["Rampage", "Winged Horror"],
+    "additive",
+    "Rampage permits a monster to move on the turn it returns from a lair, while Winged Horror's separate Move bonus and flight apply to that movement.",
+  ),
+  sourcedPair(
+    ["Atomic Recovery", "Iron Stomach"],
+    "independent-windows",
+    "Iron Stomach replaces the military-base stomp reward with a Health-or-Infamy choice during Encounter; Atomic Recovery restores Health below the monster's starting value at the beginning of its next turn. Both printed windows resolve, in turn order, without replacing or suppressing the other.",
+    ["tmp/pdfs/rulebook-pages/page-06.jpg"],
+  ),
+  sourcedPair(
+    ["2nd Generation", "X-Fighters"],
+    "additive",
+    "2nd Generation adds one deployment from the player's branch or National Guard; X-Fighters may replace a branch unit deployment, so an X-Fighter can use the added branch deployment slot.",
+  ),
+  sourcedPair(
+    ["Fusion Cells", "X-Fighters"],
+    "additive",
+    "Fusion Cells adds 1 Move to all of its holder's units, and X-Fighters are owned, fly-capable military units, so the same Move bonus applies to them while the card remains in play.",
+  ),
+  sourcedPair(
+    ["Fusion Cells", "Mecha-Monster"],
+    "additive",
+    "Fusion Cells adds 1 Move to all of its holder's units, and Mecha-Monster is a controlled giant military unit with a Move value, so its effective Move receives the same bonus while Fusion Cells remains in play.",
+  ),
+  sourcedPair(
+    ["Fusion Cells", "Captain Colossal"],
+    "additive",
+    "Fusion Cells adds 1 Move to all of its holder's units, and Captain Colossal is a controlled giant military unit with a Move value, so its effective Move receives the same bonus while Fusion Cells remains in play.",
+  ),
+  sourcedPair(
+    ["Laser Fence", "Chopper Lift"],
+    "independent-windows",
+    "Laser Fence triggers when a monster ends its move before battle, and Chopper Lift moves a monster on any of the cardholder's turns. The literal card wording therefore opens the Laser Fence reaction after Chopper Lift resolves; retreating the moved monster suppresses an Encounter only when that monster owns the active player's pending Encounter.",
+  ),
+  sourcedPair(
+    ["Blonde Lure", "Laser Fence"],
+    "independent-windows",
+    "Blonde Lure's endpoint requirement is satisfied when the monster ends its Move on the chosen space. Laser Fence explicitly opens afterward, when a monster ends its move but before battle; its separate retreat does not undo the completed Move or trigger a new Encounter.",
+  ),
+  sourcedPair(
+    ["Blonde Lure", "Chopper Lift"],
+    "independent-windows",
+    "Blonde Lure constrains the monster's next turn, while Chopper Lift moves a monster on the cardholder's turn. A Chopper Lift before the target's next turn does not satisfy or consume the lure; the chosen endpoint remains required on the target's next Move when reachable.",
+  ),
+  sourcedPair(
+    ["Blonde Lure", "Molecular Cannon"],
+    "independent-windows",
+    "Blonde Lure requires the monster to end its Move at the chosen adjacent space during its next turn, while Molecular Cannon relocates it to a lair at the start of a battle. That earlier relocation does not satisfy or consume the lure; the chosen endpoint remains required on the target's next Move when reachable.",
+  ),
+  sourcedPair(
+    ["Antimatter", "Molecular Cannon"],
+    "independent-windows",
+    "Both cards may be used at the start of a qualifying battle. Molecular Cannon used first removes the battle before Antimatter can be used; Antimatter used first is discarded and armed, but a later Molecular Cannon cancels the battle before its first combat round, so the Antimatter modifier never applies.",
+  ),
+  sourcedPair(
+    ["Antimatter", "Stabilizer Ray"],
+    "independent-windows",
+    "Both cards may be used at the start of a qualifying battle. When a first-round military hit damages the monster, Antimatter doubles that hit and Stabilizer Ray opens its printed choice to discard one of the monster's Mutation cards.",
+  ),
+  sourcedPair(
+    ["Kinda Friendly", "Guard Commander"],
+    "independent-windows",
+    "Guard Commander grants its holder control of neutral Guard units, while Kinda Friendly explicitly returns any Guard units the monster passes through or ends its move with to the record tile without battle. Returning a Guard unit does not remove Guard Commander or permanently remove the unit.",
+  ),
+  sourcedPair(
+    ["Cutbacks", "Guard Commander"],
+    "independent-windows",
+    "Cutbacks removes Guard Commander from play, ending its movement, deployment, and redeployment permission; deployed Guard units remain in the neutral inventory and are no longer controlled by that player.",
+  ),
+];
+
+function cardPairKey(cardIds: readonly [string, string]): string {
+  return [...cardIds].sort().join("\u0000");
+}
+
+export function cardInteractionRule(firstCardId: string, secondCardId: string): CardInteractionRule | undefined {
+  const requestedKey = cardPairKey([firstCardId, secondCardId]);
+  return CARD_INTERACTION_RULES.find((rule) => cardPairKey(rule.cardIds) === requestedKey);
 }

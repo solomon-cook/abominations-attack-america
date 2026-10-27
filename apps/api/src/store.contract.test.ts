@@ -20,6 +20,10 @@ async function memoryFixture(): Promise<ContractFixture> {
   for (const [playerIndex, lair] of [[0, "los-angeles"], [1, "chicago"]] as const) {
     revision = (await store.setupAction(host.room.code, [host, guest][playerIndex]!.token, { type: "choose-lair", lair }, revision)).version;
   }
+  // Keep this generic contract fixture independent of immediate giant cards;
+  // focused room tests exercise those choices through their full lifecycle.
+  const rooms = (store as unknown as { rooms: Map<string, { state: import("@abominations/game-engine").GameState }> }).rooms;
+  rooms.get(host.room.code)!.state.decks.research = { order: ["Defense Satellites", "Cutbacks", "Anti-Mutagen", "Scientific Analysis"], drawIndex: 0, discard: [], exhausted: false };
   for (const player of [host, guest]) revision = (await store.setupAction(host.room.code, player.token, { type: "choose-starting-choice", startingChoice: { kind: "research" } }, revision)).version;
   await store.setReady(host.room.code, host.token, true);
   await store.setReady(host.room.code, guest.token, true);
@@ -32,6 +36,8 @@ async function runRoomStoreContract(label: string, fixture: ContractFixture): Pr
   assert.equal(initial.state.boardContentHash.startsWith("fnv1a:"), true, `${label}: board hash`);
   assert.deepEqual(initial.state.decks.mutation.order, [], `${label}: mutation order redacted`);
   assert.deepEqual(initial.state.decks.research.order, [], `${label}: research order redacted`);
+  const initialEventVersions = initial.events.map((event) => event.version);
+  assert.deepEqual(initialEventVersions, [...initialEventVersions].sort((left, right) => left - right), `${label}: event deltas are chronological`);
   await assert.rejects(() => fixture.store.submitAction(fixture.code, fixture.token, {
     actionId: `${label}-stale`, actorId: fixture.participantId, expectedRevision: initial.version - 1, protocolVersion: 1,
     command: { type: "pass-move" },
@@ -45,6 +51,8 @@ async function runRoomStoreContract(label: string, fixture: ContractFixture): Pr
   assert.equal(first.version, initial.version + 1, `${label}: revision increments once`);
   assert.equal(retry.version, first.version, `${label}: duplicate retry does not increment`);
   assert.deepEqual(retry.state, first.state, `${label}: duplicate retry returns same state`);
+  const committedEventVersions = first.events.map((event) => event.version);
+  assert.deepEqual(committedEventVersions, [...committedEventVersions].sort((left, right) => left - right), `${label}: committed event deltas are chronological`);
 }
 
 test("MemoryRoomStore and PrismaRoomStore satisfy the same public room contract", async () => {

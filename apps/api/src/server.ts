@@ -7,25 +7,29 @@ import { MemoryRoomStore, type RoomStore } from "./store.js";
 import { PrismaRoomStore } from "./prisma-store.js";
 import { withinRate, type RateBucket } from "./rate-limit.js";
 import { ApiMetrics } from "./metrics.js";
-import { createErrorReporterSink, ErrorReporter } from "./error-reporting.js";
-import { validateRuntimeConfig } from "./runtime-config.js";
+import { createDurableErrorAggregateWriter, createErrorReporterSink, ErrorReporter } from "./error-reporting.js";
+import { resolveDatabaseConnections, validateRuntimeConfig } from "./runtime-config.js";
 import { AccountService, accountSessionCookie, clearAccountSessionCookie, sessionFromCookie } from "./accounts.js";
 import { prisma } from "../lib/prisma.js";
+import { RoomChangeListener } from "./room-change-listener.js";
 
 const port = Number(process.env.PORT ?? 8787);
-const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL;
+const { databaseUrl, roomNotificationsUrl } = resolveDatabaseConnections();
 const runtimeConfig = validateRuntimeConfig();
 const allowedOrigin = runtimeConfig.allowedOrigin === "*" ? "http://localhost:5173" : runtimeConfig.allowedOrigin;
 const allowDevelopmentFixture = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEVELOPMENT_FIXTURE === "true";
 const usePrisma = Boolean(databaseUrl) && process.env.PERSISTENCE !== "memory" && (!allowDevelopmentFixture || process.env.PERSISTENCE === "prisma");
-const store: RoomStore = usePrisma
-  ? new PrismaRoomStore(undefined, allowDevelopmentFixture)
-  : new MemoryRoomStore(allowDevelopmentFixture);
-const accountService = prisma && usePrisma ? new AccountService(prisma) : undefined;
+const testRoomSeed = () => {
+  if (process.env.NODE_ENV !== "test" || !["memory", "prisma"].includes(process.env.PERSISTENCE ?? "") || process.env.TEST_ROOM_SEED === undefined) return undefined;
+  const seed = Number(process.env.TEST_ROOM_SEED);
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff_ffff) throw new Error("TEST_ROOM_SEED must be an unsigned 32-bit integer in test-only memory or Prisma mode.");
+  return seed;
+};
 const sockets = new Map<string, Map<WebSocket, string>>();
+let roomNotificationsReady = !usePrisma;
 const RATE_WINDOW_MS = 60_000;
 const configuredDevelopmentLimit = (name: string, fallback: number) => {
-  if (!allowDevelopmentFixture) return fallback;
+  if (process.env.NODE_ENV === "production") return fallback;
   const value = Number(process.env[name] ?? fallback);
   return Number.isInteger(value) && value >= fallback ? value : fallback;
 };
@@ -39,10 +43,38 @@ const mutationRate = new Map<string, RateBucket>();
 const socketRate = new Map<string, RateBucket>();
 const socketCommandRate = new Map<string, RateBucket>();
 const metrics = new ApiMetrics();
+const errorAggregationClient = prisma;
+const persistDurableErrorAggregate = errorAggregationClient ? createDurableErrorAggregateWriter({
+  increment: async ({ category, bucketDate }) => {
+    const bucketStart = new Date(`${bucketDate}T00:00:00.000Z`);
+    await errorAggregationClient.errorReportAggregate.upsert({
+      where: { bucketDate_category: { bucketDate: bucketStart, category } },
+      create: { bucketDate: bucketStart, category, count: 1 },
+      update: { count: { increment: 1 } },
+    });
+  },
+  pruneBefore: async (bucketDate) => {
+    const retentionCutoff = new Date(`${bucketDate}T00:00:00.000Z`);
+    await errorAggregationClient.errorReportAggregate.deleteMany({ where: { bucketDate: { lt: retentionCutoff } } });
+  },
+}) : undefined;
 const errorReporter = new ErrorReporter(createErrorReporterSink({
-  endpoint: process.env.ERROR_ALERT_URL,
+  endpoint: runtimeConfig.errorAlertUrl,
   log: (line) => operationalLog({ event: "error.reporter", detail: line }),
+  persistAggregate: persistDurableErrorAggregate,
 }));
+const store: RoomStore = usePrisma
+  ? new PrismaRoomStore(undefined, allowDevelopmentFixture, (issue) => {
+      metrics.errorReport("divergence");
+      errorReporter.report({
+        category: "divergence",
+        path: "/rooms/snapshot-events",
+        roomCode: issue.roomCode,
+        message: `Snapshot revision ${issue.snapshotVersion}; latest event ${issue.latestEventVersion ?? "missing"}; ${issue.missingVersionCount} missing event version(s).`,
+      });
+    }, testRoomSeed())
+  : new MemoryRoomStore(allowDevelopmentFixture, testRoomSeed());
+const accountService = prisma && usePrisma ? new AccountService(prisma) : undefined;
 
 const json = (response: ServerResponse, status: number, body: unknown, extraHeaders: Record<string, string> = {}) => {
   response.writeHead(status, {
@@ -78,6 +110,12 @@ const safeAccountErrors = new Set([
   "Username must be 3–24 letters, numbers, hyphens, or underscores.",
   "Account not found.",
   "Player not found.",
+  "That player cannot be invited.",
+  "That invitation is no longer available.",
+  "Friend not found.",
+  "That player cannot be saved.",
+  "That invitation link is unavailable.",
+  "Revoke an active friend link before creating another.",
   "Verify your email before linking a game seat.",
   "Only a player seat can be linked to an account.",
   "This seat is already linked to another account.",
@@ -119,6 +157,23 @@ const broadcast = async (roomCode: string) => {
   if (group.size === 0) sockets.delete(roomCode);
 };
 
+const roomChangeListener = usePrisma && roomNotificationsUrl ? new RoomChangeListener(
+  roomNotificationsUrl,
+  (roomCode) => broadcast(roomCode),
+  (error) => {
+    metrics.errorReport("persistence");
+    errorReporter.report({ category: "persistence", path: "/worker/room-notifications", message: error instanceof Error ? error.message : "PostgreSQL room notification failed." });
+  },
+  (ready) => {
+    roomNotificationsReady = ready;
+    operationalLog({ event: ready ? "room-notifications.ready" : "room-notifications.unavailable" });
+    if (!ready && usePrisma) {
+      for (const group of sockets.values()) for (const socket of group.keys()) socket.close(1012, "Realtime fanout is reconnecting");
+    }
+  },
+) : undefined;
+if (roomChangeListener) await roomChangeListener.start();
+
 async function handler(request: IncomingMessage, response: ServerResponse) {
   if (request.method === "OPTIONS") return json(response, 204, {});
   metrics.request();
@@ -133,7 +188,8 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
   try {
     if (request.method === "GET" && parts[0] === "health") {
       try {
-        return json(response, 200, { ok: true, ...(await store.health()) });
+        const healthy = !usePrisma || roomNotificationsReady;
+        return json(response, healthy ? 200 : 503, { ok: healthy, ...(await store.health()), realtimeFanout: { mode: usePrisma ? "postgres-notify" : "process-local", ready: roomNotificationsReady } });
       } catch (error) {
         metrics.requestFailure();
         metrics.serverError();
@@ -188,6 +244,74 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
         const user = await currentUser();
         return json(response, 200, await accountService.getStats(user.id));
       }
+      if (request.method === "GET" && parts[1] === "me" && parts[2] === "privacy") {
+        const user = await currentUser();
+        return json(response, 200, await accountService.getPrivacySettings(user.id));
+      }
+      if (request.method === "PATCH" && parts[1] === "me" && parts[2] === "privacy") {
+        const user = await currentUser();
+        if (typeof input.publicStatsEnabled !== "boolean") throw new HttpError(400, "publicStatsEnabled must be true or false.");
+        return json(response, 200, await accountService.updatePrivacySettings(user.id, input.publicStatsEnabled));
+      }
+      if (request.method === "GET" && parts[1] === "me" && parts[2] === "social") {
+        const user = await currentUser();
+        return json(response, 200, await accountService.socialSummary(user.id));
+      }
+      if (request.method === "POST" && parts[1] === "me" && parts[2] === "friend-invite-links" && parts.length === 3) {
+        const user = await currentUser();
+        return json(response, 201, await accountService.createFriendInviteLink(user.id));
+      }
+      if (request.method === "POST" && parts[1] === "me" && parts[2] === "friend-invite-links" && parts[3] === "accept") {
+        const user = await currentUser();
+        await accountService.acceptFriendInviteLink(user.id, String(input.token ?? ""));
+        return json(response, 200, { message: "Friend invitation accepted." });
+      }
+      if (request.method === "DELETE" && parts[1] === "me" && parts[2] === "friend-invite-links" && parts[3]) {
+        const user = await currentUser();
+        await accountService.revokeFriendInviteLink(user.id, decodeURIComponent(parts[3]));
+        return json(response, 200, { message: "Friend invitation link revoked." });
+      }
+      if (request.method === "POST" && parts[1] === "me" && parts[2] === "friends" && parts[3] === "invitations" && parts.length === 4) {
+        const user = await currentUser();
+        await accountService.sendFriendInvitation(user.id, String(input.username ?? ""));
+        return json(response, 200, { message: "Friend invitation sent if the player is available." });
+      }
+      if (request.method === "POST" && parts[1] === "me" && parts[2] === "friends" && parts[3] === "invitations" && parts[4]) {
+        const user = await currentUser();
+        const action = parts[5];
+        if (action === "accept") await accountService.acceptFriendInvitation(user.id, decodeURIComponent(parts[4]));
+        else if (action === "decline") await accountService.declineFriendInvitation(user.id, decodeURIComponent(parts[4]));
+        else if (action === "revoke") await accountService.revokeFriendInvitation(user.id, decodeURIComponent(parts[4]));
+        else throw new HttpError(404, "Not found");
+        const resultMessage = action === "accept" ? "Invitation accepted." : action === "decline" ? "Invitation declined." : "Invitation revoked.";
+        return json(response, 200, { message: resultMessage });
+      }
+      if (request.method === "DELETE" && parts[1] === "me" && parts[2] === "friends" && parts[3]) {
+        const user = await currentUser();
+        await accountService.removeFriend(user.id, decodeURIComponent(parts[3]));
+        return json(response, 200, { message: "Friend removed." });
+      }
+      if (request.method === "POST" && parts[1] === "me" && parts[2] === "saved-opponents" && parts[3]) {
+        const user = await currentUser();
+        await accountService.saveOpponent(user.id, decodeURIComponent(parts[3]));
+        return json(response, 200, { message: "Opponent saved." });
+      }
+      if (request.method === "DELETE" && parts[1] === "me" && parts[2] === "saved-opponents" && parts[3]) {
+        const user = await currentUser();
+        await accountService.removeSavedOpponent(user.id, decodeURIComponent(parts[3]));
+        return json(response, 200, { message: "Saved opponent removed." });
+      }
+      if (request.method === "PATCH" && parts[1] === "me" && parts[2] === "presence") {
+        const user = await currentUser();
+        if (typeof input.enabled !== "boolean") throw new HttpError(400, "Presence setting must be true or false.");
+        await accountService.setPresence(user.id, input.enabled);
+        return json(response, 200, { message: input.enabled ? "Presence is visible to friends while active." : "Presence is hidden." });
+      }
+      if (request.method === "POST" && parts[1] === "me" && parts[2] === "presence" && parts[3] === "heartbeat") {
+        const user = await currentUser();
+        await accountService.refreshPresence(user.id);
+        return json(response, 200, { message: "Presence refreshed." });
+      }
       if (request.method === "POST" && parts[1] === "me" && parts[2] === "games" && parts[4] === "resume") {
         const user = await currentUser();
         if (!(store instanceof PrismaRoomStore)) throw new HttpError(503, "Match recovery requires database persistence.");
@@ -197,7 +321,12 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
     }
     if (request.method === "GET" && parts[0] === "players" && parts[1]) {
       if (!accountService) throw new HttpError(503, "Player profiles require database persistence.");
-      return json(response, 200, await accountService.publicProfile(decodeURIComponent(parts[1])));
+      try {
+        return json(response, 200, await accountService.publicProfile(decodeURIComponent(parts[1])));
+      } catch (error) {
+        if (error instanceof Error && error.message === "Player not found.") throw new HttpError(404, error.message);
+        throw error;
+      }
     }
     if (request.method === "GET" && parts[0] === "leaderboard") {
       const category = url.searchParams.get("category") ?? "wins";
@@ -226,12 +355,24 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
     if (request.method === "POST" && parts[2] === "rotate-session") { const input = await body(request); return json(response, 200, await store.rotateSession(code, tokenFrom(request, url, input))); }
     if (request.method === "POST" && parts[2] === "setup") { const input = await body(request); const result = await store.setupAction(code, tokenFrom(request, url, input), input.action, Number(input.expectedRevision)); operationalLog({ event: "setup.accepted", roomCode: code.toUpperCase(), actionType: input.action?.type, revision: result.version }); await broadcast(code.toUpperCase()); return json(response, 200, result); }
     if (request.method === "POST" && parts[2] === "ready") { const input = await body(request); const result = await store.setReady(code, tokenFrom(request, url, input), Boolean(input.ready)); operationalLog({ event: "ready.accepted", roomCode: code.toUpperCase(), revision: result.version }); await broadcast(code.toUpperCase()); return json(response, 200, result); }
+    if (request.method === "GET" && parts[2] === "replay") {
+      if (parts[3] === "export") {
+        const result = await store.getPublicReplayExport(code);
+        const status = !result.replayable && result.reason === "not-found" ? 404 : !result.replayable && result.reason === "not-completed" ? 409 : 200;
+        return json(response, status, result);
+      }
+      const fromVersion = Number(url.searchParams.get("fromVersion") ?? 0);
+      const limit = Number(url.searchParams.get("limit") ?? 8);
+      const result = await store.getPublicReplay(code, fromVersion, limit);
+      const status = !result.replayable && result.reason === "not-found" ? 404 : !result.replayable && result.reason === "not-completed" ? 409 : 200;
+      return json(response, status, result);
+    }
     if (request.method === "GET" && parts[2] === "state") return json(response, 200, await store.getRoom(code, tokenFrom(request, url), Number(url.searchParams.get("afterVersion") ?? 0)));
     if (request.method === "POST" && parts[2] === "actions") {
       const input = await body(request); const envelope = (input.envelope ?? { actionId: String(input.actionId ?? randomUUID()), actorId: String(input.actorId ?? ""), expectedRevision: Number(input.expectedRevision), protocolVersion: Number(input.protocolVersion ?? 1), command: input.command }) as GameCommandEnvelope; const result = await store.submitAction(code, tokenFrom(request, url, input), envelope); metrics.commandAccepted(); metrics.latency(Date.now() - requestStartedAt); if (result.status === "completed") metrics.roomCompleted(); if (result.status === "abandoned") metrics.roomAbandoned(); operationalLog({ event: "command.accepted", roomCode: code.toUpperCase(), actionId: envelope.actionId, actorId: envelope.actorId, commandType: envelope.command.type, revision: result.version }); await broadcast(code.toUpperCase()); return json(response, 200, result);
     }
     return json(response, 404, { error: "Not found" });
-  } catch (error) { metrics.requestFailure(); metrics.serverError(); metrics.latency(Date.now() - requestStartedAt); const errorCategory = parts[2] === "actions" ? "command" : "http"; metrics.errorReport(errorCategory); if (parts[2] === "actions") metrics.commandFailed(); const privateRoute = parts[0] === "accounts" || parts[0] === "players" || parts[2] === "claim"; const rawMessage = error instanceof Error ? error.message : "Request failed"; const safeMessage = error instanceof HttpError ? error.message : privateRoute ? (safeAccountErrors.has(rawMessage) ? rawMessage : "Account request failed.") : rawMessage; const reported = errorReporter.report({ category: errorCategory, method: request.method, path: url.pathname, roomCode: parts[1]?.toUpperCase(), message: privateRoute ? "Account request failed." : safeMessage }); operationalLog({ event: "request.failed", method: request.method, path: url.pathname, error: reported.message }); return json(response, error instanceof HttpError ? error.status : 400, { error: safeMessage }); }
+  } catch (error) { metrics.requestFailure(); if (!(error instanceof HttpError) || error.status >= 500) metrics.serverError(); metrics.latency(Date.now() - requestStartedAt); const errorCategory = parts[2] === "actions" ? "command" : "http"; metrics.errorReport(errorCategory); if (parts[2] === "actions") metrics.commandFailed(); const privateRoute = parts[0] === "accounts" || parts[0] === "players" || parts[2] === "claim"; const rawMessage = error instanceof Error ? error.message : "Request failed"; const safeMessage = error instanceof HttpError ? error.message : privateRoute ? (safeAccountErrors.has(rawMessage) ? rawMessage : "Account request failed.") : rawMessage; const reported = errorReporter.report({ category: errorCategory, method: request.method, path: url.pathname, roomCode: parts[1]?.toUpperCase(), message: privateRoute ? "Account request failed." : safeMessage }); operationalLog({ event: "request.failed", method: request.method, path: url.pathname, error: reported.message }); return json(response, error instanceof HttpError ? error.status : 400, { error: safeMessage }); }
 }
 
 const server = createServer(handler);
@@ -344,6 +485,7 @@ const shutdown = async (signal: string) => {
   operationalLog({ event: "deployment.shutdown", signal });
   clearInterval(websocketHeartbeat);
   clearInterval(botWorker);
+  await roomChangeListener?.close();
   for (const group of sockets.values()) for (const socket of group.keys()) socket.terminate();
   sockets.clear();
   await new Promise<void>((resolve) => wsServer.close(() => resolve()));

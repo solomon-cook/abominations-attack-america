@@ -45,7 +45,7 @@ function featuresForCell(cell: AuditedCell): BoardFeature[] {
   if (cell.features.includes("Mutation site")) features.push({ kind: "mutation-site", siteId: `mutation-${cell.row}-${cell.column}` });
   if (cell.features.includes("Monster Challenge site")) features.push({ kind: "challenge-site" });
   if (cell.features.includes("potential spawn location")) {
-    // User confirmed all spawn symbols as lairs, and the 10/2 spelling as Tomanagi.
+    // The owner-confirmed 10/2 identity is recorded in board-promotion-signoff.md.
     const monsterId = cell.row === 10 && cell.column === 2 ? "tomanagi" : cell.features.split(";")[0].toLowerCase();
     features.push({ kind: "lair", monsterId });
   }

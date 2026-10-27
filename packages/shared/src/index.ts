@@ -70,6 +70,19 @@ export interface AccountSummary {
   emailVerified: boolean;
 }
 
+export interface AccountPrivacySettings {
+  publicStatsEnabled: boolean;
+}
+
+export interface SocialSummary {
+  presenceEnabled: boolean;
+  friends: Array<{ username: string; online: boolean }>;
+  incoming: Array<{ id: string; username: string; createdAt: string; expiresAt: string }>;
+  outgoing: Array<{ id: string; username: string; createdAt: string; expiresAt: string }>;
+  inviteLinks: Array<{ id: string; createdAt: string; expiresAt: string }>;
+  savedOpponents: string[];
+}
+
 export interface AccountGameSummary {
   roomId: string;
   code: string;
@@ -93,6 +106,20 @@ export interface RoomView {
   participants: RoomParticipantView[];
   events: RoomEvent[];
 }
+
+export interface ReplayFrame {
+  version: number;
+  eventType: string;
+  state: GameState;
+}
+
+export type PublicReplayPage =
+  | { replayable: false; reason: "not-found" | "not-completed" | "history-incomplete" | "history-too-large" | "unsupported-content" | "frame-too-large" | "export-too-large" }
+  | { replayable: true; roomCode: string; terminalVersion: number; boardId: string; boardVersion: number; boardContentHash: string; rulesetVersion: string; base: ReplayFrame; frames: ReplayFrame[]; nextFromVersion?: number };
+
+export type PublicReplayExport =
+  | { replayable: false; reason: "not-found" | "not-completed" | "history-incomplete" | "history-too-large" | "unsupported-content" | "export-too-large" }
+  | { replayable: true; formatVersion: 1; roomCode: string; terminalVersion: number; boardId: string; boardVersion: number; boardContentHash: string; rulesetVersion: string; frames: ReplayFrame[] };
 
 export type RoomSocketClientMessage = {
   type: "command.submit";

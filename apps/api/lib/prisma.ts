@@ -6,8 +6,12 @@ const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL 
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
+const createPrismaClient = (url: string) => url.startsWith("prisma+")
+  ? new PrismaClient({ accelerateUrl: url })
+  : new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+
 export const prisma = databaseUrl
-  ? globalForPrisma.prisma ?? new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) })
+  ? globalForPrisma.prisma ?? createPrismaClient(databaseUrl)
   : undefined;
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (prisma) globalForPrisma.prisma = prisma;

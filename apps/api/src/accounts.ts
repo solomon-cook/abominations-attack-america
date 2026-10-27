@@ -1,5 +1,5 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import type { AccountGameSummary, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats } from "@abominations/shared";
+import type { AccountGameSummary, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, SocialSummary } from "@abominations/shared";
 import { sumPlayerStats } from "./player-stats.js";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -8,7 +8,13 @@ const RESET_TTL_MS = 60 * 60 * 1000;
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const randomToken = () => randomBytes(32).toString("base64url");
 const emailFrom = (value: string) => value.trim().toLowerCase();
+const usernameFromInput = (value: string) => value.trim().toLowerCase();
 const usernameFrom = () => `player-${randomBytes(4).toString("hex")}`;
+const PRESENCE_TTL_MS = 90_000;
+const PRESENCE_MIN_REFRESH_MS = 15_000;
+const FRIEND_INVITATION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const FRIEND_LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const MAX_ACTIVE_FRIEND_LINKS = 10;
 
 export interface AccountEmail {
   to: string;
@@ -203,16 +209,193 @@ export class AccountService {
     return sumPlayerStats(rows, user.username);
   }
 
+  async getPrivacySettings(userId: string): Promise<{ publicStatsEnabled: boolean }> {
+    const user = await this.prisma.userAccount.findUnique({ where: { id: userId }, select: { publicStatsEnabled: true } });
+    if (!user) throw new Error("Account not found.");
+    return { publicStatsEnabled: Boolean(user.publicStatsEnabled) };
+  }
+
+  async updatePrivacySettings(userId: string, publicStatsEnabled: boolean): Promise<{ publicStatsEnabled: boolean }> {
+    const user = await this.prisma.userAccount.update({ where: { id: userId }, data: { publicStatsEnabled }, select: { publicStatsEnabled: true } });
+    return { publicStatsEnabled: Boolean(user.publicStatsEnabled) };
+  }
+
   async publicProfile(usernameInput: string) {
     const username = usernameInput.trim().toLowerCase();
-    const user = await this.prisma.userAccount.findUnique({ where: { username }, select: { id: true, username: true } });
-    if (!user) throw new Error("Player not found.");
+    const user = await this.prisma.userAccount.findUnique({ where: { username }, select: { id: true, username: true, publicStatsEnabled: true } });
+    if (!user || !user.publicStatsEnabled) throw new Error("Player not found.");
     const rows = await this.prisma.playerMatchStat.findMany({ where: { userId: user.id }, orderBy: { completedAt: "desc" } });
     return { ...sumPlayerStats(rows, user.username), botAssistedMatches: rows.filter((row: any) => row.botAssisted).length };
   }
 
+  async socialSummary(userId: string): Promise<SocialSummary> {
+    const [user, friendships, incoming, outgoing, inviteLinks, saved] = await Promise.all([
+      this.prisma.userAccount.findUnique({ where: { id: userId }, select: { presenceEnabled: true } }),
+      this.prisma.friendship.findMany({
+        where: { OR: [{ userAId: userId }, { userBId: userId }] },
+        include: { userA: { select: { id: true, username: true, presenceEnabled: true, presenceExpiresAt: true } }, userB: { select: { id: true, username: true, presenceEnabled: true, presenceExpiresAt: true } } },
+        orderBy: { createdAt: "asc" },
+      }),
+      this.prisma.friendInvitation.findMany({
+        where: { recipientId: userId, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: this.now() } },
+        include: { sender: { select: { username: true } } }, orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.friendInvitation.findMany({
+        where: { senderId: userId, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: this.now() } },
+        include: { recipient: { select: { username: true } } }, orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.friendInviteLink.findMany({
+        where: { senderId: userId, acceptedAt: null, revokedAt: null, expiresAt: { gt: this.now() } },
+        select: { id: true, createdAt: true, expiresAt: true }, orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.savedOpponent.findMany({ where: { ownerId: userId }, include: { opponent: { select: { username: true } } }, orderBy: { createdAt: "asc" } }),
+    ]);
+    if (!user) throw new Error("Account not found.");
+    const now = this.now();
+    return {
+      presenceEnabled: Boolean(user.presenceEnabled),
+      friends: friendships.map((row: any) => {
+        const friend = row.userAId === userId ? row.userB : row.userA;
+        return { username: friend.username, online: Boolean(friend.presenceEnabled && friend.presenceExpiresAt && friend.presenceExpiresAt > now) };
+      }),
+      incoming: incoming.map((row: any) => ({ id: row.id, username: row.sender.username, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString() })),
+      outgoing: outgoing.map((row: any) => ({ id: row.id, username: row.recipient.username, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString() })),
+      inviteLinks: inviteLinks.map((row: any) => ({ id: row.id, createdAt: row.createdAt.toISOString(), expiresAt: row.expiresAt.toISOString() })),
+      savedOpponents: saved.map((row: any) => row.opponent.username),
+    };
+  }
+
+  async createFriendInviteLink(senderId: string): Promise<{ id: string; url: string; expiresAt: string }> {
+    const now = this.now();
+    await this.prisma.friendInviteLink.deleteMany({ where: { senderId, OR: [{ acceptedAt: { not: null } }, { revokedAt: { not: null } }, { expiresAt: { lte: now } }] } });
+    const activeCount = await this.prisma.friendInviteLink.count({ where: { senderId, acceptedAt: null, revokedAt: null, expiresAt: { gt: now } } });
+    if (activeCount >= MAX_ACTIVE_FRIEND_LINKS) throw new Error("Revoke an active friend link before creating another.");
+    const token = randomToken();
+    const expiresAt = new Date(now.getTime() + FRIEND_LINK_TTL_MS);
+    const configuredBase = process.env.WEB_APP_URL ?? process.env.ALLOWED_ORIGIN;
+    const base = configuredBase && configuredBase !== "*" ? configuredBase : "http://localhost:5173";
+    const url = new URL("/", base);
+    if (!new Set(["http:", "https:"]).has(url.protocol) || (this.production && url.protocol !== "https:")) throw new Error("A secure application URL is required for friend links.");
+    const link = await this.prisma.friendInviteLink.create({ data: { senderId, tokenHash: hash(token), expiresAt } });
+    url.hash = new URLSearchParams({ "friend-invite": token }).toString();
+    return { id: link.id, url: url.toString(), expiresAt: expiresAt.toISOString() };
+  }
+
+  async acceptFriendInviteLink(userId: string, token: string): Promise<void> {
+    if (token.length < 32 || token.length > 128 || !/^[A-Za-z0-9_-]+$/.test(token)) throw new Error("That invitation link is unavailable.");
+    await this.prisma.$transaction(async (tx: any) => {
+      const link = await tx.friendInviteLink.findUnique({ where: { tokenHash: hash(token) } });
+      if (!link || link.senderId === userId || link.acceptedAt || link.revokedAt || link.expiresAt <= this.now()) throw new Error("That invitation link is unavailable.");
+      const accepted = await tx.friendInviteLink.updateMany({ where: { id: link.id, acceptedAt: null, revokedAt: null, expiresAt: { gt: this.now() } }, data: { acceptedAt: this.now() } });
+      if (accepted.count !== 1) throw new Error("That invitation link is unavailable.");
+      const [userAId, userBId] = [link.senderId, userId].sort();
+      const existing = await tx.friendship.findUnique({ where: { userAId_userBId: { userAId, userBId } } });
+      if (!existing) await tx.friendship.create({ data: { userAId, userBId } });
+    });
+  }
+
+  async revokeFriendInviteLink(userId: string, linkId: string): Promise<void> {
+    const changed = await this.prisma.friendInviteLink.updateMany({
+      where: { id: linkId, senderId: userId, acceptedAt: null, revokedAt: null, expiresAt: { gt: this.now() } },
+      data: { revokedAt: this.now() },
+    });
+    if (changed.count !== 1) throw new Error("That invitation link is unavailable.");
+  }
+
+  async sendFriendInvitation(senderId: string, usernameInput: string): Promise<void> {
+    const username = usernameFromInput(usernameInput);
+    const recipient = await this.prisma.userAccount.findUnique({ where: { username }, select: { id: true } });
+    if (!recipient || recipient.id === senderId) throw new Error("That player cannot be invited.");
+    const [userAId, userBId] = [senderId, recipient.id].sort();
+    await this.prisma.$transaction(async (tx: any) => {
+      const friendship = await tx.friendship.findUnique({ where: { userAId_userBId: { userAId, userBId } } });
+      if (friendship) return;
+      const reverse = await tx.friendInvitation.findFirst({
+        where: { senderId: recipient.id, recipientId: senderId, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: this.now() } },
+      });
+      if (reverse) {
+        const changed = await tx.friendInvitation.updateMany({ where: { id: reverse.id, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: this.now() } }, data: { acceptedAt: this.now() } });
+        if (changed.count === 1) await tx.friendship.create({ data: { userAId, userBId } });
+        return;
+      }
+      const existing = await tx.friendInvitation.findFirst({
+        where: { senderId, recipientId: recipient.id, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: this.now() } },
+      });
+      if (existing) return;
+      await tx.friendInvitation.create({ data: { senderId, recipientId: recipient.id, expiresAt: new Date(this.now().getTime() + FRIEND_INVITATION_TTL_MS) } });
+    });
+  }
+
+  async acceptFriendInvitation(userId: string, invitationId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx: any) => {
+      const invitation = await tx.friendInvitation.findFirst({ where: { id: invitationId, recipientId: userId, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: this.now() } } });
+      if (!invitation) throw new Error("That invitation is no longer available.");
+      const accepted = await tx.friendInvitation.updateMany({ where: { id: invitation.id, recipientId: userId, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: this.now() } }, data: { acceptedAt: this.now() } });
+      if (accepted.count !== 1) throw new Error("That invitation is no longer available.");
+      const [userAId, userBId] = [invitation.senderId, invitation.recipientId].sort();
+      await tx.friendship.create({ data: { userAId, userBId } });
+    });
+  }
+
+  async declineFriendInvitation(userId: string, invitationId: string): Promise<void> {
+    const changed = await this.prisma.friendInvitation.updateMany({
+      where: { id: invitationId, recipientId: userId, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: this.now() } },
+      data: { declinedAt: this.now() },
+    });
+    if (changed.count !== 1) throw new Error("That invitation is no longer available.");
+  }
+
+  async revokeFriendInvitation(userId: string, invitationId: string): Promise<void> {
+    const changed = await this.prisma.friendInvitation.updateMany({
+      where: { id: invitationId, senderId: userId, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: this.now() } },
+      data: { revokedAt: this.now() },
+    });
+    if (changed.count !== 1) throw new Error("That invitation is no longer available.");
+  }
+
+  async removeFriend(userId: string, usernameInput: string): Promise<void> {
+    const other = await this.prisma.userAccount.findUnique({ where: { username: usernameFromInput(usernameInput) }, select: { id: true } });
+    if (!other || other.id === userId) throw new Error("Friend not found.");
+    const [userAId, userBId] = [userId, other.id].sort();
+    const removed = await this.prisma.friendship.deleteMany({ where: { userAId, userBId } });
+    if (removed.count !== 1) throw new Error("Friend not found.");
+  }
+
+  async saveOpponent(userId: string, usernameInput: string): Promise<void> {
+    const other = await this.prisma.userAccount.findUnique({ where: { username: usernameFromInput(usernameInput) }, select: { id: true } });
+    if (!other || other.id === userId) throw new Error("That player cannot be saved.");
+    await this.prisma.savedOpponent.upsert({
+      where: { ownerId_opponentId: { ownerId: userId, opponentId: other.id } },
+      create: { ownerId: userId, opponentId: other.id },
+      update: {},
+    });
+  }
+
+  async removeSavedOpponent(userId: string, usernameInput: string): Promise<void> {
+    const other = await this.prisma.userAccount.findUnique({ where: { username: usernameFromInput(usernameInput) }, select: { id: true } });
+    if (!other) return;
+    await this.prisma.savedOpponent.deleteMany({ where: { ownerId: userId, opponentId: other.id } });
+  }
+
+  async setPresence(userId: string, enabled: boolean): Promise<void> {
+    await this.prisma.userAccount.update({
+      where: { id: userId },
+      data: { presenceEnabled: enabled, presenceExpiresAt: enabled ? new Date(this.now().getTime() + PRESENCE_TTL_MS) : null },
+    });
+  }
+
+  async refreshPresence(userId: string): Promise<void> {
+    const now = this.now();
+    await this.prisma.userAccount.updateMany({
+      // Encode last-refresh time as expiry minus TTL, avoiding another stored field.
+      // This conditional update also serializes concurrent heartbeat writes for one account.
+      where: { id: userId, presenceEnabled: true, presenceExpiresAt: { lte: new Date(now.getTime() + PRESENCE_TTL_MS - PRESENCE_MIN_REFRESH_MS) } },
+      data: { presenceExpiresAt: new Date(now.getTime() + PRESENCE_TTL_MS) },
+    });
+  }
+
   async leaderboard(category: LeaderboardCategory): Promise<LeaderboardEntry[]> {
-    const users = await this.prisma.userAccount.findMany({ include: { matchStats: true } });
+    const users = await this.prisma.userAccount.findMany({ where: { publicStatsEnabled: true }, include: { matchStats: true } });
     const entries: Array<LeaderboardEntry & { categoryValue: number }> = [];
     for (const user of users) {
       const stats = sumPlayerStats(user.matchStats, user.username);

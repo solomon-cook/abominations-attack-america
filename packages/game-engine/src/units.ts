@@ -13,7 +13,7 @@ export interface UnitDefinition {
   readonly attacks: 1;
   readonly specialAbilityText?: string;
   readonly sourceRefs: readonly string[];
-  readonly effectsImplementation: "source-gated";
+  readonly effectsImplementation: "implemented";
 }
 
 export interface GiantUnitDefinition {
@@ -41,7 +41,7 @@ export interface NationalGuardDefinition {
   readonly damage: 1;
   readonly specialAbilityText: "Only the player with the Guard Commander card can move Guard units.";
   readonly sourceRefs: readonly string[];
-  readonly controlImplementation: "source-gated";
+  readonly controlImplementation: "implemented";
 }
 
 export interface BranchDeploymentDefinition {
@@ -50,22 +50,24 @@ export interface BranchDeploymentDefinition {
   readonly additionalNationalGuardUnits: number;
   readonly canDrawResearchInstead: true;
   readonly sourceRefs: readonly string[];
-  readonly implementation: "source-gated";
+  readonly implementation: "implemented";
 }
 
 const armyNavy = "references/monsters-menace-america/components/military-records/army-navy.jpg";
 const marinesAirForce = "references/monsters-menace-america/components/military-records/marines-air-force.jpg";
 const giantNationalGuard = "references/monsters-menace-america/components/military-records/giant-units-national-guard.jpg";
+const submarineRules = "tmp/pdfs/rulebook-pages/page-10.jpg";
+const guardCommanderCard = "references/monsters-menace-america/components/decks/military-research-01.jpg";
 
 export const UNIT_DEFINITIONS: readonly UnitDefinition[] = [
-  { id: "army-tank", branch: "Army", name: "Tank", quantity: 5, move: 4, movement: "land-only", defense: 5, damage: 1, attacks: 1, sourceRefs: [armyNavy], effectsImplementation: "source-gated" },
-  { id: "army-missile-launcher", branch: "Army", name: "Missile Launcher", quantity: 3, move: 4, movement: "land-only", defense: 3, damage: 1, attacks: 1, specialAbilityText: "Makes an extra attack during the first round of combat before the monster attacks.", sourceRefs: [armyNavy], effectsImplementation: "source-gated" },
-  { id: "navy-fighter", branch: "Navy", name: "Fighter", quantity: 5, move: 6, movement: "fly", defense: 4, damage: 1, attacks: 1, sourceRefs: [armyNavy], effectsImplementation: "source-gated" },
-  { id: "navy-nuclear-submarine", branch: "Navy", name: "Nuclear Submarine", quantity: 3, move: 4, movement: "sea-seacoast-or-fly", defense: [5, 6], damage: [1, 3], attacks: 1, specialAbilityText: "May be launched as a cruise missile into combat against a monster; use the starred statistics, destroy the missile after the first round, and mutate the monster if the cruise-missile attack roll is 1.", sourceRefs: [armyNavy], effectsImplementation: "source-gated" },
-  { id: "marines-fighter", branch: "Marines", name: "Fighter", quantity: 4, move: 5, movement: "fly", defense: 4, damage: 1, attacks: 1, sourceRefs: [marinesAirForce], effectsImplementation: "source-gated" },
-  { id: "marines-rocket-launcher", branch: "Marines", name: "Rocket Launcher", quantity: 4, move: 4, movement: "land-only", defense: 3, damage: 2, attacks: 1, sourceRefs: [marinesAirForce], effectsImplementation: "source-gated" },
-  { id: "air-force-fighter", branch: "Air Force", name: "Fighter", quantity: 6, move: 6, movement: "fly", defense: 4, damage: 1, attacks: 1, sourceRefs: [marinesAirForce], effectsImplementation: "source-gated" },
-  { id: "air-force-cruise-missile", branch: "Air Force", name: "Cruise Missile", quantity: 2, move: 8, movement: "fly", defense: 6, damage: 3, attacks: 1, specialAbilityText: "Destroyed after the first round of combat; if the cruise-missile attack roll is 1, the monster mutates.", sourceRefs: [marinesAirForce], effectsImplementation: "source-gated" },
+  { id: "army-tank", branch: "Army", name: "Tank", quantity: 5, move: 4, movement: "land-only", defense: 5, damage: 1, attacks: 1, sourceRefs: [armyNavy], effectsImplementation: "implemented" },
+  { id: "army-missile-launcher", branch: "Army", name: "Missile Launcher", quantity: 3, move: 4, movement: "land-only", defense: 3, damage: 1, attacks: 1, specialAbilityText: "Makes an extra attack during the first round of combat before the monster attacks.", sourceRefs: [armyNavy], effectsImplementation: "implemented" },
+  { id: "navy-fighter", branch: "Navy", name: "Fighter", quantity: 5, move: 6, movement: "fly", defense: 4, damage: 1, attacks: 1, sourceRefs: [armyNavy], effectsImplementation: "implemented" },
+  { id: "navy-nuclear-submarine", branch: "Navy", name: "Nuclear Submarine", quantity: 3, move: 4, movement: "sea-seacoast-only", defense: [5, 6], damage: [1, 3], attacks: 1, specialAbilityText: "May be launched as a cruise missile into combat against a monster; use the starred statistics, destroy the missile after the first round, and mutate the monster if the cruise-missile attack roll is 1.", sourceRefs: [armyNavy, submarineRules], effectsImplementation: "implemented" },
+  { id: "marines-fighter", branch: "Marines", name: "Fighter", quantity: 4, move: 5, movement: "fly", defense: 4, damage: 1, attacks: 1, sourceRefs: [marinesAirForce], effectsImplementation: "implemented" },
+  { id: "marines-rocket-launcher", branch: "Marines", name: "Rocket Launcher", quantity: 4, move: 4, movement: "land-only", defense: 3, damage: 2, attacks: 1, sourceRefs: [marinesAirForce], effectsImplementation: "implemented" },
+  { id: "air-force-fighter", branch: "Air Force", name: "Fighter", quantity: 6, move: 6, movement: "fly", defense: 4, damage: 1, attacks: 1, sourceRefs: [marinesAirForce], effectsImplementation: "implemented" },
+  { id: "air-force-cruise-missile", branch: "Air Force", name: "Cruise Missile", quantity: 2, move: 8, movement: "fly", defense: 6, damage: 3, attacks: 1, specialAbilityText: "Destroyed after the first round of combat; if the cruise-missile attack roll is 1, the monster mutates.", sourceRefs: [marinesAirForce], effectsImplementation: "implemented" },
 ];
 
 export const GIANT_UNIT_DEFINITIONS: readonly GiantUnitDefinition[] = [
@@ -74,13 +76,13 @@ export const GIANT_UNIT_DEFINITIONS: readonly GiantUnitDefinition[] = [
 ];
 
 export const NATIONAL_GUARD_DEFINITIONS: readonly NationalGuardDefinition[] = [
-  { id: "national-guard-tank", name: "Tank", quantity: 6, printedMove: 0, move: 3, defense: 4, damage: 1, specialAbilityText: "Only the player with the Guard Commander card can move Guard units.", sourceRefs: [giantNationalGuard], controlImplementation: "source-gated" },
-  { id: "national-guard-fighter", name: "Fighter", quantity: 2, printedMove: 0, move: 5, defense: 3, damage: 1, specialAbilityText: "Only the player with the Guard Commander card can move Guard units.", sourceRefs: [giantNationalGuard], controlImplementation: "source-gated" },
+  { id: "national-guard-tank", name: "Tank", quantity: 6, printedMove: 0, move: 3, defense: 4, damage: 1, specialAbilityText: "Only the player with the Guard Commander card can move Guard units.", sourceRefs: [giantNationalGuard, guardCommanderCard], controlImplementation: "implemented" },
+  { id: "national-guard-fighter", name: "Fighter", quantity: 2, printedMove: 0, move: 5, defense: 3, damage: 1, specialAbilityText: "Only the player with the Guard Commander card can move Guard units.", sourceRefs: [giantNationalGuard, guardCommanderCard], controlImplementation: "implemented" },
 ];
 
 export const BRANCH_DEPLOYMENT_DEFINITIONS: readonly BranchDeploymentDefinition[] = [
-  { branch: "Army", ownOrGuardUnits: 2, additionalNationalGuardUnits: 1, canDrawResearchInstead: true, sourceRefs: [armyNavy], implementation: "source-gated" },
-  { branch: "Navy", ownOrGuardUnits: 2, additionalNationalGuardUnits: 1, canDrawResearchInstead: true, sourceRefs: [armyNavy], implementation: "source-gated" },
-  { branch: "Air Force", ownOrGuardUnits: 2, additionalNationalGuardUnits: 1, canDrawResearchInstead: true, sourceRefs: [marinesAirForce], implementation: "source-gated" },
-  { branch: "Marines", ownOrGuardUnits: 3, additionalNationalGuardUnits: 0, canDrawResearchInstead: true, sourceRefs: [marinesAirForce], implementation: "source-gated" },
+  { branch: "Army", ownOrGuardUnits: 2, additionalNationalGuardUnits: 1, canDrawResearchInstead: true, sourceRefs: [armyNavy], implementation: "implemented" },
+  { branch: "Navy", ownOrGuardUnits: 2, additionalNationalGuardUnits: 1, canDrawResearchInstead: true, sourceRefs: [armyNavy], implementation: "implemented" },
+  { branch: "Air Force", ownOrGuardUnits: 2, additionalNationalGuardUnits: 1, canDrawResearchInstead: true, sourceRefs: [marinesAirForce], implementation: "implemented" },
+  { branch: "Marines", ownOrGuardUnits: 3, additionalNationalGuardUnits: 0, canDrawResearchInstead: true, sourceRefs: [marinesAirForce], implementation: "implemented" },
 ];
