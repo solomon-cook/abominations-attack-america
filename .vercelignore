@@ -1,0 +1,14 @@
+.git
+.vercel
+.env*
+node_modules
+**/node_modules
+output
+references
+tmp
+docs
+apps/api/dist
+apps/web/dist
+# The browser only renders WebP delivery assets; PNGs are source art and are
+# consumed by local generation/verification workflows, not by the deployed UI.
+apps/web/public/assets/**/*.png
