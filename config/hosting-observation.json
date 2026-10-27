@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-10-26T20:50:26.862Z",
+  "url": "https://abominations-attack-america.vercel.app",
+  "status": 200,
+  "lastModified": "Thu, 22 Oct 2026 10:24:17 GMT",
+  "assets": [
+    {
+      "path": "/assets/index-5XS8sbHa.js",
+      "status": 200,
+      "sha256": "8cb0122bbb8663221d00029593c675af43646e370b5dff7242dae3a604d9ba11",
+      "containsLocalhost": true
+    }
+  ],
+  "health": {
+    "status": 404,
+    "body": "The page could not be found\n\nNOT_FOUND\n\nlhr1::rslv2-1793047826848-0728f42c627e\n",
+    "server": "Vercel"
+  },
+  "metrics": {
+    "status": 404,
+    "body": "The page could not be found\n\nNOT_FOUND\n\nlhr1::qp2l9-1793047826849-7aa8c903fa69\n",
+    "server": "Vercel"
+  }
+}

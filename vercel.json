@@ -1,0 +1,22 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run vercel:api:build && npm run prisma:migrate:deploy && npm run build",
+  "installCommand": "npm ci",
+  "outputDirectory": "apps/web/dist",
+  "functions": {
+    "api/[...path].ts": {
+      "maxDuration": 60,
+      "includeFiles": "apps/api/generated/prisma/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/[...path]?path=:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
