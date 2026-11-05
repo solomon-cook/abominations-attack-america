@@ -1584,6 +1584,7 @@ export const GameRoomScalarFieldEnum = {
   id: 'id',
   code: 'code',
   status: 'status',
+  matchStarted: 'matchStarted',
   privacy: 'privacy',
   isTest: 'isTest',
   maxPlayers: 'maxPlayers',
@@ -1887,6 +1888,13 @@ export type ListEnumRoomStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$P
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'RoomPrivacy'
  */
 export type EnumRoomPrivacyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoomPrivacy'>
@@ -1897,13 +1905,6 @@ export type EnumRoomPrivacyFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'RoomPrivacy[]'
  */
 export type ListEnumRoomPrivacyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoomPrivacy[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 

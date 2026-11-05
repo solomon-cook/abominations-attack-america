@@ -117,6 +117,7 @@
     "api:start": "npm --workspace @abominations/api run start",
     "prisma:validate": "prisma validate --config apps/api/prisma.config.ts",
     "prisma:migrate:deploy": "prisma migrate deploy --config apps/api/prisma.config.ts",
+    "vercel:preview:migrate": "node scripts/migrate-vercel-preview.mjs",
     "vercel:api:build": "node scripts/build-vercel-api.mjs",
     "prisma:push": "npm --workspace @abominations/api run prisma:push",
     "board-audit:verify": "node scripts/generate-audited-board.mjs --check",

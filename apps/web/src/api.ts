@@ -57,6 +57,7 @@ export const revokeFriendInviteLink = (id: string) => request<{ message: string 
 export const getPlayerProfile = (username: string) => request<PlayerStats & { botAssistedMatches: number }>(`/players/${encodeURIComponent(username)}`);
 export const getLeaderboard = (category: LeaderboardCategory) => request<LeaderboardEntry[]>(`/leaderboard?category=${encodeURIComponent(category)}`);
 export const setReady = (code: string, token: string, ready: boolean) => request<RoomView>(`/rooms/${code.toUpperCase()}/ready`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ ready }) });
+export const startMatch = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/start`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const sendSetupAction = (code: string, token: string, expectedRevision: number, action: SetupAction) => request<RoomView>(`/rooms/${code.toUpperCase()}/setup`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ expectedRevision, action }) });
 export const readRoom = (code: string, token: string, afterVersion = 0) => request<RoomView>(`/rooms/${code}/state?token=${encodeURIComponent(token)}&afterVersion=${afterVersion}`);
 export const readPublicReplay = (code: string, fromVersion = 0, limit = 8) => request<PublicReplayPage>(`/rooms/${code.toUpperCase()}/replay?fromVersion=${fromVersion}&limit=${limit}`);

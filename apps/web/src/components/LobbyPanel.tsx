@@ -12,6 +12,7 @@ export type LobbyPanelProps = {
   roomCode: string;
   publicRooms: PublicRoomSummary[];
   setupComplete: boolean;
+  pendingAction: boolean;
   error: string;
   onDisplayNameChange: (value: string) => void;
   onPlayerCountChange: (value: 2 | 3 | 4) => void;
@@ -20,6 +21,7 @@ export type LobbyPanelProps = {
   onRefreshPublicRooms: () => void;
   onStartSession: (kind: "create" | "join" | "spectate") => void;
   onToggleReady: () => void;
+  onStartMatch: () => void;
   onLeaveRoom: () => void;
 };
 
@@ -34,6 +36,7 @@ export function LobbyPanel({
   roomCode,
   publicRooms,
   setupComplete,
+  pendingAction,
   error,
   onDisplayNameChange,
   onPlayerCountChange,
@@ -42,6 +45,7 @@ export function LobbyPanel({
   onRefreshPublicRooms,
   onStartSession,
   onToggleReady,
+  onStartMatch,
   onLeaveRoom,
 }: LobbyPanelProps) {
   const [inviteStatus, setInviteStatus] = useState("");
@@ -100,7 +104,21 @@ export function LobbyPanel({
           ))}
         </div>
       )}
-      {online && participant?.role === "player" && (
+      {online && room && !room.matchStarted && participant?.role === "player" && (
+        <div className="lobby-waiting-room">
+          <h2>Waiting room</h2>
+          <p>Share the room code. Any player can start once everyone has joined.</p>
+          <div className="lobby-player-seats" aria-label="Players in this room">
+            {Array.from({ length: room.maxPlayers }, (_, index) => {
+              const seat = room.participants.find((candidate) => candidate.role === "player" && candidate.playerIndex === index);
+              return <div key={index} className="lobby-player-seat"><span>Player {index + 1}</span><strong>{seat?.displayName ?? "Waiting to join"}</strong><small>{seat ? seat.connected ? "Connected" : "Reconnecting" : "Open seat"}</small></div>;
+            })}
+          </div>
+          <button type="button" className="ready-button" disabled={pendingAction || room.participants.filter((candidate) => candidate.role === "player").length !== room.maxPlayers || room.participants.some((candidate) => candidate.role === "player" && !candidate.connected)} onClick={onStartMatch}>Start match</button>
+          {room.participants.filter((candidate) => candidate.role === "player").length !== room.maxPlayers && <p className="lobby-waiting-note">Waiting for all {room.maxPlayers} players to join.</p>}
+        </div>
+      )}
+      {online && room?.matchStarted && participant?.role === "player" && (
         <div className="lobby-actions">
           <button type="button" className="ready-button" disabled={!setupComplete} onClick={onToggleReady}>
             {participant.ready ? "Unready" : "Ready"}

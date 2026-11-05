@@ -77,6 +77,7 @@ export class PrismaRoomStore implements RoomStore {
     const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
     if (!room) throw new Error("Room not found.");
     if (room.status === "EXPIRED") throw new Error("This room has expired.");
+    if (room.matchStarted) throw new Error("This match has already started.");
     const count = await this.prismaClient.participant.count({ where: { roomId: room.id, role: "PLAYER" } });
     if (count >= room.maxPlayers) throw new Error("This room is full.");
     const accessToken = token();
@@ -90,6 +91,17 @@ export class PrismaRoomStore implements RoomStore {
     await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { lastActivityAt: new Date() } });
     await this.refreshStatus(room.id, room.maxPlayers, room.state as unknown as GameState);
     return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };
+  }
+
+  async startMatch(roomCode: string, accessToken: string) {
+    const room = await this.authorize(roomCode, accessToken);
+    const starter = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
+    if (!starter || starter.playerIndex === null || !starter.connectedAt) throw new Error("Only a connected player can start the match.");
+    const players = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" }, select: { id: true, connectedAt: true } });
+    if (players.length !== room.maxPlayers || players.some((player: any) => !player.connectedAt)) throw new Error("Wait until every player has joined and is connected.");
+    const started = await this.prismaClient.gameRoom.updateMany({ where: { id: room.id, status: "WAITING", matchStarted: false }, data: { matchStarted: true, lastActivityAt: new Date() } });
+    if (started.count !== 1) throw new Error("This room has already started.");
+    return this.view(room.id, 0, "player", starter.playerIndex ?? undefined);
   }
 
   async spectateRoom(roomCode: string, displayName: string) {
@@ -165,6 +177,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async setReady(roomCode: string, accessToken: string, ready: boolean) {
     const room = await this.authorize(roomCode, accessToken);
+    if (!room.matchStarted) throw new Error("The host must start the match before players can ready up.");
     if (room.status !== "WAITING") throw new Error("Readiness can only change while a room is waiting.");
     const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
     if (!participant || participant.role !== "PLAYER") throw new Error("Only players can change readiness.");
@@ -182,6 +195,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async setupAction(roomCode: string, accessToken: string, action: SetupAction, expectedRevision: number) {
     const room = await this.authorize(roomCode, accessToken);
+    if (!room.matchStarted) throw new Error("The host has not started this match yet.");
     if (room.version !== expectedRevision) throw new Error(`Expected revision ${expectedRevision}, current revision is ${room.version}.`);
     const actor = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
     if (!actor || actor.role !== "PLAYER" || actor.playerIndex === null) throw new Error("Only seated players can complete setup.");
@@ -564,7 +578,7 @@ export class PrismaRoomStore implements RoomStore {
     // Read the newest bounded suffix, then restore chronological order and
     // apply the caller's cursor so the snapshot can also be checked for gaps.
     const events = newestEvents.map((event: any): RoomEvent => ({ id: event.id, roomId: event.roomId, version: event.version, actorId: event.actorId, type: event.type, controlSource: event.controlSource === "bot" ? "bot" : "human", payload: event.payload as Record<string, unknown>, createdAt: event.createdAt.toISOString() })).reverse().filter((event: RoomEvent) => event.version > afterVersion);
-    return { id: room.id, code: room.code, status: room.status.toLowerCase() as RoomView["status"], privacy: room.privacy.toLowerCase() as RoomView["privacy"], version: room.version, state: projectState(room.state as unknown as GameState, audience, viewerPlayerIndex), participants: room.participants.map((participant: any) => ({ id: participant.id, displayName: participant.displayName, ...(participant.user?.username ? { username: participant.user.username } : {}), role: participant.role.toLowerCase(), playerIndex: participant.playerIndex ?? undefined, connected: Boolean(participant.connectedAt), ready: Boolean(participant.ready), botControlled: Boolean(participant.botControlled), botAssisted: Boolean(participant.botAssisted) })), events };
+    return { id: room.id, code: room.code, status: room.status.toLowerCase() as RoomView["status"], matchStarted: Boolean(room.matchStarted), maxPlayers: room.maxPlayers, privacy: room.privacy.toLowerCase() as RoomView["privacy"], version: room.version, state: projectState(room.state as unknown as GameState, audience, viewerPlayerIndex), participants: room.participants.map((participant: any) => ({ id: participant.id, displayName: participant.displayName, ...(participant.user?.username ? { username: participant.user.username } : {}), role: participant.role.toLowerCase(), playerIndex: participant.playerIndex ?? undefined, connected: Boolean(participant.connectedAt), ready: Boolean(participant.ready), botControlled: Boolean(participant.botControlled), botAssisted: Boolean(participant.botAssisted) })), events };
   }
 
   private inspectEventHistory(room: { id: string; code: string; version: number }, newestEvents: readonly { version: number }[]): void {

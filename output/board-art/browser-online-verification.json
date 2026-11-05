@@ -1,7 +1,14 @@
 {
   "ok": true,
-  "url": "http://127.0.0.1:51600/",
-  "roomCode": "1F1F81",
+  "url": "http://127.0.0.1:64448/",
+  "roomCode": "FEC7E5",
+  "waitingRoom": {
+    "seatsRequired": 2,
+    "startDisabledBeforeJoin": true,
+    "startVisibleToBothPlayersAfterJoin": true,
+    "setupHiddenBeforeStart": true,
+    "setupUnlockedForBothAfterStart": true
+  },
   "setupClicks": 9,
   "boardCells": 336,
   "boardIdentity": "shared-pinned-human-audit",

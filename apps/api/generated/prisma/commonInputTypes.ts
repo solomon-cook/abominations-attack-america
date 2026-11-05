@@ -36,16 +36,16 @@ export type EnumRoomStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel> | $Enums.RoomStatus
 }
 
+export type BoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
+}
+
 export type EnumRoomPrivacyFilter<$PrismaModel = never> = {
   equals?: $Enums.RoomPrivacy | Prisma.EnumRoomPrivacyFieldRefInput<$PrismaModel>
   in?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
   notIn?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel> | $Enums.RoomPrivacy
-}
-
-export type BoolFilter<$PrismaModel = never> = {
-  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
 }
 
 export type IntFilter<$PrismaModel = never> = {
@@ -162,6 +162,14 @@ export type EnumRoomStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel>
 }
 
+export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>
+}
+
 export type EnumRoomPrivacyWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.RoomPrivacy | Prisma.EnumRoomPrivacyFieldRefInput<$PrismaModel>
   in?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
@@ -170,14 +178,6 @@ export type EnumRoomPrivacyWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel>
   _max?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel>
-}
-
-export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedBoolFilter<$PrismaModel>
-  _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
 export type IntWithAggregatesFilter<$PrismaModel = never> = {
@@ -420,16 +420,16 @@ export type NestedEnumRoomStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel> | $Enums.RoomStatus
 }
 
+export type NestedBoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
+}
+
 export type NestedEnumRoomPrivacyFilter<$PrismaModel = never> = {
   equals?: $Enums.RoomPrivacy | Prisma.EnumRoomPrivacyFieldRefInput<$PrismaModel>
   in?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
   notIn?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel> | $Enums.RoomPrivacy
-}
-
-export type NestedBoolFilter<$PrismaModel = never> = {
-  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
 }
 
 export type NestedIntFilter<$PrismaModel = never> = {
@@ -492,6 +492,14 @@ export type NestedEnumRoomStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumRoomStatusFilter<$PrismaModel>
 }
 
+export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>
+}
+
 export type NestedEnumRoomPrivacyWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.RoomPrivacy | Prisma.EnumRoomPrivacyFieldRefInput<$PrismaModel>
   in?: $Enums.RoomPrivacy[] | Prisma.ListEnumRoomPrivacyFieldRefInput<$PrismaModel>
@@ -500,14 +508,6 @@ export type NestedEnumRoomPrivacyWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel>
   _max?: Prisma.NestedEnumRoomPrivacyFilter<$PrismaModel>
-}
-
-export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedBoolFilter<$PrismaModel>
-  _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
 export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {

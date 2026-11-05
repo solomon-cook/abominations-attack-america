@@ -88,6 +88,7 @@ export const GameRoomScalarFieldEnum = {
   id: 'id',
   code: 'code',
   status: 'status',
+  matchStarted: 'matchStarted',
   privacy: 'privacy',
   isTest: 'isTest',
   maxPlayers: 'maxPlayers',

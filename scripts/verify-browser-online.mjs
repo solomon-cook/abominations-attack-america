@@ -189,11 +189,24 @@ try {
   await first.waitFor(`!!document.querySelector(".lobby strong")`, "created room code");
   const roomCode = await first.evaluate(`document.querySelector(".lobby strong")?.textContent?.trim()`);
   if (!roomCode) throw new Error("Created room did not expose a room code.");
+  const startBeforeSecondPlayer = await first.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Start match"); return Boolean(button && !button.disabled); })()`);
+  if (startBeforeSecondPlayer) throw new Error("The match start control was enabled before every player seat was filled.");
 
   await second.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "second lobby");
   await second.evaluate(`(() => { const inputs = document.querySelectorAll('input'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(inputs[0], "Second player"); inputs[0].dispatchEvent(new Event("input", { bubbles: true })); setter.call(inputs[1], ${JSON.stringify(roomCode)}); inputs[1].dispatchEvent(new Event("input", { bubbles: true })); })()`);
   if (!await second.click("Join")) throw new Error("Second browser could not join the created room.");
   await second.waitFor(`!!document.querySelector(".lobby strong")`, "joined room code");
+
+  await first.waitFor(`!!document.querySelector(".pre-match-lobby")`, "first player waiting room");
+  await second.waitFor(`!!document.querySelector(".pre-match-lobby")`, "second player waiting room");
+  await first.waitFor(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Start match"); return Boolean(button && !button.disabled); })()`, "start control after all players join");
+  const beforeStart = await Promise.all([first, second].map((browser) => browser.evaluate(`(() => ({ waiting: Boolean(document.querySelector(".pre-match-lobby")), setupVisible: Boolean(document.querySelector(".setup-panel")), canStart: [...document.querySelectorAll("button")].some((button) => button.textContent.trim() === "Start match" && !button.disabled) }))()`)));
+  if (!beforeStart[0]?.waiting || !beforeStart[1]?.waiting || beforeStart.some((state) => state?.setupVisible || !state?.canStart)) {
+    throw new Error(`The room did not remain in its player-controlled waiting room before start: ${JSON.stringify(beforeStart)}`);
+  }
+  if (!await first.click("Start match")) throw new Error("A player could not start the match from the waiting room.");
+  await first.waitFor(`!document.querySelector(".pre-match-lobby") && !!document.querySelector(".setup-panel")`, "first player setup after starting match");
+  await second.waitFor(`!document.querySelector(".pre-match-lobby") && !!document.querySelector(".setup-panel")`, "peer setup after host starts match");
 
   await spectator.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "spectator lobby");
   await spectator.evaluate(`(() => { const inputs = document.querySelectorAll('input'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(inputs[0], "Spectator"); inputs[0].dispatchEvent(new Event("input", { bubbles: true })); setter.call(inputs[1], ${JSON.stringify(roomCode)}); inputs[1].dispatchEvent(new Event("input", { bubbles: true })); })()`);
@@ -822,7 +835,7 @@ let onlineVictory;
   if (!reloadedTerminal) throw new Error("Reloaded second browser lost the terminal result.");
   const renderedVictory = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`document.querySelector(".victory-summary")?.textContent?.trim() ?? ""`)));
   if (renderedVictory.some((summary) => !summary.includes(onlineVictory?.type ?? ""))) throw new Error(`Players and spectator did not render the same authoritative victory: ${JSON.stringify({ onlineVictory, renderedVictory })}.`);
-  const result = { ok: true, url, roomCode, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", startingGiantPlacement, startingGiantPlacementRefresh, disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", liveGameplayStack: liveGameplayStackEvidence, onlineFight, stackInspection, stackArtworkGeometry, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineResearchDraw, onlineVictory, terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", nextPhase };
+  const result = { ok: true, url, roomCode, waitingRoom: { seatsRequired: 2, startDisabledBeforeJoin: !startBeforeSecondPlayer, startVisibleToBothPlayersAfterJoin: beforeStart.every((state) => state?.canStart), setupHiddenBeforeStart: beforeStart.every((state) => !state?.setupVisible), setupUnlockedForBothAfterStart: true }, setupClicks, boardCells: renderedBoardCells[0]?.count, boardIdentity: "shared-pinned-human-audit", spectatorSetup: "no-act", spectatorMove: "no-act", startingGiantPlacement, startingGiantPlacementRefresh, disconnect: disconnectState, reconnect: "online", reconnectRecovery: "verified", forgedCommand: "rejected-without-state-change", malformedCommand: "rejected-without-state-change", synchronizedPhase: "Move", reloadRecovery: "verified", onlineMovement: "verified", liveGameplayStack: liveGameplayStackEvidence, onlineFight, stackInspection, stackArtworkGeometry, onlineEncounter: "verified", onlineDeploy: postEncounterPhase === "Deploy" ? "verified" : "skipped-after-victory", onlineResearchDraw, onlineVictory, terminalProjection: "players-and-spectator", terminalReloadRecovery: "verified", nextPhase };
   await mkdir(join(process.cwd(), "output/board-art"), { recursive: true });
   await writeFile(join(process.cwd(), "output/board-art/browser-online-verification.json"), `${JSON.stringify(result, null, 2)}\n`);
   console.log(JSON.stringify(result));

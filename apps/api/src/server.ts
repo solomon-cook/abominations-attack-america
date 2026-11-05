@@ -350,6 +350,7 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
     if (request.method === "POST" && parts[2] === "ws-ticket") return json(response, 200, { ticket: await store.createSocketTicket(code, tokenFrom(request, url)) });
     if (request.method === "POST" && parts[2] === "join") return json(response, 200, await store.joinRoom(code, String((await body(request)).displayName ?? "Player")));
     if (request.method === "POST" && parts[2] === "spectate") return json(response, 200, await store.spectateRoom(code, String((await body(request)).displayName ?? "Spectator")));
+    if (request.method === "POST" && parts[2] === "start") { const result = await store.startMatch(code, tokenFrom(request, url)); await broadcast(code.toUpperCase()); return json(response, 200, result); }
     if (request.method === "POST" && parts[2] === "disconnect") { const input = await body(request); return json(response, 200, await store.disconnect(code, tokenFrom(request, url, input), String(input.connectionId ?? "legacy"))); }
     if (request.method === "POST" && parts[2] === "reconnect") { const input = await body(request); const result = await store.reconnect(code, tokenFrom(request, url, input), String(input.connectionId ?? "legacy")); metrics.reconnect(); return json(response, 200, result); }
     if (request.method === "POST" && parts[2] === "rotate-session") { const input = await body(request); return json(response, 200, await store.rotateSession(code, tokenFrom(request, url, input))); }
