@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-05T20:55:24Z",
+  "checkedAt": "2026-11-05T21:06:26Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_EFJMS5PqGkttx2HLjutH9cjCizco",
+    "deploymentId": "dpl_7VK7yaYEhVDFfXMfoDS8bWM9GMT6",
     "deploymentTarget": "production",
-    "deploymentCommit": "45b67840a037ef0d410ac18d1fb4be1c472cd47f",
-    "deploymentCheckedAt": "2026-11-05T20:55:24Z",
-    "checkedAt": "2026-11-05T20:55:24Z",
+    "deploymentCommit": "b281556dadc9e4b0a60703be0b12ff1fc68a0419",
+    "deploymentCheckedAt": "2026-11-05T21:06:26Z",
+    "checkedAt": "2026-11-05T21:06:26Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -20,7 +20,7 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Production deployment dpl_EFJMS5PqGkttx2HLjutH9cjCizco from main commit 45b67840a037ef0d410ac18d1fb4be1c472cd47f is READY and owns the canonical alias as of 20:55 UTC. This is a docs-only follow-up to the previously verified credential-rotation deployment; no runtime settings changed. /api/health and /api/metrics return 200; health reports Prisma persistence and ready HTTP polling. The served bundle contains no localhost API URL."
+    "note": "Production deployment dpl_7VK7yaYEhVDFfXMfoDS8bWM9GMT6 from main commit b281556dadc9e4b0a60703be0b12ff1fc68a0419 is READY and owns the canonical alias as of 21:06 UTC. This is an evidence-only follow-up; no runtime code or settings changed. Post-deployment /api/health and /api/metrics returned 200; health reports Prisma persistence and ready HTTP polling. The served bundle contains no localhost API URL."
   },
   "preview": {
     "deploymentId": "dpl_bP3WcDN9tGZ7NFindfCpt9ddFGjA",
@@ -117,8 +117,8 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_HVLoeBb7mdzjRLJqQyi71iRHCWqo",
-      "commit": "1fde103eb01d0255da3d2619fac640ee25652ff1",
+      "deploymentId": "dpl_7VK7yaYEhVDFfXMfoDS8bWM9GMT6",
+      "commit": "b281556dadc9e4b0a60703be0b12ff1fc68a0419",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
@@ -144,7 +144,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-05T20:42:00Z",
+      "checkedAt": "2026-11-05T21:06:26Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
@@ -160,9 +160,9 @@
       "productionLastMeasurement": {
         "databaseProject": "abominations-attack-america-production",
         "databaseId": "db_a89s8mlpgynwfwfvqiuhmhrl",
-        "operations": 3778,
+        "operations": 3801,
         "storageGiB": 0.0013580322265625,
-        "measuredAt": "2026-11-05T20:42:24Z",
+        "measuredAt": "2026-11-05T21:02:30Z",
         "databaseSpecificNotWorkspaceWide": true
       }
     },
