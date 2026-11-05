@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-05T11:22:53Z",
+  "checkedAt": "2026-11-05T11:27:44Z",
   "url": "https://abominations-attack-america.vercel.app",
   "status": 200,
   "lastModified": "Thu, 05 Nov 2026 11:22:53 GMT",
@@ -7,7 +7,8 @@
     {
       "path": "/assets/index-5XS8sbHa.js",
       "status": 200,
-      "containsLocalhost": true
+      "containsLocalhost": true,
+      "sha256": "8cb0122bbb8663221d00029593c675af43646e370b5dff7242dae3a604d9ba11"
     }
   ],
   "apiHealth": {
@@ -51,5 +52,13 @@
       }
     },
     "note": "Read-only authenticated Vercel fetch. Metrics values are a point-in-time in-memory function metric sample, not a database usage meter."
+  },
+  "headers": {
+    "contentSecurityPolicy": null,
+    "strictTransportSecurity": "max-age=63072000; includeSubDomains; preload",
+    "xFrameOptions": null,
+    "xContentTypeOptions": null,
+    "referrerPolicy": null,
+    "permissionsPolicy": null
   }
 }
