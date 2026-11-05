@@ -110,7 +110,7 @@ capacity, or human acceptance.
 
 1. Run `npm ci`, `npm run verify`, and `npm run prisma:validate` from the exact release commit.
 2. Take a named Postgres backup before migration.
-3. Apply migrations with `npm run prisma:migrate:deploy`.
+3. Review the migration diff and apply migrations as a separate, explicitly authorized operation with `DIRECT_URL` available only to the migration command: `npm run prisma:migrate:deploy`. The Vercel build command only bundles the API and builds the web client; it must not mutate a database as a side effect of deployment. Confirm a verified backup/restore path and migration rollback plan before applying production migrations.
 4. Run `/health` and `/metrics` checks, then staging room create/join/ready/act/reconnect/spectate smoke tests.
 5. Roll back the application only when the schema remains backward-compatible. For an incompatible migration, stop new rooms, preserve existing snapshots, restore the pre-migration backup in a separate database, and follow the incident decision rather than destructive ad-hoc SQL.
 
