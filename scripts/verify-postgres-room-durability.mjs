@@ -235,6 +235,10 @@ try {
   });
   players.push({ token: joined.token, participantId: joined.participantId });
   room = joined.room;
+  room = await jsonRequest(`/rooms/${room.code}/start`, {
+    method: "POST",
+    headers: { "x-room-token": players[0].token },
+  });
 
   const remoteSocketResult = await connectRemoteRoomSocket(room.code, players[1].token, room.version);
   const remoteSocket = remoteSocketResult.socket;
