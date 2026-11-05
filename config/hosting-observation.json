@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-05T21:06:26Z",
+  "checkedAt": "2026-11-05T21:17:26Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_7VK7yaYEhVDFfXMfoDS8bWM9GMT6",
+    "deploymentId": "dpl_BMnsr6urKLtzRSmvA9SBqLgfRznb",
     "deploymentTarget": "production",
-    "deploymentCommit": "b281556dadc9e4b0a60703be0b12ff1fc68a0419",
-    "deploymentCheckedAt": "2026-11-05T21:06:26Z",
-    "checkedAt": "2026-11-05T21:06:26Z",
+    "deploymentCommit": "08973acc31393e9f7500f925cc54e5595b202c02",
+    "deploymentCheckedAt": "2026-11-05T21:17:26Z",
+    "checkedAt": "2026-11-05T21:17:26Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -14,13 +14,19 @@
       "/health": 404,
       "/metrics": 404
     },
+    "healthLatencyProbe": {
+      "checkedAt": "2026-11-05T21:17:26Z",
+      "statuses": [200, 200, 200, 200, 200],
+      "elapsedMs": [9061, 251, 133, 126, 147],
+      "note": "Five sequential direct requests to /api/health; first measured request was slower, four subsequent requests completed within 126–251 ms. A separate request to this deployment at 21:13:37 UTC timed out at the configured 60-second function maximum; a retry at 21:14:44 UTC returned 200."
+    },
     "asset": {
       "path": "/assets/index-s-x_wfu6.js",
       "status": 200,
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Production deployment dpl_7VK7yaYEhVDFfXMfoDS8bWM9GMT6 from main commit b281556dadc9e4b0a60703be0b12ff1fc68a0419 is READY and owns the canonical alias as of 21:06 UTC. This is an evidence-only follow-up; no runtime code or settings changed. Post-deployment /api/health and /api/metrics returned 200; health reports Prisma persistence and ready HTTP polling. The served bundle contains no localhost API URL."
+    "note": "Production deployment dpl_BMnsr6urKLtzRSmvA9SBqLgfRznb from main commit 08973acc31393e9f7500f925cc54e5595b202c02 is READY and owns the canonical alias as of 21:17 UTC. This is an evidence-only follow-up; no runtime code or settings changed. Post-deployment /api/health and /api/metrics returned 200, with one observed 60-second health invocation timeout followed by successful retry; see healthLatencyProbe. Health reports Prisma persistence and ready HTTP polling. The served bundle contains no localhost API URL."
   },
   "preview": {
     "deploymentId": "dpl_bP3WcDN9tGZ7NFindfCpt9ddFGjA",
@@ -117,8 +123,8 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_7VK7yaYEhVDFfXMfoDS8bWM9GMT6",
-      "commit": "b281556dadc9e4b0a60703be0b12ff1fc68a0419",
+      "deploymentId": "dpl_BMnsr6urKLtzRSmvA9SBqLgfRznb",
+      "commit": "08973acc31393e9f7500f925cc54e5595b202c02",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
@@ -144,7 +150,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-05T21:06:26Z",
+      "checkedAt": "2026-11-05T21:17:26Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
