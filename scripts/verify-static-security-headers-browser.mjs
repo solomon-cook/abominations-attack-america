@@ -8,7 +8,7 @@ import { chromePath } from "./chrome-path.mjs";
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const dist = resolve("apps/web/dist");
-const configuration = JSON.parse(await readFile("apps/web/vercel.json", "utf8"));
+const configuration = JSON.parse(await readFile("vercel.json", "utf8"));
 const headers = Object.fromEntries(configuration.headers[0].headers.map(({ key, value }) => [key.toLowerCase(), value]));
 const contentTypes = new Map([
   [".html", "text/html; charset=utf-8"],
