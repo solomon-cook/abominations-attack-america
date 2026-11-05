@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-05T21:57:00Z",
+  "checkedAt": "2026-11-05T22:02:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_ELKuRLqyB21KLCjhbVp1SSQ3stqe",
+    "deploymentId": "dpl_8NLzMUsYKVV5fFnsau9dqCGJ9xjt",
     "deploymentTarget": "production",
-    "deploymentCommit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
-    "deploymentCheckedAt": "2026-11-05T21:52:00Z",
-    "checkedAt": "2026-11-05T21:57:00Z",
+    "deploymentCommit": "983bd256d7bdb2e0a894fe96d31b7b7004dc0f87",
+    "deploymentCheckedAt": "2026-11-05T22:00:00Z",
+    "checkedAt": "2026-11-05T22:02:00Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -25,7 +25,7 @@
           "ready": true
         }
       },
-      "checkedAt": "2026-11-05T21:57:00Z"
+      "checkedAt": "2026-11-05T22:01:33Z"
     },
     "metrics": {
       "path": "/api/metrics",
@@ -34,14 +34,15 @@
         "requests": 5,
         "serverErrors": 0
       },
-      "note": "Point-in-time function instance sample from the verified deployment probe; not a project-wide log or database usage meter."
+      "note": "HTTP 200 after the docs-only Production deployment; point-in-time function instance sample, not a project-wide log or database usage meter."
     },
     "runtimeErrorCheck": {
-      "checkedAt": "2026-11-05T21:56:00Z",
+      "checkedAt": "2026-11-05T22:01:00Z",
       "timeoutGroupsOnCurrentDeployment": 0,
       "priorDeploymentTimeouts": 2,
       "priorDeploymentId": "dpl_9WTbQaAHRKZxdggizouN9rDWxdnE",
-      "warnings": "url.parse deprecation and pg SSL mode warnings are present on current deployment."
+      "warnings": "url.parse deprecation and pg SSL mode warnings are present on current deployment.",
+      "note": "No runtime timeout group reported on the new docs-only deployment. One initial canonical health request during alias transition timed out and a subsequent request returned 503; later health calls recovered to 200."
     },
     "browserVerification": {
       "status": "failed-acceptance-check",
@@ -64,7 +65,7 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Production deployment dpl_ELKuRLqyB21KLCjhbVp1SSQ3stqe from main commit d35c236ce62de12505480d72c0db65c0f62f3f15 is READY and owns the canonical alias. Production /api/health and /api/metrics passed at 21:57 UTC. The Vercel runtime error view through 21:53 UTC had no timeout group on this deployment; two 60-second timeout events remain attributed to prior deployment dpl_9WTbQaAHRKZxdggizouN9rDWxdnE. Production browser verification did not pass its setup-panel condition despite authoritative phase Move; no production browser acceptance claim is made. This sample does not establish cold-start or sustained capacity.",
+    "note": "The latest Production deployment dpl_8NLzMUsYKVV5fFnsau9dqCGJ9xjt from main commit 983bd256d7bdb2e0a894fe96d31b7b7004dc0f87 is a documentation-only successor to runtime commit d35c236ce62de12505480d72c0db65c0f62f3f15. Canonical /api/health recovered to 200 at 22:01:33 UTC and /api/metrics returned 200 at 22:01 UTC. Immediately after alias transition, one health probe timed out and a subsequent call returned 503; three following requests returned 200 in 0.17-0.71 seconds. Vercel logs showed only url.parse and SSL mode warnings, not a timeout group on this deployment. Treat this as an observed transient invocation failure with recovery, not proof of cold-start or sustained reliability. Prior deployment dpl_9WTbQaAHRKZxdggizouN9rDWxdnE retains two 60-second timeouts.",
     "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment."
   },
   "preview": {
@@ -162,8 +163,8 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_ELKuRLqyB21KLCjhbVp1SSQ3stqe",
-      "commit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
+      "deploymentId": "dpl_8NLzMUsYKVV5fFnsau9dqCGJ9xjt",
+      "commit": "983bd256d7bdb2e0a894fe96d31b7b7004dc0f87",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
@@ -190,7 +191,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-05T21:57:00Z",
+      "checkedAt": "2026-11-05T22:02:00Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
@@ -211,7 +212,9 @@
         "measuredAt": "2026-11-05T21:02:30Z",
         "databaseSpecificNotWorkspaceWide": true
       },
-      "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment."
+      "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment.",
+      "runtimeCommit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
+      "healthRecoveryNote": "One timeout and one 503 were observed immediately after alias transition; three subsequent requests returned 200."
     },
     "productionLastMeasurement": {
       "databaseProject": "abominations-attack-america-production",
