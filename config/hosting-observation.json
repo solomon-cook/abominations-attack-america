@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-05T20:23:00Z",
+  "checkedAt": "2026-11-05T20:42:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_G3CYAu7PMFkDouUdmpzxCe8evckh",
+    "deploymentId": "dpl_HVLoeBb7mdzjRLJqQyi71iRHCWqo",
     "deploymentTarget": "production",
-    "deploymentCommit": "56d73ea50146ea17a4450c560d489128b250db8e",
-    "deploymentCheckedAt": "2026-11-05T20:20:00Z",
-    "checkedAt": "2026-11-05T20:20:00Z",
+    "deploymentCommit": "1fde103eb01d0255da3d2619fac640ee25652ff1",
+    "deploymentCheckedAt": "2026-11-05T20:38:54Z",
+    "checkedAt": "2026-11-05T20:42:00Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -20,7 +20,7 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Fresh Production deployment dpl_G3CYAu7PMFkDouUdmpzxCe8evckh is READY from current main commit 56d73ea50146ea17a4450c560d489128b250db8e and owns the canonical alias. /api/health and /api/metrics return 200; health reports Prisma persistence and ready HTTP polling. The client bundle contains no localhost API URL. Two isolated Production browser sessions verified private room create/join, explicit waiting-room start, nine legal setup actions, a legal move at revision 11, peer observation, and refresh recovery; see docs/hosting-decision-record.md."
+    "note": "Production redeployment dpl_HVLoeBb7mdzjRLJqQyi71iRHCWqo from main commit 1fde103eb01d0255da3d2619fac640ee25652ff1 is READY and owns the canonical alias as of 20:38:54 UTC. The pool credential in encrypted Production DATABASE_URL was rotated; the prior runtime credential was revoked only after this redeployment passed a two-browser create/join, legal setup and move, peer-state, and refresh-reconnect smoke. DIRECT_URL remains server-side for migrations. /api/health and /api/metrics return 200; health reports Prisma persistence and ready HTTP polling. The served bundle contains no localhost API URL."
   },
   "preview": {
     "deploymentId": "dpl_bP3WcDN9tGZ7NFindfCpt9ddFGjA",
@@ -117,16 +117,16 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_G3CYAu7PMFkDouUdmpzxCe8evckh",
-      "commit": "56d73ea50146ea17a4450c560d489128b250db8e",
+      "deploymentId": "dpl_HVLoeBb7mdzjRLJqQyi71iRHCWqo",
+      "commit": "1fde103eb01d0255da3d2619fac640ee25652ff1",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
       "metricsStatus": 200,
       "loopbackReferenceInClientBundle": false,
-      "twoProfileRoomCode": "8FF0BD",
-      "twoProfileSmoke": "two browser profiles created/joined private room, waited for explicit host start, completed nine legal setup actions, accepted legal move, peer observed revision, refresh restored active state",
-      "legalMoveRoomCode": "8FF0BD",
+      "twoProfileRoomCode": "",
+      "twoProfileSmoke": "After pooled credential rotation, two separate browser sessions created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh",
+      "legalMoveRoomCode": "",
       "legalMove": {
         "phaseAfterMove": "encounter",
         "acceptedRevision": 11,
@@ -143,7 +143,28 @@
         "httpPollingReady": true,
         "metricFieldsChecked": 15
       },
-      "fullHumanMatch": "not-verified"
+      "fullHumanMatch": "not-verified",
+      "checkedAt": "2026-11-05T20:42:00Z",
+      "credentialRotation": {
+        "checkedAt": "2026-11-05T20:41:18Z",
+        "status": "verified",
+        "runtimeVariable": "DATABASE_URL",
+        "storage": "encrypted Vercel Production Secret",
+        "newPrismaConnection": "vercel-production-runtime-rotation-20261105",
+        "oldRuntimeCredentialRevoked": true,
+        "migrationVariable": "DIRECT_URL",
+        "migrationCredentialChanged": false,
+        "secretValuesRead": false,
+        "verification": "Production two-browser legal move and refresh-reconnect passed on redeployment before old runtime credential was revoked."
+      },
+      "productionLastMeasurement": {
+        "databaseProject": "abominations-attack-america-production",
+        "databaseId": "db_a89s8mlpgynwfwfvqiuhmhrl",
+        "operations": 3778,
+        "storageGiB": 0.0013580322265625,
+        "measuredAt": "2026-11-05T20:42:24Z",
+        "databaseSpecificNotWorkspaceWide": true
+      }
     },
     "productionLastMeasurement": {
       "databaseProject": "abominations-attack-america-production",
@@ -160,10 +181,10 @@
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 24364,
+      "used": 24402,
       "included": 200000,
-      "remainingAtObservation": 175636,
-      "checkedAt": "2026-11-05T20:23:00Z",
+      "remainingAtObservation": 175598,
+      "checkedAt": "2026-11-05T20:42:00Z",
       "stale": false
     },
     "productionDatabase": {
@@ -173,10 +194,10 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 2929,
-        "storageGiB": 0.00131988525390625,
+        "operations": 3778,
+        "storageGiB": 0.0013580322265625,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-05T20:16:45Z"
+        "measuredAt": "2026-11-05T20:42:24Z"
       },
       "backupInventory": {
         "count": 0,
@@ -195,7 +216,7 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Two players polling every 30 seconds: 172,800 reads/month; source-based estimate assumes one Prisma operation per poll, while nested relation query SQL count and actual per-match meter use remain unisolated.",
-    "note": "Owner approved the dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). At 20:23 UTC Prisma workspace home showed 24,364/200,000 operations and a $0.00 invoice; the workspace contains five projects. Production database-specific usage is 2,929 operations and 0.001319885 GiB through 20:16:45 UTC, including migrations and synthetic tests; it is not the workspace total or isolated gameplay-poll usage. Production backup inventory is empty with zero retention; Free has no automatic backups. One manual dump/restore drill passed once, but routine backup/restore owner and schedule remain open.",
-    "workspacePollingHeadroomAtObservation": "If each 30-second poll maps to one database operation, two continuously open tabs would add an estimated 172,800 operations per 30-day month, leaving about 2,836 of the 200,000 shared allowance after the observed 24,364; other application and workspace activity is additional. Four continuously open player tabs would exceed the allowance."
+    "note": "Owner approved the dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). At 20:42 UTC Prisma workspace home showed 24,402/200,000 operations and a $0.00 invoice across five projects. Production database-specific usage was 3,778 operations and 0.001358 GiB through 20:42:24 UTC, including migrations and verification; this is not the workspace total or isolated gameplay polling. Production backup inventory is empty with zero retention; Free has no automatic backups. One manual dump/restore drill passed once, but routine backup/restore owner and schedule remain open.",
+    "workspacePollingHeadroomAtObservation": "At the observed workspace total of 24,402, assuming one database operation per 30-second poll, two continuously open tabs would add an estimated 172,800 operations per 30-day month and leave 2,798 for all other activity; four continuously open tabs would exceed the 200,000 shared allowance. This source-based estimate is not a measured billed rate."
   }
 }

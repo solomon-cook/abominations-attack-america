@@ -27,14 +27,14 @@ const productionClient = hostingObservation.production.asset?.containsLocalhost
   : "served client bundle has no recorded localhost API URL";
 const productionDeployment = hostingObservation.vercelEnvironmentMetadata?.productionDeployment;
 const productionDeploymentEvidence = productionDeployment?.status === "READY"
-  ? `Deployment ${productionDeployment.deploymentId} from commit ${productionDeployment.commit} owns the canonical alias`
+  ? `Deployment ${productionDeployment.deploymentId} from commit ${productionDeployment.commit} was READY on the canonical alias at ${productionDeployment.checkedAt}`
   : "no ready Production deployment recorded";
 const preview = hostingObservation.preview;
 const previewEvidence = preview
   ? `; Preview ${preview.deploymentId} reports HTTP ${preview.apiHealth.status} with ${preview.apiHealth.body.persistence} persistence and ${preview.apiHealth.body.realtimeFanout.mode}`
   : "";
 const databaseEvidence = databaseObservation
-  ? `Prisma ${databaseObservation.plan} at ${databaseObservation.workspaceInvoice} with a fixed 200,000 monthly operation cap; last workspace snapshot ${databaseObservation.workspaceOperations.used}/${databaseObservation.workspaceOperations.included}; manual restore drill ${databaseObservation.backupRestore.status}, but Free has no automatic backups or recurring schedule`
+  ? `Prisma ${databaseObservation.plan} at ${databaseObservation.workspaceInvoice} with a fixed 200,000 monthly operation cap; workspace meter ${databaseObservation.workspaceOperations.used}/${databaseObservation.workspaceOperations.included}; Production database-specific meter ${databaseObservation.productionDatabase?.usage.operations ?? "not measured"} operations at ${databaseObservation.productionDatabase?.usage.measuredAt ?? "an unknown time"}; manual restore drill ${databaseObservation.backupRestore.status}, but Free has no automatic backups or recurring schedule`
   : "Database plan, metered usage, and backup/restore remain unverified";
 const workspaceMeterFreshness = databaseObservation?.workspaceOperations.stale ? "The latest workspace operation meter is stale." : "The latest workspace operation meter is current as of its recorded check time.";
 const hostingEvidence = `Production homepage ${hostingObservation.production.url} returns HTTP ${hostingObservation.production.status}; ${productionClient}; production /api/health returns HTTP ${productionHealthStatus}, /health HTTP ${hostingObservation.production.routes?.["/health"] ?? "not checked"}, and /api/metrics returns HTTP ${productionMetricsStatus}${previewEvidence}. ${databaseEvidence}. ${workspaceMeterFreshness}`;
