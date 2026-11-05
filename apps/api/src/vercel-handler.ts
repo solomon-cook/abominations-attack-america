@@ -50,7 +50,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   try {
     if (req.method === "GET" && parts[0] === "health") {
       try { return respond(req, res, 200, { ok: true, ...(await store.health()), realtimeFanout: { mode: "http-polling", ready: true } }); }
-      catch { return respond(req, res, 503, { ok: false, persistence: "prisma", realtimeFanout: { mode: "http-polling", ready: true } }); }
+      catch (error) {
+        const failure = error as { name?: unknown; code?: unknown };
+        const safeName = typeof failure?.name === "string" && /^[A-Za-z0-9_.-]{1,64}$/.test(failure.name) ? failure.name : "UnknownError";
+        const safeCode = typeof failure?.code === "string" && /^[A-Za-z0-9_.-]{1,64}$/.test(failure.code) ? failure.code : "unavailable";
+        console.error("Prisma health query failed", JSON.stringify({ name: safeName, code: safeCode }));
+        metrics.requestFailure();
+        metrics.serverError();
+        return respond(req, res, 503, { ok: false, persistence: "prisma", realtimeFanout: { mode: "http-polling", ready: true } });
+      }
     }
     if (req.method === "GET" && parts[0] === "metrics") return respond(req, res, 200, metrics.snapshot());
     if (parts[0] === "leaderboard" && req.method === "GET") {
