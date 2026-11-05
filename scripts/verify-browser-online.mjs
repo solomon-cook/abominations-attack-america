@@ -31,6 +31,7 @@ const webPort = Number(process.env.BROWSER_ONLINE_WEB_PORT ?? await freePort());
 const apiPort = Number(process.env.BROWSER_ONLINE_API_PORT ?? await freePort(new Set([webPort])));
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${webPort}/`;
 const apiUrl = process.env.BROWSER_API_URL ?? `http://127.0.0.1:${apiPort}`;
+const waitTimeoutMs = Number(process.env.BROWSER_TEST_WAIT_TIMEOUT_MS ?? 12000);
 const ownsWebServer = !process.env.BROWSER_TEST_URL;
 const ownsApiServer = !process.env.BROWSER_API_URL;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -117,9 +118,10 @@ async function openBrowser(port, name, existingProfile) {
   await command("Page.navigate", { url });
   const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
   const waitFor = async (expression, label) => {
-    for (let attempt = 0; attempt < 120; attempt += 1) {
+    const deadline = Date.now() + waitTimeoutMs;
+    while (Date.now() < deadline) {
       if (await evaluate(expression)) return;
-      await wait(100);
+      await wait(Math.min(100, Math.max(1, deadline - Date.now())));
     }
     const diagnostic = await evaluate(`({ url: location.href, connection: document.querySelector(".connection")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim() })`);
     throw new Error(`${name}: timed out waiting for ${label}: ${JSON.stringify(diagnostic)}`);
@@ -229,23 +231,22 @@ try {
   if (!spectatorSetupControls) throw new Error("Spectator exposed an enabled setup control.");
 
   let setupClicks = 0;
-  let consecutiveSetupWaits = 0;
-  for (let attempt = 0; attempt < 60; attempt += 1) {
+  let setupWaitDeadline = Date.now() + waitTimeoutMs;
+  for (let attempt = 0; attempt < 10000 && Date.now() < setupWaitDeadline; attempt += 1) {
     let progressed = false;
     for (const browser of [first, second]) {
       const preferredStartingChoice = "Draw Research";
       const clicked = await browser.evaluate(`(() => { const phase = document.querySelector(".setup-panel h2")?.textContent?.trim(); if (phase === "Place unused branches") { for (const select of document.querySelectorAll(".unused-branch-placement select")) { const option = [...select.options].find((candidate) => candidate.value && !candidate.disabled); if (!option) return false; select.value = option.value; select.dispatchEvent(new Event("change", { bubbles: true })); } const place = [...document.querySelectorAll(".unused-branch-placement button")].find((candidate) => candidate.textContent?.trim() === "Place units and continue"); if (!place || place.disabled) return false; place.click(); return true; } const buttons = [...document.querySelectorAll(".setup-options button")].filter((candidate) => !candidate.disabled); const button = phase === "starting choice" ? buttons.find((candidate) => candidate.textContent?.trim().toLowerCase().includes(${JSON.stringify(preferredStartingChoice.toLowerCase())})) : buttons[0]; if (!button) return false; button.click(); return true; })()`);
-      if (clicked) { setupClicks += 1; progressed = true; consecutiveSetupWaits = 0; await wait(120); break; }
+      if (clicked) { setupClicks += 1; progressed = true; setupWaitDeadline = Date.now() + waitTimeoutMs; await wait(120); break; }
     }
     if (!progressed) {
       const complete = await first.evaluate("!document.querySelector('.setup-panel')") && await second.evaluate("!document.querySelector('.setup-panel')");
       if (complete) break;
-      consecutiveSetupWaits += 1;
-      if (consecutiveSetupWaits >= 8) {
+      if (Date.now() >= setupWaitDeadline) {
         const setupStates = await Promise.all([first, second].map((browser) => browser.evaluate(`(() => ({ phase: document.querySelector(".setup-panel h2")?.textContent?.trim(), prompt: document.querySelector(".deployment-prompt")?.textContent?.trim(), progress: document.querySelector(".setup-progress")?.textContent?.trim(), action: document.querySelector(".action-card h2")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), buttons: [...document.querySelectorAll(".setup-options button")].map((button) => ({ text: button.textContent.trim(), disabled: button.disabled, title: button.title })) }))()`)));
         throw new Error(`Neither online browser exposed the current setup choice: ${JSON.stringify(setupStates)}`);
       }
-      await wait(180);
+      await wait(Math.min(180, Math.max(1, setupWaitDeadline - Date.now())));
     }
   }
   await first.waitFor("!document.querySelector('.setup-panel')", "first setup completion");
