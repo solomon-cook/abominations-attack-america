@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useMemo, useRef, useState } from "react";
+import { StrictMode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   applyCommand,
@@ -45,6 +45,7 @@ import {
   websocketTransportEnabled,
 } from "./api";
 import { createCompletedDevelopmentSetup, createDevelopmentSetup } from "./development-setup";
+import { preferRoomSnapshot } from "./room-snapshot";
 import { boardForGame } from "./board-pin";
 import { BoardReferenceCard } from "./components/BoardReferenceCard";
 import { ActionDock } from "./components/ActionDock";
@@ -175,6 +176,9 @@ function App() {
   const nextBotStepDelay = useRef(650);
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [room, setRoom] = useState<RoomView | null>(null);
+  const updateRoomSnapshot = useCallback((nextRoom: RoomView) => {
+    setRoom((current) => preferRoomSnapshot(current, nextRoom));
+  }, []);
   const [account, setAccount] = useState<AccountSummary | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState(() => {
@@ -668,7 +672,7 @@ function App() {
             participantId: stored.participantId,
             room: restoredRoom,
           });
-          setRoom(restoredRoom);
+          updateRoomSnapshot(restoredRoom);
           setRoomCode(restoredRoom.code);
         })
         .catch(() => localStorage.removeItem("abominations-session"));
@@ -694,14 +698,14 @@ function App() {
     const pollRoom = () => {
       if (cancelled) return;
       void readRoom(room.code, session.token, room.version).then((nextRoom) => {
-        setRoom(nextRoom);
+        updateRoomSnapshot(nextRoom);
         if (!needsReconnect) {
           setConnectionState("online");
           return;
         }
         return markReconnected(room.code, session.token).then((reconnectedRoom) => {
           if (cancelled) return;
-          setRoom(reconnectedRoom);
+          updateRoomSnapshot(reconnectedRoom);
           disconnected = false;
           needsReconnect = false;
           setConnectionState("online");
@@ -730,7 +734,7 @@ function App() {
       };
       socket.onmessage = (event) => {
         const message = JSON.parse(event.data) as { type: string; room: RoomView };
-        if (message.type === "room.updated") { setRoom(message.room); setConnectionState("online"); }
+        if (message.type === "room.updated") { updateRoomSnapshot(message.room); setConnectionState("online"); }
       };
       socket.onerror = () => { markOffline(); startPolling(); };
       socket.onclose = () => { markOffline(); startPolling(); };
@@ -747,7 +751,7 @@ function App() {
       socket?.close();
       if (polling) clearInterval(polling);
     };
-  }, [session?.token, room?.code]);
+  }, [session?.token, room?.code, updateRoomSnapshot]);
 
   const focusNextMovementUnit = (nextGame: GameState) => {
     if (nextGame.phase !== "move") return;
@@ -795,7 +799,7 @@ function App() {
           normalized,
           commandChannelRef.current,
         );
-        setRoom(nextRoom);
+        updateRoomSnapshot(nextRoom);
         nextGame = nextRoom.state;
         if (normalized.type === "draw-research") {
           const event = nextRoom.state.eventLog.at(-1);
@@ -830,7 +834,7 @@ function App() {
       setError(caught instanceof Error ? caught.message : "Action failed");
       if (online && session && room) {
         try {
-          setRoom(await readRoom(room.code, session.token));
+          updateRoomSnapshot(await readRoom(room.code, session.token));
         } catch {
           /* retain the original action error when refresh also fails */
         }
@@ -876,7 +880,7 @@ function App() {
       return;
     }
     setSession(next);
-    setRoom(next.room);
+    updateRoomSnapshot(next.room);
     setRoomCode(next.room.code);
     localStorage.setItem("abominations-session", JSON.stringify({ token: next.token, participantId: next.participantId, room: { code: next.room.code } }));
   };
@@ -931,7 +935,7 @@ function App() {
       return;
     setPendingAction(true);
     try {
-      setRoom(await setReady(room.code, session.token, !participant.ready));
+      updateRoomSnapshot(await setReady(room.code, session.token, !participant.ready));
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Could not update readiness",
@@ -946,7 +950,7 @@ function App() {
     setError("");
     setPendingAction(true);
     try {
-      setRoom(await startMatch(room.code, session.token));
+      updateRoomSnapshot(await startMatch(room.code, session.token));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not start match");
     } finally {
@@ -1078,7 +1082,7 @@ function App() {
       setupActionPendingRef.current = true;
       setSetupActionPending(true);
       try {
-        setRoom(
+        updateRoomSnapshot(
           await sendSetupAction(
             room.code,
             session.token,
@@ -1130,7 +1134,7 @@ function App() {
       setupActionPendingRef.current = true;
       setSetupActionPending(true);
       try {
-        setRoom(
+        updateRoomSnapshot(
           await sendSetupAction(room.code, session.token, room.version, {
             type: "choose-starting-choice",
             startingChoice,
