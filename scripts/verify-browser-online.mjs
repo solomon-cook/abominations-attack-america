@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -35,6 +35,21 @@ const waitTimeoutMs = Number(process.env.BROWSER_TEST_WAIT_TIMEOUT_MS ?? 12000);
 const ownsWebServer = !process.env.BROWSER_TEST_URL;
 const ownsApiServer = !process.env.BROWSER_API_URL;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const apiFetch = async (input, init = {}) => {
+  const target = new URL(input);
+  if (target.protocol !== "https:") return fetch(input, init);
+  const headers = new Headers(init.headers);
+  headers.set("origin", target.origin);
+  const args = ["curl", target.toString(), "--", "-sS", "--write-out", "\n__AAA_HTTP_STATUS__:%{http_code}", "-X", init.method ?? "GET"];
+  for (const [name, value] of headers) args.push("-H", `${name}: ${value}`);
+  if (init.body !== undefined) args.push("--data", String(init.body));
+  const result = spawnSync("vercel", args, { encoding: "utf8", maxBuffer: 5 * 1024 * 1024 });
+  if (result.error || result.status !== 0) throw result.error ?? new Error("Authenticated Preview API request failed.");
+  const marker = result.stdout.lastIndexOf("\n__AAA_HTTP_STATUS__:");
+  if (marker < 0) throw new Error("Authenticated Preview API request returned no HTTP status.");
+  const status = Number(result.stdout.slice(marker + "\n__AAA_HTTP_STATUS__:".length).trim());
+  return new Response(result.stdout.slice(0, marker), { status, headers: { "content-type": headers.get("content-type") ?? "application/json" } });
+};
 
 const startServer = ({ command, args, cwd, env, name, ready }) => {
   const child = spawn(command, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"] });
@@ -124,6 +139,9 @@ async function openBrowser(port, name, existingProfile) {
   await command("Page.enable");
   await command("Runtime.enable");
   await command("Network.enable");
+  if (process.env.VERCEL_OIDC_TOKEN) {
+    await command("Network.setExtraHTTPHeaders", { headers: { "x-vercel-trusted-oidc-idp-token": process.env.VERCEL_OIDC_TOKEN } });
+  }
   await command("Page.navigate", { url });
   const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
   const waitFor = async (expression, label) => {
@@ -139,12 +157,7 @@ async function openBrowser(port, name, existingProfile) {
     evaluate,
     waitFor,
     setViewport: (width, height) => command("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width <= 600 }),
-    restart: async () => {
-      socket.close();
-      child.kill("SIGKILL");
-      if (child.exitCode === null && child.signalCode === null) await new Promise((resolve) => child.once("exit", resolve));
-      return openBrowser(port, name, profile);
-    },
+    refresh: () => command("Page.reload", { ignoreCache: true }),
     click: (label) => evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled); if (!button) return false; button.click(); return true; })()`),
     clickText: (label) => evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.includes(${JSON.stringify(label)}) && !candidate.disabled); if (!button) return false; button.click(); return true; })()`),
     close: async () => {
@@ -323,16 +336,11 @@ try {
   const [spectating, enabledActionCount, enabledLegalTileCount, enabledActionLabels] = String(spectatorMoveControls ?? "false,99,99,unknown").split(",");
   if (spectating !== "true" || Number(enabledActionCount) > 0 || Number(enabledLegalTileCount) > 0) throw new Error(`enabled spectator action: count=${enabledActionCount}, legalTiles=${enabledLegalTileCount}, labels=${enabledActionLabels}`);
   const savedSession = await first.evaluate(`localStorage.getItem("abominations-session")`);
-  if (!savedSession) throw new Error("First browser did not expose its persisted room session before restart.");
-  const reconnectedFirst = await first.restart();
-  first = reconnectedFirst;
-  const disconnectState = "websocket-process-restart";
-  await first.waitFor(`!!document.querySelector(".lobby strong") || !!document.querySelector('[aria-label="Choose how to play"]')`, "first browser reopened");
-  const restoredRoom = await first.evaluate(`Boolean(document.querySelector(".lobby strong"))`);
-  if (!restoredRoom) {
-    await first.evaluate(`localStorage.setItem("abominations-session", ${JSON.stringify(savedSession)})`);
-    await first.evaluate("location.reload()");
-  }
+  if (!savedSession) throw new Error("First browser did not expose its persisted room session before refresh.");
+  const disconnectState = "page-refresh";
+  await first.refresh();
+  await first.waitFor(`!!document.querySelector(".lobby strong")`, "first browser room restore after refresh");
+  if (!await first.evaluate(`localStorage.getItem("abominations-session")`)) throw new Error("First browser lost its persisted room session during refresh.");
   await first.waitFor(`document.querySelector(".connection")?.textContent?.trim() === "online"`, "first browser reconnect state");
   await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first browser recovered Move state");
   const forgedCommand = await first.evaluate(`(async () => {
@@ -405,16 +413,16 @@ try {
   const roomParticipant = liveStackRoom.participants?.find((candidate) => candidate.role === "player" && candidate.playerIndex === liveStackPlayer && candidate.id === playerSession.participantId);
   if (!roomParticipant) throw new Error("Could not identify the authenticated seat for the live dense-stack setup.");
   for (const { unit, destinations } of liveStackPlan.units) {
-    const currentRoom = await (await fetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(playerSession.token ?? "")}`)).json();
+    const currentRoom = await (await apiFetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(playerSession.token ?? "")}`)).json();
     const path = destinations.get(liveStackPlan.destination);
-    const response = await fetch(`${apiUrl}/rooms/${roomCode}/actions`, {
+    const response = await apiFetch(`${apiUrl}/rooms/${roomCode}/actions`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-room-token": playerSession.token ?? "" },
       body: JSON.stringify({ envelope: { actionId: randomUUID(), actorId: roomParticipant.id, expectedRevision: currentRoom.version, protocolVersion: 1, command: { type: "move-unit", unitId: unit.id, path } } }),
     });
     if (!response.ok) throw new Error(`A legal unit movement for dense-stack verification failed (${response.status}): ${await response.text()}`);
   }
-  const liveStackAfterMoves = await (await fetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(playerSession.token ?? "")}`)).json();
+  const liveStackAfterMoves = await (await apiFetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(playerSession.token ?? "")}`)).json();
   const stackedUnits = liveStackAfterMoves.state.units.filter((unit) => unit.location === liveStackPlan.destination);
   if (stackedUnits.length !== liveStackPlan.units.length || !stackedUnits.every((unit) => liveStackPlan.units.some((planned) => planned.unit.id === unit.id))) throw new Error(`The online room did not retain each accepted move in the same live stack: ${JSON.stringify({ destination: liveStackPlan.destination, planned: liveStackPlan.units.map((entry) => entry.unit.id), actual: stackedUnits.map((unit) => unit.id) })}`);
   await first.waitFor(`Number(document.querySelector('.hex-tile[data-hex-key="${liveStackPlan.destination}"]')?.dataset.stackCount ?? 0) === ${liveStackPlan.units.length}`, `live ${liveStackPlan.units.length}-unit gameplay stack artwork`);
@@ -605,8 +613,36 @@ try {
       throw new Error(`Online Fight did not resolve within the supported decision steps: ${JSON.stringify({ fightDiagnostics, recentFightEvents })}`);
     }
   }
+  await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Waiting for server…"`, "first player action settled after Fight");
   const postFightPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
-  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(postFightPhase)}`, "second synchronized post-Fight phase");
+  try {
+    await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(postFightPhase)}`, "second synchronized post-Fight phase");
+  } catch (error) {
+    const diagnostics = await Promise.all([first, second].map((browser) => browser.evaluate(`(async () => {
+      const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+      const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+      const room = response.ok ? await response.json() : null;
+      return { status: response.status, roomCode: room?.code, roomVersion: room?.version, roomPhase: room?.state?.phase, currentPlayer: room?.state?.currentPlayer, pendingDecision: room?.state?.pendingDecision, renderedPhase: document.querySelector(".action-card h2")?.textContent?.trim(), connection: document.querySelector(".connection")?.textContent?.trim() };
+    })()`)));
+    throw new Error(`${error.message}; firstPhase=${postFightPhase}; roomDiagnostics=${JSON.stringify(diagnostics)}`);
+  }
+  if (process.env.BROWSER_ONLINE_CORE_ONLY === "1") {
+    const synchronizedRooms = await Promise.all([first, second].map((browser) => browser.evaluate(`(async () => {
+      const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+      const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+      const room = response.ok ? await response.json() : null;
+      return { status: response.status, roomCode: room?.code, version: room?.version, phase: room?.state?.phase, currentPlayer: room?.state?.currentPlayer, pendingDecision: room?.state?.pendingDecision };
+    })()`)));
+    if (synchronizedRooms.some((state) => state.status !== 200 || state.roomCode !== roomCode || state.version !== synchronizedRooms[0].version || state.phase !== synchronizedRooms[0].phase || state.currentPlayer !== synchronizedRooms[0].currentPlayer || JSON.stringify(state.pendingDecision) !== JSON.stringify(synchronizedRooms[0].pendingDecision))) {
+      throw new Error(`Two browser sessions disagree on the authoritative room state: ${JSON.stringify(synchronizedRooms)}`);
+    }
+    console.log(JSON.stringify({ ok: true, url, roomCode, waitingRoomStart: "verified", setup: "verified", legalBrowserActions: "verified", reconnectAfterRefresh: "verified", synchronizedRooms }));
+    await Promise.all([first?.close(), second?.close(), spectator?.close()]);
+    first = second = spectator = undefined;
+    await Promise.all([stopServer(apiServer), stopServer(webServer)]);
+    apiServer = webServer = undefined;
+    process.exit(0);
+  }
   for (const browser of [first, second, spectator]) {
     await browser.evaluate(`(() => {
       window.__boardPlaybackEvents = [];
@@ -772,7 +808,7 @@ let onlineVictory;
     const playerSessions = await Promise.all([first, second].map((browser) => browser.evaluate(`JSON.parse(localStorage.getItem("abominations-session") ?? "{}")`)));
     let victoryRoom;
     for (let step = 0; step < 400; step += 1) {
-      const baselineResponse = await fetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(playerSessions[0].token ?? "")}`);
+      const baselineResponse = await apiFetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(playerSessions[0].token ?? "")}`);
       if (!baselineResponse.ok) throw new Error(`Online victory driver could not read the latest room (${baselineResponse.status}).`);
       const baselineRoom = await baselineResponse.json();
       if (baselineRoom.state?.phase === "game-over") { victoryRoom = baselineRoom; break; }
@@ -783,7 +819,7 @@ let onlineVictory;
       const session = playerSessions[actorIndex];
       if (actorIndex === 0) victoryRoom = baselineRoom;
       else {
-        const response = await fetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(session.token ?? "")}`);
+        const response = await apiFetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(session.token ?? "")}`);
         if (!response.ok) throw new Error(`Online victory driver could not read player ${actorIndex + 1}'s room (${response.status}).`);
         victoryRoom = await response.json();
       }
@@ -796,7 +832,7 @@ let onlineVictory;
       if (!command) throw new Error(`No legal automated choice was available for player ${actorIndex + 1} at ${victoryRoom.state?.phase}/${victoryRoom.state?.pendingDecision?.type ?? "no decision"}.`);
       const participant = victoryRoom.participants?.find((candidate) => candidate.role === "player" && candidate.playerIndex === actorIndex);
       if (!participant || participant.id !== session.participantId) throw new Error(`Online victory driver lost player ${actorIndex + 1}'s participant identity.`);
-      const actionResponse = await fetch(`${apiUrl}/rooms/${roomCode}/actions`, {
+      const actionResponse = await apiFetch(`${apiUrl}/rooms/${roomCode}/actions`, {
         method: "POST",
         headers: { "content-type": "application/json", "x-room-token": session.token ?? "" },
         body: JSON.stringify({ envelope: {
