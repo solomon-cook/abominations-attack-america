@@ -2,11 +2,11 @@
   "checkedAt": "2026-11-05T21:17:26Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_BMnsr6urKLtzRSmvA9SBqLgfRznb",
+    "deploymentId": "dpl_3aiBE4shB6TeGEjiuodU5a3YwAPt",
     "deploymentTarget": "production",
-    "deploymentCommit": "08973acc31393e9f7500f925cc54e5595b202c02",
-    "deploymentCheckedAt": "2026-11-05T21:17:26Z",
-    "checkedAt": "2026-11-05T21:17:26Z",
+    "deploymentCommit": "98ce1557aa4a28d975815717ba26e1c22598965d",
+    "deploymentCheckedAt": "2026-11-05T21:29:45Z",
+    "checkedAt": "2026-11-05T21:29:45Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -15,10 +15,13 @@
       "/metrics": 404
     },
     "healthLatencyProbe": {
-      "checkedAt": "2026-11-05T21:17:26Z",
-      "statuses": [200, 200, 200, 200, 200],
-      "elapsedMs": [9061, 251, 133, 126, 147],
-      "note": "Five sequential direct requests to /api/health; first measured request was slower, four subsequent requests completed within 126–251 ms. A separate request to this deployment at 21:13:37 UTC timed out at the configured 60-second function maximum; a retry at 21:14:44 UTC returned 200."
+      "checkedAt": "2026-11-05T21:29:45Z",
+      "statuses": [
+        200,
+        200,
+        200
+      ],
+      "note": "Three sequential requests to the canonical Production /api/health after deployment dpl_3aiBE4shB6TeGEjiuodU5a3YwAPt reached READY all returned 200 with Prisma persistence and HTTP polling ready. An earlier request during the alias transition returned Vercel FUNCTION_INVOCATION_TIMEOUT; Vercel runtime error grouping attributes two 60-second timeout events in the recent window to prior deployment dpl_9WTbQaAHRKZxdggizouN9rDWxdnE. The sample is small and does not establish cold-start or sustained capacity."
     },
     "asset": {
       "path": "/assets/index-s-x_wfu6.js",
@@ -26,7 +29,7 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Production deployment dpl_BMnsr6urKLtzRSmvA9SBqLgfRznb from main commit 08973acc31393e9f7500f925cc54e5595b202c02 is READY and owns the canonical alias as of 21:17 UTC. This is an evidence-only follow-up; no runtime code or settings changed. Post-deployment /api/health and /api/metrics returned 200, with one observed 60-second health invocation timeout followed by successful retry; see healthLatencyProbe. Health reports Prisma persistence and ready HTTP polling. The served bundle contains no localhost API URL."
+    "note": "Production deployment dpl_3aiBE4shB6TeGEjiuodU5a3YwAPt from main commit 98ce1557aa4a28d975815717ba26e1c22598965d is READY and owns the canonical alias as of 21:29 UTC. This documentation-only deployment includes the source-based Prisma polling/presence estimate; runtime code and environment settings are unchanged. Three post-READY /api/health requests returned 200. A timeout occurred during the deployment transition and older runtime logs show intermittent 60-second timeouts on the prior deployment; first-request and sustained-capacity gates remain open. Health reports Prisma persistence and ready HTTP polling; the served bundle remains free of localhost API URLs based on the previous production asset check."
   },
   "preview": {
     "deploymentId": "dpl_bP3WcDN9tGZ7NFindfCpt9ddFGjA",
@@ -123,8 +126,8 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_BMnsr6urKLtzRSmvA9SBqLgfRznb",
-      "commit": "08973acc31393e9f7500f925cc54e5595b202c02",
+      "deploymentId": "dpl_3aiBE4shB6TeGEjiuodU5a3YwAPt",
+      "commit": "98ce1557aa4a28d975815717ba26e1c22598965d",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
@@ -150,7 +153,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-05T21:17:26Z",
+      "checkedAt": "2026-11-05T21:29:45Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
