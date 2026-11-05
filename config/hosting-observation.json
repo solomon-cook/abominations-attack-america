@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-05T12:35:07Z",
+  "checkedAt": "2026-11-05T12:43:29Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "status": 200,
@@ -20,11 +20,11 @@
     "note": "Direct read-only HTTP checks. The public production client remains on the old API bundle; no production settings, secrets, database, or deployment were changed."
   },
   "preview": {
-    "deploymentId": "dpl_B1yxFCEfGT5zArNG4LBebiZcD55C",
-    "url": "https://abominations-attack-america-preview-9wscwwig7.vercel.app",
+    "deploymentId": "dpl_4bqHRUaLjobUQWauY7QY3WKZXhMP",
+    "url": "https://abominations-attack-america-preview-3lw7xxjos.vercel.app",
     "state": "READY",
     "project": "abominations-attack-america-preview",
-    "checkedAt": "2026-11-05T12:35:07Z",
+    "checkedAt": "2026-11-05T12:42:27Z",
     "apiHealth": {
       "path": "/api/health",
       "status": 200,
@@ -41,16 +41,16 @@
       "path": "/api/metrics",
       "status": 200,
       "sample": {
-        "requests": 24,
+        "requests": 1,
         "requestFailures": 0,
-        "reconnects": 4,
+        "reconnects": 0,
         "serverErrors": 0,
         "deploymentFailures": 0,
         "websocketConnections": 0
       },
       "note": "Point-in-time in-memory function instance sample, not an aggregate or Prisma usage meter."
     },
-    "browserVerification": "The deployed waiting room was verified in two independent browser profiles through Start match. Full verification is blocked: the first setup choice advanced the persisted room, but the clients stayed on stale setup and one displayed Not found; legal gameplay, reload, and reconnect were not verified on this deployment.",
+    "browserVerification": "The previous code-equivalent Preview deployment dpl_B1yxFCEfGT5zArNG4LBebiZcD55C was tested in two independent browser profiles through Start match. Full verification is blocked: the first setup choice advanced the persisted room, but clients stayed on stale setup and one displayed Not found; legal gameplay, reload, and reconnect were not verified in that run. The latest deployment changed only user-facing wording and was health checked, not run through another complete browser flow.",
     "note": "Authenticated Vercel fetch returned HTTP 200 for API health and metrics. The new Prisma matchStarted column was read and written by the Preview API."
   },
   "database": {
@@ -58,20 +58,20 @@
     "workspaceInvoice": "$0.00",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 12104,
+      "used": 12127,
       "included": 200000,
-      "remainingAtObservation": 187896,
+      "remainingAtObservation": 187873,
       "averagePerDayShown": 2400
     },
     "workspaceStorageGiB": {
       "used": 0.06,
       "included": 2
     },
-    "abominationsPreviewProjectOperations": 523,
+    "abominationsPreviewProjectOperations": 546,
     "abominationsPreviewBackups": "none available",
     "backupRestore": "no restore drill evidenced; selected Preview database has no backups",
-    "checkedAt": "2026-11-05T12:35:00Z",
-    "testDeltaSince12:15": 376,
-    "note": "Usage page groups operations at the Abominations Preview project level, not the individual database level. The increase of 376 during the browser-preview attempts is a combined test-period delta, not a per-match measurement. Secret values were not retrieved. Production environment metadata contains legacy database variable names but no production DIRECT_URL; provider provenance was not verified."
+    "checkedAt": "2026-11-05T12:43:00Z",
+    "testDeltaSince12:15": 399,
+    "note": "Usage page groups operations at the Abominations Preview project level, not the individual database level. The increase of 399 since 12:15 includes multiple browser attempts, deployment migration, and health checks; it is not a per-match measurement. Secret values were not retrieved. Production environment metadata contains legacy database variable names but no production DIRECT_URL; provider provenance was not verified."
   }
 }
