@@ -135,6 +135,7 @@ async function openBrowser(port, name, existingProfile) {
       return openBrowser(port, name, profile);
     },
     click: (label) => evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled); if (!button) return false; button.click(); return true; })()`),
+    clickText: (label) => evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.includes(${JSON.stringify(label)}) && !candidate.disabled); if (!button) return false; button.click(); return true; })()`),
     close: async () => {
       socket.close();
       child.kill("SIGKILL");
@@ -175,6 +176,12 @@ try {
   first = await openBrowser(9230, "first");
   second = await openBrowser(9231, "second");
   spectator = await openBrowser(9232, "spectator");
+  for (const browser of [first, second, spectator]) {
+    await browser.waitFor(`!!document.querySelector('[aria-label="Choose how to play"]')`, "home screen");
+    if (!await browser.clickText("Multiplayer")) throw new Error("Browser could not select Multiplayer from the home screen.");
+    await browser.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "multiplayer lobby");
+    if (!await browser.click("Continue as guest")) throw new Error("Browser could not select Continue as guest.");
+  }
   await first.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "first lobby");
   await first.evaluate(`(() => { const input = document.querySelector('[aria-label="Display name"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(input, "First player"); input.dispatchEvent(new Event("input", { bubbles: true })); })()`);
   await first.evaluate(`(() => { const select = document.querySelector('[aria-label="Room privacy"]'); if (!select) return false; const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set; setter.call(select, "public"); select.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
@@ -297,7 +304,7 @@ try {
   const reconnectedFirst = await first.restart();
   first = reconnectedFirst;
   const disconnectState = "websocket-process-restart";
-  await first.waitFor(`!!document.querySelector(".lobby strong") || !!document.querySelector('[aria-label="Display name"]')`, "first browser reopened");
+  await first.waitFor(`!!document.querySelector(".lobby strong") || !!document.querySelector('[aria-label="Choose how to play"]')`, "first browser reopened");
   const restoredRoom = await first.evaluate(`Boolean(document.querySelector(".lobby strong"))`);
   if (!restoredRoom) {
     await first.evaluate(`localStorage.setItem("abominations-session", ${JSON.stringify(savedSession)})`);
