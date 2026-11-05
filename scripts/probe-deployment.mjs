@@ -24,12 +24,12 @@ if (!baseUrl) {
     }
   }
 
-  const health = await getJson("/health");
-  if (health?.ok !== true) throw new Error("/health did not report ok=true");
-  if (health?.persistence !== "prisma") throw new Error(`/health reported persistence=${String(health?.persistence)}; deployment probe requires Prisma`);
-  if (health?.realtimeFanout?.mode !== "postgres-notify" || health.realtimeFanout.ready !== true) throw new Error("/health did not report ready PostgreSQL room-notification fanout");
+  const health = await getJson("/api/health");
+  if (health?.ok !== true) throw new Error("/api/health did not report ok=true");
+  if (health?.persistence !== "prisma") throw new Error(`/api/health reported persistence=${String(health?.persistence)}; deployment probe requires Prisma`);
+  if (health?.realtimeFanout?.mode !== "http-polling" || health.realtimeFanout.ready !== true) throw new Error("/api/health did not report ready HTTP polling fanout");
 
-  const metrics = await getJson("/metrics");
+  const metrics = await getJson("/api/metrics");
   const metricKeys = ["requests", "requestFailures", "commandAccepted", "commandFailed", "reconnects", "websocketConnections", "websocketFailures", "roomsCompleted", "roomsAbandoned", "latencySamples", "latencyTotalMs", "serverErrors", "errorReports", "divergenceReports", "deploymentFailures"];
   for (const key of metricKeys) if (!Number.isFinite(metrics?.[key]) || metrics[key] < 0) throw new Error(`/metrics has invalid ${key}`);
 

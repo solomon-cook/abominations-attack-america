@@ -126,6 +126,23 @@
       "loopbackReferenceInClientBundle": false,
       "twoProfileRoomCode": "BD1704",
       "twoProfileSmoke": "join-start-setup-action-poll-refresh-passed",
+      "legalMoveRoomCode": "6B3895",
+      "legalMove": {
+        "from": "10,-1",
+        "to": "10,-2",
+        "acceptedRevision": 11,
+        "peerObserved": true,
+        "setupComplete": true,
+        "bothPlayersReady": true
+      },
+      "deploymentProbe": {
+        "status": "passed",
+        "checkedAt": "2026-11-05T19:32:00Z",
+        "https": true,
+        "prismaPersistence": true,
+        "httpPollingReady": true,
+        "metricFieldsChecked": 15
+      },
       "fullHumanMatch": "not-verified"
     }
   },
@@ -145,7 +162,18 @@
       "databaseId": "db_a89s8mlpgynwfwfvqiuhmhrl",
       "region": "us-east-1",
       "migrationsApplied": 15,
-      "pooledAndDirectVercelVariablesPresent": true
+      "pooledAndDirectVercelVariablesPresent": true,
+      "usage": {
+        "operations": 2829,
+        "storageGiB": 0.0012359619140625,
+        "periodStart": "2026-11-01T00:00:00Z",
+        "measuredAt": "2026-11-05T19:37:32Z"
+      },
+      "backupInventory": {
+        "count": 0,
+        "retentionDays": 0,
+        "measuredAt": "2026-11-05T19:38:39Z"
+      }
     },
     "automaticBackups": "none on Free",
     "backupRestore": {
@@ -158,6 +186,6 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Two players polling every 30 seconds: 172,800 reads/month; source-based estimate assumes one Prisma operation per poll, while nested relation query SQL count and actual per-match meter use remain unisolated.",
-    "note": "Prisma Console observed Free at $0 with a fixed 200,000 monthly operation cap; usage is workspace-wide, not attributed to this game or multiplayer. Free has no automatic backups. A one-time manual restore drill succeeded, but recurring backups and restore operations have no owner/schedule."
+    "note": "Prisma Console previously observed Free at $0 with a fixed 200,000 monthly workspace operation cap. The Production database-specific meter now reports 2,829 operations and 0.0012359619140625 GiB for this billing period; the workspace meter is not refreshed in this observation and includes other projects. Production backup inventory is empty with zero retention days. A one-time manual restore drill succeeded, but recurring backups and restore operations have no owner/schedule."
   }
 }
