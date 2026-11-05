@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-05T17:58:00Z",
+  "checkedAt": "2026-11-05T18:44:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_9Jsd6bW8efXwu3RVgUzJohqqjEmm",
@@ -23,12 +23,14 @@
     "note": "Fresh direct read-only HTTP recheck at 17:58 UTC. The current Production alias is still on main commit 6ec09a93; /api/health and /api/metrics remain 404 and the served bundle still points to localhost:8787. The new Production Prisma credentials are configured for the next deployment, but no Production deployment or alias change has occurred."
   },
   "preview": {
-    "deploymentId": "dpl_2Am8CznoEjuj7mFnhXK6LHDFRLs3",
-    "url": "https://abominations-attack-america-d3fl67ytf.vercel.app",
+    "deploymentId": "dpl_bP3WcDN9tGZ7NFindfCpt9ddFGjA",
+    "url": "https://abominations-attack-america-1cr8h40v7.vercel.app",
     "state": "READY",
     "project": "abominations-attack-america",
     "branch": "codex/production-multiplayer-candidate",
-    "commit": "c1d9107",
+    "commit": "47b9b80",
+    "source": "Vercel CLI archive deployment from the clean candidate worktree",
+    "checkedAt": "2026-11-05T18:44:00Z",
     "apiHealth": {
       "path": "/api/health",
       "status": 200,
@@ -41,7 +43,22 @@
         }
       }
     },
-    "browserVerification": "Two isolated Chrome profiles completed multiplayer guest selection, room creation/join, waiting room, explicit start, legal choose-monster setup action, same revision/state observed by the peer, and refresh restoration at revision 1 (5 Nov 2026); does not prove complete setup, an in-game board move, or full match.",
+    "metrics": {
+      "path": "/api/metrics",
+      "status": 200,
+      "sample": {
+        "requests": 1,
+        "requestFailures": 0,
+        "commandAccepted": 0,
+        "commandFailed": 0,
+        "reconnects": 0,
+        "websocketConnections": 0,
+        "serverErrors": 0,
+        "deploymentFailures": 0
+      },
+      "note": "Point-in-time in-memory function instance sample, not an aggregate or Prisma usage meter."
+    },
+    "browserVerification": "Two isolated Chrome profiles with Vercel Trusted Sources auth created and joined synthetic room 3A0031 through the homepage, observed the waiting room, started the match, sent legal choose-monster action monster-1 at revision 1, observed identical peer state, and refreshed to recover revision 1 (5 Nov 2026). Does not prove complete setup or an in-game board move.",
     "pollIntervalMsObservedInBundle": 30000,
     "environmentVariableNames": [
       "ALLOWED_ORIGIN",
@@ -51,7 +68,7 @@
       "VITE_ROOM_POLL_INTERVAL_MS"
     ],
     "environmentValuesRead": false,
-    "note": "Protected Preview smoke using an expiring Vercel share URL; browser evidence is recorded in docs/hosting-decision-record.md."
+    "note": "Protected Preview. Fresh health and metrics requests returned HTTP 200. Browser evidence recorded in docs/hosting-decision-record.md."
   },
   "productionProjectPreview": {
     "deploymentId": "dpl_9GNuLmJs27sJx6RAfhkacYGkRuQg",
