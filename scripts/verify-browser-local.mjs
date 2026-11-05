@@ -187,7 +187,7 @@ try {
     ], "solo bot levels should be clearly labelled");
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, `${width}x${height} home screen should not gain horizontal overflow`);
     const difficultyBounds = await difficultyPicker.boundingBox();
-    assert.ok(difficultyBounds && difficultyBounds.x >= 0 && difficultyBounds.x + difficultyBounds.width <= width, `${width}x${height} bot difficulty should fit horizontally`);
+    assert.ok(difficultyBounds && difficultyBounds.x >= 0 && difficultyBounds.x + difficultyBounds.width <= width, `${width}x${height} bot difficulty should fit horizontally: ${JSON.stringify({ difficultyBounds, width })}`);
     await checkSetup(page);
     if (visualCapture) {
       await page.evaluate(async () => { await document.fonts.ready; });
