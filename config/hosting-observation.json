@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-05T22:08:00Z",
+  "checkedAt": "2026-11-05T22:27:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_9X3kPwzS8fQ4a6tMaVENm1gKdFqS",
     "deploymentTarget": "production",
     "deploymentCommit": "d550adc5db2383da781d4ed241e98da930afff6d",
     "deploymentCheckedAt": "2026-11-05T22:04:00Z",
-    "checkedAt": "2026-11-05T22:08:00Z",
+    "checkedAt": "2026-11-05T22:27:00Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -25,16 +25,22 @@
           "ready": true
         }
       },
-      "checkedAt": "2026-11-05T22:06:00Z"
+      "checkedAt": "2026-11-05T22:27:00Z"
     },
     "metrics": {
       "path": "/api/metrics",
       "status": 200,
       "sample": {
-        "requests": 5,
+        "requests": 26,
+        "requestFailures": 2,
+        "commandAccepted": 0,
+        "commandFailed": 0,
+        "reconnects": 1,
+        "websocketConnections": 0,
         "serverErrors": 0
       },
-      "note": "HTTP 200 after the docs-only Production deployment; point-in-time function instance sample, not a project-wide log or database usage meter."
+      "note": "Fresh point-in-time function-instance sample; counters are not an aggregate or database meter.",
+      "checkedAt": "2026-11-05T22:27:00Z"
     },
     "runtimeErrorCheck": {
       "checkedAt": "2026-11-05T22:05:00Z",
@@ -67,7 +73,7 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "The latest Production deployment dpl_9X3kPwzS8fQ4a6tMaVENm1gKdFqS from main commit d550adc5db2383da781d4ed241e98da930afff6d is a docs-only successor to runtime commit d35c236ce62de12505480d72c0db65c0f62f3f15. Immediately after alias transition one canonical /api/health call timed out and another returned 503; three following calls returned 200. After a 90-second idle interval, /api/health returned 200 in 7.75 seconds, then three quick probes returned 200. /api/metrics returned 200. Runtime logs had only url.parse and SSL-mode warnings and no timeout group, but the handler currently suppresses the Prisma query error. This is evidence of recovery, not proof of reliable wake-up or sustained capacity.",
+    "note": "Canonical Production /api/health and /api/metrics returned HTTP 200 at 22:27 UTC. Health reports Prisma persistence and ready HTTP polling. Metrics are function-instance-local. Prisma workspace usage and backup evidence are recorded separately under database.",
     "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment."
   },
   "preview": {
@@ -225,7 +231,8 @@
       "storageGiB": 0.00131988525390625,
       "measuredAt": "2026-11-05T20:16:45Z",
       "databaseSpecificNotWorkspaceWide": true
-    }
+    },
+    "checkedAt": "2026-11-05T22:27:00Z"
   },
   "database": {
     "plan": "Free",
@@ -233,11 +240,12 @@
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 24402,
+      "used": 25662,
       "included": 200000,
-      "remainingAtObservation": 175598,
-      "checkedAt": "2026-11-05T20:42:00Z",
-      "stale": true
+      "remainingAtObservation": 174338,
+      "checkedAt": "2026-11-05T22:22:00Z",
+      "stale": false,
+      "source": "Prisma Console workspace Usage page; workspace-wide across projects"
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -246,17 +254,21 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 3801,
+        "operations": 3913,
         "storageGiB": 0.0013580322265625,
         "periodStart": "2026-11-01T00:00:00Z",
         "measuredAt": "2026-11-05T21:02:30Z",
-        "databaseSpecificNotWorkspaceWide": true
+        "databaseSpecificNotWorkspaceWide": true,
+        "source": "Prisma Console project usage grouping for operations; prior Production database usage reading for storage",
+        "operationsMeasuredAt": "2026-11-05T22:22:00Z",
+        "operationsSource": "Prisma Console workspace Usage project grouping for abominations-attack-america-production",
+        "storageMeasuredAt": "2026-11-05T21:02:30Z"
       },
       "backupInventory": {
         "count": 0,
         "retentionDays": 0,
-        "measuredAt": "2026-11-05T21:01:40Z",
-        "source": "Prisma CLI postgres backup list --project proj_rg9ai5642a8773dxgy2rk3te",
+        "measuredAt": "2026-11-05T22:22:00Z",
+        "source": "Prisma Console Production database Backups page",
         "automaticBackupsAvailable": false
       }
     },
@@ -275,7 +287,7 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Source-traced 2026-11-05: each successful PrismaRoomStore.getRoom call performs one Prisma Client participant.findFirst with relationLoadStrategy=join. Prisma counts each Prisma Client query as one operation regardless of internal SQL count. At the configured 30-second interval this is 172,800 room-poll operations/month for two continuously open tabs and 345,600 for four. A two-hour guest match uses about 480 room-poll operations for two players or 960 for four, before setup/actions/reconnects. Each visible signed-in account with presence opted in sends one heartbeat every 30 seconds; each calls one updateMany, adding about 120 operations per opted-in account per two-hour session.",
-    "note": "Owner approved the dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). At 20:42 UTC Prisma workspace home showed 24,402/200,000 operations and a $0.00 invoice across five projects; this workspace-wide reading has not been refreshed. Production database-specific usage was refreshed to 3,801 operations and 0.001358 GiB through 21:02:30 UTC, including migrations and verification; this is not the workspace total or isolated gameplay polling. Prisma's current Production backup inventory query returned zero backups and zero retention at 21:01:40 UTC. One manual dump/restore drill passed once, but routine backup/restore owner and schedule remain open.",
-    "workspacePollingHeadroomAtObservation": "At the last workspace observation of 24,402/200,000 (stale), 175,598 operations remained. Source-based poll-only estimates fit about 365 two-hour two-player guest sessions (480 room polls each) or 182 two-hour four-player guest sessions (960 room polls each) before all other workspace and app queries; four tabs left open continuously would add 345,600 polls/month and exceed the shared cap. Four visible opted-in accounts would add about 480 presence heartbeat operations per two-hour session. These are code and billing-definition estimates, not an isolated meter test or capacity acceptance."
+    "note": "Owner approved a dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). The Production database already exists as abominations-attack-america-production (db_a89s8mlpgynwfwfvqiuhmhrl) and is migrated/serving Production. At 22:22 UTC Prisma Console showed 25,662/200,000 workspace-wide operations and a $0 invoice. The Production-specific meter showed 3,913 operations for this cycle. The Production Backups page showed no backups; Free has no automatic backups. One manual dump/restore drill passed once, but routine backup/restore ownership and cadence remain open.",
+    "workspacePollingHeadroomAtObservation": "At the 2026-11-05 22:22 UTC workspace observation of 25,662/200,000, 174,338 operations remained. Source-based poll-only estimates fit about 363 two-hour two-player guest sessions (480 room polls each) or 181 two-hour four-player guest sessions (960 room polls each) before all other workspace and app queries; four tabs left open continuously would add 345,600 polls/month and exceed the shared cap. Four visible opted-in accounts would add about 480 presence heartbeat operations per two-hour session. These are code and billing-definition estimates, not an isolated meter test or capacity acceptance."
   }
 }
