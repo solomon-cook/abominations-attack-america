@@ -10,7 +10,7 @@ async function memoryFixture(): Promise<ContractFixture> {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2);
   const guest = await store.joinRoom(host.room.code, "Guest");
-  let revision = host.room.version;
+  let revision = (await store.startMatch(host.room.code, host.token)).version;
   for (const [playerIndex, monsterId] of [[0, "monster-1"], [1, "monster-2"]] as const) {
     revision = (await store.setupAction(host.room.code, [host, guest][playerIndex]!.token, { type: "choose-monster", monsterId }, revision)).version;
   }

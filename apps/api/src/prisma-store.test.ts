@@ -33,7 +33,9 @@ test("Prisma room start commits the prepared snapshot and its matching event ato
     connectedAt: new Date(), disconnectedAt: null, connectionId: null, botControlled: false, botAssisted: false, ready: true,
   });
 
-  const started = await new PrismaRoomStore(adapter).setReady(room.code, "token", true);
+  const store = new PrismaRoomStore(adapter);
+  await store.startMatch(room.code, "token");
+  const started = await store.setReady(room.code, "token", true);
 
   assert.equal(started.status, "active");
   assert.equal(started.state.setupApplied, true);
@@ -471,6 +473,7 @@ test("terminal transaction writes one public stat row for each linked account se
 test("Prisma setup actions persist the shared state and reject stale revisions", async () => {
   const { adapter, room, events } = persistentAdapter();
   room.state = createRoomGame(2);
+  (room as any).matchStarted = true;
   const store = new PrismaRoomStore(adapter);
   const first = await store.setupAction(room.code, "token", { type: "choose-monster", monsterId: "monster-1" }, 0);
   assert.equal(first.version, 1);

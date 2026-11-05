@@ -7,7 +7,7 @@ async function readyTwoPlayerRoom() {
   const host = await store.createRoom(2, "Host");
   const guest = await store.joinRoom(host.room.code, "Guest");
   const sessions = [host, guest];
-  let revision = host.room.version;
+  let revision = (await store.startMatch(host.room.code, host.token)).version;
   for (const [playerIndex, monsterId] of [[0, "monster-1"], [1, "monster-2"]] as const) revision = (await store.setupAction(host.room.code, sessions[playerIndex]!.token, { type: "choose-monster", monsterId }, revision)).version;
   for (const [playerIndex, branch] of [[1, "Navy"], [0, "Army"]] as const) revision = (await store.setupAction(host.room.code, sessions[playerIndex]!.token, { type: "choose-branch", branch }, revision)).version;
   for (const [playerIndex, lair] of [[0, "los-angeles"], [1, "chicago"]] as const) revision = (await store.setupAction(host.room.code, sessions[playerIndex]!.token, { type: "choose-lair", lair }, revision)).version;
