@@ -1,37 +1,34 @@
 {
-  "checkedAt": "2026-11-05T13:59:00Z",
+  "checkedAt": "2026-11-05T17:58:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_9Jsd6bW8efXwu3RVgUzJohqqjEmm",
     "deploymentTarget": "production",
     "deploymentCommit": "6ec09a93a5caf3d5bbd9217c46f36c55fe698b06",
-    "deploymentCheckedAt": "2026-11-05T13:59:00Z",
-    "apiRouteRecheckAt": "2026-11-05T13:59:00Z",
-    "apiRouteRecheck": {"/api/health": 404, "/api/metrics": 404},
-    "checkedAt": "2026-11-05T13:27:00Z",
+    "deploymentCheckedAt": "2026-11-05T17:58:00Z",
+    "checkedAt": "2026-11-05T17:58:00Z",
     "status": 200,
-    "lastModified": "Thu, 05 Nov 2026 11:22:53 GMT",
+    "routes": {
+      "/api/health": 404,
+      "/api/metrics": 404,
+      "/health": 404,
+      "/metrics": 404
+    },
     "asset": {
       "path": "/assets/index-5XS8sbHa.js",
       "status": 200,
-      "sha256": "8cb0122bbb8663221d00029593c675af43646e370b5dff7242dae3a604d9ba11",
       "containsLocalhost": true,
       "loopbackUrl": "http://localhost:8787"
     },
-    "routes": {
-      "/health": 404,
-      "/metrics": 404,
-      "/api/health": 404,
-      "/api/metrics": 404
-    },
-    "note": "Direct read-only HTTP checks. The public production client remains on the old API bundle; no production settings, secrets, database, or deployment were changed."
+    "note": "Fresh direct read-only HTTP recheck at 17:58 UTC. The current Production alias is still on main commit 6ec09a93; /api/health and /api/metrics remain 404 and the served bundle still points to localhost:8787. The new Production Prisma credentials are configured for the next deployment, but no Production deployment or alias change has occurred."
   },
   "preview": {
-    "deploymentId": "dpl_HDpqwLD13K8XhkNLqPJaJBxMmvpL",
-    "url": "https://abominations-attack-america-preview-k8a9sszzg.vercel.app",
+    "deploymentId": "dpl_2Am8CznoEjuj7mFnhXK6LHDFRLs3",
+    "url": "https://abominations-attack-america-d3fl67ytf.vercel.app",
     "state": "READY",
-    "project": "abominations-attack-america-preview",
-    "checkedAt": "2026-11-05T13:28:12Z",
+    "project": "abominations-attack-america",
+    "branch": "codex/production-multiplayer-candidate",
+    "commit": "c1d9107",
     "apiHealth": {
       "path": "/api/health",
       "status": 200,
@@ -44,24 +41,17 @@
         }
       }
     },
-    "metrics": {
-      "path": "/api/metrics",
-      "status": 200,
-      "sample": {
-        "requests": 1,
-        "requestFailures": 0,
-        "reconnects": 0,
-        "serverErrors": 0,
-        "deploymentFailures": 0,
-        "websocketConnections": 0
-      },
-      "note": "Point-in-time in-memory function instance sample, not an aggregate or Prisma usage meter."
-    },
-    "browserVerification": "On this latest Preview, a three-profile browser run reached the two-player waiting room, enabled Start match after the second seat joined, and entered setup. The full run later failed during refresh/reconnect: the expected online connection indicator did not appear within the 35-second wait. Earlier failures had timed out before the deployed 30-second poll interval; test waits were adjusted for that cadence. No accepted legal action, peer state equality, or reconnect recovery was proven on this deployment.",
+    "browserVerification": "Two isolated Chrome profiles completed multiplayer guest selection, room creation/join, waiting room, explicit start, legal choose-monster setup action, same revision/state observed by the peer, and refresh restoration at revision 1 (5 Nov 2026); does not prove complete setup, an in-game board move, or full match.",
     "pollIntervalMsObservedInBundle": 30000,
-    "environmentVariableNames": ["ALLOWED_ORIGIN", "DATABASE_URL", "DIRECT_URL", "VITE_ENABLE_WEBSOCKETS", "VITE_ROOM_POLL_INTERVAL_MS"],
+    "environmentVariableNames": [
+      "ALLOWED_ORIGIN",
+      "DATABASE_URL",
+      "DIRECT_URL",
+      "VITE_ENABLE_WEBSOCKETS",
+      "VITE_ROOM_POLL_INTERVAL_MS"
+    ],
     "environmentValuesRead": false,
-    "note": "A protected Vercel fetch on 2026-11-05 at 13:28 UTC returned HTTP 200 for /api/health with Prisma persistence and HTTP polling ready. An API error during reconnect was not isolated from browser page-load/authentication failure. No Production setting, secret, alias, or deployment was changed."
+    "note": "Protected Preview smoke using an expiring Vercel share URL; browser evidence is recorded in docs/hosting-decision-record.md."
   },
   "productionProjectPreview": {
     "deploymentId": "dpl_9GNuLmJs27sJx6RAfhkacYGkRuQg",
@@ -72,42 +62,70 @@
     "apiHealth": {
       "path": "/api/health",
       "status": 200,
-      "body": {"ok": true, "persistence": "prisma", "realtimeFanout": {"mode": "http-polling", "ready": true}},
+      "body": {
+        "ok": true,
+        "persistence": "prisma",
+        "realtimeFanout": {
+          "mode": "http-polling",
+          "ready": true
+        }
+      },
       "checkedAt": "2026-11-05T13:57:22Z"
     },
     "note": "Feature-branch Preview from the same Vercel project as Production; demonstrates the function route works when deployed, using that project's Preview environment. This is not Production runtime evidence."
   },
   "vercelEnvironmentMetadata": {
-    "previewProject": {
-      "variableNamesByEnvironment": {"Preview": ["ALLOWED_ORIGIN", "DATABASE_URL", "DIRECT_URL", "VITE_ENABLE_WEBSOCKETS", "VITE_ROOM_POLL_INTERVAL_MS"]}
-    },
     "productionProject": {
       "variableNamesByEnvironment": {
-        "Production": ["ALLOWED_ORIGIN", "DATABASE_URL", "POSTGRES_URL", "PRISMA_DATABASE_URL"],
-        "Preview": ["DATABASE_URL", "DIRECT_URL", "POSTGRES_URL", "PRISMA_DATABASE_URL", "VITE_ENABLE_WEBSOCKETS", "VITE_ROOM_POLL_INTERVAL_MS"]
+        "Production": [
+          "ALLOWED_ORIGIN",
+          "DATABASE_URL",
+          "DIRECT_URL",
+          "POSTGRES_URL",
+          "PRISMA_DATABASE_URL"
+        ],
+        "Preview": [
+          "DATABASE_URL",
+          "DIRECT_URL",
+          "POSTGRES_URL",
+          "PRISMA_DATABASE_URL",
+          "VITE_ENABLE_WEBSOCKETS",
+          "VITE_ROOM_POLL_INTERVAL_MS"
+        ]
       }
     },
     "valuesRead": false,
-    "note": "Read-only Vercel CLI listing scoped to the exact team and project; values remained Hidden. ALLOWED_ORIGIN was added as a non-secret Production Config value for the canonical public origin at 13:56 UTC; it applies only to a future Production deployment. Production still has no DIRECT_URL. DATABASE_URL provider and Prisma database mapping remain unverified."
+    "note": "Read-only metadata only. Production pooled DATABASE_URL and direct DIRECT_URL were added encrypted; values remain server-side and were not read."
   },
   "database": {
     "plan": "Free",
     "workspaceInvoice": "$0.00",
+    "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 13184,
+      "used": 16879,
       "included": 200000,
-      "remainingAtObservation": 186816
+      "remainingAtObservation": 183121,
+      "checkedAt": "2026-11-05T16:35:00Z"
     },
-    "workspaceStorageGiB": {
-      "used": 0.1,
-      "included": 2
+    "productionDatabase": {
+      "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
+      "databaseId": "db_a89s8mlpgynwfwfvqiuhmhrl",
+      "region": "us-east-1",
+      "migrationsApplied": 15,
+      "pooledAndDirectVercelVariablesPresent": true
     },
-    "abominationsPreviewProjectOperationsDisplay": "9.6K (project includes two databases)",
-    "selectedAbominationsPreviewDatabaseOperations": 1603,
-    "abominationsPreviewBackups": "none available",
-    "backupRestore": "no restore drill evidenced; selected Preview database has no backups",
-    "checkedAt": "2026-11-05T13:26:00Z",
-    "note": "Prisma Console showed Free, a $0.00 current invoice, 13,184 of 200,000 workspace operations, and 0.1 of 2 GiB storage. The Abominations Prisma project card displayed 9.6K operations and contains two databases; the selected database dashboard showed 1,603 operations for the current cycle. Vercel environment metadata could not be read through the connected tool (403), and no secret values were accessed, so the application database endpoint cannot be matched to either Prisma database. These counts do not isolate polling or estimate per-match use."
+    "automaticBackups": "none on Free",
+    "backupRestore": {
+      "status": "manual dump/restore drill passed once",
+      "dumpBytes": 48043,
+      "sha256": "dc1ad0de06f8871bc858775050cb0bd86d60c2de453c78babb8f3615c7efdd95",
+      "restoreSeconds": 16.429,
+      "recoveryDatabaseDeleted": true,
+      "sourceTestRoomDeleted": true,
+      "routineSchedule": "not established"
+    },
+    "pollingEstimate": "Two players polling every 30 seconds: 172,800 reads/month; source-based estimate assumes one Prisma operation per poll, while nested relation query SQL count and actual per-match meter use remain unisolated.",
+    "note": "Prisma Console observed Free at $0 with a fixed 200,000 monthly operation cap; usage is workspace-wide, not attributed to this game or multiplayer. Free has no automatic backups. A one-time manual restore drill succeeded, but recurring backups and restore operations have no owner/schedule."
   }
 }

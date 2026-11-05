@@ -111,12 +111,13 @@ try {
       const body = await response.json();
       return { response, body, value: body.value?.value ?? body.value };
     };
-    await waitFor(async () => (await execute("return Boolean([...document.querySelectorAll('button')].find((button) => button.textContent.includes('Review full board shell')));")).value === true, "home board-review control");
+    await execute("const tools = document.querySelector('details.home-tools'); if (tools) tools.open = true; return true;");
+    await waitFor(async () => (await execute("return Boolean([...document.querySelectorAll('button')].find((button) => button.textContent.trim() === 'Review full board'));")).value === true, "home board-review control");
     const clickReview = await request(driverPort, `/session/${sessionId}/execute/sync`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        script: "const reviewButton = [...document.querySelectorAll('button')].find((button) => button.textContent.includes('Review full board shell')); if (!reviewButton) throw new Error('Review full board shell control not found.'); reviewButton.click(); return true;",
+        script: "const reviewButton = [...document.querySelectorAll('button')].find((button) => button.textContent.trim() === 'Review full board'); if (!reviewButton) throw new Error('Review full board control not found.'); reviewButton.click(); return true;",
         args: [],
       }),
     });

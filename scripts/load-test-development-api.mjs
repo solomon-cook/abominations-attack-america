@@ -84,6 +84,13 @@ async function createRoom(index) {
   });
   const joined = await joinedResponse.json();
   if (!joinedResponse.ok) throw new Error(`Room ${index} second seat failed: ${joined.error ?? joinedResponse.status}`);
+  const startResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/start`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-room-token": created.token },
+    body: "{}",
+  });
+  const started = await startResponse.json();
+  if (!startResponse.ok) throw new Error(`Room ${index} start failed: ${started.error ?? startResponse.status}`);
   const spectatorResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/spectate`, {
     method: "POST",
     headers: { "content-type": "application/json" },

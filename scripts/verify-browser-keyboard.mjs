@@ -82,8 +82,9 @@ try {
   let actionLabel = "first keyboard matrix skipped";
   if (process.env.BROWSER_KEYBOARD_VICTORY_ONLY !== "1") {
   await page.goto(url, { waitUntil: "domcontentloaded" });
-  const start = page.getByRole("button", { name: /Start local game/ });
-  await activateByKeyboard(start, "Start local game");
+  await activateByKeyboard(page.getByRole("button", { name: /Single player/ }), "Single player mode");
+  const start = page.getByRole("button", { name: /Play on one screen/ });
+  await activateByKeyboard(start, "Play on one screen");
   await page.locator(".setup-panel").waitFor({ state: "visible" });
   // Setup has several meaningful choices; enter the real local audited-board
   // match, then exercise the interaction-heavy gameplay controls by keyboard.
@@ -246,6 +247,7 @@ try {
   };
 
   await victoryPage.goto(url, { waitUntil: "domcontentloaded" });
+  await activateFocused(victoryPage.locator(".home-extras > summary"), "Guides and practice");
   await activateFocused(victoryPage.locator(".home-tools > summary"), "Playtest tools");
   await activateFocused(victoryPage.getByRole("button", { name: "Victory test", exact: true }), "temporary victory scenario");
   await waitForPhase((phase) => phase === "Move", "Move");

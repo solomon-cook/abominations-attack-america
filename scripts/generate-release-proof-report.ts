@@ -14,21 +14,25 @@ const unresolved = await readFile(resolve(root, "docs/unresolved-rules-inventory
 const openRuleGroups = [...unresolved.matchAll(/^\| [A-Z-]+ \| open-source-gated \|/gm)].length;
 const securityBaseline = JSON.parse(await readFile(resolve(root, "config/production-audit-baseline.json"), "utf8"));
 const hostingObservation = JSON.parse(await readFile(resolve(root, "config/hosting-observation.json"), "utf8"));
+const databaseObservation = hostingObservation.database;
 const knownSecurityEntries = securityBaseline.knownProductionAdvisories.length;
 const dependencySecurityEvidence = knownSecurityEntries === 0
   ? "No known high-severity production advisories remain; the dependency audit gate must pass before release"
   : `${knownSecurityEntries} known high-severity vulnerable production package entries remain in \`config/production-audit-baseline.json\``;
 const dependencySecurityStatus = knownSecurityEntries === 0 ? "NO KNOWN VULNERABILITIES; DEPLOYMENT REVIEW OPEN" : "BLOCKED";
-const productionHealthStatus = hostingObservation.apiHealth?.status ?? hostingObservation.api?.healthHttpStatus ?? "not checked";
-const productionMetricsStatus = hostingObservation.metrics?.status ?? hostingObservation.api?.metricsHttpStatus ?? "not checked";
-const productionClient = hostingObservation.assets?.some((asset: { containsLocalhost?: boolean }) => asset.containsLocalhost)
+const productionHealthStatus = hostingObservation.production.apiHealth?.status ?? hostingObservation.production.routes?.["/api/health"] ?? "not checked";
+const productionMetricsStatus = hostingObservation.production.metrics?.status ?? hostingObservation.production.routes?.["/api/metrics"] ?? "not checked";
+const productionClient = hostingObservation.production.asset?.containsLocalhost
   ? "served client bundle still contains a localhost API URL"
   : "served client bundle has no recorded localhost API URL";
 const preview = hostingObservation.preview;
 const previewEvidence = preview
   ? `; Preview ${preview.deploymentId} reports HTTP ${preview.apiHealth.status} with ${preview.apiHealth.body.persistence} persistence and ${preview.apiHealth.body.realtimeFanout.mode}`
   : "";
-const hostingEvidence = `Production homepage ${hostingObservation.url} returns HTTP ${hostingObservation.status}; ${productionClient}; production /api/health returns HTTP ${productionHealthStatus}, /health HTTP ${hostingObservation.health?.status ?? "not checked"}, and /metrics HTTP ${productionMetricsStatus}${previewEvidence}. Database plan, metered usage, and backup/restore remain unverified`;
+const databaseEvidence = databaseObservation
+  ? `Prisma ${databaseObservation.plan} at ${databaseObservation.workspaceInvoice} with a fixed 200,000 monthly operation cap; last workspace snapshot ${databaseObservation.workspaceOperations.used}/${databaseObservation.workspaceOperations.included}; manual restore drill ${databaseObservation.backupRestore.status}, but Free has no automatic backups or recurring schedule`
+  : "Database plan, metered usage, and backup/restore remain unverified";
+const hostingEvidence = `Production homepage ${hostingObservation.production.url} returns HTTP ${hostingObservation.production.status}; ${productionClient}; production /api/health returns HTTP ${productionHealthStatus}, /health HTTP ${hostingObservation.production.routes?.["/health"] ?? "not checked"}, and /api/metrics returns HTTP ${productionMetricsStatus}${previewEvidence}. ${databaseEvidence}`;
 const hostingStatus = productionHealthStatus === 200 ? "PRODUCTION API ENDPOINT PRESENT; RELEASE EVIDENCE OPEN" : "PRODUCTION API/DB RELEASE GATE OPEN";
 const browser = JSON.parse(await readFile(resolve(root, "output/board-art/browser-verification.json"), "utf8"));
 const passedViewports = browser.viewports.filter((viewport: { passed: boolean }) => viewport.passed).length;
@@ -62,7 +66,7 @@ This deterministic report separates proof levels. It is generated from the curre
 
 ## Current release boundary
 
-New MVP room creation pins the human-audited board ID, version, ruleset version, and content hash. The user-authorized board-data sign-off is recorded; independent review, same-scale visual acceptance, durable database persistence, source-gated rules, security, and full release sign-offs remain open. Existing provisional matches retain their immutable pins.
+New MVP room creation pins the human-audited board ID, version, ruleset version, and content hash. The user-authorized board-data sign-off is recorded; independent review, production runtime persistence/restart, routine backups, source-gated rules, security, and full release sign-offs remain open. Existing provisional matches retain their immutable pins.
 `;
 
   const outputPath = resolve(root, "docs/release-proof-report.md");

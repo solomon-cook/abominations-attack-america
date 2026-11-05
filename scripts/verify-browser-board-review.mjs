@@ -94,6 +94,7 @@ try {
   await command("Runtime.enable");
   await command("Emulation.setDeviceMetricsOverride", { width: viewportWidth, height: viewportHeight, deviceScaleFactor: 1, mobile: viewportWidth <= 600 });
   await command("Page.navigate", { url });
+  await evaluate(`(() => { const tools = document.querySelector("details.home-tools"); if (tools) tools.open = true; })()`);
   await waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board")`, "home board-review control");
   await evaluate(`([...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Review full board"))?.click()`);
   await waitFor(`document.querySelectorAll(".board-review-hex").length === 336`, "336 board-review faces");

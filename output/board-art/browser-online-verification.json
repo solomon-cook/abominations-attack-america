@@ -1,7 +1,7 @@
 {
   "ok": true,
-  "url": "http://127.0.0.1:55718/",
-  "roomCode": "9ADCFB",
+  "url": "http://127.0.0.1:62914/",
+  "roomCode": "45D555",
   "waitingRoom": {
     "seatsRequired": 2,
     "startDisabledBeforeJoin": true,
@@ -15,8 +15,8 @@
   "spectatorSetup": "no-act",
   "spectatorMove": "no-act",
   "startingGiantPlacement": "resolved-by-owner-ui",
-  "startingGiantPlacementRefresh": "not-needed",
-  "disconnect": "websocket-process-restart",
+  "startingGiantPlacementRefresh": "recovered-after-player-refresh",
+  "disconnect": "page-refresh",
   "reconnect": "online",
   "reconnectRecovery": "verified",
   "forgedCommand": "rejected-without-state-change",

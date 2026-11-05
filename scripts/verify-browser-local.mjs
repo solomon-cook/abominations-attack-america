@@ -52,7 +52,7 @@ if (server) {
 const browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
 const failures = [];
 const checkSetup = async (page) => {
-  await page.getByRole("button", { name: /Start local game/ }).click();
+  await page.getByRole("button", { name: /Play on one screen/ }).click();
   await page.locator(".setup-panel").waitFor({ state: "visible" });
   const abilities = await page.locator(".monster-choice-ability span").evaluateAll((nodes) => nodes.map((node) => {
     const text = node;
@@ -177,12 +177,13 @@ try {
       });
     }
     await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /Single player/ }).click();
     const difficultyPicker = page.getByRole("combobox", { name: "Bot difficulty" });
     assert.equal(await difficultyPicker.isVisible(), true, `${width}x${height} home screen should expose bot difficulty`);
     assert.deepEqual(await difficultyPicker.locator("option").allTextContents(), [
-      "Casual · relaxed defense, more Research",
-      "Tactical · mixed match-seeded strategy",
-      "Challenging · force-first route blocking",
+      "Casual",
+      "Tactical",
+      "Challenging",
     ], "solo bot levels should be clearly labelled");
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, `${width}x${height} home screen should not gain horizontal overflow`);
     const difficultyBounds = await difficultyPicker.boundingBox();
@@ -364,6 +365,8 @@ try {
     } });
   });
   await soloPage.goto(url, { waitUntil: "domcontentloaded" });
+  const homeExtras = soloPage.locator("details.home-extras");
+  if (!(await homeExtras.evaluate((node) => node.open))) await homeExtras.locator(":scope > summary").click();
   const rulesChallenge = soloPage.locator(".rules-challenge");
   await rulesChallenge.locator("summary").press("Enter");
   await soloPage.getByRole("heading", { name: "What comes immediately after the Move phase?" }).waitFor({ state: "visible" });
@@ -414,6 +417,7 @@ try {
   await soloPage.getByRole("status").filter({ hasText: "14 of 15 correct" }).waitFor({ state: "visible" });
   await soloPage.getByRole("button", { name: "Try again" }).click();
   assert.equal(await soloPage.locator(".game-screen").count(), 0, "rules practice must not create or change a match");
+  await soloPage.getByRole("button", { name: "Single player", exact: false }).click();
   await soloPage.getByRole("combobox", { name: "Number of players" }).selectOption("4");
   await soloPage.getByRole("combobox", { name: "Bot difficulty" }).selectOption("casual");
   await soloPage.getByRole("button", { name: "Guided first-turn scenario", exact: true }).click();
