@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-05T20:42:00Z",
+  "checkedAt": "2026-11-05T20:55:24Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_HVLoeBb7mdzjRLJqQyi71iRHCWqo",
+    "deploymentId": "dpl_EFJMS5PqGkttx2HLjutH9cjCizco",
     "deploymentTarget": "production",
-    "deploymentCommit": "1fde103eb01d0255da3d2619fac640ee25652ff1",
-    "deploymentCheckedAt": "2026-11-05T20:38:54Z",
-    "checkedAt": "2026-11-05T20:42:00Z",
+    "deploymentCommit": "45b67840a037ef0d410ac18d1fb4be1c472cd47f",
+    "deploymentCheckedAt": "2026-11-05T20:55:24Z",
+    "checkedAt": "2026-11-05T20:55:24Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -20,7 +20,7 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Production redeployment dpl_HVLoeBb7mdzjRLJqQyi71iRHCWqo from main commit 1fde103eb01d0255da3d2619fac640ee25652ff1 is READY and owns the canonical alias as of 20:38:54 UTC. The pool credential in encrypted Production DATABASE_URL was rotated; the prior runtime credential was revoked only after this redeployment passed a two-browser create/join, legal setup and move, peer-state, and refresh-reconnect smoke. DIRECT_URL remains server-side for migrations. /api/health and /api/metrics return 200; health reports Prisma persistence and ready HTTP polling. The served bundle contains no localhost API URL."
+    "note": "Production deployment dpl_EFJMS5PqGkttx2HLjutH9cjCizco from main commit 45b67840a037ef0d410ac18d1fb4be1c472cd47f is READY and owns the canonical alias as of 20:55 UTC. This is a docs-only follow-up to the previously verified credential-rotation deployment; no runtime settings changed. /api/health and /api/metrics return 200; health reports Prisma persistence and ready HTTP polling. The served bundle contains no localhost API URL."
   },
   "preview": {
     "deploymentId": "dpl_bP3WcDN9tGZ7NFindfCpt9ddFGjA",
@@ -185,7 +185,7 @@
       "included": 200000,
       "remainingAtObservation": 175598,
       "checkedAt": "2026-11-05T20:42:00Z",
-      "stale": false
+      "stale": true
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -194,20 +194,27 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 3778,
+        "operations": 3801,
         "storageGiB": 0.0013580322265625,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-05T20:42:24Z"
+        "measuredAt": "2026-11-05T21:02:30Z",
+        "databaseSpecificNotWorkspaceWide": true
       },
       "backupInventory": {
         "count": 0,
         "retentionDays": 0,
-        "measuredAt": "2026-11-05T19:38:39Z"
+        "measuredAt": "2026-11-05T21:01:40Z",
+        "source": "Prisma CLI postgres backup list --project proj_rg9ai5642a8773dxgy2rk3te",
+        "automaticBackupsAvailable": false
       }
     },
     "automaticBackups": "none on Free",
     "backupRestore": {
       "status": "manual dump/restore drill passed once",
+      "inventoryCheckedAt": "2026-11-05T21:01:40Z",
+      "inventoryCount": 0,
+      "inventoryRetentionDays": 0,
+      "inventorySource": "Prisma CLI postgres backup list --project proj_rg9ai5642a8773dxgy2rk3te",
       "dumpBytes": 48043,
       "sha256": "dc1ad0de06f8871bc858775050cb0bd86d60c2de453c78babb8f3615c7efdd95",
       "restoreSeconds": 16.429,
@@ -216,7 +223,7 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Two players polling every 30 seconds: 172,800 reads/month; source-based estimate assumes one Prisma operation per poll, while nested relation query SQL count and actual per-match meter use remain unisolated.",
-    "note": "Owner approved the dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). At 20:42 UTC Prisma workspace home showed 24,402/200,000 operations and a $0.00 invoice across five projects. Production database-specific usage was 3,778 operations and 0.001358 GiB through 20:42:24 UTC, including migrations and verification; this is not the workspace total or isolated gameplay polling. Production backup inventory is empty with zero retention; Free has no automatic backups. One manual dump/restore drill passed once, but routine backup/restore owner and schedule remain open.",
+    "note": "Owner approved the dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). At 20:42 UTC Prisma workspace home showed 24,402/200,000 operations and a $0.00 invoice across five projects; this workspace-wide reading has not been refreshed. Production database-specific usage was refreshed to 3,801 operations and 0.001358 GiB through 21:02:30 UTC, including migrations and verification; this is not the workspace total or isolated gameplay polling. Prisma's current Production backup inventory query returned zero backups and zero retention at 21:01:40 UTC. One manual dump/restore drill passed once, but routine backup/restore owner and schedule remain open.",
     "workspacePollingHeadroomAtObservation": "At the observed workspace total of 24,402, assuming one database operation per 30-second poll, two continuously open tabs would add an estimated 172,800 operations per 30-day month and leave 2,798 for all other activity; four continuously open tabs would exceed the 200,000 shared allowance. This source-based estimate is not a measured billed rate."
   }
 }
