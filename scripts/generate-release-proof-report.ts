@@ -25,6 +25,10 @@ const productionMetricsStatus = hostingObservation.production.metrics?.status ??
 const productionClient = hostingObservation.production.asset?.containsLocalhost
   ? "served client bundle still contains a localhost API URL"
   : "served client bundle has no recorded localhost API URL";
+const productionDeployment = hostingObservation.vercelEnvironmentMetadata?.productionDeployment;
+const productionDeploymentEvidence = productionDeployment?.status === "READY"
+  ? `Deployment ${productionDeployment.deploymentId} from commit ${productionDeployment.commit} owns the canonical alias`
+  : "no ready Production deployment recorded";
 const preview = hostingObservation.preview;
 const previewEvidence = preview
   ? `; Preview ${preview.deploymentId} reports HTTP ${preview.apiHealth.status} with ${preview.apiHealth.body.persistence} persistence and ${preview.apiHealth.body.realtimeFanout.mode}`
@@ -32,11 +36,16 @@ const previewEvidence = preview
 const databaseEvidence = databaseObservation
   ? `Prisma ${databaseObservation.plan} at ${databaseObservation.workspaceInvoice} with a fixed 200,000 monthly operation cap; last workspace snapshot ${databaseObservation.workspaceOperations.used}/${databaseObservation.workspaceOperations.included}; manual restore drill ${databaseObservation.backupRestore.status}, but Free has no automatic backups or recurring schedule`
   : "Database plan, metered usage, and backup/restore remain unverified";
-const hostingEvidence = `Production homepage ${hostingObservation.production.url} returns HTTP ${hostingObservation.production.status}; ${productionClient}; production /api/health returns HTTP ${productionHealthStatus}, /health HTTP ${hostingObservation.production.routes?.["/health"] ?? "not checked"}, and /api/metrics returns HTTP ${productionMetricsStatus}${previewEvidence}. ${databaseEvidence}`;
-const hostingStatus = productionHealthStatus === 200 ? "PRODUCTION API ENDPOINT PRESENT; RELEASE EVIDENCE OPEN" : "PRODUCTION API/DB RELEASE GATE OPEN";
+const workspaceMeterFreshness = databaseObservation?.workspaceOperations.stale ? "The latest workspace operation meter is stale." : "The latest workspace operation meter is current as of its recorded check time.";
+const hostingEvidence = `Production homepage ${hostingObservation.production.url} returns HTTP ${hostingObservation.production.status}; ${productionClient}; production /api/health returns HTTP ${productionHealthStatus}, /health HTTP ${hostingObservation.production.routes?.["/health"] ?? "not checked"}, and /api/metrics returns HTTP ${productionMetricsStatus}${previewEvidence}. ${databaseEvidence}. ${workspaceMeterFreshness}`;
+const hostingStatus = productionHealthStatus === 200 ? "API/DB DEPLOYED; PRODUCTION READINESS GATE OPEN" : "PRODUCTION API/DB RELEASE GATE OPEN";
 const browser = JSON.parse(await readFile(resolve(root, "output/board-art/browser-verification.json"), "utf8"));
 const passedViewports = browser.viewports.filter((viewport: { passed: boolean }) => viewport.passed).length;
 const browserEvidence = `${passedViewports}/${browser.viewports.length} audited-board browser viewports pass`;
+const productionSmoke = productionDeployment?.twoProfileSmoke;
+const productionSmokeEvidence = productionSmoke
+  ? `Production ${productionSmoke}`
+  : "no Production two-browser smoke recorded";
 let onlineEvidence = "no current audited-board online run recorded";
 let onlineStatus = "PARTIAL";
 try {
@@ -60,13 +69,13 @@ This deterministic report separates proof levels. It is generated from the curre
 | Engine and API tests | \`npm test\`; deterministic engine/store/property/fuzz/contract coverage | VERIFY IN CURRENT CHECKOUT |
 | Static contracts and build | Catalogue, traceability, source audit, docs, asset, accessibility, JSON contracts, typechecks, and Vite build | VERIFY IN CURRENT CHECKOUT |
 | Dependency security | ${dependencySecurityEvidence} | ${dependencySecurityStatus} |
-| Deployed service health | ${hostingEvidence} | ${hostingStatus} |
-| Browser QA | ${browserEvidence}; ${onlineEvidence}; full-rules victory, assistive-technology, and manual touch acceptance remain separate | ${passedViewports === browser.viewports.length && passedViewports > 0 ? onlineStatus : "PARTIAL"} |
-| Production release | Full board/rules/accessibility/content/IP/privacy/security sign-offs and real online smoke test | BLOCKED |
+| Deployed service health | ${productionDeploymentEvidence}; ${hostingEvidence} The database-specific count is not a workspace total. | ${hostingStatus} |
+| Browser QA | ${browserEvidence}; ${onlineEvidence}; ${productionSmokeEvidence}; full human match, spectator, assistive-technology, and manual touch acceptance remain open | ${productionSmoke ? "PRODUCTION MULTIPLAYER SMOKE VERIFIED" : passedViewports === browser.viewports.length && passedViewports > 0 ? onlineStatus : "PARTIAL"} |
+| Production release | Complete human match, spectator acceptance, sustained capacity evidence, routine backup/restore ownership, open rules and board review, accessibility/content/privacy/security sign-offs, rollback rehearsal, and release approvals | BLOCKED |
 
 ## Current release boundary
 
-New MVP room creation pins the human-audited board ID, version, ruleset version, and content hash. The user-authorized board-data sign-off is recorded; independent review, production runtime persistence/restart, routine backups, source-gated rules, security, and full release sign-offs remain open. Existing provisional matches retain their immutable pins.
+New MVP room creation pins the human-audited board ID, version, ruleset version, and content hash. ${productionSmoke ? "Production multiplayer has passed a synthetic two-browser test through a legal move and refresh recovery." : "Production two-browser multiplayer evidence remains open."} The user-authorized board-data sign-off is recorded; independent review, hosted restart/soak, shared operation-cap headroom, routine tested backups and restore ownership, complete human match and spectator acceptance, source-gated rules, security/credential rotation, rollback rehearsal, and full release approvals remain open. Production has not been designated production-ready. Existing provisional matches retain their immutable pins.
 `;
 
   const outputPath = resolve(root, "docs/release-proof-report.md");

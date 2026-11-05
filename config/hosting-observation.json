@@ -1,26 +1,26 @@
 {
-  "checkedAt": "2026-11-05T18:44:00Z",
+  "checkedAt": "2026-11-05T20:23:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_9Jsd6bW8efXwu3RVgUzJohqqjEmm",
+    "deploymentId": "dpl_G3CYAu7PMFkDouUdmpzxCe8evckh",
     "deploymentTarget": "production",
-    "deploymentCommit": "6ec09a93a5caf3d5bbd9217c46f36c55fe698b06",
-    "deploymentCheckedAt": "2026-11-05T17:58:00Z",
-    "checkedAt": "2026-11-05T17:58:00Z",
+    "deploymentCommit": "56d73ea50146ea17a4450c560d489128b250db8e",
+    "deploymentCheckedAt": "2026-11-05T20:20:00Z",
+    "checkedAt": "2026-11-05T20:20:00Z",
     "status": 200,
     "routes": {
-      "/api/health": 404,
-      "/api/metrics": 404,
+      "/api/health": 200,
+      "/api/metrics": 200,
       "/health": 404,
       "/metrics": 404
     },
     "asset": {
-      "path": "/assets/index-5XS8sbHa.js",
+      "path": "/assets/index-s-x_wfu6.js",
       "status": 200,
-      "containsLocalhost": true,
-      "loopbackUrl": "http://localhost:8787"
+      "containsLocalhost": false,
+      "loopbackUrl": null
     },
-    "note": "Fresh direct read-only HTTP recheck at 17:58 UTC. The current Production alias is still on main commit 6ec09a93; /api/health and /api/metrics remain 404 and the served bundle still points to localhost:8787. The new Production Prisma credentials are configured for the next deployment, but no Production deployment or alias change has occurred."
+    "note": "Fresh Production deployment dpl_G3CYAu7PMFkDouUdmpzxCe8evckh is READY from current main commit 56d73ea50146ea17a4450c560d489128b250db8e and owns the canonical alias. /api/health and /api/metrics return 200; health reports Prisma persistence and ready HTTP polling. The client bundle contains no localhost API URL. Two isolated Production browser sessions verified private room create/join, explicit waiting-room start, nine legal setup actions, a legal move at revision 11, peer observation, and refresh recovery; see docs/hosting-decision-record.md."
   },
   "preview": {
     "deploymentId": "dpl_bP3WcDN9tGZ7NFindfCpt9ddFGjA",
@@ -117,23 +117,23 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_HFiz9zNqDQxPAoZW4oNsXMja2MbS",
-      "commit": "8fae766cbf698b6a467396dd05f5bf75ed6abc34",
+      "deploymentId": "dpl_G3CYAu7PMFkDouUdmpzxCe8evckh",
+      "commit": "56d73ea50146ea17a4450c560d489128b250db8e",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
       "metricsStatus": 200,
       "loopbackReferenceInClientBundle": false,
-      "twoProfileRoomCode": "BD1704",
-      "twoProfileSmoke": "join-start-setup-action-poll-refresh-passed",
-      "legalMoveRoomCode": "6B3895",
+      "twoProfileRoomCode": "8FF0BD",
+      "twoProfileSmoke": "two browser profiles created/joined private room, waited for explicit host start, completed nine legal setup actions, accepted legal move, peer observed revision, refresh restored active state",
+      "legalMoveRoomCode": "8FF0BD",
       "legalMove": {
-        "from": "10,-1",
-        "to": "10,-2",
+        "phaseAfterMove": "encounter",
         "acceptedRevision": 11,
         "peerObserved": true,
-        "setupComplete": true,
-        "bothPlayersReady": true
+        "setupActionsAccepted": 9,
+        "bothPlayersReady": true,
+        "refreshReconnectRestoredState": true
       },
       "deploymentProbe": {
         "status": "passed",
@@ -144,6 +144,14 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified"
+    },
+    "productionLastMeasurement": {
+      "databaseProject": "abominations-attack-america-production",
+      "databaseId": "db_a89s8mlpgynwfwfvqiuhmhrl",
+      "operations": 2929,
+      "storageGiB": 0.00131988525390625,
+      "measuredAt": "2026-11-05T20:16:45Z",
+      "databaseSpecificNotWorkspaceWide": true
     }
   },
   "database": {
@@ -152,10 +160,11 @@
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 16879,
+      "used": 24364,
       "included": 200000,
-      "remainingAtObservation": 183121,
-      "checkedAt": "2026-11-05T16:35:00Z"
+      "remainingAtObservation": 175636,
+      "checkedAt": "2026-11-05T20:23:00Z",
+      "stale": false
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -164,10 +173,10 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 2829,
-        "storageGiB": 0.0012359619140625,
+        "operations": 2929,
+        "storageGiB": 0.00131988525390625,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-05T19:37:32Z"
+        "measuredAt": "2026-11-05T20:16:45Z"
       },
       "backupInventory": {
         "count": 0,
@@ -186,6 +195,7 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Two players polling every 30 seconds: 172,800 reads/month; source-based estimate assumes one Prisma operation per poll, while nested relation query SQL count and actual per-match meter use remain unisolated.",
-    "note": "Prisma Console previously observed Free at $0 with a fixed 200,000 monthly workspace operation cap. The Production database-specific meter now reports 2,829 operations and 0.0012359619140625 GiB for this billing period; the workspace meter is not refreshed in this observation and includes other projects. Production backup inventory is empty with zero retention days. A one-time manual restore drill succeeded, but recurring backups and restore operations have no owner/schedule."
+    "note": "Owner approved the dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). At 20:23 UTC Prisma workspace home showed 24,364/200,000 operations and a $0.00 invoice; the workspace contains five projects. Production database-specific usage is 2,929 operations and 0.001319885 GiB through 20:16:45 UTC, including migrations and synthetic tests; it is not the workspace total or isolated gameplay-poll usage. Production backup inventory is empty with zero retention; Free has no automatic backups. One manual dump/restore drill passed once, but routine backup/restore owner and schedule remain open.",
+    "workspacePollingHeadroomAtObservation": "If each 30-second poll maps to one database operation, two continuously open tabs would add an estimated 172,800 operations per 30-day month, leaving about 2,836 of the 200,000 shared allowance after the observed 24,364; other application and workspace activity is additional. Four continuously open player tabs would exceed the allowance."
   }
 }
