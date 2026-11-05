@@ -95,8 +95,16 @@ async function openBrowser(port, name, existingProfile) {
   await new Promise((resolve, reject) => { socket.once("open", resolve); socket.once("error", reject); });
   let nextId = 0;
   const pending = new Map();
+  const networkFailures = [];
+  const pageExceptions = [];
   socket.on("message", (raw) => {
     const message = JSON.parse(raw.toString());
+    if (message.method === "Network.responseReceived" && Number(message.params?.response?.status) >= 400) {
+      networkFailures.push({ status: message.params.response.status, path: new URL(message.params.response.url).pathname });
+    }
+    if (message.method === "Runtime.exceptionThrown") {
+      pageExceptions.push(message.params?.exceptionDetails?.text ?? "Browser page exception");
+    }
     if (message.method === "Page.javascriptDialogOpening") {
       void command("Page.handleJavaScriptDialog", { accept: true });
       return;
@@ -115,6 +123,7 @@ async function openBrowser(port, name, existingProfile) {
   });
   await command("Page.enable");
   await command("Runtime.enable");
+  await command("Network.enable");
   await command("Page.navigate", { url });
   const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
   const waitFor = async (expression, label) => {
@@ -123,8 +132,8 @@ async function openBrowser(port, name, existingProfile) {
       if (await evaluate(expression)) return;
       await wait(Math.min(100, Math.max(1, deadline - Date.now())));
     }
-    const diagnostic = await evaluate(`({ url: location.href, connection: document.querySelector(".connection")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim() })`);
-    throw new Error(`${name}: timed out waiting for ${label}: ${JSON.stringify(diagnostic)}`);
+    const diagnostic = await evaluate(`(() => { let session; try { const saved = JSON.parse(localStorage.getItem("abominations-session") ?? "null"); session = saved ? { hasToken: Boolean(saved.token), roomCode: saved.room?.code ?? null } : null; } catch {} return { url: location.origin + location.pathname, bodyText: document.body.innerText.slice(-900), hasSavedRoomSession: Boolean(session?.hasToken), roomCode: session?.roomCode ?? null, connection: document.querySelector(".connection")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim() }; })()`);
+    throw new Error(`${name}: timed out waiting for ${label}: ${JSON.stringify({ ...diagnostic, networkFailures: networkFailures.slice(-12), pageExceptions: pageExceptions.slice(-5) })}`);
   };
   return {
     evaluate,

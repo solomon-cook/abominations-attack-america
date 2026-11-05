@@ -1,10 +1,13 @@
 {
-  "checkedAt": "2026-11-05T13:28:12Z",
+  "checkedAt": "2026-11-05T13:59:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_9Jsd6bW8efXwu3RVgUzJohqqjEmm",
     "deploymentTarget": "production",
     "deploymentCommit": "6ec09a93a5caf3d5bbd9217c46f36c55fe698b06",
+    "deploymentCheckedAt": "2026-11-05T13:59:00Z",
+    "apiRouteRecheckAt": "2026-11-05T13:59:00Z",
+    "apiRouteRecheck": {"/api/health": 404, "/api/metrics": 404},
     "checkedAt": "2026-11-05T13:27:00Z",
     "status": 200,
     "lastModified": "Thu, 05 Nov 2026 11:22:53 GMT",
@@ -60,18 +63,32 @@
     "environmentValuesRead": false,
     "note": "A protected Vercel fetch on 2026-11-05 at 13:28 UTC returned HTTP 200 for /api/health with Prisma persistence and HTTP polling ready. An API error during reconnect was not isolated from browser page-load/authentication failure. No Production setting, secret, alias, or deployment was changed."
   },
+  "productionProjectPreview": {
+    "deploymentId": "dpl_9GNuLmJs27sJx6RAfhkacYGkRuQg",
+    "url": "https://abominations-attack-america-oqn1jtl9e.vercel.app",
+    "state": "READY",
+    "branch": "codex/clean-change-split-recovered",
+    "commit": "e04cfca6fc122a3a9d7eae9fa6b00bb7481d1d46",
+    "apiHealth": {
+      "path": "/api/health",
+      "status": 200,
+      "body": {"ok": true, "persistence": "prisma", "realtimeFanout": {"mode": "http-polling", "ready": true}},
+      "checkedAt": "2026-11-05T13:57:22Z"
+    },
+    "note": "Feature-branch Preview from the same Vercel project as Production; demonstrates the function route works when deployed, using that project's Preview environment. This is not Production runtime evidence."
+  },
   "vercelEnvironmentMetadata": {
     "previewProject": {
       "variableNamesByEnvironment": {"Preview": ["ALLOWED_ORIGIN", "DATABASE_URL", "DIRECT_URL", "VITE_ENABLE_WEBSOCKETS", "VITE_ROOM_POLL_INTERVAL_MS"]}
     },
     "productionProject": {
       "variableNamesByEnvironment": {
-        "Production": ["DATABASE_URL", "POSTGRES_URL", "PRISMA_DATABASE_URL"],
+        "Production": ["ALLOWED_ORIGIN", "DATABASE_URL", "POSTGRES_URL", "PRISMA_DATABASE_URL"],
         "Preview": ["DATABASE_URL", "DIRECT_URL", "POSTGRES_URL", "PRISMA_DATABASE_URL", "VITE_ENABLE_WEBSOCKETS", "VITE_ROOM_POLL_INTERVAL_MS"]
       }
     },
     "valuesRead": false,
-    "note": "Read-only Vercel CLI listing scoped to the exact team and project; values remained Hidden. The production target has no DIRECT_URL entry or ALLOWED_ORIGIN entry. Endpoint/provider matching remains unverified."
+    "note": "Read-only Vercel CLI listing scoped to the exact team and project; values remained Hidden. ALLOWED_ORIGIN was added as a non-secret Production Config value for the canonical public origin at 13:56 UTC; it applies only to a future Production deployment. Production still has no DIRECT_URL. DATABASE_URL provider and Prisma database mapping remain unverified."
   },
   "database": {
     "plan": "Free",
