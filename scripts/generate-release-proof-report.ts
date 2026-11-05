@@ -19,8 +19,17 @@ const dependencySecurityEvidence = knownSecurityEntries === 0
   ? "No known high-severity production advisories remain; the dependency audit gate must pass before release"
   : `${knownSecurityEntries} known high-severity vulnerable production package entries remain in \`config/production-audit-baseline.json\``;
 const dependencySecurityStatus = knownSecurityEntries === 0 ? "NO KNOWN VULNERABILITIES; DEPLOYMENT REVIEW OPEN" : "BLOCKED";
-const hostingEvidence = `${hostingObservation.frontend.provider} frontend ${hostingObservation.frontend.project} returns HTTP ${hostingObservation.frontend.productionHttpStatus} from ${hostingObservation.frontend.productionUrl}; the served client targets ${hostingObservation.frontend.compiledApiBase}, while /health and /metrics return HTTP ${hostingObservation.api.healthHttpStatus} and ${hostingObservation.api.metricsHttpStatus}. Database variable names are present, but their values were not read and database health, WebSocket fanout, and backup/restore are unverified`;
-const hostingStatus = hostingObservation.api.configuredPublicEndpoint ? "API ENDPOINT PRESENT; SERVICE PROBES OPEN" : "FRONTEND ONLY; API/DB RELEASE GATE OPEN";
+const productionHealthStatus = hostingObservation.apiHealth?.status ?? hostingObservation.api?.healthHttpStatus ?? "not checked";
+const productionMetricsStatus = hostingObservation.metrics?.status ?? hostingObservation.api?.metricsHttpStatus ?? "not checked";
+const productionClient = hostingObservation.assets?.some((asset: { containsLocalhost?: boolean }) => asset.containsLocalhost)
+  ? "served client bundle still contains a localhost API URL"
+  : "served client bundle has no recorded localhost API URL";
+const preview = hostingObservation.preview;
+const previewEvidence = preview
+  ? `; Preview ${preview.deploymentId} reports HTTP ${preview.apiHealth.status} with ${preview.apiHealth.body.persistence} persistence and ${preview.apiHealth.body.realtimeFanout.mode}`
+  : "";
+const hostingEvidence = `Production homepage ${hostingObservation.url} returns HTTP ${hostingObservation.status}; ${productionClient}; production /api/health returns HTTP ${productionHealthStatus}, /health HTTP ${hostingObservation.health?.status ?? "not checked"}, and /metrics HTTP ${productionMetricsStatus}${previewEvidence}. Database plan, metered usage, and backup/restore remain unverified`;
+const hostingStatus = productionHealthStatus === 200 ? "PRODUCTION API ENDPOINT PRESENT; RELEASE EVIDENCE OPEN" : "PRODUCTION API/DB RELEASE GATE OPEN";
 const browser = JSON.parse(await readFile(resolve(root, "output/board-art/browser-verification.json"), "utf8"));
 const passedViewports = browser.viewports.filter((viewport: { passed: boolean }) => viewport.passed).length;
 const browserEvidence = `${passedViewports}/${browser.viewports.length} audited-board browser viewports pass`;
