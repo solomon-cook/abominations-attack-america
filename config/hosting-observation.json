@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-05T21:34:00Z",
+  "checkedAt": "2026-11-05T21:57:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_E4TqBRRvtkQXn9Ta89aHdqU6YKRS",
+    "deploymentId": "dpl_ELKuRLqyB21KLCjhbVp1SSQ3stqe",
     "deploymentTarget": "production",
-    "deploymentCommit": "b3b2082e2afe0ff5809ea90dd399308de6f0c454",
-    "deploymentCheckedAt": "2026-11-05T21:33:00Z",
-    "checkedAt": "2026-11-05T21:34:00Z",
+    "deploymentCommit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
+    "deploymentCheckedAt": "2026-11-05T21:52:00Z",
+    "checkedAt": "2026-11-05T21:57:00Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -14,14 +14,49 @@
       "/health": 404,
       "/metrics": 404
     },
-    "healthLatencyProbe": {
-      "checkedAt": "2026-11-05T21:33:54Z",
-      "statuses": [
-        200,
-        200,
-        200
-      ],
-      "note": "Three sequential requests to the canonical Production /api/health after deployment dpl_E4TqBRRvtkQXn9Ta89aHdqU6YKRS reached READY all returned 200 with Prisma persistence and HTTP polling ready. An earlier request during the alias transition returned Vercel FUNCTION_INVOCATION_TIMEOUT; Vercel runtime error grouping attributes two 60-second timeout events in the recent window to prior deployment dpl_9WTbQaAHRKZxdggizouN9rDWxdnE. The sample is small and does not establish cold-start or sustained capacity."
+    "apiHealth": {
+      "path": "/api/health",
+      "status": 200,
+      "body": {
+        "ok": true,
+        "persistence": "prisma",
+        "realtimeFanout": {
+          "mode": "http-polling",
+          "ready": true
+        }
+      },
+      "checkedAt": "2026-11-05T21:57:00Z"
+    },
+    "metrics": {
+      "path": "/api/metrics",
+      "status": 200,
+      "sample": {
+        "requests": 5,
+        "serverErrors": 0
+      },
+      "note": "Point-in-time function instance sample from the verified deployment probe; not a project-wide log or database usage meter."
+    },
+    "runtimeErrorCheck": {
+      "checkedAt": "2026-11-05T21:56:00Z",
+      "timeoutGroupsOnCurrentDeployment": 0,
+      "priorDeploymentTimeouts": 2,
+      "priorDeploymentId": "dpl_9WTbQaAHRKZxdggizouN9rDWxdnE",
+      "warnings": "url.parse deprecation and pg SSL mode warnings are present on current deployment."
+    },
+    "browserVerification": {
+      "status": "failed-acceptance-check",
+      "checkedAt": "2026-11-05T21:53:00Z",
+      "roomCode": "AB7B81",
+      "observation": "The verifier reached Move in the authoritative phase and page action card, but its setup-panel-disappearance condition did not pass; setup UI acceptance remains unresolved. The synthetic room remains in the Production database."
+    },
+    "poolLifecycle": {
+      "deploymentCommit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
+      "poolMax": 2,
+      "idleTimeoutMs": 5000,
+      "connectionTimeoutMs": 5000,
+      "queryTimeoutMs": 20000,
+      "vercelPoolLifecycleAttached": true,
+      "verifiedOnProtectedPreviewCoreFlow": true
     },
     "asset": {
       "path": "/assets/index-s-x_wfu6.js",
@@ -29,17 +64,18 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Production deployment dpl_E4TqBRRvtkQXn9Ta89aHdqU6YKRS from main commit b3b2082e2afe0ff5809ea90dd399308de6f0c454 is READY and owns the canonical alias as of 21:33 UTC. This documentation-only deployment includes the updated source-based Prisma polling/presence estimate; runtime code and environment settings are unchanged. The canonical homepage and client bundle returned 200 at 21:34 UTC, and the bundle has no localhost API URL. /api/health and /api/metrics returned 200 at 21:33 UTC; health reports Prisma persistence and ready HTTP polling. Three post-READY health requests returned 200. A timeout occurred during the earlier deployment transition and Vercel logs show intermittent 60-second timeouts on a prior deployment; first-request and sustained-capacity gates remain open."
+    "note": "Production deployment dpl_ELKuRLqyB21KLCjhbVp1SSQ3stqe from main commit d35c236ce62de12505480d72c0db65c0f62f3f15 is READY and owns the canonical alias. Production /api/health and /api/metrics passed at 21:57 UTC. The Vercel runtime error view through 21:53 UTC had no timeout group on this deployment; two 60-second timeout events remain attributed to prior deployment dpl_9WTbQaAHRKZxdggizouN9rDWxdnE. Production browser verification did not pass its setup-panel condition despite authoritative phase Move; no production browser acceptance claim is made. This sample does not establish cold-start or sustained capacity.",
+    "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment."
   },
   "preview": {
-    "deploymentId": "dpl_bP3WcDN9tGZ7NFindfCpt9ddFGjA",
-    "url": "https://abominations-attack-america-1cr8h40v7.vercel.app",
+    "deploymentId": "dpl_ACKuFhMtrCoy9Lifi4v9eGiNiS3b",
+    "url": "https://abominations-attack-america-98s27ns60.vercel.app",
     "state": "READY",
     "project": "abominations-attack-america",
     "branch": "codex/production-multiplayer-candidate",
-    "commit": "47b9b80",
-    "source": "Vercel CLI archive deployment from the clean candidate worktree",
-    "checkedAt": "2026-11-05T18:44:00Z",
+    "commit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
+    "source": "Git deployment of the pool lifecycle fix",
+    "checkedAt": "2026-11-05T21:53:00Z",
     "apiHealth": {
       "path": "/api/health",
       "status": 200,
@@ -67,7 +103,7 @@
       },
       "note": "Point-in-time in-memory function instance sample, not an aggregate or Prisma usage meter."
     },
-    "browserVerification": "Two isolated Chrome profiles with Vercel Trusted Sources auth created and joined synthetic room 3A0031 through the homepage, observed the waiting room, started the match, sent legal choose-monster action monster-1 at revision 1, observed identical peer state, and refreshed to recover revision 1 (5 Nov 2026). Does not prove complete setup or an in-game board move.",
+    "browserVerification": "Three isolated browser contexts passed waiting-room start, legal setup, shared authoritative state, and refresh/reconnect at version 18 on the pool-fix Preview deployment. A full match/victory was not verified.",
     "pollIntervalMsObservedInBundle": 30000,
     "environmentVariableNames": [
       "ALLOWED_ORIGIN",
@@ -77,7 +113,7 @@
       "VITE_ROOM_POLL_INTERVAL_MS"
     ],
     "environmentValuesRead": false,
-    "note": "Protected Preview. Fresh health and metrics requests returned HTTP 200. Browser evidence recorded in docs/hosting-decision-record.md."
+    "note": "Protected Preview. Fresh health and metrics requests returned HTTP 200. Core multiplayer/reconnect flow passed; full match/victory remains unverified."
   },
   "productionProjectPreview": {
     "deploymentId": "dpl_9GNuLmJs27sJx6RAfhkacYGkRuQg",
@@ -126,15 +162,16 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_E4TqBRRvtkQXn9Ta89aHdqU6YKRS",
-      "commit": "b3b2082e2afe0ff5809ea90dd399308de6f0c454",
+      "deploymentId": "dpl_ELKuRLqyB21KLCjhbVp1SSQ3stqe",
+      "commit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
       "metricsStatus": 200,
       "loopbackReferenceInClientBundle": false,
+      "poolLifecycle": "pg pool max 2; 5-second idle/connection timeouts; 20-second query timeout; attachDatabasePool enabled",
       "twoProfileRoomCode": "",
-      "twoProfileSmoke": "After pooled credential rotation, two separate browser sessions created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh",
+      "twoProfileSmoke": "",
       "legalMoveRoomCode": "",
       "legalMove": {
         "phaseAfterMove": "encounter",
@@ -153,7 +190,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-05T21:34:00Z",
+      "checkedAt": "2026-11-05T21:57:00Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
@@ -173,7 +210,8 @@
         "storageGiB": 0.0013580322265625,
         "measuredAt": "2026-11-05T21:02:30Z",
         "databaseSpecificNotWorkspaceWide": true
-      }
+      },
+      "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment."
     },
     "productionLastMeasurement": {
       "databaseProject": "abominations-attack-america-production",
