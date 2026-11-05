@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-05T21:17:26Z",
+  "checkedAt": "2026-11-05T21:34:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_3aiBE4shB6TeGEjiuodU5a3YwAPt",
+    "deploymentId": "dpl_E4TqBRRvtkQXn9Ta89aHdqU6YKRS",
     "deploymentTarget": "production",
-    "deploymentCommit": "98ce1557aa4a28d975815717ba26e1c22598965d",
-    "deploymentCheckedAt": "2026-11-05T21:29:45Z",
-    "checkedAt": "2026-11-05T21:29:45Z",
+    "deploymentCommit": "b3b2082e2afe0ff5809ea90dd399308de6f0c454",
+    "deploymentCheckedAt": "2026-11-05T21:33:00Z",
+    "checkedAt": "2026-11-05T21:34:00Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -15,13 +15,13 @@
       "/metrics": 404
     },
     "healthLatencyProbe": {
-      "checkedAt": "2026-11-05T21:29:45Z",
+      "checkedAt": "2026-11-05T21:33:54Z",
       "statuses": [
         200,
         200,
         200
       ],
-      "note": "Three sequential requests to the canonical Production /api/health after deployment dpl_3aiBE4shB6TeGEjiuodU5a3YwAPt reached READY all returned 200 with Prisma persistence and HTTP polling ready. An earlier request during the alias transition returned Vercel FUNCTION_INVOCATION_TIMEOUT; Vercel runtime error grouping attributes two 60-second timeout events in the recent window to prior deployment dpl_9WTbQaAHRKZxdggizouN9rDWxdnE. The sample is small and does not establish cold-start or sustained capacity."
+      "note": "Three sequential requests to the canonical Production /api/health after deployment dpl_E4TqBRRvtkQXn9Ta89aHdqU6YKRS reached READY all returned 200 with Prisma persistence and HTTP polling ready. An earlier request during the alias transition returned Vercel FUNCTION_INVOCATION_TIMEOUT; Vercel runtime error grouping attributes two 60-second timeout events in the recent window to prior deployment dpl_9WTbQaAHRKZxdggizouN9rDWxdnE. The sample is small and does not establish cold-start or sustained capacity."
     },
     "asset": {
       "path": "/assets/index-s-x_wfu6.js",
@@ -29,7 +29,7 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Production deployment dpl_3aiBE4shB6TeGEjiuodU5a3YwAPt from main commit 98ce1557aa4a28d975815717ba26e1c22598965d is READY and owns the canonical alias as of 21:29 UTC. This documentation-only deployment includes the source-based Prisma polling/presence estimate; runtime code and environment settings are unchanged. Three post-READY /api/health requests returned 200. A timeout occurred during the deployment transition and older runtime logs show intermittent 60-second timeouts on the prior deployment; first-request and sustained-capacity gates remain open. Health reports Prisma persistence and ready HTTP polling; the served bundle remains free of localhost API URLs based on the previous production asset check."
+    "note": "Production deployment dpl_E4TqBRRvtkQXn9Ta89aHdqU6YKRS from main commit b3b2082e2afe0ff5809ea90dd399308de6f0c454 is READY and owns the canonical alias as of 21:33 UTC. This documentation-only deployment includes the updated source-based Prisma polling/presence estimate; runtime code and environment settings are unchanged. The canonical homepage and client bundle returned 200 at 21:34 UTC, and the bundle has no localhost API URL. /api/health and /api/metrics returned 200 at 21:33 UTC; health reports Prisma persistence and ready HTTP polling. Three post-READY health requests returned 200. A timeout occurred during the earlier deployment transition and Vercel logs show intermittent 60-second timeouts on a prior deployment; first-request and sustained-capacity gates remain open."
   },
   "preview": {
     "deploymentId": "dpl_bP3WcDN9tGZ7NFindfCpt9ddFGjA",
@@ -126,8 +126,8 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_3aiBE4shB6TeGEjiuodU5a3YwAPt",
-      "commit": "98ce1557aa4a28d975815717ba26e1c22598965d",
+      "deploymentId": "dpl_E4TqBRRvtkQXn9Ta89aHdqU6YKRS",
+      "commit": "b3b2082e2afe0ff5809ea90dd399308de6f0c454",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
@@ -153,7 +153,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-05T21:29:45Z",
+      "checkedAt": "2026-11-05T21:34:00Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
