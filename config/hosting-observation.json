@@ -115,7 +115,19 @@
     "valuesRead": false,
     "note": "Read-only names/targets only after configuration: Production includes ALLOWED_ORIGIN, pooled DATABASE_URL, direct DIRECT_URL, and VITE_ROOM_POLL_INTERVAL_MS=30000. No secret values were read.",
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
-    "productionPollIntervalValue": 30000
+    "productionPollIntervalValue": 30000,
+    "productionDeployment": {
+      "deploymentId": "dpl_HFiz9zNqDQxPAoZW4oNsXMja2MbS",
+      "commit": "8fae766cbf698b6a467396dd05f5bf75ed6abc34",
+      "status": "READY",
+      "canonicalAlias": "https://abominations-attack-america.vercel.app",
+      "healthStatus": 200,
+      "metricsStatus": 200,
+      "loopbackReferenceInClientBundle": false,
+      "twoProfileRoomCode": "BD1704",
+      "twoProfileSmoke": "join-start-setup-action-poll-refresh-passed",
+      "fullHumanMatch": "not-verified"
+    }
   },
   "database": {
     "plan": "Free",
