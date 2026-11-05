@@ -7,7 +7,7 @@ import { AUDITED_BOARD } from "../../../packages/game-engine/src/audited-board.j
 async function completeDevelopmentSetup(store: MemoryRoomStore, sessions: Array<{ token: string; room: { code: string; version: number } }>) {
   const code = sessions[0].room.code;
   const playerCount = sessions.length as 2 | 3 | 4;
-  let revision = sessions[0].room.version;
+  let revision = (await store.startMatch(code, sessions[0].token)).version;
   for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) revision = (await store.setupAction(code, sessions[playerIndex].token, { type: "choose-monster", monsterId: `monster-${playerIndex + 1}` }, revision)).version;
   const branches = ["Army", "Navy", "Air Force", "Marines"] as const;
   for (let playerIndex = playerCount - 1; playerIndex >= 0; playerIndex -= 1) revision = (await store.setupAction(code, sessions[playerIndex].token, { type: "choose-branch", branch: branches[playerIndex] }, revision)).version;
@@ -1001,6 +1001,7 @@ test("bot-completed setup records chronological setup and match-start events", a
   const host = await store.createRoom(2, "Host");
   const guest = await store.joinRoom(host.room.code, "Guest");
   let room = host.room;
+  room = await store.startMatch(room.code, host.token);
   room = await store.setupAction(room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, room.version);
   room = await store.setupAction(room.code, guest.token, { type: "choose-monster", monsterId: "monster-2" }, room.version);
   room = await store.setupAction(room.code, guest.token, { type: "choose-branch", branch: "Navy" }, room.version);
@@ -1830,7 +1831,8 @@ test("a setup snapshot restores after a refresh with its revision", async () => 
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2, "Player 1", "public");
   const guest = await store.joinRoom(host.room.code, "Guest");
-  const afterMonster = await store.setupAction(host.room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, host.room.version);
+  const started = await store.startMatch(host.room.code, host.token);
+  const afterMonster = await store.setupAction(host.room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, started.version);
   const restored = await store.getRoom(host.room.code, host.token);
   assert.equal(restored.version, afterMonster.version);
   assert.equal(restored.state.setupState?.seats[0]?.monsterId, "monster-1");
@@ -1844,7 +1846,7 @@ test("disconnect and reconnect preserve setup state while the room awaits takeov
   const guest = await store.joinRoom(host.room.code, "Guest");
   const disconnectedSetup = await store.disconnect(host.room.code, host.token);
   assert.equal(disconnectedSetup.participants.find((participant) => participant.id === host.participantId)?.connected, false);
-  await assert.rejects(() => store.setReady(host.room.code, host.token, true), /Reconnect/);
+  await assert.rejects(() => store.startMatch(host.room.code, host.token), /connected player/i);
   const reconnectedSetup = await store.reconnect(host.room.code, host.token);
   assert.equal(reconnectedSetup.participants.find((participant) => participant.id === host.participantId)?.connected, true);
   await store.reconnect(host.room.code, host.token, "tab-a");
@@ -1889,11 +1891,14 @@ test("expired memory sessions cannot be used and rotation refreshes the expiry",
 test("idle development rooms expire without changing a completed result", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2);
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await store.startMatch(host.room.code, host.token);
   const rooms = (store as unknown as { rooms: Map<string, { lastActivityAt: number }> }).rooms;
   [...rooms.values()][0]!.lastActivityAt = 0;
   const expired = await store.getRoom(host.room.code, host.token);
   assert.equal(expired.status, "expired");
   await assert.rejects(() => store.setupAction(host.room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, expired.version), /expired/);
+  await store.close();
 });
 
 test("spectators can read but cannot act", async () => {
@@ -2187,6 +2192,7 @@ test("setup rejects illegal starting placements without locking in the choice", 
   const guest = await store.joinRoom(host.room.code, "Guest");
   let revision = host.room.version;
   const code = host.room.code;
+  revision = (await store.startMatch(code, host.token)).version;
   for (const [index, session] of [host, guest].entries()) revision = (await store.setupAction(code, session.token, { type: "choose-monster", monsterId: `monster-${index + 1}` }, revision)).version;
   revision = (await store.setupAction(code, guest.token, { type: "choose-branch", branch: "Navy" }, revision)).version;
   revision = (await store.setupAction(code, host.token, { type: "choose-branch", branch: "Army" }, revision)).version;
@@ -2205,6 +2211,7 @@ test("production setup lets the last monster picker place each unused branch on 
   const host = await store.createRoom(2, "Host");
   const guest = await store.joinRoom(host.room.code, "Guest");
   let room = host.room;
+  room = await store.startMatch(room.code, host.token);
   room = await store.setupAction(room.code, host.token, { type: "choose-monster", monsterId: "monster-1" }, room.version);
   room = await store.setupAction(room.code, guest.token, { type: "choose-monster", monsterId: "monster-2" }, room.version);
   room = await store.setupAction(room.code, guest.token, { type: "choose-branch", branch: "Navy" }, room.version);

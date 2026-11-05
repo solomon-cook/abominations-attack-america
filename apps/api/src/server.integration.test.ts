@@ -26,6 +26,12 @@ async function waitForHealth(baseUrl: string): Promise<void> {
   throw new Error("API server did not become healthy in time.");
 }
 
+async function startMatch(baseUrl: string, code: string, token: string): Promise<void> {
+  const response = await fetch(`${baseUrl}/rooms/${code}/start`, { method: "POST", headers: { "x-room-token": token } });
+  const result = await response.json() as { error?: string };
+  assert.equal(response.ok, true, result.error ?? `Could not start room ${code}.`);
+}
+
 async function createWebSocketTicket(baseUrl: string, code: string, token: string): Promise<string> {
   const response = await fetch(`${baseUrl}/rooms/${code}/ws-ticket`, {
     method: "POST",
@@ -147,6 +153,9 @@ test("API WebSocket and polling share revisioned room updates", async () => {
     const created = await createResponse.json() as { room?: RoomPayload; token?: string; participantId?: string; error?: string };
     assert.equal(createResponse.ok, true, created.error ?? `Room creation failed with HTTP ${createResponse.status}`);
     assert.ok(created.room && created.token && created.participantId);
+    const joinedResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/join`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName: "Player 2" }) });
+    assert.equal(joinedResponse.ok, true);
+    await startMatch(baseUrl, created.room.code, created.token);
     const ticket = await createWebSocketTicket(baseUrl, created.room.code, created.token);
     const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?code=${created.room.code}&ticket=${encodeURIComponent(ticket)}`);
     const initialSocketPromise = nextWebSocketMessage(socket);
@@ -211,6 +220,8 @@ test("API completes audited-board setup and readiness for three- and four-player
         players.push({ participantId: joined.participantId, token: joined.token });
         room = joined.room;
       }
+
+      await startMatch(baseUrl, room.code, players[0]!.token);
 
       for (let step = 0; step < 100 && room.state.setupState?.phase !== "complete"; step += 1) {
         const setup = room.state.setupState;
@@ -436,6 +447,8 @@ test(`${playerCount}-player API room can reach America Saved through legal room 
       players.push({ participantId: joined.participantId, token: joined.token });
       room = joined.room;
     }
+
+    await startMatch(baseUrl, room.code, players[0]!.token);
 
     for (let step = 0; step < 100 && room.state.setupState?.phase !== "complete"; step += 1) {
       const setup = room.state.setupState;
@@ -755,6 +768,9 @@ test("bounded concurrent rooms fan out WebSocket and polling updates without cro
       const response = await fetch(`${baseUrl}/rooms`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ maxPlayers: 2, privacy: "public" }) });
       const created = await response.json() as { room: RoomPayload; token: string; participantId: string };
       assert.equal(response.ok, true);
+      const joinedResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/join`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName: `Player ${index + 1}` }) });
+      assert.equal(joinedResponse.ok, true);
+      await startMatch(baseUrl, created.room.code, created.token);
       const spectatorResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/spectate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName: `Spectator ${index}` }) });
       const spectator = await spectatorResponse.json() as { token: string };
       assert.equal(spectatorResponse.ok, true);
@@ -813,6 +829,9 @@ test("same-room command contention commits one revision and rejects the rest", a
     const createdResponse = await fetch(`${baseUrl}/rooms`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ maxPlayers: 2 }) });
     const created = await createdResponse.json() as { room: RoomPayload; token: string; participantId: string };
     assert.equal(createdResponse.ok, true);
+    const joinedResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/join`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName: "Player 2" }) });
+    assert.equal(joinedResponse.ok, true);
+    await startMatch(baseUrl, created.room.code, created.token);
     const initial = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((response) => response.json()) as RoomPayload;
     const results = await Promise.all(["contended-a", "contended-b", "contended-c", "contended-d"].map((actionId) => fetch(`${baseUrl}/rooms/${created.room.code}/setup`, {
       method: "POST",
@@ -847,6 +866,9 @@ test("bounded reconnect storm restores the same room revision without duplicate 
     });
     const created = await response.json() as { room: RoomPayload; token: string; participantId: string };
     assert.equal(response.ok, true);
+    const joinedResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/join`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName: "Player 2" }) });
+    assert.equal(joinedResponse.ok, true);
+    await startMatch(baseUrl, created.room.code, created.token);
 
     const initial = await fetch(`${baseUrl}/rooms/${created.room.code}/state?token=${encodeURIComponent(created.token)}`).then((result) => result.json()) as RoomPayload;
     const setupResponse = await fetch(`${baseUrl}/rooms/${created.room.code}/setup`, {
