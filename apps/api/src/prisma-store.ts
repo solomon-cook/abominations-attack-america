@@ -177,7 +177,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async setReady(roomCode: string, accessToken: string, ready: boolean) {
     const room = await this.authorize(roomCode, accessToken);
-    if (!room.matchStarted) throw new Error("The host must start the match before players can ready up.");
+    if (!room.matchStarted) throw new Error("Start the match before players can ready up.");
     if (room.status !== "WAITING") throw new Error("Readiness can only change while a room is waiting.");
     const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
     if (!participant || participant.role !== "PLAYER") throw new Error("Only players can change readiness.");
@@ -195,7 +195,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async setupAction(roomCode: string, accessToken: string, action: SetupAction, expectedRevision: number) {
     const room = await this.authorize(roomCode, accessToken);
-    if (!room.matchStarted) throw new Error("The host has not started this match yet.");
+    if (!room.matchStarted) throw new Error("This match has not been started yet.");
     if (room.version !== expectedRevision) throw new Error(`Expected revision ${expectedRevision}, current revision is ${room.version}.`);
     const actor = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
     if (!actor || actor.role !== "PLAYER" || actor.playerIndex === null) throw new Error("Only seated players can complete setup.");

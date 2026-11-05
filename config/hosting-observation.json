@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-05T12:03:39Z",
+  "checkedAt": "2026-11-05T12:35:07Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "status": 200,
@@ -20,11 +20,11 @@
     "note": "Direct read-only HTTP checks. The public production client remains on the old API bundle; no production settings, secrets, database, or deployment were changed."
   },
   "preview": {
-    "deploymentId": "dpl_D9YR2AoEUWv7Ntm1Becv72f8XvJZ",
-    "url": "https://abominations-attack-america-preview-hyega3cr7.vercel.app",
+    "deploymentId": "dpl_B1yxFCEfGT5zArNG4LBebiZcD55C",
+    "url": "https://abominations-attack-america-preview-9wscwwig7.vercel.app",
     "state": "READY",
     "project": "abominations-attack-america-preview",
-    "checkedAt": "2026-11-05T11:57:03Z",
+    "checkedAt": "2026-11-05T12:35:07Z",
     "apiHealth": {
       "path": "/api/health",
       "status": 200,
@@ -41,34 +41,37 @@
       "path": "/api/metrics",
       "status": 200,
       "sample": {
-        "requests": 2,
+        "requests": 24,
         "requestFailures": 0,
+        "reconnects": 4,
         "serverErrors": 0,
         "deploymentFailures": 0,
         "websocketConnections": 0
       },
-      "note": "Point-in-time in-memory function metrics, not a Prisma usage meter or aggregate."
+      "note": "Point-in-time in-memory function instance sample, not an aggregate or Prisma usage meter."
     },
-    "note": "Authenticated Vercel fetch returned HTTP 200 for API health and metrics. This deployment predates the uncommitted waiting-room changes."
+    "browserVerification": "The deployed waiting room was verified in two independent browser profiles through Start match. Full verification is blocked: the first setup choice advanced the persisted room, but the clients stayed on stale setup and one displayed Not found; legal gameplay, reload, and reconnect were not verified on this deployment.",
+    "note": "Authenticated Vercel fetch returned HTTP 200 for API health and metrics. The new Prisma matchStarted column was read and written by the Preview API."
   },
   "database": {
     "plan": "Free",
     "workspaceInvoice": "$0.00",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 11728,
+      "used": 12104,
       "included": 200000,
-      "remainingAtObservation": 188272,
-      "averagePerDayShown": 2300
+      "remainingAtObservation": 187896,
+      "averagePerDayShown": 2400
     },
     "workspaceStorageGiB": {
       "used": 0.06,
       "included": 2
     },
-    "abominationsPreviewProjectOperations": 147,
+    "abominationsPreviewProjectOperations": 523,
     "abominationsPreviewBackups": "none available",
     "backupRestore": "no restore drill evidenced; selected Preview database has no backups",
-    "checkedAt": "2026-11-05T12:15:00Z",
-    "note": "Usage page groups 147 operations at the Abominations Preview project level, not the individual database level. Secret values were not retrieved. Production environment metadata contains legacy database variable names but no production DIRECT_URL; provider provenance was not verified."
+    "checkedAt": "2026-11-05T12:35:00Z",
+    "testDeltaSince12:15": 376,
+    "note": "Usage page groups operations at the Abominations Preview project level, not the individual database level. The increase of 376 during the browser-preview attempts is a combined test-period delta, not a per-match measurement. Secret values were not retrieved. Production environment metadata contains legacy database variable names but no production DIRECT_URL; provider provenance was not verified."
   }
 }

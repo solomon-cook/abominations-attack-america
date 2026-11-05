@@ -1,7 +1,7 @@
 {
   "ok": true,
-  "url": "http://127.0.0.1:64448/",
-  "roomCode": "FEC7E5",
+  "url": "http://127.0.0.1:55718/",
+  "roomCode": "9ADCFB",
   "waitingRoom": {
     "seatsRequired": 2,
     "startDisabledBeforeJoin": true,

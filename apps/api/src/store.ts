@@ -202,7 +202,7 @@ export class MemoryRoomStore implements RoomStore {
 
   async setReady(roomCode: string, accessToken: string, ready: boolean) {
     const room = this.authorize(roomCode, accessToken);
-    if (!room.matchStarted) throw new Error("The host must start the match before players can ready up.");
+    if (!room.matchStarted) throw new Error("Start the match before players can ready up.");
     if (room.status !== "waiting") throw new Error("Readiness can only change while a room is waiting.");
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
     if (!participant || participant.role !== "player") throw new Error("Only players can change readiness.");
@@ -230,7 +230,7 @@ export class MemoryRoomStore implements RoomStore {
 
   async setupAction(roomCode: string, accessToken: string, action: SetupAction, expectedRevision: number) {
     const room = this.authorize(roomCode, accessToken);
-    if (!room.matchStarted) throw new Error("The host has not started this match yet.");
+    if (!room.matchStarted) throw new Error("This match has not been started yet.");
     if (room.status === "expired") throw new Error("This room has expired.");
     if (room.version !== expectedRevision) throw new Error(`Expected revision ${expectedRevision}, current revision is ${room.version}.`);
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
