@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const configurationPath = new URL("../apps/web/vercel.json", import.meta.url);
+const configurationPath = new URL("../vercel.json", import.meta.url);
 const configuration = JSON.parse(await readFile(configurationPath, "utf8"));
 const wildcardRule = configuration.headers?.find((rule) => rule.source === "/(.*)");
 assert.ok(wildcardRule, "Vercel must apply the static security policy to every response path.");
