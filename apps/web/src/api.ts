@@ -163,4 +163,4 @@ export const sendCommand = async (
   return request<RoomView>(`/rooms/${code}/actions`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ envelope }) });
 };
 export const websocketUrl = (code: string, ticket: string) => `${API_URL.replace(/^http/, "ws")}/ws?code=${encodeURIComponent(code)}&ticket=${encodeURIComponent(ticket)}`;
-export const websocketTransportEnabled = import.meta.env.VITE_ENABLE_WEBSOCKETS !== "false";
+export const websocketTransportEnabled = false; // Enable after this deployment has a durable cross-instance WebSocket fanout path.

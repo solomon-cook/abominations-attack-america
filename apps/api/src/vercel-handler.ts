@@ -3,20 +3,24 @@ import { randomUUID } from "node:crypto";
 import { PrismaRoomStore } from "./prisma-store.js";
 import { prisma } from "../lib/prisma.js";
 import { ApiMetrics } from "./metrics.js";
+import { AccountService, accountSessionCookie, clearAccountSessionCookie, sessionFromCookie } from "./accounts.js";
 
 const origins = new Set((process.env.ALLOWED_ORIGIN ?? "").split(",").map((value) => value.trim()).filter(Boolean));
 if (process.env.VERCEL_URL) origins.add(`https://${process.env.VERCEL_URL}`);
 const metrics = new ApiMetrics();
 const store = prisma ? new PrismaRoomStore(prisma) : undefined;
+const accountService = prisma ? new AccountService(prisma) : undefined;
 
 function respond(req: IncomingMessage, res: ServerResponse, status: number, payload: unknown) {
   const origin = String(req.headers.origin ?? "");
-  const headers: Record<string, string> = {
+  const headers: Record<string, string | string[]> = {
     "content-type": "application/json; charset=utf-8", "cache-control": "no-store",
     "x-content-type-options": "nosniff", "x-frame-options": "DENY", "referrer-policy": "no-referrer",
     "access-control-allow-credentials": "true", "access-control-allow-headers": "content-type,x-room-token",
     "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS", vary: "Origin",
   };
+  const cookies = (res as ServerResponse & { pendingCookies?: string[] }).pendingCookies;
+  if (cookies?.length) headers["set-cookie"] = cookies;
   if (origins.has(origin)) headers["access-control-allow-origin"] = origin;
   res.writeHead(status, headers);
   res.end(JSON.stringify(payload));
@@ -49,6 +53,66 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       catch { return respond(req, res, 503, { ok: false, persistence: "prisma", realtimeFanout: { mode: "http-polling", ready: true } }); }
     }
     if (req.method === "GET" && parts[0] === "metrics") return respond(req, res, 200, metrics.snapshot());
+    if (parts[0] === "leaderboard" && req.method === "GET") {
+      const category = url.searchParams.get("category") ?? "wins";
+      const valid = ["wins", "win-rate", "stomped-tiles", "damage-taken", "health-gained", "luck"];
+      if (!valid.includes(category)) return respond(req, res, 400, { error: "Unknown leaderboard category." });
+      return respond(req, res, 200, accountService ? await accountService.leaderboard(category as any) : []);
+    }
+    if (parts[0] === "players" && parts[1] && req.method === "GET") {
+      if (!accountService) return respond(req, res, 503, { error: "Player profiles require database persistence." });
+      return respond(req, res, 200, await accountService.publicProfile(decodeURIComponent(parts[1])));
+    }
+    if (parts[0] === "accounts") {
+      if (!accountService) return respond(req, res, 503, { error: "Accounts require database persistence." });
+      const input = req.method === "GET" ? {} : await readBody(req);
+      const currentUser = async () => {
+        const user = await accountService.authenticate(decodeURIComponent(sessionFromCookie(String(req.headers.cookie ?? ""))));
+        if (!user) throw Object.assign(new Error("Sign in to use this account feature."), { status: 401 });
+        return user;
+      };
+      if (req.method === "POST" && parts[1] === "register") return respond(req, res, 201, await accountService.register(String(input.email ?? ""), String(input.password ?? "")));
+      if (req.method === "POST" && parts[1] === "login") {
+        const result = await accountService.login(String(input.email ?? ""), String(input.password ?? ""));
+        (res as ServerResponse & { pendingCookies?: string[] }).pendingCookies = [accountSessionCookie(result.sessionToken!)];
+        return respond(req, res, 200, { account: result.account, message: result.message });
+      }
+      if (req.method === "POST" && parts[1] === "logout") {
+        await accountService.logout(decodeURIComponent(sessionFromCookie(String(req.headers.cookie ?? ""))));
+        (res as ServerResponse & { pendingCookies?: string[] }).pendingCookies = [clearAccountSessionCookie()];
+        return respond(req, res, 200, { message: "Signed out." });
+      }
+      if (req.method === "POST" && parts[1] === "verify-email") {
+        const result = await accountService.verifyEmail(String(input.token ?? ""));
+        (res as ServerResponse & { pendingCookies?: string[] }).pendingCookies = [accountSessionCookie(result.sessionToken!)];
+        return respond(req, res, 200, { account: result.account, message: result.message });
+      }
+      if (req.method === "POST" && parts[1] === "resend-verification") return respond(req, res, 200, await accountService.resendVerification(String(input.email ?? "")));
+      if (req.method === "POST" && parts[1] === "password-reset" && parts.length === 2) return respond(req, res, 200, await accountService.requestPasswordReset(String(input.email ?? "")));
+      if (req.method === "POST" && parts[1] === "password-reset" && parts[2] === "complete") return respond(req, res, 200, await accountService.completePasswordReset(String(input.token ?? ""), String(input.password ?? "")));
+      if (req.method === "GET" && parts.length === 2 && parts[1] === "me") {
+        const user = await currentUser();
+        return respond(req, res, 200, { account: { id: user.id, username: user.username, emailVerified: Boolean(user.emailVerifiedAt) } });
+      }
+      if (req.method === "PATCH" && parts.length === 2 && parts[1] === "me") {
+        const user = await currentUser(); return respond(req, res, 200, { account: await accountService.updateUsername(user.id, String(input.username ?? "")) });
+      }
+      if (req.method === "DELETE" && parts.length === 2 && parts[1] === "me") {
+        const user = await currentUser(); await accountService.deleteAccount(user);
+        (res as ServerResponse & { pendingCookies?: string[] }).pendingCookies = [clearAccountSessionCookie()];
+        return respond(req, res, 200, { message: "Account deleted." });
+      }
+      if (req.method === "GET" && parts[1] === "me" && parts[2] === "games") { const user = await currentUser(); return respond(req, res, 200, await accountService.listGames(user.id)); }
+      if (req.method === "GET" && parts[1] === "me" && parts[2] === "stats") { const user = await currentUser(); return respond(req, res, 200, await accountService.getStats(user.id)); }
+      if (req.method === "GET" && parts[1] === "me" && parts[2] === "privacy") { const user = await currentUser(); return respond(req, res, 200, await accountService.getPrivacySettings(user.id)); }
+      if (req.method === "PATCH" && parts[1] === "me" && parts[2] === "privacy") {
+        const user = await currentUser();
+        if (typeof input.publicStatsEnabled !== "boolean") return respond(req, res, 400, { error: "publicStatsEnabled must be true or false." });
+        return respond(req, res, 200, await accountService.updatePrivacySettings(user.id, input.publicStatsEnabled));
+      }
+      if (req.method === "GET" && parts[1] === "me" && parts[2] === "social") { const user = await currentUser(); return respond(req, res, 200, await accountService.socialSummary(user.id)); }
+      return respond(req, res, 404, { error: "Not found" });
+    }
     if (req.method === "GET" && parts[0] === "rooms" && parts[1] === "public") return respond(req, res, 200, await store.listPublicRooms());
     if (req.method === "POST" && parts[0] === "rooms" && parts.length === 1) {
       const input = await readBody(req);
