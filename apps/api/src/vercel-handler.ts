@@ -4,6 +4,7 @@ import { PrismaRoomStore } from "./prisma-store.js";
 import { prisma } from "../lib/prisma.js";
 import { ApiMetrics } from "./metrics.js";
 import { AccountService, accountSessionCookie, clearAccountSessionCookie, sessionFromCookie } from "./accounts.js";
+import { classifyApiError } from "./api-errors.js";
 
 const origins = new Set((process.env.ALLOWED_ORIGIN ?? "").split(",").map((value) => value.trim()).filter(Boolean));
 if (process.env.VERCEL_URL) origins.add(`https://${process.env.VERCEL_URL}`);
@@ -47,6 +48,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   const queryPath = (req as IncomingMessage & { query?: { path?: string | string[] } }).query?.path;
   const routePath = (Array.isArray(queryPath) ? queryPath.join("/") : queryPath) ?? url.pathname.replace(/^\/api\/?/, "");
   const parts = routePath.split("/").filter(Boolean);
+  const requestStartedAt = Date.now();
   try {
     if (req.method === "GET" && parts[0] === "health") {
       try { return respond(req, res, 200, { ok: true, ...(await store.health()), realtimeFanout: { mode: "http-polling", ready: true } }); }
@@ -146,7 +148,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return respond(req, res, 404, { error: "Not found" });
   } catch (error) {
     metrics.requestFailure();
-    const status = Number((error as { status?: number }).status ?? 400);
-    return respond(req, res, status, { error: error instanceof Error ? error.message : "Request failed" });
+    const failure = classifyApiError(error);
+    metrics.latency(Date.now() - requestStartedAt);
+    if (failure.status >= 500) metrics.serverError();
+    const route = parts[0] === "rooms" ? "rooms" + (parts[2] ? "/:" + parts[2] : "") : parts[0] ?? "unknown";
+    console.error("API request failed", JSON.stringify({ method: req.method, route, category: failure.category, name: failure.errorName, code: failure.errorCode, durationMs: Date.now() - requestStartedAt }));
+    return respond(req, res, failure.status, { error: failure.message });
   }
 }
