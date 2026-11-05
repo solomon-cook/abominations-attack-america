@@ -99,7 +99,8 @@
           "DATABASE_URL",
           "DIRECT_URL",
           "POSTGRES_URL",
-          "PRISMA_DATABASE_URL"
+          "PRISMA_DATABASE_URL",
+          "VITE_ROOM_POLL_INTERVAL_MS"
         ],
         "Preview": [
           "DATABASE_URL",
@@ -112,7 +113,9 @@
       }
     },
     "valuesRead": false,
-    "note": "Read-only metadata only. Production pooled DATABASE_URL and direct DIRECT_URL were added encrypted; values remain server-side and were not read."
+    "note": "Read-only names/targets only after configuration: Production includes ALLOWED_ORIGIN, pooled DATABASE_URL, direct DIRECT_URL, and VITE_ROOM_POLL_INTERVAL_MS=30000. No secret values were read.",
+    "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
+    "productionPollIntervalValue": 30000
   },
   "database": {
     "plan": "Free",
