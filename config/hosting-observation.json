@@ -1,33 +1,30 @@
 {
-  "checkedAt": "2026-11-05T11:22:53Z",
-  "url": "https://abominations-attack-america.vercel.app",
-  "status": 200,
-  "lastModified": "Thu, 05 Nov 2026 11:22:53 GMT",
-  "assets": [
-    {
+  "checkedAt": "2026-11-05T12:03:39Z",
+  "production": {
+    "url": "https://abominations-attack-america.vercel.app",
+    "status": 200,
+    "lastModified": "Thu, 05 Nov 2026 11:22:53 GMT",
+    "asset": {
       "path": "/assets/index-5XS8sbHa.js",
       "status": 200,
-      "containsLocalhost": true
-    }
-  ],
-  "apiHealth": {
-    "path": "/api/health",
-    "status": 404
+      "sha256": "8cb0122bbb8663221d00029593c675af43646e370b5dff7242dae3a604d9ba11",
+      "containsLocalhost": true,
+      "loopbackUrl": "http://localhost:8787"
+    },
+    "routes": {
+      "/health": 404,
+      "/metrics": 404,
+      "/api/health": 404,
+      "/api/metrics": 404
+    },
+    "note": "Direct read-only HTTP checks. The public production client remains on the old API bundle; no production settings, secrets, database, or deployment were changed."
   },
-  "health": {
-    "path": "/health",
-    "status": 404
-  },
-  "metrics": {
-    "path": "/metrics",
-    "status": 404
-  },
-  "note": "Read-only production observations. No environment values, settings, or database contents were accessed.",
   "preview": {
-    "deploymentId": "dpl_6qTjxUWPxnfNXzVMneooveoNpLeS",
-    "url": "https://abominations-attack-america-preview-pjt98izyh.vercel.app",
+    "deploymentId": "dpl_D9YR2AoEUWv7Ntm1Becv72f8XvJZ",
+    "url": "https://abominations-attack-america-preview-hyega3cr7.vercel.app",
     "state": "READY",
-    "checkedAt": "2026-11-05T11:23:48Z",
+    "project": "abominations-attack-america-preview",
+    "checkedAt": "2026-11-05T11:57:03Z",
     "apiHealth": {
       "path": "/api/health",
       "status": 200,
@@ -47,9 +44,31 @@
         "requests": 2,
         "requestFailures": 0,
         "serverErrors": 0,
-        "deploymentFailures": 0
-      }
+        "deploymentFailures": 0,
+        "websocketConnections": 0
+      },
+      "note": "Point-in-time in-memory function metrics, not a Prisma usage meter or aggregate."
     },
-    "note": "Read-only authenticated Vercel fetch. Metrics values are a point-in-time in-memory function metric sample, not a database usage meter."
+    "note": "Authenticated Vercel fetch returned HTTP 200 for API health and metrics. This deployment predates the uncommitted waiting-room changes."
+  },
+  "database": {
+    "plan": "Free",
+    "workspaceInvoice": "$0.00",
+    "billingPeriod": "2026-11-01 through 2026-11-30",
+    "workspaceOperations": {
+      "used": 11728,
+      "included": 200000,
+      "remainingAtObservation": 188272,
+      "averagePerDayShown": 2300
+    },
+    "workspaceStorageGiB": {
+      "used": 0.06,
+      "included": 2
+    },
+    "abominationsPreviewProjectOperations": 147,
+    "abominationsPreviewBackups": "none available",
+    "backupRestore": "no restore drill evidenced; selected Preview database has no backups",
+    "checkedAt": "2026-11-05T12:15:00Z",
+    "note": "Usage page groups 147 operations at the Abominations Preview project level, not the individual database level. Secret values were not retrieved. Production environment metadata contains legacy database variable names but no production DIRECT_URL; provider provenance was not verified."
   }
 }

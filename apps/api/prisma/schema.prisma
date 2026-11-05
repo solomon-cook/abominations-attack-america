@@ -36,6 +36,7 @@ model GameRoom {
   id               String            @id @default(cuid())
   code             String            @unique
   status           RoomStatus        @default(WAITING)
+  matchStarted     Boolean           @default(false)
   privacy          RoomPrivacy       @default(PRIVATE)
   isTest           Boolean           @default(false)
   maxPlayers       Int               @default(4)

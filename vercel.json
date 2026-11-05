@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run vercel:api:build && npm run build",
+  "buildCommand": "npm run vercel:preview:migrate && npm run vercel:api:build && npm run build",
   "installCommand": "npm ci",
   "outputDirectory": "apps/web/dist",
   "functions": {

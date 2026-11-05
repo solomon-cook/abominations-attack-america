@@ -8,7 +8,7 @@ export { MAX_REPLAY_EXPORT_BYTES, MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES,
 export type { ReplayCommandRecord } from "./replay.js";
 
 type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string; disconnectedAt?: number };
-type StoredRoom = { id: string; code: string; status: RoomStatus; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; initialReplayState: GameState; replayCommands: Array<{ version: number; eventType: string; record: ReplayCommandRecord }>; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
+type StoredRoom = { id: string; code: string; status: RoomStatus; matchStarted: boolean; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; initialReplayState: GameState; replayCommands: Array<{ version: number; eventType: string; record: ReplayCommandRecord }>; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
 export interface RoomSocketPrincipal { roomCode: string; participantId: string; sessionHash: string }
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
@@ -73,6 +73,7 @@ export interface RoomStore {
   createRoom(maxPlayers: number, displayName?: string, privacy?: RoomPrivacy): Promise<SessionResponse>;
   listPublicRooms(): Promise<PublicRoomSummary[]>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
+  startMatch(code: string, token: string): Promise<RoomView>;
   spectateRoom(code: string, displayName: string): Promise<SessionResponse>;
   disconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
   reconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
@@ -119,7 +120,7 @@ export class MemoryRoomStore implements RoomStore {
       ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`, secretSeed)
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`, secretSeed);
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
-    const room: StoredRoom = { id, code: roomCode, status: "waiting", privacy, maxPlayers, version: 0, state, initialReplayState: structuredClone(state), replayCommands: [], participants: [], events: [], playerStats: emptyMatchCounters(maxPlayers), lastActivityAt: Date.now() };
+    const room: StoredRoom = { id, code: roomCode, status: "waiting", matchStarted: false, privacy, maxPlayers, version: 0, state, initialReplayState: structuredClone(state), replayCommands: [], participants: [], events: [], playerStats: emptyMatchCounters(maxPlayers), lastActivityAt: Date.now() };
     this.rooms.set(room.code, room);
     return this.addParticipant(room, displayName, "player", 0);
   }
@@ -142,6 +143,7 @@ export class MemoryRoomStore implements RoomStore {
   async joinRoom(roomCode: string, displayName: string) {
     const room = this.requireRoom(roomCode);
     if (room.status === "expired") throw new Error("This room has expired.");
+    if (room.matchStarted) throw new Error("This match has already started.");
     const players = room.participants.filter((participant) => participant.role === "player");
     if (players.length >= room.maxPlayers) throw new Error("This room is full.");
     const playerIndex = players.length;
@@ -200,6 +202,7 @@ export class MemoryRoomStore implements RoomStore {
 
   async setReady(roomCode: string, accessToken: string, ready: boolean) {
     const room = this.authorize(roomCode, accessToken);
+    if (!room.matchStarted) throw new Error("The host must start the match before players can ready up.");
     if (room.status !== "waiting") throw new Error("Readiness can only change while a room is waiting.");
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
     if (!participant || participant.role !== "player") throw new Error("Only players can change readiness.");
@@ -213,8 +216,21 @@ export class MemoryRoomStore implements RoomStore {
     return this.view(room, 0, "player", participant.playerIndex);
   }
 
+  async startMatch(roomCode: string, accessToken: string) {
+    const room = this.authorize(roomCode, accessToken);
+    const starter = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!starter || starter.role !== "player" || starter.playerIndex === undefined || !starter.connected) throw new Error("Only a connected player can start the match.");
+    if (room.status !== "waiting" || room.matchStarted) throw new Error("This room has already started.");
+    const players = room.participants.filter((candidate) => candidate.role === "player");
+    if (players.length !== room.maxPlayers || players.some((candidate) => !candidate.connected)) throw new Error("Wait until every player has joined and is connected.");
+    room.matchStarted = true;
+    room.lastActivityAt = Date.now();
+    return this.view(room, 0, "player", starter.playerIndex);
+  }
+
   async setupAction(roomCode: string, accessToken: string, action: SetupAction, expectedRevision: number) {
     const room = this.authorize(roomCode, accessToken);
+    if (!room.matchStarted) throw new Error("The host has not started this match yet.");
     if (room.status === "expired") throw new Error("This room has expired.");
     if (room.version !== expectedRevision) throw new Error(`Expected revision ${expectedRevision}, current revision is ${room.version}.`);
     const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
@@ -516,6 +532,6 @@ export class MemoryRoomStore implements RoomStore {
   }
 
   private view(room: StoredRoom, afterVersion = 0, audience: StateAudience = "spectator", viewerPlayerIndex?: number): RoomView {
-    return { id: room.id, code: room.code, status: room.status, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map((participant) => ({ id: participant.id, displayName: participant.displayName, role: participant.role, playerIndex: participant.playerIndex, connected: participant.connected, ready: participant.ready, botControlled: participant.botControlled, botAssisted: participant.botAssisted })), events: room.events.filter((event) => event.version > afterVersion).reverse() };
+    return { id: room.id, code: room.code, status: room.status, matchStarted: room.matchStarted, maxPlayers: room.maxPlayers, privacy: room.privacy, version: room.version, state: projectState(room.state, audience, viewerPlayerIndex), participants: room.participants.map((participant) => ({ id: participant.id, displayName: participant.displayName, role: participant.role, playerIndex: participant.playerIndex, connected: participant.connected, ready: participant.ready, botControlled: participant.botControlled, botAssisted: participant.botAssisted })), events: room.events.filter((event) => event.version > afterVersion).reverse() };
   }
 }

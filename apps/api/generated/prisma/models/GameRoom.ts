@@ -40,6 +40,7 @@ export type GameRoomMinAggregateOutputType = {
   id: string | null
   code: string | null
   status: $Enums.RoomStatus | null
+  matchStarted: boolean | null
   privacy: $Enums.RoomPrivacy | null
   isTest: boolean | null
   maxPlayers: number | null
@@ -54,6 +55,7 @@ export type GameRoomMaxAggregateOutputType = {
   id: string | null
   code: string | null
   status: $Enums.RoomStatus | null
+  matchStarted: boolean | null
   privacy: $Enums.RoomPrivacy | null
   isTest: boolean | null
   maxPlayers: number | null
@@ -68,6 +70,7 @@ export type GameRoomCountAggregateOutputType = {
   id: number
   code: number
   status: number
+  matchStarted: number
   privacy: number
   isTest: number
   maxPlayers: number
@@ -97,6 +100,7 @@ export type GameRoomMinAggregateInputType = {
   id?: true
   code?: true
   status?: true
+  matchStarted?: true
   privacy?: true
   isTest?: true
   maxPlayers?: true
@@ -111,6 +115,7 @@ export type GameRoomMaxAggregateInputType = {
   id?: true
   code?: true
   status?: true
+  matchStarted?: true
   privacy?: true
   isTest?: true
   maxPlayers?: true
@@ -125,6 +130,7 @@ export type GameRoomCountAggregateInputType = {
   id?: true
   code?: true
   status?: true
+  matchStarted?: true
   privacy?: true
   isTest?: true
   maxPlayers?: true
@@ -229,6 +235,7 @@ export type GameRoomGroupByOutputType = {
   id: string
   code: string
   status: $Enums.RoomStatus
+  matchStarted: boolean
   privacy: $Enums.RoomPrivacy
   isTest: boolean
   maxPlayers: number
@@ -269,6 +276,7 @@ export type GameRoomWhereInput = {
   id?: Prisma.StringFilter<"GameRoom"> | string
   code?: Prisma.StringFilter<"GameRoom"> | string
   status?: Prisma.EnumRoomStatusFilter<"GameRoom"> | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFilter<"GameRoom"> | boolean
   privacy?: Prisma.EnumRoomPrivacyFilter<"GameRoom"> | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFilter<"GameRoom"> | boolean
   maxPlayers?: Prisma.IntFilter<"GameRoom"> | number
@@ -292,6 +300,7 @@ export type GameRoomOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  matchStarted?: Prisma.SortOrder
   privacy?: Prisma.SortOrder
   isTest?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
@@ -318,6 +327,7 @@ export type GameRoomWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.GameRoomWhereInput[]
   NOT?: Prisma.GameRoomWhereInput | Prisma.GameRoomWhereInput[]
   status?: Prisma.EnumRoomStatusFilter<"GameRoom"> | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFilter<"GameRoom"> | boolean
   privacy?: Prisma.EnumRoomPrivacyFilter<"GameRoom"> | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFilter<"GameRoom"> | boolean
   maxPlayers?: Prisma.IntFilter<"GameRoom"> | number
@@ -341,6 +351,7 @@ export type GameRoomOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  matchStarted?: Prisma.SortOrder
   privacy?: Prisma.SortOrder
   isTest?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
@@ -366,6 +377,7 @@ export type GameRoomScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"GameRoom"> | string
   code?: Prisma.StringWithAggregatesFilter<"GameRoom"> | string
   status?: Prisma.EnumRoomStatusWithAggregatesFilter<"GameRoom"> | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolWithAggregatesFilter<"GameRoom"> | boolean
   privacy?: Prisma.EnumRoomPrivacyWithAggregatesFilter<"GameRoom"> | $Enums.RoomPrivacy
   isTest?: Prisma.BoolWithAggregatesFilter<"GameRoom"> | boolean
   maxPlayers?: Prisma.IntWithAggregatesFilter<"GameRoom"> | number
@@ -383,6 +395,7 @@ export type GameRoomCreateInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -406,6 +419,7 @@ export type GameRoomUncheckedCreateInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -429,6 +443,7 @@ export type GameRoomUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -452,6 +467,7 @@ export type GameRoomUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -475,6 +491,7 @@ export type GameRoomCreateManyInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -492,6 +509,7 @@ export type GameRoomUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -509,6 +527,7 @@ export type GameRoomUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -526,6 +545,7 @@ export type GameRoomCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  matchStarted?: Prisma.SortOrder
   privacy?: Prisma.SortOrder
   isTest?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
@@ -548,6 +568,7 @@ export type GameRoomMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  matchStarted?: Prisma.SortOrder
   privacy?: Prisma.SortOrder
   isTest?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
@@ -562,6 +583,7 @@ export type GameRoomMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  matchStarted?: Prisma.SortOrder
   privacy?: Prisma.SortOrder
   isTest?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
@@ -590,12 +612,12 @@ export type EnumRoomStatusFieldUpdateOperationsInput = {
   set?: $Enums.RoomStatus
 }
 
-export type EnumRoomPrivacyFieldUpdateOperationsInput = {
-  set?: $Enums.RoomPrivacy
-}
-
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
+}
+
+export type EnumRoomPrivacyFieldUpdateOperationsInput = {
+  set?: $Enums.RoomPrivacy
 }
 
 export type IntFieldUpdateOperationsInput = {
@@ -702,6 +724,7 @@ export type GameRoomCreateWithoutWebsocketTicketsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -724,6 +747,7 @@ export type GameRoomUncheckedCreateWithoutWebsocketTicketsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -762,6 +786,7 @@ export type GameRoomUpdateWithoutWebsocketTicketsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -784,6 +809,7 @@ export type GameRoomUncheckedUpdateWithoutWebsocketTicketsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -806,6 +832,7 @@ export type GameRoomCreateWithoutParticipantsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -828,6 +855,7 @@ export type GameRoomUncheckedCreateWithoutParticipantsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -866,6 +894,7 @@ export type GameRoomUpdateWithoutParticipantsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -888,6 +917,7 @@ export type GameRoomUncheckedUpdateWithoutParticipantsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -910,6 +940,7 @@ export type GameRoomCreateWithoutEventsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -932,6 +963,7 @@ export type GameRoomUncheckedCreateWithoutEventsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -970,6 +1002,7 @@ export type GameRoomUpdateWithoutEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -992,6 +1025,7 @@ export type GameRoomUncheckedUpdateWithoutEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1014,6 +1048,7 @@ export type GameRoomCreateWithoutReceiptsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -1036,6 +1071,7 @@ export type GameRoomUncheckedCreateWithoutReceiptsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -1074,6 +1110,7 @@ export type GameRoomUpdateWithoutReceiptsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1096,6 +1133,7 @@ export type GameRoomUncheckedUpdateWithoutReceiptsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1118,6 +1156,7 @@ export type GameRoomCreateWithoutResultInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -1140,6 +1179,7 @@ export type GameRoomUncheckedCreateWithoutResultInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -1178,6 +1218,7 @@ export type GameRoomUpdateWithoutResultInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1200,6 +1241,7 @@ export type GameRoomUncheckedUpdateWithoutResultInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1222,6 +1264,7 @@ export type GameRoomCreateWithoutMatchStatsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -1244,6 +1287,7 @@ export type GameRoomUncheckedCreateWithoutMatchStatsInput = {
   id?: string
   code: string
   status?: $Enums.RoomStatus
+  matchStarted?: boolean
   privacy?: $Enums.RoomPrivacy
   isTest?: boolean
   maxPlayers?: number
@@ -1282,6 +1326,7 @@ export type GameRoomUpdateWithoutMatchStatsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1304,6 +1349,7 @@ export type GameRoomUncheckedUpdateWithoutMatchStatsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  matchStarted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   privacy?: Prisma.EnumRoomPrivacyFieldUpdateOperationsInput | $Enums.RoomPrivacy
   isTest?: Prisma.BoolFieldUpdateOperationsInput | boolean
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1393,6 +1439,7 @@ export type GameRoomSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   id?: boolean
   code?: boolean
   status?: boolean
+  matchStarted?: boolean
   privacy?: boolean
   isTest?: boolean
   maxPlayers?: boolean
@@ -1417,6 +1464,7 @@ export type GameRoomSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   id?: boolean
   code?: boolean
   status?: boolean
+  matchStarted?: boolean
   privacy?: boolean
   isTest?: boolean
   maxPlayers?: boolean
@@ -1434,6 +1482,7 @@ export type GameRoomSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   id?: boolean
   code?: boolean
   status?: boolean
+  matchStarted?: boolean
   privacy?: boolean
   isTest?: boolean
   maxPlayers?: boolean
@@ -1451,6 +1500,7 @@ export type GameRoomSelectScalar = {
   id?: boolean
   code?: boolean
   status?: boolean
+  matchStarted?: boolean
   privacy?: boolean
   isTest?: boolean
   maxPlayers?: boolean
@@ -1464,7 +1514,7 @@ export type GameRoomSelectScalar = {
   playerStats?: boolean
 }
 
-export type GameRoomOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "status" | "privacy" | "isTest" | "maxPlayers" | "version" | "state" | "initialReplayState" | "createdAt" | "updatedAt" | "lastActivityAt" | "completedAt" | "playerStats", ExtArgs["result"]["gameRoom"]>
+export type GameRoomOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "status" | "matchStarted" | "privacy" | "isTest" | "maxPlayers" | "version" | "state" | "initialReplayState" | "createdAt" | "updatedAt" | "lastActivityAt" | "completedAt" | "playerStats", ExtArgs["result"]["gameRoom"]>
 export type GameRoomInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   participants?: boolean | Prisma.GameRoom$participantsArgs<ExtArgs>
   events?: boolean | Prisma.GameRoom$eventsArgs<ExtArgs>
@@ -1491,6 +1541,7 @@ export type $GameRoomPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     id: string
     code: string
     status: $Enums.RoomStatus
+    matchStarted: boolean
     privacy: $Enums.RoomPrivacy
     isTest: boolean
     maxPlayers: number
@@ -1934,6 +1985,7 @@ export interface GameRoomFieldRefs {
   readonly id: Prisma.FieldRef<"GameRoom", 'String'>
   readonly code: Prisma.FieldRef<"GameRoom", 'String'>
   readonly status: Prisma.FieldRef<"GameRoom", 'RoomStatus'>
+  readonly matchStarted: Prisma.FieldRef<"GameRoom", 'Boolean'>
   readonly privacy: Prisma.FieldRef<"GameRoom", 'RoomPrivacy'>
   readonly isTest: Prisma.FieldRef<"GameRoom", 'Boolean'>
   readonly maxPlayers: Prisma.FieldRef<"GameRoom", 'Int'>

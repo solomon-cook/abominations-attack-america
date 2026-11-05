@@ -39,6 +39,7 @@ import {
   sendCommand,
   sendSetupAction,
   setReady,
+  startMatch,
   spectateRoom,
   websocketUrl,
   websocketTransportEnabled,
@@ -940,6 +941,19 @@ function App() {
     }
   };
 
+  const beginMatch = async () => {
+    if (!session || !room || !participant || participant.role !== "player") return;
+    setError("");
+    setPendingAction(true);
+    try {
+      setRoom(await startMatch(room.code, session.token));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not start match");
+    } finally {
+      setPendingAction(false);
+    }
+  };
+
   const applyLocalSetup = (next: SetupState) => {
     setLocalSetup(next);
     setGame((current) => { const updated = { ...current, setupState: next }; return next.phase === "complete" ? applyCompletedSetup(updated) : updated; });
@@ -1366,6 +1380,7 @@ function App() {
         roomCode={roomCode}
         publicRooms={publicRooms}
         setupComplete={false}
+        pendingAction={pendingAction}
         error={error}
         onDisplayNameChange={setDisplayName}
         onPlayerCountChange={changePlayerCount}
@@ -1374,6 +1389,7 @@ function App() {
         onRefreshPublicRooms={() => void refreshPublicRooms()}
         onStartSession={(kind) => void startSession(kind)}
         onToggleReady={() => undefined}
+        onStartMatch={() => undefined}
         onLeaveRoom={() => undefined}
         rulesOpen={homeRulesOpen}
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
@@ -1388,6 +1404,14 @@ function App() {
         accountPanel={<AccountPanel compact account={account} session={session} onAccountChange={setAccount} onSessionChange={replaceOnlineSession} />}
       />
     );
+  }
+
+  if (online && room && !room.matchStarted && participant?.role === "player") {
+    return <main className="pre-match-lobby">
+      <header className="home-masthead"><span className="home-wordmark">AAA</span><span className="home-edition">A game of monsters &amp; military might</span></header>
+      <section className="pre-match-lobby-heading"><p className="home-kicker">MULTIPLAYER ROOM</p><h1>Waiting room</h1><p>Share this code with your friends. The match begins when the host starts it.</p><div className="pre-match-room-code" aria-label={`Room code ${room.code}`}>{room.code}</div></section>
+      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={setRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onLeaveRoom={leaveRoomSafely} />
+    </main>;
   }
 
   const renderedBoard = boardForGame(activeGame);
@@ -1467,6 +1491,7 @@ function App() {
         roomCode={roomCode}
         publicRooms={publicRooms}
         setupComplete={setupComplete}
+        pendingAction={pendingAction}
         error={error}
         onDisplayNameChange={setDisplayName}
         onPlayerCountChange={changePlayerCount}
@@ -1475,6 +1500,7 @@ function App() {
         onRefreshPublicRooms={() => void refreshPublicRooms()}
         onStartSession={(kind) => void startSession(kind)}
         onToggleReady={() => void toggleReady()}
+        onStartMatch={() => void beginMatch()}
         onLeaveRoom={leaveRoomSafely}
       />
       {settingsOpen && (

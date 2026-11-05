@@ -100,6 +100,8 @@ export interface RoomView {
   id: string;
   code: string;
   status: RoomStatus;
+  matchStarted: boolean;
+  maxPlayers: number;
   privacy: RoomPrivacy;
   version: number;
   state: GameState;
