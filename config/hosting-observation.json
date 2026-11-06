@@ -486,7 +486,7 @@
       "limitation": "A successful single core flow does not rule out intermittent Production database timeouts; earlier Production deployments had recurring query-read-timeouts."
     },
     "latestCurrentReadiness": {
-      "checkedAt": "2026-11-06T10:33:10Z",
+      "checkedAt": "2026-11-06T11:04:13Z",
       "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
       "deploymentCommit": "b92c0de312a0fa5a85fed2b4d8f18d6bd1bf8d70",
       "deploymentState": "READY",
@@ -526,13 +526,30 @@
             }
           },
           "note": "Immediate subsequent canonical Production request recovered with HTTP 200."
+        },
+        {
+          "path": "/api/health",
+          "status": 200,
+          "durationMs": 1415,
+          "checkedAt": "2026-11-06T11:04:13Z",
+          "body": {
+            "ok": true,
+            "persistence": "prisma",
+            "realtimeFanout": {
+              "mode": "http-polling",
+              "ready": true
+            }
+          },
+          "note": "Fresh canonical Production point check. A successful probe does not clear the previously confirmed query-read-timeout or establish sustained reliability."
         }
       ],
       "metrics": {
         "path": "/api/metrics",
         "status": 200,
+        "checkedAt": "2026-11-06T11:04:13Z",
+        "durationMs": 239,
         "sample": {
-          "requests": 10,
+          "requests": 2,
           "requestFailures": 0,
           "commandAccepted": 0,
           "commandFailed": 0,
@@ -548,7 +565,7 @@
           "divergenceReports": 0,
           "deploymentFailures": 0
         },
-        "note": "Instance-local counters; not an aggregate monitor or a soak."
+        "note": "Fresh instance-local counters; not an aggregate monitor or a soak."
       }
     }
   },
