@@ -25,7 +25,7 @@ export function observePoolLifecycle(pool: Pool): () => PoolLifecycleCounts {
   pool.on("remove", () => { counts.clientsRemoved += 1; });
   pool.on("error", (error: Error & { code?: unknown }) => {
     counts.idleClientErrors += 1;
-    const code = typeof error.code === "string" && /^[A-Z0-9_]{1,32}$/.test(error.code)
+    const code = typeof error.code === "string" && (/^[0-9A-Z]{5}$/.test(error.code) || /^E[A-Z0-9]{3,16}$/.test(error.code))
       ? error.code
       : "unknown";
     counts.idleClientErrorsByCode[code] = (counts.idleClientErrorsByCode[code] ?? 0) + 1;
