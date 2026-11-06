@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T12:16:00Z",
+  "checkedAt": "2026-11-06T12:40:27Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_25mrtWhK387LqT4yP5EKB3JCkPmy",
@@ -54,32 +54,22 @@
       "checkedAt": "2026-11-06T10:17:46Z"
     },
     "latestProductionAttempt": {
-      "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
-      "commit": "b92c0de312a0fa5a85fed2b4d8f18d6bd1bf8d70",
-      "checkedAt": "2026-11-06T12:14:14.571Z",
+      "deploymentId": "dpl_HBPL2rV9cuRUdgapA5puCpg3Waca",
+      "commit": "70d6631c6001d4fe80f3f21ff35a26312d11cabe",
+      "checkedAt": "2026-11-06T12:47:19Z",
       "browserProfilesStarted": 3,
       "requestPath": "/api/rooms",
-      "httpStatus": 503,
-      "roomCreated": false,
-      "category": "database-timeout",
-      "timeoutKind": "query-read-timeout",
-      "durationMs": 20202,
-      "databaseStep": "gameRoom.create",
-      "databaseStepDurationMs": 20131,
-      "pool": {
-        "total": 0,
-        "idle": 0,
-        "waiting": 0,
-        "clientsCreated": 2,
-        "clientsAcquired": 2,
-        "clientsReleased": 2,
-        "clientsRemoved": 1,
-        "idleClientErrors": 0
-      },
-      "functionLogRequestId": "s9njg-1793967234282-3fa43e89ae19",
-      "vercelIdRegion": "lhr1; x-vercel-id also includes iad1",
-      "logCapturedAt": "2026-11-06T12:14:14.571Z",
-      "cause": "Unknown; Vercel trace access returned 403 and the CLI fallback returned 404."
+      "httpStatus": 201,
+      "roomCreated": true,
+      "roomCode": "58A549",
+      "requestId": "mqbkm-1793969018267-19b23a36cc06",
+      "waitingRoomStart": "verified",
+      "setupActions": 9,
+      "legalMoveAcceptedRevision": 11,
+      "peerObservedSameState": true,
+      "refreshReconnect": "verified",
+      "matchCompleted": false,
+      "testRoomCleanup": "The browser verifier left room 58A549 in durable Production storage; no cleanup endpoint was invoked."
     },
     "latestFullMatchAttempt": {
       "checkedAt": "2026-11-06T11:15:41.789Z",
@@ -316,33 +306,29 @@
       "note": "The same Prisma query-read-timeout recurred on the newly deployed main build; three immediate retries then returned 200. This confirms intermittent availability persists but does not identify the cause or establish reliability."
     },
     "latestProductionBrowserVerification": {
-      "deploymentId": "dpl_25mrtWhK387LqT4yP5EKB3JCkPmy",
-      "commit": "8a11cade0efc8e4a84cceade987977affd45abd1",
-      "checkedAt": "2026-11-06T10:16:30Z",
-      "roomCode": "683A5B",
+      "deploymentId": "dpl_HBPL2rV9cuRUdgapA5puCpg3Waca",
+      "commit": "70d6631c6001d4fe80f3f21ff35a26312d11cabe",
+      "checkedAt": "2026-11-06T12:47:19Z",
+      "roomCode": "58A549",
       "isolatedChromeProfiles": 3,
       "playersCreatedJoined": "verified",
       "waitingRoomAndHostStart": "verified",
       "setupActions": 9,
-      "resolvedStartingGiantPlacements": [
-        "12,0"
-      ],
       "legalMove": {
+        "acceptedRevision": 11,
+        "destination": "5,4",
         "path": [
           "5,5",
           "5,4"
-        ],
-        "acceptedRevision": 12,
-        "destination": "5,4"
+        ]
       },
       "peerObservedSameAuthoritativeState": true,
       "actingPlayerRefreshReconnect": true,
-      "spectatorJoined": true,
-      "spectatorReadOnlyThroughMovePhase": true,
+      "spectatorJoined": false,
       "matchCompleted": false,
       "method": "Automated verifier using three isolated Chrome profiles against canonical Production.",
-      "note": "Production core multiplayer flow passed after pooled runtime URL selection was merged: waiting room, host start, setup, one legal move, peer state sync and refresh/reconnect. The match was not played to a terminal result; this is not a reliability soak.",
-      "testRoomCleanup": "Public test room 683A5B was left in durable Production storage when the verifier exited; the harness does not delete test rooms."
+      "note": "Core browser flow passed after the earlier room-create timeout: room creation, waiting-room start, setup, legal move, peer sync, and refresh recovery. This is one successful run and not a reliability soak or complete match.",
+      "testRoomCleanup": "The verifier left active room 58A549 in durable Production storage; it will age out through normal room expiry."
     },
     "productionTimeoutReproductions": [
       {
@@ -423,11 +409,11 @@
       }
     ],
     "latestHealthCheck": {
-      "checkedAt": "2026-11-06T12:26:52Z",
-      "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
-      "deploymentCommit": "b92c0de312a0fa5a85fed2b4d8f18d6bd1bf8d70",
+      "checkedAt": "2026-11-06T12:40:27Z",
+      "deploymentId": "dpl_HBPL2rV9cuRUdgapA5puCpg3Waca",
+      "deploymentCommit": "70d6631c6001d4fe80f3f21ff35a26312d11cabe",
       "httpStatus": 200,
-      "durationMs": 1323,
+      "durationMs": 400,
       "health": {
         "ok": true,
         "persistence": "prisma",
@@ -436,8 +422,27 @@
           "ready": true
         }
       },
-      "vercelId": "lhr1::iad1::6wsk4-1793968011491-a39b7266fb2a",
-      "context": "Single post-timeout recovery check; this does not establish reliable room creation."
+      "vercelId": "lhr1::iad1::x5ndp-1793968765023-515969e6c4d5",
+      "context": "Single health check after report-only PR #23 was merged to main. It confirms the documentation-only deployment is healthy; it does not establish reliable room creation."
+    },
+    "latestRuntimeLogCheck": {
+      "checkedAt": "2026-11-06T12:38:56Z",
+      "lookback": "30m",
+      "environment": "production",
+      "requestIdsReturned": [
+        "s9njg-1793967234282-3fa43e89ae19",
+        "6wsk4-1793968011491-a39b7266fb2a"
+      ],
+      "latestRoomCreateFailure": "The 12:14:14 POST /api/rooms query-read-timeout remained in retained logs; no newer room-create timeout record appeared in this query.",
+      "limitation": "This is a bounded warning/error log query, not evidence of a successful room create, absence of all requests, or reliability soak."
+    },
+    "postMergeDeploymentCheck": {
+      "checkedAt": "2026-11-06T12:39:25Z",
+      "deploymentId": "dpl_HBPL2rV9cuRUdgapA5puCpg3Waca",
+      "deploymentCommit": "70d6631c6001d4fe80f3f21ff35a26312d11cabe",
+      "state": "READY",
+      "target": "production",
+      "note": "Report-only PR #23 is on main. This deployment did not include runtime code changes."
     },
     "latestMetricsCheck": {
       "checkedAt": "2026-11-06T10:17:46Z",
@@ -549,6 +554,19 @@
           "12,0"
         ],
         "legalMoveAcceptedRevision": 12,
+        "peerStateSync": true,
+        "refreshReconnect": true,
+        "matchCompleted": false
+      },
+      {
+        "deploymentId": "dpl_HBPL2rV9cuRUdgapA5puCpg3Waca",
+        "commit": "70d6631c6001d4fe80f3f21ff35a26312d11cabe",
+        "checkedAt": "2026-11-06T12:47:19Z",
+        "roomCode": "58A549",
+        "isolatedChromeProfiles": 3,
+        "waitingRoomAndHostStart": true,
+        "setupActions": 9,
+        "legalMoveAcceptedRevision": 11,
         "peerStateSync": true,
         "refreshReconnect": true,
         "matchCompleted": false
@@ -745,25 +763,36 @@
       }
     },
     "latestProductionBrowserAttempt": {
-      "checkedAt": "2026-11-06T12:14:14.571Z",
-      "requestStartedAt": "2026-11-06T12:13:54.282Z",
-      "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
-      "deploymentCommit": "b92c0de312a0fa5a85fed2b4d8f18d6bd1bf8d70",
-      "url": "https://abominations-attack-america.vercel.app",
-      "purpose": "Automated Production two-player core multiplayer browser verification using three isolated Chrome profiles.",
+      "checkedAt": "2026-11-06T12:47:19Z",
+      "deploymentId": "dpl_HBPL2rV9cuRUdgapA5puCpg3Waca",
+      "deploymentCommit": "70d6631c6001d4fe80f3f21ff35a26312d11cabe",
+      "purpose": "Automated Production multiplayer core verification using three isolated Chrome profiles.",
       "isolatedChromeProfiles": 3,
-      "stage": "First profile attempted room creation; no room code was returned; other profiles did not join.",
+      "roomCode": "58A549",
+      "roomCreateRequestId": "mqbkm-1793969018267-19b23a36cc06",
+      "roomCreateHttpStatus": 201,
+      "waitingRoomStart": "verified",
+      "setupActions": 9,
+      "legalMoveAcceptedRevision": 11,
+      "peerObservedSameAuthoritativeState": true,
+      "actingPlayerRefreshReconnect": true,
+      "matchCompleted": false,
+      "note": "One successful core browser run after the prior Production query-read-timeout; not a reliability soak or complete human match.",
+      "testRoomCleanup": "The test room remained in durable Production storage when the verifier exited."
+    },
+    "latestProductionFailure": {
+      "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
+      "commit": "b92c0de312a0fa5a85fed2b4d8f18d6bd1bf8d70",
+      "checkedAt": "2026-11-06T12:14:14.571Z",
+      "browserProfilesStarted": 3,
       "requestPath": "/api/rooms",
       "httpStatus": 503,
       "roomCreated": false,
-      "durationMs": 20202,
+      "category": "database-timeout",
       "timeoutKind": "query-read-timeout",
+      "durationMs": 20202,
       "databaseStep": "gameRoom.create",
       "databaseStepDurationMs": 20131,
-      "requestId": "s9njg-1793967234282-3fa43e89ae19",
-      "vercelId": "lhr1::iad1::s9njg-1793967234282-3fa43e89ae19",
-      "edgeRegion": "lhr1",
-      "functionRegion": "iad1",
       "pool": {
         "total": 0,
         "idle": 0,
@@ -774,12 +803,22 @@
         "clientsRemoved": 1,
         "idleClientErrors": 0
       },
-      "traceInspection": {
-        "apiStatus": 403,
-        "explicitTeamProjectCliStatus": 404,
-        "cliResult": "Trace not found"
-      },
-      "diagnosis": "The repeated Prisma query-read-timeout is verified, but its database or network root cause remains unknown. No room or game actions occurred."
+      "functionLogRequestId": "s9njg-1793967234282-3fa43e89ae19",
+      "vercelIdRegion": "lhr1; x-vercel-id also includes iad1",
+      "logCapturedAt": "2026-11-06T12:14:14.571Z",
+      "cause": "Unknown; Vercel trace access returned 403 and the CLI fallback returned 404."
+    },
+    "latestProductionRequestCheck": {
+      "checkedAt": "2026-11-06T12:49:34Z",
+      "environment": "production",
+      "deploymentId": "dpl_HBPL2rV9cuRUdgapA5puCpg3Waca",
+      "requestId": "mqbkm-1793969018267-19b23a36cc06",
+      "method": "POST",
+      "path": "/api/rooms",
+      "httpStatus": 201,
+      "roomCode": "58A549",
+      "source": "Vercel CDN request logs queried with explicit team/project scope",
+      "note": "One room-create request returned 201 during the three-profile core flow; this does not clear the earlier timeout or establish repeat reliability."
     }
   },
   "preview": {
@@ -1028,16 +1067,25 @@
       "causeEstablished": false,
       "note": "The trace request errors persist after the user reconnected Viewer access. The safe runtime logs remain the only diagnostics; timeout root cause is unknown."
     },
+    "viewerAccessRetry": {
+      "checkedAt": "2026-11-06T12:37:30Z",
+      "environmentMetadataApiStatus": 403,
+      "traceApiStatus": 403,
+      "cliEnvironmentList": "Succeeded with explicit team and project scope; values remained masked and were not read.",
+      "cliTraceLookup": "404 Trace not found for the 12:14 room-create request.",
+      "secretValuesRead": false,
+      "note": "After the user's Viewer-access reconnection, the connected Vercel API still denies project environment metadata and trace reads. The CLI can list metadata but cannot recover the expired trace; no secrets were accessed."
+    },
     "productionDeployment": {
-      "deploymentId": "dpl_25mrtWhK387LqT4yP5EKB3JCkPmy",
-      "deploymentUrl": "https://abominations-attack-america-5w2ek9i6w.vercel.app",
+      "deploymentId": "dpl_HBPL2rV9cuRUdgapA5puCpg3Waca",
+      "deploymentUrl": "https://abominations-attack-america-cp2icktyu.vercel.app",
       "canonicalUrl": "https://abominations-attack-america.vercel.app",
-      "commit": "8a11cade0efc8e4a84cceade987977affd45abd1",
+      "commit": "70d6631c6001d4fe80f3f21ff35a26312d11cabe",
       "status": "READY",
       "functionRegion": "iad1",
-      "deploymentCheckedAt": "2026-11-06T10:12:52.426Z",
+      "deploymentCheckedAt": "2026-11-06T12:39:25Z",
       "healthTimeoutReproduced": false,
-      "browserVerification": "Three isolated Chrome profiles verified the two-player Production core flow and spectator projection through Move; no terminal match or reliability soak."
+      "browserVerification": "This latest main deployment contains report-only changes; the latest browser core flow remains on an earlier deployment, and no terminal match or reliability soak was run on this deployment."
     },
     "productionLastMeasurement": {
       "databaseProject": "abominations-attack-america-production",
