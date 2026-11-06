@@ -171,7 +171,7 @@ async function openBrowser(port, name, existingProfile) {
       if (await evaluate(expression)) return;
       await wait(Math.min(100, Math.max(1, deadline - Date.now())));
     }
-    const diagnostic = await evaluate(`(() => { let session; try { const saved = JSON.parse(localStorage.getItem("abominations-session") ?? "null"); session = saved ? { hasToken: Boolean(saved.token), roomCode: saved.room?.code ?? null } : null; } catch {} return { url: location.origin + location.pathname, bodyText: document.body.innerText.slice(-900), hasSavedRoomSession: Boolean(session?.hasToken), roomCode: session?.roomCode ?? null, connection: document.querySelector(".connection")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim() }; })()`);
+    const diagnostic = await evaluate(`(() => { let session; try { const saved = JSON.parse(localStorage.getItem("abominations-session") ?? "null"); session = saved ? { hasToken: Boolean(saved.token), roomCode: saved.room?.code ?? null } : null; } catch {} return { url: location.origin + location.pathname, bodyText: document.body.innerText.slice(-900), hasSavedRoomSession: Boolean(session?.hasToken), roomCode: session?.roomCode ?? null, connection: document.querySelector(".connection")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".turn-hud-heading h2")?.textContent?.trim() }; })()`);
     throw new Error(`${name}: timed out waiting for ${label}: ${JSON.stringify({ ...diagnostic, networkResponses: networkResponses.slice(-20), networkFailures: networkFailures.slice(-12), pageExceptions: pageExceptions.slice(-5) })}`);
   };
   return {
@@ -244,7 +244,7 @@ try {
   }
   await first.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "first lobby");
   await first.evaluate(`(() => { const input = document.querySelector('[aria-label="Display name"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(input, "First player"); input.dispatchEvent(new Event("input", { bubbles: true })); })()`);
-  await first.evaluate(`(() => { const select = document.querySelector('[aria-label="Room privacy"]'); if (!select) return false; const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set; setter.call(select, "public"); select.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
+  await first.evaluate(`(() => { const select = document.querySelector('[aria-label="Room privacy"]'); if (!select) return false; const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set; setter.call(select, "private"); select.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
   if (!await first.click("Create")) throw new Error("First browser could not create a room.");
   await first.waitFor(`!!document.querySelector(".lobby strong")`, "created room code");
   const roomCode = await first.evaluate(`document.querySelector(".lobby strong")?.textContent?.trim()`);
@@ -308,22 +308,55 @@ try {
         const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
         const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
         const room = response.ok ? await response.json() : null;
-        return { status: response.status, phase: room?.state?.setupState?.phase };
+        const setup = room?.state?.setupState;
+        return { status: response.status, phase: setup?.phase, seats: setup?.seats ?? [] };
       })()`);
       nextAuthoritativeSetupCheck = Date.now() + 1000;
-      if (authoritativeSetup.status === 200 && authoritativeSetup.phase === "complete") break;
+      if (authoritativeSetup.status === 200 && authoritativeSetup.phase === "complete" && authoritativeSetup.seats.length > 0 && authoritativeSetup.seats.every((seat) => seat.startingChoice !== undefined)) break;
     }
     let progressed = false;
     for (const browser of [first, second]) {
-      const preferredStartingChoice = "Draw Research";
-      const clicked = await browser.evaluate(`(() => { const phase = document.querySelector(".setup-panel h2")?.textContent?.trim(); if (phase === "Place unused branches") { for (const select of document.querySelectorAll(".unused-branch-placement select")) { const option = [...select.options].find((candidate) => candidate.value && !candidate.disabled); if (!option) return false; select.value = option.value; select.dispatchEvent(new Event("change", { bubbles: true })); } const place = [...document.querySelectorAll(".unused-branch-placement button")].find((candidate) => candidate.textContent?.trim() === "Place units and continue"); if (!place || place.disabled) return false; place.click(); return true; } const buttons = [...document.querySelectorAll(".setup-options button")].filter((candidate) => !candidate.disabled); const button = phase === "starting choice" ? buttons.find((candidate) => candidate.textContent?.trim().toLowerCase().includes(${JSON.stringify(preferredStartingChoice.toLowerCase())})) : buttons[0]; if (!button) return false; button.click(); return true; })()`);
+      const preferStartingDeployment = process.env.BROWSER_ONLINE_CORE_ONLY !== "1";
+      const preferredStartingChoice = preferStartingDeployment ? "Deploy starting troops" : "Draw Research";
+      const clicked = await browser.evaluate(`(() => {
+        const phase = document.querySelector(".setup-panel h2")?.textContent?.trim();
+        const normalizedPhase = phase?.toLowerCase();
+        if (normalizedPhase === "place unused branches") {
+          for (const select of document.querySelectorAll(".unused-branch-placement select")) {
+            const option = [...select.options].find((candidate) => candidate.value && !candidate.disabled);
+            if (!option) return false;
+            select.value = option.value;
+            select.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          const place = [...document.querySelectorAll(".unused-branch-placement button")].find((candidate) => candidate.textContent?.trim() === "Place units and continue");
+          if (!place || place.disabled) return false;
+          place.click();
+          return true;
+        }
+        if (normalizedPhase === "starting choice" && ${JSON.stringify(preferStartingDeployment)}) {
+          const finish = [...document.querySelectorAll(".setup-panel button")].find((candidate) => candidate.textContent?.trim() === "Finish starting deployment" && !candidate.disabled);
+          if (finish) { finish.click(); return true; }
+          const troop = [...document.querySelectorAll('.military-hand button[aria-label^="Deploy "]')].find((candidate) => !candidate.disabled);
+          if (troop) { troop.click(); return true; }
+          const location = [...document.querySelectorAll(".hex-tile")].find((candidate) => candidate.getAttribute("aria-label")?.toLowerCase().includes("choose starting location") && !candidate.disabled);
+          if (location) { location.click(); return true; }
+          const start = [...document.querySelectorAll(".setup-options button")].find((candidate) => candidate.textContent?.trim() === "Deploy starting troops" && !candidate.disabled);
+          if (start) { start.click(); return true; }
+          return false;
+        }
+        const buttons = [...document.querySelectorAll(".setup-options button")].filter((candidate) => !candidate.disabled);
+        const button = normalizedPhase === "starting choice" ? buttons.find((candidate) => candidate.textContent?.trim().toLowerCase().includes(${JSON.stringify(preferredStartingChoice.toLowerCase())})) : buttons[0];
+        if (!button) return false;
+        button.click();
+        return true;
+      })()`);
       if (clicked) { setupClicks += 1; progressed = true; setupWaitDeadline = Date.now() + waitTimeoutMs; await wait(120); break; }
     }
     if (!progressed) {
       const complete = await first.evaluate("!document.querySelector('.setup-panel')") && await second.evaluate("!document.querySelector('.setup-panel')");
       if (complete) break;
       if (Date.now() >= setupWaitDeadline) {
-        const setupStates = await Promise.all([first, second].map((browser) => browser.evaluate(`(() => ({ phase: document.querySelector(".setup-panel h2")?.textContent?.trim(), prompt: document.querySelector(".deployment-prompt")?.textContent?.trim(), progress: document.querySelector(".setup-progress")?.textContent?.trim(), action: document.querySelector(".action-card h2")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), buttons: [...document.querySelectorAll(".setup-options button")].map((button) => ({ text: button.textContent.trim(), disabled: button.disabled, title: button.title })) }))()`)));
+        const setupStates = await Promise.all([first, second].map((browser) => browser.evaluate(`(() => ({ phase: document.querySelector(".setup-panel h2")?.textContent?.trim(), prompt: document.querySelector(".deployment-prompt")?.textContent?.trim(), progress: document.querySelector(".setup-progress")?.textContent?.trim(), action: document.querySelector(".turn-hud-heading h2")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), buttons: [...document.querySelectorAll(".setup-options button")].map((button) => ({ text: button.textContent.trim(), disabled: button.disabled, title: button.title })) }))()`)));
         throw new Error(`Neither online browser exposed the current setup choice: ${JSON.stringify(setupStates)}`);
       }
       await wait(Math.min(180, Math.max(1, setupWaitDeadline - Date.now())));
@@ -338,7 +371,7 @@ try {
     const setupField = room?.state?.setupState?.phase === "monster-selection" ? "monsterId" : room?.state?.setupState?.phase === "branch-selection" ? "branch" : room?.state?.setupState?.phase === "lair-selection" ? "lair" : "startingChoice";
     const turnSeat = seats.find((seat) => seat[setupField] === undefined);
     const ownParticipant = room?.participants?.find((player) => player.id === session.participantId);
-    return { status: response.status, participantIdMatches: Boolean(ownParticipant), ownPlayerIndex: ownParticipant?.playerIndex, ownRole: ownParticipant?.role, version: room?.version, roomStatus: room?.status, matchStarted: room?.matchStarted, phase: room?.state?.phase, setupPhase: room?.state?.setupState?.phase, setupSeat: turnSeat?.playerIndex, setupSeats: seats.map((seat) => ({ playerIndex: seat.playerIndex, monsterId: seat.monsterId, branch: seat.branch })), participants: room?.participants?.map((player) => ({ playerIndex: player.playerIndex, role: player.role, connected: player.connected, name: player.displayName })), setupApplied: room?.state?.setupApplied, panel: panel ? { heading: panel.querySelector("h2")?.textContent?.trim(), turn: panel.querySelector(".setup-turn")?.textContent?.trim(), buttons: [...panel.querySelectorAll(".setup-options button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), text: panel.innerText.slice(0, 180), visible: panel.getClientRects().length > 0 } : null };
+    return { status: response.status, participantIdMatches: Boolean(ownParticipant), ownPlayerIndex: ownParticipant?.playerIndex, ownRole: ownParticipant?.role, version: room?.version, roomStatus: room?.status, matchStarted: room?.matchStarted, phase: room?.state?.phase, setupPhase: room?.state?.setupState?.phase, setupComplete: Boolean(room?.state?.setupState && room.state.setupState.phase === "complete" && seats.length > 0 && seats.every((seat) => seat.startingChoice !== undefined)), setupSeat: turnSeat?.playerIndex, setupSeats: seats.map((seat) => ({ playerIndex: seat.playerIndex, monsterId: seat.monsterId, branch: seat.branch, hasStartingChoice: seat.startingChoice !== undefined })), participants: room?.participants?.map((player) => ({ playerIndex: player.playerIndex, role: player.role, connected: player.connected, name: player.displayName })), setupApplied: room?.state?.setupApplied, panel: panel ? { heading: panel.querySelector("h2")?.textContent?.trim(), turn: panel.querySelector(".setup-turn")?.textContent?.trim(), buttons: [...panel.querySelectorAll(".setup-options button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), text: panel.innerText.slice(0, 180), visible: panel.getClientRects().length > 0 } : null };
   })()`);
   const setupDiagnostics = await Promise.all([first, second].map(async (browser) => {
     try {
@@ -347,14 +380,14 @@ try {
       return { evaluationError: error instanceof Error ? error.message : String(error), recentResponses: browser.networkResponses.slice(-10) };
     }
   }));
-  if (setupDiagnostics.some((state) => state.status !== 200 || state.setupPhase !== "complete")) {
+  if (setupDiagnostics.some((state) => state.status !== 200 || !state.setupComplete)) {
     const requests = { first: first.networkResponses.slice(-25), second: second.networkResponses.slice(-25) };
     throw new Error(`The authoritative server did not report completed setup in both player sessions for room ${roomCode}: ${JSON.stringify({ setupDiagnostics, requests })}`);
   }
   await first.waitFor("!document.querySelector('.setup-panel')", "first setup completion");
   await second.waitFor("!document.querySelector('.setup-panel')", "second setup completion");
   if (!await first.click("Ready") || !await second.click("Ready")) throw new Error("Both players did not expose Ready controls.");
-  await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move" || Boolean(document.querySelector(".giant-placement-choice"))`, "Move or starting giant-placement decision");
+  await first.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move" || Boolean(document.querySelector(".giant-placement-choice"))`, "Move or starting giant-placement decision");
   let startingGiantPlacement = "not-required";
   let startingGiantPlacementRefresh = "not-needed";
   const startupRoom = await first.evaluate(`(async () => {
@@ -393,12 +426,15 @@ try {
   })()`);
   if (resolvedStartupRoom.state?.pendingDecision?.type === "giant-placement") throw new Error(`Starting Research granted more than the supported four queued giant placements: ${JSON.stringify(resolvedStartupRoom.state.pendingDecision)}.`);
   if (startingGiantPlacements > 0) startingGiantPlacement = "resolved-by-owner-ui";
-  await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first Move phase");
-  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second Move phase");
-  await spectator.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "spectator Move projection");
+  await first.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move"`, "first Move phase");
+  await second.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move"`, "second Move phase");
+  await spectator.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move"`, "spectator Move projection");
   for (const [browser, targetPlayer, label] of [[first, "Player 2", "online opponent"], [spectator, "Player 1", "spectator player"]]) {
     const clickedPortrait = await browser.evaluate(`(() => { const button = [...document.querySelectorAll(".opponent-player-card")].find((candidate) => candidate.getAttribute("aria-label")?.startsWith(${JSON.stringify(targetPlayer)})); if (!button) return false; button.click(); return true; })()`);
-    if (!clickedPortrait) throw new Error(`${label} portrait was missing.`);
+    if (!clickedPortrait) {
+      const diagnostic = await browser.evaluate(`(() => ({ phase: document.querySelector(".turn-hud-heading h2")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), players: [...document.querySelectorAll(".opponent-player-card")].map((button) => button.getAttribute("aria-label")), setupInProgress: document.querySelector(".game-screen")?.classList.contains("setup-in-progress"), visibleText: document.querySelector(".game-screen")?.innerText?.slice(0, 500) }))()`);
+      throw new Error(`${label} portrait was missing: ${JSON.stringify(diagnostic)}.`);
+    }
     await browser.waitFor(`!!document.querySelector("#player-public-status")`, `${label} public status`);
     const opened = await browser.evaluate(`document.querySelector("#player-public-status")?.textContent ?? ""`);
     if (!String(opened).toLowerCase().includes(targetPlayer.toLowerCase()) || !/\d+\/\d+/.test(String(opened)) || !/★\s*\d+/.test(String(opened))) throw new Error(`${label} portrait did not expose public health, infamy, and position: ${JSON.stringify(opened)}.`);
@@ -422,7 +458,7 @@ try {
   await first.waitFor(`!!document.querySelector(".lobby strong")`, "first browser room restore after refresh");
   if (!await first.evaluate(`localStorage.getItem("abominations-session")`)) throw new Error("First browser lost its persisted room session during refresh.");
   await first.waitFor(`document.querySelector(".connection")?.textContent?.trim() === "online"`, "first browser reconnect state");
-  await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first browser recovered Move state");
+  await first.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move"`, "first browser recovered Move state");
   const forgedCommand = await first.evaluate(`(async () => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
     const response = await fetch("${apiUrl}/rooms/${roomCode}/actions", {
@@ -432,7 +468,7 @@ try {
     });
     return { status: response.status, body: await response.json() };
   })()`);
-  if (forgedCommand.status !== 400 || await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`)) throw new Error(`Forged browser command was not rejected without changing Move: ${JSON.stringify(forgedCommand)}`);
+  if (forgedCommand.status !== 400 || await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() !== "Move"`)) throw new Error(`Forged browser command was not rejected without changing Move: ${JSON.stringify(forgedCommand)}`);
   const malformedCommand = await first.evaluate(`(async () => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
     const response = await fetch("${apiUrl}/rooms/${roomCode}/actions", {
@@ -442,9 +478,9 @@ try {
     });
     return { status: response.status, body: await response.json() };
   })()`);
-  if (malformedCommand.status !== 400 || await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`)) throw new Error(`Malformed browser command was not rejected without changing Move: ${JSON.stringify(malformedCommand)}`);
+  if (malformedCommand.status !== 400 || await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() !== "Move"`)) throw new Error(`Malformed browser command was not rejected without changing Move: ${JSON.stringify(malformedCommand)}`);
   await second.evaluate("location.reload()");
-  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
+  await second.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
   if (process.env.BROWSER_ONLINE_CORE_ONLY === "1") {
     const browserSessions = await Promise.all([first, second].map((browser) => browser.evaluate(`JSON.parse(localStorage.getItem("abominations-session") ?? "{}")`)));
     const readCoreRoom = async (session) => {
@@ -490,7 +526,7 @@ try {
     await actorBrowser.refresh();
     await actorBrowser.waitFor(`!!document.querySelector(".lobby strong")`, "active player room restore after move refresh");
     const expectedPhaseHeading = typeof acceptedRoom.state?.phase === "string" ? acceptedRoom.state.phase[0].toUpperCase() + acceptedRoom.state.phase.slice(1) : "";
-    await actorBrowser.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(expectedPhaseHeading)}`, "active player phase restore after move refresh");
+    await actorBrowser.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === ${JSON.stringify(expectedPhaseHeading)}`, "active player phase restore after move refresh");
     const restoredRoom = await readCoreRoom(actorSession);
     const restoredState = { version: restoredRoom.version, phase: restoredRoom.state?.phase, currentPlayer: restoredRoom.state?.currentPlayer, pendingDecision: restoredRoom.state?.pendingDecision, monsterLocation: restoredRoom.state?.monsters?.[activePlayer]?.location };
     if (restoredState.version !== acceptedRoom.version || restoredState.monsterLocation !== expectedLocation || restoredState.phase !== peerStateProjection.phase || restoredState.currentPlayer !== peerStateProjection.currentPlayer || JSON.stringify(restoredState.pendingDecision) !== JSON.stringify(peerStateProjection.pendingDecision)) throw new Error(`Production refresh did not restore the accepted move: ${JSON.stringify({ roomCode, acceptedVersion: acceptedRoom.version, expectedLocation, restoredState, peerState: peerStateProjection })}`);
@@ -590,12 +626,12 @@ try {
   if (!await first.click("Confirm move")) throw new Error("First browser could not confirm the online path.");
   await first.waitFor(`!!document.querySelector(".end-movement:not(:disabled)")`, "online movement completion control");
   if (!await first.evaluate(`(() => { const button = document.querySelector(".end-movement:not(:disabled)"); if (!button) return false; button.click(); return true; })()`)) throw new Error("First browser could not end online movement.");
-  await first.waitFor(`(() => { const phase = document.querySelector(".action-card h2")?.textContent?.trim(); return phase !== "Move" && phase !== "Waiting for server…"; })()`, "first settled post-move phase");
-  const nextPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
-  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`, "second post-move phase");
-  const secondPhase = await second.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+  await first.waitFor(`(() => { const phase = document.querySelector(".turn-hud-heading h2")?.textContent?.trim(); return phase !== "Move" && phase !== "Waiting for server…"; })()`, "first settled post-move phase");
+  const nextPhase = await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
+  await second.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() !== "Move"`, "second post-move phase");
+  const secondPhase = await second.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
   if (secondPhase !== nextPhase) throw new Error(`Online phase divergence after movement: first=${nextPhase ?? "unknown"}, second=${secondPhase ?? "unknown"}.`);
-  await spectator.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(nextPhase)}`, "spectator synchronized post-move phase");
+  await spectator.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === ${JSON.stringify(nextPhase)}`, "spectator synchronized post-move phase");
   await first.evaluate("new Promise((resolve) => setTimeout(resolve, 800))");
   const liveMixedStackAfterMonster = await first.evaluate(`(async () => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
@@ -710,7 +746,7 @@ try {
     stackInspection = `${inspectedStack.itemCount}-piece-visible-battle-stack-artwork-contained-no-overlap-inspected-no-state-change-${stackResponsive.length}-viewports`;
     stackArtworkGeometry = { measuredPieceCount: pendingBattleStack.pieces, settledBeforeMeasurement: true, initiallyContained: pendingBattleStack.artContained, initiallyNoOverlap: pendingBattleStack.artNoOverlap, responsive: stackResponsive.map(({ width, height, gameplayStackContained, gameplayStackNoOverlap }) => ({ width, height, contained: gameplayStackContained, noOverlap: gameplayStackNoOverlap })) };
     for (let fightStep = 0; fightStep < 32; fightStep += 1) {
-      const currentFightPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+      const currentFightPhase = await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
       if (currentFightPhase !== "Fight") break;
       let fightAction = false;
       for (const browser of [first, second]) {
@@ -735,30 +771,30 @@ try {
           const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
           const endpoint = ${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "");
           const room = await (await fetch(endpoint)).json();
-          return { phase: document.querySelector(".action-card h2")?.textContent?.trim(), action: document.querySelector(".action-dock button")?.textContent?.trim(), status: document.querySelector(".action-dock-status")?.textContent?.trim(), pending: room.state.pendingDecision, currentPlayer: room.state.currentPlayer, controls: [...document.querySelectorAll("button")].filter((button) => button.getClientRects().length).map((button) => ({ text: button.textContent.trim(), disabled: button.disabled })).filter((button) => button.text) };
+          return { phase: document.querySelector(".turn-hud-heading h2")?.textContent?.trim(), action: document.querySelector(".action-dock button")?.textContent?.trim(), status: document.querySelector(".action-dock-status")?.textContent?.trim(), pending: room.state.pendingDecision, currentPlayer: room.state.currentPlayer, controls: [...document.querySelectorAll("button")].filter((button) => button.getClientRects().length).map((button) => ({ text: button.textContent.trim(), disabled: button.disabled })).filter((button) => button.text) };
         })()`)));
         await writeFile("/tmp/abominations-online-fight-diagnostic.json", JSON.stringify(diagnostic, null, 2));
         throw new Error("Neither online player exposed an enabled legal Fight decision control; diagnostic saved to /tmp/abominations-online-fight-diagnostic.json.");
       }
       await wait(180);
     }
-    if (await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() === "Fight"`)) {
-      const fightDiagnostics = await Promise.all([first, second].map((browser) => browser.evaluate(`({ heading: document.querySelector(".action-card h2")?.textContent?.trim(), buttons: [...document.querySelectorAll("button")].map((button) => button.textContent.trim()).filter((text) => /fight|attack|retreat|target|infamy/i.test(text)).slice(-16), prompt: document.querySelector(".deployment-prompt")?.textContent?.trim() ?? "" })`)));
+    if (await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Fight"`)) {
+      const fightDiagnostics = await Promise.all([first, second].map((browser) => browser.evaluate(`({ heading: document.querySelector(".turn-hud-heading h2")?.textContent?.trim(), buttons: [...document.querySelectorAll("button")].map((button) => button.textContent.trim()).filter((text) => /fight|attack|retreat|target|infamy/i.test(text)).slice(-16), prompt: document.querySelector(".deployment-prompt")?.textContent?.trim() ?? "" })`)));
       const recentFightEvents = await first.evaluate(`(async () => { const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}"); const endpoint = ${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""); const room = await (await fetch(endpoint)).json(); return { phase: room.state.phase, currentPlayer: room.state.currentPlayer, pendingType: room.state.pendingDecision?.type, pendingPlayer: room.state.pendingDecision?.playerIndex, events: room.state.eventLog.slice(-12).map((event) => event.action) }; })()`);
       await writeFile(join(process.cwd(), "output/board-art/browser-online-fight-diagnostic.json"), `${JSON.stringify({ fightDiagnostics, recentFightEvents }, null, 2)}\n`);
       throw new Error(`Online Fight did not resolve within the supported decision steps: ${JSON.stringify({ fightDiagnostics, recentFightEvents })}`);
     }
   }
-  await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Waiting for server…"`, "first player action settled after Fight");
-  const postFightPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+  await first.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() !== "Waiting for server…"`, "first player action settled after Fight");
+  const postFightPhase = await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
   try {
-    await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(postFightPhase)}`, "second synchronized post-Fight phase");
+    await second.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === ${JSON.stringify(postFightPhase)}`, "second synchronized post-Fight phase");
   } catch (error) {
     const diagnostics = await Promise.all([first, second].map((browser) => browser.evaluate(`(async () => {
       const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
       const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
       const room = response.ok ? await response.json() : null;
-      return { status: response.status, roomCode: room?.code, roomVersion: room?.version, roomPhase: room?.state?.phase, currentPlayer: room?.state?.currentPlayer, pendingDecision: room?.state?.pendingDecision, renderedPhase: document.querySelector(".action-card h2")?.textContent?.trim(), connection: document.querySelector(".connection")?.textContent?.trim() };
+      return { status: response.status, roomCode: room?.code, roomVersion: room?.version, roomPhase: room?.state?.phase, currentPlayer: room?.state?.currentPlayer, pendingDecision: room?.state?.pendingDecision, renderedPhase: document.querySelector(".turn-hud-heading h2")?.textContent?.trim(), connection: document.querySelector(".connection")?.textContent?.trim() };
     })()`)));
     throw new Error(`${error.message}; firstPhase=${postFightPhase}; roomDiagnostics=${JSON.stringify(diagnostics)}`);
   }
@@ -833,24 +869,24 @@ try {
         return true;
       })()`);
       if (clicked) {
-        await browser.waitFor(`!/^Waiting for server/.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, `${label} Encounter response`);
+        await browser.waitFor(`!/^Waiting for server/.test(document.querySelector(".turn-hud-heading h2")?.textContent?.trim() ?? "")`, `${label} Encounter response`);
         return true;
       }
     }
-    const diagnostic = await Promise.all([first, second].map((browser) => browser.evaluate(`({ phase: document.querySelector(".action-card h2")?.textContent?.trim(), stage: document.querySelector(".resolution-stage[open]")?.innerText, controls: [...document.querySelectorAll(".path-controls button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), pending: document.querySelector(".deployment-prompt")?.textContent?.trim() })`)));
+    const diagnostic = await Promise.all([first, second].map((browser) => browser.evaluate(`({ phase: document.querySelector(".turn-hud-heading h2")?.textContent?.trim(), stage: document.querySelector(".resolution-stage[open]")?.innerText, controls: [...document.querySelectorAll(".path-controls button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), pending: document.querySelector(".deployment-prompt")?.textContent?.trim() })`)));
     throw new Error(`Encounter remained active without an enabled legal decision control in either player session: ${JSON.stringify(diagnostic)}`);
   };
   const encounterAction = await clickEncounterDecision();
   if (!encounterAction) throw new Error("First browser exposed no legal Encounter action.");
   for (let encounterStep = 0; encounterStep < 4; encounterStep += 1) {
-    const currentPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+    const currentPhase = await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
     if (currentPhase === "Deploy" || /^Victory · /.test(currentPhase ?? "")) break;
     if (currentPhase !== "Encounter") throw new Error(`Expected Encounter or Deploy after Encounter action, got ${currentPhase ?? "unknown"}.`);
     const followUp = await clickEncounterDecision();
     if (!followUp) throw new Error("Encounter remained active without an enabled legal decision control in either player session.");
   }
-  let postEncounterPhase = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
-  await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(postEncounterPhase)}`, "second synchronized post-encounter phase");
+  let postEncounterPhase = await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
+  await second.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === ${JSON.stringify(postEncounterPhase)}`, "second synchronized post-encounter phase");
   const encounterPresentationEvents = await first.evaluate(`(async () => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
     const endpoint = ${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "");
@@ -866,7 +902,7 @@ try {
     playbackLabel: document.querySelector(".board-event-playback")?.getAttribute("aria-label") ?? "",
     recordedEncounter: document.querySelector(".encounter-result")?.getAttribute("data-event-id") ?? "",
     playbackSnapshots: window.__boardPlaybackSnapshots ?? [],
-    phase: document.querySelector(".action-card h2")?.textContent?.trim() ?? ""
+    phase: document.querySelector(".turn-hud-heading h2")?.textContent?.trim() ?? ""
   })`)));
   if (!encounterPlayback.some((view) => view?.events?.length)) {
     const eventTrace = await first.evaluate(`(async () => {
@@ -913,8 +949,8 @@ let onlineVictory;
     const researchObservers = researchDraw.actorBrowser === "first" ? [second, spectator] : [first, spectator];
     await Promise.all(researchObservers.map((browser) => browser.waitFor(`(window.__boardPlaybackSnapshots ?? []).some((snapshot) => snapshot.action === "research.drawn" && snapshot.cards.some((card) => card.className.includes("research") && /MILITARY RESEARCH card drawn/.test(card.label ?? "")))`, "generic Military Research observer card")));
     const researchActor = researchDraw.actorBrowser === "first" ? first : second;
-    await first.waitFor(`["Move", "Deploy"].includes(document.querySelector(".action-card h2")?.textContent?.trim())`, "post-research phase");
-    let phaseAfterResearch = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+    await first.waitFor(`["Move", "Deploy"].includes(document.querySelector(".turn-hud-heading h2")?.textContent?.trim())`, "post-research phase");
+    let phaseAfterResearch = await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
     if (phaseAfterResearch === "Deploy") {
       const giantChoice = await researchActor.evaluate(`Boolean(document.querySelector(".giant-placement-options button:not(:disabled)"))`);
       if (giantChoice) {
@@ -922,7 +958,7 @@ let onlineVictory;
           throw new Error("The player could not select a legal base for the immediate giant Research placement.");
         }
         await researchActor.waitFor(`!document.querySelector(".giant-placement-options")`, "resolved immediate giant Research placement");
-        phaseAfterResearch = await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim()`);
+        phaseAfterResearch = await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
       }
     }
     if (phaseAfterResearch === "Deploy") {
@@ -930,14 +966,14 @@ let onlineVictory;
       if (!await researchActor.click("Pass deployment")) throw new Error("The player could not pass the remaining Deploy phase after the immediate giant Research placement.");
     }
     try {
-      await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "first next Move phase");
-      await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
+      await first.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move"`, "first next Move phase");
+      await second.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move"`, "second synchronized next Move phase");
     } catch (error) {
       const state = await first.evaluate(`(async () => {
         const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
         const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
         const room = await response.json();
-        return { status: room.status, state: { phase: room.state?.phase, currentPlayer: room.state?.currentPlayer, pendingDecision: room.state?.pendingDecision, lastEvents: room.state?.eventLog?.slice(-6).map((event) => ({ action: event.action, phase: event.detail.nextPhase, nextPlayer: event.detail.nextPlayer })) }, clients: [document.querySelector(".action-card h2")?.textContent?.trim(), document.querySelector(".lobby")?.textContent?.trim()] };
+        return { status: room.status, state: { phase: room.state?.phase, currentPlayer: room.state?.currentPlayer, pendingDecision: room.state?.pendingDecision, lastEvents: room.state?.eventLog?.slice(-6).map((event) => ({ action: event.action, phase: event.detail.nextPhase, nextPlayer: event.detail.nextPlayer })) }, clients: [document.querySelector(".turn-hud-heading h2")?.textContent?.trim(), document.querySelector(".lobby")?.textContent?.trim()] };
       })()`);
       throw new Error(`Military Research draw did not reach the next Move phase: ${JSON.stringify({ state, researchDraw })}; ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -992,7 +1028,7 @@ let onlineVictory;
     throw new Error(`Expected Deploy or an encounter-triggered victory, got ${postEncounterPhase ?? "unknown"}.`);
   }
   for (const [browser, label] of [[first, "first terminal"], [second, "second terminal"], [spectator, "spectator terminal"]]) {
-    await browser.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, label);
+    await browser.waitFor(`/^Victory · /.test(document.querySelector(".turn-hud-heading h2")?.textContent?.trim() ?? "")`, label);
     await browser.waitFor(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`, `${label} authoritative result`);
     const terminalSummary = await browser.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
     if (!terminalSummary) {
@@ -1000,7 +1036,7 @@ let onlineVictory;
         const summary = document.querySelector(".victory-summary");
         const context = document.querySelector("#phase-command-context");
         return {
-          heading: document.querySelector(".action-card h2")?.textContent?.trim() ?? null,
+          heading: document.querySelector(".turn-hud-heading h2")?.textContent?.trim() ?? null,
           summaryText: summary?.textContent?.trim() ?? null,
           summaryPresent: Boolean(summary),
           contextOpen: context?.open ?? null,
@@ -1012,7 +1048,7 @@ let onlineVictory;
     }
   }
   await second.evaluate("location.reload()");
-  await second.waitFor(`/^Victory · /.test(document.querySelector(".action-card h2")?.textContent?.trim() ?? "")`, "reloaded second terminal");
+  await second.waitFor(`/^Victory · /.test(document.querySelector(".turn-hud-heading h2")?.textContent?.trim() ?? "")`, "reloaded second terminal");
   const reloadedTerminal = await second.evaluate(`Boolean(document.querySelector(".victory-summary")?.textContent?.includes("Victory type:"))`);
   if (!reloadedTerminal) throw new Error("Reloaded second browser lost the terminal result.");
   const renderedVictory = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`document.querySelector(".victory-summary")?.textContent?.trim() ?? ""`)));
