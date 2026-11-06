@@ -31,7 +31,8 @@ const webPort = Number(process.env.BROWSER_ONLINE_WEB_PORT ?? await freePort());
 const apiPort = Number(process.env.BROWSER_ONLINE_API_PORT ?? await freePort(new Set([webPort])));
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${webPort}/`;
 const apiUrl = process.env.BROWSER_API_URL ?? `http://127.0.0.1:${apiPort}`;
-const waitTimeoutMs = Number(process.env.BROWSER_TEST_WAIT_TIMEOUT_MS ?? 12000);
+// Room state polling is configured at 30 seconds, so allow a full poll interval plus a small margin.
+const waitTimeoutMs = Number(process.env.BROWSER_TEST_WAIT_TIMEOUT_MS ?? 35000);
 const ownsWebServer = !process.env.BROWSER_TEST_URL;
 const ownsApiServer = !process.env.BROWSER_API_URL;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -421,12 +422,29 @@ try {
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
   if (process.env.BROWSER_ONLINE_CORE_ONLY === "1") {
     const browserSessions = await Promise.all([first, second].map((browser) => browser.evaluate(`JSON.parse(localStorage.getItem("abominations-session") ?? "{}")`)));
+    const readCoreRoom = async (session) => {
+      const response = await apiFetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(session.token ?? "")}`);
+      return response.ok ? response.json() : { status: response.status, body: await response.text() };
+    };
     for (const session of browserSessions) {
       const readyResponse = await apiFetch(`${apiUrl}/rooms/${roomCode}/ready`, { method: "POST", headers: { "content-type": "application/json", "x-room-token": session.token ?? "" }, body: JSON.stringify({ ready: true }) });
       if (!readyResponse.ok) throw new Error(`Production did not accept player readiness in room ${roomCode} (${readyResponse.status}): ${await readyResponse.text()}`);
     }
-    const coreRoom = await first.evaluate(`(async () => { const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}"); const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "")); return response.ok ? response.json() : { status: response.status }; })()`);
+    let coreRoom = await readCoreRoom(browserSessions[0]);
     if (coreRoom.status !== "active" || coreRoom.participants.filter((player) => player.role === "player").length !== 2 || coreRoom.participants.some((player) => player.role === "player" && !player.ready)) throw new Error(`Production room was not active after both authenticated players readied: ${JSON.stringify({ roomCode, status: coreRoom.status, participants: coreRoom.participants.map(({ role, playerIndex, ready }) => ({ role, playerIndex, ready })) })}`);
+    const resolvedGiantPlacements = [];
+    while (coreRoom.state?.pendingGiantPlacements?.length) {
+      const placementOwner = coreRoom.state.pendingGiantPlacements[0].playerIndex;
+      const placementSession = browserSessions.find((session) => session.participantId === coreRoom.participants.find((player) => player.role === "player" && player.playerIndex === placementOwner)?.id);
+      const placement = chooseBotCommand(coreRoom.state, new Set([placementOwner]));
+      if (!placementSession?.token || placement?.type !== "place-giant") throw new Error(`No legal browser-session giant placement was available for player ${placementOwner + 1}.`);
+      const placementParticipant = coreRoom.participants.find((player) => player.role === "player" && player.playerIndex === placementOwner);
+      const placementResponse = await apiFetch(`${apiUrl}/rooms/${roomCode}/actions`, { method: "POST", headers: { "content-type": "application/json", "x-room-token": placementSession.token }, body: JSON.stringify({ envelope: { actionId: randomUUID(), actorId: placementParticipant.id, expectedRevision: coreRoom.version, protocolVersion: 1, command: placement } }) });
+      if (!placementResponse.ok) throw new Error(`Production rejected the legal immediate giant placement (${placementResponse.status}): ${await placementResponse.text()}`);
+      resolvedGiantPlacements.push(placement.destination);
+      coreRoom = await readCoreRoom(placementSession);
+    }
+    if (coreRoom.state?.phase !== "move") throw new Error(`Expected Move after resolving required giant placements, got ${coreRoom.state?.phase ?? "unknown"}.`);
     const activePlayer = coreRoom.state?.currentPlayer;
     const monster = coreRoom.state?.monsters?.[activePlayer];
     const path = monster ? legalMonsterPaths(coreRoom.state, monster.id)[0] : undefined;
@@ -440,16 +458,18 @@ try {
     if (!actionResponse.ok) throw new Error(`Production rejected the legal browser-session move (${actionResponse.status}): ${await actionResponse.text()}`);
     const acceptedRoom = await actionResponse.json();
     const readAuthoritative = (browser) => browser.evaluate(`(async () => { const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}"); const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "")); const room = response.ok ? await response.json() : null; return { status: response.status, version: room?.version, phase: room?.state?.phase, currentPlayer: room?.state?.currentPlayer, pendingDecision: room?.state?.pendingDecision, monsterLocation: room?.state?.monsters?.[${activePlayer}]?.location, movedPieceIds: room?.state?.movedPieceIds }; })()`);
-    const peerState = await readAuthoritative(peerBrowser);
+    const peerState = await readCoreRoom(browserSessions[actorSession === browserSessions[0] ? 1 : 0]);
+    const peerStateProjection = { version: peerState.version, phase: peerState.state?.phase, currentPlayer: peerState.state?.currentPlayer, pendingDecision: peerState.state?.pendingDecision, monsterLocation: peerState.state?.monsters?.[activePlayer]?.location };
     const expectedLocation = acceptedRoom.state?.monsters?.[activePlayer]?.location;
-    if (peerState.status !== 200 || peerState.version !== acceptedRoom.version || peerState.monsterLocation !== expectedLocation || peerState.phase !== acceptedRoom.state?.phase || peerState.currentPlayer !== acceptedRoom.state?.currentPlayer || JSON.stringify(peerState.pendingDecision) !== JSON.stringify(acceptedRoom.state?.pendingDecision)) throw new Error(`Peer browser did not observe the accepted Production move: ${JSON.stringify({ roomCode, acceptedVersion: acceptedRoom.version, expectedLocation, peerState })}`);
+    if (peerState.version !== acceptedRoom.version || peerStateProjection.monsterLocation !== expectedLocation || peerStateProjection.phase !== acceptedRoom.state?.phase || peerStateProjection.currentPlayer !== acceptedRoom.state?.currentPlayer || JSON.stringify(peerStateProjection.pendingDecision) !== JSON.stringify(acceptedRoom.state?.pendingDecision)) throw new Error(`Peer browser did not observe the accepted Production move: ${JSON.stringify({ roomCode, acceptedVersion: acceptedRoom.version, expectedLocation, peerState: peerStateProjection })}`);
     await actorBrowser.refresh();
     await actorBrowser.waitFor(`!!document.querySelector(".lobby strong")`, "active player room restore after move refresh");
     const expectedPhaseHeading = typeof acceptedRoom.state?.phase === "string" ? acceptedRoom.state.phase[0].toUpperCase() + acceptedRoom.state.phase.slice(1) : "";
     await actorBrowser.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(expectedPhaseHeading)}`, "active player phase restore after move refresh");
-    const restoredState = await readAuthoritative(actorBrowser);
-    if (restoredState.status !== 200 || restoredState.version !== acceptedRoom.version || restoredState.monsterLocation !== expectedLocation || restoredState.phase !== peerState.phase || restoredState.currentPlayer !== peerState.currentPlayer || JSON.stringify(restoredState.pendingDecision) !== JSON.stringify(peerState.pendingDecision)) throw new Error(`Production refresh did not restore the accepted move: ${JSON.stringify({ roomCode, acceptedVersion: acceptedRoom.version, expectedLocation, restoredState, peerState })}`);
-    console.log(JSON.stringify({ ok: true, url, roomCode, waitingRoomStart: "verified", setupActions: setupClicks, setup: "verified", legalMove: { actorPlayer: activePlayer, path, acceptedVersion: acceptedRoom.version, destination: expectedLocation }, peerObservedSameState: true, refreshReconnect: "verified", synchronizedState: { version: acceptedRoom.version, phase: peerState.phase, currentPlayer: peerState.currentPlayer, monsterLocation: expectedLocation } }));
+    const restoredRoom = await readCoreRoom(actorSession);
+    const restoredState = { version: restoredRoom.version, phase: restoredRoom.state?.phase, currentPlayer: restoredRoom.state?.currentPlayer, pendingDecision: restoredRoom.state?.pendingDecision, monsterLocation: restoredRoom.state?.monsters?.[activePlayer]?.location };
+    if (restoredState.version !== acceptedRoom.version || restoredState.monsterLocation !== expectedLocation || restoredState.phase !== peerStateProjection.phase || restoredState.currentPlayer !== peerStateProjection.currentPlayer || JSON.stringify(restoredState.pendingDecision) !== JSON.stringify(peerStateProjection.pendingDecision)) throw new Error(`Production refresh did not restore the accepted move: ${JSON.stringify({ roomCode, acceptedVersion: acceptedRoom.version, expectedLocation, restoredState, peerState: peerStateProjection })}`);
+    console.log(JSON.stringify({ ok: true, url, roomCode, waitingRoomStart: "verified", setupActions: setupClicks, setup: "verified", resolvedGiantPlacements, legalMove: { actorPlayer: activePlayer, path, acceptedVersion: acceptedRoom.version, destination: expectedLocation }, peerObservedSameState: true, refreshReconnect: "verified", synchronizedState: { version: acceptedRoom.version, phase: peerStateProjection.phase, currentPlayer: peerStateProjection.currentPlayer, monsterLocation: expectedLocation } }));
     await Promise.all([first?.close(), second?.close(), spectator?.close()]);
     first = second = spectator = undefined;
     await Promise.all([stopServer(apiServer), stopServer(webServer)]);

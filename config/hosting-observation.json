@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T00:00:00Z",
+  "checkedAt": "2026-11-06T00:10:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_2gM74VQAA98i528p1WHN52gkWhTn",
@@ -134,36 +134,36 @@
     "note": "Protected Preview. Fresh health and metrics requests returned HTTP 200. Core multiplayer/reconnect flow passed; full match/victory remains unverified."
   },
   "regionCheckPreview": {
-    "deploymentId": "dpl_wNZqvJ762w1w434Ndxg3Xvh5z7LN",
-    "url": "https://abominations-attack-america-jitgiejrx.vercel.app",
+    "deploymentId": "dpl_8Ga86Kno4nmdE6Wg1cZwsZu9hbDE",
+    "url": "https://abominations-attack-america-l3yrozhgu.vercel.app",
     "state": "READY",
-    "branch": "codex/production-db-region-preview",
-    "sourceCommit": "d9644676141527f195114a3dba2397806f20e564",
-    "sourceWasDirty": true,
+    "branch": "codex/production-timeout-evidence",
+    "sourceCommit": "5c7ce9806e0e5d4d262cd0c51436b8130dadba20",
+    "sourceWasDirty": false,
     "deploymentRegions": ["iad1"],
     "projectFunctionRegion": "iad1",
-    "responseRegionPair": "lhr1::iad1",
     "protected": true,
-    "checkedAt": "2026-11-05T23:57:00Z",
+    "checkedAt": "2026-11-06T00:10:00Z",
     "apiHealth": { "status": 200, "persistence": "prisma", "realtimeFanout": "http-polling" },
     "browserVerification": {
       "status": "passed-core-flow",
       "isolatedBrowserProfiles": 3,
-      "roomCode": "7A8959",
+      "roomCode": "B332C5",
       "waitingRoomAndStart": true,
       "setupActions": 9,
       "bothPlayersReady": true,
-      "legalMoveAcceptedRevision": 11,
+      "resolvedImmediateGiantPlacement": true,
+      "legalMoveAcceptedRevision": 12,
       "phaseAfterMove": "encounter",
       "monsterLocation": "5,4",
       "peerObservedSameState": true,
       "spectatorObservedSameState": true,
       "refreshReconnectRestoredState": true,
-      "method": "Headless Chromium browser sessions with independent storage; legal command submitted using the active browser session token; peer and spectator read authenticated authoritative snapshots."
+      "method": "Headless Chromium browser sessions with independent storage; legal setup and immediate giant placement resolved; legal move submitted with active browser session token; peer and spectator read authenticated authoritative snapshots; actor refreshed and recovered the same authoritative state."
     },
     "fullMatch": "not-verified",
-    "limitations": "A separate full harness run reached the core flow but then stopped on a later dense-stack fixture assertion. The successful core-only run verifies the requested create/join, waiting room, legal action, shared state, and refresh flow, not full-match completion or soak reliability.",
-    "regionInterpretation": "Vercel project metadata already reports iad1, matching the Prisma Postgres us-east-1 database. Runtime log region=lhr1 is consistent with the London edge; x-vercel-id lhr1::iad1 identifies the edge/compute pair. The timeout is not explained by an application/database region mismatch."
+    "limitations": "The corrected clean pull-request Preview core-only run verifies create/join, waiting room, legal action, shared state, and refresh flow, not full-match completion or soak reliability. Earlier attempts exposed verifier issues in the movement command and room-status assertion, which have been corrected; one Production retry timed out in the CDP browser command channel and is not counted as API failure evidence.",
+    "regionInterpretation": "Vercel project metadata already reports iad1, matching the Prisma Postgres us-east-1 database. Deployment and response metadata confirm compute in iad1. Runtime log region=lhr1 does not establish London compute. The timeout is not explained by an application/database region mismatch."
   },
   "productionProjectPreview": {
     "deploymentId": "dpl_9GNuLmJs27sJx6RAfhkacYGkRuQg",
