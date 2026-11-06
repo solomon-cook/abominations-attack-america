@@ -21,7 +21,9 @@ const dependencySecurityEvidence = knownSecurityEntries === 0
   : `${knownSecurityEntries} known high-severity vulnerable production package entries remain in \`config/production-audit-baseline.json\``;
 const dependencySecurityStatus = knownSecurityEntries === 0 ? "NO KNOWN VULNERABILITIES; DEPLOYMENT REVIEW OPEN" : "BLOCKED";
 const latestReadiness = hostingObservation.production.latestCurrentReadiness;
-const latestHealthResponse = latestReadiness?.healthProbeSequence?.filter((probe: { status?: number }) => typeof probe.status === "number").at(-1);
+const latestProductionHealthSequence = hostingObservation.production.latestProductionHealthSequence;
+const latestHealthResponse = latestProductionHealthSequence?.probes?.at(-1)
+  ?? latestReadiness?.healthProbeSequence?.filter((probe: { status?: number }) => typeof probe.status === "number").at(-1);
 const productionHealthStatus = latestHealthResponse?.status ?? hostingObservation.production.apiHealth?.status ?? hostingObservation.production.routes?.["/api/health"] ?? "not checked";
 const productionMetricsStatus = latestReadiness?.metrics?.status ?? hostingObservation.production.metrics?.status ?? hostingObservation.production.routes?.["/api/metrics"] ?? "not checked";
 const productionClient = hostingObservation.production.asset?.containsLocalhost
@@ -68,12 +70,16 @@ const latestHealthFailure = hostingObservation.production.latestHealthFailure;
 const latestMetricsCheck = latestReadiness?.metrics ?? hostingObservation.production.latestMetricsCheck;
 const latestHealthClientTimeout = hostingObservation.production.latestHealthClientTimeout;
 const latestProbeFailure = latestReadiness?.healthProbeSequence?.find((probe: { timeoutKind?: string }) => probe.timeoutKind);
-const latestProbeEvidence = latestProbeFailure?.runtimeLog
+const latestProbeEvidence = latestProductionHealthSequence
+  ? ` The latest bounded Production health sequence ran ${latestProductionHealthSequence.probeCount} times from ${latestProductionHealthSequence.startedAt} to ${latestProductionHealthSequence.checkedAt}; all returned HTTP 200, with durations ${latestProductionHealthSequence.durationsMs.map((duration: number) => `${duration} ms`).join(", ")}. Requests were spaced by more than the five-second pool idle timeout, but the IDs do not prove a shared function instance; this is not a soak and does not diagnose the earlier timeout. The most recent room-create attempt still timed out before creating a room. ${latestProductionHealthSequence.body.persistence} persistence and ${latestProductionHealthSequence.body.realtimeFanout.mode} readiness were reported. The earlier timeout cause remains unknown.`
+  : latestProbeFailure?.runtimeLog
   ? ` The latest health request timed out after 20 seconds; Vercel logs confirm a Prisma ${latestProbeFailure.timeoutKind} (${latestProbeFailure.runtimeLog.requestId}) with pool total/idle/waiting all zero. The immediate retry returned HTTP ${productionHealthStatus}; the reason the pool had no available client remains unknown.`
   : latestReadiness
   ? ` The latest client health-probe sequence timed out once after 20 seconds without response headers, then returned HTTP ${productionHealthStatus}; no matching runtime log is recorded.`
   : "";
-const boundaryProbeEvidence = latestReadiness
+const boundaryProbeEvidence = latestProductionHealthSequence
+  ? `After the 11:15 Production room-create failure, ${latestProductionHealthSequence.probeCount} canonical health requests from ${latestProductionHealthSequence.startedAt} to ${latestProductionHealthSequence.checkedAt} returned HTTP 200; their durations were ${latestProductionHealthSequence.durationsMs.map((duration: number) => `${duration} ms`).join(", ")}. The probes span idle gaps but do not prove the same instance or a soak. The previous query-read-timeout and room-create failure remain unresolved.`
+  : latestReadiness
   ? "The latest docs-only Production deployment returned a successful health response after one client-side request timed out at 20 seconds; Vercel logs confirmed a Prisma query-read-timeout with pool total/idle/waiting all zero, but the reason no client was available remains unknown."
   : "One later client health request on the current deployment timed out without a matching server log, then health recovered.";
 const timeoutEvidence = `${latestTimeout?.note ? ` ${latestTimeout.note}` : ""}${latestAttemptSummary ? ` ${latestAttemptSummary}.` : ""}${latestHealthFailure ? ` Latest server-side health failure: HTTP ${latestHealthFailure.httpStatus}${latestHealthFailure.durationMs == null ? "" : ` after ${latestHealthFailure.durationMs} ms`}; a later check returned ${latestHealthFailure.recovery.httpStatus}${latestHealthFailure.recovery.elapsedMs == null ? "" : ` in ${latestHealthFailure.recovery.elapsedMs} ms`}.` : ""}${latestHealthClientTimeout ? ` One earlier client health request on ${latestHealthClientTimeout.deploymentId} returned no response after ${latestHealthClientTimeout.clientTimeoutMs} ms and has no matching Vercel request record or timeout log; the following health check returned HTTP ${latestHealthClientTimeout.subsequentCheck.httpStatus} in ${latestHealthClientTimeout.subsequentCheck.elapsedMs} ms.` : ""}${latestProbeEvidence}`;
