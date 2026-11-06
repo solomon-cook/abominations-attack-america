@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-06T17:39:17Z",
+  "checkedAt": "2026-11-06T17:50:03Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
     "deploymentTarget": "production",
     "deploymentCommit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
     "deploymentCheckedAt": "2026-11-06T13:11:00Z",
-    "checkedAt": "2026-11-06T17:40:07Z",
+    "checkedAt": "2026-11-06T17:50:03Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -112,14 +112,14 @@
       "limitation": "Names, types, environments, and relative creation ages do not prove which Prisma database the hidden credential values reference. Vercel environment metadata API returned 403; values were not read."
     },
     "latestProductionErrorLogCheck": {
-      "checkedAt": "2026-11-06T17:41:31.168Z",
-      "lookback": "30m",
+      "checkedAt": "2026-11-06T17:50:03.637Z",
+      "lookback": "10m",
       "levels": [
         "error",
         "fatal"
       ],
-      "summary": "A bounded Production runtime-log query returned three stderr records from successful /api/health and /api/metrics requests; messages were PostgreSQL SSL-mode and url.parse deprecation warnings. No Prisma query-read-timeout appeared in this sample.",
-      "limitation": "The query covered 30 minutes only and cannot establish reliable room creation, same-instance continuity, or soak behavior."
+      "summary": "The targeted Production runtime-log read for the 17:49:18 POST /api/rooms confirmed database-timeout/query-read-timeout during gameRoom.create after 20,387 ms; request duration was 20,444 ms with pool total/idle/waiting all zero.",
+      "limitation": "The log confirms the database timeout and empty pool snapshot but does not establish the root cause or normal reliability."
     },
     "latestProductionAttempt": {
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
@@ -140,33 +140,33 @@
       "testRoomCleanup": "The browser verifier left room 010BB1 in durable Production storage; no cleanup endpoint was invoked."
     },
     "latestFullMatchAttempt": {
-      "checkedAt": "2026-11-06T11:15:41.789Z",
-      "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
-      "deploymentCommit": "b92c0de312a0fa5a85fed2b4d8f18d6bd1bf8d70",
-      "purpose": "automated three-profile Production full-match, spectator, and terminal-state verification",
+      "checkedAt": "2026-11-06T17:49:18.216Z",
+      "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
+      "deploymentCommit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
+      "purpose": "Automated Production three-profile browser full-match attempt using the existing online verifier.",
       "isolatedChromeProfiles": 3,
-      "stage": "first browser attempted room creation; no room code was returned",
+      "stage": "First player attempted room creation; no room code returned, so the match did not start.",
       "requestPath": "/api/rooms",
       "httpStatus": 503,
       "roomCreated": false,
       "timeoutKind": "query-read-timeout",
-      "durationMs": 20188,
+      "durationMs": 20444,
       "databaseStep": "gameRoom.create",
-      "databaseStepDurationMs": 20132,
-      "requestId": "n9d5g-1793963721329-5da1696d00c5",
+      "databaseStepDurationMs": 20387,
+      "requestId": "n8kcj-1793987358216-5a219721c9f6",
       "pool": {
         "total": 0,
         "idle": 0,
         "waiting": 0,
-        "clientsCreated": 15,
-        "clientsAcquired": 16,
-        "clientsReleased": 16,
-        "clientsRemoved": 14,
+        "clientsCreated": 1,
+        "clientsAcquired": 1,
+        "clientsReleased": 1,
+        "clientsRemoved": 0,
         "idleClientErrors": 0
       },
       "region": "lhr1",
       "functionRegion": "iad1",
-      "diagnosis": "The full-match run stopped before any game actions. The request was confirmed as a Prisma query-read-timeout; the root cause remains unknown."
+      "diagnosis": "Vercel runtime logs confirm a Prisma database query-read-timeout during gameRoom.create after 20.387 seconds. Pool total/idle/waiting were all zero; one client was created, acquired, and released, none removed. Trace API returned 403 and explicit-scope CLI lookup returned 404. Root cause remains unknown."
     },
     "latestProductionHealthSequence": {
       "checkedAt": "2026-11-06T17:36:23Z",
@@ -236,7 +236,7 @@
       "checkedAt": "2026-11-06T04:22:37Z",
       "runtimeFailureLogCount": 4,
       "warnings": "PostgreSQL SSL-mode and url.parse deprecation warnings remain present.",
-      "note": "Room creation timed out twice during Production browser attempts. A direct API room create between those attempts returned 201 in 583 ms. Do not infer stable availability from this recovered request.",
+      "note": "Room creation timed out at least three times across Production browser attempts, including a fresh 17:49 UTC gameRoom.create query-read-timeout. A direct API room create between earlier attempts returned 201 in 583 ms. Do not infer stable availability from that recovered request.",
       "diagnostics": "Vercel CLI query within Hobby retention returned four safe timeout logs: health request wjs8m-1793938374507-5e08b10d31af at 04:13, room-create requests mzxsc-1793938506432-fb6abcb613a7 at 04:15 and w9ws4-1793938679837-28741046ccf7 at 04:18, and health request plkpd-1793938936883-7d13ae2d9d57 at 04:22. The room-create logs classify query-read-timeout at gameRoom.create (~20 seconds); health logs classify the same query timeout. Pool snapshots show total/idle/waiting=0. The fresh canonical health probe at 04:25 returned 200. Vercel documents the runtime-log Region field as the edge region that processed the request; x-vercel-id headers include iad1 and the deployment function is configured in iad1, consistent with the us-east-1 database placement. The London edge region does not indicate London function compute."
     },
     "runtimeErrorsRecent": {
@@ -838,50 +838,51 @@
       }
     },
     "latestProductionBrowserAttempt": {
-      "checkedAt": "2026-11-06T13:13:52.589Z",
+      "checkedAt": "2026-11-06T17:49:39.635Z",
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
       "deploymentCommit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
-      "purpose": "Automated Production multiplayer core verification using three isolated Chrome profiles.",
+      "purpose": "Automated Production three-profile browser full-match attempt using the existing online verifier.",
       "isolatedChromeProfiles": 3,
-      "roomCode": "010BB1",
-      "roomCreateRequestId": "knvdc-1793970832589-9652c9ea8552",
-      "roomCreateHttpStatus": 201,
-      "waitingRoomStart": "verified",
-      "setupActions": 9,
-      "legalMoveAcceptedRevision": 12,
-      "peerObservedSameAuthoritativeState": true,
-      "actingPlayerRefreshReconnect": true,
-      "matchCompleted": false,
-      "note": "A second current-deployment core run passed after earlier intermittent query-read-timeouts. Not a reliability soak or complete human match.",
-      "testRoomCleanup": "The test room remained in durable Production storage when the verifier exited."
+      "requestPath": "/api/rooms",
+      "roomCreateRequestId": "n8kcj-1793987358216-5a219721c9f6",
+      "roomCreateHttpStatus": 503,
+      "roomCreated": false,
+      "timeoutKind": "query-read-timeout",
+      "durationMs": 20444,
+      "databaseStep": "gameRoom.create",
+      "databaseStepDurationMs": 20387,
+      "functionLogRequestId": "n8kcj-1793987358216-5a219721c9f6",
+      "browserFlow": "Browser verifier stopped before room code; no actions or match ran.",
+      "note": "Fresh automated full-match attempt on Production failed at room creation; trace access remains unavailable and root cause is unknown.",
+      "httpStatus": 503
     },
     "latestProductionFailure": {
-      "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
-      "commit": "b92c0de312a0fa5a85fed2b4d8f18d6bd1bf8d70",
-      "checkedAt": "2026-11-06T12:14:14.571Z",
+      "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
+      "commit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
+      "checkedAt": "2026-11-06T17:49:39.635Z",
       "browserProfilesStarted": 3,
       "requestPath": "/api/rooms",
       "httpStatus": 503,
       "roomCreated": false,
       "category": "database-timeout",
       "timeoutKind": "query-read-timeout",
-      "durationMs": 20202,
+      "durationMs": 20444,
       "databaseStep": "gameRoom.create",
-      "databaseStepDurationMs": 20131,
+      "databaseStepDurationMs": 20387,
       "pool": {
         "total": 0,
         "idle": 0,
         "waiting": 0,
-        "clientsCreated": 2,
-        "clientsAcquired": 2,
-        "clientsReleased": 2,
-        "clientsRemoved": 1,
+        "clientsCreated": 1,
+        "clientsAcquired": 1,
+        "clientsReleased": 1,
+        "clientsRemoved": 0,
         "idleClientErrors": 0
       },
-      "functionLogRequestId": "s9njg-1793967234282-3fa43e89ae19",
+      "functionLogRequestId": "n8kcj-1793987358216-5a219721c9f6",
       "vercelIdRegion": "lhr1; x-vercel-id also includes iad1",
-      "logCapturedAt": "2026-11-06T12:14:14.571Z",
-      "cause": "Unknown; Vercel trace access returned 403 and the CLI fallback returned 404."
+      "logCapturedAt": "2026-11-06T17:49:39.635Z",
+      "cause": "Unknown; trace API returned 403 and explicit-scope CLI fallback returned 404 Trace not found."
     },
     "latestProductionRequestCheck": {
       "checkedAt": "2026-11-06T12:49:34Z",
@@ -924,6 +925,14 @@
       ],
       "summary": "A bounded Production runtime-log query returned three stderr records from successful /api/health and /api/metrics requests; messages were PostgreSQL SSL-mode and url.parse deprecation warnings. No Prisma query-read-timeout appeared in this sample.",
       "limitation": "The query covered 30 minutes only and cannot establish reliable room creation, same-instance continuity, or soak behavior."
+    },
+    "latestTraceLookup": {
+      "checkedAt": "2026-11-06T17:50:03Z",
+      "requestId": "n8kcj-1793987358216-5a219721c9f6",
+      "traceApiStatus": 403,
+      "cliStatus": 404,
+      "cliMessage": "Trace not found",
+      "limitation": "No trace spans were available; Hobby trace/log retention is limited and Viewer access did not grant trace reads."
     }
   },
   "preview": {
