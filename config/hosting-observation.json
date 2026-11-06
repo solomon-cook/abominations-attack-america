@@ -53,6 +53,27 @@
       "note": "Instance-local counters after the browser acceptance run; not an aggregate service monitor or database usage meter.",
       "checkedAt": "2026-11-06T13:19:21.357Z"
     },
+    "environmentVariableMetadataAudit": {
+      "checkedAt": "2026-11-06T17:31:45Z",
+      "source": "Vercel CLI env ls --environment production; values remained hidden",
+      "variables": [
+        { "name": "DATABASE_URL_POOLED", "type": "Secret", "environments": ["Production"], "displayedAge": "9h ago" },
+        { "name": "DIRECT_URL", "type": "Secret", "environments": ["Production"], "displayedAge": "1d ago" },
+        { "name": "DATABASE_URL", "type": "Secret", "environments": ["Production"], "displayedAge": "73d ago" },
+        { "name": "PRISMA_DATABASE_URL", "type": "Secret", "environments": ["Production", "Preview"], "displayedAge": "73d ago" },
+        { "name": "POSTGRES_URL", "type": "Secret", "environments": ["Production", "Preview"], "displayedAge": "73d ago" },
+        { "name": "VITE_ROOM_POLL_INTERVAL_MS", "type": "Config", "environments": ["Production"], "displayedAge": "23h ago" }
+      ],
+      "runtimeSelection": "Current API code prefers DATABASE_URL_POOLED, then DATABASE_URL, PRISMA_DATABASE_URL, or POSTGRES_URL; DIRECT_URL is used for direct database work.",
+      "limitation": "Names, types, environments, and relative creation ages do not prove which Prisma database the hidden credential values reference. Vercel environment metadata API returned 403; values were not read."
+    },
+    "latestProductionErrorLogCheck": {
+      "checkedAt": "2026-11-06T17:31:57.331Z",
+      "lookback": "50m",
+      "levels": ["error", "fatal"],
+      "result": "No logs found for the specified criteria.",
+      "limitation": "This bounded error/fatal log query is not a health soak and does not establish reliable room creation."
+    },
     "latestProductionAttempt": {
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
       "commit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
