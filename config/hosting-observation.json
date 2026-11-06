@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T10:17:46Z",
+  "checkedAt": "2026-11-06T10:39:13Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_25mrtWhK387LqT4yP5EKB3JCkPmy",
@@ -480,10 +480,56 @@
     "postPoolRuntimeLogCheck": {
       "checkedAt": "2026-11-06T10:17:00Z",
       "deploymentId": "dpl_25mrtWhK387LqT4yP5EKB3JCkPmy",
-      "window": "deployment runtime logs during the 10:13–10:17 UTC browser run",
+      "window": "deployment runtime logs during the 10:13\u201310:17 UTC browser run",
       "databaseTimeoutsObserved": false,
-      "expectedRequestErrors": "Guest account lookups and the verifier’s intentional malformed/forged command checks.",
+      "expectedRequestErrors": "Guest account lookups and the verifier\u2019s intentional malformed/forged command checks.",
       "limitation": "A successful single core flow does not rule out intermittent Production database timeouts; earlier Production deployments had recurring query-read-timeouts."
+    },
+    "latestCurrentReadiness": {
+      "checkedAt": "2026-11-06T10:33:10Z",
+      "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
+      "deploymentCommit": "b92c0de312a0fa5a85fed2b4d8f18d6bd1bf8d70",
+      "deploymentState": "READY",
+      "healthProbeSequence": [
+        {
+          "result": "Client request timed out after 20 seconds without response headers",
+          "classifiedAsDatabaseTimeout": false
+        },
+        {
+          "path": "/api/health",
+          "status": 200,
+          "body": {
+            "ok": true,
+            "persistence": "prisma",
+            "realtimeFanout": {
+              "mode": "http-polling",
+              "ready": true
+            }
+          }
+        }
+      ],
+      "metrics": {
+        "path": "/api/metrics",
+        "status": 200,
+        "sample": {
+          "requests": 10,
+          "requestFailures": 0,
+          "commandAccepted": 0,
+          "commandFailed": 0,
+          "reconnects": 0,
+          "websocketConnections": 0,
+          "websocketFailures": 0,
+          "roomsCompleted": 0,
+          "roomsAbandoned": 0,
+          "latencySamples": 0,
+          "latencyTotalMs": 0,
+          "serverErrors": 0,
+          "errorReports": 0,
+          "divergenceReports": 0,
+          "deploymentFailures": 0
+        },
+        "note": "Instance-local counters; not an aggregate monitor or a soak."
+      }
     }
   },
   "preview": {
@@ -725,22 +771,23 @@
     }
   },
   "database": {
-    "plan": "Free (last confirmed in Console on 2026-11-05; current plan not exposed by the installed CLI)",
-    "planLastConfirmedAt": "2026-11-05T22:22:00Z",
-    "workspaceInvoice": "$0.00 (last confirmed in Console on 2026-11-05; current invoice not exposed by the installed CLI)",
+    "plan": "Free (confirmed in Prisma Console on 2026-11-06)",
+    "planLastConfirmedAt": "2026-11-06T10:39:13Z",
+    "workspaceInvoice": "$0.00 current invoice (confirmed in Prisma Console on 2026-11-06)",
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 50029,
+      "used": 51058,
       "included": 200000,
-      "remainingAtObservation": 149971,
-      "checkedAt": "2026-11-06T09:49:41Z",
-      "stale": true,
-      "isDirectWorkspaceMeter": false,
+      "remainingAtObservation": 148942,
+      "checkedAt": "2026-11-06T10:39:13Z",
+      "stale": false,
+      "isDirectWorkspaceMeter": true,
       "projectsEnumerated": 5,
       "branchesEnumerated": 5,
       "databasesEnumerated": 9,
-      "source": "Last refreshed before the browser acceptance tests: derived sum of per-database Prisma CLI readings across nine databases in five projects. Estimate, not direct Console workspace meter; stale after later Preview and Production traffic."
+      "source": "Prisma Console workspace Usage page; direct current-cycle meter for 2026-11-01 through 2026-11-30, Free plan, $0.00 invoice. The page displayed 51,058 of 200,000 operations, 8.5K/day, and 0.07 GiB of 2.00 GiB storage.",
+      "averageDailyOperationsDisplayed": 8500
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -749,25 +796,26 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 11312,
+        "operations": 11693,
         "storageGiB": 0.00168609619140625,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-06T09:49:41Z",
+        "measuredAt": "2026-11-06T10:39:13Z",
         "databaseSpecificNotWorkspaceWide": true,
-        "source": "Latest known Prisma CLI postgres usage reading for the explicit Production project/database IDs, before later browser acceptance traffic.",
-        "stale": true,
-        "storageMeasuredAt": "2026-11-06T06:14:56.597Z"
+        "source": "Prisma Console Production database dashboard; workspace usage breakdown independently shows the same 11,693 Production operations.",
+        "stale": false,
+        "storageMeasuredAt": "2026-11-06T06:14:56.597Z",
+        "storageStale": true
       },
       "backupInventory": {
         "count": 0,
         "retentionDays": 0,
-        "measuredAt": "2026-11-06T09:43:52Z",
-        "stale": true,
-        "source": "Latest known Prisma CLI postgres backup list for explicit Production database ID; not refreshed this turn.",
+        "measuredAt": "2026-11-06T10:39:13Z",
+        "stale": false,
+        "source": "Prisma Console Backups page for the explicit Production database displayed No Backups Available and states automated daily backups are available on paid plans.",
         "automaticBackupsAvailable": false
       }
     },
-    "automaticBackups": "Latest known Prisma CLI inventory at 2026-11-06 09:43:52 UTC returned zero backups and zero retention days. Free has no automatic backups; inventory is stale after later browser verification.",
+    "automaticBackups": "Prisma Console Production Backups page checked 2026-11-06: No Backups Available; UI states automated daily backups are available on paid plans. The current Free database therefore has no automatic backup inventory or retention.",
     "productionDatabaseStatus": {
       "status": "ready",
       "checkedAt": "2026-11-06T01:08:27Z",
@@ -778,10 +826,10 @@
     },
     "backupRestore": {
       "status": "manual dump/restore drill passed once",
-      "inventoryCheckedAt": "2026-11-06T09:43:52Z",
+      "inventoryCheckedAt": "2026-11-06T10:39:13Z",
       "inventoryCount": 0,
       "inventoryRetentionDays": 0,
-      "inventorySource": "Latest known Prisma CLI postgres backup list for explicit Production database ID; not refreshed after 09:43:52 UTC.",
+      "inventorySource": "Prisma Console Backups page for the explicit Production database; no backups available.",
       "dumpBytes": 48043,
       "sha256": "dc1ad0de06f8871bc858775050cb0bd86d60c2de453c78babb8f3615c7efdd95",
       "restoreSeconds": 16.429,
@@ -790,7 +838,28 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Source-traced 2026-11-05: each successful PrismaRoomStore.getRoom call performs one Prisma Client participant.findFirst with relationLoadStrategy=join. Prisma counts each Prisma Client query as one operation regardless of internal SQL count. At the configured 30-second interval this is 172,800 room-poll operations/month for two continuously open tabs and 345,600 for four. A two-hour guest match uses about 480 room-poll operations for two players or 960 for four, before setup/actions/reconnects. Each visible signed-in account with presence opted in sends one heartbeat every 30 seconds; each calls one updateMany, adding about 120 operations per opted-in account per two-hour session.",
-    "note": "The last known Prisma CLI reading before the 10:16 UTC browser verification was 50,029/200,000 operations across nine databases and five projects at 09:49:41 UTC (estimated 149,971 remaining); Production contributed 11,312 operations. This is a derived sum, not the direct Console workspace meter, and is stale after later Preview and Production test traffic. The last known Production backup inventory at 09:43:52 UTC showed zero backups and zero retention. Free has no automatic backups. One manual dump/restore drill passed, but routine cadence and a named owner remain open. The current plan/$0 invoice were last confirmed in Console on 5 November; they were not refreshed this turn because the Prisma Platform CLI was unavailable. No paid upgrade or overage was used.",
-    "workspacePollingHeadroomAtObservation": "At the latest known 2026-11-06 09:49:41 UTC derived workspace estimate of 50,029/200,000, about 149,971 operations remained. Based only on one operation per successful room poll, that equates to about 312 two-hour two-player or 156 four-player sessions before other queries. Two tabs polling continuously every 30 seconds add an estimated 172,800 operations per 30-day month; four tabs add 345,600. Usage was not refreshed after browser acceptance, so these are stale estimates, not measured capacity acceptance."
+    "note": "Prisma Console read-only inspection on 2026-11-06 confirmed the workspace is Free at $0.00 with 51,058/200,000 operations, leaving 148,942 for the billing period. Production used 11,693 operations and Preview 25,272; the allowance is workspace-wide and includes unrelated projects. Workspace usage showed 0.07/2.00 GiB storage and 8.5K operations/day. If that rounded recent average continued, the 30-day projection would exceed the Free cap; synthetic test activity may skew it, so normal-play capacity remains unmeasured. The Production Backups page showed no backups and says automatic daily backups are available on paid plans. A manual dump/restore drill passed once, but no recurring schedule or owner exists. No billing or database setting was changed.",
+    "workspacePollingHeadroomAtObservation": "The direct Prisma Console workspace meter at 2026-11-06 10:39 UTC showed 148,942 operations remaining. Source-based estimates remain 480 room-poll operations for a two-player two-hour match and 960 for four players; if every remaining operation were used only for polls, this would be at most about 310 two-player or 155 four-player sessions, before setup, actions, reconnects, presence, other workspace projects, or system operations. Two tabs polling continuously every 30 seconds would produce an estimated 172,800 polls per 30-day month. These are not measured gameplay capacity or normal-use projections.",
+    "projectOperationBreakdown": {
+      "checkedAt": "2026-11-06T10:39:13Z",
+      "abominations-attack-america-production": 11693,
+      "abominations-attack-america-preview": 25272,
+      "otherListedWorkspaceProjects": {
+        "prisma-postgres-reference-database": 14004,
+        "prisma-postgres-2026-worldcup": 89
+      },
+      "source": "Prisma Console workspace Usage page grouped by project. The two Abominations databases account for 36,965 operations in this billing period; the allowance is shared across the workspace."
+    },
+    "workspaceAverageRunRateProjection": {
+      "operationsPer30DayMonthIfDisplayedAverageContinues": 255000,
+      "source": "Linear extrapolation of the Console-displayed rounded average of 8.5K operations/day; not a forecast or normal-game workload measurement.",
+      "warning": "Would exceed the Free 200,000-operation shared allowance if this average persisted. Recent synthetic testing may make the current average unrepresentative."
+    },
+    "workspaceStorage": {
+      "usedGiB": 0.07,
+      "includedGiB": 2,
+      "checkedAt": "2026-11-06T10:39:13Z",
+      "source": "Prisma Console workspace Usage page."
+    }
   }
 }
