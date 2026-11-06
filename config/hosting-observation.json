@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T12:40:27Z",
+  "checkedAt": "2026-11-06T13:02:10Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_25mrtWhK387LqT4yP5EKB3JCkPmy",
@@ -1147,17 +1147,17 @@
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 51121,
+      "used": 51493,
       "included": 200000,
-      "remainingAtObservation": 148879,
-      "checkedAt": "2026-11-06T12:16:00Z",
+      "remainingAtObservation": 148507,
+      "checkedAt": "2026-11-06T13:02:10Z",
       "stale": false,
       "isDirectWorkspaceMeter": true,
       "projectsEnumerated": 5,
       "branchesEnumerated": 5,
       "databasesEnumerated": 9,
-      "source": "Direct Prisma Console workspace Usage page, current cycle 2026-11-01 through 2026-11-30, Free plan, $0.00 invoice; refreshed after the Production browser attempt. Displayed 51,121 of 200,000 operations (25.6%), 8.5K/day, and 0.07 GiB of 2.00 GiB storage. The meter does not attribute operations to individual requests.",
-      "averageDailyOperationsDisplayed": 8500
+      "source": "Direct Prisma Console workspace Usage page, current cycle 2026-11-01 through 2026-11-30, Free plan, $0.00 invoice. Refreshed after the Production multiplayer core browser run; displayed 51,493 of 200,000 operations (25.7%), 8.6K/day, and 0.07 GiB of 2.00 GiB storage. The meter does not attribute operations to individual requests.",
+      "averageDailyOperationsDisplayed": 8600
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -1166,16 +1166,16 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 11714,
+        "operations": 12071,
         "storageGiB": 0.00168609619140625,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-06T12:16:00Z",
+        "measuredAt": "2026-11-06T13:02:10Z",
         "databaseSpecificNotWorkspaceWide": true,
-        "source": "Prisma Console current-cycle workspace Usage page grouped by project showed 11,714 Production operations after the Production browser attempt. The meter does not attribute operations to individual requests.",
+        "source": "Prisma Console current-cycle workspace Usage page grouped by project showed 12,071 Production operations after the latest Production browser run. The meter does not attribute operations to individual requests.",
         "stale": false,
         "storageMeasuredAt": "2026-11-06T06:14:56.597Z",
         "storageStale": true,
-        "operationsMeasuredAt": "2026-11-06T12:16:00Z"
+        "operationsMeasuredAt": "2026-11-06T13:02:10Z"
       },
       "backupInventory": {
         "count": 0,
@@ -1212,14 +1212,14 @@
     "note": "Prisma Console read-only inspection around 2026-11-06 12:16 UTC confirmed the workspace is Free at $0.00 with 51,121/200,000 operations (25.6%), leaving 148,879 for the billing period. The Production database showed 11,714 operations and Preview 25,314; the two Abominations databases account for 37,028 operations, while the allowance is workspace-wide and includes unrelated projects. The listed projects sum to 51,121. Workspace usage showed 0.07/2.00 GiB storage and a rounded 8.5K operations/day. The meter does not attribute operations to individual requests, and synthetic activity may skew the daily average. The Production Backups page around 12:10 UTC showed no backups and states automated daily backups are available on paid plans. A manual dump/restore drill passed once, but no recurring schedule or owner exists. No billing or database setting was changed.",
     "workspacePollingHeadroomAtObservation": "The direct Prisma Console workspace meter around 2026-11-06 12:16 UTC showed 148,879 operations remaining. Source-based estimates at the last recorded deployed polling interval of 30 seconds are 480 room-poll operations for a two-player two-hour match and 960 for four players; if every remaining operation were used only for polls, this would be at most about 310 two-player or 155 four-player sessions, before setup, actions, reconnects, presence, other workspace projects, or system operations. Two tabs polling continuously every 30 seconds would produce an estimated 172,800 polls per 30-day month. The code fallback is five seconds if the deployment variable is absent; this would produce an estimated 1,036,800 polls/month for two continuously open tabs. Neither estimate is a measured gameplay capacity or normal-use projection.",
     "projectOperationBreakdown": {
-      "checkedAt": "2026-11-06T12:16:00Z",
-      "abominations-attack-america-production": 11714,
-      "abominations-attack-america-preview": 25314,
+      "checkedAt": "2026-11-06T13:02:10Z",
+      "abominations-attack-america-production": 12071,
+      "abominations-attack-america-preview": 25329,
       "otherListedWorkspaceProjects": {
         "prisma-postgres-reference-database": 14004,
         "prisma-postgres-2026-worldcup": 89
       },
-      "source": "Prisma Console workspace Usage page grouped by project; values sum to the direct workspace total of 51,121. The shared allowance includes unrelated projects and the meter does not attribute operations to individual requests."
+      "source": "Prisma Console workspace Usage page grouped by project; values sum to the direct workspace total of 51,493. The shared allowance includes unrelated projects and the meter does not attribute operations to individual requests."
     },
     "workspaceAverageRunRateProjection": {
       "operationsPer30DayMonthIfDisplayedAverageContinues": 255000,
@@ -1229,7 +1229,7 @@
     "workspaceStorage": {
       "usedGiB": 0.07,
       "includedGiB": 2,
-      "checkedAt": "2026-11-06T12:16:00Z",
+      "checkedAt": "2026-11-06T13:02:10Z",
       "source": "Prisma Console workspace Usage page."
     }
   }
