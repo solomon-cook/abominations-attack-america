@@ -786,6 +786,14 @@
     "note": "Read-only Vercel CLI listing confirmed hidden DATABASE_URL_POOLED variables target both Production and Preview on the Production Vercel project; the Production entry was created about an hour earlier and Preview about 39 minutes earlier. Secret values were not read. The connected Vercel metadata API still returns HTTP 403, so credential-name-to-secret mapping is not independently inspectable. Main now prefers DATABASE_URL_POOLED and the pooled Production runtime passed the core browser flow; this does not establish repeat reliability.",
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
+    "productionPollIntervalMetadataCheck": {
+      "checkedAt": "2026-11-06T11:12:33Z",
+      "target": "Production",
+      "variablePresent": true,
+      "lastUpdatedDisplay": "about 16 hours before the check",
+      "valueRead": false,
+      "source": "Explicit-scope Vercel CLI environment-variable list; output masked the value. Vercel metadata API returned 403. The last readable value observation remains 30,000 ms from 2026-11-05 18:49 UTC."
+    },
     "productionDeployment": {
       "deploymentId": "dpl_25mrtWhK387LqT4yP5EKB3JCkPmy",
       "deploymentUrl": "https://abominations-attack-america-5w2ek9i6w.vercel.app",
