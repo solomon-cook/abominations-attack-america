@@ -868,9 +868,11 @@ try {
     return room.state.pendingDecision?.playerIndex ?? room.state.currentPlayer;
   })()`);
   const opponentBrowser = encounterActorIndex === firstIdentity ? second : first;
-  const opponentEncounterDicePromise = opponentBrowser.waitFor(`(() => { const playback = document.querySelector(".board-event-playback"); return playback?.dataset.outcomeVisible === "true" && Number(playback.dataset.rollCount) > 0; })()`, "opponent Encounter dice playback").then(() => true, () => false);
+  const opponentEncounterDicePromise = opponentBrowser.waitFor(`(() => { const playback = document.querySelector(".board-event-playback"); return Boolean(playback?.dataset.outcomeVisible === "true" && Number(playback.dataset.rollCount) > 0) || Boolean(playback && ["fight.resolved", "battle.target-required"].includes(playback.dataset.eventAction ?? "") && playback.querySelector(".board-battle-step")); })()`, "opponent Encounter or battle playback").then(() => true, () => false);
   const clickEncounterDecision = async () => {
-    for (const [browser, label] of [[first, "first"], [second, "second"]]) {
+    const decisionDeadline = Date.now() + 15000;
+    while (Date.now() < decisionDeadline) {
+      for (const [browser, label] of [[first, "first"], [second, "second"]]) {
       const clicked = await browser.evaluate(`(() => {
         const cityChoice = document.querySelector(".board-event-choice-actions button:not(:disabled)");
         if (cityChoice) { cityChoice.click(); return true; }
@@ -880,8 +882,12 @@ try {
         if (trophy) { trophy.click(); return true; }
         const trophyTile = document.querySelector(".hex-tile.trophy-legal:not(:disabled)");
         if (trophyTile) { trophyTile.click(); return true; }
+        const retreatTile = document.querySelector(".hex-tile.retreat-legal:not(:disabled)");
+        if (retreatTile) { retreatTile.click(); return true; }
         const stageAction = [...document.querySelectorAll(".resolution-stage button")].find((candidate) => !candidate.disabled && /Reveal encounter|Take .* Health|Take .* Infamy|Return to board|Roll die|Reveal remaining rolls/.test(candidate.textContent.trim()));
         if (stageAction) { stageAction.click(); return true; }
+        const battleTarget = [...document.querySelectorAll(".battle-target-actions button:not(:disabled), .battle-target-button:not(:disabled)")].find((candidate) => /^Target this (unit|monster) · (roll|reveal roll)$/.test(candidate.textContent.trim()));
+        if (battleTarget) { battleTarget.click(); return true; }
         const details = document.querySelector("#phase-command-context");
         if (details) details.open = true;
         const button = [...document.querySelectorAll(".path-controls button")].find((candidate) => !candidate.disabled && /^(Resolve encounter|Take .* Health|Take .* Infamy instead)$/.test(candidate.textContent.trim()));
@@ -893,16 +899,18 @@ try {
         await browser.waitFor(`!/^Waiting for server/.test(document.querySelector(".turn-hud-heading h2")?.textContent?.trim() ?? "")`, `${label} Encounter response`);
         return true;
       }
+      }
+      await wait(250);
     }
-    const diagnostic = await Promise.all([first, second].map((browser) => browser.evaluate(`({ phase: document.querySelector(".turn-hud-heading h2")?.textContent?.trim(), stage: document.querySelector(".resolution-stage[open]")?.innerText, controls: [...document.querySelectorAll(".path-controls button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), pending: document.querySelector(".deployment-prompt")?.textContent?.trim() })`)));
+    const diagnostic = await Promise.all([first, second].map((browser) => browser.evaluate(`({ phase: document.querySelector(".turn-hud-heading h2")?.textContent?.trim(), stage: document.querySelector(".resolution-stage[open]")?.innerText, controls: [...document.querySelectorAll(".path-controls button, .battle-target-button, .battle-target-actions button")].map((button) => ({ label: button.textContent.trim(), ariaLabel: button.getAttribute("aria-label"), disabled: button.disabled })), pending: document.querySelector(".deployment-prompt")?.textContent?.trim() })`)));
     throw new Error(`Encounter remained active without an enabled legal decision control in either player session: ${JSON.stringify(diagnostic)}`);
   };
   const encounterAction = await clickEncounterDecision();
   if (!encounterAction) throw new Error("First browser exposed no legal Encounter action.");
-  for (let encounterStep = 0; encounterStep < 4; encounterStep += 1) {
+  for (let encounterStep = 0; encounterStep < 16; encounterStep += 1) {
     const currentPhase = await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
     if (currentPhase === "Deploy" || /^Victory · /.test(currentPhase ?? "")) break;
-    if (currentPhase !== "Encounter") throw new Error(`Expected Encounter or Deploy after Encounter action, got ${currentPhase ?? "unknown"}.`);
+    if (currentPhase !== "Encounter" && currentPhase !== "Fight") throw new Error(`Expected Encounter, Fight, or Deploy after Encounter action, got ${currentPhase ?? "unknown"}.`);
     const followUp = await clickEncounterDecision();
     if (!followUp) throw new Error("Encounter remained active without an enabled legal decision control in either player session.");
   }
@@ -912,8 +920,8 @@ try {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
     const endpoint = ${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "");
     const room = await (await fetch(endpoint)).json();
-    return room.state.eventLog.filter((event) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required"].includes(event.action))
-      .map((event) => ({ id: event.id, action: event.action, playerIndex: event.detail.playerIndex, rollCount: Array.isArray(event.detail.rolls) ? event.detail.rolls.length : 0 }));
+    return room.state.eventLog.filter((event) => ["encounter.resolved", "encounter.choice-required", "trophy.choice-required", "fight.resolved", "battle.target-required"].includes(event.action))
+      .map((event) => ({ id: event.id, action: event.action, playerIndex: event.detail.playerIndex, rollCount: Array.isArray(event.detail.rolls) ? event.detail.rolls.length : Array.isArray(event.detail.attacks) ? event.detail.attacks.length : 0 }));
   })()`);
   const opponentOwnedEvent = encounterPresentationEvents.find((event) => event.playerIndex === encounterActorIndex);
   if (opponentOwnedEvent) await opponentBrowser.waitFor(`(window.__boardPlaybackEvents ?? []).includes(${JSON.stringify(opponentOwnedEvent.id)})`, "opponent encounter board playback");

@@ -152,10 +152,11 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
     });
     if (!enabled) return;
     const presentations = fresh.filter((event): event is BoardEvent => {
-      if (!isBoardPresentationEvent(event) && event.action !== "fight.resolved" && event.action !== "battle.target-required") return false;
+      const isFightEvent = event.action === "fight.resolved" || event.action === "battle.target-required";
+      if (!isBoardPresentationEvent(event) && !isFightEvent) return false;
       const owner = eventPlayerIndex(event);
       if (isCompactBotBattle(event, botPlayback, viewerPlayerIndex)) return newBattleAttacks(event, events).length > 0;
-      if (event.action === "fight.resolved" || event.action === "battle.target-required") return false;
+      if (isFightEvent) return spectator || (owner !== undefined && owner !== viewerPlayerIndex);
       if (!isBoardPresentationEvent(event)) return false;
       return owner !== undefined && (spectator || owner !== viewerPlayerIndex || isRoutineCityStompEvent(event, events, board));
     });
@@ -295,7 +296,7 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
         {prompt.dice > 0 && <span aria-hidden="true"> ⚄</span>}
       </button>}
     </> : current ? <>
-      <header className="board-event-heading"><span><small>PLAYER {playerIndex === undefined ? "?" : playerIndex + 1} · {isFightPlayback ? "BOT BATTLE" : isResearchDraw ? "RESEARCH" : isRoutineStompPlayback ? "CITY STOMP" : "ENCOUNTER"}</small><strong>{isFightPlayback ? "Battle in progress" : playerName}</strong></span>{locationName && <small className="board-event-location">{locationName}</small>}</header>
+      <header className="board-event-heading"><span><small>PLAYER {playerIndex === undefined ? "?" : playerIndex + 1} · {isFightPlayback ? "BATTLE" : isResearchDraw ? "RESEARCH" : isRoutineStompPlayback ? "CITY STOMP" : "ENCOUNTER"}</small><strong>{isFightPlayback ? "Battle in progress" : playerName}</strong></span>{locationName && <small className="board-event-location">{locationName}</small>}</header>
       {isFightPlayback && currentAttack && attacker && target && <div key={`${current.id}-${shownAttackIndex}`} className="board-battle-step" role="group" aria-label={`Attack ${shownAttackIndex + 1} of ${attacks.length}`} data-attack-index={shownAttackIndex}>
         <BattleActor actor={attacker} side="attacker" />
         <div className="board-battle-roll"><small>ATTACK</small><span aria-hidden="true">⚄</span><DieCube value={currentAttack.roll} label={`Attack roll ${currentAttack.roll}`} /></div>
