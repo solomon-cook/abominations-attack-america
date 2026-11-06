@@ -485,6 +485,16 @@
       "expectedRequestErrors": "Guest account lookups and the verifier\u2019s intentional malformed/forged command checks.",
       "limitation": "A successful single core flow does not rule out intermittent Production database timeouts; earlier Production deployments had recurring query-read-timeouts."
     },
+    "latestTimeoutTraceInvestigation": {
+      "checkedAt": "2026-11-06T11:06:28Z",
+      "requestId": "w5gb7-1793961165084-51d5ae2a262f",
+      "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
+      "traceApiStatus": 403,
+      "explicitTeamProjectCliStatus": 404,
+      "cliResult": "Trace not found",
+      "diagnosis": "No trace spans are available to identify why the Prisma pool had no client; existing safe runtime log classifies the request as query-read-timeout.",
+      "credentialsOrSecretsRead": false
+    },
     "latestCurrentReadiness": {
       "checkedAt": "2026-11-06T11:04:13Z",
       "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
