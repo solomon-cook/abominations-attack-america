@@ -54,90 +54,66 @@
       "checkedAt": "2026-11-06T17:40:07Z"
     },
     "environmentVariableMetadataAudit": {
-      "checkedAt": "2026-11-06T17:31:45Z",
-      "source": "Vercel CLI env ls --environment production; values remained hidden",
+      "checkedAt": "2026-11-06T18:08:39Z",
+      "source": "Explicit-scope Vercel CLI environment listing; secret values masked; no Vercel environment metadata API access.",
       "variables": [
         {
           "name": "DATABASE_URL_POOLED",
-          "type": "Secret",
-          "environments": [
-            "Production"
-          ],
-          "displayedAge": "9h ago"
+          "displayedAge": "10h ago"
         },
         {
           "name": "DIRECT_URL",
-          "type": "Secret",
-          "environments": [
-            "Production"
-          ],
           "displayedAge": "1d ago"
         },
         {
           "name": "DATABASE_URL",
-          "type": "Secret",
-          "environments": [
-            "Production"
-          ],
           "displayedAge": "73d ago"
         },
         {
           "name": "PRISMA_DATABASE_URL",
-          "type": "Secret",
-          "environments": [
-            "Production",
-            "Preview"
-          ],
           "displayedAge": "73d ago"
         },
         {
           "name": "POSTGRES_URL",
-          "type": "Secret",
-          "environments": [
-            "Production",
-            "Preview"
-          ],
           "displayedAge": "73d ago"
         },
         {
           "name": "VITE_ROOM_POLL_INTERVAL_MS",
-          "type": "Config",
-          "environments": [
-            "Production"
-          ],
           "displayedAge": "23h ago"
         }
       ],
       "runtimeSelection": "Current API code prefers DATABASE_URL_POOLED, then DATABASE_URL, PRISMA_DATABASE_URL, or POSTGRES_URL; DIRECT_URL is used for direct database work.",
-      "limitation": "Names, types, environments, and relative creation ages do not prove which Prisma database the hidden credential values reference. Vercel environment metadata API returned 403; values were not read."
+      "limitation": "Names and displayed ages do not prove which Prisma endpoint the hidden values reference or the current polling interval value. Values were not read."
     },
     "latestProductionErrorLogCheck": {
-      "checkedAt": "2026-11-06T17:50:03.637Z",
+      "checkedAt": "2026-11-06T18:07:08Z",
       "lookback": "10m",
       "levels": [
         "error",
         "fatal"
       ],
-      "summary": "The targeted Production runtime-log read for the 17:49:18 POST /api/rooms confirmed database-timeout/query-read-timeout during gameRoom.create after 20,387 ms; request duration was 20,444 ms with pool total/idle/waiting all zero.",
-      "limitation": "The log confirms the database timeout and empty pool snapshot but does not establish the root cause or normal reliability."
+      "summary": "A bounded Production runtime-log query during the browser verification showed the two deliberate forged/malformed action requests returning 400, anonymous guest account lookups, and no Prisma query-read-timeout. The accepted legal move was HTTP 200 in the separate request log.",
+      "limitation": "This short window is not a soak; HTTP 400/guest-account entries are verifier behavior, not database reliability evidence."
     },
     "latestProductionAttempt": {
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
       "commit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
-      "checkedAt": "2026-11-06T13:13:52.589Z",
+      "checkedAt": "2026-11-06T18:08:39Z",
       "browserProfilesStarted": 3,
       "requestPath": "/api/rooms",
       "httpStatus": 201,
       "roomCreated": true,
-      "roomCode": "010BB1",
-      "requestId": "knvdc-1793970832589-9652c9ea8552",
+      "roomCode": "A7B414",
+      "requestId": "ffxcw-1793988218313-2a97de847085",
       "waitingRoomStart": "verified",
       "setupActions": 9,
-      "legalMoveAcceptedRevision": 12,
+      "legalMoveAcceptedRevision": 11,
       "peerObservedSameState": true,
       "refreshReconnect": "verified",
+      "spectatorReadOnlyThroughMove": true,
+      "spectatorObservedPostMoveState": false,
       "matchCompleted": false,
-      "testRoomCleanup": "The browser verifier left room 010BB1 in durable Production storage; no cleanup endpoint was invoked."
+      "testRoomCleanup": "The browser verifier left active room A7B414 in durable Production storage; it will age out through normal room expiry."
     },
     "latestFullMatchAttempt": {
       "checkedAt": "2026-11-06T17:49:18.216Z",
@@ -369,14 +345,15 @@
     "latestProductionBrowserVerification": {
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
       "commit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
-      "checkedAt": "2026-11-06T13:13:52.589Z",
-      "roomCode": "010BB1",
+      "checkedAt": "2026-11-06T18:08:39Z",
+      "roomCode": "A7B414",
       "isolatedChromeProfiles": 3,
       "playersCreatedJoined": "verified",
       "waitingRoomAndHostStart": "verified",
       "setupActions": 9,
       "legalMove": {
-        "acceptedRevision": 12,
+        "acceptedRevision": 11,
+        "actorPlayer": 0,
         "destination": "5,4",
         "path": [
           "5,5",
@@ -385,11 +362,14 @@
       },
       "peerObservedSameAuthoritativeState": true,
       "actingPlayerRefreshReconnect": true,
-      "spectatorJoined": false,
+      "spectatorJoined": true,
+      "spectatorReadOnlyThroughMove": true,
+      "spectatorObservedPostMoveState": false,
       "matchCompleted": false,
-      "method": "Automated verifier using three isolated Chrome profiles against canonical Production.",
-      "note": "Core browser flow passed on the current Production deployment: room create/join/start, setup, legal move, peer sync, refresh recovery. This second consecutive success still does not establish reliability; a later health probe on the same deployment produced a confirmed intermittent Prisma query-read-timeout.",
-      "testRoomCleanup": "The verifier left active room 010BB1 in durable Production storage; it will age out through normal room expiry."
+      "method": "Automated browser verifier with three isolated Chrome profiles against canonical Production; core-only branch verified two players through a legal move and refresh recovery.",
+      "note": "The core browser path passed after the earlier Production room-create timeout. This does not diagnose the timeout, establish repeat reliability, or verify a full match or spectator synchronization after the legal move.",
+      "testRoomCleanup": "The verifier left room A7B414 in durable Production storage; it will age out through normal room expiry.",
+      "spectatorReadOnlyThroughMovePhase": true
     },
     "productionTimeoutReproductions": [
       {
@@ -470,11 +450,10 @@
       }
     ],
     "latestHealthCheck": {
-      "checkedAt": "2026-11-06T12:40:27Z",
-      "deploymentId": "dpl_HBPL2rV9cuRUdgapA5puCpg3Waca",
-      "deploymentCommit": "70d6631c6001d4fe80f3f21ff35a26312d11cabe",
+      "checkedAt": "2026-11-06T18:07:08Z",
+      "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
+      "deploymentCommit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
       "httpStatus": 200,
-      "durationMs": 400,
       "health": {
         "ok": true,
         "persistence": "prisma",
@@ -483,8 +462,8 @@
           "ready": true
         }
       },
-      "vercelId": "lhr1::iad1::x5ndp-1793968765023-515969e6c4d5",
-      "context": "Single health check after report-only PR #23 was merged to main. It confirms the documentation-only deployment is healthy; it does not establish reliable room creation."
+      "vercelId": "lhr1::iad1::56ljw-1793988428169-a00a87c71a0f",
+      "context": "Canonical Production point check immediately after the core-only browser run; HTTP polling and Prisma persistence reported ready. This does not establish repeat room-create reliability or a soak."
     },
     "latestRuntimeLogCheck": {
       "checkedAt": "2026-11-06T12:38:56Z",
@@ -506,27 +485,27 @@
       "note": "Report-only PR #23 is on main. This deployment did not include runtime code changes."
     },
     "latestMetricsCheck": {
-      "checkedAt": "2026-11-06T10:17:46Z",
-      "deploymentId": "dpl_25mrtWhK387LqT4yP5EKB3JCkPmy",
+      "checkedAt": "2026-11-06T18:07:08Z",
+      "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
       "httpStatus": 200,
       "counters": {
-        "requests": 66,
-        "requestFailures": 4,
-        "commandAccepted": 1,
+        "requests": 28,
+        "requestFailures": 5,
+        "commandAccepted": 0,
         "commandFailed": 0,
-        "reconnects": 5,
+        "reconnects": 4,
         "websocketConnections": 0,
         "websocketFailures": 0,
         "roomsCompleted": 0,
         "roomsAbandoned": 0,
-        "latencySamples": 4,
-        "latencyTotalMs": 33,
+        "latencySamples": 5,
+        "latencyTotalMs": 1,
         "serverErrors": 0,
         "errorReports": 0,
         "divergenceReports": 0,
         "deploymentFailures": 0
       },
-      "note": "Instance-local counters after the browser acceptance run; not an aggregate service monitor or database usage meter."
+      "note": "Point-in-time in-memory function instance snapshot. These counters are not an aggregate; the sampled browser run deliberately sent malformed/forged requests and guest account lookups, so failures do not measure database availability."
     },
     "priorProductionBrowserVerification": {
       "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
@@ -645,6 +624,37 @@
         "refreshReconnect": true,
         "matchCompleted": false,
         "requestId": "knvdc-1793970832589-9652c9ea8552"
+      },
+      {
+        "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
+        "commit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
+        "checkedAt": "2026-11-06T18:08:39Z",
+        "roomCode": "A7B414",
+        "isolatedChromeProfiles": 3,
+        "playersCreatedJoined": true,
+        "waitingRoomAndHostStart": true,
+        "setupActions": 9,
+        "legalMoveAcceptedRevision": 11,
+        "legalMove": {
+          "actorPlayer": 0,
+          "path": [
+            "5,5",
+            "5,4"
+          ],
+          "destination": "5,4"
+        },
+        "peerStateSync": true,
+        "refreshReconnect": true,
+        "spectatorJoined": true,
+        "spectatorReadOnlyThroughMove": true,
+        "spectatorObservedPostMoveState": false,
+        "matchCompleted": false,
+        "requestIds": {
+          "roomCreate": "ffxcw-1793988218313-2a97de847085",
+          "legalAction": "vjdrl-1793988407315-8dfcf068d766"
+        },
+        "note": "Core-only Production browser flow passed after the 17:49 room-create timeout. The spectator remained read-only through Move, but post-move spectator sync and full-match completion were not verified. This single pass does not establish reliability.",
+        "spectatorReadOnlyThroughMovePhase": true
       }
     ],
     "latestSpectatorSetupCheck": {
@@ -838,23 +848,21 @@
       }
     },
     "latestProductionBrowserAttempt": {
-      "checkedAt": "2026-11-06T17:49:39.635Z",
+      "checkedAt": "2026-11-06T18:08:39Z",
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
       "deploymentCommit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
-      "purpose": "Automated Production three-profile browser full-match attempt using the existing online verifier.",
+      "purpose": "Automated Production core-only browser verification after the 17:49 room-create timeout.",
       "isolatedChromeProfiles": 3,
       "requestPath": "/api/rooms",
-      "roomCreateRequestId": "n8kcj-1793987358216-5a219721c9f6",
-      "roomCreateHttpStatus": 503,
-      "roomCreated": false,
-      "timeoutKind": "query-read-timeout",
-      "durationMs": 20444,
-      "databaseStep": "gameRoom.create",
-      "databaseStepDurationMs": 20387,
-      "functionLogRequestId": "n8kcj-1793987358216-5a219721c9f6",
-      "browserFlow": "Browser verifier stopped before room code; no actions or match ran.",
-      "note": "Fresh automated full-match attempt on Production failed at room creation; trace access remains unavailable and root cause is unknown.",
-      "httpStatus": 503
+      "roomCreateRequestId": "ffxcw-1793988218313-2a97de847085",
+      "roomCreateHttpStatus": 201,
+      "roomCreated": true,
+      "roomCode": "A7B414",
+      "legalActionRequestId": "vjdrl-1793988407315-8dfcf068d766",
+      "legalActionHttpStatus": 200,
+      "acceptedRevision": 11,
+      "browserFlow": "Two players created/joined, started from waiting room, completed nine setup actions, made a legal move, observed the same authoritative state in the peer browser, and restored the acting player session after refresh. A spectator joined and remained read-only through Move. The full match and post-move spectator sync were not verified.",
+      "note": "Successful bounded recovery run; the earlier Prisma query-read-timeout remains unexplained and repeat reliability is open."
     },
     "latestProductionFailure": {
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
@@ -914,17 +922,17 @@
       "functionRegion": "iad1",
       "deploymentCheckedAt": "2026-11-06T13:32:00Z",
       "healthTimeoutReproduced": true,
-      "browserVerification": "Canonical Production deployment: two consecutive three-profile core browser flows passed room create/join/start/setup/legal move/peer sync/refresh recovery. A subsequent health request returned 503 with confirmed Prisma query-read-timeout, followed by three 200 responses. No full match or reliability soak."
+      "browserVerification": "Latest core-only Production browser flow on 2026-11-06 verified waiting-room create/join/start, nine setup actions, legal move revision 11, peer state sync, and player refresh recovery; a spectator was read-only through Move. Earlier 17:49 Prisma room-create timeout remains unexplained; full match, post-move spectator sync, and reliability soak remain open."
     },
     "errorLogsRecent": {
-      "checkedAt": "2026-11-06T17:41:31.168Z",
-      "lookback": "30m",
+      "checkedAt": "2026-11-06T18:07:08Z",
+      "lookback": "10m",
       "levels": [
         "error",
         "fatal"
       ],
-      "summary": "A bounded Production runtime-log query returned three stderr records from successful /api/health and /api/metrics requests; messages were PostgreSQL SSL-mode and url.parse deprecation warnings. No Prisma query-read-timeout appeared in this sample.",
-      "limitation": "The query covered 30 minutes only and cannot establish reliable room creation, same-instance continuity, or soak behavior."
+      "summary": "No Prisma query-read-timeout appeared in the sampled Production runtime logs during the successful core browser flow. The captured API 400s were deliberate malformed/forged-command checks; anonymous account lookups also appeared.",
+      "limitation": "Bounded runtime logs are not a soak and do not clear the confirmed 17:49 gameRoom.create timeout."
     },
     "latestTraceLookup": {
       "checkedAt": "2026-11-06T17:50:03Z",
@@ -933,7 +941,20 @@
       "cliStatus": 404,
       "cliMessage": "Trace not found",
       "limitation": "No trace spans were available; Hobby trace/log retention is limited and Viewer access did not grant trace reads."
-    }
+    },
+    "productionBrowserCheck": {
+      "checkedAt": "2026-11-06T18:08:39Z",
+      "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
+      "roomCode": "A7B414",
+      "isolatedChromeProfiles": 3,
+      "legalMoveAcceptedRevision": 11,
+      "peerSync": true,
+      "refreshReconnect": true,
+      "spectatorReadOnlyThroughMove": true,
+      "matchCompleted": false
+    },
+    "workspaceUsageAccessBlockedAt": "2026-11-06T18:08:39Z",
+    "workspaceUsageAccessBlockedReason": "Prisma Console usage/backup pages could not be opened because the Mac was locked; last direct meter remains 2026-11-06T17:39:17Z and is marked stale."
   },
   "preview": {
     "latestEvidenceDeployment": {
@@ -1295,13 +1316,14 @@
       "included": 200000,
       "remainingAtObservation": 148074,
       "checkedAt": "2026-11-06T17:39:17Z",
-      "stale": false,
+      "stale": true,
       "isDirectWorkspaceMeter": true,
       "projectsEnumerated": 5,
       "branchesEnumerated": 5,
       "databasesEnumerated": 9,
       "source": "Direct Prisma Console workspace Usage page, current cycle 2026-11-01 through 2026-11-30; Free plan and $0.00 invoice. Refreshed at 17:39 UTC; 51,926 of 200,000 operations (25.96%), 0.07 of 2.00 GiB storage, and 8.7K displayed operations/day. The meter does not attribute operations to individual requests.",
-      "averageDailyOperationsDisplayed": 8700
+      "averageDailyOperationsDisplayed": 8700,
+      "staleReason": "Direct Console meter last refreshed at 2026-11-06T17:39:17Z; after subsequent Production browser tests, current usage could not be checked because the Prisma Console browser was inaccessible while the Mac was locked."
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
