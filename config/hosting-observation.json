@@ -551,6 +551,39 @@
             }
           },
           "note": "Fresh canonical Production point check. A successful probe does not clear the previously confirmed query-read-timeout or establish sustained reliability."
+        },
+        {
+          "path": "/api/health",
+          "status": 200,
+          "durationMs": 525,
+          "checkedAt": "2026-11-06T11:09:38Z",
+          "body": { "ok": true, "persistence": "prisma", "realtimeFanout": { "mode": "http-polling", "ready": true } },
+          "probeSequence": "1 of 4; sequential Production probe series ended 2026-11-06T11:10:01Z with 7-second gaps",
+          "note": "A point check after more than five seconds of idle time; not a soak or same-instance guarantee."
+        },
+        {
+          "path": "/api/health",
+          "status": 200,
+          "durationMs": 359,
+          "checkedAt": "2026-11-06T11:09:45Z",
+          "body": { "ok": true, "persistence": "prisma", "realtimeFanout": { "mode": "http-polling", "ready": true } },
+          "probeSequence": "2 of 4; 7-second gap"
+        },
+        {
+          "path": "/api/health",
+          "status": 200,
+          "durationMs": 282,
+          "checkedAt": "2026-11-06T11:09:53Z",
+          "body": { "ok": true, "persistence": "prisma", "realtimeFanout": { "mode": "http-polling", "ready": true } },
+          "probeSequence": "3 of 4; 7-second gap"
+        },
+        {
+          "path": "/api/health",
+          "status": 200,
+          "durationMs": 336,
+          "checkedAt": "2026-11-06T11:10:01Z",
+          "body": { "ok": true, "persistence": "prisma", "realtimeFanout": { "mode": "http-polling", "ready": true } },
+          "probeSequence": "4 of 4; 7-second gap"
         }
       ],
       "metrics": {
