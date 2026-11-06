@@ -5,7 +5,7 @@ import { Pool } from "pg";
 import { PrismaClient } from "../generated/prisma/client.js";
 import { observePoolLifecycle, type PoolLifecycleCounts } from "../src/pool-diagnostics.js";
 
-const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL;
+const databaseUrl = process.env.DATABASE_URL_POOLED ?? process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL;
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 let pgPool: Pool | undefined;
