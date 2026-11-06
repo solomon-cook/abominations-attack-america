@@ -31,7 +31,8 @@ const webPort = Number(process.env.BROWSER_ONLINE_WEB_PORT ?? await freePort());
 const apiPort = Number(process.env.BROWSER_ONLINE_API_PORT ?? await freePort(new Set([webPort])));
 const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${webPort}/`;
 const apiUrl = process.env.BROWSER_API_URL ?? `http://127.0.0.1:${apiPort}`;
-const waitTimeoutMs = Number(process.env.BROWSER_TEST_WAIT_TIMEOUT_MS ?? 12000);
+// Room state polling is configured at 30 seconds, so allow a full poll interval plus a small margin.
+const waitTimeoutMs = Number(process.env.BROWSER_TEST_WAIT_TIMEOUT_MS ?? 35000);
 const ownsWebServer = !process.env.BROWSER_TEST_URL;
 const ownsApiServer = !process.env.BROWSER_API_URL;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -111,9 +112,21 @@ async function openBrowser(port, name, existingProfile) {
   let nextId = 0;
   const pending = new Map();
   const networkFailures = [];
+  const networkResponses = [];
+  const requestDetails = new Map();
   const pageExceptions = [];
   socket.on("message", (raw) => {
     const message = JSON.parse(raw.toString());
+    if (message.method === "Network.requestWillBeSent") {
+      const request = message.params?.request;
+      try { requestDetails.set(message.params.requestId, { method: request.method, path: new URL(request.url).pathname }); } catch { /* Ignore malformed browser request URLs. */ }
+    }
+    if (message.method === "Network.responseReceived") {
+      const response = message.params?.response;
+      const request = requestDetails.get(message.params.requestId);
+      if (response && request) networkResponses.push({ ...request, status: response.status });
+      if (networkResponses.length > 40) networkResponses.shift();
+    }
     if (message.method === "Network.responseReceived" && Number(message.params?.response?.status) >= 400) {
       networkFailures.push({ status: message.params.response.status, path: new URL(message.params.response.url).pathname });
     }
@@ -151,15 +164,30 @@ async function openBrowser(port, name, existingProfile) {
       await wait(Math.min(100, Math.max(1, deadline - Date.now())));
     }
     const diagnostic = await evaluate(`(() => { let session; try { const saved = JSON.parse(localStorage.getItem("abominations-session") ?? "null"); session = saved ? { hasToken: Boolean(saved.token), roomCode: saved.room?.code ?? null } : null; } catch {} return { url: location.origin + location.pathname, bodyText: document.body.innerText.slice(-900), hasSavedRoomSession: Boolean(session?.hasToken), roomCode: session?.roomCode ?? null, connection: document.querySelector(".connection")?.textContent?.trim(), error: document.querySelector(".error")?.textContent?.trim(), lobby: document.querySelector(".lobby")?.textContent?.trim(), phase: document.querySelector(".action-card h2")?.textContent?.trim() }; })()`);
-    throw new Error(`${name}: timed out waiting for ${label}: ${JSON.stringify({ ...diagnostic, networkFailures: networkFailures.slice(-12), pageExceptions: pageExceptions.slice(-5) })}`);
+    throw new Error(`${name}: timed out waiting for ${label}: ${JSON.stringify({ ...diagnostic, networkResponses: networkResponses.slice(-20), networkFailures: networkFailures.slice(-12), pageExceptions: pageExceptions.slice(-5) })}`);
   };
   return {
     evaluate,
     waitFor,
+    networkResponses,
     setViewport: (width, height) => command("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width <= 600 }),
     refresh: () => command("Page.reload", { ignoreCache: true }),
-    click: (label) => evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled); if (!button) return false; button.click(); return true; })()`),
-    clickText: (label) => evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.includes(${JSON.stringify(label)}) && !candidate.disabled); if (!button) return false; button.click(); return true; })()`),
+    click: async (label) => {
+      const rect = await evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled); if (!button) return null; button.scrollIntoView({ block: "center", inline: "center" }); const rect = button.getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, visible: rect.width > 0 && rect.height > 0 && rect.x >= 0 && rect.y >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight }; })()`);
+      if (!rect?.visible) return false;
+      await command("Input.dispatchMouseEvent", { type: "mouseMoved", x: rect.x, y: rect.y });
+      await command("Input.dispatchMouseEvent", { type: "mousePressed", x: rect.x, y: rect.y, button: "left", clickCount: 1 });
+      await command("Input.dispatchMouseEvent", { type: "mouseReleased", x: rect.x, y: rect.y, button: "left", clickCount: 1 });
+      return true;
+    },
+    clickText: async (label) => {
+      const rect = await evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.includes(${JSON.stringify(label)}) && !candidate.disabled); if (!button) return null; button.scrollIntoView({ block: "center", inline: "center" }); const rect = button.getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, visible: rect.width > 0 && rect.height > 0 && rect.x >= 0 && rect.y >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight }; })()`);
+      if (!rect?.visible) return false;
+      await command("Input.dispatchMouseEvent", { type: "mouseMoved", x: rect.x, y: rect.y });
+      await command("Input.dispatchMouseEvent", { type: "mousePressed", x: rect.x, y: rect.y, button: "left", clickCount: 1 });
+      await command("Input.dispatchMouseEvent", { type: "mouseReleased", x: rect.x, y: rect.y, button: "left", clickCount: 1 });
+      return true;
+    },
     close: async () => {
       socket.close();
       child.kill("SIGKILL");
@@ -223,7 +251,18 @@ try {
 
   await first.waitFor(`!!document.querySelector(".pre-match-lobby")`, "first player waiting room");
   await second.waitFor(`!!document.querySelector(".pre-match-lobby")`, "second player waiting room");
-  await first.waitFor(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Start match"); return Boolean(button && !button.disabled); })()`, "start control after all players join");
+  try {
+    await first.waitFor(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Start match"); return Boolean(button && !button.disabled); })()`, "start control after all players join");
+  } catch (error) {
+    const diagnostics = await Promise.all([first, second].map((browser) => browser.evaluate(`(async () => {
+      const saved = JSON.parse(localStorage.getItem("abominations-session") ?? "null");
+      const code = saved?.room?.code ?? "";
+      const response = code && saved?.token ? await fetch(${JSON.stringify(`${apiUrl}/rooms/`)} + code + "/state?token=" + encodeURIComponent(saved.token)) : null;
+      const room = response?.ok ? await response.json() : null;
+      return { savedRoomCode: code || null, hasToken: Boolean(saved?.token), stateStatus: response?.status ?? null, version: room?.version ?? null, players: room?.players?.map((player) => ({ playerIndex: player.playerIndex, name: player.displayName, connected: player.connected })) ?? null, lobbyText: document.querySelector(".lobby")?.innerText?.trim() ?? "", error: document.querySelector(".error")?.innerText?.trim() ?? "" };
+    })()`)));
+    throw new Error(`${error.message}; joinDiagnostics=${JSON.stringify(diagnostics)}; firstRequests=${JSON.stringify(first.networkResponses.slice(-12))}; secondRequests=${JSON.stringify(second.networkResponses.slice(-12))}`);
+  }
   const beforeStart = await Promise.all([first, second].map((browser) => browser.evaluate(`(() => ({ waiting: Boolean(document.querySelector(".pre-match-lobby")), setupVisible: Boolean(document.querySelector(".setup-panel")), canStart: [...document.querySelectorAll("button")].some((button) => button.textContent.trim() === "Start match" && !button.disabled) }))()`)));
   if (!beforeStart[0]?.waiting || !beforeStart[1]?.waiting || beforeStart.some((state) => state?.setupVisible || !state?.canStart)) {
     throw new Error(`The room did not remain in its player-controlled waiting room before start: ${JSON.stringify(beforeStart)}`);
@@ -270,6 +309,22 @@ try {
       }
       await wait(Math.min(180, Math.max(1, setupWaitDeadline - Date.now())));
     }
+  }
+  const setupCompletionState = (browser) => browser.evaluate(`(async () => {
+    const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+    const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+    const room = response.ok ? await response.json() : undefined;
+    const panel = document.querySelector(".setup-panel");
+    const seats = room?.state?.setupState?.seats ?? [];
+    const setupField = room?.state?.setupState?.phase === "monster-selection" ? "monsterId" : room?.state?.setupState?.phase === "branch-selection" ? "branch" : room?.state?.setupState?.phase === "lair-selection" ? "lair" : "startingChoice";
+    const turnSeat = seats.find((seat) => seat[setupField] === undefined);
+    const ownParticipant = room?.participants?.find((player) => player.id === session.participantId);
+    return { status: response.status, setupPhase: room?.state?.setupState?.phase, participantIdMatches: Boolean(ownParticipant), ownPlayerIndex: ownParticipant?.playerIndex, ownRole: ownParticipant?.role, version: room?.version, roomStatus: room?.status, matchStarted: room?.matchStarted, phase: room?.state?.phase, setupPhase: room?.state?.setupState?.phase, setupSeat: turnSeat?.playerIndex, setupSeats: seats.map((seat) => ({ playerIndex: seat.playerIndex, monsterId: seat.monsterId, branch: seat.branch })), participants: room?.participants?.map((player) => ({ playerIndex: player.playerIndex, role: player.role, connected: player.connected, name: player.displayName })), setupApplied: room?.state?.setupApplied, panel: panel ? { heading: panel.querySelector("h2")?.textContent?.trim(), turn: panel.querySelector(".setup-turn")?.textContent?.trim(), buttons: [...panel.querySelectorAll(".setup-options button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), text: panel.innerText.slice(0, 180), visible: panel.getClientRects().length > 0 } : null };
+  })()`);
+  const setupDiagnostics = await Promise.all([setupCompletionState(first), setupCompletionState(second)]);
+  if (setupDiagnostics.some((state) => state.status !== 200 || state.setupPhase !== "complete")) {
+    const requests = { first: first.networkResponses.slice(-25), second: second.networkResponses.slice(-25) };
+    throw new Error(`The authoritative server did not report completed setup in both player sessions for room ${roomCode}: ${JSON.stringify({ setupDiagnostics, requests })}`);
   }
   await first.waitFor("!document.querySelector('.setup-panel')", "first setup completion");
   await second.waitFor("!document.querySelector('.setup-panel')", "second setup completion");
@@ -365,6 +420,62 @@ try {
   if (malformedCommand.status !== 400 || await first.evaluate(`document.querySelector(".action-card h2")?.textContent?.trim() !== "Move"`)) throw new Error(`Malformed browser command was not rejected without changing Move: ${JSON.stringify(malformedCommand)}`);
   await second.evaluate("location.reload()");
   await second.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move"`, "reloaded second Move phase");
+  if (process.env.BROWSER_ONLINE_CORE_ONLY === "1") {
+    const browserSessions = await Promise.all([first, second].map((browser) => browser.evaluate(`JSON.parse(localStorage.getItem("abominations-session") ?? "{}")`)));
+    const readCoreRoom = async (session) => {
+      const response = await apiFetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(session.token ?? "")}`);
+      return response.ok ? response.json() : { status: response.status, body: await response.text() };
+    };
+    for (const session of browserSessions) {
+      const readyResponse = await apiFetch(`${apiUrl}/rooms/${roomCode}/ready`, { method: "POST", headers: { "content-type": "application/json", "x-room-token": session.token ?? "" }, body: JSON.stringify({ ready: true }) });
+      if (!readyResponse.ok) throw new Error(`Production did not accept player readiness in room ${roomCode} (${readyResponse.status}): ${await readyResponse.text()}`);
+    }
+    let coreRoom = await readCoreRoom(browserSessions[0]);
+    if (coreRoom.status !== "active" || coreRoom.participants.filter((player) => player.role === "player").length !== 2 || coreRoom.participants.some((player) => player.role === "player" && !player.ready)) throw new Error(`Production room was not active after both authenticated players readied: ${JSON.stringify({ roomCode, status: coreRoom.status, participants: coreRoom.participants.map(({ role, playerIndex, ready }) => ({ role, playerIndex, ready })) })}`);
+    const resolvedGiantPlacements = [];
+    while (coreRoom.state?.pendingGiantPlacements?.length) {
+      const placementOwner = coreRoom.state.pendingGiantPlacements[0].playerIndex;
+      const placementSession = browserSessions.find((session) => session.participantId === coreRoom.participants.find((player) => player.role === "player" && player.playerIndex === placementOwner)?.id);
+      const placement = chooseBotCommand(coreRoom.state, new Set([placementOwner]));
+      if (!placementSession?.token || placement?.type !== "place-giant") throw new Error(`No legal browser-session giant placement was available for player ${placementOwner + 1}.`);
+      const placementParticipant = coreRoom.participants.find((player) => player.role === "player" && player.playerIndex === placementOwner);
+      const placementResponse = await apiFetch(`${apiUrl}/rooms/${roomCode}/actions`, { method: "POST", headers: { "content-type": "application/json", "x-room-token": placementSession.token }, body: JSON.stringify({ envelope: { actionId: randomUUID(), actorId: placementParticipant.id, expectedRevision: coreRoom.version, protocolVersion: 1, command: placement } }) });
+      if (!placementResponse.ok) throw new Error(`Production rejected the legal immediate giant placement (${placementResponse.status}): ${await placementResponse.text()}`);
+      resolvedGiantPlacements.push(placement.destination);
+      coreRoom = await readCoreRoom(placementSession);
+    }
+    if (coreRoom.state?.phase !== "move") throw new Error(`Expected Move after resolving required giant placements, got ${coreRoom.state?.phase ?? "unknown"}.`);
+    const activePlayer = coreRoom.state?.currentPlayer;
+    const monster = coreRoom.state?.monsters?.[activePlayer];
+    const path = monster ? legalMonsterPaths(coreRoom.state, monster.id)[0] : undefined;
+    if (!path) throw new Error(`No engine-legal monster move was available for the active Production player in room ${roomCode}.`);
+    const actorSession = browserSessions.find((session) => session.participantId === coreRoom.participants.find((player) => player.role === "player" && player.playerIndex === activePlayer)?.id);
+    const actorBrowser = actorSession === browserSessions[0] ? first : second;
+    const peerBrowser = actorBrowser === first ? second : first;
+    if (!actorSession?.token) throw new Error(`Could not find the active player's browser session for Production room ${roomCode}.`);
+    const actorId = coreRoom.participants.find((player) => player.role === "player" && player.playerIndex === activePlayer)?.id;
+    const actionResponse = await apiFetch(`${apiUrl}/rooms/${roomCode}/actions`, { method: "POST", headers: { "content-type": "application/json", "x-room-token": actorSession.token }, body: JSON.stringify({ envelope: { actionId: randomUUID(), actorId, expectedRevision: coreRoom.version, protocolVersion: 1, command: { type: "move", path } } }) });
+    if (!actionResponse.ok) throw new Error(`Production rejected the legal browser-session move (${actionResponse.status}): ${await actionResponse.text()}`);
+    const acceptedRoom = await actionResponse.json();
+    const readAuthoritative = (browser) => browser.evaluate(`(async () => { const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}"); const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "")); const room = response.ok ? await response.json() : null; return { status: response.status, version: room?.version, phase: room?.state?.phase, currentPlayer: room?.state?.currentPlayer, pendingDecision: room?.state?.pendingDecision, monsterLocation: room?.state?.monsters?.[${activePlayer}]?.location, movedPieceIds: room?.state?.movedPieceIds }; })()`);
+    const peerState = await readCoreRoom(browserSessions[actorSession === browserSessions[0] ? 1 : 0]);
+    const peerStateProjection = { version: peerState.version, phase: peerState.state?.phase, currentPlayer: peerState.state?.currentPlayer, pendingDecision: peerState.state?.pendingDecision, monsterLocation: peerState.state?.monsters?.[activePlayer]?.location };
+    const expectedLocation = acceptedRoom.state?.monsters?.[activePlayer]?.location;
+    if (peerState.version !== acceptedRoom.version || peerStateProjection.monsterLocation !== expectedLocation || peerStateProjection.phase !== acceptedRoom.state?.phase || peerStateProjection.currentPlayer !== acceptedRoom.state?.currentPlayer || JSON.stringify(peerStateProjection.pendingDecision) !== JSON.stringify(acceptedRoom.state?.pendingDecision)) throw new Error(`Peer browser did not observe the accepted Production move: ${JSON.stringify({ roomCode, acceptedVersion: acceptedRoom.version, expectedLocation, peerState: peerStateProjection })}`);
+    await actorBrowser.refresh();
+    await actorBrowser.waitFor(`!!document.querySelector(".lobby strong")`, "active player room restore after move refresh");
+    const expectedPhaseHeading = typeof acceptedRoom.state?.phase === "string" ? acceptedRoom.state.phase[0].toUpperCase() + acceptedRoom.state.phase.slice(1) : "";
+    await actorBrowser.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === ${JSON.stringify(expectedPhaseHeading)}`, "active player phase restore after move refresh");
+    const restoredRoom = await readCoreRoom(actorSession);
+    const restoredState = { version: restoredRoom.version, phase: restoredRoom.state?.phase, currentPlayer: restoredRoom.state?.currentPlayer, pendingDecision: restoredRoom.state?.pendingDecision, monsterLocation: restoredRoom.state?.monsters?.[activePlayer]?.location };
+    if (restoredState.version !== acceptedRoom.version || restoredState.monsterLocation !== expectedLocation || restoredState.phase !== peerStateProjection.phase || restoredState.currentPlayer !== peerStateProjection.currentPlayer || JSON.stringify(restoredState.pendingDecision) !== JSON.stringify(peerStateProjection.pendingDecision)) throw new Error(`Production refresh did not restore the accepted move: ${JSON.stringify({ roomCode, acceptedVersion: acceptedRoom.version, expectedLocation, restoredState, peerState: peerStateProjection })}`);
+    console.log(JSON.stringify({ ok: true, url, roomCode, waitingRoomStart: "verified", setupActions: setupClicks, setup: "verified", resolvedGiantPlacements, legalMove: { actorPlayer: activePlayer, path, acceptedVersion: acceptedRoom.version, destination: expectedLocation }, peerObservedSameState: true, refreshReconnect: "verified", synchronizedState: { version: acceptedRoom.version, phase: peerStateProjection.phase, currentPlayer: peerStateProjection.currentPlayer, monsterLocation: expectedLocation } }));
+    await Promise.all([first?.close(), second?.close(), spectator?.close()]);
+    first = second = spectator = undefined;
+    await Promise.all([stopServer(apiServer), stopServer(webServer)]);
+    apiServer = webServer = undefined;
+    process.exit(0);
+  }
   const liveStackRoom = await first.evaluate(`(async () => {
     const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
     return await (await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""))).json();
