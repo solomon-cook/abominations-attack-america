@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T05:18:53Z",
+  "checkedAt": "2026-11-06T05:34:29Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_G12mrfgBzK2nv9thJNRGUoVW5Fe8",
@@ -633,16 +633,16 @@
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 34197,
+      "used": 34369,
       "included": 200000,
-      "remainingAtObservation": 165803,
-      "checkedAt": "2026-11-06T05:02:17Z",
+      "remainingAtObservation": 165631,
+      "checkedAt": "2026-11-06T05:34:29Z",
       "stale": false,
       "isDirectWorkspaceMeter": false,
       "projectsEnumerated": 5,
       "branchesEnumerated": 5,
       "databasesEnumerated": 9,
-      "source": "Derived sum of Prisma CLI per-database operation readings across all 9 databases listed in all five enumerated workspace projects; sampled 05:02:13–05:02:16 UTC. Estimate, not the Console direct workspace meter."
+      "source": "Derived sum of Prisma CLI per-database operation readings across all 9 databases listed in all five enumerated workspace projects; sampled 05:34:27–05:34:29 UTC. Estimate, not the Console direct workspace meter."
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -692,7 +692,7 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Source-traced 2026-11-05: each successful PrismaRoomStore.getRoom call performs one Prisma Client participant.findFirst with relationLoadStrategy=join. Prisma counts each Prisma Client query as one operation regardless of internal SQL count. At the configured 30-second interval this is 172,800 room-poll operations/month for two continuously open tabs and 345,600 for four. A two-hour guest match uses about 480 room-poll operations for two players or 960 for four, before setup/actions/reconnects. Each visible signed-in account with presence opted in sends one heartbeat every 30 seconds; each calls one updateMany, adding about 120 operations per opted-in account per two-hour session.",
-    "note": "Owner approved dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). Direct Console plan and $0 invoice were last confirmed 5 November; current billing cannot be refreshed through CLI. At 05:18 UTC Prisma CLI measured 8,615 Production operations. The sum across all nine databases is 34,197 at 05:02 UTC, a derived estimate rather than the direct Console workspace meter. The Production backup inventory at 05:18 UTC showed no listed backups (zero retention). Production database is ready and lists five credential records, but per-credential health is unavailable. One manual dump/restore drill passed once; Free has no automatic backups, and recurring backup/restore ownership and cadence remain open.",
-    "workspacePollingHeadroomAtObservation": "At the 2026-11-06 05:02 UTC derived workspace sum of 34,197/200,000, about 165,803 operations remained. Based only on the one-operation room-poll estimate, this supports about 345 two-hour two-player sessions (480 room polls each) or 172 four-player sessions (960 room polls each) before all other queries. Two tabs polling continuously every 30 seconds would add 172,800 operations per 30-day month; if the other measured workspace usage repeated in that month, the total would be 206,997, about 6,997 over the cap. Four tabs would add 345,600. Presence adds about 120 operations per opted-in account per two-hour session. These are source-based estimates, not measured polling traffic or capacity acceptance."
+    "note": "Owner approved dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). Direct Console plan and $0 invoice were last confirmed 5 November; current billing cannot be refreshed through CLI. At 05:34 UTC Prisma CLI measured 8,618 Production operations. The sum across all nine databases in all five enumerated projects is 34,369 at 05:34 UTC, a derived estimate rather than the direct Console workspace meter. The Production backup inventory at 05:18 UTC showed no listed backups (zero retention). Production database is ready and lists five credential records, but per-credential health is unavailable. One manual dump/restore drill passed once; Free has no automatic backups, and recurring backup/restore ownership and cadence remain open.",
+    "workspacePollingHeadroomAtObservation": "At the 2026-11-06 05:34 UTC derived workspace sum of 34,369/200,000, about 165,631 operations remained. Based only on the one-operation room-poll estimate, this supports about 345 two-hour two-player sessions (480 room polls each) or 172 four-player sessions (960 room polls each) before all other queries. Two tabs polling continuously every 30 seconds would add 172,800 operations per 30-day month; four tabs would add 345,600. Presence adds about 120 operations per opted-in account per two-hour session. These are source-based estimates, not measured polling traffic or capacity acceptance."
   }
 }
