@@ -15,10 +15,16 @@ export function classifyApiError(error: unknown) {
     || code === "ECONNREFUSED";
 
   if (databaseTimeout) {
+    const timeoutKind = message === "Query read timeout"
+      ? "query-read-timeout"
+      : message === "Connection terminated due to connection timeout"
+        ? "connection-timeout"
+        : `network-${code?.toLowerCase() ?? "unknown"}`;
     return {
       status: 503,
       message: "The game service is temporarily unavailable. Please try again.",
       category: "database-timeout",
+      timeoutKind,
       errorName: safeIdentifier(candidate?.name) ?? "DatabaseError",
       errorCode: code,
     };

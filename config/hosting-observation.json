@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-06T01:17:24Z",
+  "checkedAt": "2026-11-06T01:44:52Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_2fASTLPfLhsdS6apfnAbBBAk2eVe",
+    "deploymentId": "dpl_392n3RNrhVanXZZHCxkoeT6A51mT",
     "deploymentTarget": "production",
-    "deploymentCommit": "0775baf02340248fb5f690795f96e45e66a49bd5",
-    "deploymentCheckedAt": "2026-11-06T00:55:35Z",
-    "checkedAt": "2026-11-06T01:17:24Z",
+    "deploymentCommit": "04b3d86f46ae30379977ddfa274af7897e0e48ae",
+    "deploymentCheckedAt": "2026-11-06T01:38:24Z",
+    "checkedAt": "2026-11-06T01:44:52Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -25,22 +25,42 @@
           "ready": true
         }
       },
-      "checkedAt": "2026-11-06T01:17:10Z"
+      "checkedAt": "2026-11-06T01:44:52Z",
+      "elapsedSeconds": 0.480037
     },
     "metrics": {
       "path": "/api/metrics",
       "status": 200,
       "sample": {
-        "requests": 54,
-        "requestFailures": 4,
-        "commandAccepted": 1,
+        "requests": 5,
+        "requestFailures": 1,
+        "commandAccepted": 0,
         "commandFailed": 0,
-        "reconnects": 2,
+        "reconnects": 0,
         "websocketConnections": 0,
-        "serverErrors": 0
+        "serverErrors": 1,
+        "latencySamples": 1,
+        "latencyTotalMs": 20170
       },
       "note": "Fresh point-in-time function-instance sample; counters are not an aggregate or database meter.",
-      "checkedAt": "2026-11-06T01:17:15Z"
+      "checkedAt": "2026-11-06T01:44:52Z",
+      "elapsedSeconds": 0.156469
+    },
+    "latestProductionAttempt": {
+      "deploymentId": "dpl_392n3RNrhVanXZZHCxkoeT6A51mT",
+      "commit": "04b3d86f46ae30379977ddfa274af7897e0e48ae",
+      "browserTestCheckedAt": "2026-11-06T01:41:34Z",
+      "browserProfilesStarted": 1,
+      "requestPath": "/api/rooms",
+      "httpStatus": 503,
+      "roomCreated": false,
+      "category": "database-timeout",
+      "durationMs": 20170,
+      "databaseStep": "gameRoom.create",
+      "databaseStepDurationMs": 20123,
+      "pool": { "total": 0, "idle": 0, "waiting": 0 },
+      "functionLogRequestId": "xqjjn-1793929273724-3b30d92202f2",
+      "traceLookup": "Vercel trace API returned 403; CLI trace lookup returned 404"
     },
     "runtimeErrorCheck": {
       "checkedAt": "2026-11-06T01:17:15Z",
@@ -229,8 +249,8 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_2fASTLPfLhsdS6apfnAbBBAk2eVe",
-      "commit": "0775baf02340248fb5f690795f96e45e66a49bd5",
+      "deploymentId": "dpl_392n3RNrhVanXZZHCxkoeT6A51mT",
+      "commit": "04b3d86f46ae30379977ddfa274af7897e0e48ae",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
@@ -238,7 +258,8 @@
       "loopbackReferenceInClientBundle": false,
       "poolLifecycle": "pg pool max 2; 5-second idle/connection timeouts; 20-second query timeout; attachDatabasePool enabled",
       "twoProfileRoomCode": "2F46E0",
-      "twoProfileSmoke": "passed core flow with two player Chromium profiles and one spectator; reliability remains open after a same-deployment database timeout",
+      "twoProfileSmoke": "a prior Production deployment passed core flow with two player Chromium profiles and one spectator; this current deployment's fresh create-room attempt failed with a database timeout, so reliability remains open",
+      "legalMoveEvidenceDeployment": "dpl_2fASTLPfLhsdS6apfnAbBBAk2eVe",
       "legalMoveRoomCode": "2F46E0",
       "legalMove": {
         "phaseAfterMove": "encounter",
@@ -257,7 +278,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-06T01:17:24Z",
+      "checkedAt": "2026-11-06T01:44:52Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",

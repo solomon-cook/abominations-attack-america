@@ -7,9 +7,15 @@ test("database query timeouts are reported as temporary service failures", () =>
     status: 503,
     message: "The game service is temporarily unavailable. Please try again.",
     category: "database-timeout",
+    timeoutKind: "query-read-timeout",
     errorName: "Error",
     errorCode: undefined,
   });
+});
+
+test("database connection timeouts are distinguished without logging connection details", () => {
+  assert.equal(classifyApiError(new Error("Connection terminated due to connection timeout")).timeoutKind, "connection-timeout");
+  assert.equal(classifyApiError(Object.assign(new Error("socket timeout"), { code: "ETIMEDOUT" })).timeoutKind, "network-etimedout");
 });
 
 test("explicit client status codes remain intact", () => {
