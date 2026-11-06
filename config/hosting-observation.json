@@ -928,13 +928,13 @@
   },
   "preview": {
     "latestEvidenceDeployment": {
-      "deploymentId": "dpl_Fs3TfX5QeQuGcRDFBSudsVYok21G",
-      "url": "https://abominations-attack-america-rbgyekmwj.vercel.app",
+      "deploymentId": "dpl_3b24B18rkMMspJfoCENSvTeptRBo",
+      "url": "https://abominations-attack-america-3leicgpll.vercel.app",
       "branch": "codex/production-reliability-refresh",
-      "commit": "f4f07806fb3317599176a20bedc463815eec640e",
+      "commit": "873703c0866166fa82686b3624da4b30958e99ba",
       "state": "READY",
       "target": null,
-      "checkedAt": "2026-11-06T17:34:37Z",
+      "checkedAt": "2026-11-06T17:43:53Z",
       "apiHealth": {
         "status": 200,
         "body": {
@@ -953,7 +953,7 @@
           "requestFailures": 0,
           "serverErrors": 0
         },
-        "note": "Instance-local point sample after the verification request, not an aggregate monitor or a soak."
+        "note": "Instance-local point sample after verification, not an aggregate monitor or a soak."
       },
       "note": "Evidence-only branch Preview; browser multiplayer flow was not rerun on this commit."
     },
