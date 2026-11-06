@@ -124,11 +124,11 @@ async function openBrowser(port, name, existingProfile) {
     if (message.method === "Network.responseReceived") {
       const response = message.params?.response;
       const request = requestDetails.get(message.params.requestId);
-      if (response && request) networkResponses.push({ ...request, status: response.status });
+      if (response && request) networkResponses.push({ ...request, status: response.status, vercelId: response.headers?.["x-vercel-id"] ?? null });
       if (networkResponses.length > 40) networkResponses.shift();
     }
     if (message.method === "Network.responseReceived" && Number(message.params?.response?.status) >= 400) {
-      networkFailures.push({ status: message.params.response.status, path: new URL(message.params.response.url).pathname });
+      networkFailures.push({ status: message.params.response.status, path: new URL(message.params.response.url).pathname, vercelId: message.params.response.headers?.["x-vercel-id"] ?? null });
     }
     if (message.method === "Runtime.exceptionThrown") {
       pageExceptions.push(message.params?.exceptionDetails?.text ?? "Browser page exception");
