@@ -34,7 +34,7 @@ export function resolveDatabaseConnections(environment: NodeJS.ProcessEnv = proc
   directUrl?: string;
   roomNotificationsUrl?: string;
 } {
-  const databaseUrl = environment.DATABASE_URL ?? environment.PRISMA_DATABASE_URL ?? environment.POSTGRES_URL;
+  const databaseUrl = environment.DATABASE_URL_POOLED ?? environment.DATABASE_URL ?? environment.PRISMA_DATABASE_URL ?? environment.POSTGRES_URL;
   const directUrl = environment.DIRECT_URL?.trim() || undefined;
   return {
     ...(databaseUrl?.trim() ? { databaseUrl: databaseUrl.trim() } : {}),
@@ -49,7 +49,7 @@ export function validateRuntimeConfig(environment: NodeJS.ProcessEnv = process.e
   const errorAlertUrl = resolveErrorAlertUrl(environment.ERROR_ALERT_URL);
   const { databaseUrl, directUrl } = resolveDatabaseConnections(environment);
   if (nodeEnvironment === "production" && !databaseUrl?.trim()) {
-    throw new Error("A production API requires DATABASE_URL, PRISMA_DATABASE_URL, or POSTGRES_URL.");
+    throw new Error("A production API requires DATABASE_URL_POOLED, DATABASE_URL, PRISMA_DATABASE_URL, or POSTGRES_URL.");
   }
   if (nodeEnvironment === "production" && databaseUrl) {
     for (const configuredUrl of [databaseUrl, directUrl].filter((value): value is string => Boolean(value))) {
