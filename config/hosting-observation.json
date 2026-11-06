@@ -492,8 +492,27 @@
       "deploymentState": "READY",
       "healthProbeSequence": [
         {
-          "result": "Client request timed out after 20 seconds without response headers",
-          "classifiedAsDatabaseTimeout": false
+          "result": "Client request timed out after 20 seconds without response headers; Vercel runtime log confirms a Prisma query-read-timeout.",
+          "classifiedAsDatabaseTimeout": true,
+          "timeoutKind": "query-read-timeout",
+          "runtimeLog": {
+            "checkedAt": "2026-11-06T10:33:05.245Z",
+            "requestId": "w5gb7-1793961165084-51d5ae2a262f",
+            "path": "/api/health",
+            "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
+            "pool": {
+              "total": 0,
+              "idle": 0,
+              "waiting": 0,
+              "clientsCreated": 3,
+              "clientsAcquired": 8,
+              "clientsReleased": 8,
+              "clientsRemoved": 2,
+              "idleClientErrors": 0
+            },
+            "vercelLogRegion": "lhr1",
+            "regionNote": "Vercel runtime log region is the request-processing edge region and does not establish function-compute location."
+          }
         },
         {
           "path": "/api/health",
@@ -505,7 +524,8 @@
               "mode": "http-polling",
               "ready": true
             }
-          }
+          },
+          "note": "Immediate subsequent canonical Production request recovered with HTTP 200."
         }
       ],
       "metrics": {

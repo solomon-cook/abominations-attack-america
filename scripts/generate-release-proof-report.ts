@@ -58,11 +58,14 @@ const latestAttemptSummary = latestProductionAttempt
 const latestHealthFailure = hostingObservation.production.latestHealthFailure;
 const latestMetricsCheck = latestReadiness?.metrics ?? hostingObservation.production.latestMetricsCheck;
 const latestHealthClientTimeout = hostingObservation.production.latestHealthClientTimeout;
-const latestProbeEvidence = latestReadiness
-  ? ` The latest client health-probe sequence timed out once after 20 seconds without response headers, then returned HTTP ${productionHealthStatus}; the first timeout is unclassified because no response or runtime log was captured.`
+const latestProbeFailure = latestReadiness?.healthProbeSequence?.find((probe: { timeoutKind?: string }) => probe.timeoutKind);
+const latestProbeEvidence = latestProbeFailure?.runtimeLog
+  ? ` The latest health request timed out after 20 seconds; Vercel logs confirm a Prisma ${latestProbeFailure.timeoutKind} (${latestProbeFailure.runtimeLog.requestId}) with pool total/idle/waiting all zero. The immediate retry returned HTTP ${productionHealthStatus}; the reason the pool had no available client remains unknown.`
+  : latestReadiness
+  ? ` The latest client health-probe sequence timed out once after 20 seconds without response headers, then returned HTTP ${productionHealthStatus}; no matching runtime log is recorded.`
   : "";
 const boundaryProbeEvidence = latestReadiness
-  ? "The latest docs-only Production deployment returned a successful health response after one client-side request timed out at 20 seconds with no response headers; that event is unclassified and does not clear the earlier database timeout evidence."
+  ? "The latest docs-only Production deployment returned a successful health response after one client-side request timed out at 20 seconds; Vercel logs confirmed a Prisma query-read-timeout with pool total/idle/waiting all zero, but the reason no client was available remains unknown."
   : "One later client health request on the current deployment timed out without a matching server log, then health recovered.";
 const timeoutEvidence = `${latestTimeout?.note ? ` ${latestTimeout.note}` : ""}${latestAttemptSummary ? ` ${latestAttemptSummary}.` : ""}${latestHealthFailure ? ` Latest server-side health failure: HTTP ${latestHealthFailure.httpStatus}${latestHealthFailure.durationMs == null ? "" : ` after ${latestHealthFailure.durationMs} ms`}; a later check returned ${latestHealthFailure.recovery.httpStatus}${latestHealthFailure.recovery.elapsedMs == null ? "" : ` in ${latestHealthFailure.recovery.elapsedMs} ms`}.` : ""}${latestHealthClientTimeout ? ` One earlier client health request on ${latestHealthClientTimeout.deploymentId} returned no response after ${latestHealthClientTimeout.clientTimeoutMs} ms and has no matching Vercel request record or timeout log; the following health check returned HTTP ${latestHealthClientTimeout.subsequentCheck.httpStatus} in ${latestHealthClientTimeout.subsequentCheck.elapsedMs} ms.` : ""}${latestProbeEvidence}`;
 const latestMetricCounters = latestMetricsCheck?.counters ?? latestMetricsCheck?.sample;
