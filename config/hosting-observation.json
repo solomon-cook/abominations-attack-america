@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T06:13:56Z",
+  "checkedAt": "2026-11-06T06:24:40Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_6o8ATShJqc56g87ZCaUbyukZij6W",
@@ -176,7 +176,7 @@
       "metrics": 200,
       "method": "Vercel CLI-authenticated calls to the public canonical API; response tokens were kept in process memory and not printed."
     },
-    "note": "Canonical Production health and metrics returned HTTP 200 on the post-merge documentation deployment at 06:13 UTC. Health reports Prisma persistence and HTTP polling. This fresh point check follows the 05:45 confirmed room-create query timeout; it does not diagnose the timeout or establish repeat reliability. Runtime error aggregation returned no errors for /api/rooms or /api/health in a 30-minute query, while individual runtime logs separately captured the timeout and expected request-rejection errors. Metrics are instance-local.",
+    "note": "The latest main deployment again produced a confirmed Prisma query-read-timeout on GET /api/health at 06:24 UTC (503 after about 20 seconds), followed by three successful probes. The cause remains unknown and the repeated timeout rules out treating a single prior recovery as resolved. Health currently responds with Prisma persistence and HTTP polling. Reliability, diagnosis, soak, and release gates remain open.",
     "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment.",
     "routeRepresentation": {
       "apiHealth": "JSON Function route at /api/health",
@@ -186,18 +186,33 @@
       "checkedAt": "2026-11-05T23:48:59Z"
     },
     "latestHealthFailure": {
-      "deploymentId": "dpl_EC2u9rEcPoM7tJg1CXw5gHPhoCAg",
-      "requestId": "plkpd-1793938936883-7d13ae2d9d57",
-      "checkedAt": "2026-11-06T04:22:37Z",
+      "deploymentId": "dpl_8zL26y3bcrGzwW2V1sjHii8tLSAe",
+      "commit": "a580bae75cc50a20e17909e76a815fed03d8ed79",
+      "checkedAt": "2026-11-06T06:24:18.382Z",
+      "requestId": "ch8ph-1793946237522-b1e2d8adaedb",
       "httpStatus": 503,
-      "durationMs": null,
-      "log": "Prisma health query failed; safe metadata code=unavailable, timeoutKind=query-read-timeout; pool total/idle/waiting=0, clientsCreated=7, clientsAcquired=9, clientsReleased=9, clientsRemoved=6, idleClientErrors=0",
+      "durationMs": 20160,
+      "log": "Prisma health query failed; safe metadata code=unavailable, timeoutKind=query-read-timeout; pool total/idle/waiting=0, clientsCreated=1, clientsAcquired=1, clientsReleased=1, clientsRemoved=0, idleClientErrors=0",
       "recovery": {
-        "checkedAt": "2026-11-06T04:25:14Z",
+        "checkedAt": "2026-11-06T06:24:27Z",
         "httpStatus": 200,
-        "elapsedMs": null
+        "vercelId": "lhr1::iad1::s7scf-1793946267193-08d71e4aa2a0"
       },
-      "note": "A health probe failed again after earlier recovery. The fresh 04:25 probe returned 200; intermittent availability is unresolved."
+      "subsequentChecks": [
+        {
+          "checkedAt": "2026-11-06T06:24:40.308Z",
+          "httpStatus": 200,
+          "durationMs": 438,
+          "vercelId": "lhr1::iad1::j9jzw-1793946280308-adda56dc13a4"
+        },
+        {
+          "checkedAt": "2026-11-06T06:24:40.775Z",
+          "httpStatus": 200,
+          "durationMs": 342,
+          "vercelId": "lhr1::iad1::6bn26-1793946280775-02e3bb9b3bc1"
+        }
+      ],
+      "note": "The same Prisma query-read-timeout recurred on the newly deployed main build; three immediate retries then returned 200. This confirms intermittent availability persists but does not identify the cause or establish reliability."
     },
     "latestProductionBrowserVerification": {
       "deploymentId": "dpl_DVaTrAiJAbfVumNLntxzQq1jt8Lm",
@@ -301,10 +316,11 @@
       }
     ],
     "latestHealthCheck": {
-      "checkedAt": "2026-11-06T06:13:56Z",
-      "deploymentId": "dpl_6o8ATShJqc56g87ZCaUbyukZij6W",
+      "checkedAt": "2026-11-06T06:24:40.775Z",
+      "deploymentId": "dpl_8zL26y3bcrGzwW2V1sjHii8tLSAe",
       "httpStatus": 200,
-      "vercelId": "lhr1::iad1::6jrfp-1793945635078-1f8ebf31bfdc",
+      "durationMs": 342,
+      "vercelId": "lhr1::iad1::6bn26-1793946280775-02e3bb9b3bc1",
       "health": {
         "ok": true,
         "persistence": "prisma",
@@ -315,17 +331,17 @@
       }
     },
     "latestMetricsCheck": {
-      "checkedAt": "2026-11-06T06:13:56Z",
-      "deploymentId": "dpl_6o8ATShJqc56g87ZCaUbyukZij6W",
+      "checkedAt": "2026-11-06T06:24:27Z",
+      "deploymentId": "dpl_8zL26y3bcrGzwW2V1sjHii8tLSAe",
       "httpStatus": 200,
-      "vercelId": "lhr1::iad1::ph9j7-1793945636240-c2eeff669362",
+      "vercelId": "lhr1::iad1::rnqmg-1793946267639-0d40093a635f",
       "counters": {
-        "requests": 2,
-        "requestFailures": 0,
-        "serverErrors": 0,
+        "requests": 3,
+        "requestFailures": 1,
+        "serverErrors": 1,
         "reconnects": 0
       },
-      "note": "Fresh instance-local snapshot. It does not clear the earlier request-level timeout or provide an aggregate availability view."
+      "note": "The same instance snapshot reflects the failed health request, followed by one successful health response and the metrics request itself; counters are not aggregate."
     },
     "priorProductionBrowserVerification": {
       "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
@@ -422,14 +438,14 @@
       "limitation": "Verifier selected Draw Research and placed no units; its later legal-shared-destination fixture required four owned units and stopped with unitStarts empty. No gameplay move or terminal full match was verified."
     },
     "postMergeRuntimeErrorCheck": {
-      "checkedAt": "2026-11-06T06:13:56Z",
+      "checkedAt": "2026-11-06T06:24:27Z",
       "lookback": "30m",
       "routes": [
         "/api/rooms",
         "/api/health"
       ],
       "errorClusters": "none returned by Vercel runtime-errors aggregation",
-      "limitation": "Individual function logs for deployment dpl_DVaTrAiJAbfVumNLntxzQq1jt8Lm captured the 05:45 database query timeout and expected rejected request errors. Aggregation absence is not proof of no runtime failures."
+      "limitation": "Earlier aggregation absence does not negate the 06:24 individual runtime log recording a health query-read-timeout."
     }
   },
   "preview": {
@@ -605,14 +621,15 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_6o8ATShJqc56g87ZCaUbyukZij6W",
-      "deploymentUrl": "https://abominations-attack-america-mje4dhk9b.vercel.app",
+      "deploymentId": "dpl_8zL26y3bcrGzwW2V1sjHii8tLSAe",
+      "deploymentUrl": "https://abominations-attack-america-2tojwmmwn.vercel.app",
       "canonicalUrl": "https://abominations-attack-america.vercel.app",
-      "commit": "7b85b64db6180c847030e2b45147b5df00c40364",
+      "commit": "a580bae75cc50a20e17909e76a815fed03d8ed79",
       "status": "READY",
       "functionRegion": "iad1",
-      "deploymentCheckedAt": "2026-11-06T06:13:21Z",
-      "browserVerification": "No browser gameplay was run on this documentation-only deployment; latest gameplay evidence remains on dpl_DVaTrAiJAbfVumNLntxzQq1jt8Lm."
+      "deploymentCheckedAt": "2026-11-06T06:23:46Z",
+      "healthTimeoutReproduced": true,
+      "browserVerification": "No gameplay run on this documentation-only deployment; latest core/spectator setup evidence remains on dpl_DVaTrAiJAbfVumNLntxzQq1jt8Lm."
     },
     "productionLastMeasurement": {
       "databaseProject": "abominations-attack-america-production",
