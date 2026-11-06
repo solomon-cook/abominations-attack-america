@@ -156,7 +156,15 @@ async function openBrowser(port, name, existingProfile) {
     await command("Network.setExtraHTTPHeaders", { headers: { "x-vercel-trusted-oidc-idp-token": process.env.VERCEL_OIDC_TOKEN } });
   }
   await command("Page.navigate", { url });
-  const evaluate = async (expression) => (await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result?.value;
+  const evaluate = async (expression) => {
+    const response = await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
+    if (response.exceptionDetails) {
+      const detail = response.exceptionDetails;
+      const description = detail.exception?.description ?? detail.text ?? "page evaluation failed";
+      throw new Error(`${name}: browser page evaluation failed: ${description}`);
+    }
+    return response.result?.value;
+  };
   const waitFor = async (expression, label) => {
     const deadline = Date.now() + waitTimeoutMs;
     while (Date.now() < deadline) {
@@ -259,7 +267,7 @@ try {
       const code = saved?.room?.code ?? "";
       const response = code && saved?.token ? await fetch(${JSON.stringify(`${apiUrl}/rooms/`)} + code + "/state?token=" + encodeURIComponent(saved.token)) : null;
       const room = response?.ok ? await response.json() : null;
-      return { savedRoomCode: code || null, hasToken: Boolean(saved?.token), stateStatus: response?.status ?? null, version: room?.version ?? null, players: room?.players?.map((player) => ({ playerIndex: player.playerIndex, name: player.displayName, connected: player.connected })) ?? null, lobbyText: document.querySelector(".lobby")?.innerText?.trim() ?? "", error: document.querySelector(".error")?.innerText?.trim() ?? "" };
+      return { savedRoomCode: code || null, hasToken: Boolean(saved?.token), stateStatus: response?.status ?? null, version: room?.version ?? null, status: room?.status ?? null, matchStarted: room?.matchStarted ?? null, participants: room?.participants?.filter((player) => player.role === "player").map((player) => ({ playerIndex: player.playerIndex, name: player.displayName, connected: player.connected })) ?? null, startButtonDisabled: [...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Start match")?.disabled ?? null, lobbyText: document.querySelector(".lobby")?.innerText?.trim() ?? "", error: document.querySelector(".error")?.innerText?.trim() ?? "" };
     })()`)));
     throw new Error(`${error.message}; joinDiagnostics=${JSON.stringify(diagnostics)}; firstRequests=${JSON.stringify(first.networkResponses.slice(-12))}; secondRequests=${JSON.stringify(second.networkResponses.slice(-12))}`);
   }
@@ -293,7 +301,18 @@ try {
 
   let setupClicks = 0;
   let setupWaitDeadline = Date.now() + waitTimeoutMs;
+  let nextAuthoritativeSetupCheck = 0;
   for (let attempt = 0; attempt < 10000 && Date.now() < setupWaitDeadline; attempt += 1) {
+    if (Date.now() >= nextAuthoritativeSetupCheck) {
+      const authoritativeSetup = await first.evaluate(`(async () => {
+        const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+        const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+        const room = response.ok ? await response.json() : null;
+        return { status: response.status, phase: room?.state?.setupState?.phase };
+      })()`);
+      nextAuthoritativeSetupCheck = Date.now() + 1000;
+      if (authoritativeSetup.status === 200 && authoritativeSetup.phase === "complete") break;
+    }
     let progressed = false;
     for (const browser of [first, second]) {
       const preferredStartingChoice = "Draw Research";
@@ -319,9 +338,15 @@ try {
     const setupField = room?.state?.setupState?.phase === "monster-selection" ? "monsterId" : room?.state?.setupState?.phase === "branch-selection" ? "branch" : room?.state?.setupState?.phase === "lair-selection" ? "lair" : "startingChoice";
     const turnSeat = seats.find((seat) => seat[setupField] === undefined);
     const ownParticipant = room?.participants?.find((player) => player.id === session.participantId);
-    return { status: response.status, setupPhase: room?.state?.setupState?.phase, participantIdMatches: Boolean(ownParticipant), ownPlayerIndex: ownParticipant?.playerIndex, ownRole: ownParticipant?.role, version: room?.version, roomStatus: room?.status, matchStarted: room?.matchStarted, phase: room?.state?.phase, setupPhase: room?.state?.setupState?.phase, setupSeat: turnSeat?.playerIndex, setupSeats: seats.map((seat) => ({ playerIndex: seat.playerIndex, monsterId: seat.monsterId, branch: seat.branch })), participants: room?.participants?.map((player) => ({ playerIndex: player.playerIndex, role: player.role, connected: player.connected, name: player.displayName })), setupApplied: room?.state?.setupApplied, panel: panel ? { heading: panel.querySelector("h2")?.textContent?.trim(), turn: panel.querySelector(".setup-turn")?.textContent?.trim(), buttons: [...panel.querySelectorAll(".setup-options button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), text: panel.innerText.slice(0, 180), visible: panel.getClientRects().length > 0 } : null };
+    return { status: response.status, participantIdMatches: Boolean(ownParticipant), ownPlayerIndex: ownParticipant?.playerIndex, ownRole: ownParticipant?.role, version: room?.version, roomStatus: room?.status, matchStarted: room?.matchStarted, phase: room?.state?.phase, setupPhase: room?.state?.setupState?.phase, setupSeat: turnSeat?.playerIndex, setupSeats: seats.map((seat) => ({ playerIndex: seat.playerIndex, monsterId: seat.monsterId, branch: seat.branch })), participants: room?.participants?.map((player) => ({ playerIndex: player.playerIndex, role: player.role, connected: player.connected, name: player.displayName })), setupApplied: room?.state?.setupApplied, panel: panel ? { heading: panel.querySelector("h2")?.textContent?.trim(), turn: panel.querySelector(".setup-turn")?.textContent?.trim(), buttons: [...panel.querySelectorAll(".setup-options button")].map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })), text: panel.innerText.slice(0, 180), visible: panel.getClientRects().length > 0 } : null };
   })()`);
-  const setupDiagnostics = await Promise.all([setupCompletionState(first), setupCompletionState(second)]);
+  const setupDiagnostics = await Promise.all([first, second].map(async (browser) => {
+    try {
+      return await setupCompletionState(browser);
+    } catch (error) {
+      return { evaluationError: error instanceof Error ? error.message : String(error), recentResponses: browser.networkResponses.slice(-10) };
+    }
+  }));
   if (setupDiagnostics.some((state) => state.status !== 200 || state.setupPhase !== "complete")) {
     const requests = { first: first.networkResponses.slice(-25), second: second.networkResponses.slice(-25) };
     throw new Error(`The authoritative server did not report completed setup in both player sessions for room ${roomCode}: ${JSON.stringify({ setupDiagnostics, requests })}`);

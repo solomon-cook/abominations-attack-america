@@ -3,11 +3,13 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { attachDatabasePool } from "@vercel/functions";
 import { Pool } from "pg";
 import { PrismaClient } from "../generated/prisma/client.js";
+import { observePoolLifecycle, type PoolLifecycleCounts } from "../src/pool-diagnostics.js";
 
 const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL;
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 let pgPool: Pool | undefined;
+let poolLifecycleSnapshot: (() => PoolLifecycleCounts) | undefined;
 
 const createPrismaClient = (url: string) => {
   if (url.startsWith("prisma+")) return new PrismaClient({ accelerateUrl: url });
@@ -20,6 +22,7 @@ const createPrismaClient = (url: string) => {
     query_timeout: 20_000,
   });
   pgPool = pool;
+  poolLifecycleSnapshot = observePoolLifecycle(pool);
   pool.on("error", (error: Error & { code?: string }) => {
     console.error("Idle PostgreSQL pool client error", error.code ?? error.name);
   });
@@ -37,6 +40,7 @@ export const databasePoolDiagnostics = () => pgPool ? {
   total: pgPool.totalCount,
   idle: pgPool.idleCount,
   waiting: pgPool.waitingCount,
+  ...poolLifecycleSnapshot?.(),
 } : undefined;
 
 if (prisma) globalForPrisma.prisma = prisma;
