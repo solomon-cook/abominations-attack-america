@@ -273,9 +273,9 @@
       "productionLastMeasurement": {
         "databaseProject": "abominations-attack-america-production",
         "databaseId": "db_a89s8mlpgynwfwfvqiuhmhrl",
-        "operations": 6224,
-        "storageGiB": 0.001434326171875,
-        "measuredAt": "2026-11-06T01:09:34Z",
+        "operations": 6498,
+        "storageGiB": 0.0014495849609375,
+        "measuredAt": "2026-11-06T01:26:11Z",
         "databaseSpecificNotWorkspaceWide": true
       },
       "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment.",
@@ -285,12 +285,12 @@
     "productionLastMeasurement": {
       "databaseProject": "abominations-attack-america-production",
       "databaseId": "db_a89s8mlpgynwfwfvqiuhmhrl",
-      "operations": 6224,
-      "storageGiB": 0.001434326171875,
-      "measuredAt": "2026-11-06T01:09:34Z",
+      "operations": 6498,
+      "storageGiB": 0.0014495849609375,
+      "measuredAt": "2026-11-06T01:26:11Z",
       "databaseSpecificNotWorkspaceWide": true
     },
-    "checkedAt": "2026-11-06T01:09:39Z"
+    "checkedAt": "2026-11-06T01:26:12Z"
   },
   "database": {
     "plan": "Free (last confirmed in Console on 2026-11-05; current plan not exposed by the installed CLI)",
@@ -299,16 +299,16 @@
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 29791,
+      "used": 30073,
       "included": 200000,
-      "remainingAtObservation": 170209,
-      "checkedAt": "2026-11-06T01:09:39Z",
+      "remainingAtObservation": 169927,
+      "checkedAt": "2026-11-06T01:26:12Z",
       "stale": false,
       "isDirectWorkspaceMeter": false,
       "projectsEnumerated": 5,
       "branchesEnumerated": 5,
-      "databasesEnumerated": 11,
-      "source": "Derived sum of Prisma CLI per-database operation readings across all 11 databases listed in the five enumerated workspace projects; each project listed one main branch. Same monthly period, sampled between 01:09:34 and 01:09:39 UTC. Estimate, not the Console's direct workspace meter."
+      "databasesEnumerated": 9,
+      "source": "Derived sum of Prisma CLI per-database operation readings across all 9 databases listed in the five enumerated workspace projects; each project listed one main branch. Same monthly period, sampled between 01:26:09 and 01:26:12 UTC. Estimate, not the Console's direct workspace meter."
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -317,15 +317,15 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 6224,
-        "storageGiB": 0.001434326171875,
+        "operations": 6498,
+        "storageGiB": 0.0014495849609375,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-06T01:09:34Z",
+        "measuredAt": "2026-11-06T01:26:11Z",
         "databaseSpecificNotWorkspaceWide": true,
         "source": "Prisma CLI postgres usage for the explicit Production project/database IDs",
-        "operationsMeasuredAt": "2026-11-06T01:09:34Z",
+        "operationsMeasuredAt": "2026-11-06T01:26:11Z",
         "operationsSource": "Prisma CLI postgres usage; Nov 1 through Nov 6 period",
-        "storageMeasuredAt": "2026-11-06T01:09:34Z"
+        "storageMeasuredAt": "2026-11-06T01:26:11Z"
       },
       "backupInventory": {
         "count": 0,
@@ -358,7 +358,7 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Source-traced 2026-11-05: each successful PrismaRoomStore.getRoom call performs one Prisma Client participant.findFirst with relationLoadStrategy=join. Prisma counts each Prisma Client query as one operation regardless of internal SQL count. At the configured 30-second interval this is 172,800 room-poll operations/month for two continuously open tabs and 345,600 for four. A two-hour guest match uses about 480 room-poll operations for two players or 960 for four, before setup/actions/reconnects. Each visible signed-in account with presence opted in sends one heartbeat every 30 seconds; each calls one updateMany, adding about 120 operations per opted-in account per two-hour session.",
-    "note": "The owner approved a dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). The last direct Console confirmation on 5 November showed Free and a $0 invoice. On 6 November, Prisma CLI measured 6,224 Production database operations and zero listed backups. The sum of all 11 databases in the five listed projects is 29,791 operations; this is a derived estimate, not a direct workspace meter, and current plan/invoice could not be refreshed through the CLI. The Production database is ready and lists five credential records, but per-credential health is unavailable. One manual dump/restore drill passed once; Free has no automatic backups, and routine backup/restore ownership and cadence remain open.",
-    "workspacePollingHeadroomAtObservation": "At the 2026-11-06 01:09 UTC derived workspace sum of 29,791/200,000, about 170,209 operations remained. That supports approximately 354 two-hour two-player guest sessions (480 room polls each) or 177 two-hour four-player guest sessions (960 room polls each) before all other queries, using the estimated headroom. Two tabs polling continuously would add 172,800 operations in a 30-day month, leaving only 27,200 under the nominal Free limit before any other app/workspace usage; four tabs would add 345,600 and exceed the monthly allowance. Presence adds about 120 operations per opted-in account per two-hour session. These are source-based estimates, not measured polling traffic or capacity acceptance."
+    "note": "The owner approved a dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). The last direct Console confirmation on 5 November showed Free and a $0 invoice. On 6 November, Prisma CLI measured 6,498 Production database operations and zero listed backups. The sum of all 9 databases in the five listed projects is 30,073 operations; this is a derived estimate, not a direct workspace meter, and current plan/invoice could not be refreshed through the CLI. The Production database is ready and lists five credential records, but per-credential health is unavailable. One manual dump/restore drill passed once; Free has no automatic backups, and routine backup/restore ownership and cadence remain open.",
+    "workspacePollingHeadroomAtObservation": "At the 2026-11-06 01:26 UTC derived workspace sum of 30,073/200,000, about 169,927 operations remained. That supports approximately 354 two-hour two-player guest sessions (480 room polls each) or 177 two-hour four-player guest sessions (960 room polls each) before all other queries, using the estimated headroom. Two tabs polling continuously would add 172,800 operations in a 30-day month, leaving only 27,200 under the nominal Free limit before any other app/workspace usage; four tabs would add 345,600 and exceed the monthly allowance. Presence adds about 120 operations per opted-in account per two-hour session. These are source-based estimates, not measured polling traffic or capacity acceptance."
   }
 }
