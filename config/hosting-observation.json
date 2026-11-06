@@ -812,7 +812,7 @@
       }
     },
     "valuesRead": false,
-    "note": "Read-only Vercel CLI listing confirmed hidden DATABASE_URL_POOLED variables target both Production and Preview on the Production Vercel project; the Production entry was created about an hour earlier and Preview about 39 minutes earlier. Secret values were not read. The connected Vercel metadata API still returns HTTP 403, so credential-name-to-secret mapping is not independently inspectable. Main now prefers DATABASE_URL_POOLED and the pooled Production runtime passed the core browser flow; this does not establish repeat reliability.",
+    "note": "Read-only Vercel CLI listings confirm the Production project contains both DATABASE_URL_POOLED and an older DATABASE_URL, plus DIRECT_URL. Secret values were not read. Application code selects DATABASE_URL_POOLED first when present, but Vercel environment metadata API access is denied and the credential values were not inspected; the endpoint-to-credential mapping is therefore not independently confirmed. The pooled Production runtime passed the core browser flow; this does not establish repeat reliability.",
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionPollIntervalMetadataCheck": {
@@ -822,6 +822,32 @@
       "lastUpdatedDisplay": "about 16 hours before the check",
       "valueRead": false,
       "source": "Explicit-scope Vercel CLI environment-variable list; output masked the value. Vercel metadata API returned 403. The last readable value observation remains 30,000 ms from 2026-11-05 18:49 UTC."
+    },
+    "productionEnvironmentMetadataCheck": {
+      "checkedAt": "2026-11-06T11:27:00Z",
+      "source": "Explicit-scope Vercel CLI environment list; secret values were not read. Vercel environment metadata API returned 403.",
+      "productionVariables": {
+        "DATABASE_URL_POOLED": { "target": "Production", "createdDisplay": "about 3 hours before check", "valueRead": false },
+        "DATABASE_URL": { "target": "Production", "createdDisplay": "about 73 days before check", "valueRead": false },
+        "DIRECT_URL": { "target": "Production", "createdDisplay": "about 19 hours before check", "valueRead": false },
+        "VITE_ROOM_POLL_INTERVAL_MS": { "target": "Production", "createdDisplay": "about 17 hours before check", "valueRead": false }
+      },
+      "sourceSelectionOrder": ["DATABASE_URL_POOLED", "DATABASE_URL", "PRISMA_DATABASE_URL", "POSTGRES_URL"],
+      "sourceAlsoRequires": "DIRECT_URL for production Prisma configuration",
+      "credentialEndpointMappingConfirmed": false,
+      "note": "The current source prefers DATABASE_URL_POOLED, and that variable is present on the Production target. A separate legacy DATABASE_URL is also present. Because Vercel metadata and traces are denied, no secret value or endpoint mapping was inspected; do not infer from variable names alone which database each credential reaches."
+    },
+    "timeoutTraceAccessCheck": {
+      "checkedAt": "2026-11-06T11:28:00Z",
+      "requestIds": [
+        "n9d5g-1793963721329-5da1696d00c5",
+        "w5gb7-1793961165084-51d5ae2a262f"
+      ],
+      "apiResult": "HTTP 403 Forbidden for both trace requests",
+      "explicitScopeCliResult": "404 Trace not found for both trace requests",
+      "traceSpansAvailable": false,
+      "causeEstablished": false,
+      "note": "The trace request errors persist after the user reconnected Viewer access. The safe runtime logs remain the only diagnostics; timeout root cause is unknown."
     },
     "productionDeployment": {
       "deploymentId": "dpl_25mrtWhK387LqT4yP5EKB3JCkPmy",
