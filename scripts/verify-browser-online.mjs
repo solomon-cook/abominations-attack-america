@@ -963,6 +963,7 @@ let onlineVictory;
         const room = await (await fetch(endpoint)).json();
         const participant = room.participants?.find((candidate) => candidate.id === session.participantId);
         if (participant?.role !== "player" || participant.playerIndex !== room.state.pendingDecision?.playerIndex || room.state.phase !== "deploy") return undefined;
+        if (room.state.pendingDecision?.type === "giant-placement") return { pendingGiantPlacement: true, actorBrowser: ${JSON.stringify(browserName)}, actorPlayerIndex: participant.playerIndex };
         if (room.state.decks.research.exhausted) return { skipped: "research-deck-exhausted" };
         const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/actions`)}, {
           method: "POST",
@@ -973,12 +974,35 @@ let onlineVictory;
       })()`);
       if (researchDraw) break;
     }
+    if (researchDraw?.pendingGiantPlacement) {
+      const placementActor = researchDraw.actorBrowser === "first" ? first : second;
+      await placementActor.waitFor(`Boolean(document.querySelector(".giant-placement-options button:not(:disabled)"))`, "combat-triggered giant placement options");
+      if (!await placementActor.evaluate(`(() => { const button = document.querySelector(".giant-placement-options button:not(:disabled)"); if (!button) return false; button.click(); return true; })()`)) {
+        throw new Error("The player could not select a legal base for the combat-triggered giant placement.");
+      }
+      await placementActor.waitFor(`(async () => { const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}"); const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "")); const room = response.ok ? await response.json() : undefined; return room?.state?.pendingDecision?.type !== "giant-placement"; })()`, "resolved combat-triggered giant placement");
+      researchDraw = await placementActor.evaluate(`(async () => {
+        const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+        const endpoint = ${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? "");
+        const room = await (await fetch(endpoint)).json();
+        const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/actions`)}, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-room-token": session.token ?? "" },
+          body: JSON.stringify({ envelope: { actionId: crypto.randomUUID(), actorId: session.participantId, expectedRevision: room.version, protocolVersion: 1, command: { type: "draw-research" } } }),
+        });
+        return { status: response.status, body: await response.json(), actorBrowser: ${JSON.stringify(researchDraw.actorBrowser)}, actorPlayerIndex: room.participants?.find((participant) => participant.id === session.participantId)?.playerIndex };
+      })()`);
+    }
     if (!researchDraw || researchDraw.status !== 200) throw new Error(`No active player could draw Military Research during Deploy: ${JSON.stringify(researchDraw)}`);
     onlineResearchDraw = "verified";
     const researchObservers = researchDraw.actorBrowser === "first" ? [second, spectator] : [first, spectator];
     await Promise.all(researchObservers.map((browser) => browser.waitFor(`(window.__boardPlaybackSnapshots ?? []).some((snapshot) => snapshot.action === "research.drawn" && snapshot.cards.some((card) => card.className.includes("research") && /MILITARY RESEARCH card drawn/.test(card.label ?? "")))`, "generic Military Research observer card")));
     const researchActor = researchDraw.actorBrowser === "first" ? first : second;
-    await first.waitFor(`["Move", "Deploy"].includes(document.querySelector(".turn-hud-heading h2")?.textContent?.trim())`, "post-research phase");
+    if (researchDraw.body?.state?.pendingDecision?.type === "giant-placement") {
+      await researchActor.waitFor(`Boolean(document.querySelector(".giant-placement-options button:not(:disabled)"))`, "Research giant placement options");
+    } else {
+      await first.waitFor(`["Move", "Deploy"].includes(document.querySelector(".turn-hud-heading h2")?.textContent?.trim())`, "post-research phase");
+    }
     let phaseAfterResearch = await first.evaluate(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim()`);
     if (phaseAfterResearch === "Deploy") {
       const giantChoice = await researchActor.evaluate(`Boolean(document.querySelector(".giant-placement-options button:not(:disabled)"))`);
@@ -992,7 +1016,9 @@ let onlineVictory;
     }
     if (phaseAfterResearch === "Deploy") {
       await researchActor.waitFor(`!![...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Pass deployment" && !button.disabled)`, "post-giant research Deploy continuation");
-      if (!await researchActor.click("Pass deployment")) throw new Error("The player could not pass the remaining Deploy phase after the immediate giant Research placement.");
+      if (!await researchActor.evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === "Pass deployment" && !candidate.disabled); if (!button) return false; button.click(); return true; })()`)) {
+        throw new Error("The player could not pass the remaining Deploy phase after the immediate giant Research placement.");
+      }
     }
     try {
       await first.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move"`, "first next Move phase");
@@ -1028,7 +1054,7 @@ let onlineVictory;
       const decisionOwner = victoryRoom.state?.pendingDecision && "playerIndex" in victoryRoom.state.pendingDecision
         ? victoryRoom.state.pendingDecision.playerIndex
         : victoryRoom.state?.currentPlayer;
-      if (decisionOwner !== actorIndex) throw new Error(`Online decision owner changed during bot planning: expected ${actorIndex}, received ${decisionOwner}.`);
+      if (decisionOwner !== actorIndex) continue;
       const command = chooseBotCommand(victoryRoom.state, new Set([actorIndex]));
       if (!command) throw new Error(`No legal automated choice was available for player ${actorIndex + 1} at ${victoryRoom.state?.phase}/${victoryRoom.state?.pendingDecision?.type ?? "no decision"}.`);
       const participant = victoryRoom.participants?.find((candidate) => candidate.role === "player" && candidate.playerIndex === actorIndex);
@@ -1045,6 +1071,10 @@ let onlineVictory;
         } }),
       });
       const actionBody = await actionResponse.json();
+      if (!actionResponse.ok && ["The game changed before this action was committed. Refresh and try again.", "It is not your turn."].includes(actionBody.error)) {
+        await wait(100);
+        continue;
+      }
       if (!actionResponse.ok) throw new Error(`Online victory command ${JSON.stringify(command)} failed (${actionResponse.status}): ${JSON.stringify({ actionBody, actorIndex, currentPlayer: victoryRoom.state?.currentPlayer, phase: victoryRoom.state?.phase, pendingDecision: victoryRoom.state?.pendingDecision, revision: victoryRoom.version })}.`);
       victoryRoom = actionBody;
       if (step % 10 === 0) await wait(10);

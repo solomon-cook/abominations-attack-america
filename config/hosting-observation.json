@@ -561,14 +561,14 @@
     }
   },
   "preview": {
-    "deploymentId": "dpl_DxKQwdNTyjFeZseprENb4H92Gato",
-    "url": "https://abominations-attack-america-kkfioyr5b.vercel.app",
+    "deploymentId": "dpl_86sKm7SopQ4nPkem8dk796ZA6SMg",
+    "url": "https://abominations-attack-america-klqv1wvn5.vercel.app",
     "state": "READY",
     "project": "abominations-attack-america",
-    "branch": "codex/record-production-retry-evidence",
-    "commit": "82b7efc",
-    "source": "Git PR deployment; pull request #6",
-    "checkedAt": "2026-11-06T02:48:19Z",
+    "branch": "codex/fix-online-full-match-setup",
+    "commit": "5aa7261",
+    "source": "Vercel redeploy of the pushed feature branch after adding DATABASE_URL_POOLED for Preview",
+    "checkedAt": "2026-11-06T09:27:49Z",
     "apiHealth": {
       "path": "/api/health",
       "status": 200,
@@ -580,7 +580,7 @@
           "ready": true
         }
       },
-      "checkedAt": "2026-11-06T02:44:16Z"
+      "checkedAt": "2026-11-06T09:27:49Z"
     },
     "metrics": {
       "path": "/api/metrics",
@@ -637,15 +637,29 @@
       "DATABASE_URL",
       "DIRECT_URL",
       "VITE_ENABLE_WEBSOCKETS",
-      "VITE_ROOM_POLL_INTERVAL_MS"
+      "VITE_ROOM_POLL_INTERVAL_MS",
+      "DATABASE_URL_POOLED"
     ],
     "environmentValuesRead": false,
-    "note": "Preview remained protected. A short-lived Vercel OIDC development token was supplied only to the browser test; it was not printed or persisted. The PR #6 Preview passed the focused core browser flow. This Preview result does not clear Production reliability failures or release gates.",
+    "note": "Preview remains protected. DATABASE_URL_POOLED is present as a Hidden Secret for Preview and its Prisma pooled TCP hostname was verified at credential creation; the stored Vercel value was not read. A prior full-mode attempt on the old Preview URL returned Cloudflare Error 1102 from accelerate.prisma-data.net. After adding the pooled TCP variable and redeploying, a separate full-mode run did not report 1102 and advanced to round 4, revision 126, but was stopped before a terminal result. This is not full-match or soak acceptance.",
     "databaseUsage": {
-      "operations": 11623,
+      "operations": 24523,
       "periodStart": "2026-11-01T00:00:00Z",
-      "measuredAt": "2026-11-06T02:48:13Z",
+      "measuredAt": "2026-11-06T09:43:22.003Z",
       "source": "Prisma CLI postgres usage for Preview database db_qk1c8t4ao6pqd1fny66it8yp"
+    },
+    "latestFullMatchAttempt": {
+      "status": "stopped-incomplete",
+      "deploymentId": "dpl_86sKm7SopQ4nPkem8dk796ZA6SMg",
+      "checkedAt": "2026-11-06T09:43:00Z",
+      "roomCode": "1BE0EC",
+      "isolatedBrowserProfiles": 3,
+      "combatPlaybackObservedByPeerAndSpectator": true,
+      "phaseAtStop": "move",
+      "roundAtStop": 4,
+      "revisionAtStop": 126,
+      "terminalVictory": false,
+      "reason": "The long automated full-match driver was stopped to limit additional shared Free-tier database operations; terminal result and final refresh/reconnect were not reached."
     }
   },
   "regionCheckPreview": {
@@ -725,13 +739,14 @@
           "POSTGRES_URL",
           "PRISMA_DATABASE_URL",
           "VITE_ENABLE_WEBSOCKETS",
-          "VITE_ROOM_POLL_INTERVAL_MS"
+          "VITE_ROOM_POLL_INTERVAL_MS",
+          "DATABASE_URL_POOLED"
         ]
       },
-      "note": "Read-only Vercel CLI listing confirmed Production targets for ALLOWED_ORIGIN, DATABASE_URL, DATABASE_URL_POOLED, DIRECT_URL, PRISMA_DATABASE_URL, POSTGRES_URL, and VITE_ROOM_POLL_INTERVAL_MS. Values remained masked; the newly added pooled variable is inert until candidate code is deployed."
+      "note": "Read-only Vercel CLI listing confirmed Production and Preview targets for DATABASE_URL_POOLED plus the existing database variables. Values remained masked; Preview was redeployed with candidate code and the new pooled runtime variable, while Production deployment remains unchanged."
     },
     "valuesRead": false,
-    "note": "Read-only Vercel CLI listing confirmed Production targets for ALLOWED_ORIGIN, DATABASE_URL, DATABASE_URL_POOLED, DIRECT_URL, PRISMA_DATABASE_URL, POSTGRES_URL, and VITE_ROOM_POLL_INTERVAL_MS. Values remained masked; the newly added pooled variable is inert until candidate code is deployed. No secret values were read.",
+    "note": "Read-only Vercel CLI listing confirmed Production and Preview targets for DATABASE_URL_POOLED plus the existing database variables. Values remained masked; Preview was redeployed with candidate code and the new pooled runtime variable, while Production deployment remains unchanged. No secret values were read.",
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
@@ -744,18 +759,18 @@
       "deploymentCheckedAt": "2026-11-06T07:00:00Z",
       "healthTimeoutReproduced": true,
       "browserVerification": "Two-profile browser core flow passed; a later POST /api/rooms timed out on this same deployment at 07:07 UTC. Full human match and spectator post-action sync are not verified.",
-      "checkedAt": "2026-11-06T08:31:00Z",
+      "checkedAt": "2026-11-06T09:43:00Z",
       "latestApiHealth": {
         "path": "/api/health",
         "status": 200,
         "persistence": "prisma",
         "realtimeFanout": "http-polling",
-        "checkedAt": "2026-11-06T08:31:00Z"
+        "checkedAt": "2026-11-06T09:43:00Z"
       },
       "latestApiMetrics": {
         "path": "/api/metrics",
         "status": 200,
-        "checkedAt": "2026-11-06T08:31:00Z",
+        "checkedAt": "2026-11-06T09:43:00Z",
         "note": "Fresh instance-local point sample; not an aggregate reliability monitor."
       }
     },
@@ -809,16 +824,16 @@
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 38451,
+      "used": 49927,
       "included": 200000,
-      "remainingAtObservation": 161549,
-      "checkedAt": "2026-11-06T08:17:29Z",
+      "remainingAtObservation": 150073,
+      "checkedAt": "2026-11-06T09:43:24Z",
       "stale": false,
       "isDirectWorkspaceMeter": false,
       "projectsEnumerated": 5,
       "branchesEnumerated": 5,
       "databasesEnumerated": 9,
-      "source": "Derived sum of explicit per-database Prisma CLI usage readings across all nine databases in five enumerated projects; sampled 08:17:29 UTC. Estimate, not direct Console workspace meter."
+      "source": "Derived sum of explicit per-database Prisma CLI usage readings across all nine databases in five enumerated projects; sampled 09:43:21–09:43:24 UTC. Estimate, not direct Console workspace meter."
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -827,27 +842,27 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 11310,
+        "operations": 11311,
         "storageGiB": 0.0017547607421875,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-06T08:31:15.285Z",
+        "measuredAt": "2026-11-06T09:43:21.113Z",
         "databaseSpecificNotWorkspaceWide": true,
         "source": "Prisma CLI postgres usage for explicit Production project/database IDs"
       },
       "backupInventory": {
         "count": 0,
         "retentionDays": 0,
-        "measuredAt": "2026-11-06T08:31:18.477Z",
+        "measuredAt": "2026-11-06T09:43:52.707Z",
         "source": "Prisma CLI postgres backup list for explicit Production database ID",
         "automaticBackupsAvailable": false
       },
       "connectionCredentialCount": 6,
       "pooledRuntimeCredentialListed": true
     },
-    "automaticBackups": "Refreshed Prisma CLI inventory at 2026-11-06 07:39 UTC returned no backups and zero retention days; Free has no automatic backups.",
+    "automaticBackups": "Refreshed Prisma CLI inventory at 2026-11-06 09:43 UTC returned no backups and zero retention days; Free has no automatic backups.",
     "productionDatabaseStatus": {
       "status": "ready",
-      "checkedAt": "2026-11-06T08:31:18.477Z",
+      "checkedAt": "2026-11-06T09:43:52.707Z",
       "connectionCredentialCount": 6,
       "runtimeCredentialListed": true,
       "migrationCredentialListed": true,
@@ -868,10 +883,10 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Source-traced 2026-11-05: each successful PrismaRoomStore.getRoom call performs one Prisma Client participant.findFirst with relationLoadStrategy=join. Prisma counts each Prisma Client query as one operation regardless of internal SQL count. At the configured 30-second interval this is 172,800 room-poll operations/month for two continuously open tabs and 345,600 for four. A two-hour guest match uses about 480 room-poll operations for two players or 960 for four, before setup/actions/reconnects. Each visible signed-in account with presence opted in sends one heartbeat every 30 seconds; each calls one updateMany, adding about 120 operations per opted-in account per two-hour session.",
-    "note": "Owner approved dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). Direct Console plan and $0 invoice last confirmed 5 November; current billing is not exposed through CLI. At 08:31 UTC Prisma CLI measured 11,310 Production operations. The sum across all nine databases in all five enumerated projects was 38,451 at 08:17 UTC, a derived estimate rather than the direct Console workspace meter. Production backup inventory at 08:31 UTC showed zero backups and zero retention. Production database is ready and lists six credential records; per-credential health is unavailable. One manual dump/restore drill passed once; Free has no automatic backups, and recurring backup/restore ownership and cadence remain open.",
-    "workspacePollingHeadroomAtObservation": "At the 2026-11-06 08:17 UTC derived workspace estimate of 38,451/200,000, about 161,549 operations remained. Based only on one operation per successful room poll, this equates to about 336 two-hour two-player or 168 four-player sessions before other queries. Two tabs polling continuously every 30 seconds add an estimated 172,800 operations per 30-day month; four tabs add 345,600. These remain estimates, not measured capacity acceptance.",
+    "note": "Owner approved the dedicated Production database and pooled runtime credential on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). Direct Console plan and $0 invoice last confirmed 5 November; current billing is not exposed through CLI. At 09:43 UTC Prisma CLI measured 11,311 Production operations. The sum across all nine databases in five enumerated projects was 49,927 at 09:43 UTC, a derived estimate rather than the direct Console workspace meter. Production backup inventory at 09:43 UTC showed zero backups and zero retention. The Production database lists six credential records; per-credential health is unavailable. One manual dump/restore drill passed once; Free has no automatic backups, and recurring backup/restore ownership and cadence remain open.",
+    "workspacePollingHeadroomAtObservation": "At the 2026-11-06 09:43 UTC derived workspace estimate of 49,927/200,000, about 150,073 operations remained. Under one operation per successful room poll, that is at most about 312 two-hour two-player or 156 four-player sessions before other queries. Two tabs polling continuously every 30 seconds add an estimated 172,800 operations per 30-day month; four add 345,600. These remain estimates, not measured capacity acceptance.",
     "pooledUrlCompatibility": {
-      "checkedAt": "2026-11-06T08:31:00Z",
+      "checkedAt": "2026-11-06T09:43:00Z",
       "vercelProductionVariableListed": true,
       "listedProductionDatabaseVariables": [
         "DATABASE_URL",
@@ -896,11 +911,21 @@
       "productionEnvChanged": true,
       "productionDeploymentChanged": false,
       "source": "Vercel CLI environment-variable names/creation ages plus Prisma Postgres Vercel integration documentation",
-      "note": "A new pooled Prisma credential was created and added as a Hidden Secret named DATABASE_URL_POOLED in Vercel Production. The Prisma connection hostname was verified before saving; Vercel stored value was not read. Current Production does not yet run candidate code that prefers this variable, so no runtime mitigation is verified. Recurring query timeouts remain unexplained.",
+      "note": "A dedicated pooled TCP credential was added as Hidden Secret DATABASE_URL_POOLED in both Preview and Production; both Prisma hosts were verified as pooled.db.prisma.io at creation and no stored Vercel secret value was read. Preview was redeployed with candidate runtime code and /api/health returned 200. Its subsequent full-mode browser attempt advanced to round 4/revision 126 without reproducing the prior Accelerate Worker 1102, but ended without a terminal match result. Production still has not redeployed candidate code, so its pooled variable remains inert. The earlier query-read-timeouts are not resolved.",
       "newPrismaConnectionName": "vercel-production-pooled-runtime-20261106-final-cli",
       "newPrismaConnectionHostVerified": true,
       "newConnectionHost": "pooled.db.prisma.io",
-      "newVercelVariableValueRead": false
+      "newVercelVariableValueRead": false,
+      "vercelPreviewVariableListed": true,
+      "previewPrismaConnectionName": "vercel-preview-pooled-runtime-20261106",
+      "previewPrismaConnectionHostVerified": true,
+      "previewConnectionHost": "pooled.db.prisma.io",
+      "previewVercelVariableValueRead": false,
+      "previewEnvChanged": true,
+      "previewDeploymentId": "dpl_86sKm7SopQ4nPkem8dk796ZA6SMg",
+      "previewDeploymentChanged": true,
+      "previewDeploymentHealthStatus": 200,
+      "previewDeploymentHealthCheckedAt": "2026-11-06T09:27:49Z"
     }
   }
 }
