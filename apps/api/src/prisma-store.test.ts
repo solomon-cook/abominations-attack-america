@@ -71,6 +71,25 @@ test("Prisma room creation stores a private initial replay snapshot", async () =
   assert.equal("initialReplayState" in created.room, false);
 });
 
+test("Prisma room creation failures log only the failed step and safe error metadata", async () => {
+  const { adapter } = persistentAdapter();
+  adapter.gameRoom.create = async () => {
+    throw Object.assign(new Error("Query read timeout for secret-connection-details"), { code: "P6004" });
+  };
+  const records: string[] = [];
+  const originalError = console.error;
+  console.error = (...values: unknown[]) => { records.push(values.map(String).join(" ")); };
+  try {
+    await assert.rejects(new PrismaRoomStore(adapter, true).createRoom(2), /Query read timeout/);
+  } finally {
+    console.error = originalError;
+  }
+  assert.equal(records.length, 1);
+  assert.match(records[0]!, /gameRoom\.create/);
+  assert.match(records[0]!, /P6004/);
+  assert.doesNotMatch(records[0]!, /secret-connection-details|Query read timeout/);
+});
+
 test("Prisma public replay reconstructs a completed match with a spectator-safe projection", async () => {
   const { adapter, room, events } = persistentAdapter();
   const initial = completedDevelopmentSetupGame();
