@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-06T06:01:04Z",
+  "checkedAt": "2026-11-06T06:13:56Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_DVaTrAiJAbfVumNLntxzQq1jt8Lm",
+    "deploymentId": "dpl_6o8ATShJqc56g87ZCaUbyukZij6W",
     "deploymentTarget": "production",
-    "deploymentCommit": "7bb02a2c1479648330464be037401d9c648d10a8",
-    "deploymentCheckedAt": "2026-11-06T05:43:00Z",
-    "checkedAt": "2026-11-06T06:01:04Z",
+    "deploymentCommit": "7b85b64db6180c847030e2b45147b5df00c40364",
+    "deploymentCheckedAt": "2026-11-06T06:13:21Z",
+    "checkedAt": "2026-11-06T06:13:56Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -23,28 +23,32 @@
           "ready": true
         }
       },
-      "checkedAt": "2026-11-06T06:01:04Z",
-      "vercelIdRegion": "iad1"
+      "checkedAt": "2026-11-06T06:13:56Z",
+      "vercelId": "lhr1::iad1::6jrfp-1793945635078-1f8ebf31bfdc"
     },
     "metrics": {
       "path": "/api/metrics",
       "status": 200,
       "sample": {
-        "requests": 173,
-        "requestFailures": 8,
-        "commandAccepted": 2,
+        "requests": 2,
+        "requestFailures": 0,
+        "commandAccepted": 0,
         "commandFailed": 0,
-        "reconnects": 8,
+        "reconnects": 0,
         "websocketConnections": 0,
-        "latencySamples": 8,
-        "latencyTotalMs": 20252,
-        "serverErrors": 1,
+        "websocketFailures": 0,
+        "roomsCompleted": 0,
+        "roomsAbandoned": 0,
+        "latencySamples": 0,
+        "latencyTotalMs": 0,
+        "serverErrors": 0,
         "errorReports": 0,
         "divergenceReports": 0,
         "deploymentFailures": 0
       },
-      "note": "Point-in-time function-instance-local metrics, not an aggregate. The server error corresponds to the captured room-create database timeout; request failures also include intentional malformed/forged command checks.",
-      "checkedAt": "2026-11-06T06:01:04Z"
+      "note": "Fresh function-instance-local point-in-time snapshot, not an aggregate or usage meter.",
+      "checkedAt": "2026-11-06T06:13:56Z",
+      "vercelId": "lhr1::iad1::ph9j7-1793945636240-c2eeff669362"
     },
     "latestProductionAttempt": {
       "deploymentId": "dpl_DVaTrAiJAbfVumNLntxzQq1jt8Lm",
@@ -172,7 +176,7 @@
       "metrics": 200,
       "method": "Vercel CLI-authenticated calls to the public canonical API; response tokens were kept in process memory and not printed."
     },
-    "note": "Canonical Production /api/health and /api/metrics returned JSON HTTP 200 at 03:44 UTC on dpl_CRhzgaQL12tZnd1ngy7HzMcw9g26 (main commit 3946de4); health reports Prisma persistence and HTTP polling. An automated three-profile browser core flow passed on the immediately preceding app-identical deployment dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix. Earlier intermittent room-create and health-query timeouts on prior deployments remain unresolved; the later pass confirms recovery, not reliable behavior. Vercel reported no runtime errors for /api/rooms or /api/health in the preceding 24 hours. /health and /metrics are SPA HTML fallbacks, not API probes. Metrics are function-instance-local. Production database usage was refreshed at 03:49 UTC and its backup inventory at 03:40 UTC. Current plan and invoice are not available from the CLI.",
+    "note": "Canonical Production health and metrics returned HTTP 200 on the post-merge documentation deployment at 06:13 UTC. Health reports Prisma persistence and HTTP polling. This fresh point check follows the 05:45 confirmed room-create query timeout; it does not diagnose the timeout or establish repeat reliability. Runtime error aggregation returned no errors for /api/rooms or /api/health in a 30-minute query, while individual runtime logs separately captured the timeout and expected request-rejection errors. Metrics are instance-local.",
     "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment.",
     "routeRepresentation": {
       "apiHealth": "JSON Function route at /api/health",
@@ -297,11 +301,10 @@
       }
     ],
     "latestHealthCheck": {
-      "checkedAt": "2026-11-06T05:02:14Z",
-      "deploymentId": "dpl_FaDgmcLsViCrhrRRo3Sa4zUfhNY9",
+      "checkedAt": "2026-11-06T06:13:56Z",
+      "deploymentId": "dpl_6o8ATShJqc56g87ZCaUbyukZij6W",
       "httpStatus": 200,
-      "durationMs": 2371,
-      "vercelId": "lhr1::iad1::ch8ph-1793941332069-4aebbc3d1224",
+      "vercelId": "lhr1::iad1::6jrfp-1793945635078-1f8ebf31bfdc",
       "health": {
         "ok": true,
         "persistence": "prisma",
@@ -312,18 +315,17 @@
       }
     },
     "latestMetricsCheck": {
-      "checkedAt": "2026-11-06T05:02:14Z",
-      "deploymentId": "dpl_FaDgmcLsViCrhrRRo3Sa4zUfhNY9",
+      "checkedAt": "2026-11-06T06:13:56Z",
+      "deploymentId": "dpl_6o8ATShJqc56g87ZCaUbyukZij6W",
       "httpStatus": 200,
-      "durationMs": 143,
-      "vercelId": "lhr1::iad1::7vk29-1793941334451-f872af718d08",
+      "vercelId": "lhr1::iad1::ph9j7-1793945636240-c2eeff669362",
       "counters": {
-        "requests": 47,
-        "requestFailures": 2,
+        "requests": 2,
+        "requestFailures": 0,
         "serverErrors": 0,
-        "reconnects": 2
+        "reconnects": 0
       },
-      "note": "Fresh instance-local snapshot after the two browser runs. Browser verifier deliberately sent malformed and forged commands and confirmed their HTTP 400 rejection; requestFailures includes those expected negative checks, serverErrors remains zero."
+      "note": "Fresh instance-local snapshot. It does not clear the earlier request-level timeout or provide an aggregate availability view."
     },
     "priorProductionBrowserVerification": {
       "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
@@ -418,6 +420,16 @@
       "forgedAndMalformedCommandsRejected": true,
       "fullMatchMoveCompleted": false,
       "limitation": "Verifier selected Draw Research and placed no units; its later legal-shared-destination fixture required four owned units and stopped with unitStarts empty. No gameplay move or terminal full match was verified."
+    },
+    "postMergeRuntimeErrorCheck": {
+      "checkedAt": "2026-11-06T06:13:56Z",
+      "lookback": "30m",
+      "routes": [
+        "/api/rooms",
+        "/api/health"
+      ],
+      "errorClusters": "none returned by Vercel runtime-errors aggregation",
+      "limitation": "Individual function logs for deployment dpl_DVaTrAiJAbfVumNLntxzQq1jt8Lm captured the 05:45 database query timeout and expected rejected request errors. Aggregation absence is not proof of no runtime failures."
     }
   },
   "preview": {
@@ -593,21 +605,14 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_DVaTrAiJAbfVumNLntxzQq1jt8Lm",
-      "deploymentUrl": "https://abominations-attack-america-72m51bt1h.vercel.app",
+      "deploymentId": "dpl_6o8ATShJqc56g87ZCaUbyukZij6W",
+      "deploymentUrl": "https://abominations-attack-america-mje4dhk9b.vercel.app",
       "canonicalUrl": "https://abominations-attack-america.vercel.app",
-      "commit": "7bb02a2c1479648330464be037401d9c648d10a8",
+      "commit": "7b85b64db6180c847030e2b45147b5df00c40364",
       "status": "READY",
       "functionRegion": "iad1",
-      "deploymentCheckedAt": "2026-11-06T05:43:00Z",
-      "browserVerification": {
-        "status": "two-profile-core-passed; three-profile spectator setup projection passed; confirmed query timeout remains unexplained",
-        "checkedAt": "2026-11-06T05:51:00Z",
-        "coreRoom": "8D3846",
-        "spectatorRoom": "463F5B",
-        "fullMatch": "not verified"
-      },
-      "twoProfileSmoke": "A two-profile Production flow passed after a confirmed 05:45 UTC gameRoom.create query-read-timeout: room 8D3846, legal move accepted at revision 12, peer sync and refresh/reconnect. One recovered sample does not establish reliability. A separate three-profile flow verified spectator read-only setup projection but no gameplay move or full match."
+      "deploymentCheckedAt": "2026-11-06T06:13:21Z",
+      "browserVerification": "No browser gameplay was run on this documentation-only deployment; latest gameplay evidence remains on dpl_DVaTrAiJAbfVumNLntxzQq1jt8Lm."
     },
     "productionLastMeasurement": {
       "databaseProject": "abominations-attack-america-production",
@@ -659,16 +664,16 @@
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 35084,
+      "used": 35095,
       "included": 200000,
-      "remainingAtObservation": 164916,
-      "checkedAt": "2026-11-06T05:58:09Z",
+      "remainingAtObservation": 164905,
+      "checkedAt": "2026-11-06T06:15:26Z",
       "stale": false,
       "isDirectWorkspaceMeter": false,
       "projectsEnumerated": 5,
       "branchesEnumerated": 5,
       "databasesEnumerated": 9,
-      "source": "Derived sum of per-database Prisma CLI operation readings across all nine databases in five enumerated workspace projects; sampled 05:58:06\u201305:58:09 UTC. Estimate, not Console direct workspace meter."
+      "source": "Derived sum of the explicit per-database Prisma CLI usage readings across all nine databases in five enumerated projects; sampled 06:14:55\u201306:15:26 UTC. Estimate, not direct Console workspace meter."
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -677,10 +682,10 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 9326,
-        "storageGiB": 0.0016326904296875,
+        "operations": 9330,
+        "storageGiB": 0.00168609619140625,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-06T05:58:06.954Z",
+        "measuredAt": "2026-11-06T06:14:56.597Z",
         "databaseSpecificNotWorkspaceWide": true,
         "source": "Prisma CLI postgres usage for explicit Production project/database IDs"
       },
@@ -716,6 +721,6 @@
     },
     "pollingEstimate": "Source-traced 2026-11-05: each successful PrismaRoomStore.getRoom call performs one Prisma Client participant.findFirst with relationLoadStrategy=join. Prisma counts each Prisma Client query as one operation regardless of internal SQL count. At the configured 30-second interval this is 172,800 room-poll operations/month for two continuously open tabs and 345,600 for four. A two-hour guest match uses about 480 room-poll operations for two players or 960 for four, before setup/actions/reconnects. Each visible signed-in account with presence opted in sends one heartbeat every 30 seconds; each calls one updateMany, adding about 120 operations per opted-in account per two-hour session.",
     "note": "Owner approved dedicated Production database on Prisma Free ($0, fixed 200,000-operation shared workspace cap; no paid upgrade or overages). Direct Console plan and $0 invoice were last confirmed 5 November; current billing cannot be refreshed through CLI. At 05:34 UTC Prisma CLI measured 8,618 Production operations. The sum across all nine databases in all five enumerated projects is 34,369 at 05:34 UTC, a derived estimate rather than the direct Console workspace meter. The Production backup inventory at 05:18 UTC showed no listed backups (zero retention). Production database is ready and lists five credential records, but per-credential health is unavailable. One manual dump/restore drill passed once; Free has no automatic backups, and recurring backup/restore ownership and cadence remain open.",
-    "workspacePollingHeadroomAtObservation": "At the 2026-11-06 05:58 UTC derived workspace estimate of 35,084/200,000, about 164,916 operations remained. Based only on one operation per successful room poll, this equates to about 343 two-hour two-player sessions or 171 four-player sessions before other queries. Two tabs continuously polling every 30 seconds would add an estimated 172,800 operations per 30-day month; four tabs 345,600. These are estimates, not measured capacity acceptance."
+    "workspacePollingHeadroomAtObservation": "At the 2026-11-06 06:15 UTC derived workspace estimate of 35,095/200,000, about 164,905 operations remained. Based only on one operation per successful room poll, this equates to about 343 two-hour two-player or 171 four-player sessions before other queries. Two tabs polling continuously every 30 seconds add an estimated 172,800 operations per 30-day month; four tabs add 345,600. These remain estimates, not measured capacity acceptance."
   }
 }
