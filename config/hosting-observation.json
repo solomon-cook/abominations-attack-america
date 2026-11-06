@@ -77,6 +77,35 @@
       "vercelIdRegion": "iad1",
       "cause": "Unknown; safe diagnostics do not identify root cause."
     },
+    "latestFullMatchAttempt": {
+      "checkedAt": "2026-11-06T11:15:41.789Z",
+      "deploymentId": "dpl_6ffJN8tX3AyUe49rpjCtdQuJ3o66",
+      "deploymentCommit": "b92c0de312a0fa5a85fed2b4d8f18d6bd1bf8d70",
+      "purpose": "automated three-profile Production full-match, spectator, and terminal-state verification",
+      "isolatedChromeProfiles": 3,
+      "stage": "first browser attempted room creation; no room code was returned",
+      "requestPath": "/api/rooms",
+      "httpStatus": 503,
+      "roomCreated": false,
+      "timeoutKind": "query-read-timeout",
+      "durationMs": 20188,
+      "databaseStep": "gameRoom.create",
+      "databaseStepDurationMs": 20132,
+      "requestId": "n9d5g-1793963721329-5da1696d00c5",
+      "pool": {
+        "total": 0,
+        "idle": 0,
+        "waiting": 0,
+        "clientsCreated": 15,
+        "clientsAcquired": 16,
+        "clientsReleased": 16,
+        "clientsRemoved": 14,
+        "idleClientErrors": 0
+      },
+      "region": "lhr1",
+      "functionRegion": "iad1",
+      "diagnosis": "The full-match run stopped before any game actions. The request was confirmed as a Prisma query-read-timeout; the root cause remains unknown."
+    },
     "runtimeErrorCheck": {
       "checkedAt": "2026-11-06T04:22:37Z",
       "runtimeFailureLogCount": 4,
