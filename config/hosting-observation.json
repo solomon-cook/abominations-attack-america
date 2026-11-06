@@ -915,21 +915,21 @@
   },
   "database": {
     "plan": "Free (confirmed in Prisma Console on 2026-11-06)",
-    "planLastConfirmedAt": "2026-11-06T10:59:07Z",
+    "planLastConfirmedAt": "2026-11-06T11:39:20Z",
     "workspaceInvoice": "$0.00 current invoice (confirmed in Prisma Console on 2026-11-06)",
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 51095,
+      "used": 51102,
       "included": 200000,
-      "remainingAtObservation": 148905,
-      "checkedAt": "2026-11-06T11:22:28Z",
+      "remainingAtObservation": 148898,
+      "checkedAt": "2026-11-06T11:39:20Z",
       "stale": false,
       "isDirectWorkspaceMeter": true,
       "projectsEnumerated": 5,
       "branchesEnumerated": 5,
       "databasesEnumerated": 9,
-      "source": "Prisma Console workspace Usage page; direct current-cycle meter for 2026-11-01 through 2026-11-30, Free plan, $0.00 invoice. The page displayed 51,095 of 200,000 operations, 8.5K/day, and 0.07 GiB of 2.00 GiB storage.",
+      "source": "Prisma Console workspace Usage page; direct current-cycle meter for 2026-11-01 through 2026-11-30, Free plan, $0.00 invoice. The page displayed 51,102 of 200,000 operations, 8.5K/day, and 0.07 GiB of 2.00 GiB storage.",
       "averageDailyOperationsDisplayed": 8500
     },
     "productionDatabase": {
@@ -942,9 +942,9 @@
         "operations": 11709,
         "storageGiB": 0.00168609619140625,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-06T11:22:28Z",
+        "measuredAt": "2026-11-06T11:39:20Z",
         "databaseSpecificNotWorkspaceWide": true,
-        "source": "Prisma Console Production database dashboard and workspace usage breakdown both show 11,709 Production operations.",
+        "source": "Prisma Console workspace usage breakdown shows 11,709 Production operations; this value was unchanged from the prior direct reading.",
         "stale": false,
         "storageMeasuredAt": "2026-11-06T06:14:56.597Z",
         "storageStale": true
@@ -952,7 +952,7 @@
       "backupInventory": {
         "count": 0,
         "retentionDays": 0,
-        "measuredAt": "2026-11-06T10:39:13Z",
+        "measuredAt": "2026-11-06T11:39:20Z",
         "stale": false,
         "source": "Prisma Console Backups page for the explicit Production database displayed No Backups Available and states automated daily backups are available on paid plans.",
         "automaticBackupsAvailable": false
@@ -969,7 +969,7 @@
     },
     "backupRestore": {
       "status": "manual dump/restore drill passed once",
-      "inventoryCheckedAt": "2026-11-06T10:39:13Z",
+      "inventoryCheckedAt": "2026-11-06T11:39:20Z",
       "inventoryCount": 0,
       "inventoryRetentionDays": 0,
       "inventorySource": "Prisma Console Backups page for the explicit Production database; no backups available.",
@@ -981,12 +981,12 @@
       "routineSchedule": "not established"
     },
     "pollingEstimate": "Source-traced 2026-11-05: each successful PrismaRoomStore.getRoom call performs one Prisma Client participant.findFirst with relationLoadStrategy=join. Prisma counts each Prisma Client query as one operation regardless of internal SQL count. The last recorded Production Vercel environment value was VITE_ROOM_POLL_INTERVAL_MS=30000 (checked 2026-11-05 18:49 UTC); at that setting the estimate is 172,800 room-poll operations/month for two continuously open tabs and 345,600 for four. A two-hour guest match uses about 480 room-poll operations for two players or 960 for four, before setup/actions/reconnects. The source fallback when the variable is absent is 5,000 ms, which would yield 1,036,800 polls/month for two continuously open tabs. This fallback is not evidence of the deployed interval. Each visible signed-in account with presence opted in sends one heartbeat every 30 seconds; each calls one updateMany, adding about 120 operations per opted-in account per two-hour session.",
-    "note": "Prisma Console read-only inspection on 2026-11-06 11:22 UTC confirmed the workspace is Free at $0.00 with 51,095/200,000 operations, leaving 148,905 for the billing period. Production used 11,709 operations and Preview 25,293; the two Abominations databases account for 37,002 operations, while the allowance is workspace-wide and includes unrelated projects. Workspace usage showed 0.07/2.00 GiB storage and a rounded 8.5K operations/day. If that rounded recent average continued, the 30-day projection would exceed the Free cap; synthetic test activity may skew it, so normal-play capacity remains unmeasured. The Production Backups page last checked at 10:39 UTC showed no backups and says automatic daily backups are available on paid plans. A manual dump/restore drill passed once, but no recurring schedule or owner exists. No billing or database setting was changed.",
-    "workspacePollingHeadroomAtObservation": "The direct Prisma Console workspace meter at 2026-11-06 11:22 UTC showed 148,905 operations remaining. Source-based estimates at the last recorded deployed polling interval of 30 seconds are 480 room-poll operations for a two-player two-hour match and 960 for four players; if every remaining operation were used only for polls, this would be at most about 310 two-player or 155 four-player sessions, before setup, actions, reconnects, presence, other workspace projects, or system operations. Two tabs polling continuously every 30 seconds would produce an estimated 172,800 polls per 30-day month. The code fallback is five seconds if the deployment variable is absent; this would produce an estimated 1,036,800 polls/month for two continuously open tabs. Neither estimate is a measured gameplay capacity or normal-use projection.",
+      "note": "Prisma Console read-only inspection on 2026-11-06 11:39 UTC confirmed the workspace is Free at $0.00 with 51,102/200,000 operations, leaving 148,898 for the billing period. Production used 11,709 operations and Preview 25,300; the two Abominations databases account for 37,009 operations, while the allowance is workspace-wide and includes unrelated projects. Workspace usage showed 0.07/2.00 GiB storage and a rounded 8.5K operations/day. If that rounded recent average continued, the 30-day projection would exceed the Free cap; synthetic test activity may skew it, so normal-play capacity remains unmeasured. The Production Backups page checked at 11:39 UTC showed no backups and says automatic daily backups are available on paid plans. A manual dump/restore drill passed once, but no recurring schedule or owner exists. No billing or database setting was changed.",
+    "workspacePollingHeadroomAtObservation": "The direct Prisma Console workspace meter at 2026-11-06 11:39 UTC showed 148,898 operations remaining. Source-based estimates at the last recorded deployed polling interval of 30 seconds are 480 room-poll operations for a two-player two-hour match and 960 for four players; if every remaining operation were used only for polls, this would be at most about 310 two-player or 155 four-player sessions, before setup, actions, reconnects, presence, other workspace projects, or system operations. Two tabs polling continuously every 30 seconds would produce an estimated 172,800 polls per 30-day month. The code fallback is five seconds if the deployment variable is absent; this would produce an estimated 1,036,800 polls/month for two continuously open tabs. Neither estimate is a measured gameplay capacity or normal-use projection.",
     "projectOperationBreakdown": {
-      "checkedAt": "2026-11-06T11:22:28Z",
+      "checkedAt": "2026-11-06T11:39:20Z",
       "abominations-attack-america-production": 11709,
-      "abominations-attack-america-preview": 25293,
+      "abominations-attack-america-preview": 25300,
       "otherListedWorkspaceProjects": {
         "prisma-postgres-reference-database": 14004,
         "prisma-postgres-2026-worldcup": 89
