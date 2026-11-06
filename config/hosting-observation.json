@@ -77,7 +77,7 @@
       "runtimeFailureLogCount": 4,
       "warnings": "PostgreSQL SSL-mode and url.parse deprecation warnings remain present.",
       "note": "Room creation timed out twice during Production browser attempts. A direct API room create between those attempts returned 201 in 583 ms. Do not infer stable availability from this recovered request.",
-      "diagnostics": "Vercel CLI query within Hobby retention returned four safe timeout logs: health request wjs8m-1793938374507-5e08b10d31af at 04:13, room-create requests mzxsc-1793938506432-fb6abcb613a7 at 04:15 and w9ws4-1793938679837-28741046ccf7 at 04:18, and health request plkpd-1793938936883-7d13ae2d9d57 at 04:22. The room-create logs classify query-read-timeout at gameRoom.create (~20 seconds); health logs classify the same query timeout. Pool snapshots show total/idle/waiting=0. The fresh canonical health probe at 04:25 returned 200. Runtime log region values include lhr1 and iad1; this is not sufficient evidence of function compute location or a region mismatch."
+      "diagnostics": "Vercel CLI query within Hobby retention returned four safe timeout logs: health request wjs8m-1793938374507-5e08b10d31af at 04:13, room-create requests mzxsc-1793938506432-fb6abcb613a7 at 04:15 and w9ws4-1793938679837-28741046ccf7 at 04:18, and health request plkpd-1793938936883-7d13ae2d9d57 at 04:22. The room-create logs classify query-read-timeout at gameRoom.create (~20 seconds); health logs classify the same query timeout. Pool snapshots show total/idle/waiting=0. The fresh canonical health probe at 04:25 returned 200. Vercel documents the runtime-log Region field as the edge region that processed the request; x-vercel-id headers include iad1 and the deployment function is configured in iad1, consistent with the us-east-1 database placement. The London edge region does not indicate London function compute."
     },
     "runtimeErrorsRecent": {
       "checkedAt": "2026-11-06T04:19:00Z",
@@ -239,7 +239,8 @@
           "clientsRemoved": 2,
           "idleClientErrors": 0
         },
-        "browserFlow": "Room creation failed in isolated browser session."
+        "browserFlow": "Room creation failed in isolated browser session.",
+        "regionInterpretation": "Vercel runtime log region=lhr1 describes the edge region that processed this request; x-vercel-id includes iad1 and deployment function configuration is iad1."
       },
       {
         "checkedAt": "2026-11-06T04:18:20Z",
@@ -263,7 +264,8 @@
           "clientsRemoved": 4,
           "idleClientErrors": 0
         },
-        "browserFlow": "Second isolated browser room-creation attempt failed."
+        "browserFlow": "Second isolated browser room-creation attempt failed.",
+        "regionInterpretation": "Vercel runtime log region=lhr1 describes the edge region that processed this request; x-vercel-id includes iad1 and deployment function configuration is iad1."
       }
     ],
     "latestHealthCheck": {
@@ -496,7 +498,7 @@
       "fullHumanMatch": "not-verified",
       "checkedAt": "2026-11-06T04:25:14Z",
       "runtimeDeploymentRegion": "iad1 (from Vercel CLI inspect of deployed function)",
-      "recentTimeouts": "Four safe query-read-timeout logs retained 6 November 2026, 04:13–04:22 UTC; two health requests and two browser room-create requests."
+      "recentTimeouts": "Four safe query-read-timeout logs retained 6 November 2026, 04:13\u201304:22 UTC; two health requests and two browser room-create requests."
     },
     "productionLastMeasurement": {
       "databaseProject": "abominations-attack-america-production",
