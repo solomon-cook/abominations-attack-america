@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-06T03:08:18Z",
+  "checkedAt": "2026-11-06T03:24:07Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
+    "deploymentId": "dpl_FX8E28PjeN3pVYW2SZ8FuT9ECV4f",
     "deploymentTarget": "production",
-    "deploymentCommit": "55c5a4a1f549e43aea2b4448e82fb99ac8d87419",
-    "deploymentCheckedAt": "2026-11-06T03:00:33Z",
-    "checkedAt": "2026-11-06T03:00:48Z",
+    "deploymentCommit": "78bc936f94ac3ff4e080bffba07cdef417e9122c",
+    "deploymentCheckedAt": "2026-11-06T03:23:43Z",
+    "checkedAt": "2026-11-06T03:24:07Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -25,13 +25,13 @@
           "ready": true
         }
       },
-      "checkedAt": "2026-11-06T03:00:47Z"
+      "checkedAt": "2026-11-06T03:24:05Z"
     },
     "metrics": {
       "path": "/api/metrics",
       "status": 200,
       "sample": {
-        "requests": 2,
+        "requests": 4,
         "requestFailures": 0,
         "commandAccepted": 0,
         "commandFailed": 0,
@@ -48,7 +48,7 @@
         "deploymentFailures": 0
       },
       "note": "Fresh instance-local snapshot; not an aggregate or database meter.",
-      "checkedAt": "2026-11-06T03:00:48Z"
+      "checkedAt": "2026-11-06T03:24:07Z"
     },
     "latestProductionAttempt": {
       "deploymentId": "dpl_B1sno7AFgfjhzQ5XPV851MGkW1zq",
@@ -147,7 +147,7 @@
       "metrics": 200,
       "method": "Vercel CLI-authenticated calls to the public canonical API; response tokens were kept in process memory and not printed."
     },
-    "note": "Canonical Production /api/health and /api/metrics returned JSON HTTP 200 at 03:00 UTC on dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix; health reports Prisma persistence and HTTP polling. A later automated three-profile browser core flow passed create/join/start/setup/legal move/peer sync/refresh recovery and spectator setup projection. Earlier intermittent room-create and health-query timeouts on prior deployments remain unresolved; the later pass confirms recovery, not reliable behavior. /health and /metrics are SPA HTML fallbacks, not API probes. Metrics are function-instance-local. Prisma usage and backup readings below are older snapshots; current plan and invoice are not available from the CLI.",
+    "note": "Canonical Production /api/health and /api/metrics returned JSON HTTP 200 at 03:24 UTC on dpl_FX8E28PjeN3pVYW2SZ8FuT9ECV4f; health reports Prisma persistence and HTTP polling. An automated three-profile browser core flow passed on the immediately preceding app-identical deployment dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix. Earlier intermittent room-create and health-query timeouts on prior deployments remain unresolved; the later pass confirms recovery, not reliable behavior. /health and /metrics are SPA HTML fallbacks, not API probes. Metrics are function-instance-local. Prisma usage and backup readings below are older snapshots; current plan and invoice are not available from the CLI.",
     "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment.",
     "routeRepresentation": {
       "apiHealth": "JSON Function route at /api/health",
@@ -369,15 +369,15 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
-      "commit": "55c5a4a1f549e43aea2b4448e82fb99ac8d87419",
+      "deploymentId": "dpl_FX8E28PjeN3pVYW2SZ8FuT9ECV4f",
+      "commit": "78bc936f94ac3ff4e080bffba07cdef417e9122c",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
       "metricsStatus": 200,
       "loopbackReferenceInClientBundle": false,
       "poolLifecycle": "pg pool max 2; 5-second idle/connection timeouts; 20-second query timeout; attachDatabasePool enabled",
-      "twoProfileSmoke": "On 6 November 2026 an automated three-profile Chrome core flow on this deployment passed create/join/waiting-room/start/setup/legal move at revision 12/peer sync/refresh recovery; a spectator joined with setup controls disabled. This is not a full human match or repeat reliability evidence.",
+      "twoProfileSmoke": "Automated three-profile Chrome core flow passed on the immediately preceding app-identical deployment dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix; current deployment 78bc936 includes only evidence/report updates and has health/metrics HTTP 200.",
       "legalMoveEvidenceDeployment": "dpl_2fASTLPfLhsdS6apfnAbBBAk2eVe",
       "legalMoveRoomCode": "2F46E0",
       "legalMove": {
@@ -397,7 +397,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-06T03:00:33Z",
+      "checkedAt": "2026-11-06T03:23:43Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
