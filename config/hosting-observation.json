@@ -847,12 +847,12 @@
     },
     "productionDeployment": {
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
-      "deploymentUrl": "https://abominations-attack-america-cp2icktyu.vercel.app",
+      "deploymentUrl": "https://abominations-attack-america-pjrzp2cp9.vercel.app",
       "canonicalUrl": "https://abominations-attack-america.vercel.app",
       "commit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
       "status": "READY",
       "functionRegion": "iad1",
-      "deploymentCheckedAt": "2026-11-06T13:11:00Z",
+      "deploymentCheckedAt": "2026-11-06T13:32:00Z",
       "healthTimeoutReproduced": true,
       "browserVerification": "Canonical Production deployment: two consecutive three-profile core browser flows passed room create/join/start/setup/legal move/peer sync/refresh recovery. A subsequent health request returned 503 with confirmed Prisma query-read-timeout, followed by three 200 responses. No full match or reliability soak."
     }
