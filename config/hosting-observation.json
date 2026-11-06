@@ -89,6 +89,15 @@
       "source": "Vercel read-only runtime error aggregation",
       "limitation": "No errors returned in this window; this does not explain earlier timeouts or establish availability/soak acceptance."
     },
+    "runtimeLogRetention": {
+      "checkedAt": "2026-11-06T04:02:06Z",
+      "plan": "Hobby",
+      "retention": "one hour",
+      "olderTimeoutLogsAvailable": false,
+      "olderQueryResult": "Vercel returned HTTP 400 for a seven-day query, stating the Hobby retention window was exceeded.",
+      "recentQueryResult": "A 30-minute query for the current deployment returned only PostgreSQL SSL-mode and url.parse deprecation warnings; no timeout diagnostic was present.",
+      "nextDiagnosticRequirement": "If a timeout recurs, collect its request ID and safe function log details within the retention window."
+    },
     "browserVerification": {
       "status": "production-core-flow-verified; reliability-open",
       "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
