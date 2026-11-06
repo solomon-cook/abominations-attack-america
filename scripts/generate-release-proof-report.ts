@@ -33,18 +33,27 @@ const preview = hostingObservation.preview;
 const previewEvidence = preview
   ? `; Preview ${preview.deploymentId} reports HTTP ${preview.apiHealth.status} with ${preview.apiHealth.body.persistence} persistence and ${preview.apiHealth.body.realtimeFanout.mode}`
   : "";
+const regionPreview = hostingObservation.regionCheckPreview;
+const regionPreviewEvidence = regionPreview
+  ? `; protected Preview ${regionPreview.deploymentId} used function region ${regionPreview.deploymentRegions.join(", ")} and passed its three-profile core flow through legal move revision ${regionPreview.browserVerification.legalMoveAcceptedRevision} plus peer/spectator sync and refresh recovery`
+  : "";
 const databaseEvidence = databaseObservation
   ? `Prisma ${databaseObservation.plan} at ${databaseObservation.workspaceInvoice} with a fixed 200,000 monthly operation cap; workspace meter ${databaseObservation.workspaceOperations.used}/${databaseObservation.workspaceOperations.included}; Production Prisma project grouping ${databaseObservation.productionDatabase?.usage.operations ?? "not measured"} operations at ${databaseObservation.productionDatabase?.usage.operationsMeasuredAt ?? databaseObservation.productionDatabase?.usage.measuredAt ?? "an unknown time"}; manual restore drill ${databaseObservation.backupRestore.status}, but Free has no automatic backups or recurring schedule`
   : "Database plan, metered usage, and backup/restore remain unverified";
 const workspaceMeterFreshness = databaseObservation?.workspaceOperations.stale ? "The latest workspace operation meter is stale." : "The latest workspace operation meter is current as of its recorded check time.";
-const hostingEvidence = `Production homepage ${hostingObservation.production.url} returns HTTP ${hostingObservation.production.status}; ${productionClient}; production /api/health returns HTTP ${productionHealthStatus}, /health HTTP ${hostingObservation.production.routes?.["/health"] ?? "not checked"}, and /api/metrics returns HTTP ${productionMetricsStatus}${previewEvidence}. ${databaseEvidence}. ${workspaceMeterFreshness}`;
+const latestTimeout = hostingObservation.production.runtimeErrorCheck;
+const timeoutEvidence = latestTimeout?.note ? ` ${latestTimeout.note}` : "";
+const hostingEvidence = `Production homepage ${hostingObservation.production.url} returns HTTP ${hostingObservation.production.status}; ${productionClient}; production /api/health returns HTTP ${productionHealthStatus}, /health HTTP ${hostingObservation.production.routes?.["/health"] ?? "not checked"} (static HTML fallback), and /api/metrics returns HTTP ${productionMetricsStatus}${previewEvidence}${regionPreviewEvidence}. ${databaseEvidence}. ${workspaceMeterFreshness}${timeoutEvidence}`;
 const hostingStatus = productionHealthStatus === 200 ? "API/DB DEPLOYED; PRODUCTION READINESS GATE OPEN" : "PRODUCTION API/DB RELEASE GATE OPEN";
 const browser = JSON.parse(await readFile(resolve(root, "output/board-art/browser-verification.json"), "utf8"));
 const passedViewports = browser.viewports.filter((viewport: { passed: boolean }) => viewport.passed).length;
 const browserEvidence = `${passedViewports}/${browser.viewports.length} audited-board browser viewports pass`;
 const productionSmoke = productionDeployment?.twoProfileSmoke;
+const observedProductionBrowser = hostingObservation.production.browserVerification;
 const productionSmokeEvidence = productionSmoke
   ? `Production ${productionSmoke}`
+  : observedProductionBrowser?.status === "observed-core-flow-repeatability-open"
+    ? `one Production core browser flow on ${observedProductionBrowser.deploymentId} accepted revision ${observedProductionBrowser.acceptedRevision} and recovered on refresh; repeatability failed on a later create-room timeout`
   : "no Production two-browser smoke recorded";
 let onlineEvidence = "no current audited-board online run recorded";
 let onlineStatus = "PARTIAL";
@@ -75,7 +84,7 @@ This deterministic report separates proof levels. It is generated from the curre
 
 ## Current release boundary
 
-New MVP room creation pins the human-audited board ID, version, ruleset version, and content hash. ${productionSmoke ? "Production multiplayer has passed a synthetic two-browser test through a legal move and refresh recovery." : "Production two-browser multiplayer evidence remains open."} The user-authorized board-data sign-off is recorded; independent review, hosted restart/soak, shared operation-cap headroom, routine tested backups and restore ownership, complete human match and spectator acceptance, source-gated rules, security/credential rotation, rollback rehearsal, and full release approvals remain open. Production has not been designated production-ready. Existing provisional matches retain their immutable pins.
+New MVP room creation pins the human-audited board ID, version, ruleset version, and content hash. ${productionSmoke ? "Production multiplayer has passed a synthetic two-browser test through a legal move and refresh recovery." : observedProductionBrowser?.status === "observed-core-flow-repeatability-open" ? "One core Production browser flow has been observed, but repeatable current-deployment create/join/action/reconnect acceptance remains open after a database timeout." : "Production two-browser multiplayer evidence remains open."} The user-authorized board-data sign-off is recorded; independent review, hosted restart/soak, shared operation-cap headroom, routine tested backups and restore ownership, complete human match and spectator acceptance, source-gated rules, security/credential rotation, rollback rehearsal, and full release approvals remain open. Production has not been designated production-ready. Existing provisional matches retain their immutable pins.
 `;
 
   const outputPath = resolve(root, "docs/release-proof-report.md");

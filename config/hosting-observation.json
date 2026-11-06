@@ -1,18 +1,18 @@
 {
-  "checkedAt": "2026-11-05T22:27:00Z",
+  "checkedAt": "2026-11-06T00:00:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_9X3kPwzS8fQ4a6tMaVENm1gKdFqS",
+    "deploymentId": "dpl_2gM74VQAA98i528p1WHN52gkWhTn",
     "deploymentTarget": "production",
-    "deploymentCommit": "d550adc5db2383da781d4ed241e98da930afff6d",
-    "deploymentCheckedAt": "2026-11-05T22:04:00Z",
-    "checkedAt": "2026-11-05T22:27:00Z",
+    "deploymentCommit": "d9644676141527f195114a3dba2397806f20e564",
+    "deploymentCheckedAt": "2026-11-05T23:43:25Z",
+    "checkedAt": "2026-11-05T23:48:59Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
       "/api/metrics": 200,
-      "/health": 404,
-      "/metrics": 404
+      "/health": 200,
+      "/metrics": 200
     },
     "apiHealth": {
       "path": "/api/health",
@@ -25,38 +25,40 @@
           "ready": true
         }
       },
-      "checkedAt": "2026-11-05T22:27:00Z"
+      "checkedAt": "2026-11-05T23:48:59Z"
     },
     "metrics": {
       "path": "/api/metrics",
       "status": 200,
       "sample": {
-        "requests": 26,
-        "requestFailures": 2,
+        "requests": 4,
+        "requestFailures": 1,
         "commandAccepted": 0,
         "commandFailed": 0,
         "reconnects": 1,
         "websocketConnections": 0,
-        "serverErrors": 0
+        "serverErrors": 1
       },
       "note": "Fresh point-in-time function-instance sample; counters are not an aggregate or database meter.",
-      "checkedAt": "2026-11-05T22:27:00Z"
+      "checkedAt": "2026-11-05T23:48:59Z"
     },
     "runtimeErrorCheck": {
-      "checkedAt": "2026-11-05T22:05:00Z",
-      "timeoutGroupsOnCurrentDeployment": 0,
-      "priorDeploymentTimeouts": 2,
-      "priorDeploymentId": "dpl_9WTbQaAHRKZxdggizouN9rDWxdnE",
+      "checkedAt": "2026-11-05T23:52:37Z",
+      "runtimeFailureLogCount": 5,
       "warnings": "url.parse deprecation and pg SSL mode warnings are present on current deployment.",
-      "note": "No runtime timeout group reported on the new docs-only deployment. One initial canonical health request during alias transition timed out and a subsequent request returned 503; later health calls recovered to 200.",
-      "noTimeoutCluster": true,
-      "diagnostics": "Runtime stderr contains only url.parse and SSL mode warnings; the handler currently suppresses the Prisma health-query exception. A sanitized error identifier log is being added."
+      "note": "On deployment dpl_2gM74VQAA98i528p1WHN52gkWhTn, POST /api/rooms failed with a classified database timeout after 20.678 seconds. Runtime logs also recorded repeated Prisma health-query failures; one /api/health request returned 503 after 20.326 seconds, followed by two immediate 200 health responses. This is evidence of intermittent failure and recovery, not a successful reliability soak.",
+      "diagnostics": "Sanitized handler logging now records route, timeout category, error name/code when available, and elapsed duration. Vercel runtime records show Error without a driver code; Prisma query/connection telemetry is still needed to identify the failing stage."
     },
     "browserVerification": {
-      "status": "failed-acceptance-check",
-      "checkedAt": "2026-11-05T21:53:00Z",
-      "roomCode": "AB7B81",
-      "observation": "The verifier reached Move in the authoritative phase and page action card, but its setup-panel-disappearance condition did not pass; setup UI acceptance remains unresolved. The synthetic room remains in the Production database."
+      "status": "observed-core-flow-repeatability-open",
+      "deploymentId": "dpl_ErYJS5AneNjo6Wc1nv1fa6YX6fup",
+      "checkedAt": "2026-11-05T23:39:00Z",
+      "roomCode": "18F3B9",
+      "acceptedRevision": 11,
+      "phaseAfterMove": "encounter",
+      "peerAndSpectatorObservedSameState": true,
+      "refreshReconnectRestoredState": true,
+      "observation": "One Production run on the prior main deployment completed create/join, waiting-room start, nine setup actions and readiness, a legal engine-derived monster move, peer/spectator state reads, and refresh recovery at revision 11. A corrected repeat run failed during room creation with the 20-second database read timeout. This one successful core flow does not establish repeatable Production reliability or a complete human match."
     },
     "poolLifecycle": {
       "deploymentCommit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
@@ -73,8 +75,15 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Canonical Production /api/health and /api/metrics returned HTTP 200 at 22:27 UTC. Health reports Prisma persistence and ready HTTP polling. Metrics are function-instance-local. Prisma workspace usage and backup evidence are recorded separately under database.",
-    "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment."
+    "note": "Latest canonical Production /api/health and /api/metrics checks returned HTTP 200 at 23:48:59 UTC; an earlier health request returned 503 after 20.326 seconds. /health and /metrics returned the static SPA document (text/html), not API responses. Metrics are function-instance-local. Prisma workspace usage and backup evidence are recorded separately under database.",
+    "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment.",
+    "routeRepresentation": {
+      "apiHealth": "JSON Function route at /api/health",
+      "apiMetrics": "JSON Function route at /api/metrics",
+      "legacyHealth": "SPA HTML fallback; not an API health route",
+      "legacyMetrics": "SPA HTML fallback; not an API metrics route",
+      "checkedAt": "2026-11-05T23:48:59Z"
+    }
   },
   "preview": {
     "deploymentId": "dpl_ACKuFhMtrCoy9Lifi4v9eGiNiS3b",
@@ -124,6 +133,38 @@
     "environmentValuesRead": false,
     "note": "Protected Preview. Fresh health and metrics requests returned HTTP 200. Core multiplayer/reconnect flow passed; full match/victory remains unverified."
   },
+  "regionCheckPreview": {
+    "deploymentId": "dpl_wNZqvJ762w1w434Ndxg3Xvh5z7LN",
+    "url": "https://abominations-attack-america-jitgiejrx.vercel.app",
+    "state": "READY",
+    "branch": "codex/production-db-region-preview",
+    "sourceCommit": "d9644676141527f195114a3dba2397806f20e564",
+    "sourceWasDirty": true,
+    "deploymentRegions": ["iad1"],
+    "projectFunctionRegion": "iad1",
+    "responseRegionPair": "lhr1::iad1",
+    "protected": true,
+    "checkedAt": "2026-11-05T23:57:00Z",
+    "apiHealth": { "status": 200, "persistence": "prisma", "realtimeFanout": "http-polling" },
+    "browserVerification": {
+      "status": "passed-core-flow",
+      "isolatedBrowserProfiles": 3,
+      "roomCode": "7A8959",
+      "waitingRoomAndStart": true,
+      "setupActions": 9,
+      "bothPlayersReady": true,
+      "legalMoveAcceptedRevision": 11,
+      "phaseAfterMove": "encounter",
+      "monsterLocation": "5,4",
+      "peerObservedSameState": true,
+      "spectatorObservedSameState": true,
+      "refreshReconnectRestoredState": true,
+      "method": "Headless Chromium browser sessions with independent storage; legal command submitted using the active browser session token; peer and spectator read authenticated authoritative snapshots."
+    },
+    "fullMatch": "not-verified",
+    "limitations": "A separate full harness run reached the core flow but then stopped on a later dense-stack fixture assertion. The successful core-only run verifies the requested create/join, waiting room, legal action, shared state, and refresh flow, not full-match completion or soak reliability.",
+    "regionInterpretation": "Vercel project metadata already reports iad1, matching the Prisma Postgres us-east-1 database. Runtime log region=lhr1 is consistent with the London edge; x-vercel-id lhr1::iad1 identifies the edge/compute pair. The timeout is not explained by an application/database region mismatch."
+  },
   "productionProjectPreview": {
     "deploymentId": "dpl_9GNuLmJs27sJx6RAfhkacYGkRuQg",
     "url": "https://abominations-attack-america-oqn1jtl9e.vercel.app",
@@ -171,8 +212,8 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_9X3kPwzS8fQ4a6tMaVENm1gKdFqS",
-      "commit": "d550adc5db2383da781d4ed241e98da930afff6d",
+      "deploymentId": "dpl_2gM74VQAA98i528p1WHN52gkWhTn",
+      "commit": "d9644676141527f195114a3dba2397806f20e564",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
@@ -199,7 +240,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-05T22:08:00Z",
+      "checkedAt": "2026-11-05T23:43:25Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
@@ -232,7 +273,7 @@
       "measuredAt": "2026-11-05T20:16:45Z",
       "databaseSpecificNotWorkspaceWide": true
     },
-    "checkedAt": "2026-11-05T22:27:00Z"
+    "checkedAt": "2026-11-05T23:53:00Z"
   },
   "database": {
     "plan": "Free",
@@ -244,7 +285,7 @@
       "included": 200000,
       "remainingAtObservation": 174338,
       "checkedAt": "2026-11-05T22:22:00Z",
-      "stale": false,
+      "stale": true,
       "source": "Prisma Console workspace Usage page; workspace-wide across projects"
     },
     "productionDatabase": {
