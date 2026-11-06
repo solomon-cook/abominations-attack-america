@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-06T02:48:19Z",
+  "checkedAt": "2026-11-06T03:08:18Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_B1sno7AFgfjhzQ5XPV851MGkW1zq",
+    "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
     "deploymentTarget": "production",
-    "deploymentCommit": "8db22572592dc5fe78f81d9f6dc8f6271243b266",
-    "deploymentCheckedAt": "2026-11-06T01:58:41Z",
-    "checkedAt": "2026-11-06T02:36:57Z",
+    "deploymentCommit": "55c5a4a1f549e43aea2b4448e82fb99ac8d87419",
+    "deploymentCheckedAt": "2026-11-06T03:00:33Z",
+    "checkedAt": "2026-11-06T03:00:48Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -25,32 +25,30 @@
           "ready": true
         }
       },
-      "checkedAt": "2026-11-06T02:36:55Z",
-      "elapsedSeconds": 1.522
+      "checkedAt": "2026-11-06T03:00:47Z"
     },
     "metrics": {
       "path": "/api/metrics",
       "status": 200,
       "sample": {
-        "requests": 55,
-        "requestFailures": 5,
+        "requests": 2,
+        "requestFailures": 0,
         "commandAccepted": 0,
         "commandFailed": 0,
-        "reconnects": 5,
+        "reconnects": 0,
         "websocketConnections": 0,
         "websocketFailures": 0,
         "roomsCompleted": 0,
         "roomsAbandoned": 0,
-        "latencySamples": 4,
-        "latencyTotalMs": 20131,
-        "serverErrors": 2,
+        "latencySamples": 0,
+        "latencyTotalMs": 0,
+        "serverErrors": 0,
         "errorReports": 0,
         "divergenceReports": 0,
         "deploymentFailures": 0
       },
-      "note": "Point-in-time in-memory function-instance snapshot returned after a health-query failure; counters are not an aggregate or database meter.",
-      "checkedAt": "2026-11-06T02:36:30Z",
-      "elapsedSeconds": 0.192
+      "note": "Fresh instance-local snapshot; not an aggregate or database meter.",
+      "checkedAt": "2026-11-06T03:00:48Z"
     },
     "latestProductionAttempt": {
       "deploymentId": "dpl_B1sno7AFgfjhzQ5XPV851MGkW1zq",
@@ -81,10 +79,13 @@
       "diagnostics": "Sanitized request IDs: room create j7g52-1793932262921-f061da325600; health w9ws4-1793932569553-d4109e77eca7. Vercel traces remain unavailable (API 403, CLI 404). Health log does not include timeout classification; its 20.439-second duration and empty pool are consistent with the repeated database-timeout symptom, but do not establish the exact driver error."
     },
     "browserVerification": {
-      "status": "current-deployment-core-incomplete",
-      "deploymentId": "dpl_B1sno7AFgfjhzQ5XPV851MGkW1zq",
-      "checkedAt": "2026-11-06T02:32:00Z",
+      "status": "production-core-flow-verified; reliability-open",
+      "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
+      "checkedAt": "2026-11-06T03:07:00Z",
       "isolatedBrowserProfiles": 3,
+      "legalMoveVerified": true,
+      "peerObservedSameState": true,
+      "refreshReconnectRestoredState": true,
       "priorAttempts": [
         {
           "checkedAt": "2026-11-06T02:21:00Z",
@@ -116,10 +117,7 @@
           "note": "After 35 seconds the host browser still showed the second seat as waiting and could not start, while the peer browser showed both players connected. Requests were successful HTTP 200; no start, setup, legal action, or reconnect flow was completed."
         }
       ],
-      "legalMoveVerified": false,
-      "peerObservedSameState": false,
-      "refreshReconnectRestoredState": false,
-      "observation": "The current Production deployment has intermittent room-create timeouts and an incomplete two-browser waiting-room flow. One earlier browser run reached server-authoritative setup completion, but legal action, peer synchronization, and refresh recovery were not verified on this deployment."
+      "observation": "The latest automated three-profile Production browser run completed create/join/start/setup/legal move/peer sync/refresh reconnect and spectator setup projection. Earlier intermittent room-create and health-query timeouts remain unresolved; one successful run is not repeat reliability or soak evidence."
     },
     "poolLifecycle": {
       "deploymentCommit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
@@ -149,7 +147,7 @@
       "metrics": 200,
       "method": "Vercel CLI-authenticated calls to the public canonical API; response tokens were kept in process memory and not printed."
     },
-    "note": "Canonical Production /api/health and /api/metrics returned JSON HTTP 200 at 01:17 UTC on diagnostic deployment dpl_2fASTLPfLhsdS6apfnAbBBAk2eVe; health reports Prisma persistence and HTTP polling. An API create/join/shared-state smoke and a later three-profile browser core flow passed. An intervening browser retry on the same deployment failed at room creation with HTTP 503; diagnostics identify gameRoom.create timing out with no pg connections established. The later pass confirms recovery, not reliable behavior; keep reliability and idle soak gates open. /health and /metrics are SPA HTML fallbacks, not API probes. Metrics are function-instance-local. Prisma usage and backups are refreshed below, but current plan and invoice are not available from the CLI.",
+    "note": "Canonical Production /api/health and /api/metrics returned JSON HTTP 200 at 03:00 UTC on dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix; health reports Prisma persistence and HTTP polling. A later automated three-profile browser core flow passed create/join/start/setup/legal move/peer sync/refresh recovery and spectator setup projection. Earlier intermittent room-create and health-query timeouts on prior deployments remain unresolved; the later pass confirms recovery, not reliable behavior. /health and /metrics are SPA HTML fallbacks, not API probes. Metrics are function-instance-local. Prisma usage and backup readings below are older snapshots; current plan and invoice are not available from the CLI.",
     "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment.",
     "routeRepresentation": {
       "apiHealth": "JSON Function route at /api/health",
@@ -171,6 +169,31 @@
         "elapsedMs": 1522
       },
       "note": "A single immediate health retry recovered. This is intermittent availability evidence, not a successful soak."
+    },
+    "latestProductionBrowserVerification": {
+      "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
+      "commit": "55c5a4a1f549e43aea2b4448e82fb99ac8d87419",
+      "checkedAt": "2026-11-06T03:07:00Z",
+      "roomCode": "D5DAD6",
+      "isolatedChromeProfiles": 3,
+      "playersCreatedJoined": "verified",
+      "waitingRoomAndHostStart": "verified",
+      "setupActions": 9,
+      "legalMove": {
+        "path": [
+          "5,5",
+          "5,4"
+        ],
+        "acceptedRevision": 12
+      },
+      "peerObservedSameAuthoritativeState": true,
+      "actingPlayerRefreshReconnect": true,
+      "spectatorJoined": true,
+      "spectatorSetupControlsDisabled": true,
+      "postMoveSpectatorSync": false,
+      "fullHumanMatch": false,
+      "method": "Automated browser:online verifier against canonical Production with separate Chrome user-data profiles; no secret values were read or printed.",
+      "note": "One earlier invocation was stopped after creating a room because the verifier API base omitted the deployed /api prefix. Corrected invocation passed. Test rooms are durable and are not cleaned up by the verifier."
     }
   },
   "preview": {
@@ -346,15 +369,15 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_B1sno7AFgfjhzQ5XPV851MGkW1zq",
-      "commit": "8db22572592dc5fe78f81d9f6dc8f6271243b266",
+      "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
+      "commit": "55c5a4a1f549e43aea2b4448e82fb99ac8d87419",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
       "metricsStatus": 200,
       "loopbackReferenceInClientBundle": false,
       "poolLifecycle": "pg pool max 2; 5-second idle/connection timeouts; 20-second query timeout; attachDatabasePool enabled",
-      "twoProfileSmoke": "Current Production acceptance remains incomplete: one run reached authoritative setup completion but did not test a legal action or refresh recovery; another showed a stale host waiting-room view after a successful peer join; a later create timed out. The latest health query failed once and recovered on a single retry. Separately, PR #6 protected Preview passed the focused three-profile core flow.",
+      "twoProfileSmoke": "On 6 November 2026 an automated three-profile Chrome core flow on this deployment passed create/join/waiting-room/start/setup/legal move at revision 12/peer sync/refresh recovery; a spectator joined with setup controls disabled. This is not a full human match or repeat reliability evidence.",
       "legalMoveEvidenceDeployment": "dpl_2fASTLPfLhsdS6apfnAbBBAk2eVe",
       "legalMoveRoomCode": "2F46E0",
       "legalMove": {
@@ -374,7 +397,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-06T02:36:57Z",
+      "checkedAt": "2026-11-06T03:00:33Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
