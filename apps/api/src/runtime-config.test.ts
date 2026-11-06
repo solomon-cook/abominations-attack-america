@@ -28,6 +28,11 @@ test("production configuration requires durable non-loopback persistence", () =>
 test("Prisma Postgres uses pooled runtime queries and a direct room-notification and migration connection", () => {
   const pooledUrl = "postgresql://user:password@pooled.db.prisma.io:5432/app?sslmode=require";
   const directUrl = "postgresql://user:password@db.prisma.io:5432/app?sslmode=require";
+  assert.deepEqual(resolveDatabaseConnections({ DATABASE_URL_POOLED: pooledUrl, DATABASE_URL: directUrl, DIRECT_URL: directUrl }), {
+    databaseUrl: pooledUrl,
+    directUrl,
+    roomNotificationsUrl: directUrl,
+  });
   assert.deepEqual(resolveDatabaseConnections({ DATABASE_URL: pooledUrl, DIRECT_URL: directUrl }), {
     databaseUrl: pooledUrl,
     directUrl,
@@ -38,6 +43,7 @@ test("Prisma Postgres uses pooled runtime queries and a direct room-notification
     roomNotificationsUrl: "postgresql://db.example/app",
   });
   assert.throws(() => validateRuntimeConfig({ NODE_ENV: "production", ALLOWED_ORIGIN: "https://play.example.test", DATABASE_URL: pooledUrl }), /requires DIRECT_URL/);
+  assert.throws(() => validateRuntimeConfig({ NODE_ENV: "production", ALLOWED_ORIGIN: "https://play.example.test", DATABASE_URL_POOLED: pooledUrl }), /requires DIRECT_URL/);
   assert.throws(() => validateRuntimeConfig({ NODE_ENV: "production", ALLOWED_ORIGIN: "https://play.example.test", DATABASE_URL: pooledUrl, DIRECT_URL: "postgresql://localhost/app" }), /loopback database URL/);
 });
 
