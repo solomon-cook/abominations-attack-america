@@ -37,10 +37,15 @@ const regionPreview = hostingObservation.regionCheckPreview;
 const regionPreviewEvidence = regionPreview
   ? `; protected Preview ${regionPreview.deploymentId} used function region ${regionPreview.deploymentRegions.join(", ")} and passed its three-profile core flow through legal move revision ${regionPreview.browserVerification.legalMoveAcceptedRevision} plus peer/spectator sync and refresh recovery`
   : "";
+const workspaceUsageEvidence = databaseObservation?.workspaceOperations.isDirectWorkspaceMeter === false
+  ? `summed per-database usage estimate ${databaseObservation.workspaceOperations.used}/${databaseObservation.workspaceOperations.included} across ${databaseObservation.workspaceOperations.databasesEnumerated} listed databases`
+  : `workspace meter ${databaseObservation?.workspaceOperations.used ?? "not measured"}/${databaseObservation?.workspaceOperations.included ?? "unknown"}`;
 const databaseEvidence = databaseObservation
-  ? `Prisma ${databaseObservation.plan} at ${databaseObservation.workspaceInvoice} with a fixed 200,000 monthly operation cap; workspace meter ${databaseObservation.workspaceOperations.used}/${databaseObservation.workspaceOperations.included}; Production Prisma project grouping ${databaseObservation.productionDatabase?.usage.operations ?? "not measured"} operations at ${databaseObservation.productionDatabase?.usage.operationsMeasuredAt ?? databaseObservation.productionDatabase?.usage.measuredAt ?? "an unknown time"}; manual restore drill ${databaseObservation.backupRestore.status}, but Free has no automatic backups or recurring schedule`
+  ? `Prisma ${databaseObservation.plan} at ${databaseObservation.workspaceInvoice} with a fixed 200,000 monthly operation cap; ${workspaceUsageEvidence}; Production database usage ${databaseObservation.productionDatabase?.usage.operations ?? "not measured"} operations at ${databaseObservation.productionDatabase?.usage.operationsMeasuredAt ?? databaseObservation.productionDatabase?.usage.measuredAt ?? "an unknown time"}; manual restore drill ${databaseObservation.backupRestore.status}, but Free has no automatic backups or recurring schedule`
   : "Database plan, metered usage, and backup/restore remain unverified";
-const workspaceMeterFreshness = databaseObservation?.workspaceOperations.stale ? "The latest workspace operation meter is stale." : "The latest workspace operation meter is current as of its recorded check time.";
+const workspaceMeterFreshness = databaseObservation?.workspaceOperations.isDirectWorkspaceMeter === false
+  ? `This is a database-usage sum, not a direct Console workspace meter; the plan and invoice were last confirmed ${databaseObservation.planLastConfirmedAt}.`
+  : databaseObservation?.workspaceOperations.stale ? "The latest workspace operation meter is stale." : "The latest workspace operation meter is current as of its recorded check time.";
 const latestTimeout = hostingObservation.production.runtimeErrorCheck;
 const timeoutEvidence = latestTimeout?.note ? ` ${latestTimeout.note}` : "";
 const hostingEvidence = `Production homepage ${hostingObservation.production.url} returns HTTP ${hostingObservation.production.status}; ${productionClient}; production /api/health returns HTTP ${productionHealthStatus}, /health HTTP ${hostingObservation.production.routes?.["/health"] ?? "not checked"} (static HTML fallback), and /api/metrics returns HTTP ${productionMetricsStatus}${previewEvidence}${regionPreviewEvidence}. ${databaseEvidence}. ${workspaceMeterFreshness}${timeoutEvidence}`;
@@ -52,6 +57,8 @@ const productionSmoke = productionDeployment?.twoProfileSmoke;
 const observedProductionBrowser = hostingObservation.production.browserVerification;
 const productionSmokeEvidence = productionSmoke
   ? `Production ${productionSmoke}`
+  : observedProductionBrowser?.latestAttempt && observedProductionBrowser?.priorAttemptFailure
+    ? `Production deployment ${observedProductionBrowser.deploymentId} later passed a three-profile core browser flow in room ${observedProductionBrowser.latestAttempt.roomCode}, accepting revision ${observedProductionBrowser.latestAttempt.acceptedRevision} with peer synchronization and refresh recovery; an earlier room create on the same deployment timed out after ${observedProductionBrowser.priorAttemptFailure.durationMs} ms with no pg pool connection, so repeat/idle reliability remains open`
   : observedProductionBrowser?.status?.startsWith("intermittent-core-flow")
     ? `Production deployment ${observedProductionBrowser.deploymentId} passed one three-profile core browser flow in room ${observedProductionBrowser.roomCode}, accepting revision ${observedProductionBrowser.acceptedRevision} and recovering the same state on refresh; a second room create timed out after 20.156 seconds, so repeat/idle reliability remains open`
   : observedProductionBrowser?.status?.startsWith("passed-core-flow")
