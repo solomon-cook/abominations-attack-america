@@ -33,6 +33,8 @@ const url = process.env.BROWSER_TEST_URL ?? `http://127.0.0.1:${webPort}/`;
 const apiUrl = process.env.BROWSER_API_URL ?? `http://127.0.0.1:${apiPort}`;
 // Room state polling is configured at 30 seconds, so allow a full poll interval plus a small margin.
 const waitTimeoutMs = Number(process.env.BROWSER_TEST_WAIT_TIMEOUT_MS ?? 35000);
+const roomPrivacy = process.env.BROWSER_ONLINE_ROOM_PRIVACY ?? "public";
+if (!["private", "public"].includes(roomPrivacy)) throw new Error("BROWSER_ONLINE_ROOM_PRIVACY must be private or public.");
 const ownsWebServer = !process.env.BROWSER_TEST_URL;
 const ownsApiServer = !process.env.BROWSER_API_URL;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -244,7 +246,7 @@ try {
   }
   await first.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "first lobby");
   await first.evaluate(`(() => { const input = document.querySelector('[aria-label="Display name"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(input, "First player"); input.dispatchEvent(new Event("input", { bubbles: true })); })()`);
-  await first.evaluate(`(() => { const select = document.querySelector('[aria-label="Room privacy"]'); if (!select) return false; const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set; setter.call(select, "private"); select.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
+  await first.evaluate(`(() => { const select = document.querySelector('[aria-label="Room privacy"]'); if (!select) return false; const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set; setter.call(select, ${JSON.stringify(roomPrivacy)}); select.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
   if (!await first.click("Create")) throw new Error("First browser could not create a room.");
   await first.waitFor(`!!document.querySelector(".lobby strong")`, "created room code");
   const roomCode = await first.evaluate(`document.querySelector(".lobby strong")?.textContent?.trim()`);
@@ -386,7 +388,30 @@ try {
   }
   await first.waitFor("!document.querySelector('.setup-panel')", "first setup completion");
   await second.waitFor("!document.querySelector('.setup-panel')", "second setup completion");
-  if (!await first.click("Ready") || !await second.click("Ready")) throw new Error("Both players did not expose Ready controls.");
+  const readyClicks = await Promise.all([first, second].map((browser) => browser.evaluate(`(() => {
+    const button = document.querySelector(".setup-ready-toggle");
+    if (!button || button.disabled || button.textContent?.trim() !== "Ready to begin") return false;
+    button.click();
+    return true;
+  })()`)));
+  if (readyClicks.some((clicked) => !clicked)) throw new Error(`Both player sessions did not expose an enabled setup readiness control: ${JSON.stringify(readyClicks)}`);
+  const readyDeadline = Date.now() + waitTimeoutMs;
+  let readySnapshot;
+  while (Date.now() < readyDeadline) {
+    readySnapshot = await first.evaluate(`(async () => {
+      const session = JSON.parse(localStorage.getItem("abominations-session") ?? "{}");
+      const response = await fetch(${JSON.stringify(`${apiUrl}/rooms/${roomCode}/state?token=`)} + encodeURIComponent(session.token ?? ""));
+      if (!response.ok) return { status: response.status };
+      const room = await response.json();
+      return { status: response.status, roomStatus: room.status, players: room.participants?.filter((participant) => participant.role === "player").map((participant) => ({ playerIndex: participant.playerIndex, ready: participant.ready, connected: participant.connected })) ?? [], setupApplied: room.state?.setupApplied, phase: room.state?.phase, pendingDecision: room.state?.pendingDecision?.type };
+    })()`);
+    if (readySnapshot.status === 200 && readySnapshot.players.length === 2 && readySnapshot.players.every((participant) => participant.ready) && readySnapshot.setupApplied === true && readySnapshot.phase === "move") break;
+    await wait(1000);
+  }
+  if (readySnapshot?.status !== 200 || readySnapshot.players?.length !== 2 || !readySnapshot.players.every((participant) => participant.ready) || readySnapshot.setupApplied !== true || readySnapshot.phase !== "move") {
+    const readinessButtons = await Promise.all([first, second].map((browser) => browser.evaluate(`document.querySelector(".setup-ready-toggle")?.textContent?.trim() ?? null`)));
+    throw new Error(`Both players did not reach authoritative ready state with starting deployments applied: ${JSON.stringify({ readySnapshot, readinessButtons })}`);
+  }
   await first.waitFor(`document.querySelector(".turn-hud-heading h2")?.textContent?.trim() === "Move" || Boolean(document.querySelector(".giant-placement-choice"))`, "Move or starting giant-placement decision");
   let startingGiantPlacement = "not-required";
   let startingGiantPlacementRefresh = "not-needed";
@@ -487,10 +512,6 @@ try {
       const response = await apiFetch(`${apiUrl}/rooms/${roomCode}/state?token=${encodeURIComponent(session.token ?? "")}`);
       return response.ok ? response.json() : { status: response.status, body: await response.text() };
     };
-    for (const session of browserSessions) {
-      const readyResponse = await apiFetch(`${apiUrl}/rooms/${roomCode}/ready`, { method: "POST", headers: { "content-type": "application/json", "x-room-token": session.token ?? "" }, body: JSON.stringify({ ready: true }) });
-      if (!readyResponse.ok) throw new Error(`Production did not accept player readiness in room ${roomCode} (${readyResponse.status}): ${await readyResponse.text()}`);
-    }
     let coreRoom = await readCoreRoom(browserSessions[0]);
     if (coreRoom.status !== "active" || coreRoom.participants.filter((player) => player.role === "player").length !== 2 || coreRoom.participants.some((player) => player.role === "player" && !player.ready)) throw new Error(`Production room was not active after both authenticated players readied: ${JSON.stringify({ roomCode, status: coreRoom.status, participants: coreRoom.participants.map(({ role, playerIndex, ready }) => ({ role, playerIndex, ready })) })}`);
     const resolvedGiantPlacements = [];
@@ -580,7 +601,7 @@ try {
       || b.units.length - a.units.length
       || a.units.reduce((sum, entry) => sum + entry.destinations.get(a.destination).length, 0)
         - b.units.reduce((sum, entry) => sum + entry.destinations.get(b.destination).length, 0))[0];
-  if (!liveStackPlan) throw new Error(`Could not find a legal shared destination for four or more live owned units on the audited board: ${JSON.stringify({ player: liveStackPlayer, monster: liveStackMonster.location, unitStarts: reachableUnitDestinations.map(({ unit }) => ({ id: unit.id, location: unit.location })) })}`);
+  if (!liveStackPlan) throw new Error(`Could not find a legal shared destination for four or more live owned units on the audited board: ${JSON.stringify({ player: liveStackPlayer, monster: liveStackMonster.location, setupAssignments: liveStackState.setupAssignments?.map(({ playerIndex, branch, startingChoice }) => ({ playerIndex, branch, startingChoice })), units: liveStackState.units.map(({ id, branch, unitTypeId, ownerPlayer, location }) => ({ id, branch, unitTypeId, ownerPlayer, location })), unitStarts: reachableUnitDestinations.map(({ unit }) => ({ id: unit.id, location: unit.location })) })}`);
   const playerSession = await first.evaluate(`JSON.parse(localStorage.getItem("abominations-session") ?? "{}")`);
   const roomParticipant = liveStackRoom.participants?.find((candidate) => candidate.role === "player" && candidate.playerIndex === liveStackPlayer && candidate.id === playerSession.participantId);
   if (!roomParticipant) throw new Error("Could not identify the authenticated seat for the live dense-stack setup.");
