@@ -7,6 +7,7 @@ import { PrismaClient } from "../generated/prisma/client.js";
 const databaseUrl = process.env.DATABASE_URL ?? process.env.PRISMA_DATABASE_URL ?? process.env.POSTGRES_URL;
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+let pgPool: Pool | undefined;
 
 const createPrismaClient = (url: string) => {
   if (url.startsWith("prisma+")) return new PrismaClient({ accelerateUrl: url });
@@ -18,6 +19,7 @@ const createPrismaClient = (url: string) => {
     connectionTimeoutMillis: 5_000,
     query_timeout: 20_000,
   });
+  pgPool = pool;
   pool.on("error", (error: Error & { code?: string }) => {
     console.error("Idle PostgreSQL pool client error", error.code ?? error.name);
   });
@@ -29,5 +31,12 @@ const createPrismaClient = (url: string) => {
 export const prisma = databaseUrl
   ? globalForPrisma.prisma ?? createPrismaClient(databaseUrl)
   : undefined;
+
+/** Safe per-function diagnostics for pool saturation; contains no connection details. */
+export const databasePoolDiagnostics = () => pgPool ? {
+  total: pgPool.totalCount,
+  idle: pgPool.idleCount,
+  waiting: pgPool.waitingCount,
+} : undefined;
 
 if (prisma) globalForPrisma.prisma = prisma;

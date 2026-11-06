@@ -23,6 +23,19 @@ const getPrisma = () => {
   return prisma;
 };
 
+async function databaseStep<T>(operation: string, execute: () => Promise<T>): Promise<T> {
+  const startedAt = Date.now();
+  try {
+    return await execute();
+  } catch (error) {
+    const failure = error as { name?: unknown; code?: unknown };
+    const name = typeof failure?.name === "string" && /^[A-Za-z0-9_.-]{1,64}$/.test(failure.name) ? failure.name : "UnknownError";
+    const code = typeof failure?.code === "string" && /^[A-Za-z0-9_.-]{1,64}$/.test(failure.code) ? failure.code : undefined;
+    console.error("Prisma room creation step failed", JSON.stringify({ operation, name, code, durationMs: Date.now() - startedAt }));
+    throw error;
+  }
+}
+
 /** Prisma-backed store. The HTTP server selects this when DATABASE_URL is configured. */
 export class PrismaRoomStore implements RoomStore {
   private readonly reportedEventDivergences = new Set<string>();
@@ -52,9 +65,10 @@ export class PrismaRoomStore implements RoomStore {
       ? createRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`, secretSeed)
       : createMvpRoomGame(maxPlayers as 2 | 3 | 4, seed, `room-${roomCode}`, secretSeed);
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
-    const room = await this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", state: state as any, initialReplayState: structuredClone(state) as any, playerStats: emptyMatchCounters(maxPlayers) as any, isTest: this.allowDevelopmentFixture } });
-    const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
-    return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };
+    const room = await databaseStep("gameRoom.create", () => this.prismaClient.gameRoom.create({ data: { code: roomCode, maxPlayers, privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", state: state as any, initialReplayState: structuredClone(state) as any, playerStats: emptyMatchCounters(maxPlayers) as any, isTest: this.allowDevelopmentFixture } }));
+    const participant = await databaseStep("participant.create", () => this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Player 1", role: "PLAYER", playerIndex: 0, ready: false, connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } }));
+    const roomView = await databaseStep("room.view", () => this.view(room.id, 0, "player", participant.playerIndex ?? undefined));
+    return { room: roomView, participantId: participant.id, token: accessToken };
   }
 
   async listPublicRooms(): Promise<PublicRoomSummary[]> {

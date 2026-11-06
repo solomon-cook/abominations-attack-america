@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { PrismaRoomStore } from "./prisma-store.js";
-import { prisma } from "../lib/prisma.js";
+import { databasePoolDiagnostics, prisma } from "../lib/prisma.js";
 import { ApiMetrics } from "./metrics.js";
 import { AccountService, accountSessionCookie, clearAccountSessionCookie, sessionFromCookie } from "./accounts.js";
 import { classifyApiError } from "./api-errors.js";
@@ -56,7 +56,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         const failure = error as { name?: unknown; code?: unknown };
         const safeName = typeof failure?.name === "string" && /^[A-Za-z0-9_.-]{1,64}$/.test(failure.name) ? failure.name : "UnknownError";
         const safeCode = typeof failure?.code === "string" && /^[A-Za-z0-9_.-]{1,64}$/.test(failure.code) ? failure.code : "unavailable";
-        console.error("Prisma health query failed", JSON.stringify({ name: safeName, code: safeCode }));
+        console.error("Prisma health query failed", JSON.stringify({ name: safeName, code: safeCode, pool: databasePoolDiagnostics() }));
         metrics.requestFailure();
         metrics.serverError();
         return respond(req, res, 503, { ok: false, persistence: "prisma", realtimeFanout: { mode: "http-polling", ready: true } });
@@ -152,7 +152,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     metrics.latency(Date.now() - requestStartedAt);
     if (failure.status >= 500) metrics.serverError();
     const route = parts[0] === "rooms" ? "rooms" + (parts[2] ? "/:" + parts[2] : "") : parts[0] ?? "unknown";
-    console.error("API request failed", JSON.stringify({ method: req.method, route, category: failure.category, name: failure.errorName, code: failure.errorCode, durationMs: Date.now() - requestStartedAt }));
+    console.error("API request failed", JSON.stringify({ method: req.method, route, category: failure.category, name: failure.errorName, code: failure.errorCode, durationMs: Date.now() - requestStartedAt, ...(failure.category === "database-timeout" ? { pool: databasePoolDiagnostics() } : {}) }));
     return respond(req, res, failure.status, { error: failure.message });
   }
 }

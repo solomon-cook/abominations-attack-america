@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-06T00:10:00Z",
+  "checkedAt": "2026-11-06T00:40:00Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
-    "deploymentId": "dpl_2gM74VQAA98i528p1WHN52gkWhTn",
+    "deploymentId": "dpl_9h5jweHLmzLk1dyJ1F1HDJDEdBA1",
     "deploymentTarget": "production",
-    "deploymentCommit": "d9644676141527f195114a3dba2397806f20e564",
-    "deploymentCheckedAt": "2026-11-05T23:43:25Z",
-    "checkedAt": "2026-11-05T23:48:59Z",
+    "deploymentCommit": "a29f5fc470a5681fc6d78844954041ed3be639c2",
+    "deploymentCheckedAt": "2026-11-06T00:34:41Z",
+    "checkedAt": "2026-11-06T00:34:55Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -43,22 +43,25 @@
       "checkedAt": "2026-11-05T23:48:59Z"
     },
     "runtimeErrorCheck": {
-      "checkedAt": "2026-11-05T23:52:37Z",
-      "runtimeFailureLogCount": 5,
+      "checkedAt": "2026-11-06T00:43:32Z",
+      "runtimeFailureLogCount": 6,
       "warnings": "url.parse deprecation and pg SSL mode warnings are present on current deployment.",
-      "note": "On deployment dpl_2gM74VQAA98i528p1WHN52gkWhTn, POST /api/rooms failed with a classified database timeout after 20.678 seconds. Runtime logs also recorded repeated Prisma health-query failures; one /api/health request returned 503 after 20.326 seconds, followed by two immediate 200 health responses. This is evidence of intermittent failure and recovery, not a successful reliability soak.",
-      "diagnostics": "Sanitized handler logging now records route, timeout category, error name/code when available, and elapsed duration. Vercel runtime records show Error without a driver code; Prisma query/connection telemetry is still needed to identify the failing stage."
+      "note": "On current Production deployment dpl_9h5jweHLmzLk1dyJ1F1HDJDEdBA1, the second browser run's POST /api/rooms returned 503 after a classified database timeout at 20.156 seconds. One full core browser flow had succeeded on the same deployment shortly before. The preceding deployment dpl_2gM74VQAA98i528p1WHN52gkWhTn also had POST /api/rooms timeout after 20.678 seconds and a health 503 after 20.326 seconds, followed by recovery. This confirms intermittent Production failure on both adjacent deployments; no soak/reliability pass is established.",
+      "diagnostics": "Sanitized handler logging records route, timeout category, safe error name/code, and elapsed duration, but Vercel exposes Error without a driver code. The follow-up diagnostics change adds safe pg pool occupancy and labels each room-create database step to distinguish local pool wait from a slow create/participant/view query."
     },
     "browserVerification": {
-      "status": "observed-core-flow-repeatability-open",
-      "deploymentId": "dpl_ErYJS5AneNjo6Wc1nv1fa6YX6fup",
-      "checkedAt": "2026-11-05T23:39:00Z",
-      "roomCode": "18F3B9",
+      "status": "intermittent-core-flow-repeatability-open",
+      "deploymentId": "dpl_9h5jweHLmzLk1dyJ1F1HDJDEdBA1",
+      "checkedAt": "2026-11-06T00:39:50Z",
+      "roomCode": "339546",
       "acceptedRevision": 11,
       "phaseAfterMove": "encounter",
       "peerAndSpectatorObservedSameState": true,
       "refreshReconnectRestoredState": true,
-      "observation": "One Production run on the prior main deployment completed create/join, waiting-room start, nine setup actions and readiness, a legal engine-derived monster move, peer/spectator state reads, and refresh recovery at revision 11. A corrected repeat run failed during room creation with the 20-second database read timeout. This one successful core flow does not establish repeatable Production reliability or a complete human match."
+      "isolatedBrowserProfiles": 3,
+      "legalMove": { "type": "move", "path": ["5,5", "5,4"], "destination": "5,4" },
+      "secondAttempt": { "checkedAt": "2026-11-06T00:43:32Z", "roomCreationHttpStatus": 503, "category": "database-timeout", "durationMs": 20156, "roomCreated": false },
+      "observation": "On the current Production deployment, three isolated Chromium profiles created and joined public room 339546, waited for host start, completed nine setup actions and both-player readiness, submitted an engine-derived legal monster move accepted at revision 11, observed the same authoritative Encounter state in peer and spectator sessions, and confirmed actor refresh/reconnect restored revision 11. A second independent run on the same deployment failed at room creation with HTTP 503 after 20.156 seconds, classified as database-timeout by Vercel logs. Production multiplayer works in a successful run but is not reliable; diagnose the intermittent database timeout and keep release gates open."
     },
     "poolLifecycle": {
       "deploymentCommit": "d35c236ce62de12505480d72c0db65c0f62f3f15",
@@ -75,7 +78,7 @@
       "containsLocalhost": false,
       "loopbackUrl": null
     },
-    "note": "Latest canonical Production /api/health and /api/metrics checks returned HTTP 200 at 23:48:59 UTC; an earlier health request returned 503 after 20.326 seconds. /health and /metrics returned the static SPA document (text/html), not API responses. Metrics are function-instance-local. Prisma workspace usage and backup evidence are recorded separately under database.",
+    "note": "Canonical Production /api/health and /api/metrics returned JSON HTTP 200 at 00:34:55 UTC on the current merged deployment; health reports Prisma persistence and HTTP polling. The current deployment is in Vercel iad1. A successful browser flow and a later classified room-create timeout both occurred on this deployment; the preceding deployment also timed out and recovered. /health and /metrics are SPA HTML fallbacks, not API probes. Metrics are function-instance-local. Prisma workspace usage and backup evidence are recorded separately under database.",
     "priorDeploymentTwoProfileSmoke": "Before the pool lifecycle fix, two separate browser sessions after pooled credential rotation created/joined a private room, completed nine legal setup actions, accepted a legal move at revision 11, observed peer revision 11, and restored state after refresh. This is historical evidence and does not verify the d35 deployment.",
     "routeRepresentation": {
       "apiHealth": "JSON Function route at /api/health",
@@ -212,8 +215,8 @@
     "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
     "productionPollIntervalValue": 30000,
     "productionDeployment": {
-      "deploymentId": "dpl_2gM74VQAA98i528p1WHN52gkWhTn",
-      "commit": "d9644676141527f195114a3dba2397806f20e564",
+      "deploymentId": "dpl_9h5jweHLmzLk1dyJ1F1HDJDEdBA1",
+      "commit": "a29f5fc470a5681fc6d78844954041ed3be639c2",
       "status": "READY",
       "canonicalAlias": "https://abominations-attack-america.vercel.app",
       "healthStatus": 200,
@@ -240,7 +243,7 @@
         "metricFieldsChecked": 15
       },
       "fullHumanMatch": "not-verified",
-      "checkedAt": "2026-11-05T23:43:25Z",
+      "checkedAt": "2026-11-06T00:34:41Z",
       "credentialRotation": {
         "checkedAt": "2026-11-05T20:41:18Z",
         "status": "verified",
