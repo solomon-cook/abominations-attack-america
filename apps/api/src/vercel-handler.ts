@@ -152,7 +152,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     metrics.latency(Date.now() - requestStartedAt);
     if (failure.status >= 500) metrics.serverError();
     const route = parts[0] === "rooms" ? "rooms" + (parts[2] ? "/:" + parts[2] : "") : parts[0] ?? "unknown";
-    console.error("API request failed", JSON.stringify({ method: req.method, route, category: failure.category, name: failure.errorName, code: failure.errorCode, durationMs: Date.now() - requestStartedAt, ...(failure.category === "database-timeout" ? { pool: databasePoolDiagnostics() } : {}) }));
+    console.error("API request failed", JSON.stringify({ method: req.method, route, category: failure.category, name: failure.errorName, code: failure.errorCode, durationMs: Date.now() - requestStartedAt, ...(failure.category === "database-timeout" ? { timeoutKind: failure.timeoutKind, pool: databasePoolDiagnostics() } : {}) }));
     return respond(req, res, failure.status, { error: failure.message });
   }
 }
