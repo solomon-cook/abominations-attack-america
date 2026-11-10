@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-06T17:50:03Z",
+  "checkedAt": "2026-11-10T17:18:02Z",
   "production": {
     "url": "https://abominations-attack-america.vercel.app",
     "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
     "deploymentTarget": "production",
     "deploymentCommit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
     "deploymentCheckedAt": "2026-11-06T13:11:00Z",
-    "checkedAt": "2026-11-06T17:50:03Z",
+    "checkedAt": "2026-11-10T17:18:02Z",
     "status": 200,
     "routes": {
       "/api/health": 200,
@@ -23,35 +23,19 @@
           "ready": true
         }
       },
-      "checkedAt": "2026-11-06T17:36:23Z",
-      "durationMs": null,
+      "checkedAt": "2026-11-10T17:18:01.783Z",
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
       "deploymentCommit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
-      "vercelId": "7m6zr-1793986583037-873aa4d1c1ad",
-      "note": "Latest response in a four-request Production health sequence; all four returned HTTP 200. A confirmed server-side Prisma query-read-timeout occurred in an earlier sequence and remains unexplained."
+      "vercelId": "lhr1::iad1::wtbgf-1794331081783-41d972d54ab7",
+      "note": "Fresh canonical Production check; HTTP polling and Prisma persistence ready. Single point check, not a reliability sample or soak."
     },
     "metrics": {
       "path": "/api/metrics",
       "status": 200,
-      "sample": {
-        "requests": 1,
-        "requestFailures": 0,
-        "commandAccepted": 0,
-        "commandFailed": 0,
-        "reconnects": 0,
-        "websocketConnections": 0,
-        "websocketFailures": 0,
-        "roomsCompleted": 0,
-        "roomsAbandoned": 0,
-        "latencySamples": 0,
-        "latencyTotalMs": 0,
-        "serverErrors": 0,
-        "errorReports": 0,
-        "divergenceReports": 0,
-        "deploymentFailures": 0
-      },
-      "note": "Instance-local counters after a fresh canonical metrics request; not an aggregate service monitor or database usage meter.",
-      "checkedAt": "2026-11-06T17:40:07Z"
+      "checkedAt": "2026-11-10T17:18:02.091Z",
+      "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
+      "vercelId": "lhr1::iad1::wtbgf-1794331082091-8c92774d8208",
+      "note": "Endpoint returned HTTP 200; counters not retained in this refresh."
     },
     "environmentVariableMetadataAudit": {
       "checkedAt": "2026-11-06T18:08:39Z",
@@ -371,6 +355,42 @@
       "testRoomCleanup": "The verifier left room A7B414 in durable Production storage; it will age out through normal room expiry.",
       "spectatorReadOnlyThroughMovePhase": true
     },
+    "productionPollingRequestSample": {
+      "checkedAt": "2026-11-06T18:27:44Z",
+      "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
+      "roomCode": "A7B414",
+      "path": "/api/rooms/A7B414/state",
+      "windowStart": "2026-11-06T17:53:00Z",
+      "windowEnd": "2026-11-06T18:10:00Z",
+      "requestCount": 142,
+      "http200Count": 142,
+      "method": "GET",
+      "observedSpanStart": "2026-11-06T18:03:38.779Z",
+      "observedSpanEnd": "2026-11-06T18:06:51.292Z",
+      "paginationComplete": true,
+      "limitation": "Vercel CDN request records for this test room only; includes browser reads and verifier probes, does not attribute Prisma operations, and is not a representative usage sample."
+    },
+    "pollingAndPresenceVolumeModel": {
+      "checkedAt": "2026-11-06T18:27:44Z",
+      "productionPollIntervalMs": 30000,
+      "roomPollPrismaClientCallsPerPoll": 1,
+      "roomPollModelSource": "PrismaRoomStore.getRoom uses one participant.findFirst with relationLoadStrategy join; expired-room path may issue additional reads/writes.",
+      "presenceEnabledByDefault": false,
+      "presenceHeartbeatIntervalMs": 30000,
+      "presencePrismaCallsPerHeartbeat": 2,
+      "presenceModelSource": "Authenticated heartbeat performs accountSession.findUnique and userAccount.updateMany; tabs heartbeat only when visible and user opted in.",
+      "estimatedMonthlyRoomPollCalls": {
+        "twoContinuouslyOpenPlayers": 172800,
+        "fourContinuouslyOpenPlayers": 345600
+      },
+      "estimatedTwoHourSessionPrismaCalls": {
+        "twoPlayersRoomPolling": 480,
+        "fourPlayersRoomPolling": 960,
+        "twoOptedInPlayersPresence": 960,
+        "fourOptedInPlayersPresence": 1920
+      },
+      "measurementStatus": "source-based model; not confirmed against refreshed Prisma usage meter"
+    },
     "productionTimeoutReproductions": [
       {
         "checkedAt": "2026-11-06T04:15:26Z",
@@ -450,7 +470,7 @@
       }
     ],
     "latestHealthCheck": {
-      "checkedAt": "2026-11-06T18:07:08Z",
+      "checkedAt": "2026-11-10T17:18:01.783Z",
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
       "deploymentCommit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
       "httpStatus": 200,
@@ -462,8 +482,8 @@
           "ready": true
         }
       },
-      "vercelId": "lhr1::iad1::56ljw-1793988428169-a00a87c71a0f",
-      "context": "Canonical Production point check immediately after the core-only browser run; HTTP polling and Prisma persistence reported ready. This does not establish repeat room-create reliability or a soak."
+      "vercelId": "lhr1::iad1::wtbgf-1794331081783-41d972d54ab7",
+      "context": "Fresh canonical Production point check on 2026-11-10; Prisma persistence and HTTP-polling readiness returned. This does not establish repeat room-create reliability or a soak."
     },
     "latestRuntimeLogCheck": {
       "checkedAt": "2026-11-06T12:38:56Z",
@@ -485,27 +505,11 @@
       "note": "Report-only PR #23 is on main. This deployment did not include runtime code changes."
     },
     "latestMetricsCheck": {
-      "checkedAt": "2026-11-06T18:07:08Z",
+      "checkedAt": "2026-11-10T17:18:02.091Z",
       "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
       "httpStatus": 200,
-      "counters": {
-        "requests": 28,
-        "requestFailures": 5,
-        "commandAccepted": 0,
-        "commandFailed": 0,
-        "reconnects": 4,
-        "websocketConnections": 0,
-        "websocketFailures": 0,
-        "roomsCompleted": 0,
-        "roomsAbandoned": 0,
-        "latencySamples": 5,
-        "latencyTotalMs": 1,
-        "serverErrors": 0,
-        "errorReports": 0,
-        "divergenceReports": 0,
-        "deploymentFailures": 0
-      },
-      "note": "Point-in-time in-memory function instance snapshot. These counters are not an aggregate; the sampled browser run deliberately sent malformed/forged requests and guest account lookups, so failures do not measure database availability."
+      "vercelId": "lhr1::iad1::wtbgf-1794331082091-8c92774d8208",
+      "note": "Fresh endpoint check only; counters were not retained, and any instance-local response would not be an aggregate monitor."
     },
     "priorProductionBrowserVerification": {
       "deploymentId": "dpl_2s9EwFRsSDVA1uAGJMXaEnJgcDix",
@@ -920,9 +924,10 @@
       "commit": "2a1c361c61dc75dc9fe4b395730016f5f64628c8",
       "status": "READY",
       "functionRegion": "iad1",
-      "deploymentCheckedAt": "2026-11-06T13:32:00Z",
+      "deploymentCheckedAt": "2026-11-10T17:18:02Z",
       "healthTimeoutReproduced": true,
-      "browserVerification": "Latest core-only Production browser flow on 2026-11-06 verified waiting-room create/join/start, nine setup actions, legal move revision 11, peer state sync, and player refresh recovery; a spectator was read-only through Move. Earlier 17:49 Prisma room-create timeout remains unexplained; full match, post-move spectator sync, and reliability soak remain open."
+      "browserVerification": "Latest core-only Production browser flow on 2026-11-06 verified waiting-room create/join/start, nine setup actions, legal move revision 11, peer state sync, and player refresh recovery; a spectator was read-only through Move. Earlier 17:49 Prisma room-create timeout remains unexplained; full match, post-move spectator sync, and reliability soak remain open.",
+      "note": "Vercel CLI inspect refreshed on 2026-11-10 confirmed this READY deployment still owns the canonical alias. Direct canonical checks returned homepage/API health/API metrics HTTP 200."
     },
     "errorLogsRecent": {
       "checkedAt": "2026-11-06T18:07:08Z",
@@ -954,7 +959,28 @@
       "matchCompleted": false
     },
     "workspaceUsageAccessBlockedAt": "2026-11-06T18:08:39Z",
-    "workspaceUsageAccessBlockedReason": "Prisma Console usage/backup pages could not be opened because the Mac was locked; last direct meter remains 2026-11-06T17:39:17Z and is marked stale."
+    "workspaceUsageAccessBlockedReason": "The Prisma Console usage/backup access issue observed on 2026-11-06 was resolved on 2026-11-10 when the Console became available; current usage and backup observations are recorded in database fields.",
+    "currentCanonicalProductionRecheck": {
+      "checkedAt": "2026-11-10T17:18:02Z",
+      "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
+      "deploymentTarget": "production",
+      "deploymentStatus": "READY",
+      "deploymentCreatedAt": "2026-11-06T13:11:18.905Z",
+      "canonicalAlias": "https://abominations-attack-america.vercel.app",
+      "functionRegion": "iad1",
+      "homepageStatus": 200,
+      "clientAssetPath": "/assets/index-s-x_wfu6.js",
+      "clientAssetStatus": 200,
+      "clientAssetBytes": 818339,
+      "clientAssetSha256": "6a72c7e016d939f4e46eebf6473cc867a44fad2d48b568d616c7786ec7a272b2",
+      "pollIntervalMs": 30000,
+      "localhostApiReference": false,
+      "healthStatus": 200,
+      "metricsStatus": 200,
+      "source": "Vercel CLI inspect and direct canonical HTTP fetches on 2026-11-10.",
+      "limitation": "Point-in-time verification; a single successful health request does not clear previous intermittent Prisma query-read-timeouts or establish reliability."
+    },
+    "workspaceUsageAccessRecheckedAt": "2026-11-10T17:15:37Z"
   },
   "preview": {
     "latestEvidenceDeployment": {
@@ -1158,8 +1184,18 @@
     },
     "valuesRead": false,
     "note": "Read-only Vercel CLI listings confirm the Production project contains both DATABASE_URL_POOLED and an older DATABASE_URL, plus DIRECT_URL. Secret values were not read. Application code selects DATABASE_URL_POOLED first when present, but Vercel environment metadata API access is denied and the credential values were not inspected; the endpoint-to-credential mapping is therefore not independently confirmed. The pooled Production runtime passed the core browser flow; this does not establish repeat reliability.",
-    "productionPollIntervalCheckedAt": "2026-11-05T18:49:00Z",
+    "productionPollIntervalCheckedAt": "2026-11-10T17:18:02Z",
     "productionPollIntervalValue": 30000,
+    "productionPollBundleVerification": {
+      "checkedAt": "2026-11-10T17:18:02Z",
+      "deploymentId": "dpl_2ovgCzVfSPgjfCPfjGLztRBuKHAX",
+      "assetPath": "/assets/index-s-x_wfu6.js",
+      "assetSha256": "6a72c7e016d939f4e46eebf6473cc867a44fad2d48b568d616c7786ec7a272b2",
+      "compiledIntervalMarker": "setInterval(s,3e4)",
+      "sourceMapping": "Unique room-state polling interval in apps/web/src/main.tsx; separate 30-second presence heartbeat is in AccountPanel.tsx.",
+      "valueMs": 30000,
+      "source": "Fresh canonical Production bundle fetch on 2026-11-10; confirms deployed runtime asset without reading masked Vercel environment values."
+    },
     "productionPollIntervalMetadataCheck": {
       "checkedAt": "2026-11-06T11:12:33Z",
       "target": "Production",
@@ -1306,24 +1342,23 @@
     }
   },
   "database": {
-    "plan": "Free (confirmed in Prisma Console on 2026-11-06)",
-    "planLastConfirmedAt": "2026-11-06T17:39:17Z",
-    "workspaceInvoice": "$0.00 current invoice (confirmed in Prisma Console on 2026-11-06)",
+    "plan": "Free (confirmed in Prisma Console on 2026-11-10)",
+    "planLastConfirmedAt": "2026-11-10T17:15:37Z",
+    "workspaceInvoice": "$0.00 current invoice (confirmed in Prisma Console on 2026-11-10)",
     "spendCap": "$0 fixed monthly spend cap; no overages",
     "billingPeriod": "2026-11-01 through 2026-11-30",
     "workspaceOperations": {
-      "used": 51926,
+      "used": 64955,
       "included": 200000,
-      "remainingAtObservation": 148074,
-      "checkedAt": "2026-11-06T17:39:17Z",
-      "stale": true,
+      "remainingAtObservation": 135045,
+      "checkedAt": "2026-11-10T17:15:37Z",
+      "stale": false,
       "isDirectWorkspaceMeter": true,
       "projectsEnumerated": 5,
       "branchesEnumerated": 5,
       "databasesEnumerated": 9,
-      "source": "Direct Prisma Console workspace Usage page, current cycle 2026-11-01 through 2026-11-30; Free plan and $0.00 invoice. Refreshed at 17:39 UTC; 51,926 of 200,000 operations (25.96%), 0.07 of 2.00 GiB storage, and 8.7K displayed operations/day. The meter does not attribute operations to individual requests.",
-      "averageDailyOperationsDisplayed": 8700,
-      "staleReason": "Direct Console meter last refreshed at 2026-11-06T17:39:17Z; after subsequent Production browser tests, current usage could not be checked because the Prisma Console browser was inaccessible while the Mac was locked."
+      "source": "Direct Prisma Console workspace Usage page, current cycle 2026-11-01 through 2026-11-30; Free plan and $0.00 current invoice. Refreshed at 17:15 UTC; 64,955 of 200,000 operations (32.4775%), 0.07 of 2.00 GiB storage, and 6.5K displayed operations/day. The meter does not attribute operations to individual requests.",
+      "averageDailyOperationsDisplayed": 6500
     },
     "productionDatabase": {
       "projectId": "proj_rg9ai5642a8773dxgy2rk3te",
@@ -1332,23 +1367,23 @@
       "migrationsApplied": 15,
       "pooledAndDirectVercelVariablesPresent": true,
       "usage": {
-        "operations": 12452,
+        "operations": 13109,
         "storageGiB": 0.00168609619140625,
         "periodStart": "2026-11-01T00:00:00Z",
-        "measuredAt": "2026-11-06T17:39:17Z",
+        "measuredAt": "2026-11-10T17:15:37Z",
         "databaseSpecificNotWorkspaceWide": true,
-        "source": "Prisma Console workspace Usage page grouped by project at 17:39 UTC; the Production database row showed 12,452 operations. The meter does not attribute operations to individual requests.",
+        "source": "Prisma Console workspace Usage page grouped by project at 17:15 UTC; abominations-attack-america-production showed 13,109 operations. The meter does not attribute operations to individual requests.",
         "stale": false,
         "storageMeasuredAt": "2026-11-06T06:14:56.597Z",
         "storageStale": true,
-        "operationsMeasuredAt": "2026-11-06T17:39:17Z"
+        "operationsMeasuredAt": "2026-11-10T17:15:37Z"
       },
       "backupInventory": {
         "count": 0,
         "retentionDays": 0,
-        "measuredAt": "2026-11-06T17:39:17Z",
+        "measuredAt": "2026-11-10T17:15:37Z",
         "stale": false,
-        "source": "Prisma Console Production database Backups page at 17:39 UTC showed No Backups Available and says automated daily backups are available on paid plans.",
+        "source": "Prisma Console Production database Backups page at 17:15 UTC showed No Backups Available and says automated daily backups are available on paid plans.",
         "automaticBackupsAvailable": false
       }
     },
@@ -1363,10 +1398,10 @@
     },
     "backupRestore": {
       "status": "manual dump/restore drill passed once",
-      "inventoryCheckedAt": "2026-11-06T17:39:17Z",
+      "inventoryCheckedAt": "2026-11-10T17:15:37Z",
       "inventoryCount": 0,
       "inventoryRetentionDays": 0,
-      "inventorySource": "Prisma Console Production database Backups page at 17:39 UTC showed No Backups Available and says automated daily backups are available on paid plans.",
+      "inventorySource": "Prisma Console Production database Backups page at 17:15 UTC showed No Backups Available and says automated daily backups are available on paid plans.",
       "dumpBytes": 48043,
       "sha256": "dc1ad0de06f8871bc858775050cb0bd86d60c2de453c78babb8f3615c7efdd95",
       "restoreSeconds": 16.429,
@@ -1374,29 +1409,29 @@
       "sourceTestRoomDeleted": true,
       "routineSchedule": "not established"
     },
-    "pollingEstimate": "Source-traced 2026-11-05: each successful PrismaRoomStore.getRoom call performs one Prisma Client participant.findFirst with relationLoadStrategy=join. Prisma counts each Prisma Client query as one operation regardless of internal SQL count. The last recorded Production Vercel environment value was VITE_ROOM_POLL_INTERVAL_MS=30000 (checked 2026-11-05 18:49 UTC); at that setting the estimate is 172,800 room-poll operations/month for two continuously open tabs and 345,600 for four. A two-hour guest match uses about 480 room-poll operations for two players or 960 for four, before setup/actions/reconnects. The source fallback when the variable is absent is 5,000 ms, which would yield 1,036,800 polls/month for two continuously open tabs. This fallback is not evidence of the deployed interval. Each visible signed-in account with presence opted in sends one heartbeat every 30 seconds; each calls one updateMany, adding about 120 operations per opted-in account per two-hour session.",
-    "note": "Prisma Console Usage page checked at 17:39 UTC: Free plan, $0.00 current invoice, 51,926/200,000 shared monthly operations, 148,074 remaining, 0.07/2.00 GiB storage, and displayed 8.7K operations/day. Project totals: Preview 25,345; Production 12,452; reference 14,040; World Cup 89. They sum to the shared workspace meter. Production Backups page showed no backups and states automated daily backups are available on paid plans. One manual dump/restore drill passed once; no recurring schedule or named owner exists. Usage does not attribute operations to individual requests and synthetic activity may skew the daily average. No billing or database setting was changed.",
-    "workspacePollingHeadroomAtObservation": "At the 2026-11-06 17:39 UTC direct Prisma Console meter, 148,074 shared operations remained. Source-based estimates at the last actually observed deployed polling interval of 30 seconds are about 480 room-poll operations for a two-player two-hour match and 960 for four players; if every remaining operation were used only for polls, this would be at most about 308 two-player or 154 four-player sessions, before setup, actions, reconnects, presence, other workspace projects, or system operations. Two tabs polling continuously every 30 seconds would produce an estimated 172,800 polls per 30-day month. The current Production poll value is not known from environment-variable names alone; the source fallback is five seconds if the variable is absent, which would produce an estimated 1,036,800 polls/month for two continuously open tabs. Neither estimate is measured gameplay capacity or a normal-use projection.",
+    "pollingEstimate": "Source-traced 2026-11-06 and live-bundle verified again 2026-11-10: deployed client interval is 30,000 ms. One normal successful PrismaRoomStore.getRoom call makes one Prisma Client participant.findFirst with relationLoadStrategy=join. Vercel recorded 142 successful HTTP 200 GETs for /api/rooms/A7B414/state during the 3m12.5s core browser sample; these edge request records do not measure/attribute Prisma operations. At 30 seconds, estimate 172,800 polls/month for two continuously open tabs and 345,600 for four. Two-hour estimate is 480 polls (two players) or 960 (four players), before setup/actions/reconnects. Optional visible signed-in presence is disabled by default; opted-in accounts heartbeat every 30 seconds, making one session lookup and one conditional updateMany per heartbeat, up to 960 additional Prisma Client calls over two hours for two players (1,920 for four). All capacity values are models, not measured normal-game usage.",
+    "note": "Prisma Console Usage page checked at 17:15 UTC on 2026-11-10: Free plan, $0.00 current invoice, 64,955/200,000 shared monthly operations, 135,045 remaining, 0.07/2.00 GiB storage, and displayed 6.5K operations/day. Project totals: Preview 25,381; Production 13,109; reference 26,237; World Cup 228. These sum to the shared workspace meter. Production Backups page showed no backups and states automated daily backups are available on paid plans. One manual dump/restore drill passed once; no recurring schedule or named owner exists. Usage does not attribute operations to individual requests and synthetic activity may skew the daily average. No billing or database setting was changed.",
+    "workspacePollingHeadroomAtObservation": "At the 2026-11-10 17:15 UTC direct Prisma Console meter, 135,045 shared operations remained. Source-based estimates at the deployed 30-second room polling interval are 480 room-poll operations for a two-player two-hour session and 960 for four players; if every remaining operation were used only for polls, this would be at most about 281 two-player or 140 four-player sessions, before setup, actions, reconnects, optional presence, other workspace projects, or system operations. Two tabs polling continuously every 30 seconds imply 172,800 room polls/month. These are not measured gameplay capacity.",
     "projectOperationBreakdown": {
-      "checkedAt": "2026-11-06T17:39:17Z",
-      "abominations-attack-america-production": 12452,
-      "abominations-attack-america-preview": 25345,
+      "checkedAt": "2026-11-10T17:15:37Z",
+      "abominations-attack-america-production": 13109,
+      "abominations-attack-america-preview": 25381,
       "otherListedWorkspaceProjects": {
-        "prisma-postgres-reference-database": 14040,
-        "prisma-postgres-2026-worldcup": 89
+        "prisma-postgres-reference-database": 26237,
+        "prisma-postgres-2026-worldcup": 228
       },
-      "source": "Prisma Console workspace Usage page grouped by project. Values sum to the direct workspace total of 51,926. The shared allowance includes unrelated projects and the meter does not attribute operations to individual requests."
+      "source": "Prisma Console workspace Usage page grouped by project. Values sum to the direct workspace total of 64,955. The shared allowance includes unrelated projects and the meter does not attribute operations to individual requests."
     },
     "workspaceAverageRunRateProjection": {
-      "operationsPer30DayMonthIfDisplayedAverageContinues": 261000,
-      "source": "Linear extrapolation of the Console-displayed rounded average of 8.7K operations/day; not a forecast or normal-game workload measurement.",
-      "warning": "Would exceed the Free 200,000-operation shared allowance if this average persisted. Recent synthetic testing may make the current average unrepresentative."
+      "operationsPer30DayMonthIfDisplayedAverageContinues": 195000,
+      "source": "Linear extrapolation of the Console-displayed rounded average of 6.5K operations/day; not a forecast or normal-game workload measurement.",
+      "warning": "This projection is near the Free 200,000-operation shared allowance and includes activity from other projects; recent synthetic testing may make the displayed average unrepresentative."
     },
     "workspaceStorage": {
       "usedGiB": 0.07,
       "includedGiB": 2,
-      "checkedAt": "2026-11-06T13:21:00Z",
-      "source": "Prisma Console workspace Usage page refreshed after latest Production probes."
+      "checkedAt": "2026-11-10T17:15:37Z",
+      "source": "Prisma Console workspace Usage page refreshed on 2026-11-10."
     }
   }
 }
