@@ -984,14 +984,15 @@
   },
   "preview": {
     "latestEvidenceDeployment": {
-      "deploymentId": "dpl_3b24B18rkMMspJfoCENSvTeptRBo",
-      "url": "https://abominations-attack-america-3leicgpll.vercel.app",
+      "deploymentId": "dpl_H6D1Bk4yz6zTsi9v5sDDLZXjKQxa",
+      "url": "https://abominations-attack-america-p9dfxdv2g.vercel.app",
       "branch": "codex/production-reliability-refresh",
-      "commit": "873703c0866166fa82686b3624da4b30958e99ba",
+      "commit": "49d7061fb2c9cb9a57f1dbba318651c01c40dbdb",
       "state": "READY",
-      "target": null,
-      "checkedAt": "2026-11-06T17:43:53Z",
+      "target": "preview",
+      "checkedAt": "2026-11-10T17:28:40Z",
       "apiHealth": {
+        "path": "/api/health",
         "status": 200,
         "body": {
           "ok": true,
@@ -1003,15 +1004,17 @@
         }
       },
       "metrics": {
+        "path": "/api/metrics",
         "status": 200,
         "sample": {
-          "requests": 1,
+          "requests": 2,
           "requestFailures": 0,
           "serverErrors": 0
         },
-        "note": "Instance-local point sample after verification, not an aggregate monitor or a soak."
+        "note": "Instance-local point sample after the paired health/metrics check, not an aggregate monitor or soak."
       },
-      "note": "Evidence-only branch Preview; browser multiplayer flow was not rerun on this commit."
+      "deploymentProtection": "Checks used Vercel CLI automatic protection bypass; they do not determine public/share-link accessibility.",
+      "browserMultiplayer": "Not rerun on this evidence-only commit; earlier three-profile Preview browser acceptance remains on a prior Preview deployment."
     },
     "deploymentId": "dpl_DxKQwdNTyjFeZseprENb4H92Gato",
     "url": "https://abominations-attack-america-kkfioyr5b.vercel.app",
