@@ -22,6 +22,7 @@ export type LobbyPanelProps = {
   onStartSession: (kind: "create" | "join" | "spectate") => void;
   onToggleReady: () => void;
   onStartMatch: () => void;
+  onCreateViewerLink?: () => Promise<string>;
   onLeaveRoom: () => void;
 };
 
@@ -46,6 +47,7 @@ export function LobbyPanel({
   onStartSession,
   onToggleReady,
   onStartMatch,
+  onCreateViewerLink,
   onLeaveRoom,
 }: LobbyPanelProps) {
   const [inviteStatus, setInviteStatus] = useState("");
@@ -58,6 +60,19 @@ export function LobbyPanel({
       setInviteStatus("Invite link copied");
     } catch {
       setInviteStatus(inviteUrl.toString());
+    }
+  };
+  const copyViewerLink = async () => {
+    if (!room?.code || !onCreateViewerLink) return;
+    try {
+      const viewerToken = await onCreateViewerLink();
+      const viewerUrl = new URL(window.location.href);
+      viewerUrl.search = `?room=${encodeURIComponent(room.code)}`;
+      viewerUrl.hash = `watch=${encodeURIComponent(viewerToken)}`;
+      await navigator.clipboard.writeText(viewerUrl.toString());
+      setInviteStatus("TV viewing link copied · valid for 24 hours");
+    } catch (error) {
+      setInviteStatus(error instanceof Error ? error.message : "Could not create the TV viewing link.");
     }
   };
   return (
@@ -123,14 +138,15 @@ export function LobbyPanel({
           <button type="button" className="ready-button" disabled={!setupComplete} onClick={onToggleReady}>
             {participant.ready ? "Unready" : "Ready"}
           </button>
-          <button type="button" className="subtle" onClick={() => void copyInviteLink}>Copy invite link</button>
+          <button type="button" className="subtle" onClick={() => void copyInviteLink()}>Copy invite link</button>
+          {onCreateViewerLink && <button type="button" className="subtle" onClick={() => void copyViewerLink()}>Copy TV viewing link</button>}
           <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>
           {inviteStatus && <span className="invite-status" role="status">{inviteStatus}</span>}
         </div>
       )}
       {online && participant?.role === "spectator" && (
         <div className="lobby-actions">
-          <button type="button" className="subtle" onClick={() => void copyInviteLink}>Copy invite link</button>
+          <button type="button" className="subtle" onClick={() => void copyInviteLink()}>Copy invite link</button>
           <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>
           {inviteStatus && <span className="invite-status" role="status">{inviteStatus}</span>}
         </div>

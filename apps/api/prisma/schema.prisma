@@ -52,6 +52,8 @@ model GameRoom {
   receipts         CommandReceipt[]
   result           GameResult?
   playerStats      Json              @default("[]")
+  viewerInviteTokenHash String?
+  viewerInviteExpiresAt DateTime?
   websocketTickets WebSocketTicket[]
   matchStats       PlayerMatchStat[]
 }

@@ -8,9 +8,10 @@ export { MAX_REPLAY_EXPORT_BYTES, MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES,
 export type { ReplayCommandRecord } from "./replay.js";
 
 type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string; disconnectedAt?: number };
-type StoredRoom = { id: string; code: string; status: RoomStatus; matchStarted: boolean; privacy: RoomPrivacy; maxPlayers: number; version: number; state: GameState; initialReplayState: GameState; replayCommands: Array<{ version: number; eventType: string; record: ReplayCommandRecord }>; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
+type StoredRoom = { id: string; code: string; status: RoomStatus; matchStarted: boolean; privacy: RoomPrivacy; viewerInviteTokenHash?: string; viewerInviteExpiresAt?: number; maxPlayers: number; version: number; state: GameState; initialReplayState: GameState; replayCommands: Array<{ version: number; eventType: string; record: ReplayCommandRecord }>; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
 export interface RoomSocketPrincipal { roomCode: string; participantId: string; sessionHash: string }
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+export const ROOM_VIEWER_INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
 
 export function mutationBattleOwner(state: GameState, envelope: GameCommandEnvelope): number | undefined {
@@ -74,7 +75,8 @@ export interface RoomStore {
   listPublicRooms(): Promise<PublicRoomSummary[]>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
   startMatch(code: string, token: string): Promise<RoomView>;
-  spectateRoom(code: string, displayName: string): Promise<SessionResponse>;
+  createViewerInvite(code: string, token: string): Promise<{ token: string; expiresAt: string }>;
+  spectateRoom(code: string, displayName: string, viewerToken?: string): Promise<SessionResponse>;
   disconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
   reconnect(code: string, token: string, connectionId?: string): Promise<RoomView>;
   rotateSession(code: string, token: string): Promise<SessionResponse>;
@@ -154,9 +156,22 @@ export class MemoryRoomStore implements RoomStore {
     return session;
   }
 
-  async spectateRoom(roomCode: string, displayName: string) {
+  async createViewerInvite(roomCode: string, accessToken: string) {
+    const room = this.authorize(roomCode, accessToken);
+    const owner = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!owner || owner.role !== "player") throw new Error("Only players can create a TV viewing link.");
+    if (!room.matchStarted) throw new Error("Start the match before creating a TV viewing link.");
+    const viewerToken = token();
+    const expiresAt = Date.now() + ROOM_VIEWER_INVITE_TTL_MS;
+    room.viewerInviteTokenHash = hash(viewerToken);
+    room.viewerInviteExpiresAt = expiresAt;
+    return { token: viewerToken, expiresAt: new Date(expiresAt).toISOString() };
+  }
+
+  async spectateRoom(roomCode: string, displayName: string, viewerToken?: string) {
     const room = this.requireRoom(roomCode);
-    if (room.privacy === "private") throw new Error("This room is private and does not allow spectator entry.");
+    const invited = Boolean(viewerToken && room.viewerInviteTokenHash && room.viewerInviteTokenHash === hash(viewerToken) && room.viewerInviteExpiresAt && room.viewerInviteExpiresAt > Date.now());
+    if (room.privacy === "private" && !invited) throw new Error("This room is private. Ask a player for the TV viewing link.");
     const session = this.addParticipant(room, displayName || "Spectator", "spectator");
     this.touch(room);
     return session;

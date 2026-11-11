@@ -49,6 +49,8 @@ export type GameRoomMinAggregateOutputType = {
   updatedAt: Date | null
   lastActivityAt: Date | null
   completedAt: Date | null
+  viewerInviteTokenHash: string | null
+  viewerInviteExpiresAt: Date | null
 }
 
 export type GameRoomMaxAggregateOutputType = {
@@ -64,6 +66,8 @@ export type GameRoomMaxAggregateOutputType = {
   updatedAt: Date | null
   lastActivityAt: Date | null
   completedAt: Date | null
+  viewerInviteTokenHash: string | null
+  viewerInviteExpiresAt: Date | null
 }
 
 export type GameRoomCountAggregateOutputType = {
@@ -82,6 +86,8 @@ export type GameRoomCountAggregateOutputType = {
   lastActivityAt: number
   completedAt: number
   playerStats: number
+  viewerInviteTokenHash: number
+  viewerInviteExpiresAt: number
   _all: number
 }
 
@@ -109,6 +115,8 @@ export type GameRoomMinAggregateInputType = {
   updatedAt?: true
   lastActivityAt?: true
   completedAt?: true
+  viewerInviteTokenHash?: true
+  viewerInviteExpiresAt?: true
 }
 
 export type GameRoomMaxAggregateInputType = {
@@ -124,6 +132,8 @@ export type GameRoomMaxAggregateInputType = {
   updatedAt?: true
   lastActivityAt?: true
   completedAt?: true
+  viewerInviteTokenHash?: true
+  viewerInviteExpiresAt?: true
 }
 
 export type GameRoomCountAggregateInputType = {
@@ -142,6 +152,8 @@ export type GameRoomCountAggregateInputType = {
   lastActivityAt?: true
   completedAt?: true
   playerStats?: true
+  viewerInviteTokenHash?: true
+  viewerInviteExpiresAt?: true
   _all?: true
 }
 
@@ -247,6 +259,8 @@ export type GameRoomGroupByOutputType = {
   lastActivityAt: Date
   completedAt: Date | null
   playerStats: runtime.JsonValue
+  viewerInviteTokenHash: string | null
+  viewerInviteExpiresAt: Date | null
   _count: GameRoomCountAggregateOutputType | null
   _avg: GameRoomAvgAggregateOutputType | null
   _sum: GameRoomSumAggregateOutputType | null
@@ -288,6 +302,8 @@ export type GameRoomWhereInput = {
   lastActivityAt?: Prisma.DateTimeFilter<"GameRoom"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"GameRoom"> | Date | string | null
   playerStats?: Prisma.JsonFilter<"GameRoom">
+  viewerInviteTokenHash?: Prisma.StringNullableFilter<"GameRoom"> | string | null
+  viewerInviteExpiresAt?: Prisma.DateTimeNullableFilter<"GameRoom"> | Date | string | null
   participants?: Prisma.ParticipantListRelationFilter
   events?: Prisma.GameEventListRelationFilter
   receipts?: Prisma.CommandReceiptListRelationFilter
@@ -312,6 +328,8 @@ export type GameRoomOrderByWithRelationInput = {
   lastActivityAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   playerStats?: Prisma.SortOrder
+  viewerInviteTokenHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  viewerInviteExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   participants?: Prisma.ParticipantOrderByRelationAggregateInput
   events?: Prisma.GameEventOrderByRelationAggregateInput
   receipts?: Prisma.CommandReceiptOrderByRelationAggregateInput
@@ -339,6 +357,8 @@ export type GameRoomWhereUniqueInput = Prisma.AtLeast<{
   lastActivityAt?: Prisma.DateTimeFilter<"GameRoom"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"GameRoom"> | Date | string | null
   playerStats?: Prisma.JsonFilter<"GameRoom">
+  viewerInviteTokenHash?: Prisma.StringNullableFilter<"GameRoom"> | string | null
+  viewerInviteExpiresAt?: Prisma.DateTimeNullableFilter<"GameRoom"> | Date | string | null
   participants?: Prisma.ParticipantListRelationFilter
   events?: Prisma.GameEventListRelationFilter
   receipts?: Prisma.CommandReceiptListRelationFilter
@@ -363,6 +383,8 @@ export type GameRoomOrderByWithAggregationInput = {
   lastActivityAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   playerStats?: Prisma.SortOrder
+  viewerInviteTokenHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  viewerInviteExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.GameRoomCountOrderByAggregateInput
   _avg?: Prisma.GameRoomAvgOrderByAggregateInput
   _max?: Prisma.GameRoomMaxOrderByAggregateInput
@@ -389,6 +411,8 @@ export type GameRoomScalarWhereWithAggregatesInput = {
   lastActivityAt?: Prisma.DateTimeWithAggregatesFilter<"GameRoom"> | Date | string
   completedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"GameRoom"> | Date | string | null
   playerStats?: Prisma.JsonWithAggregatesFilter<"GameRoom">
+  viewerInviteTokenHash?: Prisma.StringNullableWithAggregatesFilter<"GameRoom"> | string | null
+  viewerInviteExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"GameRoom"> | Date | string | null
 }
 
 export type GameRoomCreateInput = {
@@ -407,6 +431,8 @@ export type GameRoomCreateInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptCreateNestedManyWithoutRoomInput
@@ -431,6 +457,8 @@ export type GameRoomUncheckedCreateInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantUncheckedCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventUncheckedCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptUncheckedCreateNestedManyWithoutRoomInput
@@ -455,6 +483,8 @@ export type GameRoomUpdateInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUpdateManyWithoutRoomNestedInput
@@ -479,6 +509,8 @@ export type GameRoomUncheckedUpdateInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUncheckedUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUncheckedUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUncheckedUpdateManyWithoutRoomNestedInput
@@ -503,6 +535,8 @@ export type GameRoomCreateManyInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
 }
 
 export type GameRoomUpdateManyMutationInput = {
@@ -521,6 +555,8 @@ export type GameRoomUpdateManyMutationInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type GameRoomUncheckedUpdateManyInput = {
@@ -539,6 +575,8 @@ export type GameRoomUncheckedUpdateManyInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type GameRoomCountOrderByAggregateInput = {
@@ -557,6 +595,8 @@ export type GameRoomCountOrderByAggregateInput = {
   lastActivityAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
   playerStats?: Prisma.SortOrder
+  viewerInviteTokenHash?: Prisma.SortOrder
+  viewerInviteExpiresAt?: Prisma.SortOrder
 }
 
 export type GameRoomAvgOrderByAggregateInput = {
@@ -577,6 +617,8 @@ export type GameRoomMaxOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
   lastActivityAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
+  viewerInviteTokenHash?: Prisma.SortOrder
+  viewerInviteExpiresAt?: Prisma.SortOrder
 }
 
 export type GameRoomMinOrderByAggregateInput = {
@@ -592,6 +634,8 @@ export type GameRoomMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
   lastActivityAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
+  viewerInviteTokenHash?: Prisma.SortOrder
+  viewerInviteExpiresAt?: Prisma.SortOrder
 }
 
 export type GameRoomSumOrderByAggregateInput = {
@@ -634,6 +678,10 @@ export type DateTimeFieldUpdateOperationsInput = {
 
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
+}
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
 }
 
 export type GameRoomCreateNestedOneWithoutWebsocketTicketsInput = {
@@ -736,6 +784,8 @@ export type GameRoomCreateWithoutWebsocketTicketsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptCreateNestedManyWithoutRoomInput
@@ -759,6 +809,8 @@ export type GameRoomUncheckedCreateWithoutWebsocketTicketsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantUncheckedCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventUncheckedCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptUncheckedCreateNestedManyWithoutRoomInput
@@ -798,6 +850,8 @@ export type GameRoomUpdateWithoutWebsocketTicketsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUpdateManyWithoutRoomNestedInput
@@ -821,6 +875,8 @@ export type GameRoomUncheckedUpdateWithoutWebsocketTicketsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUncheckedUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUncheckedUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUncheckedUpdateManyWithoutRoomNestedInput
@@ -844,6 +900,8 @@ export type GameRoomCreateWithoutParticipantsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   events?: Prisma.GameEventCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptCreateNestedManyWithoutRoomInput
   result?: Prisma.GameResultCreateNestedOneWithoutRoomInput
@@ -867,6 +925,8 @@ export type GameRoomUncheckedCreateWithoutParticipantsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   events?: Prisma.GameEventUncheckedCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptUncheckedCreateNestedManyWithoutRoomInput
   result?: Prisma.GameResultUncheckedCreateNestedOneWithoutRoomInput
@@ -906,6 +966,8 @@ export type GameRoomUpdateWithoutParticipantsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   events?: Prisma.GameEventUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUpdateManyWithoutRoomNestedInput
   result?: Prisma.GameResultUpdateOneWithoutRoomNestedInput
@@ -929,6 +991,8 @@ export type GameRoomUncheckedUpdateWithoutParticipantsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   events?: Prisma.GameEventUncheckedUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUncheckedUpdateManyWithoutRoomNestedInput
   result?: Prisma.GameResultUncheckedUpdateOneWithoutRoomNestedInput
@@ -952,6 +1016,8 @@ export type GameRoomCreateWithoutEventsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptCreateNestedManyWithoutRoomInput
   result?: Prisma.GameResultCreateNestedOneWithoutRoomInput
@@ -975,6 +1041,8 @@ export type GameRoomUncheckedCreateWithoutEventsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantUncheckedCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptUncheckedCreateNestedManyWithoutRoomInput
   result?: Prisma.GameResultUncheckedCreateNestedOneWithoutRoomInput
@@ -1014,6 +1082,8 @@ export type GameRoomUpdateWithoutEventsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUpdateManyWithoutRoomNestedInput
   result?: Prisma.GameResultUpdateOneWithoutRoomNestedInput
@@ -1037,6 +1107,8 @@ export type GameRoomUncheckedUpdateWithoutEventsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUncheckedUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUncheckedUpdateManyWithoutRoomNestedInput
   result?: Prisma.GameResultUncheckedUpdateOneWithoutRoomNestedInput
@@ -1060,6 +1132,8 @@ export type GameRoomCreateWithoutReceiptsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventCreateNestedManyWithoutRoomInput
   result?: Prisma.GameResultCreateNestedOneWithoutRoomInput
@@ -1083,6 +1157,8 @@ export type GameRoomUncheckedCreateWithoutReceiptsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantUncheckedCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventUncheckedCreateNestedManyWithoutRoomInput
   result?: Prisma.GameResultUncheckedCreateNestedOneWithoutRoomInput
@@ -1122,6 +1198,8 @@ export type GameRoomUpdateWithoutReceiptsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUpdateManyWithoutRoomNestedInput
   result?: Prisma.GameResultUpdateOneWithoutRoomNestedInput
@@ -1145,6 +1223,8 @@ export type GameRoomUncheckedUpdateWithoutReceiptsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUncheckedUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUncheckedUpdateManyWithoutRoomNestedInput
   result?: Prisma.GameResultUncheckedUpdateOneWithoutRoomNestedInput
@@ -1168,6 +1248,8 @@ export type GameRoomCreateWithoutResultInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptCreateNestedManyWithoutRoomInput
@@ -1191,6 +1273,8 @@ export type GameRoomUncheckedCreateWithoutResultInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantUncheckedCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventUncheckedCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptUncheckedCreateNestedManyWithoutRoomInput
@@ -1230,6 +1314,8 @@ export type GameRoomUpdateWithoutResultInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUpdateManyWithoutRoomNestedInput
@@ -1253,6 +1339,8 @@ export type GameRoomUncheckedUpdateWithoutResultInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUncheckedUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUncheckedUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUncheckedUpdateManyWithoutRoomNestedInput
@@ -1276,6 +1364,8 @@ export type GameRoomCreateWithoutMatchStatsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptCreateNestedManyWithoutRoomInput
@@ -1299,6 +1389,8 @@ export type GameRoomUncheckedCreateWithoutMatchStatsInput = {
   lastActivityAt?: Date | string
   completedAt?: Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: string | null
+  viewerInviteExpiresAt?: Date | string | null
   participants?: Prisma.ParticipantUncheckedCreateNestedManyWithoutRoomInput
   events?: Prisma.GameEventUncheckedCreateNestedManyWithoutRoomInput
   receipts?: Prisma.CommandReceiptUncheckedCreateNestedManyWithoutRoomInput
@@ -1338,6 +1430,8 @@ export type GameRoomUpdateWithoutMatchStatsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUpdateManyWithoutRoomNestedInput
@@ -1361,6 +1455,8 @@ export type GameRoomUncheckedUpdateWithoutMatchStatsInput = {
   lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   playerStats?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  viewerInviteTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  viewerInviteExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   participants?: Prisma.ParticipantUncheckedUpdateManyWithoutRoomNestedInput
   events?: Prisma.GameEventUncheckedUpdateManyWithoutRoomNestedInput
   receipts?: Prisma.CommandReceiptUncheckedUpdateManyWithoutRoomNestedInput
@@ -1451,6 +1547,8 @@ export type GameRoomSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   lastActivityAt?: boolean
   completedAt?: boolean
   playerStats?: boolean
+  viewerInviteTokenHash?: boolean
+  viewerInviteExpiresAt?: boolean
   participants?: boolean | Prisma.GameRoom$participantsArgs<ExtArgs>
   events?: boolean | Prisma.GameRoom$eventsArgs<ExtArgs>
   receipts?: boolean | Prisma.GameRoom$receiptsArgs<ExtArgs>
@@ -1476,6 +1574,8 @@ export type GameRoomSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   lastActivityAt?: boolean
   completedAt?: boolean
   playerStats?: boolean
+  viewerInviteTokenHash?: boolean
+  viewerInviteExpiresAt?: boolean
 }, ExtArgs["result"]["gameRoom"]>
 
 export type GameRoomSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1494,6 +1594,8 @@ export type GameRoomSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   lastActivityAt?: boolean
   completedAt?: boolean
   playerStats?: boolean
+  viewerInviteTokenHash?: boolean
+  viewerInviteExpiresAt?: boolean
 }, ExtArgs["result"]["gameRoom"]>
 
 export type GameRoomSelectScalar = {
@@ -1512,9 +1614,11 @@ export type GameRoomSelectScalar = {
   lastActivityAt?: boolean
   completedAt?: boolean
   playerStats?: boolean
+  viewerInviteTokenHash?: boolean
+  viewerInviteExpiresAt?: boolean
 }
 
-export type GameRoomOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "status" | "matchStarted" | "privacy" | "isTest" | "maxPlayers" | "version" | "state" | "initialReplayState" | "createdAt" | "updatedAt" | "lastActivityAt" | "completedAt" | "playerStats", ExtArgs["result"]["gameRoom"]>
+export type GameRoomOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "status" | "matchStarted" | "privacy" | "isTest" | "maxPlayers" | "version" | "state" | "initialReplayState" | "createdAt" | "updatedAt" | "lastActivityAt" | "completedAt" | "playerStats" | "viewerInviteTokenHash" | "viewerInviteExpiresAt", ExtArgs["result"]["gameRoom"]>
 export type GameRoomInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   participants?: boolean | Prisma.GameRoom$participantsArgs<ExtArgs>
   events?: boolean | Prisma.GameRoom$eventsArgs<ExtArgs>
@@ -1553,6 +1657,8 @@ export type $GameRoomPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     lastActivityAt: Date
     completedAt: Date | null
     playerStats: runtime.JsonValue
+    viewerInviteTokenHash: string | null
+    viewerInviteExpiresAt: Date | null
   }, ExtArgs["result"]["gameRoom"]>
   composites: {}
 }
@@ -1997,6 +2103,8 @@ export interface GameRoomFieldRefs {
   readonly lastActivityAt: Prisma.FieldRef<"GameRoom", 'DateTime'>
   readonly completedAt: Prisma.FieldRef<"GameRoom", 'DateTime'>
   readonly playerStats: Prisma.FieldRef<"GameRoom", 'Json'>
+  readonly viewerInviteTokenHash: Prisma.FieldRef<"GameRoom", 'String'>
+  readonly viewerInviteExpiresAt: Prisma.FieldRef<"GameRoom", 'DateTime'>
 }
     
 

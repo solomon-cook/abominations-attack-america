@@ -725,10 +725,6 @@ export type NullableIntFieldUpdateOperationsInput = {
   divide?: number
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type ParticipantCreateNestedOneWithoutMatchStatsInput = {
   create?: Prisma.XOR<Prisma.ParticipantCreateWithoutMatchStatsInput, Prisma.ParticipantUncheckedCreateWithoutMatchStatsInput>
   connectOrCreate?: Prisma.ParticipantCreateOrConnectWithoutMatchStatsInput

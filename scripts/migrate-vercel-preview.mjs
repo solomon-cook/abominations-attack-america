@@ -1,12 +1,12 @@
 import { spawnSync } from "node:child_process";
 
-if (process.env.VERCEL_ENV !== "preview") {
-  console.log("Skipping database migrations outside a Vercel Preview deployment.");
+if (!["preview", "production"].includes(process.env.VERCEL_ENV ?? "")) {
+  console.log("Skipping database migrations outside a Vercel Preview or Production deployment.");
   process.exit(0);
 }
 
 if (!process.env.DIRECT_URL?.trim()) {
-  throw new Error("Vercel Preview deployments require the server-side DIRECT_URL to apply Prisma migrations.");
+  throw new Error(`Vercel ${process.env.VERCEL_ENV} deployments require the server-side DIRECT_URL to apply Prisma migrations.`);
 }
 
 const migration = spawnSync("npm", ["run", "prisma:migrate:deploy"], { stdio: "inherit" });

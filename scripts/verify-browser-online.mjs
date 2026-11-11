@@ -179,6 +179,7 @@ async function openBrowser(port, name, existingProfile) {
     waitFor,
     networkResponses,
     setViewport: (width, height) => command("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width <= 600 }),
+    navigate: (nextUrl) => command("Page.navigate", { url: nextUrl }),
     refresh: () => command("Page.reload", { ignoreCache: true }),
     click: async (label) => {
       const rect = await evaluate(`(() => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)} && !candidate.disabled); if (!button) return null; button.scrollIntoView({ block: "center", inline: "center" }); const rect = button.getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, visible: rect.width > 0 && rect.height > 0 && rect.x >= 0 && rect.y >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight }; })()`);
@@ -236,6 +237,7 @@ try {
   first = await openBrowser(9230, "first");
   second = await openBrowser(9231, "second");
   spectator = await openBrowser(9232, "spectator");
+  await spectator.setViewport(1920, 1080);
   for (const browser of [first, second, spectator]) {
     await browser.waitFor(`!!document.querySelector('[aria-label="Choose how to play"]')`, "home screen");
     if (!await browser.clickText("Multiplayer")) throw new Error("Browser could not select Multiplayer from the home screen.");
@@ -244,7 +246,6 @@ try {
   }
   await first.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "first lobby");
   await first.evaluate(`(() => { const input = document.querySelector('[aria-label="Display name"]'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(input, "First player"); input.dispatchEvent(new Event("input", { bubbles: true })); })()`);
-  await first.evaluate(`(() => { const select = document.querySelector('[aria-label="Room privacy"]'); if (!select) return false; const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set; setter.call(select, "public"); select.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
   if (!await first.click("Create")) throw new Error("First browser could not create a room.");
   await first.waitFor(`!!document.querySelector(".lobby strong")`, "created room code");
   const roomCode = await first.evaluate(`document.querySelector(".lobby strong")?.textContent?.trim()`);
@@ -279,11 +280,17 @@ try {
   await first.waitFor(`!document.querySelector(".pre-match-lobby") && !!document.querySelector(".setup-panel")`, "first player setup after starting match");
   await second.waitFor(`!document.querySelector(".pre-match-lobby") && !!document.querySelector(".setup-panel")`, "peer setup after host starts match");
 
-  await spectator.waitFor(`!!document.querySelector('[aria-label="Display name"]')`, "spectator lobby");
-  await spectator.evaluate(`(() => { const inputs = document.querySelectorAll('input'); const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; setter.call(inputs[0], "Spectator"); inputs[0].dispatchEvent(new Event("input", { bubbles: true })); setter.call(inputs[1], ${JSON.stringify(roomCode)}); inputs[1].dispatchEvent(new Event("input", { bubbles: true })); })()`);
-  if (!await spectator.click("Spectate")) throw new Error("Spectator browser could not join the created room.");
-  await spectator.waitFor(`!!document.querySelector(".lobby strong")`, "joined spectator room code");
-  await spectator.waitFor(`!!document.querySelector(".setup-panel")`, "spectator setup projection");
+  // A private room can add its read-only TV viewer only through the player-created link.
+  const hostSession = await first.evaluate(`JSON.parse(localStorage.getItem("abominations-session") ?? "null")`);
+  const viewerInviteResponse = await apiFetch(`${apiUrl}/rooms/${roomCode}/viewer-link`, { method: "POST", headers: { "x-room-token": hostSession.token } });
+  if (!viewerInviteResponse.ok) throw new Error(`Player could not create the TV viewer link (${viewerInviteResponse.status}).`);
+  const viewerInvite = await viewerInviteResponse.json();
+  const viewerUrl = new URL(url);
+  viewerUrl.searchParams.set("room", roomCode);
+  viewerUrl.hash = `watch=${encodeURIComponent(viewerInvite.token)}`;
+  await spectator.navigate(viewerUrl.toString());
+  await spectator.waitFor(`!!document.querySelector(".lobby")?.textContent?.includes("spectating")`, "private room TV viewer link");
+  await spectator.waitFor(`!!document.querySelector(".setup-panel")`, "TV viewer setup projection");
   const boardIdentities = await Promise.all([first, second, spectator].map((browser) => browser.evaluate(`(() => { const root = document.querySelector("main.game-screen"); return { id: root?.dataset.boardId ?? "", version: root?.dataset.boardVersion ?? "", hash: root?.dataset.boardContentHash ?? "", renderedId: root?.dataset.renderedBoardId ?? "", renderedHash: root?.dataset.renderedBoardContentHash ?? "" }; })()`)));
   const boardIdentityKeys = boardIdentities.map((identity) => `${identity?.id}:${identity?.version}:${identity?.hash}:${identity?.renderedId}:${identity?.renderedHash}`);
   if (new Set(boardIdentityKeys).size !== 1 || boardIdentities[0]?.id !== "human-audited-north-america" || boardIdentities[0]?.renderedId !== boardIdentities[0]?.id || boardIdentities[0]?.renderedHash !== boardIdentities[0]?.hash) {
@@ -355,6 +362,7 @@ try {
   await second.waitFor("!document.querySelector('.setup-panel')", "second setup completion");
   if (!await first.click("Ready") || !await second.click("Ready")) throw new Error("Both players did not expose Ready controls.");
   await first.waitFor(`document.querySelector(".action-card h2")?.textContent?.trim() === "Move" || Boolean(document.querySelector(".giant-placement-choice"))`, "Move or starting giant-placement decision");
+  await first.setViewport(390, 844);
   let startingGiantPlacement = "not-required";
   let startingGiantPlacementRefresh = "not-needed";
   const startupRoom = await first.evaluate(`(async () => {

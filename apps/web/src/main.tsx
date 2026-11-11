@@ -29,6 +29,7 @@ import type { AccountSummary, RoomView, SessionResponse } from "@abominations/sh
 import {
   claimRoomSeat,
   createRoom,
+  createViewerInvite,
   createWebSocketTicket,
   joinRoom,
   listPublicRooms,
@@ -656,6 +657,21 @@ function App() {
   }, [acceptedActionFeedback]);
 
   useEffect(() => {
+    const url = new URL(window.location.href);
+    const viewerToken = new URLSearchParams(url.hash.slice(1)).get("watch");
+    const viewerRoomCode = url.searchParams.get("room");
+    if (viewerToken && viewerRoomCode) {
+      url.hash = "";
+      window.history.replaceState(null, "", url.toString());
+      void spectateRoom(viewerRoomCode, "TV Viewer", viewerToken).then((viewerSession) => {
+        setSession(viewerSession);
+        updateRoomSnapshot(viewerSession.room);
+        setRoomCode(viewerSession.room.code);
+        setGamePanelOpen(true);
+        localStorage.setItem("abominations-session", JSON.stringify({ token: viewerSession.token, participantId: viewerSession.participantId, room: { code: viewerSession.room.code } }));
+      }).catch((caught) => setError(caught instanceof Error ? caught.message : "Could not open the TV viewing link."));
+      return;
+    }
     const saved = safeStorageGet("abominations-session");
     if (!saved) return;
     try {
@@ -903,6 +919,11 @@ function App() {
         caught instanceof Error ? caught.message : "Could not join room",
       );
     }
+  };
+  const makeViewerLink = async () => {
+    if (!room || !session || participant?.role !== "player") throw new Error("Only a player can create a TV viewing link.");
+    const invitation = await createViewerInvite(room.code, session.token);
+    return invitation.token;
   };
   const refreshPublicRooms = async () => {
     setError("");
@@ -1414,7 +1435,7 @@ function App() {
     return <main className="pre-match-lobby">
       <header className="home-masthead"><span className="home-wordmark">AAA</span><span className="home-edition">A game of monsters &amp; military might</span></header>
       <section className="pre-match-lobby-heading"><p className="home-kicker">MULTIPLAYER ROOM</p><h1>Waiting room</h1><p>Share this code with your friends. The match begins when someone starts it.</p><div className="pre-match-room-code" aria-label={`Room code ${room.code}`}>{room.code}</div></section>
-      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={setRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onLeaveRoom={leaveRoomSafely} />
+      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={setRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} />
     </main>;
   }
 
@@ -1505,6 +1526,7 @@ function App() {
         onStartSession={(kind) => void startSession(kind)}
         onToggleReady={() => void toggleReady()}
         onStartMatch={() => void beginMatch()}
+        onCreateViewerLink={makeViewerLink}
         onLeaveRoom={leaveRoomSafely}
       />
       {settingsOpen && (

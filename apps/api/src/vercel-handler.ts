@@ -132,8 +132,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (parts[0] !== "rooms" || !parts[1]) return respond(req, res, 404, { error: "Not found" });
     const code = parts[1];
     if (req.method === "POST" && parts[2] === "join") return respond(req, res, 200, await store.joinRoom(code, String((await readBody(req)).displayName ?? "Player")));
+    if (req.method === "POST" && parts[2] === "viewer-link") return respond(req, res, 200, await store.createViewerInvite(code, roomToken(req, url)));
     if (req.method === "POST" && parts[2] === "start") return respond(req, res, 200, await store.startMatch(code, roomToken(req, url)));
-    if (req.method === "POST" && parts[2] === "spectate") return respond(req, res, 200, await store.spectateRoom(code, String((await readBody(req)).displayName ?? "Spectator")));
+    if (req.method === "POST" && parts[2] === "spectate") { const input = await readBody(req); return respond(req, res, 200, await store.spectateRoom(code, String(input.displayName ?? "Spectator"), typeof input.viewerToken === "string" ? input.viewerToken : undefined)); }
     if (req.method === "POST" && parts[2] === "disconnect") { const input = await readBody(req); return respond(req, res, 200, await store.disconnect(code, roomToken(req, url, input), String(input.connectionId ?? "legacy"))); }
     if (req.method === "POST" && parts[2] === "reconnect") { const input = await readBody(req); metrics.reconnect(); return respond(req, res, 200, await store.reconnect(code, roomToken(req, url, input), String(input.connectionId ?? "legacy"))); }
     if (req.method === "POST" && parts[2] === "rotate-session") return respond(req, res, 200, await store.rotateSession(code, roomToken(req, url, await readBody(req))));

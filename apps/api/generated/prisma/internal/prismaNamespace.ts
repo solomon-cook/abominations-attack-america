@@ -1595,7 +1595,9 @@ export const GameRoomScalarFieldEnum = {
   updatedAt: 'updatedAt',
   lastActivityAt: 'lastActivityAt',
   completedAt: 'completedAt',
-  playerStats: 'playerStats'
+  playerStats: 'playerStats',
+  viewerInviteTokenHash: 'viewerInviteTokenHash',
+  viewerInviteExpiresAt: 'viewerInviteExpiresAt'
 } as const
 
 export type GameRoomScalarFieldEnum = (typeof GameRoomScalarFieldEnum)[keyof typeof GameRoomScalarFieldEnum]

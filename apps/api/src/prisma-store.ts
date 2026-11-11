@@ -2,7 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupActionWithRecord, createMvpRoomGame, createRoomGame, projectState, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicReplayExport, PublicReplayPage, PublicRoomSummary, ReplayFrame, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 import { completedMatchRows, emptyMatchCounters, updateMatchCounters } from "./player-stats.js";
-import { MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketPrincipal, type RoomStore } from "./store.js";
+import { MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, ROOM_VIEWER_INVITE_TTL_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketPrincipal, type RoomStore } from "./store.js";
 import { cacheReplayFrames, getCachedReplayFrames, MAX_REPLAY_EXPORT_BYTES, reconstructReplay, type ReplayCommandRecord, type ReplaySourceEvent } from "./replay.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
@@ -118,10 +118,22 @@ export class PrismaRoomStore implements RoomStore {
     return this.view(room.id, 0, "player", starter.playerIndex ?? undefined);
   }
 
-  async spectateRoom(roomCode: string, displayName: string) {
+  async createViewerInvite(roomCode: string, accessToken: string) {
+    const room = await this.authorize(roomCode, accessToken);
+    const owner = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
+    if (!owner) throw new Error("Only players can create a TV viewing link.");
+    if (!room.matchStarted) throw new Error("Start the match before creating a TV viewing link.");
+    const viewerToken = token();
+    const expiresAt = new Date(Date.now() + ROOM_VIEWER_INVITE_TTL_MS);
+    await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { viewerInviteTokenHash: hash(viewerToken), viewerInviteExpiresAt: expiresAt } });
+    return { token: viewerToken, expiresAt: expiresAt.toISOString() };
+  }
+
+  async spectateRoom(roomCode: string, displayName: string, viewerToken?: string) {
     const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
     if (!room) throw new Error("Room not found.");
-    if (room.privacy === "PRIVATE") throw new Error("This room is private and does not allow spectator entry.");
+    const invited = Boolean(viewerToken && room.viewerInviteTokenHash && room.viewerInviteTokenHash === hash(viewerToken) && room.viewerInviteExpiresAt && room.viewerInviteExpiresAt.getTime() > Date.now());
+    if (room.privacy === "PRIVATE" && !invited) throw new Error("This room is private. Ask a player for the TV viewing link.");
     const accessToken = token();
     const participant = await this.prismaClient.participant.create({ data: { roomId: room.id, displayName: displayName.trim().slice(0, 32) || "Spectator", role: "SPECTATOR", connectedAt: new Date(), tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt() } });
     return { room: await this.view(room.id), participantId: participant.id, token: accessToken };

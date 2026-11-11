@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { COMMAND_PROTOCOL_VERSION, applyCommand, boardForState, legalChopperLiftDestinations, legalMonsterPaths, legalUnitPaths, locationIdToHexKey, militaryUnitStats, monsterCombatStats } from "@abominations/game-engine";
 import { MAX_RETAINED_ROOM_EVENTS, MemoryRoomStore } from "./store.js";
@@ -1759,6 +1760,26 @@ test("private rooms reject spectator entry and public rooms allow it", async () 
   assert.equal(publicHost.room.privacy, "public");
   const spectator = await store.spectateRoom(publicHost.room.code, "Watcher");
   assert.equal(spectator.room.privacy, "public");
+});
+
+test("private room TV links admit read-only spectators and rotate securely", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host", "private");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  await store.startMatch(host.room.code, host.token);
+  const guestInvite = await store.createViewerInvite(host.room.code, guest.token);
+  assert.equal((store as any).rooms.get(host.room.code).viewerInviteTokenHash, createHash("sha256").update(guestInvite.token).digest("hex"));
+  const invite = await store.createViewerInvite(host.room.code, host.token);
+  const room = (store as any).rooms.get(host.room.code);
+  assert.notEqual(room.viewerInviteTokenHash, invite.token);
+  assert.equal(room.viewerInviteTokenHash.length, 64);
+  const watcher = await store.spectateRoom(host.room.code, "TV", invite.token);
+  assert.equal(watcher.room.participants.find((person) => person.id === watcher.participantId)?.role, "spectator");
+  await assert.rejects(() => store.submitAction(host.room.code, watcher.token, { actionId: "tv-cannot-play", actorId: watcher.participantId, expectedRevision: watcher.room.version, protocolVersion: 1, command: { type: "concede" } }), /Spectators cannot submit/);
+  const replacement = await store.createViewerInvite(host.room.code, host.token);
+  await assert.rejects(() => store.spectateRoom(host.room.code, "Old TV", invite.token), /private/);
+  const nextWatcher = await store.spectateRoom(host.room.code, "New TV", replacement.token);
+  assert.equal(nextWatcher.room.participants.find((person) => person.id === nextWatcher.participantId)?.role, "spectator");
 });
 
 test("public room discovery returns only redacted open-room summaries", async () => {
