@@ -62,6 +62,9 @@
 .game-screen > .board-map-controls > summary { display:grid; width:44px; height:44px; place-items:center; border:1px solid var(--hud-border); border-radius:6px; background:var(--hud-bg); color:var(--civ-ivory); box-shadow:0 4px 14px #06131170; cursor:pointer; font-size:1.2rem; list-style:none; }
 .game-screen > .board-map-controls > summary::-webkit-details-marker { display:none; }
 .game-screen > .board-map-controls[open] > summary { border-color:var(--civ-brass); }
+.game-screen > .board-map-controls > summary .map-controls-close-icon { display:none; font-size:1.5rem; line-height:1; }
+.game-screen > .board-map-controls[open] > summary .map-controls-open-icon { display:none; }
+.game-screen > .board-map-controls[open] > summary .map-controls-close-icon { display:block; }
 .game-screen > .board-map-controls > .map-control-slot { position:absolute; top:calc(100% + 4px); left:0; }
 .game-screen > .board-map-controls .map-controls { position:static; z-index:auto; display:flex; flex-direction:row; align-items:center; width:max-content; margin:0; padding:3px; transform:none; gap:2px; border:1px solid var(--hud-border); border-radius:6px; background:var(--hud-bg); box-shadow:0 4px 14px #06131170; pointer-events:auto; }
 .game-screen > .board-map-controls .map-controls button { width:44px; min-width:44px; min-height:44px; padding:4px; border-color:var(--hud-border); background:#263b37; }
@@ -415,8 +418,9 @@
   .game-screen > .board-map-controls > summary { width:44px; height:44px; }
   .game-screen > .board-map-controls .map-controls button { width:44px; min-width:44px; min-height:44px; }
   .game-screen > .board-map-controls .map-controls .map-zoom { min-width:32px; }
-  .game-screen > .board-map-controls .map-controls { flex-direction:column; align-items:stretch; width:50px; }
-  .game-screen > .board-map-controls .map-controls .map-zoom { min-height:20px; }
+  .game-screen > .board-map-controls[open] { z-index:60; }
+  .game-screen > .board-map-controls > .map-control-slot { top:0; left:calc(100% + 6px); }
+  .game-screen > .board-map-controls .map-controls { flex-direction:row; align-items:center; width:max-content; max-width:calc(100vw - 68px - env(safe-area-inset-left) - env(safe-area-inset-right)); }
   .game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .board-minimap { display:block; left:auto; right:8px; top:140px; bottom:auto; width:min(220px,calc(100vw - 36px)); height:auto; max-height:135px; }
   .game-screen:has(.persistent-record.mobile-record-open[data-record-tab="map"]) .board-minimap svg { height:110px; }
   .opponent-portrait-rail { top:calc(max(5px,env(safe-area-inset-top)) + 61px); right:max(7px,env(safe-area-inset-right)); left:auto; flex-direction:row; align-items:flex-start; gap:4px; }

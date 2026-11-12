@@ -1513,7 +1513,7 @@ function App() {
       </section>}
       <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} className="board-context-tray-focus" />
       <details className="board-map-controls">
-        <summary aria-label="Open map view controls" title="Map controls">⌖</summary>
+        <summary aria-label="Toggle map view controls" title="Map controls · tap again to close"><span className="map-controls-open-icon" aria-hidden="true">⌖</span><span className="map-controls-close-icon" aria-hidden="true">×</span></summary>
         <div className="map-control-slot" />
       </details>
       {error && <p className="error global-game-error" role="alert">{error}</p>}
