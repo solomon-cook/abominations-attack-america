@@ -1487,7 +1487,7 @@ function App() {
         <div className="header-actions">
           {setupComplete && <PlayerStatusControls game={activeGame} playerIndex={playerRecordIndex} monster={playerRecordMonster} branch={playerRecordBranch} canAct={canAct} mobileCommandExpanded={mobileCommandExpanded} runCommand={runCommand} onDeploy={openMilitarySheet} onSelectDeployment={(choice) => { setDeploymentPieceId(choice.id); setFocusedHexKey(choice.destinations[0]); }} />}
           <details className="hud-menu">
-            <summary aria-label="Open game menu">☰ <span>Menu</span></summary>
+            <summary aria-label="Toggle game menu" title="Game menu · tap again to close"><span className="hud-menu-open-icon" aria-hidden="true">☰</span><span className="hud-menu-close-icon" aria-hidden="true">×</span><span className="hud-menu-label">Menu</span></summary>
             <div className="hud-menu-items">
               {online && <span className="room-hud-menu-status" role="status">{room?.code} · {connectionState}</span>}
               <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>How to play</button>
@@ -1513,7 +1513,7 @@ function App() {
       </section>}
       <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} className="board-context-tray-focus" />
       <details className="board-map-controls">
-        <summary aria-label="Toggle map view controls" title="Map controls · tap again to close"><span className="map-controls-open-icon" aria-hidden="true">⌖</span><span className="map-controls-close-icon" aria-hidden="true">×</span></summary>
+        <summary aria-label="Open map view controls" title="Map controls">⌖</summary>
         <div className="map-control-slot" />
       </details>
       {error && <p className="error global-game-error" role="alert">{error}</p>}
