@@ -74,6 +74,7 @@ export interface RoomStore {
   createRoom(maxPlayers: number, displayName?: string, privacy?: RoomPrivacy): Promise<SessionResponse>;
   listPublicRooms(): Promise<PublicRoomSummary[]>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
+  addBot(code: string, token: string): Promise<RoomView>;
   startMatch(code: string, token: string): Promise<RoomView>;
   createViewerInvite(code: string, token: string): Promise<{ token: string; expiresAt: string }>;
   spectateRoom(code: string, displayName: string, viewerToken?: string): Promise<SessionResponse>;
@@ -154,6 +155,24 @@ export class MemoryRoomStore implements RoomStore {
     this.refreshStatus(room);
     session.room = this.view(room, 0, "player", playerIndex);
     return session;
+  }
+
+  async addBot(roomCode: string, accessToken: string) {
+    const room = this.authorize(roomCode, accessToken);
+    if (room.status !== "waiting" || room.matchStarted) throw new Error("Bots can only be added while the room is waiting.");
+    const requester = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!requester || requester.role !== "player" || requester.botControlled) throw new Error("Only a human player can add a bot.");
+    const players = room.participants.filter((candidate) => candidate.role === "player");
+    if (players.length >= room.maxPlayers) throw new Error("This room is full.");
+    const playerIndex = Array.from({ length: room.maxPlayers }, (_, index) => index).find((index) => !players.some((player) => player.playerIndex === index));
+    if (playerIndex === undefined) throw new Error("This room is full.");
+    const session = this.addParticipant(room, `Bot ${playerIndex + 1}`, "player", playerIndex);
+    const bot = room.participants.find((candidate) => candidate.id === session.participantId)!;
+    bot.connected = false;
+    bot.ready = true;
+    bot.botControlled = true;
+    this.touch(room);
+    return this.view(room, 0, "player", requester.playerIndex);
   }
 
   async createViewerInvite(roomCode: string, accessToken: string) {
@@ -237,7 +256,7 @@ export class MemoryRoomStore implements RoomStore {
     if (!starter || starter.role !== "player" || starter.playerIndex === undefined || !starter.connected) throw new Error("Only a connected player can start the match.");
     if (room.status !== "waiting" || room.matchStarted) throw new Error("This room has already started.");
     const players = room.participants.filter((candidate) => candidate.role === "player");
-    if (players.length !== room.maxPlayers || players.some((candidate) => !candidate.connected)) throw new Error("Wait until every player has joined and is connected.");
+    if (players.length !== room.maxPlayers || players.some((candidate) => !candidate.connected && !candidate.botControlled)) throw new Error("Wait until every player has joined and is connected.");
     room.matchStarted = true;
     room.lastActivityAt = Date.now();
     return this.view(room, 0, "player", starter.playerIndex);
@@ -426,6 +445,7 @@ export class MemoryRoomStore implements RoomStore {
           updated.push(room.code);
         }
       }
+      if (!room.matchStarted) continue;
       for (let step = 0; step < 12; step += 1) {
         const setup = room.state.setupState;
         if (setup && setup.phase !== "complete") {

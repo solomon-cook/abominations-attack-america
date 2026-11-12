@@ -27,6 +27,7 @@ import {
 } from "@abominations/game-engine";
 import type { AccountSummary, RoomView, SessionResponse } from "@abominations/shared";
 import {
+  addRoomBot,
   claimRoomSeat,
   createRoom,
   createViewerInvite,
@@ -979,6 +980,19 @@ function App() {
     }
   };
 
+  const addBotToRoom = async () => {
+    if (!session || !room || !participant || participant.role !== "player") return;
+    setError("");
+    setPendingAction(true);
+    try {
+      updateRoomSnapshot(await addRoomBot(room.code, session.token));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not add a bot.");
+    } finally {
+      setPendingAction(false);
+    }
+  };
+
   const applyLocalSetup = (next: SetupState) => {
     setLocalSetup(next);
     setGame((current) => { const updated = { ...current, setupState: next }; return next.phase === "complete" ? applyCompletedSetup(updated) : updated; });
@@ -1525,6 +1539,7 @@ function App() {
         onRefreshPublicRooms={() => void refreshPublicRooms()}
         onStartSession={(kind) => void startSession(kind)}
         onToggleReady={() => void toggleReady()}
+        onAddBot={() => void addBotToRoom()}
         onStartMatch={() => void beginMatch()}
         onCreateViewerLink={makeViewerLink}
         onLeaveRoom={leaveRoomSafely}

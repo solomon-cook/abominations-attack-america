@@ -107,12 +107,41 @@ export class PrismaRoomStore implements RoomStore {
     return { room: await this.view(room.id, 0, "player", participant.playerIndex ?? undefined), participantId: participant.id, token: accessToken };
   }
 
+  async addBot(roomCode: string, accessToken: string) {
+    const room = await this.authorize(roomCode, accessToken);
+    if (room.status !== "WAITING" || room.matchStarted) throw new Error("Bots can only be added while the room is waiting.");
+    const requester = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
+    if (!requester || requester.botControlled || requester.playerIndex === null) throw new Error("Only a human player can add a bot.");
+    const players = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" }, select: { playerIndex: true } });
+    if (players.length >= room.maxPlayers) throw new Error("This room is full.");
+    const playerIndex = Array.from({ length: room.maxPlayers }, (_, index) => index).find((index) => !players.some((player: any) => player.playerIndex === index));
+    if (playerIndex === undefined) throw new Error("This room is full.");
+    try {
+      await this.prismaClient.participant.create({ data: {
+        roomId: room.id,
+        displayName: `Bot ${playerIndex + 1}`,
+        role: "PLAYER",
+        playerIndex,
+        ready: true,
+        botControlled: true,
+        connectedAt: null,
+        tokenHash: hash(token()),
+        sessionExpiresAt: sessionExpiresAt(),
+      } });
+    } catch (error) {
+      if ((error as { code?: string }).code === "P2002") throw new Error("A player just took that seat. Try adding the bot again.");
+      throw error;
+    }
+    await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { lastActivityAt: new Date() } });
+    return this.view(room.id, 0, "player", requester.playerIndex ?? undefined);
+  }
+
   async startMatch(roomCode: string, accessToken: string) {
     const room = await this.authorize(roomCode, accessToken);
     const starter = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
     if (!starter || starter.playerIndex === null || !starter.connectedAt) throw new Error("Only a connected player can start the match.");
-    const players = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" }, select: { id: true, connectedAt: true } });
-    if (players.length !== room.maxPlayers || players.some((player: any) => !player.connectedAt)) throw new Error("Wait until every player has joined and is connected.");
+    const players = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" }, select: { id: true, connectedAt: true, botControlled: true } });
+    if (players.length !== room.maxPlayers || players.some((player: any) => !player.connectedAt && !player.botControlled)) throw new Error("Wait until every player has joined and is connected.");
     const started = await this.prismaClient.gameRoom.updateMany({ where: { id: room.id, status: "WAITING", matchStarted: false }, data: { matchStarted: true, lastActivityAt: new Date() } });
     if (started.count !== 1) throw new Error("This room has already started.");
     return this.view(room.id, 0, "player", starter.playerIndex ?? undefined);
@@ -502,6 +531,7 @@ export class PrismaRoomStore implements RoomStore {
     for (let step = 0; step < 12; step += 1) {
       const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
       if (!room || !["ACTIVE", "WAITING"].includes(room.status)) return;
+      if (!room.matchStarted) return;
       const state = room.state as unknown as GameState;
       const participants = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" } });
       const botIndices = new Set<number>(participants.filter((participant: any) => participant.botControlled && participant.playerIndex !== null).map((participant: any) => participant.playerIndex));

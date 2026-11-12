@@ -22,6 +22,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const createRoom = (maxPlayers = 4, displayName = "Player 1", privacy: RoomPrivacy = "private") => request<SessionResponse>("/rooms", { method: "POST", body: JSON.stringify({ maxPlayers, displayName, privacy }) });
 export const listPublicRooms = () => request<PublicRoomSummary[]>("/rooms/public");
 export const joinRoom = (code: string, displayName: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/join`, { method: "POST", body: JSON.stringify({ displayName }) });
+export const addRoomBot = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/bots`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const spectateRoom = (code: string, displayName: string, viewerToken?: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/spectate`, { method: "POST", body: JSON.stringify({ displayName, ...(viewerToken ? { viewerToken } : {}) }) });
 export const createViewerInvite = (code: string, token: string) => request<{ token: string; expiresAt: string }>(`/rooms/${code.toUpperCase()}/viewer-link`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const markDisconnected = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/disconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });

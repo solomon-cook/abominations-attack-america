@@ -21,6 +21,7 @@ export type LobbyPanelProps = {
   onRefreshPublicRooms: () => void;
   onStartSession: (kind: "create" | "join" | "spectate") => void;
   onToggleReady: () => void;
+  onAddBot: () => void;
   onStartMatch: () => void;
   onCreateViewerLink?: () => Promise<string>;
   onLeaveRoom: () => void;
@@ -46,6 +47,7 @@ export function LobbyPanel({
   onRefreshPublicRooms,
   onStartSession,
   onToggleReady,
+  onAddBot,
   onStartMatch,
   onCreateViewerLink,
   onLeaveRoom,
@@ -126,10 +128,11 @@ export function LobbyPanel({
           <div className="lobby-player-seats" aria-label="Players in this room">
             {Array.from({ length: room.maxPlayers }, (_, index) => {
               const seat = room.participants.find((candidate) => candidate.role === "player" && candidate.playerIndex === index);
-              return <div key={index} className="lobby-player-seat"><span>Player {index + 1}</span><strong>{seat?.displayName ?? "Waiting to join"}</strong><small>{seat ? seat.connected ? "Connected" : "Reconnecting" : "Open seat"}</small></div>;
+              return <div key={index} className="lobby-player-seat"><span>Player {index + 1}</span><strong>{seat?.displayName ?? "Waiting to join"}</strong><small>{seat ? seat.botControlled ? "Bot" : seat.connected ? "Connected" : "Reconnecting" : "Open seat"}</small></div>;
             })}
           </div>
-          <button type="button" className="ready-button" disabled={pendingAction || room.participants.filter((candidate) => candidate.role === "player").length !== room.maxPlayers || room.participants.some((candidate) => candidate.role === "player" && !candidate.connected)} onClick={onStartMatch}>Start match</button>
+          <button type="button" className="subtle" disabled={pendingAction || room.participants.filter((candidate) => candidate.role === "player").length >= room.maxPlayers} onClick={onAddBot}>Add bot</button>
+          <button type="button" className="ready-button" disabled={pendingAction || room.participants.filter((candidate) => candidate.role === "player").length !== room.maxPlayers || room.participants.some((candidate) => candidate.role === "player" && !candidate.connected && !candidate.botControlled)} onClick={onStartMatch}>Start match</button>
           {room.participants.filter((candidate) => candidate.role === "player").length !== room.maxPlayers && <p className="lobby-waiting-note">Waiting for all {room.maxPlayers} players to join.</p>}
         </div>
       )}
