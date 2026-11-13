@@ -465,8 +465,8 @@
     overscroll-behavior:contain;
     padding:8px;
   }
-  .game-screen > header .hud-menu > summary .hud-menu-open-icon,
-  .game-screen > header .hud-menu > summary .hud-menu-close-icon { display:inline; }
+  .game-screen > header .hud-menu > summary .hud-menu-open-icon { display:inline; }
+  .game-screen > header .hud-menu > summary .hud-menu-close-icon { display:none; }
   .game-screen > header .hud-menu > summary .hud-menu-label { display:none; }
   .game-screen > header .hud-menu-items > .ghost { min-height:44px; padding:10px 12px; }
   .game-screen > header .hud-menu-items > .account-panel {
