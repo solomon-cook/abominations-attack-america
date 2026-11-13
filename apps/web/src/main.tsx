@@ -1770,11 +1770,12 @@ function App() {
               command={actionDock.command ?? (actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? undefined : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
               onPrimary={actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? selectNextMovableUnit : undefined}
               canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
-            /> : <ActionDock contextLabel={activeGame.phase} guidance={soloScenarioGuidance ?? (activeGame.phase === "deploy" ? deploymentPiece ? `Place ${deploymentPiece.typeId.replaceAll("-", " ")} on a highlighted legal location.` : "Choose a military action." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab.")}
+            /> : <ActionDock contextLabel={activeGame.phase} guidance={soloScenarioGuidance ?? (activeGame.phase === "deploy" ? deploymentPiece ? `Place ${deploymentPiece.typeId.replaceAll("-", " ")} on a highlighted legal location.` : "Deploy a unit or draw Research." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab.")}
               onPrimary={!actionDock.command ? () => { if (activeGame.phase === "deploy") { openMilitarySheet(); return; } if (activeGame.phase === "fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } if (activeGame.phase === "move" && selectableUnitIds.size) { selectNextMovableUnit(); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
               label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction}
-              secondaryLabel={activeGame.phase === "deploy" && deploymentPiece ? "Cancel placement" : undefined}
-              onSecondary={activeGame.phase === "deploy" && deploymentPiece ? () => setDeploymentPieceId(null) : undefined} />}
+              secondaryLabel={activeGame.phase === "deploy" && deploymentPiece ? "Cancel placement" : activeGame.phase === "deploy" && activeGame.deploymentsThisTurn === 0 ? activeGame.decks.research.exhausted ? "Research exhausted" : "Draw Research" : undefined}
+              secondaryDisabled={activeGame.phase === "deploy" && !deploymentPiece && (!canAct || activeGame.decks.research.exhausted)}
+              onSecondary={activeGame.phase === "deploy" && deploymentPiece ? () => setDeploymentPieceId(null) : activeGame.phase === "deploy" && activeGame.deploymentsThisTurn === 0 ? () => { setDeploymentPieceId(null); void runCommand({ type: "draw-research" }); } : undefined} />}
           </div>
           <div id="mobile-command-details" className="bottom-context-dock">
           {activeGame.pendingDecision?.type === "trophy-choice" && <MilitaryReference
