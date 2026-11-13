@@ -35,7 +35,6 @@ export function MilitaryReference({ sheet, game, choices, onSelect, trophyUnitId
   const research = game?.players[game.currentPlayer]?.researchCardIds ?? [];
   return <section className="sheet-reference" aria-label={`${sheet} reference rules`}>
     <div className="military-reference-details">
-    <p className="sheet-reference-note">Printed reference values · special abilities and research may change combat.</p>
     {deployment && <p className="deployment-reference"><b>Deploy:</b> {deployment.ownOrGuardUnits} branch or National Guard units{deployment.additionalNationalGuardUnits ? `, plus ${deployment.additionalNationalGuardUnits} National Guard` : ""}, or draw 1 Military Research card. Anyone may deploy Guard unless another player holds Guard Commander.</p>}
     </div>
     {units.map((unit) => <article key={unit.id}>
