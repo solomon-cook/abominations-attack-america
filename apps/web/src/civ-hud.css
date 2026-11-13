@@ -327,7 +327,7 @@
   .game-screen .command-station.mobile-command-expanded .record-tabs button[aria-selected="true"] { border-color: var(--civ-brass); background: #3d4b3c; }
   .game-screen .command-station.mobile-command-expanded #record-panel { display: grid; gap: 6px; }
   .game-screen .command-station.mobile-command-expanded #record-panel .record-preview { min-height: 64px; }
-  .game-screen .command-station.mobile-command-expanded > .movement-checklist { position: static; inset: auto; left: auto; right: auto; transform: none; order: 2; width: 100%; max-height: 126px; flex: 0 0 auto; overflow: auto; border: 1px solid var(--hud-border); border-radius: 6px; }
+  .game-screen .command-station.mobile-command-expanded > .movement-checklist { display: none; }
   .game-screen .command-station.mobile-command-expanded > .bottom-context-dock { position: static; inset: auto; order: 3; width: 100%; max-height: none; min-height: 0; flex: 0 1 auto; overflow: visible; border: 0; background: transparent; }
   .game-screen .command-station.mobile-command-expanded .context-tab-body { max-height: 24dvh; overflow: auto; }
   .game-screen .command-station.mobile-command-expanded > .board-action-bar { left: 0; right: 0; bottom: 0; width: 100%; }
