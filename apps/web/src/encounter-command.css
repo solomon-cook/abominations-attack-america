@@ -56,3 +56,4 @@
 .manual-reduced-motion .resolution-stage *{animation:none!important;transition:none!important}
 .resolution-stage .cinema-reward{animation-delay:.65s}
 @media(max-width:760px){.has-card .cinema-card-art img{max-height:45vh}}
+.toxicor-mutation-options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px!important;align-items:start}.toxicor-mutation-options>section{display:flex;min-width:0;flex-direction:column;align-items:center;gap:12px}.toxicor-mutation-options .cinema-digital-card{width:min(260px,100%)}.toxicor-mutation-options .cinema-primary{width:100%;padding:12px 8px}
