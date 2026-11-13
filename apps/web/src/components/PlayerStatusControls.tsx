@@ -78,21 +78,24 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
   useEffect(() => {
     const media = window.matchMedia("(max-width: 700px)");
     const update = () => {
-      setMobileViewport(media.matches);
-      setMobileRecordHost(media.matches ? document.querySelector<HTMLElement>(".mobile-record-slot") : null);
+      const isMobile = media.matches;
+      setMobileViewport(isMobile);
+      setMobileRecordHost(isMobile ? document.querySelector<HTMLElement>(".mobile-record-slot") : null);
+      if (isMobile) setTab(current => current === "map" ? "monster" : current);
     };
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
   const recordExpanded = mobileViewport ? mobileCommandExpanded : mobileRecordOpen;
-  const recordContent = <section className={`persistent-record ${recordExpanded ? "mobile-record-open" : "mobile-record-closed"}`} data-record-tab={tab} aria-label="Player record and map">
+  const recordViews: Array<typeof tab> = mobileViewport ? ["monster", "military"] : ["monster", "military", "map"];
+  const recordContent = <section className={`persistent-record ${recordExpanded ? "mobile-record-open" : "mobile-record-closed"}`} data-record-tab={tab} aria-label="Player record">
       <button
         type="button"
         className="mobile-record-toggle"
         aria-expanded={recordExpanded}
         aria-controls="record-panel"
-        aria-label={recordExpanded ? "Minimize monster, military and map record" : `Open ${monster.name}, ${ownBranch}, health ${monster.health}, infamy ${monster.infamy}`}
+        aria-label={recordExpanded ? "Minimize player record" : `Open ${monster.name}, ${ownBranch}, health ${monster.health}, infamy ${monster.infamy}`}
         onClick={() => setMobileRecordOpen((current) => !current)}
       >
         {mobileRecordOpen ? <span aria-hidden="true">×</span> : <>
@@ -104,9 +107,8 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
           <small>★ {monster.infamy}</small>
         </>}
       </button>
-      <div className="record-tabs" role="tablist" aria-label="Record view">{(["monster", "military", "map"] as const).map(view => <button key={view} role="tab" id={`record-tab-${view}`} aria-selected={tab === view} aria-controls="record-panel" tabIndex={tab === view ? 0 : -1} onClick={() => setTab(view)} onKeyDown={event => {
-        const views = ["monster", "military", "map"] as const;
-        if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); const next = views[(views.indexOf(view) + (event.key === "ArrowRight" ? 1 : 2)) % 3]; setTab(next); document.getElementById(`record-tab-${next}`)?.focus(); }
+      <div className="record-tabs" role="tablist" aria-label="Record view">{recordViews.map(view => <button key={view} role="tab" id={`record-tab-${view}`} aria-selected={tab === view} aria-controls="record-panel" tabIndex={tab === view ? 0 : -1} onClick={() => setTab(view)} onKeyDown={event => {
+        if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); const delta = event.key === "ArrowRight" ? 1 : recordViews.length - 1; const next = recordViews[(recordViews.indexOf(view) + delta) % recordViews.length]; setTab(next); document.getElementById(`record-tab-${next}`)?.focus(); }
       }}>{view === "monster" ? "Monster" : view === "military" ? "Military" : "Map"}</button>)}</div>
       <div id="record-panel" role="tabpanel" aria-labelledby={`record-tab-${tab}`}>
         {tab === "monster" && <button className="record-preview" onClick={() => setOpen("monster")} aria-label={`Open ${monster.name} monster sheet`}>
