@@ -1763,7 +1763,7 @@ function App() {
         error={error}
         open={encounterOverlayOpen && (!online || participant?.role === "player" && participant.playerIndex === encounterOverlayOwnerRef.current && decisionPlayer === encounterOverlayOwnerRef.current)}
         canAct={canAct}
-        pendingChoice={activeGame.pendingDecision?.type === "encounter-choice"}
+        pendingChoice={activeGame.pendingDecision?.type === "encounter-choice" || activeGame.pendingDecision?.type === "mutation-choice"}
         monsterName={activePlayer.name}
         locationName={activeLocation?.name ?? activePlayer.location}
         eventId={lastEncounterEvent?.id}
@@ -1774,6 +1774,12 @@ function App() {
         choiceSource={encounterChoiceSource}
         mutationDraws={encounterMutationDraws}
         mutationCardId={encounterMutationDraws.some((draw) => draw.cardDrawn) ? encounterRevealCard : undefined}
+        mutationChoiceCardIds={activeGame.pendingDecision?.type === "mutation-choice" && activeGame.pendingMutationChoice?.source === "mutation-site" ? activeGame.pendingDecision.cardIds : []}
+        onMutationChoice={async (cardId) => {
+          await runCommand({ type: "choose-mutation-card", cardId });
+          setEncounterOverlayOpen(false);
+          encounterOverlayOwnerRef.current = undefined;
+        }}
         onReveal={() => void runCommand({ type: "resolve-encounter" })}
         onChoice={(choice) => void runCommand({ type: "resolve-encounter", choice })}
         onClose={() => { setEncounterOverlayOpen(false); encounterOverlayOwnerRef.current = undefined; }}
