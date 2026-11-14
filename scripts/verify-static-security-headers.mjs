@@ -22,6 +22,11 @@ for (const directive of ["default-src 'self'", "script-src 'self'", "object-src 
   assert.ok(csp.split(";").some((part) => part.trim() === directive), `CSP must include ${directive}.`);
 }
 assert.ok(!/(?:^|\s)'unsafe-(?:eval|inline)'(?:\s|$)/.test(csp.match(/script-src[^;]*/)?.[0] ?? ""), "CSP script-src must not permit inline or evaluated scripts.");
-assert.ok(csp.split(";").some((part) => part.trim() === "connect-src 'self' ws: wss:"), "CSP must limit network connections to the app and WebSocket transports.");
+const connectSource = csp.split(";").find((part) => part.trim().startsWith("connect-src "))?.trim();
+assert.equal(
+  connectSource,
+  "connect-src 'self' https://*.convex.cloud https://*.convex.site ws: wss:",
+  "CSP must allow same-origin, Convex HTTPS, and WebSocket transports only.",
+);
 
 console.log("Vercel static responses apply the reviewed CSP and baseline transport, framing, MIME, referrer, and permissions headers.");

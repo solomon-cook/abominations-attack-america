@@ -3,7 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "vite", "build": "vite build && node ../../scripts/verify-web-api-origin-build.mjs", "typecheck": "tsc --noEmit" },
-  "dependencies": { "@abominations/game-engine": "*", "@abominations/shared": "*", "vite": "latest", "typescript": "latest", "react": "latest", "react-dom": "latest" },
-  "devDependencies": { "@types/node": "latest", "@types/react": "latest", "@types/react-dom": "latest" }
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node ../../scripts/verify-web-api-origin-build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@abominations/game-engine": "*",
+    "@abominations/shared": "*",
+    "convex": "^1.50.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
 }

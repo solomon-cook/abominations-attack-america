@@ -32,6 +32,8 @@ import {
   createRoom,
   createViewerInvite,
   createWebSocketTicket,
+  convexRealtimeEnabled,
+  heartbeatRoom,
   joinRoom,
   listPublicRooms,
   markDisconnected,
@@ -41,6 +43,7 @@ import {
   sendCommand,
   sendSetupAction,
   setReady,
+  subscribeRoom,
   startMatch,
   spectateRoom,
   websocketUrl,
@@ -700,6 +703,37 @@ function App() {
 
   useEffect(() => {
     if (!session || !room) return;
+    if (convexRealtimeEnabled) {
+      let cancelled = false;
+      let unsubscribe: (() => void) | undefined;
+      let heartbeat: ReturnType<typeof setInterval> | undefined;
+      setConnectionState("reconnecting");
+      void markReconnected(room.code, session.token).then((restoredRoom) => {
+        if (cancelled) return;
+        updateRoomSnapshot(restoredRoom);
+        unsubscribe = subscribeRoom(room.code, session.token, (nextRoom) => {
+          if (cancelled) return;
+          updateRoomSnapshot(nextRoom);
+          setConnectionState("online");
+        }, () => {
+          if (!cancelled) setConnectionState("stale");
+        });
+        heartbeat = setInterval(() => {
+          void heartbeatRoom(room.code, session.token).catch(() => {
+            if (!cancelled) setConnectionState("stale");
+          });
+        }, 25_000);
+        setConnectionState("online");
+      }).catch(() => {
+        if (!cancelled) setConnectionState("stale");
+      });
+      return () => {
+        cancelled = true;
+        unsubscribe?.();
+        if (heartbeat) clearInterval(heartbeat);
+        void markDisconnected(room.code, session.token).catch(() => undefined);
+      };
+    }
     let socket: WebSocket | undefined;
     let commandChannel: RoomCommandChannel | undefined;
     let polling: ReturnType<typeof setInterval> | undefined;
@@ -1430,6 +1464,7 @@ function App() {
         onToggleReady={() => undefined}
         onStartMatch={() => undefined}
         onLeaveRoom={() => undefined}
+        onAddBot={() => void addBotToRoom()}
         rulesOpen={homeRulesOpen}
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
         onStartLocal={resetLocal}
@@ -1449,7 +1484,7 @@ function App() {
     return <main className="pre-match-lobby">
       <header className="home-masthead"><span className="home-wordmark">AAA</span><span className="home-edition">A game of monsters &amp; military might</span></header>
       <section className="pre-match-lobby-heading"><p className="home-kicker">MULTIPLAYER ROOM</p><h1>Waiting room</h1><p>Share this code with your friends. The match begins when someone starts it.</p><div className="pre-match-room-code" aria-label={`Room code ${room.code}`}>{room.code}</div></section>
-      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={setRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} />
+      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={setRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} onAddBot={() => void addBotToRoom()} />
     </main>;
   }
 

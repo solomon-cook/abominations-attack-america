@@ -113,6 +113,13 @@
     "verify:card-ui-coverage": "tsx scripts/verify-card-ui-coverage.ts",
     "verify:ui": "npm run verify:card-ui-coverage && npm run verify:cutbacks-ui && npm run verify:mutation-ui && npm run verify:stabilizer-ray-ui && npm run verify:laser-fence-ui && npm run verify:chopper-lift-ui && npm run verify:fins-and-gills-ui && npm run verify:atomic-recovery-ui && npm run verify:atomic-breath-ui && npm run verify:iron-stomach-ui && npm run verify:whip-tentacles-ui && npm run verify:military-deployment-ui && npm run verify:movement-queue-ui && npm run verify:encounter-ui && npm run verify:selected-piece-ui && npm run verify:pending-decision-ui && npm run verify:high-octane-blood-ui && npm run verify:winged-horror-ui && npm run verify:kinda-friendly-ui && npm run verify:laser-beam-eyes-ui && npm run verify:armored-scales-ui && npm run verify:fusion-cells-ui && npm run verify:blonde-lure-ui && npm run verify:anti-mutagen-ui && npm run verify:scientific-analysis-ui && npm run verify:its-a-robot-ui && npm run verify:defense-satellites-ui && npm run verify:antimatter-ui && npm run verify:rampage-ui && npm run verify:radiation-field-ui && npm run verify:war-spikes-ui && npm run verify:toxicor-ui && npm run verify:molecular-cannon-ui",
     "prisma:generate": "npm --workspace @abominations/api run prisma:generate",
+    "convex:dev": "convex dev",
+    "convex:codegen": "convex codegen --typecheck enable",
+    "convex:deploy": "convex deploy",
+    "test:convex": "tsx --test convex/*.test.ts",
+    "test:convex-proxy": "tsx --test api/convex-proxy.test.ts",
+    "test:convex-migration": "tsx --test scripts/convex-migration-integrity.test.ts",
+    "convex:export-migration": "tsx scripts/export-convex-migration.ts",
     "api:build": "npm --workspace @abominations/api run build",
     "api:start": "npm --workspace @abominations/api run start",
     "prisma:validate": "prisma validate --config apps/api/prisma.config.ts",
@@ -127,6 +134,7 @@
     "board-art:build": "node scripts/build-board-art-guides.mjs && node scripts/assemble-reviewed-board.mjs && node scripts/slice-continuous-board.mjs --source=output/board-art/seamless-board-reviewed.png && node scripts/finalize-audited-art-review.mjs && npm run board-audited-assets:verify"
   },
   "devDependencies": {
+    "convex-test": "^0.0.71",
     "playwright": "^1.63.0",
     "sharp": "^0.35.4"
   },
@@ -134,5 +142,8 @@
     "deepmerge-ts": "^8.0.0",
     "mysql2": "^3.24.1",
     "fast-uri": "^3.1.9"
+  },
+  "dependencies": {
+    "convex": "^1.50.0"
   }
 }

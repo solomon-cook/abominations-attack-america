@@ -1,8 +1,32 @@
 import { COMMAND_PROTOCOL_VERSION, type GameCommand, type GameCommandEnvelope, type SetupAction } from "@abominations/game-engine";
 import type { AccountGameSummary, AccountPrivacySettings, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, PublicReplayExport, PublicReplayPage, PublicRoomSummary, RoomPrivacy, RoomSocketServerMessage, RoomView, SessionResponse, SocialSummary } from "@abominations/shared";
+import { ConvexClient } from "convex/browser";
+import { api as convexApi } from "../../../convex/_generated/api.js";
 import { resolveApiBaseUrl } from "./api-origin";
 
-const API_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL, import.meta.env.DEV ? "http://localhost:8787" : `${window.location.origin}/api`);
+const convexUrl = import.meta.env.VITE_CONVEX_URL || __APP_CONVEX_URL__;
+const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL || __APP_CONVEX_SITE_URL__;
+export const convexRealtimeEnabled = Boolean(convexUrl);
+const explicitApiOrigin = convexRealtimeEnabled && (!import.meta.env.DEV || convexSiteUrl) ? undefined : import.meta.env.VITE_API_URL;
+const API_URL = resolveApiBaseUrl(explicitApiOrigin, import.meta.env.DEV ? (convexSiteUrl ? "/api" : "http://localhost:8787") : `${window.location.origin}/api`);
+let convexClient: ConvexClient | undefined;
+function getConvexClient() {
+  if (!convexUrl) throw new Error("Convex is not configured for this web build.");
+  return convexClient ??= new ConvexClient(convexUrl);
+}
+async function hashRoomToken(token: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+export function subscribeRoom(code: string, token: string, onUpdate: (room: RoomView) => void, onError: (error: Error) => void) {
+  let disposed = false;
+  let unsubscribe: (() => void) | undefined;
+  void hashRoomToken(token).then((tokenHash) => {
+    if (disposed) return;
+    unsubscribe = getConvexClient().onUpdate(convexApi.rooms.read, { code: code.toUpperCase(), tokenHash, afterVersion: 0 }, onUpdate, onError);
+  }).catch((error) => onError(error instanceof Error ? error : new Error("Could not subscribe to the room.")));
+  return () => { disposed = true; unsubscribe?.(); };
+}
 const connectionId = () => {
   const key = "abominations-connection-id";
   const existing = sessionStorage.getItem(key);
@@ -27,6 +51,7 @@ export const spectateRoom = (code: string, displayName: string, viewerToken?: st
 export const createViewerInvite = (code: string, token: string) => request<{ token: string; expiresAt: string }>(`/rooms/${code.toUpperCase()}/viewer-link`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const markDisconnected = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/disconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
 export const markReconnected = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/reconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
+export const heartbeatRoom = (code: string, token: string) => request<{ ok: true; at: number }>(`/rooms/${code.toUpperCase()}/heartbeat`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
 export const rotateSession = (code: string, token: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/rotate-session`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const claimRoomSeat = (code: string, token: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/claim`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const createWebSocketTicket = (code: string, token: string) => request<{ ticket: string }>(`/rooms/${code.toUpperCase()}/ws-ticket`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });

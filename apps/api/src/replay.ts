@@ -32,7 +32,7 @@ export function getCachedReplayFrames(key: string, version: number): ReplayFrame
 }
 
 export function cacheReplayFrames(key: string, version: number, frames: ReplayFrame[]): void {
-  const bytes = Buffer.byteLength(JSON.stringify(frames));
+  const bytes = new TextEncoder().encode(JSON.stringify(frames)).byteLength;
   if (bytes > MAX_REPLAY_CACHE_ENTRY_BYTES) return;
   const previous = replayFrameCache.get(key);
   if (previous) {
