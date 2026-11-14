@@ -12,5 +12,5 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true
   },
-  "include": ["./schema.ts", "./rooms.ts", "./accounts.ts", "./accountAuth.ts", "./accountData.ts", "./crons.ts", "./replays.ts", "./requestLimits.ts", "./errorReports.ts", "./http.ts", "./_generated/**/*.ts", "../packages/game-engine/src/index.ts", "../packages/shared/src/index.ts", "../apps/api/src/player-stats.ts", "../apps/api/src/replay.ts"]
+  "include": ["./schema.ts", "./rooms.ts", "./accounts.ts", "./accountAuth.ts", "./accountData.ts", "./crons.ts", "./replays.ts", "./requestLimits.ts", "./errorReports.ts", "./http.ts", "./*.test.ts", "./_generated/**/*.ts", "../packages/game-engine/src/index.ts", "../packages/shared/src/index.ts", "../apps/api/src/player-stats.ts", "../apps/api/src/replay.ts"]
 }

@@ -28,6 +28,7 @@ test("account registration, email verification, and imported password hashes sup
   const t = convexTest(schema, modules);
   const registered = await t.action(internal.accountAuth.register, { emailInput: " Test@Example.com ", password: "a-long-test-password" });
   assert.equal(registered.account.emailVerified, false);
+  assert.ok(registered.developmentLink);
   assert.match(registered.developmentLink, /verify-email=/);
   const verificationToken = new URL(registered.developmentLink).searchParams.get("verify-email")!;
   const verified = await t.action(internal.accountAuth.verifyEmail, { value: verificationToken });
@@ -44,6 +45,7 @@ test("account registration, email verification, and imported password hashes sup
   await t.mutation(internal.accountData.updatePrivacy, { userId: login.account.id, publicStatsEnabled: true });
   assert.equal((await t.query(internal.accountData.privacy, { userId: login.account.id })).publicStatsEnabled, true);
   const registeredFriend = await t.action(internal.accountAuth.register, { emailInput: "friend@example.com", password: "another-long-password" });
+  assert.ok(registeredFriend.developmentLink);
   const friendToken = new URL(registeredFriend.developmentLink).searchParams.get("verify-email")!;
   await t.action(internal.accountAuth.verifyEmail, { value: friendToken });
   await t.mutation(internal.accountData.sendFriendInvitation, { userId: login.account.id, usernameInput: registeredFriend.account.username });
@@ -89,6 +91,77 @@ test("account HTTP routes set, authenticate, and clear the first-party session c
   assert.equal(logoutResponse.status, 200);
   assert.match(logoutResponse.headers.get("set-cookie") ?? "", /Max-Age=0/);
   assert.equal((await t.fetch("/accounts/me", { headers: { ...headers, cookie } })).status, 401);
+});
+
+test("account HTTP routes preserve privacy choices, social ownership, password reset, and deletion", async () => {
+  const t = convexTest(schema, modules);
+  const baseHeaders = { "content-type": "application/json", origin: "http://localhost:5173" };
+  async function createVerifiedAccount(email: string, password: string) {
+    const registrationResponse = await t.fetch("/accounts/register", { method: "POST", headers: baseHeaders, body: JSON.stringify({ email, password }) });
+    assert.equal(registrationResponse.status, 201);
+    const registration = await registrationResponse.json() as { developmentLink: string };
+    const token = new URL(registration.developmentLink).searchParams.get("verify-email")!;
+    const verificationResponse = await t.fetch("/accounts/verify-email", { method: "POST", headers: baseHeaders, body: JSON.stringify({ token }) });
+    assert.equal(verificationResponse.status, 200);
+    const verified = await verificationResponse.json() as { account: { id: string; username: string; emailVerified: boolean } };
+    const cookie = verificationResponse.headers.get("set-cookie")?.split(";")[0];
+    assert.ok(cookie);
+    return { account: verified.account, cookie: cookie! };
+  }
+
+  const alice = await createVerifiedAccount("privacy-owner@example.com", "a-long-privacy-password");
+  const bob = await createVerifiedAccount("privacy-friend@example.com", "another-long-privacy-password");
+  const aliceHeaders = { ...baseHeaders, cookie: alice.cookie };
+  const bobHeaders = { ...baseHeaders, cookie: bob.cookie };
+
+  const initialPrivacy = await t.fetch("/accounts/me/privacy", { headers: aliceHeaders }).then((response) => response.json()) as { publicStatsEnabled: boolean };
+  assert.equal(initialPrivacy.publicStatsEnabled, true);
+  const privatePrivacy = await t.fetch("/accounts/me/privacy", { method: "PATCH", headers: aliceHeaders, body: JSON.stringify({ publicStatsEnabled: false }) }).then((response) => response.json()) as { publicStatsEnabled: boolean };
+  assert.equal(privatePrivacy.publicStatsEnabled, false);
+  assert.equal((await t.fetch(`/players/${encodeURIComponent(alice.account.username)}`, { headers: baseHeaders })).status, 404);
+  const privateLeaderboard = await t.fetch("/leaderboard?category=wins", { headers: baseHeaders }).then((response) => response.json()) as Array<{ username: string }>;
+  assert.equal(privateLeaderboard.some((entry) => entry.username === alice.account.username), false);
+
+  await t.fetch("/accounts/me/privacy", { method: "PATCH", headers: aliceHeaders, body: JSON.stringify({ publicStatsEnabled: true }) });
+  const publicProfileResponse = await t.fetch(`/players/${encodeURIComponent(alice.account.username)}`, { headers: baseHeaders });
+  assert.equal(publicProfileResponse.status, 200);
+  const publicProfile = await publicProfileResponse.json() as Record<string, unknown>;
+  assert.equal(publicProfile.username, alice.account.username);
+  assert.equal(JSON.stringify(publicProfile).includes("privacy-owner@example.com"), false);
+  const publicLeaderboard = await t.fetch("/leaderboard?category=wins", { headers: baseHeaders }).then((response) => response.json()) as Array<{ username: string }>;
+  assert.equal(publicLeaderboard.some((entry) => entry.username === alice.account.username), true);
+  assert.equal(JSON.stringify(publicLeaderboard).includes("privacy-owner@example.com"), false);
+
+  await t.fetch("/accounts/me/friends/invitations", { method: "POST", headers: aliceHeaders, body: JSON.stringify({ username: bob.account.username }) });
+  const bobSocialResponse = await t.fetch("/accounts/me/social", { headers: bobHeaders });
+  assert.equal(bobSocialResponse.status, 200);
+  const bobSocial = await bobSocialResponse.json() as { incoming: Array<{ id: string; username: string }>; friends: Array<{ username: string; online: boolean }> };
+  assert.equal(bobSocial.incoming.length, 1);
+  assert.equal(bobSocial.incoming[0]?.username, alice.account.username);
+  assert.equal(JSON.stringify(bobSocial).includes("privacy-owner@example.com"), false);
+
+  const acceptResponse = await t.fetch(`/accounts/me/friends/invitations/${encodeURIComponent(bobSocial.incoming[0]!.id)}/accept`, { method: "POST", headers: bobHeaders, body: "{}" });
+  assert.equal(acceptResponse.status, 200);
+  const aliceSocialResponse = await t.fetch("/accounts/me/social", { headers: aliceHeaders });
+  const aliceSocial = await aliceSocialResponse.json() as { friends: Array<{ username: string }> };
+  assert.deepEqual(aliceSocial.friends.map((friend) => friend.username), [bob.account.username]);
+
+  const resetResponse = await t.fetch("/accounts/password-reset", { method: "POST", headers: baseHeaders, body: JSON.stringify({ email: "privacy-owner@example.com" }) });
+  const reset = await resetResponse.json() as { developmentLink: string };
+  const resetToken = new URL(reset.developmentLink).searchParams.get("reset-password")!;
+  const completeReset = await t.fetch("/accounts/password-reset/complete", { method: "POST", headers: baseHeaders, body: JSON.stringify({ token: resetToken, password: "a-new-privacy-password" }) });
+  assert.equal(completeReset.status, 200);
+  assert.equal((await t.fetch("/accounts/me", { headers: aliceHeaders })).status, 401);
+  const loginResponse = await t.fetch("/accounts/login", { method: "POST", headers: baseHeaders, body: JSON.stringify({ email: "privacy-owner@example.com", password: "a-new-privacy-password" }) });
+  assert.equal(loginResponse.status, 200);
+  const loginCookie = loginResponse.headers.get("set-cookie")?.split(";")[0];
+  assert.ok(loginCookie);
+
+  const deleteResponse = await t.fetch("/accounts/me", { method: "DELETE", headers: { ...baseHeaders, cookie: loginCookie! } });
+  assert.equal(deleteResponse.status, 200);
+  assert.equal((await t.fetch("/accounts/me", { headers: { ...baseHeaders, cookie: loginCookie! } })).status, 401);
+  const bobAfterDeletion = await t.fetch("/accounts/me/social", { headers: bobHeaders }).then((response) => response.json()) as { friends: Array<{ username: string }> };
+  assert.deepEqual(bobAfterDeletion.friends, []);
 });
 
 test("Convex HTTP adapter enforces a shared per-address request limit", async () => {
