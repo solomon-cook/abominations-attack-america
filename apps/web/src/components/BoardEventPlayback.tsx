@@ -4,7 +4,7 @@ import { isHexKey, type BattleAttack, type BoardDefinition, type GameLogEntry, t
 import { DieCube } from "./DieCube";
 import { isRoutineCityStompEvent, type RoutineCityStomp } from "../routine-stomp";
 import { militaryArt, readBattleAttacks } from "./combat-presentation";
-import { monsterPortrait } from "./ResolutionStage";
+import { CardReveal, monsterPortrait, ResolutionStage } from "./ResolutionStage";
 
 type Props = {
   matchId: string;
@@ -26,7 +26,8 @@ type Props = {
 type BoardEvent = GameLogEntry & { detail: Record<string, unknown> };
 type Position = { x: number; y: number; above: boolean };
 type Reward = { type: string; amount: number; source?: string };
-type MutationDraw = { cardDrawn: boolean; siteId?: string };
+type MutationDraw = { cardDrawn: boolean; siteId?: string; cardId?: string };
+type MutationReveal = { id: string; playerIndex: number; monsterName: string; cardId: string };
 
 function numberList(value: unknown): number[] {
   return Array.isArray(value) ? value.filter((entry): entry is number => typeof entry === "number" && Number.isFinite(entry)) : [];
@@ -71,6 +72,36 @@ export function newBattleAttacks(event: GameLogEntry, events: readonly GameLogEn
   return attacks.slice(Math.min(previousCount, attacks.length));
 }
 
+function mutationRevealsForEvent(event: GameLogEntry, events: readonly GameLogEntry[], monsters: GameState["monsters"]): MutationReveal[] {
+  const reveal = (suffix: string, cardId: unknown, playerIndex: number | undefined): MutationReveal[] => {
+    if (typeof cardId !== "string" || playerIndex === undefined || !monsters[playerIndex]) return [];
+    return [{ id: `${event.id}:${suffix}`, playerIndex, monsterName: monsters[playerIndex].name, cardId }];
+  };
+  const ownerFromMonsterId = (monsterId: unknown) => typeof monsterId === "string"
+    ? monsters.findIndex((monster) => monster.id === monsterId)
+    : -1;
+  const ownerIndex = eventPlayerIndex(event);
+  const draws = mutationDrawList(event.detail.mutationDraws);
+  const siteReveals = draws.flatMap((draw, index) => draw.cardDrawn
+    ? reveal(`site-${draw.siteId ?? index}`, draw.cardId, ownerIndex)
+    : []);
+  if (event.action === "mutation.choice") {
+    return [...siteReveals, ...reveal("choice", event.detail.mutationCardId, ownerFromMonsterId(event.detail.monsterId))];
+  }
+  if (event.action === "fight.resolved" || event.action === "battle.target-required") {
+    const attackReveals = newBattleAttacks(event, events).flatMap((attack, index) => {
+      const playerIndex = ownerFromMonsterId(attack.targetId);
+      return [
+        ...reveal(`attack-${index}`, attack.mutationCardId, playerIndex),
+        ...reveal(`antimatter-${index}`, attack.antimatterMutationCardId, playerIndex),
+        ...reveal(`stabilizer-${index}`, attack.stabilizerMutationCardId, playerIndex),
+      ];
+    });
+    return [...siteReveals, ...attackReveals];
+  }
+  return siteReveals;
+}
+
 function battleOutcome(attack: BattleAttack): { kind: string; label: string } {
   if (!attack.hit) return { kind: "is-miss", label: "MISS" };
   if (attack.targetHealthBefore !== undefined && attack.targetHealthAfter !== undefined) {
@@ -89,12 +120,14 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
   const initializedMatch = useRef(matchId);
   const seenEvents = useRef(new Set<string>());
   const [queue, setQueue] = useState<BoardEvent[]>([]);
+  const [mutationRevealQueue, setMutationRevealQueue] = useState<MutationReveal[]>([]);
   const [shownDice, setShownDice] = useState(0);
   const [shownAttack, setShownAttack] = useState<{ eventId: string; index: number }>();
   const [outcomeEventId, setOutcomeEventId] = useState<string>();
   const [position, setPosition] = useState<Position>();
   const playbackRef = useRef<HTMLDivElement>(null);
   const current = queue[0];
+  const currentMutationReveal = mutationRevealQueue[0];
   const rolls = useMemo(() => current ? numberList(current.detail.rolls) : [], [current]);
   const attacks = useMemo(() => current && (current.action === "fight.resolved" || current.action === "battle.target-required") ? newBattleAttacks(current, events) : [], [current, events]);
   const effects = useMemo(() => current ? rewardList(current.detail.effects) : [], [current]);
@@ -142,6 +175,7 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
       initializedMatch.current = matchId;
       seenEvents.current = new Set(events.map((event) => `${matchId}:${event.id}`));
       setQueue([]);
+      setMutationRevealQueue([]);
       return;
     }
     const fresh = events.filter((event) => {
@@ -151,6 +185,9 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
       return true;
     });
     if (!enabled) return;
+    const mutationReveals = fresh.flatMap((event) => mutationRevealsForEvent(event, events, monsters))
+      .filter((reveal) => spectator || viewerPlayerIndex !== reveal.playerIndex);
+    if (mutationReveals.length) setMutationRevealQueue((existing) => [...existing, ...mutationReveals]);
     const presentations = fresh.filter((event): event is BoardEvent => {
       if (!isBoardPresentationEvent(event) && event.action !== "fight.resolved" && event.action !== "battle.target-required") return false;
       const owner = eventPlayerIndex(event);
@@ -160,10 +197,10 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
       return owner !== undefined && (spectator || owner !== viewerPlayerIndex || isRoutineCityStompEvent(event, events, board));
     });
     if (presentations.length) setQueue((existing) => [...existing, ...presentations]);
-  }, [board, botPlayback, enabled, events, matchId, spectator, viewerPlayerIndex]);
+  }, [board, botPlayback, enabled, events, matchId, monsters, spectator, viewerPlayerIndex]);
 
   useEffect(() => {
-    if (!current) return;
+    if (!current || currentMutationReveal) return;
     let timer: number;
     let revealed = 0;
     setShownDice(0);
@@ -195,7 +232,7 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
       timer = window.setTimeout(revealNext, 150);
     }
     return () => window.clearTimeout(timer);
-  }, [attacks.length, current?.id, isFightPlayback, reducedMotion, rolls.length]);
+  }, [attacks.length, current?.id, currentMutationReveal?.id, isFightPlayback, reducedMotion, rolls.length]);
 
   useEffect(() => {
     if (!current && !routineStomp) return;
@@ -258,13 +295,19 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
     return () => cancelAnimationFrame(frame);
   }, [current?.id, presentationLocationKey, Boolean(routineStomp)]);
 
-  if ((!current && !routineStomp) || !position || typeof document === "undefined") return null;
+  if (typeof document === "undefined") return null;
+  const dismissMutationReveal = () => setMutationRevealQueue((existing) => existing.slice(1));
+  if ((!current && !routineStomp) || !position) {
+    return currentMutationReveal ? createPortal(<MutationRevealStage key={currentMutationReveal.id} reveal={currentMutationReveal} onDismiss={dismissMutationReveal} />, document.body) : null;
+  }
   const visibleRolls = rolls.slice(0, shownDice);
   const attacker = currentAttack ? combatant(currentAttack.attackerId) : undefined;
   const target = currentAttack ? combatant(currentAttack.targetId) : undefined;
   const labels = [playerName, locationName, ...effects.map((effect) => `${effect.type} ${effect.amount > 0 ? "+" : ""}${effect.amount}`), ...cards.map((card) => card.label)].filter(Boolean);
   const prompt = !current ? routineStomp : undefined;
-  return createPortal(<div
+  return createPortal(<>
+    {currentMutationReveal && <MutationRevealStage key={currentMutationReveal.id} reveal={currentMutationReveal} onDismiss={dismissMutationReveal} />}
+    <div
     ref={playbackRef}
     className={`board-event-playback${position.above ? " is-above" : ""}${reducedMotion ? " reduced-motion" : ""}${prompt ? " is-interactive" : ""}`}
     style={{ left: `${position.x}px`, top: `${position.y}px` }}
@@ -317,7 +360,29 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
         {outcomeText && <span className="board-event-note">{outcomeText}</span>}
       </div>}
     </> : null}
-  </div>, document.body);
+    </div>
+  </>, document.body);
+}
+
+function MutationRevealStage({ reveal, onDismiss }: { reveal: MutationReveal; onDismiss: () => void }) {
+  const [revealed, setRevealed] = useState(false);
+  const dismissRef = useRef<HTMLButtonElement>(null);
+  const handleRevealed = () => {
+    setRevealed(true);
+    window.requestAnimationFrame(() => dismissRef.current?.focus());
+  };
+  return <ResolutionStage
+    title={`${reveal.monsterName} gained a Mutation`}
+    eyebrow={`PLAYER ${reveal.playerIndex + 1} · NEW CARD`}
+    onClose={onDismiss}
+    variant="mutation-reveal"
+  >
+    <div className="mutation-reveal-content">
+      <CardReveal cardId={reveal.cardId} kind="mutation" autoReveal onRevealed={handleRevealed} />
+      <p aria-live="polite">{revealed ? `${reveal.monsterName} drew ${reveal.cardId}.` : `${reveal.monsterName} drew a Mutation card.`}</p>
+      <button ref={dismissRef} className="mutation-reveal-dismiss" type="button" disabled={!revealed} onClick={onDismiss}>Dismiss</button>
+    </div>
+  </ResolutionStage>;
 }
 
 function BattleActor({ actor, side, impact }: { actor: { name: string; image?: string; kind: "monster" | "unit" | "unknown" }; side: "attacker" | "target"; impact?: string }) {
