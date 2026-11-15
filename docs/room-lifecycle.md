@@ -11,7 +11,7 @@ The room stores expose explicit `disconnect` and `reconnect` transitions for a p
 | active | every player disconnects | The room becomes abandoned. |
 | abandoned | all ready players reconnect | The room becomes active again. |
 | completed | disconnect/reconnect | The terminal state remains completed. |
-| any non-terminal room | no activity for 24 hours | The room becomes expired and cannot be rejoined or resumed. |
+| any non-terminal room | no activity for 24 hours | The room expires; stale unfinished rooms are deleted on the next room discovery or creation request. Account-linked rooms and completed match history are retained. |
 
 The web client marks the participant disconnected when its WebSocket fails or closes, marks it reconnected when the socket is restored, and uses one guarded polling interval while the socket is unavailable. Each browser tab uses a session-scoped connection lease; a stale close from another tab cannot clear the newer lease. Commands remain revision-checked and action-idempotent across tabs. The Memory and Prisma stores implement the same status rules.
 
@@ -23,7 +23,7 @@ When setup is complete and every seat is ready, the stores apply the selected se
 
 Prisma room reads inspect the newest retained event suffix before applying the requested event cursor. If the latest event revision differs from the snapshot or retained versions contain a gap, the API reports a redacted divergence metric and alert event once per room/revision while continuing to return the authoritative snapshot. This keeps pre-existing rooms readable while making their event-history gaps visible to operations.
 
-The expiry window is an operational policy, not a game rule: `ROOM_IDLE_TIMEOUT_MS` is 24 hours, and meaningful room activity refreshes the deadline. Disconnect/reconnect does not bypass an expired room.
+The expiry window is an operational policy, not a game rule: `ROOM_IDLE_TIMEOUT_MS` is 24 hours, and meaningful room activity refreshes the deadline. Disconnect/reconnect does not bypass an expired room. Stale unfinished rooms without account-linked participants are pruned when rooms are listed or created; completed rooms and rooms linked to accounts are retained.
 
 ## Session and access policy
 

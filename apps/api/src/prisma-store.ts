@@ -58,6 +58,7 @@ export class PrismaRoomStore implements RoomStore {
   }
 
   async createRoom(maxPlayers: number, displayName = "Player 1", privacy: RoomPrivacy = "private"): Promise<SessionResponse> {
+    await this.pruneIdleRooms();
     const accessToken = token();
     const roomCode = code();
     const seed = this.testRoomSeed ?? gameSeed();
@@ -73,6 +74,7 @@ export class PrismaRoomStore implements RoomStore {
   }
 
   async listPublicRooms(): Promise<PublicRoomSummary[]> {
+    await this.pruneIdleRooms();
     const rooms = await this.prismaClient.gameRoom.findMany({
       where: { privacy: "PUBLIC", status: { in: ["WAITING", "ACTIVE"] }, lastActivityAt: { gt: new Date(Date.now() - ROOM_IDLE_TIMEOUT_MS) } },
       orderBy: { lastActivityAt: "desc" },
@@ -86,6 +88,17 @@ export class PrismaRoomStore implements RoomStore {
       playerCount: room.participants.filter((participant) => participant.role === "PLAYER").length,
       spectatorCount: room.participants.filter((participant) => participant.role === "SPECTATOR").length,
     }));
+  }
+
+  private async pruneIdleRooms(): Promise<void> {
+    const cutoff = new Date(Date.now() - ROOM_IDLE_TIMEOUT_MS);
+    await this.prismaClient.gameRoom.deleteMany({
+      where: {
+        status: { not: "COMPLETED" },
+        lastActivityAt: { lt: cutoff },
+        participants: { none: { userId: { not: null } } },
+      },
+    });
   }
 
   async joinRoom(roomCode: string, displayName: string) {

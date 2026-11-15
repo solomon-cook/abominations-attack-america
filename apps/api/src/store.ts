@@ -119,6 +119,7 @@ export class MemoryRoomStore implements RoomStore {
   async health(): Promise<{ persistence: "memory" }> { return { persistence: "memory" }; }
 
   async createRoom(maxPlayers: number, displayName = "Player 1", privacy: RoomPrivacy = "private"): Promise<SessionResponse> {
+    this.pruneIdleRooms();
     const id = randomBytes(12).toString("hex");
     const roomCode = code();
     const seed = this.testRoomSeed ?? gameSeed();
@@ -133,6 +134,7 @@ export class MemoryRoomStore implements RoomStore {
   }
 
   async listPublicRooms(): Promise<PublicRoomSummary[]> {
+    this.pruneIdleRooms();
     for (const room of this.rooms.values()) this.refreshStatus(room);
     return [...this.rooms.values()]
       .filter((room) => room.privacy === "public" && (room.status === "waiting" || room.status === "active"))
@@ -569,6 +571,13 @@ export class MemoryRoomStore implements RoomStore {
     const participant: StoredParticipant = { id: randomBytes(10).toString("hex"), displayName: displayName.trim().slice(0, 32) || "Player", role, playerIndex, connected: true, ready: false, botControlled: false, botAssisted: false, tokenHash: hash(accessToken), sessionExpiresAt: sessionExpiresAt().getTime() };
     room.participants.push(participant);
     return { room: this.view(room), participantId: participant.id, token: accessToken };
+  }
+
+  private pruneIdleRooms(): void {
+    const cutoff = Date.now() - ROOM_IDLE_TIMEOUT_MS;
+    for (const [roomCode, room] of this.rooms) {
+      if (room.status !== "completed" && room.lastActivityAt < cutoff) this.rooms.delete(roomCode);
+    }
   }
 
   private authorize(roomCode: string, accessToken: string) {
