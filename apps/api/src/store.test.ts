@@ -1026,6 +1026,33 @@ test("bot-completed setup records chronological setup and match-start events", a
   await store.close();
 });
 
+test("a started match continues the active bot turn while room status is waiting", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  const guest = await store.joinRoom(host.room.code, "Guest");
+  const internal = (store as unknown as { rooms: Map<string, any> }).rooms.get(host.room.code)!;
+  internal.matchStarted = true;
+  internal.status = "waiting";
+  internal.participants[0].connected = false;
+  internal.participants[0].disconnectedAt = Date.now();
+  internal.participants[1].connected = false;
+  internal.participants[1].botControlled = true;
+  internal.state.setupState = { ...internal.state.setupState, phase: "complete" };
+  internal.state.setupApplied = true;
+  internal.state.currentPlayer = 1;
+  internal.state.pendingDecision = { type: "monster-movement", playerIndex: 1, pieceId: internal.state.monsters[1].id };
+  const beforeVersion = internal.version;
+
+  const updated = await store.processBotTakeovers();
+  const room = await store.getRoom(host.room.code, host.token);
+  assert.deepEqual(updated, [host.room.code]);
+  assert.ok(room.version > beforeVersion);
+  assert.ok(room.events.some((event) => event.controlSource === "bot" && event.version > beforeVersion));
+  const tomanagiMove = room.events.find((event) => event.type === "monster.moved" && event.controlSource === "bot");
+  assert.ok(tomanagiMove, "the Player 2 Tomanagi bot should move instead of remaining stuck");
+  await store.close();
+});
+
 test("an authenticated active player can play Molecular Cannon through the online room command path", async () => {
   const store = new MemoryRoomStore(true);
   const host = await store.createRoom(2, "Host");

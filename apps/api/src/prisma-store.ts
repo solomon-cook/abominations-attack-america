@@ -554,7 +554,8 @@ export class PrismaRoomStore implements RoomStore {
         const human = await tx.participant.findFirst({ where: { id: actor.id, botControlled: false, ...(humanLease?.tokenHash ? { tokenHash: humanLease.tokenHash } : {}), ...(humanLease?.connectionId ? { connectionId: humanLease.connectionId, connectedAt: { not: null } } : {}) } });
         if (!human) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
       }
-      const changed = await tx.gameRoom.updateMany({ where: { id: room.id, version: room.version, status: "ACTIVE" }, data: { state: result.state as any, playerStats: counters as any, version, lastActivityAt: new Date(), ...(terminal ? { status: "COMPLETED", completedAt: new Date() } : {}) } });
+      const allowedStatuses = controlSource === "bot" && room.matchStarted && state.setupApplied ? ["ACTIVE", "WAITING"] : ["ACTIVE"];
+      const changed = await tx.gameRoom.updateMany({ where: { id: room.id, version: room.version, status: { in: allowedStatuses } }, data: { state: result.state as any, playerStats: counters as any, version, lastActivityAt: new Date(), ...(terminal ? { status: "COMPLETED", completedAt: new Date() } : {}) } });
       if (changed.count !== 1) throw new Error("The game changed before this action was committed. Refresh and try again.");
       const replayCommand: ReplayCommandRecord = { kind: "command", playerIndex: actor.playerIndex ?? 0, command: structuredClone(envelope.command) };
       await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: result.eventType, controlSource, payload: { ...result.eventPayload, receipt: result.receipt }, replayCommand: replayCommand as any } });
@@ -612,8 +613,10 @@ export class PrismaRoomStore implements RoomStore {
       }
       await this.refreshStatus(room.id, room.maxPlayers, state);
       const refreshed = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id } });
-      if (!refreshed || refreshed.status !== "ACTIVE") return;
+      if (!refreshed) return;
       const liveState = refreshed.state as unknown as GameState;
+      const canResumeBotTurn = refreshed.status === "WAITING" && refreshed.matchStarted && liveState.setupApplied;
+      if (refreshed.status !== "ACTIVE" && !canResumeBotTurn) return;
       if (liveState.phase === "game-over") return;
       const proposed = chooseBotCommand(liveState, botIndices);
       const command = proposed ?? (liveState.phase === "move" ? { type: "pass-move" as const } : liveState.phase === "deploy" ? { type: "pass-deploy" as const } : undefined);
@@ -653,7 +656,7 @@ export class PrismaRoomStore implements RoomStore {
   private async refreshStatus(roomId: string, maxPlayers: number, state?: GameState) {
     const players = await this.prismaClient.participant.findMany({ where: { roomId, role: "PLAYER" } });
     const currentState = state ?? await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, select: { state: true } }).then((room: any) => room?.state as GameState | undefined);
-    const room = await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, select: { status: true, lastActivityAt: true } });
+    const room = await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, select: { status: true, lastActivityAt: true, matchStarted: true } });
     const setupComplete = !currentState?.setupState || currentState.setupState.phase === "complete";
     if (room?.status === "COMPLETED" || room?.status === "EXPIRED") return;
     const linkedActive = room?.status === "ACTIVE" && await this.prismaClient.participant.count({ where: { roomId, userId: { not: null }, role: "PLAYER" } }) > 0;

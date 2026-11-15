@@ -514,7 +514,8 @@ export class MemoryRoomStore implements RoomStore {
           continue;
         }
         this.refreshStatus(room);
-        if (room.status !== "active") break;
+        const canResumeBotTurn = room.status === "waiting" && room.matchStarted && room.state.setupApplied;
+        if (room.status !== "active" && !canResumeBotTurn) break;
         if (room.state.phase === "game-over") break;
         const botIndices = new Set(room.participants.filter((candidate) => candidate.role === "player" && candidate.botControlled && candidate.playerIndex !== undefined).map((candidate) => candidate.playerIndex!));
         const proposed = chooseBotCommand(room.state, botIndices);

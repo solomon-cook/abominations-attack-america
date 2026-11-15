@@ -525,7 +525,11 @@ function App() {
     : !setupComplete
       ? "Complete setup before taking a gameplay action."
       : online && room?.status === "waiting"
-        ? "Waiting for every player to finish setup."
+        ? !room.matchStarted
+          ? "Waiting for the match to start."
+          : room.participants.some((candidate) => candidate.role === "player" && !candidate.connected && !candidate.botControlled)
+            ? "Waiting for disconnected players to reconnect or be taken over by bots."
+            : "Waiting for the server to activate the match."
       : online && participant?.role !== "player"
         ? "Spectators can follow the match but cannot submit actions."
         : online && participant?.playerIndex !== decisionPlayer
