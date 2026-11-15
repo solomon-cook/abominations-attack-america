@@ -1394,6 +1394,7 @@ function App() {
     setRoom(null);
     setError("");
     localStorage.removeItem("abominations-session");
+    window.location.assign("/");
   };
   const deleteCurrentRoom = async () => {
     if (!session || !room) return;
