@@ -35,11 +35,11 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSum
     return <section className="setup-panel lair-selection-prompt" aria-label="Game setup">
       <ol className="setup-step-track" aria-label="Setup progress">{setupSteps.map((step, index) => <li key={step} className={index < activeStep ? "complete" : index === activeStep ? "current" : "upcoming"}>{step}</li>)}</ol>
       <strong>{waiting ? `Waiting for ${playerName(setupSeat?.playerIndex ?? 0)}` : `${playerName(setupSeat?.playerIndex ?? 0)} · Choose your lair`}</strong>
-      <span>Click a glowing spawn on the map.</span>
-      <details key={setupSeat?.playerIndex}>
+      <span>{waiting ? "The map is inactive while they choose." : "Click a glowing spawn on the map."}</span>
+      {!waiting && <details key={setupSeat?.playerIndex}>
         <summary>Choose from list</summary>
         <div className="setup-options">{lairs.map((lair) => <button key={lair} disabled={disabled} onClick={() => onChooseOption(lair)}>{lairLabel(lair)}</button>)}</div>
-      </details>
+      </details>}
     </section>;
   }
   return (
@@ -50,8 +50,8 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSum
           <span className="label">GAME SETUP</span>
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
           <p>{activeSetup.phase === "starting-choice" ? "Deploy starting troops using your branch allowance, or draw one Military Research card instead." : "Choose your monster and military branch."}</p>
-          {setupSeat && <p className="setup-turn">Choosing for {playerName(setupSeat.playerIndex)}{waiting ? " · waiting" : ""}</p>}
-          <div className={`setup-options ${activeSetup.phase === "monster-selection" ? "monster-options" : activeSetup.phase === "branch-selection" ? "branch-options" : ""}`}>
+          {setupSeat && <p className="setup-turn" role={waiting ? "status" : undefined}>{waiting ? `Waiting for ${playerName(setupSeat.playerIndex)}` : `Choosing for ${playerName(setupSeat.playerIndex)}`}</p>}
+          <div className={`setup-options ${waiting ? "setup-options-waiting" : ""} ${activeSetup.phase === "monster-selection" ? "monster-options" : activeSetup.phase === "branch-selection" ? "branch-options" : ""}`}>
             {activeSetup.phase === "monster-selection" && activeSetup.definition.monsterIds.map((id, index) => {
               // The local development fixture uses placeholder IDs; keep its cards visual too.
               const monster = monsterDefinition(id) ?? monsters.find((candidate) => candidate.id === id) ?? monsters[index];
