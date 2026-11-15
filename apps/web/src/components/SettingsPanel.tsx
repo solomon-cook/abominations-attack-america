@@ -1,4 +1,5 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
+import { RoomQrCode } from "./RoomQrCode";
 
 interface SettingsPanelProps {
   boardTheme: "classic" | "moonlit" | "desert";
@@ -56,7 +57,7 @@ export function SettingsPanel({ boardTheme, setBoardTheme, largeText, showBoardL
         <span className="label">ROOM INVITE</span>
         <h3 id="settings-room-invite-title">Rejoin or spectate</h3>
         <p>Scan to take an open player seat. If the room is full, you’ll join as a spectator.</p>
-        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(roomInviteUrl)}`} alt="QR code to rejoin this lobby or spectate if it is full" />
+        <RoomQrCode value={roomInviteUrl} size={160} label="QR code to rejoin this lobby or spectate if it is full" />
         <button type="button" onClick={() => void copyRoomInvite()}>Copy lobby link</button>
         {inviteMessage && <span role="status">{inviteMessage}</span>}
       </section>}

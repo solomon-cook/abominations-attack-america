@@ -224,7 +224,7 @@ body:has(.home-screen) { margin: 0; }
 .home-menu-scroll .lobby-entry-options button { display: flex; min-height: 48px; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1px solid #8c794f; background: #111c23; color: #f5edda; text-align: left; cursor: pointer; }
 .home-menu-scroll .lobby-entry-options button:hover { border-color: #f2c86e; background: #1b292b; }
 .home-menu-scroll .lobby-qr { display: grid; justify-items: start; gap: 5px; color: #ddd2b9; font-size: 10px; }
-.home-menu-scroll .lobby-qr img { width: 116px; height: 116px; padding: 5px; background: #fff; image-rendering: pixelated; }
+.home-menu-scroll .lobby-qr svg { width: 116px; height: 116px; padding: 5px; background: #fff; shape-rendering: crispEdges; }
 .home-menu-scroll .strategy-columns { gap: 16px; margin-top: 12px; }
 .home-menu-scroll .strategy-columns h3 { margin: 0 0 8px; color: #f5edda; font: 700 14px/1.2 Georgia,serif; }
 .home-menu-scroll .strategy-columns article { border-color: #6f664f; }

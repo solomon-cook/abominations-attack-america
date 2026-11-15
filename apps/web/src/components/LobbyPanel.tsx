@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { PublicRoomSummary, RoomView } from "@abominations/shared";
+import { RoomQrCode } from "./RoomQrCode";
 
 export type LobbyPanelProps = {
   online: boolean;
@@ -136,7 +137,7 @@ export function LobbyPanel({
               return <div key={index} className="lobby-player-seat"><span>Player {index + 1}</span><strong>{seat?.displayName ?? "Waiting to join"}</strong><small>{seat ? seat.botControlled ? "Bot" : seat.connected ? "Connected" : "Reconnecting" : "Open seat"}</small></div>;
             })}
           </div>
-          {roomQrUrl && <div className="lobby-room-qr"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(roomQrUrl)}`} alt="QR code to join this room or spectate if full"/><span>Scan to join · spectators welcome when full</span></div>}
+          {roomQrUrl && <div className="lobby-room-qr"><RoomQrCode value={roomQrUrl} size={144} label="QR code to join this room or spectate if full"/><span>Scan to join · spectators welcome when full</span></div>}
           <button type="button" className="ready-button" disabled={pendingAction || participant.playerIndex !== 0} onClick={onStartMatch}>{pendingAction ? "Starting…" : "Start match"}</button>
         </div>
       )}

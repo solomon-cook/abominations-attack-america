@@ -83,11 +83,11 @@
 .game-screen .settings-room-invite { display:grid; justify-items:start; gap:9px; margin-top:18px; padding-top:16px; border-top:1px solid var(--aaa-line); }
 .game-screen .settings-room-invite h3 { margin:0; font:700 1.05rem/1.2 Georgia,serif; }
 .game-screen .settings-room-invite p { max-width:38rem; color:var(--aaa-muted); font-size:.82rem; line-height:1.45; }
-.game-screen .settings-room-invite img { width:160px; height:160px; padding:6px; background:#fff; }
+.game-screen .settings-room-invite svg { width:160px; height:160px; padding:6px; background:#fff; shape-rendering:crispEdges; }
 .game-screen .settings-room-invite button { min-height:38px; padding:8px 12px; border:1px solid var(--aaa-ink); background:var(--aaa-ink); color:var(--aaa-card); }
 .game-screen .settings-room-invite [role="status"] { color:var(--aaa-muted); font-size:.75rem; overflow-wrap:anywhere; }
 .lobby-room-qr { display:grid; justify-items:start; gap:6px; margin-top:12px; color:var(--aaa-muted); font-size:.75rem; }
-.lobby-room-qr img { width:144px; height:144px; padding:6px; background:#fff; }
+.lobby-room-qr svg { width:144px; height:144px; padding:6px; background:#fff; shape-rendering:crispEdges; }
 
 /* Keep the board artwork vivid; the parchment palette applies to its controls. */
 .game-screen .board-viewport,
