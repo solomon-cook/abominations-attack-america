@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { monsterDefinition, monsters, UNIT_DEFINITIONS, type BoardDefinition, type SetupState } from "@abominations/game-engine";
 import { setupLairLabel } from "./setup-location-label";
 import { monsterAssetSlug } from "../monster-assets";
