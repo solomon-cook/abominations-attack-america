@@ -1632,7 +1632,7 @@ function App() {
       <header>
         <div className="top-turn-summary" aria-live="polite">
           <div className="turn-hud-heading">
-            <div><span className="label">{!setupComplete ? "GAME SETUP" : `ROUND ${activeGame.round} · ${soloMode && decisionPlayer !== 0 ? "BOT TURN" : canAct ? "YOUR TURN" : "CURRENT TURN"}`}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? action : "Monster and branch selection"}</h2>
+            <div><span className="label">{!setupComplete ? "GAME SETUP" : `ROUND ${activeGame.round}${soloMode && decisionPlayer !== 0 ? " · BOT TURN" : canAct ? " · YOUR TURN" : ""}`}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? action : "Monster and branch selection"}</h2>
               {setupComplete && <div className="top-turn-details" aria-label="Current turn details">
                 <span><b>PLAYER</b> {activeGame.monsters[decisionPlayer]?.name ?? "Unknown player"}</span>
                 <span><b>PHASE</b> {activeGame.phase}</span>
