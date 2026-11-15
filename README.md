@@ -12,7 +12,7 @@ A cross-device digital board-game project inspired by *Monsters Menace America*.
 - `packages/shared` — shared domain types and future protocol contracts
 - `docs` — source notes and product planning
 
-The web prototype supports local play, guest online rooms, account-linked online matches, public profiles, and a no-login spectator mode. Account emails and password hashes stay server-side; rooms and public rankings expose generated usernames only. The API uses the same game engine and exposes short-ticket WebSockets with polling fallback.
+The web prototype supports local play, guest online rooms, username-and-password accounts, account-linked online matches, public profiles, and a no-login spectator mode. Account emails and password hashes stay server-side; rooms and public rankings expose usernames only. New accounts do not require an email. The API uses the same game engine and exposes short-ticket WebSockets with polling fallback.
 
 ## Run the web prototype
 

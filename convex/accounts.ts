@@ -17,7 +17,7 @@ export const userBySessionHash = internalQuery({
     const session = await ctx.db.query("accountSessions").withIndex("by_token_hash", (q) => q.eq("tokenHash", tokenHash)).unique();
     if (!session || session.revokedAt || session.expiresAt <= Date.now()) return null;
     const user = await ctx.db.query("userAccounts").withIndex("by_external_id", (q) => q.eq("externalId", session.userId)).unique();
-    return user?.emailVerifiedAt ? user : null;
+    return user ?? null;
   },
 });
 
@@ -32,14 +32,15 @@ export const actionToken = internalQuery({
 });
 
 export const createUser = internalMutation({
-  args: { email: v.string(), passwordHash: v.string(), username: v.string(), tokenHash: v.string(), tokenExpiresAt: v.number() },
+  args: { email: v.optional(v.string()), passwordHash: v.string(), username: v.string(), tokenHash: v.optional(v.string()), tokenExpiresAt: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    if (await ctx.db.query("userAccounts").withIndex("by_email", (q) => q.eq("email", args.email)).unique()) throw new Error("An account with that email already exists.");
+    if (args.email && await ctx.db.query("userAccounts").withIndex("by_email", (q) => q.eq("email", args.email)).unique()) throw new Error("An account with that email already exists.");
+    if (await ctx.db.query("userAccounts").withIndex("by_username", (q) => q.eq("username", args.username)).unique()) throw new Error("That username is already in use.");
     const timestamp = Date.now();
     const externalId = crypto.randomUUID();
-    await ctx.db.insert("userAccounts", { externalId, email: args.email, passwordHash: args.passwordHash, username: args.username, publicStatsEnabled: true, presenceEnabled: false, createdAt: timestamp, updatedAt: timestamp });
-    await ctx.db.insert("accountTokens", { externalId: crypto.randomUUID(), userId: externalId, tokenHash: args.tokenHash, purpose: "EMAIL_VERIFICATION", expiresAt: args.tokenExpiresAt, createdAt: timestamp });
-    return { id: externalId, username: args.username, email: args.email };
+    await ctx.db.insert("userAccounts", { externalId, ...(args.email ? { email: args.email } : {}), passwordHash: args.passwordHash, username: args.username, publicStatsEnabled: true, presenceEnabled: false, createdAt: timestamp, updatedAt: timestamp });
+    if (args.tokenHash && args.tokenExpiresAt) await ctx.db.insert("accountTokens", { externalId: crypto.randomUUID(), userId: externalId, tokenHash: args.tokenHash, purpose: "EMAIL_VERIFICATION", expiresAt: args.tokenExpiresAt, createdAt: timestamp });
+    return { id: externalId, username: args.username, ...(args.email ? { email: args.email } : {}) };
   },
 });
 

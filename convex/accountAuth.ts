@@ -49,37 +49,52 @@ async function createAndSendToken(ctx: any, user: any, purpose: "EMAIL_VERIFICAT
   const path = purpose === "EMAIL_VERIFICATION" ? "verify-email" : "reset-password";
   const base = process.env.WEB_APP_URL ?? process.env.ALLOWED_ORIGIN ?? "http://localhost:5173";
   const link = `${base.replace(/\/$/, "")}/?${path}=${encodeURIComponent(raw)}`;
+  if (!user.email) throw new Error("An email address is required for this account link.");
   await sendActionEmail(user.email, purpose === "EMAIL_VERIFICATION" ? "Verify your Abominations Attack America account" : "Reset your Abominations Attack America password", link, expiresAt);
   return isProduction() ? undefined : link;
 }
 
 export const register = internalAction({
-  args: { emailInput: v.string(), password: v.string() },
-  handler: async (ctx, { emailInput, password }): Promise<{ account: { id: string; username: string; emailVerified: false }; message: string; developmentLink?: string }> => {
-    const email = emailInput.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error("Enter a valid email address.");
+  args: { usernameInput: v.optional(v.string()), emailInput: v.optional(v.string()), password: v.string() },
+  handler: async (ctx, { usernameInput, emailInput, password }): Promise<{ account: { id: string; username: string; emailVerified: boolean }; sessionToken?: string; message: string; developmentLink?: string }> => {
     if (password.length < 12 || password.length > 128) throw new Error("Password must be between 12 and 128 characters.");
-    if (await ctx.runQuery(internal.accounts.userByEmail, { email })) throw new Error("An account with that email already exists.");
-    const username = `player-${randomBytes(4).toString("hex")}`;
-    const verificationToken = token();
+    const legacyEmail = usernameInput === undefined;
+    let email: string | undefined;
+    let username: string;
+    if (legacyEmail) {
+      email = (emailInput ?? "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error("Enter a valid email address.");
+      if (await ctx.runQuery(internal.accounts.userByEmail, { email })) throw new Error("An account with that email already exists.");
+      username = `player-${randomBytes(4).toString("hex")}`;
+    } else {
+      username = (usernameInput ?? "").trim().toLowerCase();
+      if (!/^[a-z0-9_-]{3,24}$/.test(username)) throw new Error("Username must be 3–24 letters, numbers, hyphens, or underscores.");
+      if (await ctx.runQuery(internal.accounts.userByUsername, { username })) throw new Error("That username is already in use.");
+    }
+    const verificationToken = legacyEmail ? token() : undefined;
     const expiresAt = Date.now() + VERIFY_TTL;
-    const user = await ctx.runMutation(internal.accounts.createUser, { email, passwordHash: passwordHash(password), username, tokenHash: hash(verificationToken), tokenExpiresAt: expiresAt });
-    const base = process.env.WEB_APP_URL ?? process.env.ALLOWED_ORIGIN ?? "http://localhost:5173";
-    const link = `${base.replace(/\/$/, "")}/?verify-email=${encodeURIComponent(verificationToken)}`;
-    await sendActionEmail(email, "Verify your Abominations Attack America account", link, expiresAt);
-    return { account: { id: user.id, username: user.username, emailVerified: false }, message: "Check your email for a verification link.", ...(isProduction() ? {} : { developmentLink: link }) };
+    const user = await ctx.runMutation(internal.accounts.createUser, { ...(email ? { email } : {}), passwordHash: passwordHash(password), username, ...(verificationToken ? { tokenHash: hash(verificationToken), tokenExpiresAt: expiresAt } : {}) });
+    if (legacyEmail && email && verificationToken) {
+      const base = process.env.WEB_APP_URL ?? process.env.ALLOWED_ORIGIN ?? "http://localhost:5173";
+      const link = `${base.replace(/\/$/, "")}/?verify-email=${encodeURIComponent(verificationToken)}`;
+      await sendActionEmail(email, "Verify your Abominations Attack America account", link, expiresAt);
+      return { account: { id: user.id, username: user.username, emailVerified: false }, message: "Check your email for a verification link.", ...(isProduction() ? {} : { developmentLink: link }) };
+    }
+    const sessionToken = token();
+    await ctx.runMutation(internal.accounts.issueSession, { userId: user.id, tokenHash: hash(sessionToken), expiresAt: Date.now() + SESSION_TTL });
+    return { account: { id: user.id, username: user.username, emailVerified: false }, sessionToken, message: "Account created and signed in." };
   },
 });
 
 export const login = internalAction({
-  args: { emailInput: v.string(), password: v.string() },
-  handler: async (ctx, { emailInput, password }): Promise<{ account: { id: string; username: string; emailVerified: true }; sessionToken: string; message: string }> => {
-    const user = await ctx.runQuery(internal.accounts.userByEmail, { email: emailInput.trim().toLowerCase() });
-    if (!user || !passwordMatches(password, user.passwordHash)) throw new Error("Email or password is incorrect.");
-    if (!user.emailVerifiedAt) throw new Error("Verify your email before signing in.");
+  args: { usernameInput: v.optional(v.string()), emailInput: v.optional(v.string()), password: v.string() },
+  handler: async (ctx, { usernameInput, emailInput, password }): Promise<{ account: { id: string; username: string; emailVerified: boolean }; sessionToken: string; message: string }> => {
+    const loginInput = (usernameInput ?? emailInput ?? "").trim().toLowerCase();
+    const user = await ctx.runQuery(internal.accounts.userByUsername, { username: loginInput }) ?? await ctx.runQuery(internal.accounts.userByEmail, { email: loginInput });
+    if (!user || !passwordMatches(password, user.passwordHash)) throw new Error("Username or password is incorrect.");
     const sessionToken = token();
     await ctx.runMutation(internal.accounts.issueSession, { userId: user.externalId, tokenHash: hash(sessionToken), expiresAt: Date.now() + SESSION_TTL });
-    return { account: { id: user.externalId, username: user.username, emailVerified: true }, sessionToken, message: "Signed in." };
+    return { account: { id: user.externalId, username: user.username, emailVerified: Boolean(user.emailVerifiedAt) }, sessionToken, message: "Signed in." };
   },
 });
 
