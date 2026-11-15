@@ -55,14 +55,13 @@
   color: var(--aaa-ink);
 }
 
-.game-screen :is(button, .button, select, input, textarea) {
+.game-screen :is(.button, select, input, textarea) {
   border-color: #a8aa9c;
   border-radius: 2px;
   color: var(--aaa-ink);
 }
 
-.game-screen button:not(.primary):not([aria-pressed="true"]),
-.game-screen .map-controls button {
+.game-screen :is(select, input, textarea) {
   background-color: var(--aaa-card);
 }
 
@@ -75,8 +74,8 @@
   color: var(--aaa-card);
 }
 
-.game-screen :is(h1, h2, h3, .label, .eyebrow, strong) { color: var(--aaa-ink); }
-.game-screen :is(.label, .eyebrow, .muted, small, .secondary-text) { color: var(--aaa-muted); }
+.game-screen :is(h1, h2, h3, .label, .eyebrow) { color: var(--aaa-ink); }
+.game-screen :is(.muted, .secondary-text) { color: var(--aaa-muted); }
 .game-screen .error,
 .game-screen [role="alert"] { color: #9f3020; }
 .game-screen :is(button, input, select, textarea, summary):focus-visible { outline-color: var(--aaa-rust); }
