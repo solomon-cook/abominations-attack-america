@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import test from "node:test";
-import convexProxy from "./convex-proxy.js";
+import convexProxy from "../api/convex-proxy.js";
 
 test("same-origin proxy forwards API paths, JSON bodies, cookies, and upstream session cookies", async (t) => {
   const upstream = createServer(async (request, response) => {

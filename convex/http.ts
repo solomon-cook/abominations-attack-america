@@ -4,6 +4,7 @@ import { api } from "./_generated/api.js";
 import { internal } from "./_generated/api.js";
 
 const MAX_BODY_BYTES = 64 * 1024;
+const MAX_MIGRATION_BODY_BYTES = 4 * 1024 * 1024;
 const accountCookieName = "aaa_account";
 const secureRequest = (request: Request) => new URL(request.url).protocol === "https:";
 const sessionCookie = (value: string, secure: boolean) => `${accountCookieName}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000${secure ? "; Secure" : ""}`;
@@ -53,12 +54,60 @@ async function readBody(request: Request): Promise<Record<string, any>> {
   return raw ? JSON.parse(raw) as Record<string, any> : {};
 }
 
+async function readMigrationBody(request: Request): Promise<Record<string, any>> {
+  const raw = await request.text();
+  if (new TextEncoder().encode(raw).byteLength > MAX_MIGRATION_BODY_BYTES) throw new Error("Migration request body is too large.");
+  return raw ? JSON.parse(raw) as Record<string, any> : {};
+}
+
+function constantTimeEqual(left: string, right: string) {
+  const width = Math.max(left.length, right.length);
+  let difference = left.length ^ right.length;
+  for (let index = 0; index < width; index += 1) {
+    difference |= (left.charCodeAt(index % Math.max(left.length, 1)) || 0)
+      ^ (right.charCodeAt(index % Math.max(right.length, 1)) || 0);
+  }
+  return difference === 0;
+}
+
+async function handleMigration(ctx: any, request: Request, parts: string[]) {
+  if (request.method !== "POST") return response(request, 405, { error: "Method not allowed." }, { allow: "POST" });
+  const productionDeployment = process.env.CONVEX_DEPLOYMENT?.startsWith("prod:") === true;
+  if ((process.env.APP_ENV === "production" || productionDeployment) && process.env.APP_ENV !== "migration") {
+    return response(request, 404, { error: "Not found." });
+  }
+  const expected = process.env.CONVEX_MIGRATION_TOKEN;
+  const supplied = request.headers.get("authorization") ?? "";
+  if (!expected || !constantTimeEqual(supplied, `Bearer ${expected}`)) return response(request, 404, { error: "Not found." });
+
+  try {
+    const body = await readMigrationBody(request);
+    if (parts.length !== 3 || parts[0] !== "internal" || parts[1] !== "migration") return response(request, 404, { error: "Not found." });
+    if (parts[2] === "begin") return response(request, 200, await ctx.runMutation(internal.migration.begin, {
+      runId: String(body.runId ?? ""), expectedCounts: body.expectedCounts,
+    }));
+    if (parts[2] === "batch") return response(request, 200, await ctx.runMutation(internal.migration.importBatch, {
+      runId: String(body.runId ?? ""), table: body.table, batchNumber: Number(body.batchNumber),
+      sha256: String(body.sha256 ?? ""), rows: body.rows,
+    }));
+    if (parts[2] === "finish") return response(request, 200, await ctx.runMutation(internal.migration.finish, {
+      runId: String(body.runId ?? ""),
+    }));
+    return response(request, 404, { error: "Not found." });
+  } catch {
+    // Migration rows include account credentials and match histories. Never echo
+    // request bodies or backend validation details into HTTP responses/logs.
+    return response(request, 400, { error: "Migration request rejected." });
+  }
+}
+
 async function handle(ctx: any, request: Request) {
   const origin = request.headers.get("origin");
   if (origin && !corsOrigin(origin)) return response(request, 403, { error: "Origin is not allowed." });
   if (request.method === "OPTIONS") return response(request, 204, {});
   const url = new URL(request.url);
   const parts = url.pathname.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+  if (parts[0] === "internal" && parts[1] === "migration") return handleMigration(ctx, request, parts);
   try {
     const forwardedFor = request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(forwardedFor));

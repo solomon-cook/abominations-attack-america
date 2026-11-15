@@ -230,4 +230,22 @@ export default defineSchema({
     count: v.number(),
     updatedAt: v.number(),
   }).index("by_date_category", ["bucketDate", "category"]),
+
+  migrationRuns: defineTable({
+    runId: v.string(),
+    status: v.union(v.literal("started"), v.literal("completed")),
+    expectedCounts: v.any(),
+    importedCounts: v.any(),
+    createdAt: v.number(),
+    completedAt: v.optional(v.number()),
+  }).index("by_run_id", ["runId"]),
+
+  migrationBatches: defineTable({
+    runId: v.string(),
+    table: v.string(),
+    batchNumber: v.number(),
+    rowCount: v.number(),
+    sha256: v.string(),
+    createdAt: v.number(),
+  }).index("by_run_table_batch", ["runId", "table", "batchNumber"]),
 });

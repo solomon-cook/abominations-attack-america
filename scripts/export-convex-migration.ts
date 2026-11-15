@@ -51,7 +51,10 @@ async function main() {
     assertMigrationIntegrity(rowsByTable);
 
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const outDir = resolve(".data", `convex-migration-${stamp}`);
+    const outputRoot = resolve(process.env.CONVEX_MIGRATION_OUTPUT_DIR?.trim() || ".data");
+    const outDir = resolve(outputRoot, `convex-migration-${stamp}`);
+    if (!outDir.startsWith(`${outputRoot}/`)) throw new Error("Invalid migration output directory.");
+    await mkdir(outputRoot, { recursive: true, mode: 0o700 });
     await mkdir(outDir, { recursive: true, mode: 0o700 });
     await chmod(outDir, 0o700);
     const manifest: Row = { createdAt: new Date().toISOString(), consistency: "PostgreSQL repeatable-read transaction", tables: {}, excluded: ["websocketTickets (ephemeral tickets are invalidated at cutover; clients reconnect through Convex subscriptions)", "httpRateLimitBuckets (ephemeral per-address throttling state)"] };
