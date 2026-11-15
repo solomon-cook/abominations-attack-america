@@ -23,7 +23,8 @@
 @media(max-width:700px){
   .game-screen.setup-in-progress>.setup-panel:has(.monster-options)> .label,
   .game-screen.setup-in-progress>.setup-panel:has(.monster-options)> h2,
-  .game-screen.setup-in-progress>.setup-panel:has(.monster-options)> p:not(.setup-progress){display:none}
+  .game-screen.setup-in-progress>.setup-panel:has(.monster-options)> p:not(.setup-progress):not(.setup-turn){display:none}
+  .game-screen.setup-in-progress>.setup-panel:has(.monster-options)>.setup-turn{display:block;margin:0;padding:3px 12px 7px;color:#ffe083!important;font-size:.78rem;font-weight:750;line-height:1.25}
   .game-screen.setup-in-progress>.setup-panel:has(.monster-options){top:165px;padding-top:8px}
   .game-screen .setup-panel:has(.monster-options) .monster-options{height:calc(100% - 42px);padding-top:4px}
   .game-screen .setup-panel:has(.monster-options)>.setup-progress{margin:0;padding:4px 12px 0;color:#aebcaf;font-size:.68rem}

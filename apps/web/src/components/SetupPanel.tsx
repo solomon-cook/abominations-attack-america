@@ -50,7 +50,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSum
           <span className="label">GAME SETUP</span>
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
           <p>{activeSetup.phase === "starting-choice" ? "Deploy starting troops using your branch allowance, or draw one Military Research card instead." : "Choose your monster and military branch."}</p>
-          {setupSeat && <p className="setup-turn">Choosing for {playerName(setupSeat.playerIndex)}{waiting ? " · waiting" : ""}</p>}
+          {setupSeat && <p className={`setup-turn ${waiting ? "setup-turn-waiting" : ""}`} role={waiting ? "status" : undefined}>{waiting ? `Waiting for ${playerName(setupSeat.playerIndex)} to choose` : `${playerName(setupSeat.playerIndex)} · Your choice`}</p>}
           <div className={`setup-options ${activeSetup.phase === "monster-selection" ? "monster-options" : activeSetup.phase === "branch-selection" ? "branch-options" : ""}`}>
             {activeSetup.phase === "monster-selection" && activeSetup.definition.monsterIds.map((id, index) => {
               // The local development fixture uses placeholder IDs; keep its cards visual too.

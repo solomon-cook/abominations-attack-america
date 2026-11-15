@@ -162,6 +162,7 @@
 }
 .game-screen > .setup-panel:has(.branch-options) > .setup-step-track { margin-bottom: 6px; }
 .game-screen > .setup-panel:has(.branch-options) > .setup-turn { margin: 4px 0 6px; }
+.game-screen > .setup-panel > .setup-turn-waiting { color: #ffe083 !important; font-weight: 750; }
 .game-screen > .setup-panel:has(.branch-options) .branch-title,
 .game-screen > .setup-panel:has(.branch-options) .branch-description { flex: 0 0 auto; }
 .game-screen > .setup-panel:has(.branch-options) .branch-description { min-height: 0; font-size: .72rem; line-height: 1.3; }
