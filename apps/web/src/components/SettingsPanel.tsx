@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 
 interface SettingsPanelProps {
   boardTheme: "classic" | "moonlit" | "desert";
@@ -20,9 +20,20 @@ interface SettingsPanelProps {
   setEffectsVolume: (value: number) => void;
   setMuted: Dispatch<SetStateAction<boolean>>;
   togglePreference: (key: string, setter: Dispatch<SetStateAction<boolean>>) => void;
+  roomInviteUrl?: string;
 }
 
-export function SettingsPanel({ boardTheme, setBoardTheme, largeText, showBoardLabels, manualReducedMotion, confirmIrreversible, masterVolume, musicVolume, effectsVolume, muted, setLargeText, setShowBoardLabels, setManualReducedMotion, setConfirmIrreversible, setMasterVolume, setMusicVolume, setEffectsVolume, setMuted, togglePreference }: SettingsPanelProps) {
+export function SettingsPanel({ boardTheme, setBoardTheme, largeText, showBoardLabels, manualReducedMotion, confirmIrreversible, masterVolume, musicVolume, effectsVolume, muted, setLargeText, setShowBoardLabels, setManualReducedMotion, setConfirmIrreversible, setMasterVolume, setMusicVolume, setEffectsVolume, setMuted, togglePreference, roomInviteUrl }: SettingsPanelProps) {
+  const [inviteMessage, setInviteMessage] = useState("");
+  const copyRoomInvite = async () => {
+    if (!roomInviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(roomInviteUrl);
+      setInviteMessage("Lobby link copied.");
+    } catch {
+      setInviteMessage(roomInviteUrl);
+    }
+  };
   return (
     <section className="settings-panel" aria-label="Play preferences">
       <span className="label">PLAY PREFERENCES</span>
@@ -41,6 +52,14 @@ export function SettingsPanel({ boardTheme, setBoardTheme, largeText, showBoardL
         <label>Music <input type="range" min="0" max="1" step="0.05" value={musicVolume} onChange={(event) => setMusicVolume(Number(event.target.value))} /></label>
       </div>
       <p className="settings-note">Music is silent until enabled here and is synthesized in this browser. All results and actions are also shown as text.</p>
+      {roomInviteUrl && <section className="settings-room-invite" aria-labelledby="settings-room-invite-title">
+        <span className="label">ROOM INVITE</span>
+        <h3 id="settings-room-invite-title">Rejoin or spectate</h3>
+        <p>Scan to take an open player seat. If the room is full, you’ll join as a spectator.</p>
+        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(roomInviteUrl)}`} alt="QR code to rejoin this lobby or spectate if it is full" />
+        <button type="button" onClick={() => void copyRoomInvite()}>Copy lobby link</button>
+        {inviteMessage && <span role="status">{inviteMessage}</span>}
+      </section>}
     </section>
   );
 }

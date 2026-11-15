@@ -33,6 +33,7 @@ import {
   createViewerInvite,
   createWebSocketTicket,
   convexRealtimeEnabled,
+  getAccountGames,
   heartbeatRoom,
   joinRoom,
   listPublicRooms,
@@ -40,6 +41,7 @@ import {
   markReconnected,
   RoomCommandChannel,
   readRoom,
+  resumeAccountGame,
   sendCommand,
   sendSetupAction,
   setReady,
@@ -99,6 +101,7 @@ import { monsterAssetSlug } from "./monster-assets";
 import { BRANCH_MARK } from "./player-visuals";
 import { activatePwaUpdate, registerPwaServiceWorker } from "./pwa";
 import "./styles.css";
+import "./brand-theme.css";
 
 function randomGameSeed(): number {
   return crypto.getRandomValues(new Uint32Array(1))[0]!;
@@ -941,13 +944,28 @@ function App() {
     setOnboardingOpen(false);
     setGamePanelOpen(true);
     try {
-      const created =
-        kind === "create"
-          ? await createRoom(playerCount, displayName || "Player 1", roomPrivacy)
-          : kind === "join"
-            ? await joinRoom(roomCode, displayName || "Player")
-            : await spectateRoom(roomCode, displayName || "Spectator");
-      const result = account && kind !== "spectate" ? await claimRoomSeat(created.room.code, created.token) : created;
+      if (kind === "join" && account && new URLSearchParams(window.location.search).get("qr") === "1") {
+        const existingGame = (await getAccountGames()).find((candidate) => candidate.code === roomCode && (candidate.status === "waiting" || candidate.status === "active"));
+        if (existingGame) {
+          replaceOnlineSession(await resumeAccountGame(existingGame.roomId));
+          return;
+        }
+      }
+      let joinedAsSpectator = kind === "spectate";
+      let created: SessionResponse;
+      if (kind === "create") created = await createRoom(playerCount, displayName || "Player 1", roomPrivacy);
+      else if (kind === "spectate") created = await spectateRoom(roomCode, displayName || "Spectator");
+      else {
+        try {
+          created = await joinRoom(roomCode, displayName || "Player");
+        } catch (joinError) {
+          const qrJoin = new URLSearchParams(window.location.search).get("qr") === "1";
+          if (!qrJoin || !(joinError instanceof Error) || !joinError.message.toLowerCase().includes("room is full")) throw joinError;
+          created = await spectateRoom(roomCode, displayName || "Spectator");
+          joinedAsSpectator = true;
+        }
+      }
+      const result = account && !joinedAsSpectator ? await claimRoomSeat(created.room.code, created.token) : created;
       replaceOnlineSession(result);
     } catch (caught) {
       setError(
@@ -1580,7 +1598,7 @@ function App() {
         onLeaveRoom={leaveRoomSafely}
       />
       {settingsOpen && (
-        <SettingsPanel boardTheme={boardTheme} setBoardTheme={updateBoardTheme} largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} masterVolume={masterVolume} musicVolume={musicVolume} effectsVolume={effectsVolume} muted={muted} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} setMasterVolume={(value) => setStoredVolume("abominations-master-volume", setMasterVolume, value)} setMusicVolume={(value) => { setStoredVolume("abominations-music-volume", setMusicVolume, value); setAmbientMusicPreferences({ masterVolume, musicVolume: value, muted }, true); }} setEffectsVolume={(value) => setStoredVolume("abominations-effects-volume", setEffectsVolume, value)} setMuted={setMuted} togglePreference={togglePreference} />
+        <SettingsPanel boardTheme={boardTheme} setBoardTheme={updateBoardTheme} largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} masterVolume={masterVolume} musicVolume={musicVolume} effectsVolume={effectsVolume} muted={muted} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} setMasterVolume={(value) => setStoredVolume("abominations-master-volume", setMasterVolume, value)} setMusicVolume={(value) => { setStoredVolume("abominations-music-volume", setMusicVolume, value); setAmbientMusicPreferences({ masterVolume, musicVolume: value, muted }, true); }} setEffectsVolume={(value) => setStoredVolume("abominations-effects-volume", setEffectsVolume, value)} setMuted={setMuted} togglePreference={togglePreference} roomInviteUrl={online && room && (room.status === "waiting" || room.status === "active") ? `${window.location.origin}/?room=${encodeURIComponent(room.code)}&qr=1` : undefined} />
       )}
       {onboardingOpen && (
         <section className="onboarding" aria-label="First match guide">
