@@ -51,13 +51,11 @@ import { MatchStatus } from "./components/MatchStatus";
 import { PhaseActions } from "./components/PhaseActions";
 import { ChallengeActions } from "./components/ChallengeActions";
 import { BlondeLureActions } from "./components/BlondeLureActions";
-import { PieceStackInspector } from "./components/PieceStackInspector";
 import { PlayerStatusControls } from "./components/PlayerStatusControls";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { LaserFenceControls } from "./components/LaserFenceControls";
 import { ChopperLiftChoiceControls } from "./components/ChopperLiftChoiceControls";
 import { SelectedPieceTray } from "./components/SelectedPieceTray";
-import { BoardContextTray } from "./components/BoardContextTray";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SetupPanel } from "./components/SetupPanel";
 import { TerminalSummary } from "./components/TerminalSummary";
@@ -194,7 +192,6 @@ function App() {
   const latestAnimatedUnitMoveRef = useRef<{ matchId: string; eventId?: string } | null>(null);
   const moveAnimationSequence = useRef(0);
   const [acceptedActionFeedback, setAcceptedActionFeedback] = useState<{ label: string; key: number } | null>(null);
-  const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
   const [focusedHexKey, setFocusedHexKey] = useState<HexKey | null>(null);
   const [retreatChoices, setRetreatChoices] = useState<Record<string, HexKey | "disappeared">>({});
   const [onboardingOpen, setOnboardingOpen] = useState(() => safeStorageGet("abominations-onboarding-seen") !== "1");
@@ -1496,7 +1493,6 @@ function App() {
               acceptedPieceId={acceptedMoveAnimation?.pieceId}
               acceptedAnimationKey={acceptedMoveAnimation?.key}
               onFocusHex={setFocusedHexKey}
-              onSelectStack={setSelectedStackKey}
               onSelectUnit={(unitId) => {
                 if (activeGame.pendingDecision?.type === "trophy-choice" && activeGame.pendingDecision.unitIds.includes(unitId)) {
                   void runCommand({ type: "resolve-encounter", trophyUnitId: unitId });
@@ -1541,13 +1537,6 @@ function App() {
                     : `Select a highlighted reachable space to preview a path for ${activePlayer.name}.`
                 : "Waiting for the active player."}
             </p>
-            <PieceStackInspector
-              game={activeGame}
-              activeMonsterId={activePlayer.id}
-              selectedStackKey={selectedStackKey}
-              onSelect={setSelectedStackKey}
-              onClear={() => setSelectedStackKey(null)}
-            />
           </div>
         </div>
         {setupComplete && <>
@@ -1700,9 +1689,6 @@ function App() {
             )}
             </details>
           </div>
-          <details className="hud-section"><summary>Selected board space</summary>
-          <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} />
-          </details>
           <details className="hud-section"><summary>Pieces, cards & board reference</summary>
           <BoardReferenceCard />
           <UnitCard
