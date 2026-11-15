@@ -7,53 +7,245 @@
     "Monster Mutation": "references/monsters-menace-america/components/decks/monster-mutation-concepts/"
   },
   "artworkReview": {
-    "status": "approved",
-    "reviewer": "Solomon",
-    "reviewedOn": "2026-08-26",
-    "scope": "All 32 individual WebP card artworks",
-    "notes": "Project-owner approval covers the generated illustration, title, rules-panel typography, and rendered text treatment. SOURCED_CARD_RULES remains authoritative for card wording and effects."
+    "status": "text-free image crops generated from approved concept artwork",
+    "scope": "All 32 individual Military Research and Monster Mutation cards",
+    "notes": "Web display uses the individual art-only crop. Full-text card faces are preserved in localFullTextArchive."
   },
   "cards": [
-    { "id": "Mecha-Monster", "deck": "Military Research", "src": "/assets/cards/military-research-mecha-monster.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Cutbacks", "deck": "Military Research", "src": "/assets/cards/military-research-cutbacks.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Laser Fence", "deck": "Military Research", "src": "/assets/cards/military-research-laser-fence.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Guard Commander", "deck": "Military Research", "src": "/assets/cards/military-research-guard-commander.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Defense Satellites", "deck": "Military Research", "src": "/assets/cards/military-research-defense-satellites.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Stabilizer Ray", "deck": "Military Research", "src": "/assets/cards/military-research-stabilizer-ray.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Fusion Cells", "deck": "Military Research", "src": "/assets/cards/military-research-fusion-cells.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "X-Fighters", "deck": "Military Research", "src": "/assets/cards/military-research-x-fighters.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Molecular Cannon", "deck": "Military Research", "src": "/assets/cards/military-research-molecular-cannon.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "2nd Generation", "deck": "Military Research", "src": "/assets/cards/military-research-2nd-generation.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Blonde Lure", "deck": "Military Research", "src": "/assets/cards/military-research-blonde-lure.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Anti-Mutagen", "deck": "Military Research", "src": "/assets/cards/military-research-anti-mutagen.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Antimatter", "deck": "Military Research", "src": "/assets/cards/military-research-antimatter.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Scientific Analysis", "deck": "Military Research", "src": "/assets/cards/military-research-scientific-analysis.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Chopper Lift", "deck": "Military Research", "src": "/assets/cards/military-research-chopper-lift.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Captain Colossal", "deck": "Military Research", "src": "/assets/cards/military-research-captain-colossal.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Fins and Gills", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-fins-and-gills.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Rampage", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-rampage.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Radiation Field", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-radiation-field.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Atomic Recovery", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-atomic-recovery.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Berserk", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-berserk.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "War Spikes", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-war-spikes.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Atomic Breath", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-atomic-breath.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Iron Stomach", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-iron-stomach.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Whip Tentacles", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-whip-tentacles.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "High-Octane Blood", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-high-octane-blood.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Son of a Monster", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-son-of-a-monster.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Winged Horror", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-winged-horror.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Kinda Friendly", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-kinda-friendly.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Laser Beam Eyes", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-laser-beam-eyes.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "Armored Scales", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-armored-scales.webp", "textStatus": "candidate-authoritative-text" },
-    { "id": "It's a Robot!", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-its-a-robot.webp", "textStatus": "candidate-authoritative-text" }
+    {
+      "id": "Mecha-Monster",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-mecha-monster-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Cutbacks",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-cutbacks-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Laser Fence",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-laser-fence-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Guard Commander",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-guard-commander-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Defense Satellites",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-defense-satellites-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Stabilizer Ray",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-stabilizer-ray-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Fusion Cells",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-fusion-cells-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "X-Fighters",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-x-fighters-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Molecular Cannon",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-molecular-cannon-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "2nd Generation",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-2nd-generation-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Blonde Lure",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-blonde-lure-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Anti-Mutagen",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-anti-mutagen-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Antimatter",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-antimatter-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Scientific Analysis",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-scientific-analysis-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Chopper Lift",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-chopper-lift-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Captain Colossal",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-captain-colossal-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Fins and Gills",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-fins-and-gills-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Rampage",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-rampage-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Radiation Field",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-radiation-field-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Atomic Recovery",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-atomic-recovery-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Berserk",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-berserk-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "War Spikes",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-war-spikes-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Atomic Breath",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-atomic-breath-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Iron Stomach",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-iron-stomach-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Whip Tentacles",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-whip-tentacles-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "High-Octane Blood",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-high-octane-blood-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Son of a Monster",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-son-of-a-monster-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Winged Horror",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-winged-horror-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Kinda Friendly",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-kinda-friendly-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Laser Beam Eyes",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-laser-beam-eyes-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "Armored Scales",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-armored-scales-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    },
+    {
+      "id": "It's a Robot!",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-its-a-robot-art.webp",
+      "textStatus": "image-only-art; full-text-face-archived-locally"
+    }
   ],
   "sheets": [
-    { "id": "military-research-01", "deck": "Military Research", "src": "/assets/cards/military-research-01.webp" },
-    { "id": "military-research-02", "deck": "Military Research", "src": "/assets/cards/military-research-02.webp" },
-    { "id": "military-research-03", "deck": "Military Research", "src": "/assets/cards/military-research-03.webp" },
-    { "id": "monster-mutation-01", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-01.webp" },
-    { "id": "monster-mutation-02", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-02.webp" },
-    { "id": "monster-mutation-03", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-03.webp" },
-    { "id": "monster-mutation-04", "deck": "Monster Mutation", "src": "/assets/cards/monster-mutation-04.webp" }
-  ]
+    {
+      "id": "military-research-01",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-01.webp"
+    },
+    {
+      "id": "military-research-02",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-02.webp"
+    },
+    {
+      "id": "military-research-03",
+      "deck": "Military Research",
+      "src": "/assets/cards/military-research-03.webp"
+    },
+    {
+      "id": "monster-mutation-01",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-01.webp"
+    },
+    {
+      "id": "monster-mutation-02",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-02.webp"
+    },
+    {
+      "id": "monster-mutation-03",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-03.webp"
+    },
+    {
+      "id": "monster-mutation-04",
+      "deck": "Monster Mutation",
+      "src": "/assets/cards/monster-mutation-04.webp"
+    }
+  ],
+  "imageOnlyArtwork": {
+    "format": "webp",
+    "source": "references/monsters-menace-america/components/decks/{military-research,monster-mutation}-concepts/",
+    "localFullTextArchive": "references/monsters-menace-america/components/decks/full-text-card-archive/",
+    "notes": "Individual card illustrations are cropped below the baked poster title. The original full-text card faces remain archived locally."
+  }
 }

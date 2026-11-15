@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { cardDefinition, sourcedCardRule } from "@abominations/game-engine";
+import { cardDefinition } from "@abominations/game-engine";
 import { CardArtwork, cardArtworkSrc } from "./DigitalCard";
 
 export const mutationArt = (id: string) => cardArtworkSrc(id, "mutation");
@@ -24,10 +24,9 @@ export function MutationStrip({ cards }: { cards: readonly string[] }) {
       <CardArtwork cardId={id} kind="mutation" />
     </button>)}</div>
     {!visible.length && <span>No revealed mutations</span>}
-    {preview && createPortal(<aside className="mutation-card-preview" aria-label={preview.id} onMouseEnter={keepOpen} onMouseLeave={closeSoon} onFocus={keepOpen} onBlur={closeSoon} style={{left:Math.max(8,Math.min(preview.x,window.innerWidth-288)),top:Math.max(8,preview.y-410)}}>
-      <button aria-label="Close mutation preview" onClick={() => setPreview(null)}>×</button><strong>{preview.id}</strong>
+    {preview && createPortal(<aside className="mutation-card-preview" aria-label={`${preview.id} card artwork`} onMouseEnter={keepOpen} onMouseLeave={closeSoon} onFocus={keepOpen} onBlur={closeSoon} style={{left:Math.max(8,Math.min(preview.x,window.innerWidth-288)),top:Math.max(8,preview.y-410)}}>
+      <button aria-label="Close mutation preview" onClick={() => setPreview(null)}>×</button>
       <CardArtwork cardId={preview.id} kind="mutation" alt="" />
-      <p>{sourcedCardRule(preview.id)?.transcription}</p>
     </aside>,strip.current?.closest("dialog") ?? document.body)}
   </div>;
 }
