@@ -136,6 +136,23 @@ export class PrismaRoomStore implements RoomStore {
     return this.view(room.id, 0, "player", requester.playerIndex ?? undefined);
   }
 
+  async takeOverWithBot(roomCode: string, accessToken: string) {
+    const room = await this.authorize(roomCode, accessToken);
+    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
+    if (!participant || participant.playerIndex === null) throw new Error("Only a player can hand their seat to a bot.");
+    if (!room.matchStarted || room.status !== "ACTIVE") throw new Error("Bot takeover is only available during an active match.");
+    const changed = await this.prismaClient.participant.updateMany({ where: { id: participant.id, tokenHash: hash(accessToken), botControlled: false }, data: { connectedAt: null, disconnectedAt: new Date(), botControlled: true, botAssisted: true, connectionId: null } });
+    if (changed.count !== 1) throw new Error("This seat is already being controlled by a bot.");
+    return this.view(room.id, 0, "player", participant.playerIndex);
+  }
+
+  async deleteRoom(roomCode: string, accessToken: string) {
+    const room = await this.authorize(roomCode, accessToken);
+    const creator = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER", playerIndex: 0 } });
+    if (!creator) throw new Error("Only the room creator can delete this room.");
+    await this.prismaClient.gameRoom.delete({ where: { id: room.id } });
+  }
+
   async startMatch(roomCode: string, accessToken: string) {
     const room = await this.authorize(roomCode, accessToken);
     const starter = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });

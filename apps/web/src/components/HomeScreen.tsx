@@ -20,7 +20,7 @@ type Props = LobbyPanelProps & {
 type MenuPanel = "auth" | "home" | "solo" | "multiplayer";
 
 export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo, onStartSoloScenario, botDifficulty, onBotDifficultyChange, onStartProvisionalPlaytest, onOpenBoardReview, onStartVictoryScenario, accountPanel, ...lobbyProps }: Props) {
-  const [panel, setPanel] = useState<MenuPanel>("auth");
+  const [panel, setPanel] = useState<MenuPanel>(() => { const returnToMultiplayer = sessionStorage.getItem("abominations-return-multiplayer") === "1"; sessionStorage.removeItem("abominations-return-multiplayer"); return returnToMultiplayer ? "multiplayer" : "auth"; });
   const [qrJoinRequested, setQrJoinRequested] = useState(false);
   void rulesOpen; void onToggleRules; void onStartSoloScenario; void onStartProvisionalPlaytest; void onOpenBoardReview; void onStartVictoryScenario;
 
@@ -73,7 +73,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
                 {panel === "multiplayer" && <section aria-labelledby="multiplayer-menu-title">
                   <h2 id="multiplayer-menu-title">Multiplayer</h2>
                   <button type="button" className="home-back" onClick={() => openPanel("home")}>← Back</button>
-                  <LobbyPanel {...lobbyProps} />
+                  <LobbyPanel {...lobbyProps} onBackToMenu={() => setPanel("home")} />
                 </section>}
               </div>
             </div>

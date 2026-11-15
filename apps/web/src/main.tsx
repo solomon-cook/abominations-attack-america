@@ -30,6 +30,7 @@ import {
   addRoomBot,
   claimRoomSeat,
   createRoom,
+  deleteRoom as deleteOnlineRoom,
   createViewerInvite,
   createWebSocketTicket,
   convexRealtimeEnabled,
@@ -46,6 +47,7 @@ import {
   sendSetupAction,
   setReady,
   subscribeRoom,
+  takeOverRoomWithBot,
   startMatch,
   spectateRoom,
   websocketUrl,
@@ -201,6 +203,7 @@ function App() {
   );
   const [error, setError] = useState("");
   const [pendingAction, setPendingAction] = useState(false);
+  const [leaveChoiceOpen, setLeaveChoiceOpen] = useState(false);
   const [setupActionPending, setSetupActionPending] = useState(false);
   const setupActionPendingRef = useRef(false);
   const [selectedPath, setSelectedPath] = useState<HexKey[]>([]);
@@ -1369,6 +1372,27 @@ function App() {
     setError("");
     localStorage.removeItem("abominations-session");
   };
+  const deleteCurrentRoom = async () => {
+    if (!session || !room) return;
+    setPendingAction(true);
+    try {
+      await deleteOnlineRoom(room.code, session.token);
+      await leaveRoom();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete the room.");
+    } finally { setPendingAction(false); }
+  };
+  const leaveAndHandToBot = async () => {
+    if (!session || !room) return;
+    setPendingAction(true);
+    try {
+      updateRoomSnapshot(await takeOverRoomWithBot(room.code, session.token));
+      setLeaveChoiceOpen(false);
+      await leaveRoom();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not hand your seat to a bot.");
+    } finally { setPendingAction(false); }
+  };
   const togglePreference = (key: string, setter: (value: boolean | ((current: boolean) => boolean)) => void) => {
     setter((current: boolean) => {
       const next = !current;
@@ -1388,8 +1412,8 @@ function App() {
     if (!confirmIrreversible || window.confirm(message)) actionToRun();
   };
   const leaveRoomSafely = () => {
-    if (online && activeGame.phase !== "game-over") {
-      runIrreversibleAction(() => void leaveRoom(), "Leave this active match? Your seat will be marked disconnected.");
+    if (online) {
+      setLeaveChoiceOpen(true);
       return;
     }
     void leaveRoom();
@@ -1539,6 +1563,7 @@ function App() {
         onToggleReady={() => undefined}
         onStartMatch={() => undefined}
         onLeaveRoom={() => undefined}
+        onDeleteRoom={() => undefined}
         onAddBot={() => void addBotToRoom()}
         rulesOpen={homeRulesOpen}
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
@@ -1559,7 +1584,7 @@ function App() {
     return <main className="pre-match-lobby">
       <header className="home-masthead"><span className="home-wordmark">AAA</span><span className="home-edition">A game of monsters &amp; military might</span></header>
       <section className="pre-match-lobby-heading"><p className="home-kicker">MULTIPLAYER ROOM</p><h1>Waiting room</h1><p>Share this code with your friends. The match begins when someone starts it.</p><div className="pre-match-room-code" aria-label={`Room code ${room.code}`}>{room.code}</div></section>
-      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={setRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} onAddBot={() => void addBotToRoom()} />
+      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={setRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} onDeleteRoom={() => void deleteCurrentRoom()} onBackToMenu={() => { sessionStorage.setItem("abominations-return-multiplayer", "1"); void leaveRoom(); }} onAddBot={() => void addBotToRoom()} />
     </main>;
   }
 
@@ -1653,7 +1678,9 @@ function App() {
         onStartMatch={() => void beginMatch()}
         onCreateViewerLink={makeViewerLink}
         onLeaveRoom={leaveRoomSafely}
+        onDeleteRoom={() => void deleteCurrentRoom()}
       />
+      {leaveChoiceOpen && <div className="room-leave-backdrop" role="presentation"><section className="room-leave-dialog" role="dialog" aria-modal="true" aria-labelledby="room-leave-title"><span className="label">LEAVE MATCH</span><h2 id="room-leave-title">What should happen to your room?</h2><p>Choose whether your seat stays in the match under bot control, or the whole room is removed.</p>{room?.status === "active" && activeGame.phase !== "game-over" && <button type="button" className="ready-button" disabled={pendingAction} onClick={() => void leaveAndHandToBot()}>Leave · bot takes over</button>}{participant?.playerIndex === 0 && <button type="button" className="subtle lobby-delete-room" disabled={pendingAction} onClick={() => void deleteCurrentRoom()}>Leave and delete room</button>}<button type="button" className="subtle" disabled={pendingAction} onClick={() => { setLeaveChoiceOpen(false); void leaveRoom(); }}>Leave room</button><button type="button" className="subtle" disabled={pendingAction} onClick={() => setLeaveChoiceOpen(false)}>Stay in match</button></section></div>}
       {settingsOpen && (
         <SettingsPanel boardTheme={boardTheme} setBoardTheme={updateBoardTheme} largeText={largeText} showBoardLabels={showBoardLabels} manualReducedMotion={manualReducedMotion} confirmIrreversible={confirmIrreversible} masterVolume={masterVolume} musicVolume={musicVolume} effectsVolume={effectsVolume} muted={muted} setLargeText={setLargeText} setShowBoardLabels={setShowBoardLabels} setManualReducedMotion={setManualReducedMotion} setConfirmIrreversible={setConfirmIrreversible} setMasterVolume={(value) => setStoredVolume("abominations-master-volume", setMasterVolume, value)} setMusicVolume={(value) => { setStoredVolume("abominations-music-volume", setMusicVolume, value); setAmbientMusicPreferences({ masterVolume, musicVolume: value, muted }, true); }} setEffectsVolume={(value) => setStoredVolume("abominations-effects-volume", setEffectsVolume, value)} setMuted={setMuted} togglePreference={togglePreference} roomInviteUrl={online && room && (room.status === "waiting" || room.status === "active") ? `${window.location.origin}/?room=${encodeURIComponent(room.code)}&qr=1` : undefined} />
       )}

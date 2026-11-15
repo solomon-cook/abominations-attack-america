@@ -26,6 +26,8 @@ export type LobbyPanelProps = {
   onStartMatch: () => void;
   onCreateViewerLink?: () => Promise<string>;
   onLeaveRoom: () => void;
+  onDeleteRoom: () => void;
+  onBackToMenu?: () => void;
 };
 
 export function LobbyPanel({
@@ -52,6 +54,8 @@ export function LobbyPanel({
   onStartMatch,
   onCreateViewerLink,
   onLeaveRoom,
+  onDeleteRoom,
+  onBackToMenu,
 }: LobbyPanelProps) {
   const [entryMode, setEntryMode] = useState<"choose" | "create" | "join">(() => roomCode ? "join" : "choose");
   const [inviteStatus, setInviteStatus] = useState("");
@@ -129,6 +133,7 @@ export function LobbyPanel({
       )}
       {online && room && !room.matchStarted && participant?.role === "player" && (
         <div className="lobby-waiting-room">
+          <div className="lobby-room-management"><button type="button" className="subtle" onClick={onBackToMenu ?? onLeaveRoom}>← Back to multiplayer</button>{participant.playerIndex === 0 && <button type="button" className="subtle lobby-delete-room" onClick={onDeleteRoom}>Delete room</button>}</div>
           <h2>Waiting room</h2>
           <p>Share the room code. The host can start at any time; bots fill all open seats.</p>
           <div className="lobby-player-seats" aria-label="Players in this room">

@@ -75,6 +75,8 @@ export interface RoomStore {
   listPublicRooms(): Promise<PublicRoomSummary[]>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
   addBot(code: string, token: string): Promise<RoomView>;
+  takeOverWithBot(code: string, token: string): Promise<RoomView>;
+  deleteRoom(code: string, token: string): Promise<void>;
   startMatch(code: string, token: string): Promise<RoomView>;
   createViewerInvite(code: string, token: string): Promise<{ token: string; expiresAt: string }>;
   spectateRoom(code: string, displayName: string, viewerToken?: string): Promise<SessionResponse>;
@@ -173,6 +175,27 @@ export class MemoryRoomStore implements RoomStore {
     bot.botControlled = true;
     this.touch(room);
     return this.view(room, 0, "player", requester.playerIndex);
+  }
+
+  async takeOverWithBot(roomCode: string, accessToken: string) {
+    const room = this.authorize(roomCode, accessToken);
+    const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!participant || participant.role !== "player" || participant.playerIndex === undefined) throw new Error("Only a player can hand their seat to a bot.");
+    if (!room.matchStarted || room.status !== "active") throw new Error("Bot takeover is only available during an active match.");
+    participant.connected = false;
+    participant.disconnectedAt = Date.now();
+    participant.botControlled = true;
+    participant.botAssisted = true;
+    participant.connectionId = undefined;
+    this.touch(room);
+    return this.view(room, 0, "player", participant.playerIndex);
+  }
+
+  async deleteRoom(roomCode: string, accessToken: string) {
+    const room = this.authorize(roomCode, accessToken);
+    const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!participant || participant.role !== "player" || participant.playerIndex !== 0) throw new Error("Only the room creator can delete this room.");
+    this.rooms.delete(room.code);
   }
 
   async createViewerInvite(roomCode: string, accessToken: string) {
