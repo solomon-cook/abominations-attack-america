@@ -7,6 +7,7 @@ import { cacheReplayFrames, getCachedReplayFrames, MAX_REPLAY_EXPORT_BYTES, reco
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
 
+const MAX_BOT_ACTIONS_PER_WAKE = 64;
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const token = () => randomBytes(24).toString("base64url");
 const code = () => randomBytes(3).toString("hex").toUpperCase();
@@ -496,8 +497,9 @@ export class PrismaRoomStore implements RoomStore {
     return this.getRoomForParticipant(roomCode, participantId);
   }
 
-  async processBotTakeovers(nowMs = Date.now()): Promise<string[]> {
-    const due = await this.prismaClient.participant.findMany({ where: { role: "PLAYER", connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - 4 * 60_000) }, room: { status: { in: ["WAITING", "ACTIVE"] } } }, select: { id: true, roomId: true } });
+  async processBotTakeovers(nowMs = Date.now(), roomCode?: string): Promise<string[]> {
+    const scopedRoom = roomCode ? { code: roomCode.toUpperCase() } : {};
+    const due = await this.prismaClient.participant.findMany({ where: { role: "PLAYER", connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - 4 * 60_000) }, room: { ...scopedRoom, status: { in: ["WAITING", "ACTIVE"] } } }, select: { id: true, roomId: true } });
     const affected = new Set<string>();
     for (const participant of due) {
       const changed = await this.prismaClient.participant.updateMany({ where: { id: participant.id, connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - 4 * 60_000) } }, data: { botControlled: true, botAssisted: true } });
@@ -508,7 +510,7 @@ export class PrismaRoomStore implements RoomStore {
       const info = await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, select: { code: true } });
       if (info) completedCodes.push(info.code);
     }
-    const activeRooms = await this.prismaClient.gameRoom.findMany({ where: { status: { in: ["WAITING", "ACTIVE"] }, participants: { some: { botControlled: true, role: "PLAYER" } } }, select: { code: true } });
+    const activeRooms = await this.prismaClient.gameRoom.findMany({ where: { ...scopedRoom, status: { in: ["WAITING", "ACTIVE"] }, participants: { some: { botControlled: true, role: "PLAYER" } } }, select: { code: true } });
     for (const item of activeRooms) if (!completedCodes.includes(item.code)) completedCodes.push(item.code);
     for (const roomCode of completedCodes) await this.runBotActions(roomCode);
     return completedCodes;
@@ -555,7 +557,7 @@ export class PrismaRoomStore implements RoomStore {
   }
 
   private async runBotActions(roomCode: string): Promise<void> {
-    for (let step = 0; step < 12; step += 1) {
+    for (let step = 0; step < MAX_BOT_ACTIONS_PER_WAKE; step += 1) {
       const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
       if (!room || !["ACTIVE", "WAITING"].includes(room.status)) return;
       if (!room.matchStarted) return;

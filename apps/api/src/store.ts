@@ -13,6 +13,7 @@ export interface RoomSocketPrincipal { roomCode: string; participantId: string; 
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const ROOM_VIEWER_INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
+const MAX_BOT_ACTIONS_PER_WAKE = 64;
 
 export function mutationBattleOwner(state: GameState, envelope: GameCommandEnvelope): number | undefined {
   const command = envelope.command;
@@ -96,7 +97,7 @@ export interface RoomStore {
   submitActionForParticipant(code: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomView>;
   connectParticipant(code: string, participantId: string, connectionId: string, sessionHash: string): Promise<RoomView>;
   disconnectParticipant(code: string, participantId: string, connectionId?: string): Promise<RoomView>;
-  processBotTakeovers(now?: number): Promise<string[]>;
+  processBotTakeovers(now?: number, roomCode?: string): Promise<string[]>;
 }
 
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");
@@ -469,9 +470,10 @@ export class MemoryRoomStore implements RoomStore {
     return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
   }
 
-  async processBotTakeovers(nowMs = Date.now()): Promise<string[]> {
+  async processBotTakeovers(nowMs = Date.now(), roomCode?: string): Promise<string[]> {
     const updated: string[] = [];
     for (const room of this.rooms.values()) {
+      if (roomCode && room.code !== roomCode.toUpperCase()) continue;
       if (room.status === "completed" || room.status === "expired") continue;
       for (const participant of room.participants) {
         if (participant.role === "player" && !participant.connected && participant.disconnectedAt !== undefined && nowMs - participant.disconnectedAt >= 4 * 60_000 && !participant.botControlled) {
@@ -481,7 +483,7 @@ export class MemoryRoomStore implements RoomStore {
         }
       }
       if (!room.matchStarted) continue;
-      for (let step = 0; step < 12; step += 1) {
+      for (let step = 0; step < MAX_BOT_ACTIONS_PER_WAKE; step += 1) {
         const setup = room.state.setupState;
         if (setup && setup.phase !== "complete") {
           const setupPlayer = this.nextSetupPlayer(setup);

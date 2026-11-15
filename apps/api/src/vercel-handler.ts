@@ -139,14 +139,17 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (req.method === "POST" && parts[2] === "disconnect") { const input = await readBody(req); return respond(req, res, 200, await store.disconnect(code, roomToken(req, url, input), String(input.connectionId ?? "legacy"))); }
     if (req.method === "POST" && parts[2] === "reconnect") { const input = await readBody(req); metrics.reconnect(); return respond(req, res, 200, await store.reconnect(code, roomToken(req, url, input), String(input.connectionId ?? "legacy"))); }
     if (req.method === "POST" && parts[2] === "rotate-session") return respond(req, res, 200, await store.rotateSession(code, roomToken(req, url, await readBody(req))));
-    if (req.method === "POST" && parts[2] === "setup") { const input = await readBody(req); return respond(req, res, 200, await store.setupAction(code, roomToken(req, url, input), input.action, Number(input.expectedRevision))); }
-    if (req.method === "POST" && parts[2] === "ready") { const input = await readBody(req); return respond(req, res, 200, await store.setReady(code, roomToken(req, url, input), Boolean(input.ready))); }
+    if (req.method === "POST" && parts[2] === "setup") { const input = await readBody(req); const accessToken = roomToken(req, url, input); await store.setupAction(code, accessToken, input.action, Number(input.expectedRevision)); await store.processBotTakeovers(Date.now(), code); return respond(req, res, 200, await store.getRoom(code, accessToken)); }
+    if (req.method === "POST" && parts[2] === "ready") { const input = await readBody(req); const accessToken = roomToken(req, url, input); await store.setReady(code, accessToken, Boolean(input.ready)); await store.processBotTakeovers(Date.now(), code); return respond(req, res, 200, await store.getRoom(code, accessToken)); }
     if (req.method === "GET" && parts[2] === "state") return respond(req, res, 200, await store.getRoom(code, roomToken(req, url), Number(url.searchParams.get("afterVersion") ?? 0)));
     if (req.method === "POST" && parts[2] === "actions") {
       const input = await readBody(req);
       const envelope = input.envelope ?? { actionId: String(input.actionId ?? randomUUID()), actorId: String(input.actorId ?? ""), expectedRevision: Number(input.expectedRevision), protocolVersion: Number(input.protocolVersion ?? 1), command: input.command };
+      const accessToken = roomToken(req, url, input);
+      await store.submitAction(code, accessToken, envelope);
+      await store.processBotTakeovers(Date.now(), code);
       metrics.commandAccepted();
-      return respond(req, res, 200, await store.submitAction(code, roomToken(req, url, input), envelope));
+      return respond(req, res, 200, await store.getRoom(code, accessToken));
     }
     return respond(req, res, 404, { error: "Not found" });
   } catch (error) {
