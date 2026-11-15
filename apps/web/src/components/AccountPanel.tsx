@@ -16,6 +16,7 @@ import {
   loginAccount,
   logoutAccount,
   registerAccount,
+  requestAccountPasswordReset,
   resumeAccountGame,
   refreshPresence,
   removeFriend,
@@ -53,12 +54,14 @@ const categories: { value: LeaderboardCategory; label: string }[] = [
 export function AccountPanel({ account, session, onAccountChange, onSessionChange, onOpenChange, defaultOpen = false, compact = false, deferAccountRequests = false }: Props) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loginName, setLoginName] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [username, setUsername] = useState("");
   const [lookup, setLookup] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [actionLink, setActionLink] = useState("");
   const [games, setGames] = useState<AccountGameSummary[]>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [publicStatsEnabled, setPublicStatsEnabled] = useState<boolean | null>(null);
@@ -124,7 +127,7 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
   }, [boardCategory, deferAccountRequests, defaultOpen]);
 
   const run = async (action: () => Promise<void>) => {
-    setError(""); setMessage("");
+    setError(""); setMessage(""); setActionLink("");
     try { await action(); } catch (caught) { setError(caught instanceof Error ? caught.message : "Account request failed."); }
   };
 
@@ -172,6 +175,14 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
             <label>Password<input type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} minLength={12} maxLength={128} required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
             <button type="submit">{mode === "register" ? "Create account" : "Sign in"}</button>
           </form>
+          {!compact && <details className="account-email-recovery">
+            <summary>Reset an existing email-based account</summary>
+            <form className="account-form" onSubmit={(event) => { event.preventDefault(); void run(async () => { const result = await requestAccountPasswordReset(recoveryEmail); setMessage(result.message); if (result.developmentLink) setActionLink(result.developmentLink); }); }}>
+              <label>Account email<input type="email" autoComplete="email" required value={recoveryEmail} onChange={(event) => setRecoveryEmail(event.target.value)} /></label>
+              <button type="submit">Send reset link</button>
+            </form>
+          </details>}
+          {actionLink && <a className="account-action-link" href={actionLink}>Continue with account link</a>}
           {resetToken && <form className="account-form" onSubmit={(event) => { event.preventDefault(); void run(async () => { const result = await completeAccountPasswordReset(resetToken, newPassword); setMessage(result.message); }); }}><label>New password<input type="password" autoComplete="new-password" minLength={12} maxLength={128} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label><button type="submit">Set new password</button></form>}
         </> : <>
           <div className="account-identity"><span>Public username</span><strong>@{account.username}</strong><span>Account ready</span></div>
