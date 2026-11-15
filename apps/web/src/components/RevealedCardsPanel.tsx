@@ -1,5 +1,5 @@
 import { canUseDefenseSatellites, cardDefinition, legalLaserFenceTargets, sourcedCardRule, type GameCommand, type GameState } from "@abominations/game-engine";
-import { CardArtwork } from "./DigitalCard";
+import { DigitalCard } from "./DigitalCard";
 
 type Props = {
   game: GameState;
@@ -76,7 +76,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation =
           <span>{definition?.availability === "implemented" ? "Implemented in this ruleset" : "Source-gated · unavailable"}</span>
           {rule ? (
             <>
-              <CardArtwork cardId={cardId} kind={definition?.deck === "research" ? "research" : "mutation"} />
+              <DigitalCard cardId={cardId} kind={definition?.deck === "research" ? "research" : "mutation"} className="revealed-card-face" />
               {actionWindow && <span className="hand-card-action-status">{cardId === "Berserk" || cardId === "Son of a Monster"
                 ? `Playable by this monster's controller: ${actionWindow}`
                 : cardId === "Laser Fence" ? `${legalLaserFenceTargets(game).length > 0 ? "Playable now by this card's holder" : "Playable by this card's holder"}: ${actionWindow}`
@@ -91,8 +91,6 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation =
                 <span><span className="metric-icon" aria-hidden="true">◆</span> Status effect: {rule.classification === "persistent" ? "active while held" : "none · resolved through a legal timing window"}</span>
                 <span>Source: {rule.sourceRefs.join(", ")}</span>
               </div>
-              <strong>{rule.timing}</strong>
-              <p className="hand-card-rules-box">{rule.transcription}</p>
               <small>{rule.classification === "persistent" ? "Keep this card face up while its effect applies." : directAction ? "Use this action now." : actionWindow ? "Use the controls for this step." : "Use the phase controls when available."}</small>
             </>
           ) : (

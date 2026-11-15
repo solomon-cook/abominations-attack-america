@@ -1,3 +1,4 @@
+import { sourcedCardRule } from "@abominations/game-engine";
 import type { ReactNode } from "react";
 
 export type DigitalCardKind = "mutation" | "research";
@@ -23,9 +24,18 @@ export function DigitalCard({ cardId, kind, children, className = "", status, ta
   status?: ReactNode;
   tabIndex?: number;
 }) {
+  const rule = sourcedCardRule(cardId);
   const deckName = kind === "mutation" ? "Monster Mutation" : "Military Research";
   return <article className={`digital-card digital-card-${kind} ${className}`.trim()} aria-label={`${cardId} ${deckName} card`} tabIndex={tabIndex}>
+    <header className="digital-card-heading">
+      <span>{deckName}</span>
+      <h4>{cardId}</h4>
+    </header>
     <CardArtwork cardId={cardId} kind={kind} alt="" />
+    <section className="digital-card-rules" aria-label={`${cardId} description`}>
+      {rule?.timing && <p className="digital-card-timing">{rule.timing}</p>}
+      <p>{rule?.transcription ?? "Rules text unavailable."}</p>
+    </section>
     {status && <p className="digital-card-status" aria-label={typeof status === "string" ? status : undefined}>{status}</p>}
     {children && <footer className="digital-card-actions">{children}</footer>}
   </article>;

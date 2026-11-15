@@ -1,6 +1,6 @@
 # Card image assets
 
-The seven sheet WebP files are optimized delivery copies of the source card-sheet photographs. The individual Military Research and Monster Mutation web cards use 32 title-free illustration crops (`*-art.webp`) generated from the concept artwork. Their text-free web images contain no card titles or rules panels.
+The seven sheet WebP files are optimized delivery copies of the source card-sheet photographs. The individual Military Research and Monster Mutation web cards use 32 title-free illustration crops (`*-art.webp`) generated from the concept artwork. The online game renders each card title and sourced description as web text above and below the framed illustration; no card text is baked into these image files.
 
 The previous full-text card faces are retained locally in `references/monsters-menace-america/components/decks/full-text-card-archive/`. Regenerate the art-only delivery assets and refresh that archive with `python3 scripts/prepare-art-only-card-assets.py`.
 

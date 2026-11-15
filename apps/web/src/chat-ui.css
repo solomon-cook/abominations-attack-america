@@ -6,8 +6,13 @@
 .mutation-strip button .digital-card-art { height:100%; border:0; }
 .mutation-card-preview { position:fixed; z-index:150; box-sizing:border-box; width:280px; max-height:min(400px,calc(100dvh - 16px)); overflow:auto; padding:10px; border:1px solid #ddc17e; border-radius:6px; background:#202b28; color:#fff1c9; box-shadow:0 10px 30px #0009; }
 .mutation-card-preview>button { float:right; background:#3c493c; color:#fff; border:0; font-size:20px; }
+.mutation-card-preview-heading { display:grid; gap:2px; margin:4px 34px 8px 0; }
+.mutation-card-preview-heading small { color:#ddc88c; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+.mutation-card-preview-heading strong { color:#fff1c9; font:20px Georgia,serif; }
 .mutation-card-preview .digital-card-art { height:auto; margin:7px 0; border-radius:3px; }
 .mutation-card-preview p { font-size:12px; line-height:1.4; }
+.mutation-card-preview .digital-card-timing { margin:5px 0; color:#e1bf69; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+.mutation-card-preview-rules { margin:7px 0 2px; color:#fff1c9; white-space:pre-line; }
 .board-monster-peek { position:fixed; z-index:90; width:320px; box-sizing:border-box; padding:10px; border:1px solid #c9b67e; border-radius:6px; background:#1d2925ed; color:#fff2d3; pointer-events:none; box-shadow:0 8px 24px #0008; }
 .board-monster-peek>span { display:block; font-size:11px; line-height:1.5; margin:5px 0; }
 .board-monster-peek>div { display:flex; gap:5px; overflow:hidden; }
