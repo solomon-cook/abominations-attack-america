@@ -125,7 +125,7 @@ try {
   await tabTo(overview, "board overview");
   await page.keyboard.press("ArrowRight");
   assert.notEqual(await page.locator(".map-canvas").getAttribute("style"), beforePan, "the overview keyboard arrows pan the board");
-  await activateByKeyboard(page.getByRole("button", { name: "Minimize monster, military and map record" }), "minimize record");
+  await activateByKeyboard(page.getByRole("button", { name: "Minimize player record" }), "minimize record");
 
   const boardCell = page.locator(".hex-tile[tabindex='0']:not(:disabled)").first();
   await boardCell.waitFor({ state: "visible" });
@@ -329,7 +329,7 @@ try {
       }
       let passDeployment = victoryPage.getByRole("button", { name: "Pass deployment", exact: true });
       if (!(await passDeployment.count())) {
-        const deploymentPrimary = victoryPage.locator(".action-dock > button:visible:not(:disabled)");
+        const deploymentPrimary = victoryPage.locator(".action-dock > button:visible:not(:disabled)").first();
         if (await deploymentPrimary.count()) await activateFocused(deploymentPrimary, "open Deploy actions");
         passDeployment = victoryPage.getByRole("button", { name: "Pass deployment", exact: true });
       }

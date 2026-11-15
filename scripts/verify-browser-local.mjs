@@ -298,7 +298,7 @@ try {
       assert.equal(overlaps(layout.minimap, layout.command), false, `${width}x${height} minimap overlaps command sheet`);
       assert.equal(overlaps(layout.queue, layout.record), false, `${width}x${height} movement orders overlap the open player record`);
       await page.screenshot({ path: `output/board-art/ui-minimap-${width}x${height}.png` });
-      await page.getByRole("button", { name: "Minimize monster, military and map record" }).click();
+      await page.getByRole("button", { name: "Minimize player record" }).click();
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.minimap?.visible, false, "closing the record hides the minimap");
     } else {
@@ -306,6 +306,7 @@ try {
       await page.waitForFunction(() => document.querySelector(".mobile-command-toggle")?.getAttribute("aria-expanded") === "true");
       const tabs = page.getByRole("tablist", { name: "Record view" });
       await tabs.waitFor({ state: "visible" });
+      await page.waitForFunction(() => document.querySelectorAll(".mobile-record-slot [role='tab']").length === 2);
       const mobileOrder = page.locator(".movement-piece").first();
       assert.ok(await mobileOrder.isVisible(), "expanded mobile command sheet should show its order cards");
       const mobileOrderBounds = await mobileOrder.evaluate((node) => {
@@ -315,33 +316,33 @@ try {
         return { item: { x: box.x, y: box.y, width: box.width, height: box.height }, list: { x: list.x, y: list.y, width: list.width, height: list.height }, text: node.innerText, display: style.display, visibility: style.visibility, opacity: style.opacity, color: style.color, background: style.backgroundColor };
       });
       assert.ok(mobileOrderBounds.item.x >= Math.max(0, mobileOrderBounds.list.x) - 1 && mobileOrderBounds.item.x + mobileOrderBounds.item.width <= Math.min(width, mobileOrderBounds.list.x + mobileOrderBounds.list.width) + 1 && mobileOrderBounds.item.y >= mobileOrderBounds.list.y - 1 && mobileOrderBounds.item.y + mobileOrderBounds.item.height <= mobileOrderBounds.list.y + mobileOrderBounds.list.height + 1, `mobile order card should be fully inside the visible horizontal list: ${JSON.stringify(mobileOrderBounds)}`);
-      await page.getByRole("tab", { name: "Monster" }).click();
+      await tabs.getByRole("tab", { name: "Monster" }).click();
       const monsterRecord = await page.locator("#record-panel").innerText();
       assert.match(monsterRecord, /♥\s*\d+\/\d+/);
       assert.match(monsterRecord, /★\s*\d+/);
       assert.match(await page.locator(".record-medallion").first().evaluate((node) => getComputedStyle(node).backgroundImage), /conic-gradient/);
-      await page.getByRole("tab", { name: "Military" }).click();
+      await tabs.getByRole("tab", { name: "Military" }).click();
       assert.match(await page.locator("#record-panel").innerText(), /Military Record|Research cards/i);
-      for (const tab of await page.getByRole("tab").all()) {
+      for (const tab of await tabs.getByRole("tab").all()) {
         const box = await tab.boundingBox();
         assert.ok(box && box.height >= 43.5 && box.width >= 43.5, `${width}x${height} record tab needs a 44px target within subpixel layout tolerance; got ${JSON.stringify(box)}`);
       }
-      await page.getByRole("tab", { name: "Map" }).click();
-      await page.getByRole("button", { name: "Board overview. Click to move camera; arrow keys pan." }).waitFor({ state: "visible" });
+      assert.equal(await tabs.getByRole("tab", { name: "Map" }).count(), 0, "the mobile player record reserves Map controls for the dedicated map toolbar");
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.documentOverflow, false);
       const command = layout.command;
       assert.ok(command?.visible && command.y + command.height <= height + 1, `${width}x${height} expanded command sheet must remain on screen`);
-      assert.equal(layout.minimap?.visible, true);
-      assert.ok(layout.minimap.y + layout.minimap.height < command.y + 1, `${width}x${height} minimap ${JSON.stringify(layout.minimap)} must clear command sheet ${JSON.stringify(command)}`);
+      assert.equal(layout.minimap?.visible, false, "the phone layout keeps the overview minimap hidden without a Map record tab");
       const overlaps = (a, b) => a && b && a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
-      assert.equal(overlaps(layout.minimap, layout.portraitRail), false, `${width}x${height} minimap overlaps player portraits`);
-      for (const control of layout.controls) assert.equal(overlaps(layout.minimap, control), false, `${width}x${height} minimap overlaps ${control.name}`);
+      for (const control of layout.controls) assert.equal(overlaps(control, command), false, `${width}x${height} map control ${control.name} overlaps the expanded command sheet`);
       await page.screenshot({ path: `output/board-art/ui-minimap-${width}x${height}.png` });
       await page.locator(".mobile-command-toggle").click();
       await page.waitForFunction(() => document.querySelector(".mobile-command-toggle")?.getAttribute("aria-expanded") === "false");
       layout = await inspectLayout(page, width, height);
-      assert.equal(layout.minimap?.visible, false, "collapsing the sheet hides the minimap");
+      assert.equal(layout.minimap?.visible, false, "collapsing the player sheet keeps the phone minimap hidden");
+      await mapControls.locator("summary").click();
+      layout = await inspectLayout(page, width, height);
+      assert.equal(layout.minimap?.visible, false, "closing the map toolbar hides the minimap");
     }
 
     const activeAction = page.locator(".action-dock > button").filter({ visible: true }).first();
@@ -501,7 +502,7 @@ try {
   }
   await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("Deploy"));
   assert.match(await soloPage.locator(".solo-scenario-guidance").innerText(), /Your objective · resolve Deploy/);
-  await soloPage.locator(".board-action-bar .action-dock > button").click();
+  await soloPage.locator(".board-action-bar .action-dock > button").first().click();
   await soloPage.getByRole("button", { name: /Military research/ }).last().click();
   await soloPage.getByRole("button", { name: "Draw a Military Research card instead of deploying a unit" }).click();
   await soloPage.locator("dialog.resolution-research").waitFor({ state: "visible" });

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "strict": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
+    "types": ["node"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
+  },
+  "include": ["./schema.ts", "./rooms.ts", "./accounts.ts", "./accountAuth.ts", "./accountData.ts", "./crons.ts", "./replays.ts", "./requestLimits.ts", "./errorReports.ts", "./http.ts", "./*.test.ts", "./_generated/**/*.ts", "../packages/game-engine/src/index.ts", "../packages/shared/src/index.ts", "../apps/api/src/player-stats.ts", "../apps/api/src/replay.ts"]
+}
