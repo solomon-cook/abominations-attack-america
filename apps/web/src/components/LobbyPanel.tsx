@@ -54,7 +54,7 @@ export function LobbyPanel({
   onDeleteRoom,
   onBackToMenu,
 }: LobbyPanelProps) {
-  const [entryMode, setEntryMode] = useState<"choose" | "create" | "join">(() => roomCode ? "join" : "choose");
+  const [entryMode, setEntryMode] = useState<"choose" | "create" | "join">("choose");
   const [inviteStatus, setInviteStatus] = useState("");
   void onAddBot;
   const roomQrUrl = room?.code ? `${window.location.origin}/?room=${encodeURIComponent(room.code)}&qr=1` : "";
