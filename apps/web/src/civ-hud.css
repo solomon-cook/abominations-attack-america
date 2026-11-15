@@ -11,6 +11,9 @@
 .top-turn-summary .turn-hud-heading { padding: 0; }
 .top-turn-summary .turn-hud-heading h2 { overflow: hidden; margin: 2px 0 0; color: #fff; font: 400 1.05rem/1.1 Georgia, serif; text-overflow: ellipsis; white-space: nowrap; }
 .top-turn-summary .turn-hud-heading .label { color: var(--civ-brass); }
+.top-turn-details { display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:6px; color:#d6ded4; font-size:.68rem; line-height:1.25; }
+.top-turn-details span { white-space:nowrap; }
+.top-turn-details b { margin-right:4px; color:var(--civ-brass); font-size:.58rem; letter-spacing:.06em; }
 .top-turn-summary .turn-progress { display: none; }
 .game-screen > header .header-actions { min-width: max-content; margin-left: auto; align-items: center; }
 .room-hud-menu-status { display:block; padding:7px 9px; border-bottom:1px solid var(--hud-border); color:var(--civ-muted); font-size:.66rem; }

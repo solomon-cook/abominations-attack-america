@@ -72,7 +72,8 @@
   .top-turn-summary .turn-hud-heading .label { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.48rem; letter-spacing:.06em; }
   .top-turn-summary .turn-hud-heading h2 { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:1px 0 0; font-size:.78rem; }
   .top-turn-summary .turn-progress { display:none; }
-  .game-screen > header .turn-hud-heading button { min-width:32px; min-height:32px; padding:3px; font-size:1rem; }
+  .top-turn-details { gap:3px 9px; margin-top:4px; font-size:.58rem; }
+  .top-turn-details b { font-size:.52rem; }
   .game-screen > header .header-actions { width:auto; flex:0 0 auto; gap:2px; }
   .game-screen > header .header-actions .ghost { min-height:30px; padding:4px 6px; font-size:.55rem; }
   .game-screen > header .how-to-play-action,

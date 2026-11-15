@@ -1632,8 +1632,13 @@ function App() {
       <header>
         <div className="top-turn-summary" aria-live="polite">
           <div className="turn-hud-heading">
-            <div><span className="label">{!setupComplete ? "GAME SETUP" : `ROUND ${activeGame.round} · ${soloMode && decisionPlayer !== 0 ? "BOT TURN" : canAct ? "YOUR TURN" : "CURRENT TURN"} · PLAYER ${decisionPlayer + 1}`}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? action : "Monster and branch selection"}</h2></div>
-            <button type="button" className="ghost" onClick={() => setGamePanelOpen((open) => !open)} aria-expanded={gamePanelOpen} aria-controls="turn-hud-body" aria-label={gamePanelOpen ? "Minimize turn panel" : "Expand turn panel"}>{gamePanelOpen ? "−" : "+"}</button>
+            <div><span className="label">{!setupComplete ? "GAME SETUP" : `ROUND ${activeGame.round} · ${soloMode && decisionPlayer !== 0 ? "BOT TURN" : canAct ? "YOUR TURN" : "CURRENT TURN"}`}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? action : "Monster and branch selection"}</h2>
+              {setupComplete && <div className="top-turn-details" aria-label="Current turn details">
+                <span><b>PLAYER</b> {activeGame.monsters[decisionPlayer]?.name ?? "Unknown player"}</span>
+                <span><b>PHASE</b> {activeGame.phase}</span>
+                <span><b>STOMP TOKENS</b> {activeGame.stompMarkers}</span>
+              </div>}
+            </div>
           </div>
         </div>
         <div className="header-actions">
