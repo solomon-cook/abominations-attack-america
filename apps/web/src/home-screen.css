@@ -259,6 +259,7 @@ html:has(.home-screen), body:has(.home-screen) { background: #efede2; }
 .home-screen { color: #252923; background: #efede2; }
 .home-screen .home-backdrop,.home-screen::before { display: none; }
 .home-masthead { border-color: #aaa99d; }
+.home-masthead { border-bottom: 0; }
 .home-wordmark { border: 0; color: #252923; font-size: 18px; letter-spacing: -.08em; }
 .home-edition { color: #55594e; }
 .home-screen .home-text-button { color: #55594e; }
