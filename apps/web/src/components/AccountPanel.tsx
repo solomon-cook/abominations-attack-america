@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { GeneralAvatar } from "./GeneralAvatar";
 import type { AccountSummary, AccountGameSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, SessionResponse, SocialSummary } from "@abominations/shared";
 import {
   claimRoomSeat,
@@ -152,7 +153,7 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
 
   return (
     <details className={`account-panel${compact ? " account-panel-compact" : ""}`} open={defaultOpen || undefined} onToggle={(event) => onOpenChange?.((event.currentTarget as HTMLDetailsElement).open)}>
-      <summary><span>PLAYER ACCOUNT</span><strong>{account ? `@${account.username}` : "Sign in · save matches and stats"}</strong></summary>
+      <summary><span>PLAYER ACCOUNT</span>{account && <GeneralAvatar name={account.username} size={30}/>}<strong>{account ? `@${account.username}` : "Sign in · save matches and stats"}</strong></summary>
       <div className="account-panel-content">
         {error && <p className="error" role="alert">{error}</p>}
         {message && <p className="account-message" role="status">{message}</p>}
@@ -185,7 +186,7 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
           {actionLink && <a className="account-action-link" href={actionLink}>Continue with account link</a>}
           {resetToken && <form className="account-form" onSubmit={(event) => { event.preventDefault(); void run(async () => { const result = await completeAccountPasswordReset(resetToken, newPassword); setMessage(result.message); }); }}><label>New password<input type="password" autoComplete="new-password" minLength={12} maxLength={128} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label><button type="submit">Set new password</button></form>}
         </> : <>
-          <div className="account-identity"><span>Public username</span><strong>@{account.username}</strong><span>Account ready</span></div>
+          <div className="account-identity"><GeneralAvatar name={account.username} size={68}/><div><span>Public username</span><strong>@{account.username}</strong><span>Account ready</span></div></div>
           {friendInviteToken && <div className="account-private-note" role="group" aria-label="Private friend invitation"><p>A private friend invitation is ready. Accept it to add the sender to your friends.</p><button type="button" onClick={() => void run(async () => { const result = await acceptFriendInviteLink(friendInviteToken); setMessage(result.message); await reloadSocial(); clearFriendInviteToken(); })}>Accept friend invitation</button></div>}
           {session?.room.participants.find((seat) => seat.id === session.participantId)?.role === "player" && <button type="button" className="account-link-seat" onClick={() => void run(async () => { onSessionChange(await claimRoomSeat(session.room.code, session.token)); setMessage("This match is linked to your account."); })}>Link current player seat</button>}
           <form className="account-inline-form" onSubmit={(event) => { event.preventDefault(); void run(async () => { const result = await updateAccountUsername(username || account.username); onAccountChange(result.account); setUsername(""); setMessage("Username updated."); }); }}><label>Change username<input minLength={3} maxLength={24} pattern="[A-Za-z0-9_-]+" value={username} placeholder={account.username} onChange={(event) => setUsername(event.target.value)} /></label><button type="submit">Save</button></form>
@@ -211,7 +212,7 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
         {!compact && <section className="account-leaderboard"><h3>Public rankings</h3><select aria-label="Leaderboard category" value={boardCategory} onChange={(event) => setBoardCategory(event.target.value as LeaderboardCategory)}>{categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}</select>{board.slice(0, 10).map((entry) => <div className="leaderboard-row" key={entry.username}><span>{entry.rank}. <button className="leaderboard-profile-button" type="button" onClick={() => void run(async () => { setLookup(entry.username); setPublicProfile(await getPlayerProfile(entry.username)); })}>@{entry.username}</button></span><strong>{boardCategory === "win-rate" ? `${(entry.value * 100).toFixed(1)}%` : boardCategory === "luck" ? entry.value.toFixed(2) : entry.value}</strong></div>)}</section>}
         {!compact && <>
           <form className="account-inline-form" onSubmit={(event) => { event.preventDefault(); void run(async () => setPublicProfile(await getPlayerProfile(lookup))); }}><label>View public profile<input value={lookup} onChange={(event) => setLookup(event.target.value)} placeholder="player username" /></label><button type="submit">View</button></form>
-          {publicProfile && <div className="account-public-profile"><strong>@{publicProfile.username}</strong><span>{publicProfile.wins} wins · {publicProfile.losses} losses · {publicProfile.ties} ties · {Math.round(publicProfile.winRate * 100)}% win rate</span><span>Most chosen: {publicProfile.mostChosenMonster ?? "—"} · {publicProfile.mostChosenBranch ?? "—"}</span><span>{publicProfile.botAssistedMatches} bot-assisted results</span></div>}
+          {publicProfile && <div className="account-public-profile"><GeneralAvatar name={publicProfile.username} size={64}/><strong>@{publicProfile.username}</strong><span>{publicProfile.wins} wins · {publicProfile.losses} losses · {publicProfile.ties} ties · {Math.round(publicProfile.winRate * 100)}% win rate</span><span>Most chosen: {publicProfile.mostChosenMonster ?? "—"} · {publicProfile.mostChosenBranch ?? "—"}</span><span>{publicProfile.botAssistedMatches} bot-assisted results</span></div>}
         </>}
       </div>
     </details>

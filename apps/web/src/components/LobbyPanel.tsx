@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { PublicRoomSummary, RoomView } from "@abominations/shared";
 import { RoomQrCode } from "./RoomQrCode";
+import { GeneralAvatar } from "./GeneralAvatar";
 
 export type LobbyPanelProps = {
   online: boolean;
@@ -87,7 +88,7 @@ export function LobbyPanel({
   };
   return (
     <section className="lobby" aria-label="Online room lobby">
-      <div>
+      <div className={online ? "lobby-room-summary" : undefined}>
         <span className="label">ONLINE ROOM</span>
         <p>
           {online ? (
@@ -136,7 +137,7 @@ export function LobbyPanel({
           <div className="lobby-player-seats" aria-label="Players in this room">
             {Array.from({ length: room.maxPlayers }, (_, index) => {
               const seat = room.participants.find((candidate) => candidate.role === "player" && candidate.playerIndex === index);
-              return <div key={index} className="lobby-player-seat"><span>Player {index + 1}</span><strong>{seat?.displayName ?? "Waiting to join"}</strong><small>{seat ? seat.botControlled ? "Bot" : seat.connected ? "Connected" : "Reconnecting" : "Open seat"}</small></div>;
+              return <div key={index} className={`lobby-player-seat${seat ? " occupied" : " open"}`}><span>Player {index + 1}</span>{seat ? <div className="lobby-seat-identity"><GeneralAvatar name={seat.username ?? seat.displayName} size={48}/><div><strong>{seat.username ? `@${seat.username}` : seat.displayName}</strong><small>{seat.botControlled ? "Bot general" : seat.connected ? "Connected" : "Reconnecting"}</small></div></div> : <><strong>Waiting to join</strong><small>Open seat</small></>}</div>;
             })}
           </div>
           {roomQrUrl && <div className="lobby-room-qr"><RoomQrCode value={roomQrUrl} size={144} label="QR code to join this room or spectate if full"/><span>Scan to join · spectators welcome when full</span></div>}
