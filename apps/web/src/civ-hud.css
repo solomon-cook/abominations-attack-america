@@ -9,7 +9,7 @@
 .game-screen > header { min-height: 56px; padding: 6px 12px; gap: 12px; flex-wrap: nowrap; justify-content: space-between; }
 .top-turn-summary { min-width: 0; max-width: none; flex: 1 1 auto; }
 .top-turn-summary .turn-hud-heading { padding: 0; }
-.top-turn-summary .turn-hud-heading h2 { overflow: hidden; margin: 2px 0 0; font: 400 1.05rem/1.1 Georgia, serif; text-overflow: ellipsis; white-space: nowrap; }
+.top-turn-summary .turn-hud-heading h2 { overflow: hidden; margin: 2px 0 0; color: #fff; font: 400 1.05rem/1.1 Georgia, serif; text-overflow: ellipsis; white-space: nowrap; }
 .top-turn-summary .turn-hud-heading .label { color: var(--civ-brass); }
 .top-turn-summary .turn-progress { display: none; }
 .game-screen > header .header-actions { min-width: max-content; margin-left: auto; align-items: center; }
