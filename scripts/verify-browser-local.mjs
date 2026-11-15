@@ -289,7 +289,7 @@ try {
       }
       await page.keyboard.press("Escape");
       await militaryDialog.waitFor({ state: "detached" });
-      await page.getByRole("tab", { name: "Map" }).click();
+      assert.equal(await page.getByRole("tab", { name: "Map" }).count(), 0, "the mobile player record reserves Map controls for the dedicated map toolbar");
       await page.getByRole("button", { name: "Board overview. Click to move camera; arrow keys pan." }).waitFor({ state: "visible" });
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.minimap?.visible, true);
@@ -341,7 +341,10 @@ try {
       await page.locator(".mobile-command-toggle").click();
       await page.waitForFunction(() => document.querySelector(".mobile-command-toggle")?.getAttribute("aria-expanded") === "false");
       layout = await inspectLayout(page, width, height);
-      assert.equal(layout.minimap?.visible, false, "collapsing the sheet hides the minimap");
+      assert.equal(layout.minimap?.visible, true, "collapsing the player sheet leaves the map toolbar open");
+      await mapControls.locator("summary").click();
+      layout = await inspectLayout(page, width, height);
+      assert.equal(layout.minimap?.visible, false, "closing the map toolbar hides the minimap");
     }
 
     const activeAction = page.locator(".action-dock > button").filter({ visible: true }).first();
