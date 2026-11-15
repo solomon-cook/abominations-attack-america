@@ -27,9 +27,12 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
   useEffect(() => {
     if (!qrJoinRequested) return;
     setQrJoinRequested(false);
-    setPanel("multiplayer");
+    if (accountPanel && typeof accountPanel === "object" && "props" in accountPanel) {
+      const account = (accountPanel as ReactElement<{ account?: AccountSummary | null }>).props.account;
+      if (account?.username) lobbyProps.onDisplayNameChange(account.username);
+    }
     lobbyProps.onStartSession("join");
-  }, [qrJoinRequested, lobbyProps.onStartSession]);
+  }, [qrJoinRequested, lobbyProps.onStartSession, accountPanel]);
 
   const openPanel = (next: MenuPanel) => {
     setPanel(next);

@@ -1008,15 +1008,16 @@ function App() {
       }
       let joinedAsSpectator = kind === "spectate";
       let created: SessionResponse;
-      if (kind === "create") created = await createRoom(4, displayName || "Player 1", roomPrivacy);
-      else if (kind === "spectate") created = await spectateRoom(roomCode, displayName || "Spectator");
+      const lobbyName = account?.username || displayName;
+      if (kind === "create") created = await createRoom(4, lobbyName || "Player 1", roomPrivacy);
+      else if (kind === "spectate") created = await spectateRoom(roomCode, lobbyName || "Spectator");
       else {
         try {
-          created = await joinRoom(roomCode, displayName || "Player");
+          created = await joinRoom(roomCode, lobbyName || "Player");
         } catch (joinError) {
           const qrJoin = new URLSearchParams(window.location.search).get("qr") === "1";
           if (!qrJoin || !(joinError instanceof Error) || !joinError.message.toLowerCase().includes("room is full")) throw joinError;
-          created = await spectateRoom(roomCode, displayName || "Spectator");
+          created = await spectateRoom(roomCode, lobbyName || "Spectator");
           joinedAsSpectator = true;
         }
       }
