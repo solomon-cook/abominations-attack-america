@@ -13,7 +13,6 @@ export type LobbyPanelProps = {
   roomPrivacy: "private" | "public";
   roomCode: string;
   publicRooms: PublicRoomSummary[];
-  setupComplete: boolean;
   pendingAction: boolean;
   error: string;
   onDisplayNameChange: (value: string) => void;
@@ -22,7 +21,6 @@ export type LobbyPanelProps = {
   onRoomCodeChange: (value: string) => void;
   onRefreshPublicRooms: () => void;
   onStartSession: (kind: "create" | "join" | "spectate") => void;
-  onToggleReady: () => void;
   onAddBot: () => void;
   onStartMatch: () => void;
   onCreateViewerLink?: () => Promise<string>;
@@ -41,7 +39,6 @@ export function LobbyPanel({
   roomPrivacy,
   roomCode,
   publicRooms,
-  setupComplete,
   pendingAction,
   error,
   onDisplayNameChange,
@@ -50,7 +47,6 @@ export function LobbyPanel({
   onRoomCodeChange,
   onRefreshPublicRooms,
   onStartSession,
-  onToggleReady,
   onAddBot,
   onStartMatch,
   onCreateViewerLink,
@@ -146,9 +142,6 @@ export function LobbyPanel({
       )}
       {online && room?.matchStarted && participant?.role === "player" && (
         <div className="lobby-actions">
-          <button type="button" className="ready-button" disabled={!setupComplete} onClick={onToggleReady}>
-            {participant.ready ? "Unready" : "Ready"}
-          </button>
           <button type="button" className="subtle" onClick={() => void copyInviteLink()}>Copy invite link</button>
           {onCreateViewerLink && <button type="button" className="subtle" onClick={() => void copyViewerLink()}>Copy TV viewing link</button>}
           <button type="button" className="subtle" onClick={onLeaveRoom}>Leave room</button>

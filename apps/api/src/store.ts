@@ -319,6 +319,9 @@ export class MemoryRoomStore implements RoomStore {
     room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: participant.id, type: "setup.updated", payload: { phase: nextSetup.phase, action: action.type }, createdAt: now() });
     room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.refreshStatus(room);
+    if (room.status === "active" && nextSetup.phase === "complete" && !room.state.setupApplied) {
+      this.applySetupCompletion(room, participant.id, "human");
+    }
     return this.view(room, 0, "player", participant.playerIndex);
   }
 
@@ -588,8 +591,8 @@ export class MemoryRoomStore implements RoomStore {
       room.status = "active";
       return;
     }
-    if (room.status === "abandoned" && !(setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.ready && participant.connected))) return;
-    room.status = setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.ready && (participant.connected || participant.botControlled)) ? "active" : "waiting";
+    if (room.status === "abandoned" && !(room.matchStarted && setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.connected || participant.botControlled))) return;
+    room.status = room.matchStarted && setupComplete && players.length === room.maxPlayers && players.every((participant) => participant.connected || participant.botControlled) ? "active" : "waiting";
   }
 
   private requireRoom(roomCode: string) {

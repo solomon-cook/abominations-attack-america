@@ -303,6 +303,10 @@ export class PrismaRoomStore implements RoomStore {
       await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: "setup.updated", payload: { phase: nextState.setupState.phase, action: action.type }, replayCommand: replayCommand as any } });
     });
     await this.refreshStatus(room.id, room.maxPlayers, nextState);
+    const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { status: true, state: true, version: true } });
+    if (activated?.status === "ACTIVE" && (activated.state as unknown as GameState).setupState?.phase === "complete" && !(activated.state as unknown as GameState).setupApplied) {
+      await this.commitSetupCompletion(room.id, actor.id, activated.version, activated.state as unknown as GameState, "human");
+    }
     return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
   }
 
@@ -638,8 +642,8 @@ export class PrismaRoomStore implements RoomStore {
       await this.prismaClient.gameRoom.update({ where: { id: roomId }, data: { status: "ACTIVE" } });
       return;
     }
-    if (room?.status === "ABANDONED" && !(setupComplete && players.length === maxPlayers && players.every((participant: any) => participant.ready && (participant.connectedAt || participant.botControlled)))) return;
-    const nextStatus = setupComplete && players.length === maxPlayers && players.every((participant: any) => participant.ready && (participant.connectedAt || participant.botControlled)) ? "ACTIVE" : "WAITING";
+    if (room?.status === "ABANDONED" && !(room.matchStarted && setupComplete && players.length === maxPlayers && players.every((participant: any) => participant.connectedAt || participant.botControlled))) return;
+    const nextStatus = room?.matchStarted && setupComplete && players.length === maxPlayers && players.every((participant: any) => participant.connectedAt || participant.botControlled) ? "ACTIVE" : "WAITING";
     await this.prismaClient.gameRoom.update({ where: { id: roomId }, data: { status: nextStatus } });
   }
 

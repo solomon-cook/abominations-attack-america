@@ -182,6 +182,7 @@ export function chooseStartingChoice(state: SetupState, playerIndex: number, sta
   if (state.phase !== "starting-choice") throw new Error("Starting choice is not the current setup step.");
   if (nextUnassigned(state, "startingChoice")?.playerIndex !== playerIndex) throw new Error("Starting choices must follow player order.");
   const current = seat(state, playerIndex);
+  if (startingChoice.kind !== "deploy") throw new Error("Starting setup is for troop deployment only. Military Research is drawn during a Deploy phase.");
   if (startingChoice.kind === "deploy" && "placements" in startingChoice && (!Array.isArray(startingChoice.placements) || startingChoice.placements.length === 0)) throw new Error("Choose at least one starting troop.");
   if (current.startingChoice) throw new Error(`Player ${playerIndex} already chose a starting option.`);
   const next = replaceSeat(state, { ...current, startingChoice, ready: true });
@@ -202,7 +203,7 @@ export function validateSetup(state: SetupState): void {
     else if (state.unusedBranchPlacements?.length) throw new Error("Four-player setup cannot place unused branches.");
   }
   if (lairs.some((value) => !value) || new Set(lairs).size !== state.seats.length) throw new Error("Every player needs one distinct lair.");
-  if (state.seats.some((candidate) => !candidate.startingChoice || !candidate.ready)) throw new Error("Every player must confirm a starting choice.");
+  if (state.seats.some((candidate) => candidate.startingChoice?.kind !== "deploy")) throw new Error("Every player must deploy starting troops.");
 }
 
 export function applySetupAction(state: SetupState, playerIndex: number, action: SetupAction): SetupState {

@@ -11,12 +11,7 @@ type Props = {
   online: boolean;
   showSetupSummary?: boolean;
   playerIndex?: number;
-  participants: RoomView["participants"];
-  participantReady: boolean;
-  canToggleReady: boolean;
-  readinessPending: boolean;
   setupActionPending: boolean;
-  onToggleReady: () => void;
   onChooseOption: (value: string) => void;
   onPlaceUnusedBranches: (placements: readonly SetupPlacement[]) => void;
   deploymentCount: number;
@@ -28,7 +23,7 @@ type Props = {
   onChooseStartingChoice: (kind: "research" | "deploy") => void;
 };
 
-export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSummary = true, playerIndex, participants, participantReady, canToggleReady, readinessPending, setupActionPending, onToggleReady, onChooseOption, onPlaceUnusedBranches, onChooseStartingChoice, deploymentCount, hasAvailableDeploymentOptions, selectingDeployment, selectedPiece, onFinishDeployment, onUndoDeployment }: Props) {
+export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSummary = true, playerIndex, setupActionPending, onChooseOption, onPlaceUnusedBranches, onChooseStartingChoice, deploymentCount, hasAvailableDeploymentOptions, selectingDeployment, selectedPiece, onFinishDeployment, onUndoDeployment }: Props) {
   const [unusedPlacements, setUnusedPlacements] = useState<Record<string, string>>({});
   useEffect(() => {
     if (activeSetup.phase === "unused-branch-placement") setUnusedPlacements({});
@@ -90,7 +85,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSum
           <ol className="setup-step-track" aria-label="Setup progress">{setupSteps.map((step, index) => <li key={step} className={index < activeStep ? "complete" : index === activeStep ? "current" : "upcoming"}>{step}</li>)}</ol>
           <span className="label">GAME SETUP</span>
           <h2>{activeSetup.phase.replaceAll("-", " ")}</h2>
-          <p>{activeSetup.phase === "starting-choice" ? "Deploy starting troops using your branch allowance, or draw one Military Research card instead." : "Choose your monster and military branch."}</p>
+          <p>{activeSetup.phase === "starting-choice" ? "Deploy starting troops using your branch allowance. Military Research is available once the game begins." : "Choose your monster and military branch."}</p>
           {setupSeat && <p className="setup-turn">Choosing for Player {setupSeat.playerIndex + 1}{waiting ? " · waiting" : ""}</p>}
           <div className={`setup-options ${activeSetup.phase === "monster-selection" ? "monster-options" : activeSetup.phase === "branch-selection" ? "branch-options" : ""}`}>
             {activeSetup.phase === "monster-selection" && activeSetup.definition.monsterIds.map((id, index) => {
@@ -145,33 +140,29 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSum
             })}
             {activeSetup.phase === "starting-choice" && <>
               {!(selectingDeployment && !hasAvailableDeploymentOptions) && <>
-                {deploymentCount === 0 && <button disabled={disabled} onClick={() => onChooseStartingChoice("research")}>Draw Research</button>}
                 <button disabled={disabled} onClick={() => onChooseStartingChoice("deploy")}>{selectingDeployment ? "Choose another starting unit" : "Deploy starting troops"}</button>
               </>}
               {selectingDeployment && !hasAvailableDeploymentOptions && <><p>{deploymentCount} starting troop{deploymentCount === 1 ? "" : "s"} placed.{selectedPiece ? ` Place ${selectedPiece.replaceAll("-", " ")} on a glowing location.` : " Choose a piece from your military sheet."}</p><button disabled={disabled || !deploymentCount} onClick={onFinishDeployment}>Finish starting deployment</button><button disabled={disabled || !deploymentCount} onClick={onUndoDeployment}>Undo last placement</button></>}
             </>}
           </div>
-          <p className="setup-progress">{activeSetup.seats.filter((seat) => seat.ready).length}/{activeSetup.seats.length} starting choices confirmed</p>
+          <p className="setup-progress">{activeSetup.seats.filter((seat) => seat.startingChoice?.kind === "deploy").length}/{activeSetup.seats.length} players have deployed starting troops</p>
         </section>
       )}
       {online && showSetupSummary && activeSetup.phase === "complete" && (
         <section className="setup-summary" aria-label="Setup summary">
           <span className="label">SETUP LOCKED</span>
           <h2>Match configuration</h2>
-          <p>Assignments are set. Each player must confirm they are ready to begin.</p>
+          <p>Assignments and starting deployments are set.</p>
           <div className="setup-summary-grid">
             {activeSetup.seats.map((seat) => (
               <div key={seat.playerIndex}>
                 <strong>Player {seat.playerIndex + 1}</strong>
                 <span>{monsters.find(monster => monster.id === seat.monsterId)?.name ?? seat.monsterId} · {seat.branch}</span>
                 <span>Lair: {lairLabel(seat.lair, seat.monsterId)}</span>
-                <span>{participants.find((candidate) => candidate.playerIndex === seat.playerIndex)?.ready ? "Ready" : "Not ready"}</span>
+                <span>{seat.startingChoice?.kind === "deploy" ? "Troops deployed" : "Deployment pending"}</span>
               </div>
             ))}
           </div>
-          {canToggleReady && <button className="setup-ready-toggle" type="button" aria-pressed={participantReady} disabled={readinessPending} onClick={onToggleReady}>
-            {readinessPending ? "Updating readiness…" : participantReady ? "Not ready" : "Ready to begin"}
-          </button>}
         </section>
       )}
     </>

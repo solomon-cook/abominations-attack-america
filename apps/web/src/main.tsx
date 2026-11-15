@@ -45,7 +45,6 @@ import {
   resumeAccountGame,
   sendCommand,
   sendSetupAction,
-  setReady,
   subscribeRoom,
   setRoomPrivacy as setOnlineRoomPrivacy,
   takeOverRoomWithBot,
@@ -518,7 +517,7 @@ function App() {
     : !setupComplete
       ? "Complete setup before taking a gameplay action."
       : online && room?.status === "waiting"
-        ? "Waiting for all players to press Ready."
+        ? "Waiting for every player to finish setup."
       : online && participant?.role !== "player"
         ? "Spectators can follow the match but cannot submit actions."
         : online && participant?.playerIndex !== decisionPlayer
@@ -1074,21 +1073,6 @@ function App() {
     }
   };
 
-  const toggleReady = async () => {
-    if (!session || !room || !participant || participant.role !== "player")
-      return;
-    setPendingAction(true);
-    try {
-      updateRoomSnapshot(await setReady(room.code, session.token, !participant.ready));
-    } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Could not update readiness",
-      );
-    } finally {
-      setPendingAction(false);
-    }
-  };
-
   const beginMatch = async () => {
     if (!session || !room || !participant || participant.role !== "player") return;
     setError("");
@@ -1567,7 +1551,6 @@ function App() {
         roomPrivacy={roomPrivacy}
         roomCode={roomCode}
         publicRooms={publicRooms}
-        setupComplete={false}
         pendingAction={pendingAction}
         error={error}
         onDisplayNameChange={setDisplayName}
@@ -1576,7 +1559,6 @@ function App() {
         onRoomCodeChange={setRoomCode}
         onRefreshPublicRooms={() => void refreshPublicRooms()}
         onStartSession={(kind) => void startSession(kind)}
-        onToggleReady={() => undefined}
         onStartMatch={() => undefined}
         onLeaveRoom={() => undefined}
         onDeleteRoom={() => undefined}
@@ -1599,7 +1581,7 @@ function App() {
   if (online && room && !room.matchStarted && participant?.role === "player") {
     return <main className="pre-match-lobby">
       <section className="pre-match-lobby-heading"><p className="home-kicker">MULTIPLAYER ROOM</p><h1>Waiting room</h1><p>Share this code with your friends. The match begins when someone starts it.</p><div className="pre-match-room-code" aria-label={`Room code ${room.code}`}>{room.code}</div></section>
-      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={changeOnlineRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} onDeleteRoom={() => void deleteCurrentRoom()} onBackToMenu={() => { sessionStorage.setItem("abominations-return-multiplayer", "1"); void leaveRoom(); }} onAddBot={() => void addBotToRoom()} />
+      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={changeOnlineRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} onDeleteRoom={() => void deleteCurrentRoom()} onBackToMenu={() => { sessionStorage.setItem("abominations-return-multiplayer", "1"); void leaveRoom(); }} onAddBot={() => void addBotToRoom()} />
     </main>;
   }
 
@@ -1643,7 +1625,6 @@ function App() {
               <button className="ghost how-to-play-action" onClick={() => { setSettingsOpen(false); setOnboardingOpen(true); }}>How to play</button>
               <button className="ghost settings-action" onClick={() => { setOnboardingOpen(false); setSettingsOpen((open) => !open); }} aria-expanded={settingsOpen}>Settings</button>
               <button className="ghost new-game-action" onClick={soloMode ? () => startSolo(soloScenarioMode) : resetLocal}>{soloScenarioMode ? "Restart scenario" : soloMode ? "New solo game" : "New local game"}</button>
-              {online && participant?.role === "player" && room?.status === "waiting" && <button className="ghost" disabled={!setupComplete || pendingAction} onClick={() => void toggleReady()}>{participant.ready ? "Not ready" : "Ready"}</button>}
               {online && <button className="ghost leave-room-action" onClick={leaveRoomSafely}>Leave room</button>}
               <AccountPanel account={account} session={session} onAccountChange={setAccount} onSessionChange={replaceOnlineSession} />
             </div>
@@ -1679,7 +1660,6 @@ function App() {
         roomPrivacy={roomPrivacy}
         roomCode={roomCode}
         publicRooms={publicRooms}
-        setupComplete={setupComplete}
         pendingAction={pendingAction}
         error={error}
         onDisplayNameChange={setDisplayName}
@@ -1688,7 +1668,6 @@ function App() {
         onRoomCodeChange={setRoomCode}
         onRefreshPublicRooms={() => void refreshPublicRooms()}
         onStartSession={(kind) => void startSession(kind)}
-        onToggleReady={() => void toggleReady()}
         onAddBot={() => void addBotToRoom()}
         onStartMatch={() => void beginMatch()}
         onCreateViewerLink={makeViewerLink}
@@ -1726,12 +1705,7 @@ function App() {
           online={online}
           showSetupSummary={room?.status === "waiting"}
           playerIndex={participant?.playerIndex}
-          participants={room?.participants ?? []}
-          participantReady={Boolean(participant?.ready)}
-          canToggleReady={online && participant?.role === "player" && room?.status === "waiting" && connectionState === "online"}
-          readinessPending={pendingAction}
           setupActionPending={setupActionPending}
-          onToggleReady={() => void toggleReady()}
           onChooseOption={(value) => void chooseSetupOption(value)}
           onPlaceUnusedBranches={(placements) => {
             if (!setupSeat || !activeSetup || (online && participant?.playerIndex !== setupSeat.playerIndex)) return;

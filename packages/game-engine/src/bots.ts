@@ -209,7 +209,8 @@ export function chooseBotSetupAction(game: GameState, setup: SetupState, playerI
       break;
     }
   }
-  return chooseStartingChoice(setup, playerIndex, placements.length ? { kind: "deploy", placements } : { kind: "research" });
+  if (!placements.length) throw new Error(`Bot player ${playerIndex} has no legal starting troop deployment.`);
+  return chooseStartingChoice(setup, playerIndex, { kind: "deploy", placements });
 }
 
 /** Return the same deterministic bot setup transition together with its replayable public action shape. */
