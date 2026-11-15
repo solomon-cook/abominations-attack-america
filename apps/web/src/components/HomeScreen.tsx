@@ -40,8 +40,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
       <div className="home-backdrop" aria-hidden="true" />
       <div className="home-frame">
         <header className="home-masthead">
-          <span className="home-wordmark">MMA</span>
-          <span className="home-edition">Monsters Menace America</span>
+          <span className="home-wordmark" aria-hidden="true">AAA</span>
           {panel !== "home" && panel !== "auth" && <button type="button" className="home-text-button" onClick={() => openPanel("home")}>Main menu</button>}
         </header>
 
@@ -52,9 +51,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
               <div className="home-menu-scroll">
                 {panel === "auth" && <section aria-labelledby="auth-menu-title">
                   <h2 id="auth-menu-title">Sign in to continue</h2>
-                  <p className="home-auth-intro">Save your matches and choose how to play.</p>
                   <div className="home-account-form">{cloneElement(accountPanel as ReactElement<{ defaultOpen?: boolean; compact?: boolean; deferAccountRequests?: boolean; onAccountChange?: (account: AccountSummary | null) => void }>, { defaultOpen: true, compact: true, deferAccountRequests: true, onAccountChange: (nextAccount: AccountSummary | null) => { const original = (accountPanel as ReactElement<{ onAccountChange?: (account: AccountSummary | null) => void }>).props.onAccountChange; original?.(nextAccount); if (nextAccount) { if (new URLSearchParams(window.location.search).get("qr") === "1" && lobbyProps.roomCode) setQrJoinRequested(true); else setPanel("home"); } } })}</div>
-                  <button type="button" className="home-guest-button" onClick={() => { if (new URLSearchParams(window.location.search).get("qr") === "1" && lobbyProps.roomCode) setQrJoinRequested(true); else openPanel("home"); }}>Continue as guest <span aria-hidden="true">→</span></button>
                 </section>}
 
                 {panel === "home" && <nav className="home-primary-menu" aria-label="Main menu">

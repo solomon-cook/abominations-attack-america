@@ -159,7 +159,7 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
         {!account ? <>
           {friendInviteToken && <p className="account-private-note">Sign in or create an account to accept this private friend invitation.</p>}
           <div className="account-mode-tabs"><button type="button" className={mode === "login" ? "selected" : ""} onClick={() => setMode("login")}>Sign in</button><button type="button" className={mode === "register" ? "selected" : ""} onClick={() => setMode("register")}>Create account</button></div>
-          <p className="account-private-note">Your public username is separate from your private email and password.</p>
+          {!compact && <p className="account-private-note">Your public username is separate from your private email and password.</p>}
           <form className="account-form" onSubmit={(event) => { event.preventDefault(); void run(async () => {
             if (mode === "register") {
               const result = await registerAccount(email, password);
@@ -206,8 +206,10 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
           <button className="account-delete" type="button" onClick={() => { if (window.confirm("Delete your account? Your public profile and stats will be removed. Shared match history will remain anonymized.")) void run(async () => { await deleteAccount(); onAccountChange(null); onSessionChange(null); setMessage("Account deleted."); }); }}>Delete account</button>
         </>}
         {!compact && <section className="account-leaderboard"><h3>Public rankings</h3><select aria-label="Leaderboard category" value={boardCategory} onChange={(event) => setBoardCategory(event.target.value as LeaderboardCategory)}>{categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}</select>{board.slice(0, 10).map((entry) => <div className="leaderboard-row" key={entry.username}><span>{entry.rank}. <button className="leaderboard-profile-button" type="button" onClick={() => void run(async () => { setLookup(entry.username); setPublicProfile(await getPlayerProfile(entry.username)); })}>@{entry.username}</button></span><strong>{boardCategory === "win-rate" ? `${(entry.value * 100).toFixed(1)}%` : boardCategory === "luck" ? entry.value.toFixed(2) : entry.value}</strong></div>)}</section>}
-        <form className="account-inline-form" onSubmit={(event) => { event.preventDefault(); void run(async () => setPublicProfile(await getPlayerProfile(lookup))); }}><label>View public profile<input value={lookup} onChange={(event) => setLookup(event.target.value)} placeholder="player username" /></label><button type="submit">View</button></form>
-        {publicProfile && <div className="account-public-profile"><strong>@{publicProfile.username}</strong><span>{publicProfile.wins} wins · {publicProfile.losses} losses · {publicProfile.ties} ties · {Math.round(publicProfile.winRate * 100)}% win rate</span><span>Most chosen: {publicProfile.mostChosenMonster ?? "—"} · {publicProfile.mostChosenBranch ?? "—"}</span><span>{publicProfile.botAssistedMatches} bot-assisted results</span></div>}
+        {!compact && <>
+          <form className="account-inline-form" onSubmit={(event) => { event.preventDefault(); void run(async () => setPublicProfile(await getPlayerProfile(lookup))); }}><label>View public profile<input value={lookup} onChange={(event) => setLookup(event.target.value)} placeholder="player username" /></label><button type="submit">View</button></form>
+          {publicProfile && <div className="account-public-profile"><strong>@{publicProfile.username}</strong><span>{publicProfile.wins} wins · {publicProfile.losses} losses · {publicProfile.ties} ties · {Math.round(publicProfile.winRate * 100)}% win rate</span><span>Most chosen: {publicProfile.mostChosenMonster ?? "—"} · {publicProfile.mostChosenBranch ?? "—"}</span><span>{publicProfile.botAssistedMatches} bot-assisted results</span></div>}
+        </>}
       </div>
     </details>
   );

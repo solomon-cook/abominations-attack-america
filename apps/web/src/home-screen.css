@@ -155,7 +155,7 @@ body:has(.home-screen) { margin: 0; }
   background: #071321;
   isolation: isolate;
 }
-.home-backdrop { position: absolute; inset: 0; z-index: -2; background-image: url('/assets/home-monster-movie-poster.png'); background-position: center; background-size: cover; }
+.home-backdrop { position: absolute; inset: 0; z-index: -2; background: none; }
 .home-screen::before { position: absolute; inset: 0; z-index: -1; content: ""; background: linear-gradient(90deg,#06111eee 0%,#071321e8 28%,#071321a8 47%,#0713211c 75%),linear-gradient(0deg,#06111e88,transparent 34%,#06111e40); pointer-events: none; }
 .home-frame { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; }
 .home-masthead { flex: 0 0 auto; align-items: center; min-height: 64px; gap: 16px; margin: 0 clamp(18px,5vw,72px); padding: 0; border-bottom: 1px solid #e4ce9a66; }
@@ -289,3 +289,43 @@ html:has(.home-screen), body:has(.home-screen) { background: #efede2; }
 .home-screen .home-auth-intro { color: #55594e; }
 .home-screen .home-guest-button { min-height: 40px; padding: 8px 12px; border: 1px solid #a8aa9c; background: transparent; color: #252923; font: inherit; font-size: 12px; cursor: pointer; }
 .home-screen :is(button,summary,input,select):focus-visible { outline-color: #ac3d24; }
+
+/* Focused sign-in screen, matched to the dark multiplayer waiting room. */
+html:has(.home-screen), body:has(.home-screen) { background:#171311; }
+body:has(.home-screen) { color:#f3ead9; }
+.home-screen { background:radial-gradient(ellipse at 55% 30%,#30231d 0%,#211a17 50%,#151211 100%); color:#f3ead9; }
+.home-screen .home-backdrop,.home-screen::before { display:none; }
+.home-frame { width:min(100%,960px); margin-inline:auto; }
+.home-masthead { min-height:68px; justify-content:center; margin-inline:clamp(20px,5vw,56px); border-color:#66544888; }
+.home-wordmark { width:auto; height:auto; color:#f3ead9; font:900 16px/1 system-ui,sans-serif; letter-spacing:-.08em; }
+.home-intro { justify-content:center; align-items:center; padding:28px 20px 56px; }
+.home-intro-copy { width:min(100%,440px); max-height:100%; flex:0 1 440px; align-items:center; text-align:center; }
+.home-screen h1 { color:#f3ead9; font-size:clamp(48px,8vw,78px); line-height:.83; letter-spacing:0; text-align:center; }
+.home-screen h1 span { color:#d77939; }
+.home-menu-panel { width:100%; max-height:none; margin-top:30px; border:0; background:transparent; box-shadow:none; }
+.home-menu-scroll { overflow:visible; padding:0; }
+.home-menu-scroll section[aria-labelledby="auth-menu-title"] { text-align:left; }
+.home-menu-scroll h2 { margin:0 0 16px; color:#f3ead9; font:700 22px/1.2 Georgia,serif; text-align:center; }
+.home-account-form { width:100%; margin:0; }
+.home-account-form .account-panel { width:100%; margin:0; border:1px solid #635044; border-radius:3px; background:#211a17; box-shadow:0 18px 48px #0005; }
+.home-account-form .account-panel > summary { display:none; }
+.home-account-form .account-panel-content { padding:22px; color:#e8ddca; }
+.home-account-form .account-private-note { color:#cbbba5; font-size:12px; line-height:1.45; }
+.home-account-form .account-mode-tabs { display:flex; justify-content:center; gap:8px; margin:0 0 16px; }
+.home-account-form .account-mode-tabs button { min-height:40px; padding:8px 16px; border:1px solid #66564a; border-radius:22px; background:transparent; color:#e8ddca; font:inherit; }
+.home-account-form .account-mode-tabs button.selected { border-color:#d77939; background:#d77939; color:#211813; }
+.home-account-form .account-form { display:grid; gap:12px; margin:0; }
+.home-account-form .account-form label { display:grid; gap:6px; color:#cbbba5; font-size:12px; }
+.home-account-form .account-form input { width:100%; min-height:42px; padding:9px 11px; border:1px solid #574b43; border-radius:4px; background:#111416; color:#f3ead9; }
+.home-account-form .account-form button { justify-self:start; min-height:42px; padding:9px 18px; border:1px solid #d77939; border-radius:4px; background:#d77939; color:#201611; font-weight:750; }
+.home-account-form .account-action-link { color:#e3b06d; }
+.home-screen .home-guest-button { display:none; }
+.home-screen :is(button,summary,input,select):focus-visible { outline-color:#e3b06d; }
+@media (max-width:700px) {
+  .home-masthead { min-height:56px; margin-inline:20px; }
+  .home-intro { padding:22px 20px 36px; }
+  .home-intro-copy { width:min(100%,420px); flex-basis:420px; }
+  .home-screen h1 { font-size:clamp(46px,13vw,68px); }
+  .home-menu-panel { margin-top:24px; }
+  .home-account-form .account-panel-content { padding:18px; }
+}
