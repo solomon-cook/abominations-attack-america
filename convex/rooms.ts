@@ -478,7 +478,12 @@ export const setup = mutation({
     const timestamp = now();
     await ctx.db.patch(room._id, { state, version, lastActivityAt: timestamp, updatedAt: timestamp });
     await insertEvent(ctx, room, participant.externalId, version, "setup.updated", { phase: nextSetup.phase, action: (args.action as SetupAction).type }, { kind: "setup", playerIndex: participant.playerIndex, action: args.action });
-    if (nextSetup.phase === "complete") await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId: room.externalId });
+    // A human setup choice can hand the next pick to a bot before setup is complete.
+    // Wake the bot runner after every accepted setup action; it exits if a human is next.
+    const participants = await getParticipants(ctx, room.externalId);
+    if (participants.some((candidate: any) => candidate.role === "player" && candidate.botControlled)) {
+      await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId: room.externalId });
+    }
     const updatedRoom = { ...room, state, version, lastActivityAt: timestamp };
     return loadRoomView(ctx, updatedRoom, participant);
   },
@@ -539,6 +544,9 @@ export const submit = mutation({
           })),
         }, createdAt: timestamp,
       });
+    }
+    if (!terminal && participants.some((candidate: any) => candidate.role === "player" && candidate.botControlled)) {
+      await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId: room.externalId });
     }
     return loadRoomView(ctx, { ...room, state: result.state, playerStats: counters, version, status: terminal ? "completed" : room.status, lastActivityAt: timestamp }, participant);
   },
