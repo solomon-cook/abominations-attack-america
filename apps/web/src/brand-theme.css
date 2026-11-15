@@ -14,9 +14,9 @@
   --hud-bg: rgba(239, 237, 226, .97);
   --hud-border: #aaa99d;
   --civ-brass: var(--aaa-rust);
-  --civ-ivory: var(--aaa-ink);
-  --civ-muted: var(--aaa-muted);
-  color: var(--aaa-ink);
+  --civ-ivory: #f4f1ea;
+  --civ-muted: #b8b0a1;
+  color: #f4f1ea;
 }
 
 .game-screen > header,
@@ -38,9 +38,7 @@
 .game-screen .terminal-summary,
 .game-screen .selected-piece-tray,
 .game-screen .board-reference-card,
-.game-screen .log-panel,
-.game-screen .account-panel,
-.game-screen .account-panel-content {
+.game-screen .log-panel {
   border-color: var(--aaa-line);
   background-color: var(--aaa-paper);
   color: var(--aaa-ink);
@@ -74,8 +72,6 @@
   color: var(--aaa-card);
 }
 
-.game-screen :is(h1, h2, h3, .label, .eyebrow) { color: var(--aaa-ink); }
-.game-screen :is(.muted, .secondary-text) { color: var(--aaa-muted); }
 .game-screen .error,
 .game-screen [role="alert"] { color: #9f3020; }
 .game-screen :is(button, input, select, textarea, summary):focus-visible { outline-color: var(--aaa-rust); }
@@ -91,3 +87,9 @@
 /* Keep the board artwork vivid; the parchment palette applies to its controls. */
 .game-screen .board-viewport,
 .game-screen .board-viewport .map-canvas { color: var(--aaa-ink); }
+
+/* The dark HUD menu and account panel keep their own light text palette. */
+.game-screen .hud-menu-items{color:#f4f1ea}
+.game-screen .account-panel{color:#f7ecce}
+.game-screen .account-panel-content{background:transparent;color:#f7ecce}
+.game-screen .account-panel :is(h1,h2,h3,.label,.eyebrow){color:#f7ecce}
