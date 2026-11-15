@@ -1,6 +1,7 @@
 {
   "eventType": "monster.moved",
   "eventPayload": {
+    "monsterId": "monster-1",
     "path": ["-2,2", "-3,1"],
     "destination": "-3,1"
   },

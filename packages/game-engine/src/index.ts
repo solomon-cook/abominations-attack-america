@@ -3380,7 +3380,7 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       next.phase = "move";
       next.pendingDecision = { type: "monster-movement", playerIndex: next.currentPlayer, pieceId: next.monsters[next.currentPlayer].id };
     }
-    const eventPayload = { path: command.path, destination: command.path.at(-1) };
+    const eventPayload = { monsterId: state.monsters[state.currentPlayer].id, path: command.path, destination: command.path.at(-1) };
     return { state: appendEvent(next, "monster.moved", eventPayload), eventType: "monster.moved", eventPayload };
   }
   if (command.type === "launch-submarine-at-monster") {

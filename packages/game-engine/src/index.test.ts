@@ -1536,7 +1536,7 @@ test("command receipts record structured actor, action, outcome, and detail", ()
   assert.equal(entry?.actorId, "player-1");
   assert.equal(entry?.action, "monster.moved");
   assert.equal(entry?.outcome, "moved");
-  assert.deepEqual(entry?.detail, { path: ["los-angeles", "denver"], destination: "denver" });
+  assert.deepEqual(entry?.detail, { monsterId: "monster-1", path: ["los-angeles", "denver"], destination: "denver" });
 });
 
 test("legacy schema-1 snapshots without eventLog remain command-compatible", () => {
