@@ -298,7 +298,7 @@ try {
       assert.equal(overlaps(layout.minimap, layout.command), false, `${width}x${height} minimap overlaps command sheet`);
       assert.equal(overlaps(layout.queue, layout.record), false, `${width}x${height} movement orders overlap the open player record`);
       await page.screenshot({ path: `output/board-art/ui-minimap-${width}x${height}.png` });
-      await page.getByRole("button", { name: "Minimize monster, military and map record" }).click();
+      await page.getByRole("button", { name: "Minimize player record" }).click();
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.minimap?.visible, false, "closing the record hides the minimap");
     } else {

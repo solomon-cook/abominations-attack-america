@@ -264,7 +264,7 @@ for (const [width,height] of sizes) {
    const mini=page.getByRole('button',{name:'Board overview. Click to move camera; arrow keys pan.'});
    await mini.waitFor({state:'visible'});
    await mini.click({position:{x:8,y:8}}); await check(page,'minimap'); await mini.focus(); await page.keyboard.press('ArrowRight'); await check(page,'keyboard pan');
-   await page.getByRole('button',{name:'Minimize monster, military and map record'}).click();
+   await page.getByRole('button',{name:'Minimize player record'}).click();
    assert.equal(await mini.isVisible(),false,'minimap remained open after closing the Map tab');
   }
   await resetView(page);
