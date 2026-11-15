@@ -343,6 +343,7 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
     const code = parts[1];
     if (request.method === "DELETE" && parts.length === 2) { await store.deleteRoom(code, tokenFrom(request, url)); await broadcast(code.toUpperCase()); return json(response, 200, { ok: true }); }
     if (request.method === "POST" && parts[2] === "bot-takeover") { const result = await store.takeOverWithBot(code, tokenFrom(request, url)); await broadcast(code.toUpperCase()); return json(response, 200, result); }
+    if (request.method === "POST" && parts[2] === "privacy") { const input = await body(request); const result = await store.setRoomPrivacy(code, tokenFrom(request, url), input.privacy === "public" ? "public" : "private"); await broadcast(code.toUpperCase()); return json(response, 200, result); }
     if (request.method === "POST" && parts[2] === "claim") {
       if (!accountService || !(store instanceof PrismaRoomStore)) throw new HttpError(503, "Account linking requires database persistence.");
       const user = await accountService.authenticate(decodeURIComponent(sessionFromCookie(String(request.headers.cookie ?? ""))));

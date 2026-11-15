@@ -131,6 +131,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
     if (parts[0] !== "rooms" || !parts[1]) return respond(req, res, 404, { error: "Not found" });
     const code = parts[1];
+    if (req.method === "POST" && parts[2] === "privacy") { const input = await readBody(req); return respond(req, res, 200, await store.setRoomPrivacy(code, roomToken(req, url, input), input.privacy === "public" ? "public" : "private")); }
     if (req.method === "POST" && parts[2] === "join") return respond(req, res, 200, await store.joinRoom(code, String((await readBody(req)).displayName ?? "Player")));
     if (req.method === "POST" && parts[2] === "viewer-link") return respond(req, res, 200, await store.createViewerInvite(code, roomToken(req, url)));
     if (req.method === "POST" && parts[2] === "start") return respond(req, res, 200, await store.startMatch(code, roomToken(req, url)));

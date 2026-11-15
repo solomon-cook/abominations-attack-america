@@ -75,6 +75,7 @@ export interface RoomStore {
   listPublicRooms(): Promise<PublicRoomSummary[]>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
   addBot(code: string, token: string): Promise<RoomView>;
+  setRoomPrivacy(code: string, token: string, privacy: RoomPrivacy): Promise<RoomView>;
   takeOverWithBot(code: string, token: string): Promise<RoomView>;
   deleteRoom(code: string, token: string): Promise<void>;
   startMatch(code: string, token: string): Promise<RoomView>;
@@ -175,6 +176,17 @@ export class MemoryRoomStore implements RoomStore {
     bot.botControlled = true;
     this.touch(room);
     return this.view(room, 0, "player", requester.playerIndex);
+  }
+
+  async setRoomPrivacy(roomCode: string, accessToken: string, privacy: RoomPrivacy) {
+    if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
+    const room = this.authorize(roomCode, accessToken);
+    const participant = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!participant || participant.role !== "player" || participant.playerIndex !== 0) throw new Error("Only the room creator can change privacy.");
+    if (room.status !== "waiting" || room.matchStarted) throw new Error("Room privacy can only be changed before the match starts.");
+    room.privacy = privacy;
+    this.touch(room);
+    return this.view(room, 0, "player", participant.playerIndex);
   }
 
   async takeOverWithBot(roomCode: string, accessToken: string) {

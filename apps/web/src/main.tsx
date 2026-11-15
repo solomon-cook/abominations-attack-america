@@ -47,6 +47,7 @@ import {
   sendSetupAction,
   setReady,
   subscribeRoom,
+  setRoomPrivacy as setOnlineRoomPrivacy,
   takeOverRoomWithBot,
   startMatch,
   spectateRoom,
@@ -1009,7 +1010,7 @@ function App() {
       let joinedAsSpectator = kind === "spectate";
       let created: SessionResponse;
       const lobbyName = account?.username || displayName;
-      if (kind === "create") created = await createRoom(4, lobbyName || "Player 1", roomPrivacy);
+      if (kind === "create") created = await createRoom(4, lobbyName || "Player 1", "private");
       else if (kind === "spectate") created = await spectateRoom(roomCode, lobbyName || "Spectator");
       else {
         try {
@@ -1028,6 +1029,17 @@ function App() {
         caught instanceof Error ? caught.message : "Could not join room",
       );
     }
+  };
+  const changeOnlineRoomPrivacy = async (privacy: "private" | "public") => {
+    if (!session || !room || participant?.playerIndex !== 0) return;
+    setPendingAction(true);
+    try {
+      const updated = await setOnlineRoomPrivacy(room.code, session.token, privacy);
+      updateRoomSnapshot(updated);
+      setRoomPrivacy(privacy);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not change room privacy.");
+    } finally { setPendingAction(false); }
   };
   const makeViewerLink = async () => {
     if (!room || !session || participant?.role !== "player") throw new Error("Only a player can create a TV viewing link.");
@@ -1584,7 +1596,7 @@ function App() {
   if (online && room && !room.matchStarted && participant?.role === "player") {
     return <main className="pre-match-lobby">
       <section className="pre-match-lobby-heading"><p className="home-kicker">MULTIPLAYER ROOM</p><h1>Waiting room</h1><p>Share this code with your friends. The match begins when someone starts it.</p><div className="pre-match-room-code" aria-label={`Room code ${room.code}`}>{room.code}</div></section>
-      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={setRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} onDeleteRoom={() => void deleteCurrentRoom()} onBackToMenu={() => { sessionStorage.setItem("abominations-return-multiplayer", "1"); void leaveRoom(); }} onAddBot={() => void addBotToRoom()} />
+      <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={changeOnlineRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} onDeleteRoom={() => void deleteCurrentRoom()} onBackToMenu={() => { sessionStorage.setItem("abominations-return-multiplayer", "1"); void leaveRoom(); }} onAddBot={() => void addBotToRoom()} />
     </main>;
   }
 

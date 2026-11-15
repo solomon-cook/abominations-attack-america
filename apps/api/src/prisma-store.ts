@@ -136,6 +136,16 @@ export class PrismaRoomStore implements RoomStore {
     return this.view(room.id, 0, "player", requester.playerIndex ?? undefined);
   }
 
+  async setRoomPrivacy(roomCode: string, accessToken: string, privacy: RoomPrivacy) {
+    if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
+    const room = await this.authorize(roomCode, accessToken);
+    const creator = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER", playerIndex: 0 } });
+    if (!creator) throw new Error("Only the room creator can change privacy.");
+    if (room.status !== "WAITING" || room.matchStarted) throw new Error("Room privacy can only be changed before the match starts.");
+    await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", lastActivityAt: new Date() } });
+    return this.view(room.id, 0, "player", creator.playerIndex ?? undefined);
+  }
+
   async takeOverWithBot(roomCode: string, accessToken: string) {
     const room = await this.authorize(roomCode, accessToken);
     const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });

@@ -102,21 +102,17 @@ export function LobbyPanel({
       {!online && (
         <div className="lobby-entry">
           {entryMode === "choose" ? <div className="lobby-entry-options" aria-label="Multiplayer options">
-            <button type="button" disabled={pendingAction} onClick={() => setEntryMode("create")}>Create room <span aria-hidden="true">→</span></button>
+            <button type="button" disabled={pendingAction} onClick={() => onStartSession("create")}>Create room <span aria-hidden="true">→</span></button>
             <button type="button" disabled={pendingAction} onClick={() => setEntryMode("join")}>Join room <span aria-hidden="true">→</span></button>
           </div> : <div className="lobby-entry-form">
             <button type="button" className="lobby-entry-back" onClick={() => setEntryMode("choose")}>← Back</button>
             <label>Display name<input aria-label="Display name" value={displayName} onChange={(event) => onDisplayNameChange(event.target.value)} placeholder="Your name" /></label>
-            {entryMode === "create" ? <>
-              <label>Room privacy<select aria-label="Room privacy" value={roomPrivacy} onChange={(event) => onRoomPrivacyChange(event.target.value as "private" | "public")}><option value="private">Private room</option><option value="public">Public room</option></select></label>
-              <p className="lobby-entry-note">Four player seats. Any open seats will be filled by bots when you start.</p>
-              <button type="button" disabled={pendingAction} onClick={() => onStartSession("create")}>Create room</button>
-            </> : <>
+            <>
               <label>Room code<input aria-label="Room code" value={roomCode} onChange={(event) => onRoomCodeChange(event.target.value.toUpperCase())} placeholder="Enter room code" maxLength={6} /></label>
               <button type="button" disabled={pendingAction || roomCode.trim().length < 4} onClick={() => onStartSession("join")}>Join room</button>
               <button type="button" className="subtle" disabled={pendingAction || roomCode.trim().length < 4} onClick={() => onStartSession("spectate")}>Join as spectator</button>
               <button type="button" className="subtle" disabled={pendingAction} onClick={onRefreshPublicRooms}>Find public rooms</button>
-            </>}
+            </>
           </div>}
         </div>
       )}
@@ -134,6 +130,7 @@ export function LobbyPanel({
       {online && room && !room.matchStarted && participant?.role === "player" && (
         <div className="lobby-waiting-room">
           <div className="lobby-room-management"><button type="button" className="subtle" onClick={onBackToMenu ?? onLeaveRoom}>← Back to multiplayer</button>{participant.playerIndex === 0 && <button type="button" className="subtle lobby-delete-room" onClick={onDeleteRoom}>Delete room</button>}</div>
+          {participant.playerIndex === 0 && <label className="lobby-room-privacy">Room visibility<select aria-label="Room visibility" value={room.privacy} disabled={pendingAction} onChange={(event) => onRoomPrivacyChange(event.target.value as "private" | "public")}><option value="private">Private</option><option value="public">Public</option></select></label>}
           <h2>Waiting room</h2>
           <p>Share the room code. The host can start at any time; bots fill all open seats.</p>
           <div className="lobby-player-seats" aria-label="Players in this room">
