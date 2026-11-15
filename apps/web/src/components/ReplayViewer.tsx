@@ -171,7 +171,6 @@ export function ReplayViewer({ code }: { code: string }) {
             acceptedPath={emptyPath}
             onSelectUnit={() => undefined}
             onFocusHex={() => undefined}
-            onSelectStack={() => undefined}
             onChoosePath={() => undefined}
             onChooseUnitPath={() => undefined}
             onPreviewPath={() => undefined}

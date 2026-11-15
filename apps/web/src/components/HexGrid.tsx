@@ -126,14 +126,13 @@ type Props = {
   focusedHexKey?: HexKey | null;
   onSelectUnit: (unitId: string) => void;
   onFocusHex: (hexKey: HexKey) => void;
-  onSelectStack: (hexKey: HexKey) => void;
   onChoosePath: (destination: HexKey) => void;
   onChooseUnitPath: (destination: HexKey) => void;
   onPreviewPath: (destination: HexKey) => void;
   onClearPreview: () => void;
 };
 
-export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, onRetreat, deploymentDestinations, onDeploy, onSelectMonster, game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, trophyUnitIds = new Set(), selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onSelectStack, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
+export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, onRetreat, deploymentDestinations, onDeploy, onSelectMonster, game, activePlayerId, canAct, legalDestinations, legalUnitDestinations, selectableUnitIds, trophyUnitIds = new Set(), selectedUnitId, selectedPath, hoveredPath, selectedUnitPath, acceptedPath, acceptedPieceId, acceptedAnimationKey, focusedHexKey, onSelectUnit, onFocusHex, onChoosePath, onChooseUnitPath, onPreviewPath, onClearPreview }: Props) {
   const [monsterPeek, setMonsterPeek] = useState<{id:string;x:number;y:number} | null>(null);
   const peekMonster = game.monsters.find(monster => monster.id === monsterPeek?.id);
   const peekCards = peekMonster ? (game.players[game.monsters.indexOf(peekMonster)]?.mutationCardIds ?? []).filter(id=>cardDefinition(id)) : [];
@@ -366,14 +365,12 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
               if (setupLegal) { onSetupLocation?.(placeKey); return; }
               if (retreatLegal) { onRetreat(placeKey); return; }
               if (deploymentLegal) { onDeploy(placeKey); return; }
-              if (game.phase === "move" && event.shiftKey && occupantCount > 0) onSelectStack(placeKey);
-              else if (trophySelectableUnit) onSelectUnit(trophySelectableUnit.id);
+              if (trophySelectableUnit) onSelectUnit(trophySelectableUnit.id);
               else if (game.phase === "move" && selectableUnit && !selectedUnitId && selectedPath.length < 2) onSelectUnit(selectableUnit.id);
               else if (monsterLegal || unitLegal) {
                 if (selectedUnitId) onChooseUnitPath(placeKey);
                 else onChoosePath(placeKey);
               } else if (game.phase === "move" && inspectableUnit && !selectedUnitId) onSelectUnit(inspectableUnit.id);
-              else if (game.phase !== "deploy" && occupantCount > 0) onSelectStack(placeKey);
               else onFocusHex(placeKey);
             }}
           >

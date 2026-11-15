@@ -64,13 +64,11 @@ import { MatchStatus } from "./components/MatchStatus";
 import { PhaseActions } from "./components/PhaseActions";
 import { ChallengeActions } from "./components/ChallengeActions";
 import { BlondeLureActions } from "./components/BlondeLureActions";
-import { PieceStackInspector } from "./components/PieceStackInspector";
 import { PlayerStatusControls } from "./components/PlayerStatusControls";
 import { RevealedCardsPanel } from "./components/RevealedCardsPanel";
 import { LaserFenceControls } from "./components/LaserFenceControls";
 import { ChopperLiftChoiceControls } from "./components/ChopperLiftChoiceControls";
 import { SelectedPieceTray } from "./components/SelectedPieceTray";
-import { BoardContextTray } from "./components/BoardContextTray";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SetupPanel } from "./components/SetupPanel";
 import { PlayerNamesProvider } from "./components/player-name-context";
@@ -228,7 +226,6 @@ function App() {
   const movementAnimationRunningRef = useRef(false);
   const moveAnimationSequence = useRef(0);
   const [acceptedActionFeedback, setAcceptedActionFeedback] = useState<{ label: string; key: number } | null>(null);
-  const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
   const [focusedHexKey, setFocusedHexKey] = useState<HexKey | null>(null);
   const [retreatChoices, setRetreatChoices] = useState<Record<string, HexKey | "disappeared">>({});
   const [onboardingOpen, setOnboardingOpen] = useState(() => safeStorageGet("abominations-onboarding-seen") !== "1");
@@ -1661,7 +1658,6 @@ function App() {
           {!activeGame.pendingDecision.destinations.length && <p role="alert">No verified base is available for this placement. The placement needs review.</p>}
         </div>
       </section>}
-      <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} className="board-context-tray-focus" />
       <details className="board-map-controls">
         <summary aria-label="Open map view controls" title="Map controls">⌖</summary>
         <div className="map-control-slot" />
@@ -1807,7 +1803,6 @@ function App() {
               acceptedPieceId={acceptedMoveAnimation?.pieceId}
               acceptedAnimationKey={acceptedMoveAnimation?.key}
               onFocusHex={setFocusedHexKey}
-              onSelectStack={setSelectedStackKey}
               onSelectUnit={(unitId) => {
                 if (activeGame.pendingDecision?.type === "trophy-choice" && activeGame.pendingDecision.unitIds.includes(unitId)) {
                   void runCommand({ type: "resolve-encounter", trophyUnitId: unitId });
@@ -1827,15 +1822,6 @@ function App() {
               onClearPreview={() => setHoveredPath((current) => current.length ? [] : current)}
             />
           </BoardViewport>
-          {selectedStackKey && <div className="board-stack-inspector">
-            <PieceStackInspector
-              game={activeGame}
-              viewerPlayerIndex={online ? participant?.playerIndex : soloMode ? 0 : activeGame.currentPlayer}
-              selectedStackKey={selectedStackKey}
-              onSelect={setSelectedStackKey}
-              onClear={() => setSelectedStackKey(null)}
-            />
-          </div>}
           {choosingSubmarineTarget && <div className="deployment-prompt" role="status">Choose a glowing monster to launch the cruise missile. <button onClick={() => setSubmarineTargetingId(null)}>Cancel</button></div>}
           {activeGame.phase === "fight" && activeGame.pendingRetreat?.monsterId && <div className="deployment-prompt retreat-prompt" role="status">
             {activeGame.monsters.find((monster) => monster.id === activeGame.pendingRetreat?.monsterId)?.name ?? "Monster"} retreats · Select a glowing adjacent hex.
@@ -2012,9 +1998,6 @@ function App() {
             )}
             </details>
           </div>
-          <details className="hud-section"><summary>Selected board space</summary>
-          <BoardContextTray game={activeGame} board={activeBoard} hex={focusedBoardHex} />
-          </details>
           <details className="hud-section"><summary>Pieces, cards & board reference</summary>
           <BoardReferenceCard />
           <UnitCard
