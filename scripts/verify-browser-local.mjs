@@ -289,7 +289,7 @@ try {
       }
       await page.keyboard.press("Escape");
       await militaryDialog.waitFor({ state: "detached" });
-      assert.equal(await page.getByRole("tab", { name: "Map" }).count(), 0, "the mobile player record reserves Map controls for the dedicated map toolbar");
+      await page.getByRole("tab", { name: "Map" }).click();
       await page.getByRole("button", { name: "Board overview. Click to move camera; arrow keys pan." }).waitFor({ state: "visible" });
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.minimap?.visible, true);
@@ -306,6 +306,7 @@ try {
       await page.waitForFunction(() => document.querySelector(".mobile-command-toggle")?.getAttribute("aria-expanded") === "true");
       const tabs = page.getByRole("tablist", { name: "Record view" });
       await tabs.waitFor({ state: "visible" });
+      await page.waitForFunction(() => document.querySelectorAll(".mobile-record-slot [role='tab']").length === 2);
       const mobileOrder = page.locator(".movement-piece").first();
       assert.ok(await mobileOrder.isVisible(), "expanded mobile command sheet should show its order cards");
       const mobileOrderBounds = await mobileOrder.evaluate((node) => {
@@ -315,18 +316,18 @@ try {
         return { item: { x: box.x, y: box.y, width: box.width, height: box.height }, list: { x: list.x, y: list.y, width: list.width, height: list.height }, text: node.innerText, display: style.display, visibility: style.visibility, opacity: style.opacity, color: style.color, background: style.backgroundColor };
       });
       assert.ok(mobileOrderBounds.item.x >= Math.max(0, mobileOrderBounds.list.x) - 1 && mobileOrderBounds.item.x + mobileOrderBounds.item.width <= Math.min(width, mobileOrderBounds.list.x + mobileOrderBounds.list.width) + 1 && mobileOrderBounds.item.y >= mobileOrderBounds.list.y - 1 && mobileOrderBounds.item.y + mobileOrderBounds.item.height <= mobileOrderBounds.list.y + mobileOrderBounds.list.height + 1, `mobile order card should be fully inside the visible horizontal list: ${JSON.stringify(mobileOrderBounds)}`);
-      await page.getByRole("tab", { name: "Monster" }).click();
+      await tabs.getByRole("tab", { name: "Monster" }).click();
       const monsterRecord = await page.locator("#record-panel").innerText();
       assert.match(monsterRecord, /♥\s*\d+\/\d+/);
       assert.match(monsterRecord, /★\s*\d+/);
       assert.match(await page.locator(".record-medallion").first().evaluate((node) => getComputedStyle(node).backgroundImage), /conic-gradient/);
-      await page.getByRole("tab", { name: "Military" }).click();
+      await tabs.getByRole("tab", { name: "Military" }).click();
       assert.match(await page.locator("#record-panel").innerText(), /Military Record|Research cards/i);
-      for (const tab of await page.getByRole("tab").all()) {
+      for (const tab of await tabs.getByRole("tab").all()) {
         const box = await tab.boundingBox();
         assert.ok(box && box.height >= 43.5 && box.width >= 43.5, `${width}x${height} record tab needs a 44px target within subpixel layout tolerance; got ${JSON.stringify(box)}`);
       }
-      await page.getByRole("tab", { name: "Map" }).click();
+      assert.equal(await tabs.getByRole("tab", { name: "Map" }).count(), 0, "the mobile player record reserves Map controls for the dedicated map toolbar");
       await page.getByRole("button", { name: "Board overview. Click to move camera; arrow keys pan." }).waitFor({ state: "visible" });
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.documentOverflow, false);

@@ -329,7 +329,7 @@ try {
       }
       let passDeployment = victoryPage.getByRole("button", { name: "Pass deployment", exact: true });
       if (!(await passDeployment.count())) {
-        const deploymentPrimary = victoryPage.locator(".action-dock > button:visible:not(:disabled)");
+        const deploymentPrimary = victoryPage.locator(".action-dock > button:visible:not(:disabled)").first();
         if (await deploymentPrimary.count()) await activateFocused(deploymentPrimary, "open Deploy actions");
         passDeployment = victoryPage.getByRole("button", { name: "Pass deployment", exact: true });
       }
