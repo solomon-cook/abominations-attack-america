@@ -615,13 +615,23 @@ export class PrismaRoomStore implements RoomStore {
       if (!refreshed || refreshed.status !== "ACTIVE") return;
       const liveState = refreshed.state as unknown as GameState;
       if (liveState.phase === "game-over") return;
-      const command = chooseBotCommand(liveState, botIndices);
+      const proposed = chooseBotCommand(liveState, botIndices);
+      const command = proposed ?? (liveState.phase === "move" ? { type: "pass-move" as const } : liveState.phase === "deploy" ? { type: "pass-deploy" as const } : undefined);
       if (!command) return;
       const probe = { command, actorId: "bot-probe", actionId: "bot-probe", expectedRevision: refreshed.version, protocolVersion: 1 as const };
       const actor = participants.find((participant: any) => participant.playerIndex === this.requiredPlayer(liveState, probe));
       if (!actor?.botControlled) return;
       const envelope: GameCommandEnvelope = { actionId: randomBytes(16).toString("hex"), actorId: actor.id, expectedRevision: refreshed.version, protocolVersion: 1, command };
-      try { await this.commitCommand(refreshed, actor, envelope, "bot"); } catch { return; }
+      try {
+        await this.commitCommand(refreshed, actor, envelope, "bot");
+      } catch {
+        const latest = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
+        if (!latest || latest.version !== refreshed.version) continue;
+        const recovery = liveState.phase === "move" ? { type: "pass-move" as const } : liveState.phase === "deploy" ? { type: "pass-deploy" as const } : undefined;
+        if (!recovery || recovery.type === command.type) return;
+        const recoveryEnvelope: GameCommandEnvelope = { ...envelope, actionId: randomBytes(16).toString("hex"), command: recovery };
+        try { await this.commitCommand(refreshed, actor, recoveryEnvelope, "bot"); } catch { return; }
+      }
     }
   }
 

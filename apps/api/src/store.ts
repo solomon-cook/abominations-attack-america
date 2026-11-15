@@ -517,13 +517,21 @@ export class MemoryRoomStore implements RoomStore {
         if (room.status !== "active") break;
         if (room.state.phase === "game-over") break;
         const botIndices = new Set(room.participants.filter((candidate) => candidate.role === "player" && candidate.botControlled && candidate.playerIndex !== undefined).map((candidate) => candidate.playerIndex!));
-        const command = chooseBotCommand(room.state, botIndices);
+        const proposed = chooseBotCommand(room.state, botIndices);
+        const command = proposed ?? (room.state.phase === "move" ? { type: "pass-move" as const } : room.state.phase === "deploy" ? { type: "pass-deploy" as const } : undefined);
         if (!command) break;
         const playerIndex = this.requiredPlayer(room.state, { actionId: "bot-probe", actorId: "bot-probe", expectedRevision: room.version, protocolVersion: 1, command });
         const actor = room.participants.find((candidate) => candidate.role === "player" && candidate.playerIndex === playerIndex);
         if (!actor?.botControlled) break;
         const envelope = { actionId: randomBytes(16).toString("hex"), actorId: actor.id, expectedRevision: room.version, protocolVersion: 1 as const, command };
-        this.applyRoomCommand(room, actor, envelope, "bot");
+        try {
+          this.applyRoomCommand(room, actor, envelope, "bot");
+        } catch (error) {
+          const recovery = room.state.phase === "move" ? { type: "pass-move" as const } : room.state.phase === "deploy" ? { type: "pass-deploy" as const } : undefined;
+          if (!recovery || recovery.type === command.type) throw error;
+          const recoveryEnvelope = { ...envelope, actionId: randomBytes(16).toString("hex"), expectedRevision: room.version, command: recovery };
+          this.applyRoomCommand(room, actor, recoveryEnvelope, "bot");
+        }
         updated.push(room.code);
       }
     }

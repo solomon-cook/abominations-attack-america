@@ -1799,6 +1799,7 @@ test("Fly pieces pass through occupants while preserving pre-Challenge monster f
 });
 
 test("movement modes enforce authored water barriers and reject unresolved edges", () => {
+  const tomanagiMovement = monsterDefinition("tomanagi")!.movement;
   const lakeEdgeBoard = {
     ...DEVELOPMENT_BOARD,
     edges: DEVELOPMENT_BOARD.edges.map((edge) => edge.from === K("los-angeles") && edge.to === K("denver") ? { ...edge, barrier: "lake" as const } : edge),
@@ -1816,6 +1817,7 @@ test("movement modes enforce authored water barriers and reject unresolved edges
     edges: DEVELOPMENT_BOARD.edges.map((edge) => edge.from === K("los-angeles") && edge.to === K("denver") ? { ...edge, barrier: "sea" as const } : edge),
   };
   assert.equal(movementPathAllowed(seaEdgeBoard, [K("los-angeles"), K("denver")], "sea-seacoast-only"), true);
+  assert.equal(movementPathAllowed(seaEdgeBoard, [K("los-angeles"), K("denver")], tomanagiMovement), true);
   assert.equal(movementPathAllowed(seaEdgeBoard, [K("los-angeles"), K("denver")], "land-lake"), false);
   const unresolvedBoard = {
     ...DEVELOPMENT_BOARD,
