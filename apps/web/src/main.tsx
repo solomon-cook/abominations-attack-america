@@ -324,7 +324,10 @@ function App() {
   useEffect(() => { setSubmarineTargetingId(null); }, [activeGame, selectedUnitId]);
   const militaryChoices = useMemo(() => deploymentChoices(activeGame), [activeGame]);
   const deploymentPiece = militaryChoices.find((choice) => choice.id === deploymentPieceId);
-  const deploymentDestinations = new Set(deploymentPiece?.destinations ?? []);
+  const deploymentDestinations = new Set([
+    ...(deploymentPiece?.destinations ?? []),
+    ...(activeGame.pendingDecision?.type === "giant-placement" && canAct ? activeGame.pendingDecision.destinations : []),
+  ]);
   const openMilitarySheet = (sheet?: string) => {
     const requestedSheet = typeof sheet === "string" ? sheet : undefined;
     setGamePanelOpen(false);
