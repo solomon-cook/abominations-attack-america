@@ -328,21 +328,18 @@ try {
         assert.ok(box && box.height >= 43.5 && box.width >= 43.5, `${width}x${height} record tab needs a 44px target within subpixel layout tolerance; got ${JSON.stringify(box)}`);
       }
       assert.equal(await tabs.getByRole("tab", { name: "Map" }).count(), 0, "the mobile player record reserves Map controls for the dedicated map toolbar");
-      await page.getByRole("button", { name: "Board overview. Click to move camera; arrow keys pan." }).waitFor({ state: "visible" });
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.documentOverflow, false);
       const command = layout.command;
       assert.ok(command?.visible && command.y + command.height <= height + 1, `${width}x${height} expanded command sheet must remain on screen`);
-      assert.equal(layout.minimap?.visible, true);
-      assert.ok(layout.minimap.y + layout.minimap.height < command.y + 1, `${width}x${height} minimap ${JSON.stringify(layout.minimap)} must clear command sheet ${JSON.stringify(command)}`);
+      assert.equal(layout.minimap?.visible, false, "the phone layout keeps the overview minimap hidden without a Map record tab");
       const overlaps = (a, b) => a && b && a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
-      assert.equal(overlaps(layout.minimap, layout.portraitRail), false, `${width}x${height} minimap overlaps player portraits`);
-      for (const control of layout.controls) assert.equal(overlaps(layout.minimap, control), false, `${width}x${height} minimap overlaps ${control.name}`);
+      for (const control of layout.controls) assert.equal(overlaps(control, command), false, `${width}x${height} map control ${control.name} overlaps the expanded command sheet`);
       await page.screenshot({ path: `output/board-art/ui-minimap-${width}x${height}.png` });
       await page.locator(".mobile-command-toggle").click();
       await page.waitForFunction(() => document.querySelector(".mobile-command-toggle")?.getAttribute("aria-expanded") === "false");
       layout = await inspectLayout(page, width, height);
-      assert.equal(layout.minimap?.visible, true, "collapsing the player sheet leaves the map toolbar open");
+      assert.equal(layout.minimap?.visible, false, "collapsing the player sheet keeps the phone minimap hidden");
       await mapControls.locator("summary").click();
       layout = await inspectLayout(page, width, height);
       assert.equal(layout.minimap?.visible, false, "closing the map toolbar hides the minimap");
