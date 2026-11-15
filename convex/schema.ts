@@ -101,7 +101,7 @@ export default defineSchema({
 
   userAccounts: defineTable({
     externalId: v.string(),
-    email: v.string(),
+    email: v.optional(v.string()),
     passwordHash: v.string(),
     username: v.string(),
     emailVerifiedAt: v.optional(v.number()),

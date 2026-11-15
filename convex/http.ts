@@ -117,9 +117,12 @@ async function handle(ctx: any, request: Request) {
     const body = ["POST", "PATCH", "DELETE"].includes(request.method) ? await readBody(request) : {};
     const token = String(request.headers.get("x-room-token") ?? url.searchParams.get("token") ?? body.token ?? "");
     if (parts[0] === "accounts") {
-      if (request.method === "POST" && parts[1] === "register") return response(request, 201, await ctx.runAction(internal.accountAuth.register, { emailInput: String(body.email ?? ""), password: String(body.password ?? "") }));
+      if (request.method === "POST" && parts[1] === "register") {
+        const result = await ctx.runAction(internal.accountAuth.register, { ...(body.username !== undefined ? { usernameInput: String(body.username) } : { emailInput: String(body.email ?? "") }), password: String(body.password ?? "") });
+        return response(request, 201, { account: result.account, message: result.message }, result.sessionToken ? { "set-cookie": sessionCookie(result.sessionToken, secureRequest(request)) } : {});
+      }
       if (request.method === "POST" && parts[1] === "login") {
-        const result = await ctx.runAction(internal.accountAuth.login, { emailInput: String(body.email ?? ""), password: String(body.password ?? "") });
+        const result = await ctx.runAction(internal.accountAuth.login, { usernameInput: String(body.username ?? body.email ?? ""), password: String(body.password ?? "") });
         return response(request, 200, { account: result.account, message: result.message }, { "set-cookie": sessionCookie(result.sessionToken, secureRequest(request)) });
       }
       if (request.method === "POST" && parts[1] === "logout") {
@@ -208,7 +211,6 @@ async function handle(ctx: any, request: Request) {
       if (request.method === "POST" && parts[2] === "claim") {
         const user = await ctx.runAction(internal.accountAuth.authenticate, { value: accountToken(request) });
         if (!user) return response(request, 401, { error: "Sign in to link this seat." });
-        if (!user.emailVerifiedAt) return response(request, 400, { error: "Verify your email before linking a game seat." });
         return response(request, 200, await ctx.runMutation(internal.rooms.claimAccountSeat, { code, token, userId: user.externalId, username: user.username }));
       }
       if (request.method === "POST" && parts[2] === "join") return response(request, 200, await ctx.runMutation(api.rooms.join, { code, displayName: String(body.displayName ?? "Player") }));

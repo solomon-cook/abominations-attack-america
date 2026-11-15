@@ -57,8 +57,8 @@ export const claimRoomSeat = (code: string, token: string) => request<SessionRes
 export const createWebSocketTicket = (code: string, token: string) => request<{ ticket: string }>(`/rooms/${code.toUpperCase()}/ws-ticket`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const resumeAccountGame = (roomId: string) => request<SessionResponse>(`/accounts/me/games/${encodeURIComponent(roomId)}/resume`, { method: "POST", body: "{}" });
 export const getAccount = () => request<{ account: AccountSummary }>("/accounts/me");
-export const registerAccount = (email: string, password: string) => request<{ account?: AccountSummary; message: string; developmentLink?: string }>("/accounts/register", { method: "POST", body: JSON.stringify({ email, password }) });
-export const loginAccount = (email: string, password: string) => request<{ account: AccountSummary; message: string }>("/accounts/login", { method: "POST", body: JSON.stringify({ email, password }) });
+export const registerAccount = (username: string, password: string) => request<{ account: AccountSummary; message: string }>("/accounts/register", { method: "POST", body: JSON.stringify({ username, password }) });
+export const loginAccount = (username: string, password: string) => request<{ account: AccountSummary; message: string }>("/accounts/login", { method: "POST", body: JSON.stringify({ username, password }) });
 export const logoutAccount = () => request<{ message: string }>("/accounts/logout", { method: "POST", body: "{}" });
 export const verifyAccountEmail = (token: string) => request<{ account: AccountSummary; message: string }>("/accounts/verify-email", { method: "POST", body: JSON.stringify({ token }) });
 export const resendAccountVerification = (email: string) => request<{ message: string; developmentLink?: string }>("/accounts/resend-verification", { method: "POST", body: JSON.stringify({ email }) });

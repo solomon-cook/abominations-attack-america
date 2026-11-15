@@ -17,7 +17,6 @@ import {
   logoutAccount,
   registerAccount,
   requestAccountPasswordReset,
-  resendAccountVerification,
   resumeAccountGame,
   refreshPresence,
   removeFriend,
@@ -54,7 +53,8 @@ const categories: { value: LeaderboardCategory; label: string }[] = [
 
 export function AccountPanel({ account, session, onAccountChange, onSessionChange, onOpenChange, defaultOpen = false, compact = false, deferAccountRequests = false }: Props) {
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("");
+  const [loginName, setLoginName] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -159,30 +159,33 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
         {!account ? <>
           {friendInviteToken && <p className="account-private-note">Sign in or create an account to accept this private friend invitation.</p>}
           <div className="account-mode-tabs"><button type="button" className={mode === "login" ? "selected" : ""} onClick={() => setMode("login")}>Sign in</button><button type="button" className={mode === "register" ? "selected" : ""} onClick={() => setMode("register")}>Create account</button></div>
-          {!compact && <p className="account-private-note">Your public username is separate from your private email and password.</p>}
+          {!compact && <p className="account-private-note">Create an account with a username and password. No email is required.</p>}
           <form className="account-form" onSubmit={(event) => { event.preventDefault(); void run(async () => {
             if (mode === "register") {
-              const result = await registerAccount(email, password);
+              const result = await registerAccount(loginName, password);
               setMessage(result.message);
-              if (result.developmentLink) setActionLink(result.developmentLink);
+              await claimCurrentSeat(result.account);
             } else {
-              const result = await loginAccount(email, password);
+              const result = await loginAccount(loginName, password);
               await claimCurrentSeat(result.account);
               setMessage(result.message);
             }
           }); }}>
-            <label>Email<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+            <label>Username<input type="text" autoComplete="username" minLength={3} maxLength={24} required value={loginName} onChange={(event) => setLoginName(event.target.value)} /></label>
             <label>Password<input type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} minLength={12} maxLength={128} required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
             <button type="submit">{mode === "register" ? "Create account" : "Sign in"}</button>
           </form>
-          {!compact && <div className="account-secondary-actions">
-            <button type="button" onClick={() => void run(async () => { const result = await resendAccountVerification(email); setMessage(result.message); if (result.developmentLink) setActionLink(result.developmentLink); })}>Resend verification</button>
-            <button type="button" onClick={() => void run(async () => { const result = await requestAccountPasswordReset(email); setMessage(result.message); if (result.developmentLink) setActionLink(result.developmentLink); })}>Reset password</button>
-          </div>}
+          {!compact && <details className="account-email-recovery">
+            <summary>Reset an existing email-based account</summary>
+            <form className="account-form" onSubmit={(event) => { event.preventDefault(); void run(async () => { const result = await requestAccountPasswordReset(recoveryEmail); setMessage(result.message); if (result.developmentLink) setActionLink(result.developmentLink); }); }}>
+              <label>Account email<input type="email" autoComplete="email" required value={recoveryEmail} onChange={(event) => setRecoveryEmail(event.target.value)} /></label>
+              <button type="submit">Send reset link</button>
+            </form>
+          </details>}
           {actionLink && <a className="account-action-link" href={actionLink}>Continue with account link</a>}
           {resetToken && <form className="account-form" onSubmit={(event) => { event.preventDefault(); void run(async () => { const result = await completeAccountPasswordReset(resetToken, newPassword); setMessage(result.message); }); }}><label>New password<input type="password" autoComplete="new-password" minLength={12} maxLength={128} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label><button type="submit">Set new password</button></form>}
         </> : <>
-          <div className="account-identity"><span>Public username</span><strong>@{account.username}</strong><span>{account.emailVerified ? "Email verified" : "Email verification required"}</span></div>
+          <div className="account-identity"><span>Public username</span><strong>@{account.username}</strong><span>Account ready</span></div>
           {friendInviteToken && <div className="account-private-note" role="group" aria-label="Private friend invitation"><p>A private friend invitation is ready. Accept it to add the sender to your friends.</p><button type="button" onClick={() => void run(async () => { const result = await acceptFriendInviteLink(friendInviteToken); setMessage(result.message); await reloadSocial(); clearFriendInviteToken(); })}>Accept friend invitation</button></div>}
           {session?.room.participants.find((seat) => seat.id === session.participantId)?.role === "player" && <button type="button" className="account-link-seat" onClick={() => void run(async () => { onSessionChange(await claimRoomSeat(session.room.code, session.token)); setMessage("This match is linked to your account."); })}>Link current player seat</button>}
           <form className="account-inline-form" onSubmit={(event) => { event.preventDefault(); void run(async () => { const result = await updateAccountUsername(username || account.username); onAccountChange(result.account); setUsername(""); setMessage("Username updated."); }); }}><label>Change username<input minLength={3} maxLength={24} pattern="[A-Za-z0-9_-]+" value={username} placeholder={account.username} onChange={(event) => setUsername(event.target.value)} /></label><button type="submit">Save</button></form>
