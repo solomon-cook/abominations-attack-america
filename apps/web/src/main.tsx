@@ -215,7 +215,10 @@ function App() {
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitPath, setSelectedUnitPath] = useState<HexKey[]>([]);
   const [acceptedMoveAnimation, setAcceptedMoveAnimation] = useState<{ path: HexKey[]; pieceId: string; key: number } | null>(null);
-  const latestAnimatedUnitMoveRef = useRef<{ matchId: string; eventId?: string } | null>(null);
+  const seenMovementEventsRef = useRef<{ matchId: string; eventIds: Set<string> } | null>(null);
+  const localMovementEventsRef = useRef(new Set<string>());
+  const pendingMoveAnimationsRef = useRef<{ path: HexKey[]; pieceId: string }[]>([]);
+  const movementAnimationRunningRef = useRef(false);
   const moveAnimationSequence = useRef(0);
   const [acceptedActionFeedback, setAcceptedActionFeedback] = useState<{ label: string; key: number } | null>(null);
   const [selectedStackKey, setSelectedStackKey] = useState<HexKey | null>(null);
@@ -631,26 +634,56 @@ function App() {
   }, [activeGame.pendingRetreat?.monsterId]);
 
   useEffect(() => {
-    const latestMove = [...activeGame.eventLog].reverse().find((event) => event.action === "unit.moved");
-    const previous = latestAnimatedUnitMoveRef.current;
+    const previous = seenMovementEventsRef.current;
     if (!previous || previous.matchId !== activeGame.matchId) {
-      latestAnimatedUnitMoveRef.current = { matchId: activeGame.matchId, eventId: latestMove?.id };
+      seenMovementEventsRef.current = {
+        matchId: activeGame.matchId,
+        eventIds: new Set(activeGame.eventLog.map((event) => event.id)),
+      };
+      pendingMoveAnimationsRef.current = [];
+      movementAnimationRunningRef.current = false;
+      setAcceptedMoveAnimation(null);
       return;
     }
-    if (!latestMove || latestMove.id === previous.eventId) return;
-    latestAnimatedUnitMoveRef.current = { matchId: activeGame.matchId, eventId: latestMove.id };
-    const unitId = latestMove.detail.unitId;
-    const pathValue = latestMove.detail.path;
-    if (typeof unitId !== "string" || !Array.isArray(pathValue) || pathValue.length < 2 || !pathValue.every(isHexKey)) return;
-    const path = pathValue as HexKey[];
-    if (!activeGame.units.some((unit) => unit.id === unitId && unit.location === path.at(-1))) return;
-    moveAnimationSequence.current += 1;
-    setAcceptedMoveAnimation({ path, pieceId: unitId, key: moveAnimationSequence.current });
-  }, [activeGame.eventLog, activeGame.matchId, activeGame.units]);
+    const freshMoves = activeGame.eventLog.flatMap((event) => {
+      if (previous.eventIds.has(event.id)) return [];
+      previous.eventIds.add(event.id);
+      if (event.action !== "unit.moved" && event.action !== "monster.moved") return [];
+      if (localMovementEventsRef.current.delete(event.id)) return [];
+      const pathValue = event.detail.path;
+      if (!Array.isArray(pathValue) || pathValue.length < 2 || !pathValue.every(isHexKey)) return [];
+      const path = pathValue as HexKey[];
+      const pieceId = event.action === "unit.moved"
+        ? event.detail.unitId
+        : event.detail.monsterId ?? activeGame.monsters.find((monster) => monster.location === path.at(-1))?.id;
+      if (typeof pieceId !== "string") return [];
+      return [{ path, pieceId }];
+    });
+    if (freshMoves.length) {
+      pendingMoveAnimationsRef.current.push(...freshMoves);
+      if (!movementAnimationRunningRef.current) {
+        const next = pendingMoveAnimationsRef.current.shift();
+        if (next) {
+          movementAnimationRunningRef.current = true;
+          moveAnimationSequence.current += 1;
+          setAcceptedMoveAnimation({ ...next, key: moveAnimationSequence.current });
+        }
+      }
+    }
+  }, [activeGame.eventLog, activeGame.matchId, activeGame.monsters, activeGame.units]);
 
   useEffect(() => {
     if (!acceptedMoveAnimation) return;
-    const timeout = window.setTimeout(() => setAcceptedMoveAnimation(null), (acceptedMoveAnimation.path.length - 1) * 400 + 250);
+    const timeout = window.setTimeout(() => {
+      const next = pendingMoveAnimationsRef.current.shift();
+      if (!next) {
+        movementAnimationRunningRef.current = false;
+        setAcceptedMoveAnimation(null);
+        return;
+      }
+      moveAnimationSequence.current += 1;
+      setAcceptedMoveAnimation({ ...next, key: moveAnimationSequence.current });
+    }, (acceptedMoveAnimation.path.length - 1) * 400 + 250);
     return () => window.clearTimeout(timeout);
   }, [acceptedMoveAnimation]);
 
@@ -834,11 +867,7 @@ function App() {
             ? { type: "resolve-encounter" }
             : { type: "deploy" }
         : command.type === "move" ? { ...command, continueMovement: true } : command;
-    const acceptedMove = normalized.type === "move"
-      ? { path: normalized.path as HexKey[], pieceId: activePlayer.id }
-      : normalized.type === "move-unit"
-        ? { path: normalized.path as HexKey[], pieceId: normalized.unitId }
-        : undefined;
+    const isMoveCommand = normalized.type === "move" || normalized.type === "move-unit";
     try {
       let nextGame: GameState;
       if (online && session && room) {
@@ -856,18 +885,41 @@ function App() {
           const event = nextRoom.state.eventLog.at(-1);
           if (typeof event?.detail.cardId === "string") setResearchReveal(event.detail.cardId);
         }
-        if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
         const actionLabel = acceptedActionLabel(normalized);
         if (actionLabel) setAcceptedActionFeedback({ label: actionLabel, key: Date.now() });
       } else {
         const result = applyCommand(game, normalized);
+        const movementEvent = result.state.eventLog.at(-1);
+        if (isMoveCommand && (movementEvent?.action === "unit.moved" || movementEvent?.action === "monster.moved")) {
+          localMovementEventsRef.current.add(movementEvent.id);
+        }
         setGame(result.state);
         nextGame = result.state;
         if (normalized.type === "draw-research" && typeof result.eventPayload.cardId === "string") setResearchReveal(result.eventPayload.cardId);
-        if (acceptedMove) setAcceptedMoveAnimation({ ...acceptedMove, key: Date.now() });
         const actionLabel = acceptedActionLabel(normalized);
         if (actionLabel) setAcceptedActionFeedback({ label: actionLabel, key: Date.now() });
         await new Promise((resolve) => window.setTimeout(resolve, 0));
+      }
+      if (isMoveCommand) {
+        const event = nextGame.eventLog.at(-1);
+        const pathValue = event?.detail.path;
+        const pieceId = event?.action === "unit.moved" ? event.detail.unitId : event?.detail.monsterId;
+        if ((event?.action === "unit.moved" || event?.action === "monster.moved")
+          && typeof pieceId === "string"
+          && Array.isArray(pathValue)
+          && pathValue.length > 1
+          && pathValue.every(isHexKey)) {
+          localMovementEventsRef.current.add(event.id);
+          pendingMoveAnimationsRef.current.push({ path: pathValue as HexKey[], pieceId });
+          if (!movementAnimationRunningRef.current) {
+            const next = pendingMoveAnimationsRef.current.shift();
+            if (next) {
+              movementAnimationRunningRef.current = true;
+              moveAnimationSequence.current += 1;
+              setAcceptedMoveAnimation({ ...next, key: moveAnimationSequence.current });
+            }
+          }
+        }
       }
       if (normalized.type === "deploy" || normalized.type === "redeploy") {
         setDeploymentPieceId(null);
@@ -877,7 +929,7 @@ function App() {
           setMilitarySheetOpen(true);
         }
       }
-      if (acceptedMove || normalized.type === "stay-piece") { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); setSelectedUnitId(null); }
+      if (isMoveCommand || normalized.type === "stay-piece") { setSelectedPath([]); setSelectedUnitPath([]); setHoveredPath([]); setSelectedUnitId(null); }
       if (normalized.type === "move" || (normalized.type === "stay-piece" && normalized.pieceId === activePlayer.id)) {
         focusNextMovementUnit(nextGame);
       }
@@ -1097,13 +1149,6 @@ function App() {
         return;
       }
       if (command.type === "move" || command.type === "move-unit") {
-        if (command.type === "move") {
-          const pieceId = currentGame.monsters[currentGame.currentPlayer]?.id;
-          if (pieceId) {
-            moveAnimationSequence.current += 1;
-            setAcceptedMoveAnimation({ path: command.path as HexKey[], pieceId, key: moveAnimationSequence.current });
-          }
-        }
         const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches || Boolean(document.querySelector(".manual-reduced-motion"));
         nextBotStepDelay.current = botActionDelayMs(command, reducedMotion);
       } else if (command.type === "resolve-fight") {
