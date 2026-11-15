@@ -2523,7 +2523,7 @@ export interface EncounterResolution {
   state: GameState;
   effects: readonly Readonly<{ type: "health" | "infamy" | "stomp"; amount: number; source: string }>[];
   rolls: readonly number[];
-  mutationDraws: readonly Readonly<{ siteId: string; cardDrawn: boolean; effectStatus: "implemented" | "source-gated" | "none" }>[];
+  mutationDraws: readonly Readonly<{ siteId: string; cardDrawn: boolean; cardId?: string; effectStatus: "implemented" | "source-gated" | "none" }>[];
 }
 
 /** Only these printed features consume a Stomp marker and apply an Encounter reward. */
@@ -2589,11 +2589,11 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
       }
       const mutationCardId = first.cardId ?? second.cardId;
       if (mutationCardId) next.players[next.currentPlayer].mutationCardIds.push(mutationCardId);
-      mutationDraws.push({ siteId: feature.siteId, cardDrawn: Boolean(mutationCardId), effectStatus: mutationCardId ? sourcedCardRule(mutationCardId)?.effectsImplementation === "implemented" ? "implemented" : "source-gated" : "none" });
+      mutationDraws.push({ siteId: feature.siteId, cardDrawn: Boolean(mutationCardId), ...(mutationCardId ? { cardId: mutationCardId } : {}), effectStatus: mutationCardId ? sourcedCardRule(mutationCardId)?.effectsImplementation === "implemented" ? "implemented" : "source-gated" : "none" });
       continue;
     }
     const mutationCardId = drawMutationForMonster(next, monster);
-    mutationDraws.push({ siteId: feature.siteId, cardDrawn: Boolean(mutationCardId), effectStatus: mutationCardId ? sourcedCardRule(mutationCardId)?.effectsImplementation === "implemented" ? "implemented" : "source-gated" : "none" });
+    mutationDraws.push({ siteId: feature.siteId, cardDrawn: Boolean(mutationCardId), ...(mutationCardId ? { cardId: mutationCardId } : {}), effectStatus: mutationCardId ? sourcedCardRule(mutationCardId)?.effectsImplementation === "implemented" ? "implemented" : "source-gated" : "none" });
     next.log.push(`${monster.name} used Mutation site ${feature.siteId};${mutationCardId ? ` A Mutation card was drawn face up.${mutationDrawStatus(mutationCardId)}` : " No Mutation card was available."}`);
   }
   if (next.challenge?.declared && !next.challenge.active && challengeSite && monster.location !== "hollywood" && !next.challenge.defeatedMonsterIds.includes(monster.id)) {
