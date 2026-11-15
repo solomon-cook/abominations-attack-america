@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { applyCommand, cardDefinition, sourcedCardRule, legalGiantPlacementDestinations, legalMolecularCannonTargets, type GameCommand, type GameState } from "@abominations/game-engine";
 import { boardForGame } from "../board-pin";
 import { DigitalCard } from "./DigitalCard";
+import { usePlayerNames } from "./player-name-context";
 
 type CardAction = { label: string; command: GameCommand };
-export function sheetCardActions(game: GameState, cardId: string): CardAction[] {
+export function sheetCardActions(game: GameState, cardId: string, playerName: (index: number) => string = (index) => `Player ${index + 1}`): CardAction[] {
   const board = boardForGame(game);
   const name = (key: string) => board?.hexes[key as `${number},${number}`]?.label ?? key;
   const candidates: CardAction[] = [];
@@ -27,7 +28,7 @@ export function sheetCardActions(game: GameState, cardId: string): CardAction[] 
     const faceUpCards = player.visibleResearchCardIds ?? player.researchCardIds;
     for (const researchCardId of faceUpCards) {
       if (researchCardId !== cardId) candidates.push({
-        label: `Remove Player ${researchPlayerIndex + 1}'s ${researchCardId} from play`,
+        label: `Remove ${playerName(researchPlayerIndex)}'s ${researchCardId} from play`,
         command: { type: "use-research", cardId, researchCardId, researchPlayerIndex },
       });
     }
@@ -59,11 +60,11 @@ function kindForMonsterCard(game: GameState, cardId: string): boolean {
     && game.players[game.currentPlayer]?.mutationCardIds.includes(cardId) === true;
 }
 
-function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game: GameState; cardId: string; kind: "mutation" | "research"; canPlay: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void }) {
+function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy, playerName }: { game: GameState; cardId: string; kind: "mutation" | "research"; canPlay: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void; playerName: (index: number) => string }) {
   const [selected, setSelected] = useState("");
   const rule = sourcedCardRule(cardId);
   const implemented = cardDefinition(cardId)?.availability === "implemented";
-  const actions = useMemo(() => canPlay && implemented ? sheetCardActions(game, cardId) : [], [game, cardId, canPlay, implemented]);
+  const actions = useMemo(() => canPlay && implemented ? sheetCardActions(game, cardId, playerName) : [], [game, cardId, canPlay, implemented, playerName]);
   const chosen = actions.find((action) => JSON.stringify(action.command) === selected);
   const status = !implemented ? "This card’s action is not implemented yet."
     : rule?.classification === "persistent" ? "Active while held · no play action needed."
@@ -85,9 +86,11 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy }: { game:
 }
 
 export function SheetCards({ game, playerIndex, kind, canAct = false, runCommand, onDeploy }: { game: GameState; playerIndex: number; kind: "mutation" | "research"; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void }) {
+  const names = usePlayerNames();
+  const playerName = (index: number) => names[index] ?? "Unknown player";
   const cards = game.players[playerIndex]?.[kind === "mutation" ? "mutationCardIds" : "researchCardIds"] ?? [];
   return <section className="sheet-held-cards" aria-label={kind === "mutation" ? "Your Mutation cards" : "Your Military Research cards"}>
     <h3>{kind === "mutation" ? "Monster Mutation" : "Military Research"} · {cards.length}</h3>
-    {!cards.length ? <p>No {kind === "mutation" ? "Mutation" : "Military Research"} cards held.</p> : <div className="sheet-held-card-grid">{cards.map((cardId) => <HeldCard key={cardId} game={game} cardId={cardId} kind={kind} canPlay={canAct && playerIndex === game.currentPlayer} runCommand={runCommand} onDeploy={onDeploy} />)}</div>}
+    {!cards.length ? <p>No {kind === "mutation" ? "Mutation" : "Military Research"} cards held.</p> : <div className="sheet-held-card-grid">{cards.map((cardId) => <HeldCard key={cardId} game={game} cardId={cardId} kind={kind} canPlay={canAct && playerIndex === game.currentPlayer} runCommand={runCommand} onDeploy={onDeploy} playerName={playerName} />)}</div>}
   </section>;
 }

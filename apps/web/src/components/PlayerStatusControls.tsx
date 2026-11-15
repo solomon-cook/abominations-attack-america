@@ -8,6 +8,7 @@ import { MilitarySheet, type DeploymentChoice } from "./MilitarySheet";
 import { monsterAssetSlug } from "../monster-assets";
 import { movementLabel, SheetStats } from "./SheetReference";
 import { branchForPlayer, BRANCH_MARK, playerControlBadges, trophyUnitsForPlayer } from "../player-visuals";
+import { usePlayerNames } from "./player-name-context";
 
 type Props = { game: GameState; monster: GameState["monsters"][number]; branch: Branch; playerIndex: number; canAct: boolean; mobileCommandExpanded: boolean; runCommand: (command: GameCommand) => void | Promise<void>; onDeploy: (sheet?: string) => void; onSelectDeployment?: (choice: DeploymentChoice) => void };
 
@@ -64,6 +65,8 @@ function MonsterSheet({ monster, game, playerIndex, canAct, runCommand, onClose 
 }
 
 export function PlayerStatusControls({ game, monster, branch, playerIndex, canAct, mobileCommandExpanded, runCommand, onDeploy, onSelectDeployment }: Props) {
+  const playerNames = usePlayerNames();
+  const playerName = (index: number) => playerNames[index] ?? `Player ${index + 1}`;
   const [open, setOpen] = useState<string | null>(null);
   const [tab, setTab] = useState<"monster" | "military" | "map">("monster");
   const [mobileRecordOpen, setMobileRecordOpen] = useState(false);
@@ -140,7 +143,7 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
         const healthPercent = Math.max(0, Math.min(100, Math.round(entry.health / entry.maxHealth * 100)));
         const controlSummary = controls.length ? `, controls ${controls.map(({ label }) => label).join(", ")}` : "";
         const trophySummary = trophies.length ? `, ${trophies.length} trophy ${trophies.length === 1 ? "unit" : "units"}` : "";
-        return <button key={entry.id} type="button" data-branch={playerBranch} className={`opponent-player-card ${trophies.length ? "has-trophies" : ""} ${index === game.currentPlayer ? "is-active" : ""} ${index === playerIndex ? "is-you" : ""}`} aria-label={`Player ${index + 1}: ${entry.name}, ${playerBranch}, ${entry.health} of ${entry.maxHealth} health, ${entry.infamy} infamy${trophySummary}${controlSummary}${index === game.currentPlayer ? ", active turn" : ""}`} aria-expanded={inspectedPlayer === index} aria-controls="player-public-status" title={`Player ${index + 1} · ${entry.name} · ${playerBranch} · ♥ ${entry.health}/${entry.maxHealth} · ★ ${entry.infamy}${trophies.length ? ` · ${trophies.length} trophy ${trophies.length === 1 ? "unit" : "units"}` : ""}${controls.length ? ` · ${controls.map(({ label }) => label).join(" · ")}` : ""}`} onClick={() => setInspectedPlayer((current) => current === index ? null : index)}>
+        return <button key={entry.id} type="button" data-branch={playerBranch} className={`opponent-player-card ${trophies.length ? "has-trophies" : ""} ${index === game.currentPlayer ? "is-active" : ""} ${index === playerIndex ? "is-you" : ""}`} aria-label={`${playerName(index)}: ${entry.name}, ${playerBranch}, ${entry.health} of ${entry.maxHealth} health, ${entry.infamy} infamy${trophySummary}${controlSummary}${index === game.currentPlayer ? ", active turn" : ""}`} aria-expanded={inspectedPlayer === index} aria-controls="player-public-status" title={`${playerName(index)} · ${entry.name} · ${playerBranch} · ♥ ${entry.health}/${entry.maxHealth} · ★ ${entry.infamy}${trophies.length ? ` · ${trophies.length} trophy ${trophies.length === 1 ? "unit" : "units"}` : ""}${controls.length ? ` · ${controls.map(({ label }) => label).join(" · ")}` : ""}`} onClick={() => setInspectedPlayer((current) => current === index ? null : index)}>
           <span className="opponent-portrait" style={{ "--health-percent": `${healthPercent}%` } as CSSProperties}>
             <img src={`/assets/monsters/portraits/${monsterAssetSlug(entry.name)}.webp`} alt="" />
             <span className="opponent-health-badge" aria-hidden="true">♥{entry.health}</span>
@@ -164,7 +167,7 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
         const playerBranch = branchForPlayer(game, inspectedPlayer);
         const controls = playerControlBadges(game, inspectedPlayer);
         const position = isHexKey(entry.location) ? game.boardId ? getLocation(entry.location)?.name : undefined : undefined;
-        return <section id="player-public-status" className="player-public-status" aria-label={`Player ${inspectedPlayer + 1} status`}>
+        return <section id="player-public-status" className="player-public-status" aria-label={`${playerName(inspectedPlayer)} status`}>
           <button type="button" className="player-public-close" aria-label="Close player status" onClick={() => setInspectedPlayer(null)}>×</button>
           <img src={`/assets/monsters/portraits/${monsterAssetSlug(entry.name)}.webp`} alt="" />
           <div><small>PLAYER {inspectedPlayer + 1}{inspectedPlayer === playerIndex ? " · YOU" : ""}</small><strong>{entry.name}</strong><span className="player-public-branch" data-branch={playerBranch}><i aria-hidden="true">{BRANCH_MARK[playerBranch]}</i>{playerBranch}</span><span>♥ {entry.health}/{entry.maxHealth} · ★ {entry.infamy}</span><span>{position ?? entry.location}</span>{controls.length > 0 && <span className="player-public-controls">Controls: {controls.map(({ label }) => label).join(" · ")}</span>}</div>
@@ -172,7 +175,7 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
       })()}
     </nav>
     {mobileRecordHost ? createPortal(recordContent, mobileRecordHost) : recordContent}
-    <nav className="player-sheet-peeks" aria-label={`Player ${playerIndex + 1} reference sheets`}>
+    <nav className="player-sheet-peeks" aria-label={`${playerName(playerIndex)} reference sheets`}>
       {[{ id: "monster", name: monster.name, kind: "Monster", theme: "monster", count: game.players[playerIndex]?.mutationCardIds.length ?? 0 },
         ...ownedMilitarySheets(game, playerIndex, branch).map((name) => ({ id: name, name, kind: "Military", theme: name, count: name === branch ? game.players[playerIndex]?.researchCardIds.length ?? 0 : undefined })),
       ].map((sheet) => <button key={sheet.id} className="sheet-peek" data-sheet={sheet.theme} aria-label={`Open ${sheet.name} ${sheet.kind.toLowerCase()} sheet`} aria-haspopup="dialog" onClick={() => setOpen(sheet.id)}>

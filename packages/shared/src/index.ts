@@ -13,6 +13,14 @@ import type { GameCommandEnvelope } from "@abominations/game-engine";
 
 export type RoomStatus = "waiting" | "active" | "completed" | "abandoned" | "expired";
 export type RoomPrivacy = "private" | "public";
+
+const botUsernames = ["Stompzilla", "KaijuKaraoke", "AtomicPickle", "MothraMischief", "RumbleRaccoon", "MayorOfMonstertown", "TinyApocalypse", "SasquatchSnack"] as const;
+
+/** Stable playful handle for an automated room seat. */
+export function botUsernameForSeat(playerIndex: number, roomCode = ""): string {
+  const offset = [...roomCode.toUpperCase()].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+  return botUsernames[(offset + playerIndex) % botUsernames.length]!;
+}
 export type ParticipantRole = "player" | "spectator";
 
 export interface RoomEvent {

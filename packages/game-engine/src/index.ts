@@ -951,12 +951,6 @@ function prepareSetupPositions(state: GameState): GameState {
     next.units = next.units.map((unit) => ({ ...unit,
       ownerPlayer: next.setupAssignments!.find((assignment) => assignment.branch === unit.branch)?.playerIndex ?? unit.ownerPlayer,
     }));
-    for (const placement of completedSetup.unusedBranchPlacements ?? []) {
-      const unit = next.units.find((candidate) => candidate.id === placement.unitId);
-      if (!unit || !isHexKey(placement.destination) || !board.hexes[placement.destination]) throw new GameDomainError("ILLEGAL_COMMAND", "Unused branch setup placement is not on the active audited board.");
-      if (unit.location !== "record-tile") throw new GameDomainError("ILLEGAL_COMMAND", `Unused branch unit ${unit.id} has already left its record tile.`);
-      unit.location = placement.destination;
-    }
   }
   const normalizeLocation = (value: string): HexKey => {
     if (isHexKey(value) && board.hexes[value]) return value;

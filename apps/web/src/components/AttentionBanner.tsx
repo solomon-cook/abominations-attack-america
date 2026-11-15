@@ -1,4 +1,5 @@
 import type { GameState } from "@abominations/game-engine";
+import { usePlayerName } from "./player-name-context";
 
 type Props = {
   game: GameState;
@@ -45,6 +46,8 @@ const eventIcons: Record<string, string> = {
 
 /** Board-adjacent attention state derived only from the authoritative snapshot. */
 export function AttentionBanner({ game, action, canAct, online }: Props) {
+  const decisionName = usePlayerName(game.pendingDecision && "playerIndex" in game.pendingDecision ? game.pendingDecision.playerIndex : game.currentPlayer);
+  const currentPlayerName = usePlayerName(game.currentPlayer);
   if (game.phase === "game-over") {
     return <div className="attention-banner complete" role="status" aria-live="polite"><span className="metric-icon" aria-hidden="true">■</span><strong>Match complete</strong><span>Choose a rematch or return to the lobby.</span></div>;
   }
@@ -53,7 +56,7 @@ export function AttentionBanner({ game, action, canAct, online }: Props) {
     return (
       <div className={`attention-banner ${canAct ? "action-needed" : "waiting"}`} role="status" aria-live="polite">
         <span className="metric-icon" aria-hidden="true">{canAct ? "!" : "…"}</span>
-        <strong>{canAct ? "Your decision" : `Waiting for Player ${pending.playerIndex + 1}`}</strong>
+        <strong>{canAct ? "Your decision" : `Waiting for ${decisionName}`}</strong>
         <span>{readableDecision(pending.type)} · use the highlighted controls.</span>
       </div>
     );
@@ -64,7 +67,7 @@ export function AttentionBanner({ game, action, canAct, online }: Props) {
     return <div className="attention-banner event" role="status" aria-live="polite"><span className="metric-icon" aria-hidden="true">{eventIcons[latestEvent?.action ?? ""] ?? "•"}</span><strong>Update</strong><span>{eventLabel}.</span></div>;
   }
   if (!online && action) {
-    return <div className="attention-banner" role="status" aria-live="polite"><span className="metric-icon" aria-hidden="true">▶</span><strong>Player {game.currentPlayer + 1} · {action}</strong><span>Choose a highlighted action.</span></div>;
+    return <div className="attention-banner" role="status" aria-live="polite"><span className="metric-icon" aria-hidden="true">▶</span><strong>{currentPlayerName} · {action}</strong><span>Choose a highlighted action.</span></div>;
   }
   return null;
 }

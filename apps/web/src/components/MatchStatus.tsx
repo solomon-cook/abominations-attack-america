@@ -1,14 +1,16 @@
 import type { GameState } from "@abominations/game-engine";
+import { usePlayerName } from "./player-name-context";
 
 type Props = { game: GameState; action: string };
 
 export function MatchStatus({ game, action }: Props) {
+  const playerName = usePlayerName(game.currentPlayer);
   const monster = game.monsters[game.currentPlayer];
   const challenge = game.challenge?.active ? "Active" : game.challenge?.declared ? "Declared" : "Not declared";
   return (
     <section className="status" aria-live="polite" aria-label="Match status">
       <div><span className="label"><span className="metric-icon" aria-hidden="true">↻</span> ROUND</span><strong>{game.round}</strong></div>
-      <div><span className="label"><span className="metric-icon" aria-hidden="true">▶</span> ACTIVE PLAYER</span><strong>Player {game.currentPlayer + 1}</strong></div>
+      <div><span className="label"><span className="metric-icon" aria-hidden="true">▶</span> ACTIVE PLAYER</span><strong>{playerName}</strong></div>
       <div><span className="label"><span className="metric-icon" aria-hidden="true">♥</span> ACTIVE MONSTER</span><strong>{game.monsters[game.currentPlayer].name}</strong></div>
       <div><span className="label">PHASE</span><strong>{action}</strong></div>
       <div><span className="label">HEALTH</span><strong>{monster.health} / {monster.maxHealth}</strong></div>

@@ -1,4 +1,5 @@
 import type { GameState } from "@abominations/game-engine";
+import { usePlayerName } from "./player-name-context";
 
 type Props = {
   game: GameState;
@@ -7,6 +8,7 @@ type Props = {
 const phases = ["move", "fight", "encounter", "deploy", "challenge"] as const;
 
 export function TurnProgress({ game }: Props) {
+  const playerName = usePlayerName(game.currentPlayer);
   const currentIndex = game.phase === "game-over" ? phases.length : phases.indexOf(game.phase);
   const substep = game.pendingDecision?.type === "monster-movement"
     ? "Choose monster movement"
@@ -46,7 +48,7 @@ export function TurnProgress({ game }: Props) {
 
   return (
     <nav className="turn-progress" aria-label="Turn progress">
-      <span className="label">TURN {game.round} · PLAYER {game.currentPlayer + 1}</span>
+      <span className="label">TURN {game.round} · {playerName}</span>
       <ol>
         {phases.map((phase, index) => (
           <li key={phase} className={index < currentIndex ? "complete" : index === currentIndex ? "current" : "upcoming"}>

@@ -1,4 +1,5 @@
 import type { GameState } from "@abominations/game-engine";
+import { usePlayerNames } from "./player-name-context";
 
 type Props = {
   eventLog: GameState["eventLog"];
@@ -6,6 +7,8 @@ type Props = {
 };
 
 export function LogPanel({ eventLog, log }: Props) {
+  const playerNames = usePlayerNames();
+  const personalize = (text: string) => text.replace(/\bPlayer (\d+)\b/g, (label, seat: string) => playerNames[Number(seat) - 1] ?? label);
   return (
     <div className="card log">
       <span className="label">TURN LOG</span>
@@ -16,10 +19,10 @@ export function LogPanel({ eventLog, log }: Props) {
                 {entry.actorId ? `${entry.actorId} · ` : ""}
                 {entry.action} · {entry.outcome}
               </summary>
-              <pre>{JSON.stringify(entry.detail, null, 2)}</pre>
+              <pre>{personalize(JSON.stringify(entry.detail, null, 2))}</pre>
             </details>
           ))
-        : log.map((entry, index) => <p key={index}>{entry}</p>)}
+        : log.map((entry, index) => <p key={index}>{personalize(entry)}</p>)}
     </div>
   );
 }

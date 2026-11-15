@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePlayerName } from "./player-name-context";
 import { isHexKey, legalChopperLiftDestinations, type GameCommand, type GameState, type HexKey } from "@abominations/game-engine";
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 
 /** The die is committed by the backend before the player chooses their move. */
 export function ChopperLiftChoiceControls({ game, canChoose, runCommand, getLocationName }: Props) {
+  const playerName = usePlayerName(game.pendingChopperLift?.playerIndex ?? game.currentPlayer);
   const pending = game.pendingChopperLift;
   const [monsterId, setMonsterId] = useState("");
   const [destination, setDestination] = useState<HexKey | "">("");
@@ -25,7 +27,7 @@ export function ChopperLiftChoiceControls({ game, canChoose, runCommand, getLoca
   }, [destination, destinations]);
 
   if (!pending) return null;
-  if (!canChoose) return <p className="chopper-lift-pending" role="status">Player {pending.playerIndex + 1} rolled {pending.roll} for Chopper Lift and is choosing a monster and destination.</p>;
+  if (!canChoose) return <p className="chopper-lift-pending" role="status">{playerName} rolled {pending.roll} for Chopper Lift and is choosing a monster and destination.</p>;
   return <section className="chopper-lift-choice" aria-label="Chopper Lift movement choice">
     <strong>Chopper Lift rolled {pending.roll}. Choose a monster, then a landing space.</strong>
     <label>Monster

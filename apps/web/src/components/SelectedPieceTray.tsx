@@ -1,10 +1,12 @@
 import { boardForState, getLocation, isHexKey, shortestLegalUnitPaths, militaryUnitStats, monsterCombatStats, monsterDefinition, UNIT_DEFINITIONS, NATIONAL_GUARD_DEFINITIONS, GIANT_UNIT_DEFINITIONS, type GameState, type HexKey } from "@abominations/game-engine";
 import { movementLabel, SheetStats } from "./SheetReference";
 import { monsterAssetSlug } from "../monster-assets";
+import { usePlayerName } from "./player-name-context";
 
 type Props = { game: GameState; selectedUnitId: string | null; selectedUnitPath: readonly HexKey[]; onClear: () => void; canLaunchSubmarine: boolean; choosingSubmarineTarget: boolean; onLaunchSubmarine: () => void };
 
 export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onClear, canLaunchSubmarine, choosingSubmarineTarget, onLaunchSubmarine }: Props) {
+  const playerName = usePlayerName(game.currentPlayer);
   const unit = game.units.find((candidate) => candidate.id === selectedUnitId);
   if (!unit) {
     const monster = game.monsters[game.currentPlayer];
@@ -14,7 +16,7 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
     return <section className="piece-detail-tray monster-command-record" aria-label="Selected piece details">
       <div className="command-portrait"><img src={`/assets/monsters/portraits/${monsterAssetSlug(monster.name)}.webp`} alt="" /></div>
       <div className="command-record-body">
-        <div className="command-identity"><div><span className="command-eyebrow">MONSTER RECORD · PLAYER {game.currentPlayer + 1}</span><h3>{monster.name}</h3></div><span className="command-infamy" title="Infamy">★ <b>{monster.infamy}</b><small>INFAMY</small></span></div>
+        <div className="command-identity"><div><span className="command-eyebrow">MONSTER RECORD · {playerName}</span><h3>{monster.name}</h3></div><span className="command-infamy" title="Infamy">★ <b>{monster.infamy}</b><small>INFAMY</small></span></div>
         <div className="command-health"><span>HEALTH <b>{monster.health}<small> / {monster.maxHealth}</small></b></span><meter aria-label="Monster health" min={0} max={monster.maxHealth} value={monster.health} /></div>
         <SheetStats values={{ Move: combatStats.move, Attacks: combatStats.attacks, Defense: combatStats.defense, Damage: combatStats.damage }} />
         <div className="command-movement">{movementLabel(monster.movement)}<span>{moved ? "✓ Movement complete" : game.phase === "move" ? "Ready to move" : game.phase}</span></div>

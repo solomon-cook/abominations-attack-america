@@ -1,5 +1,6 @@
 import { canUseDefenseSatellites, cardDefinition, legalLaserFenceTargets, sourcedCardRule, type GameCommand, type GameState } from "@abominations/game-engine";
 import { DigitalCard } from "./DigitalCard";
+import { usePlayerName } from "./player-name-context";
 
 type Props = {
   game: GameState;
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation = canAct, runCommand }: Props) {
+  const ownerName = usePlayerName(playerIndex);
   const player = game.players[playerIndex];
   const isActivePlayer = playerIndex === game.currentPlayer;
   const revealedMutationCards = player?.mutationCardIds ?? [];
@@ -101,7 +103,7 @@ export function RevealedCardsPanel({ game, playerIndex, canAct, canUseMutation =
     );
   };
   return (
-    <div className="card revealed-card-panel" aria-label={`Card actions for Player ${playerIndex + 1}`}>
+    <div className="card revealed-card-panel" aria-label={`Card actions for ${ownerName}`}>
       <span className="label">YOUR CARD ACTIONS</span>
       <p className="card-privacy-note">Your held cards and available actions are shown here. Drawn cards are face up for everyone; deck order and discard contents stay hidden.</p>
       <div className="revealed-card-group">

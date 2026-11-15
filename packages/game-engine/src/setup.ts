@@ -130,7 +130,7 @@ export function chooseBranch(state: SetupState, playerIndex: number, branch: Bra
   const next = replaceSeat(state, { ...seat(state, playerIndex), branch });
   if (nextUnassigned(next, "branch", true)) return next;
   const unused = state.definition.eligibleBranches.filter((candidate) => !next.seats.some((candidateSeat) => candidateSeat.branch === candidate));
-  return unused.length > 0 && state.definition.unusedBranchPlacements ? { ...next, phase: "unused-branch-placement" } : { ...next, phase: "lair-selection" };
+  return { ...next, phase: "lair-selection" };
 }
 
 /** The player who made the final monster pick places every unused branch. */
@@ -196,12 +196,6 @@ export function validateSetup(state: SetupState): void {
   const lairs = state.seats.map((candidate) => candidate.lair);
   if (monsterIds.some((value) => !value) || new Set(monsterIds).size !== state.seats.length) throw new Error("Every player needs one distinct monster.");
   if (branches.some((value) => !value) || new Set(branches).size !== state.seats.length) throw new Error("Every player needs one distinct eligible branch.");
-  if (state.definition.unusedBranchPlacements) {
-    const unused = state.definition.eligibleBranches.filter((branch) => !branches.includes(branch));
-    const expectedCount = unused.reduce((total, branch) => total + (state.definition.unusedBranchPlacements?.unitIdsByBranch[branch]?.length ?? 0), 0);
-    if (expectedCount > 0) validateUnusedPlacements(state.definition.unusedBranchPlacements, unused, state.unusedBranchPlacements?.length ? state.unusedBranchPlacements : []);
-    else if (state.unusedBranchPlacements?.length) throw new Error("Four-player setup cannot place unused branches.");
-  }
   if (lairs.some((value) => !value) || new Set(lairs).size !== state.seats.length) throw new Error("Every player needs one distinct lair.");
   if (state.seats.some((candidate) => candidate.startingChoice?.kind !== "deploy")) throw new Error("Every player must deploy starting troops.");
 }

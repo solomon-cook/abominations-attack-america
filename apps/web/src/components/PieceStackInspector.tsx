@@ -1,4 +1,5 @@
 import { getLocation, type GameState, type HexKey } from "@abominations/game-engine";
+import { usePlayerNames } from "./player-name-context";
 
 type Props = {
   game: GameState;
@@ -11,6 +12,8 @@ type Props = {
 };
 
 export function PieceStackInspector({ game, viewerPlayerIndex, selectedStackKey, onSelect, onClear }: Props) {
+  const playerNames = usePlayerNames();
+  const playerName = (index: number) => playerNames[index] ?? `Player ${index + 1}`;
   const occupiedStackKeys = [...new Set([
     ...game.monsters.filter((monster) => typeof monster.location === "string" && monster.location.includes(",")).map((monster) => monster.location as HexKey),
     ...game.units.filter((unit) => typeof unit.location === "string" && unit.location.includes(",")).map((unit) => unit.location as HexKey),
@@ -40,7 +43,7 @@ export function PieceStackInspector({ game, viewerPlayerIndex, selectedStackKey,
           ...monsters.map((monster) => {
             const ownerPlayer = game.monsters.findIndex((candidate) => candidate.id === monster.id);
             const role = viewerPlayerIndex === undefined
-              ? `Player ${ownerPlayer + 1} monster`
+              ? `${playerName(ownerPlayer)} monster`
               : ownerPlayer === viewerPlayerIndex ? "Your monster" : "Opponent monster";
             return { id: monster.id, role, title: monster.name, detail: `${monster.health}/${monster.maxHealth} Health · ${monster.infamy} Infamy · ${monster.location === "hollywood" ? "Hollywood" : "on board"}` };
           }),
@@ -48,9 +51,9 @@ export function PieceStackInspector({ game, viewerPlayerIndex, selectedStackKey,
             const role = unit.ownerPlayer === undefined
               ? "Neutral unit"
               : viewerPlayerIndex === undefined
-                ? `Player ${unit.ownerPlayer + 1} unit`
+                ? `${playerName(unit.ownerPlayer)} unit`
                 : unit.ownerPlayer === viewerPlayerIndex ? "Your unit" : "Opponent unit";
-            return { id: unit.id, role, title: unit.unitTypeId ?? unit.branch, detail: `${unit.branch} · ${unit.ownerPlayer === undefined ? "Neutral" : `Player ${unit.ownerPlayer + 1}`} · ${unit.health === undefined ? "Health not tracked" : `${unit.health} Health`} · ${game.movedPieceIds.includes(unit.id) ? "moved" : "available"}` };
+            return { id: unit.id, role, title: unit.unitTypeId ?? unit.branch, detail: `${unit.branch} · ${unit.ownerPlayer === undefined ? "Neutral" : playerName(unit.ownerPlayer)} · ${unit.health === undefined ? "Health not tracked" : `${unit.health} Health`} · ${game.movedPieceIds.includes(unit.id) ? "moved" : "available"}` };
           }),
         ].map((piece) => <div key={piece.id}><span>{piece.role} · {piece.title}</span><small>{piece.detail}</small></div>)}
       </div>}

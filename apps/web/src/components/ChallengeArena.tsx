@@ -7,10 +7,12 @@ import { HealthBar } from "./FightResolutionPanel";
 import { militaryArt, readBattleAttacks } from "./combat-presentation";
 import { ChallengeMutationControls } from "./ChallengeMutationControls";
 import "../combat-stage.css";
+import { usePlayerName } from "./player-name-context";
 
 type Props = { game: GameState; canAct: boolean; canUseMutation?: boolean; playerIndex?: number; runCommand: (command: GameCommand) => void | Promise<void>; onClose: () => void; error?: string };
 
 export function ChallengeArena({ game, canAct, canUseMutation = canAct, playerIndex, runCommand, onClose, error }: Props) {
+  const waitingFor = usePlayerName(game.pendingDecision && "playerIndex" in game.pendingDecision ? game.pendingDecision.playerIndex : game.currentPlayer);
   const event = game.eventLog.at(-1);
   const [settledId, setSettledId] = useState<string>();
   const [acknowledged, setAcknowledged] = useState<string>();
@@ -95,7 +97,7 @@ export function ChallengeArena({ game, canAct, canUseMutation = canAct, playerIn
           {typeof event?.detail.loserWeighIn === "number" && <p>{recovered ? "Recovered" : "Recovering"} {String(event.detail.healthRecovered ?? event.detail.loserWeighIn)} Health from the opponent’s weigh-in.</p>}
           <button className="cinema-primary" disabled={!recovered} onClick={() => game.phase === "game-over" ? onClose() : setAcknowledged(event?.id)}>{game.phase === "game-over" ? "Finish challenge" : "Choose next opponent →"}</button>
         </div> : <div className="challenge-turn-actions">
-          <p>{!canAct ? `Waiting for Player ${(decision?.playerIndex ?? game.currentPlayer) + 1} · ${name(attackerId)}` : remaining > 0 ? `Choose the defending monster · ${remaining} attack${remaining === 1 ? "" : "s"} remaining` : "Keep fighting, or hand over the dice."}</p>
+          <p>{!canAct ? `Waiting for ${waitingFor} · ${name(attackerId)}` : remaining > 0 ? `Choose the defending monster · ${remaining} attack${remaining === 1 ? "" : "s"} remaining` : "Keep fighting, or hand over the dice."}</p>
           {remaining === 0 && <button className="cinema-primary" disabled={disabled} onClick={() => void send({ type: "resolve-challenge", endTurn: true })}>Pass dice to {name(attackerId === leftId ? rightId : leftId)} →</button>}
         </div>}
       </>}

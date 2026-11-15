@@ -25,7 +25,7 @@ import {
   type HexKey,
   type SetupState,
 } from "@abominations/game-engine";
-import type { AccountSummary, RoomView, SessionResponse } from "@abominations/shared";
+import { botUsernameForSeat, type AccountSummary, type RoomView, type SessionResponse } from "@abominations/shared";
 import {
   addRoomBot,
   claimRoomSeat,
@@ -73,6 +73,7 @@ import { SelectedPieceTray } from "./components/SelectedPieceTray";
 import { BoardContextTray } from "./components/BoardContextTray";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SetupPanel } from "./components/SetupPanel";
+import { PlayerNamesProvider } from "./components/player-name-context";
 import { TerminalSummary } from "./components/TerminalSummary";
 import { TurnPrompt } from "./components/TurnPrompt";
 import { TurnProgress } from "./components/TurnProgress";
@@ -261,6 +262,16 @@ function App() {
   const browserSupported = supportsPlaytestBrowser();
   const activeGame = room?.state ?? game;
   const activePlayer = activeGame.monsters[activeGame.currentPlayer];
+  const playerNames = useMemo(() => activeGame.monsters.map((monster, index) => {
+    const roomPlayer = room?.participants.find((candidate) => candidate.role === "player" && candidate.playerIndex === index);
+    if (roomPlayer) {
+      if (roomPlayer.botControlled) return `${/^Bot \d+$/.test(roomPlayer.displayName) ? botUsernameForSeat(index, room?.code) : roomPlayer.displayName} (Bot)`;
+      return roomPlayer.username ?? roomPlayer.displayName;
+    }
+    if (soloMode) return index === 0 ? account?.username ?? (displayName.trim() || "You") : `${botUsernameForSeat(index, "solo-match")} (Bot)`;
+    return monster.name;
+  }), [activeGame.monsters, room?.participants, room?.code, soloMode, account?.username, displayName]);
+  const playerName = (index: number) => playerNames[index] ?? "Unknown player";
   const commandUnit = activeGame.units.find((unit) => unit.id === selectedUnitId);
   const commandPieceName = commandUnit
     ? (commandUnit.unitTypeId ?? commandUnit.branch).replaceAll("-", " ")
@@ -521,7 +532,7 @@ function App() {
       : online && participant?.role !== "player"
         ? "Spectators can follow the match but cannot submit actions."
         : online && participant?.playerIndex !== decisionPlayer
-          ? `Waiting for Player ${decisionPlayer + 1} to make the current decision.`
+          ? `Waiting for ${playerName(decisionPlayer)} to make the current decision.`
           : activeGame.phase === "game-over"
             ? "The match is complete; gameplay actions are disabled."
         : "";
@@ -1600,6 +1611,7 @@ function App() {
       : "This match references an unavailable board version, so board interaction is disabled until the matching definition is loaded.";
 
   return (
+    <PlayerNamesProvider names={playerNames}>
     <main
       className={`game-screen ${!setupComplete ? "setup-in-progress" : ""} ${online ? "online-game" : "local-game"} ${gamePanelOpen ? "game-panel-open" : "game-panel-closed"} ${largeText ? "large-text" : ""} ${!showBoardLabels ? "board-labels-hidden" : ""} ${manualReducedMotion ? "manual-reduced-motion" : ""}`}
       data-board-theme={boardTheme}
@@ -1633,7 +1645,7 @@ function App() {
       </header>
       {activeGame.pendingDecision?.type === "giant-placement" && <section className="giant-placement-choice" aria-labelledby="giant-placement-title" aria-live="polite">
         <h2 id="giant-placement-title">Place {activeGame.pendingDecision.cardId}</h2>
-        <p>{canAct ? "Choose one of your bases." : `Waiting for Player ${activeGame.pendingDecision.playerIndex + 1} to choose a base.`}</p>
+        <p>{canAct ? "Choose one of your bases." : `Waiting for ${playerName(activeGame.pendingDecision.playerIndex)} to choose a base.`}</p>
         <div className="giant-placement-options">
           {activeGame.pendingDecision.destinations.map((destination) => {
             const label = activeBoard?.hexes[destination]?.label;
@@ -1707,23 +1719,6 @@ function App() {
           playerIndex={participant?.playerIndex}
           setupActionPending={setupActionPending}
           onChooseOption={(value) => void chooseSetupOption(value)}
-          onPlaceUnusedBranches={(placements) => {
-            if (!setupSeat || !activeSetup || (online && participant?.playerIndex !== setupSeat.playerIndex)) return;
-            const action = { type: "place-unused-branches", placements } as const;
-            if (online && session && room) {
-              if (setupActionPendingRef.current) return;
-              setupActionPendingRef.current = true;
-              setSetupActionPending(true);
-              void sendSetupAction(room.code, session.token, room.version, action)
-                .then(setRoom)
-                .catch((caught) => setError(caught instanceof Error ? caught.message : "Could not place unused branch units"))
-                .finally(() => {
-                  setupActionPendingRef.current = false;
-                  setSetupActionPending(false);
-                });
-            }
-            else applyLocalSetup(applySetupAction(localSetup, setupSeat.playerIndex, action));
-          }}
           deploymentCount={setupPlacements.length}
           hasAvailableDeploymentOptions={setupChoices.length > 0}
           selectingDeployment={setupDeploying}
@@ -1755,14 +1750,14 @@ function App() {
             <span className="chip">
               {online
                 ? `ROOM ${room?.code}`
-                : `PLAYER ${activeGame.currentPlayer + 1}`}
+                : playerName(activeGame.currentPlayer).toUpperCase()}
             </span>
           </div>
           <BoardViewport board={renderedBoard} boardId={activeGame.boardId} boardContentHash={activeGame.boardContentHash} focusHexKey={boardFollowHexKey} overviewImage={renderedBoard?.id === AUDITED_BOARD.id ? "/assets/board/audited/overview.webp" : undefined}>
             {activeGame.phase === "encounter" && activeGame.pendingDecision?.type === "trophy-choice" && <div className="deployment-prompt trophy-prompt" role="status">
               {activeGame.pendingDecision.unitIds.some((id) => activeGame.units.some((unit) => unit.id === id && unit.location === "record-tile"))
-                ? <>Player {activeGame.pendingDecision.playerIndex + 1} · {activeGame.pendingDecision.branch} military record<br />Choose a card still in reserve.</>
-                : <>Player {activeGame.pendingDecision.playerIndex + 1} · {activeGame.pendingDecision.branch} units<br />No cards remain in reserve · choose a highlighted unit on the board.</>}
+                ? <>{playerName(activeGame.pendingDecision.playerIndex)} · {activeGame.pendingDecision.branch} military record<br />Choose a card still in reserve.</>
+                : <>{playerName(activeGame.pendingDecision.playerIndex)} · {activeGame.pendingDecision.branch} units<br />No cards remain in reserve · choose a highlighted unit on the board.</>}
             </div>}
             <HexGrid
               game={setupPreview ?? activeGame}
@@ -2119,6 +2114,7 @@ function App() {
         onResolveRoutineStompChoice={(choice) => void runCommand({ type: "resolve-encounter", choice })}
       />
     </main>
+    </PlayerNamesProvider>
   );
 }
 
