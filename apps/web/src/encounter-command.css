@@ -70,3 +70,9 @@
 .mutation-reveal-dismiss:disabled{opacity:.55;cursor:wait}
 .mutation-reveal-dismiss:focus-visible{outline:3px solid #fff1b5;outline-offset:3px}
 @media(max-width:760px){.resolution-stage.resolution-mutation-reveal{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);padding:16px}.mutation-reveal-content .cinema-digital-card{width:min(255px,100%)}.mutation-reveal-content .cinema-digital-card .digital-card-art{height:auto}}
+
+/* Keep the Research reveal readable on its dark cinematic backdrop. */
+.resolution-stage.resolution-research .resolution-header h2{color:#f6edda}
+.resolution-stage.resolution-research .digital-card-rules{background:linear-gradient(135deg,#ffffff14,transparent 60%),#182421;color:#f4f1ea}
+.resolution-stage.resolution-research .digital-card-rules p{color:#f4f1ea}
+.resolution-stage.resolution-research .digital-card-rules .digital-card-timing{color:#e6c77e}
