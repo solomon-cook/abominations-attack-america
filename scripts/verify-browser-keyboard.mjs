@@ -125,7 +125,7 @@ try {
   await tabTo(overview, "board overview");
   await page.keyboard.press("ArrowRight");
   assert.notEqual(await page.locator(".map-canvas").getAttribute("style"), beforePan, "the overview keyboard arrows pan the board");
-  await activateByKeyboard(page.getByRole("button", { name: "Minimize monster, military and map record" }), "minimize record");
+  await activateByKeyboard(page.getByRole("button", { name: "Minimize player record" }), "minimize record");
 
   const boardCell = page.locator(".hex-tile[tabindex='0']:not(:disabled)").first();
   await boardCell.waitFor({ state: "visible" });
