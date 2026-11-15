@@ -173,7 +173,7 @@ function safeStoredBoardTheme(): BoardTheme {
 function App() {
   const actionHeadingRef = useRef<HTMLHeadingElement>(null);
   const commandChannelRef = useRef<RoomCommandChannel | null>(null);
-  const [game, setGame] = useState<GameState>(() => createGame(2));
+  const [game, setGame] = useState<GameState>(() => createGame(4));
   const [localPlaytestStarted, setLocalPlaytestStarted] = useState(false);
   const [soloMode, setSoloMode] = useState(false);
   const [soloScenarioMode, setSoloScenarioMode] = useState(false);
@@ -194,10 +194,10 @@ function App() {
     return new URLSearchParams(window.location.search).get("room")?.trim().toUpperCase().slice(0, 6) ?? "";
   });
   const [publicRooms, setPublicRooms] = useState<import("@abominations/shared").PublicRoomSummary[]>([]);
-  const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(2);
+  const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(4);
   const [roomPrivacy, setRoomPrivacy] = useState<"private" | "public">("private");
   const [localSetup, setLocalSetup] = useState<SetupState>(() =>
-    createDevelopmentSetup(2),
+    createDevelopmentSetup(4),
   );
   const [error, setError] = useState("");
   const [pendingAction, setPendingAction] = useState(false);
@@ -1005,7 +1005,7 @@ function App() {
       }
       let joinedAsSpectator = kind === "spectate";
       let created: SessionResponse;
-      if (kind === "create") created = await createRoom(playerCount, displayName || "Player 1", roomPrivacy);
+      if (kind === "create") created = await createRoom(4, displayName || "Player 1", roomPrivacy);
       else if (kind === "spectate") created = await spectateRoom(roomCode, displayName || "Spectator");
       else {
         try {
@@ -1043,8 +1043,7 @@ function App() {
     setError("");
     setPendingAction(true);
     try {
-      const count = room.participants.filter((candidate) => candidate.role === "player").length;
-      const rematchPlayerCount = (count === 3 || count === 4 ? count : 2) as 2 | 3 | 4;
+      const rematchPlayerCount = 4 as const;
       const created = await createRoom(rematchPlayerCount, (account?.username ?? displayName) || "Player 1");
       const result = account ? await claimRoomSeat(created.room.code, created.token) : created;
       setPlayerCount(rematchPlayerCount);
@@ -1076,6 +1075,19 @@ function App() {
     setError("");
     setPendingAction(true);
     try {
+      let latestRoom = room;
+      while (latestRoom.participants.filter((candidate) => candidate.role === "player").length < latestRoom.maxPlayers) {
+        try {
+          latestRoom = await addRoomBot(latestRoom.code, session.token);
+          updateRoomSnapshot(latestRoom);
+        } catch (caught) {
+          const refreshed = await readRoom(room.code, session.token);
+          const playerCountNow = refreshed.participants.filter((candidate) => candidate.role === "player").length;
+          if (!(caught instanceof Error) || !caught.message.toLowerCase().includes("room is full") || playerCountNow <= latestRoom.participants.filter((candidate) => candidate.role === "player").length) throw caught;
+          latestRoom = refreshed;
+          updateRoomSnapshot(refreshed);
+        }
+      }
       updateRoomSnapshot(await startMatch(room.code, session.token));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not start match");

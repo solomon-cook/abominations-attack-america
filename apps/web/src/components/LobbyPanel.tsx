@@ -52,7 +52,9 @@ export function LobbyPanel({
   onCreateViewerLink,
   onLeaveRoom,
 }: LobbyPanelProps) {
+  const [entryMode, setEntryMode] = useState<"choose" | "create" | "join">(() => roomCode ? "join" : "choose");
   const [inviteStatus, setInviteStatus] = useState("");
+  void onAddBot;
   const roomQrUrl = room?.code ? `${window.location.origin}/?room=${encodeURIComponent(room.code)}&qr=1` : "";
   const copyInviteLink = async () => {
     if (!room?.code) return;
@@ -89,26 +91,28 @@ export function LobbyPanel({
               <span className={`connection ${connectionState}`}>{connectionState}</span> ·{" "}
               {participant?.role === "spectator" ? "spectating" : `Player ${(participant?.playerIndex ?? 0) + 1}`}
             </>
-          ) : "Play with friends or watch without an account."}
+          ) : "Create a room or join one with a code."}
         </p>
       </div>
       {!online && (
-        <div className="lobby-actions">
-          <input aria-label="Display name" value={displayName} onChange={(event) => onDisplayNameChange(event.target.value)} placeholder="Display name" />
-          <select aria-label="Player count" value={playerCount} onChange={(event) => onPlayerCountChange(Number(event.target.value) as 2 | 3 | 4)}>
-            <option value="2">2 players</option>
-            <option value="3">3 players</option>
-            <option value="4">4 players</option>
-          </select>
-          <select aria-label="Room privacy" value={roomPrivacy} onChange={(event) => onRoomPrivacyChange(event.target.value as "private" | "public")}>
-            <option value="private">Private room</option>
-            <option value="public">Public room</option>
-          </select>
-          <input aria-label="Room code" value={roomCode} onChange={(event) => onRoomCodeChange(event.target.value.toUpperCase())} placeholder="Room code" maxLength={6} />
-          <button type="button" onClick={() => onStartSession("create")}>Create</button>
-          <button type="button" onClick={() => onStartSession("join")}>Join</button>
-          <button type="button" className="subtle" onClick={() => onStartSession("spectate")}>Spectate</button>
-          <button type="button" className="subtle" onClick={onRefreshPublicRooms}>Find public rooms</button>
+        <div className="lobby-entry">
+          {entryMode === "choose" ? <div className="lobby-entry-options" aria-label="Multiplayer options">
+            <button type="button" disabled={pendingAction} onClick={() => setEntryMode("create")}>Create room <span aria-hidden="true">→</span></button>
+            <button type="button" disabled={pendingAction} onClick={() => setEntryMode("join")}>Join room <span aria-hidden="true">→</span></button>
+          </div> : <div className="lobby-entry-form">
+            <button type="button" className="lobby-entry-back" onClick={() => setEntryMode("choose")}>← Back</button>
+            <label>Display name<input aria-label="Display name" value={displayName} onChange={(event) => onDisplayNameChange(event.target.value)} placeholder="Your name" /></label>
+            {entryMode === "create" ? <>
+              <label>Room privacy<select aria-label="Room privacy" value={roomPrivacy} onChange={(event) => onRoomPrivacyChange(event.target.value as "private" | "public")}><option value="private">Private room</option><option value="public">Public room</option></select></label>
+              <p className="lobby-entry-note">Four player seats. Any open seats will be filled by bots when you start.</p>
+              <button type="button" disabled={pendingAction} onClick={() => onStartSession("create")}>Create room</button>
+            </> : <>
+              <label>Room code<input aria-label="Room code" value={roomCode} onChange={(event) => onRoomCodeChange(event.target.value.toUpperCase())} placeholder="Enter room code" maxLength={6} /></label>
+              <button type="button" disabled={pendingAction || roomCode.trim().length < 4} onClick={() => onStartSession("join")}>Join room</button>
+              <button type="button" className="subtle" disabled={pendingAction || roomCode.trim().length < 4} onClick={() => onStartSession("spectate")}>Join as spectator</button>
+              <button type="button" className="subtle" disabled={pendingAction} onClick={onRefreshPublicRooms}>Find public rooms</button>
+            </>}
+          </div>}
         </div>
       )}
       {!online && publicRooms.length > 0 && (
@@ -125,7 +129,7 @@ export function LobbyPanel({
       {online && room && !room.matchStarted && participant?.role === "player" && (
         <div className="lobby-waiting-room">
           <h2>Waiting room</h2>
-          <p>Share the room code. Any player can start once everyone has joined.</p>
+          <p>Share the room code. The host can start at any time; bots fill all open seats.</p>
           <div className="lobby-player-seats" aria-label="Players in this room">
             {Array.from({ length: room.maxPlayers }, (_, index) => {
               const seat = room.participants.find((candidate) => candidate.role === "player" && candidate.playerIndex === index);
@@ -133,9 +137,7 @@ export function LobbyPanel({
             })}
           </div>
           {roomQrUrl && <div className="lobby-room-qr"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(roomQrUrl)}`} alt="QR code to join this room or spectate if full"/><span>Scan to join · spectators welcome when full</span></div>}
-          <button type="button" className="subtle" disabled={pendingAction || room.participants.filter((candidate) => candidate.role === "player").length >= room.maxPlayers} onClick={onAddBot}>Add bot</button>
-          <button type="button" className="ready-button" disabled={pendingAction || room.participants.filter((candidate) => candidate.role === "player").length !== room.maxPlayers || room.participants.some((candidate) => candidate.role === "player" && !candidate.connected && !candidate.botControlled)} onClick={onStartMatch}>Start match</button>
-          {room.participants.filter((candidate) => candidate.role === "player").length !== room.maxPlayers && <p className="lobby-waiting-note">Waiting for all {room.maxPlayers} players to join.</p>}
+          <button type="button" className="ready-button" disabled={pendingAction || participant.playerIndex !== 0} onClick={onStartMatch}>{pendingAction ? "Starting…" : "Start match"}</button>
         </div>
       )}
       {online && room?.matchStarted && participant?.role === "player" && (

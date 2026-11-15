@@ -66,7 +66,6 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
                   <div className="home-submenu-options">
                     <label className="home-bot-difficulty"><span>Bot difficulty</span><select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => onBotDifficultyChange(event.target.value as BotDifficulty)}><option value="casual">Casual</option><option value="standard">Tactical</option><option value="challenging">Challenging</option></select></label>
                     <button className="home-start" type="button" onClick={onStartSolo}>Play solo vs bots <span aria-hidden="true">→</span></button>
-                    <label className="home-player-count"><span>Players at the table</span><select aria-label="Number of players" value={lobbyProps.playerCount} onChange={(event) => lobbyProps.onPlayerCountChange(Number(event.target.value) as 2 | 3 | 4)}><option value="2">2 players</option><option value="3">3 players</option><option value="4">4 players</option></select></label>
                     <button className="home-start home-start-solo" type="button" onClick={onStartLocal}>Play on one screen <span aria-hidden="true">→</span></button>
                   </div>
                 </section>}
