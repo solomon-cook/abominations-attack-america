@@ -88,6 +88,22 @@
 .game-screen .board-viewport,
 .game-screen .board-viewport .map-canvas { color: var(--aaa-ink); }
 
+/* Keep the locked setup summary readable over the detailed board artwork. */
+.game-screen > .setup-summary {
+  background: var(--aaa-paper);
+  color: var(--aaa-ink);
+}
+.game-screen > .setup-summary > .label { color: var(--aaa-olive); }
+.game-screen > .setup-summary > h2 { color: var(--aaa-ink); }
+.game-screen > .setup-summary > p { color: #454a40; }
+.game-screen .setup-summary-grid > div {
+  border-color: #b7b9a9;
+  background: var(--aaa-card);
+}
+.game-screen .setup-summary-grid > div > strong,
+.game-screen .setup-summary-grid > div > span { color: #30352c; }
+.game-screen .setup-summary-grid > div > span:last-child { color: #66531e; }
+
 /* The dark HUD menu and account panel keep their own light text palette. */
 .game-screen .hud-menu-items{color:#f4f1ea}
 .game-screen .account-panel{color:#f7ecce}
