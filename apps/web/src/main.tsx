@@ -454,7 +454,9 @@ function App() {
     ?? (["Army", "Navy", "Air Force", "Marines"] as const)[playerRecordIndex % 4];
   const activeSetup = online ? activeGame.setupState : localSetup;
   const localSetupComplete = localSetup.phase === "complete";
-  const setupComplete = !activeSetup || activeSetup.phase === "complete";
+  const setupComplete = online
+    ? activeGame.setupApplied === true
+    : !activeSetup || activeSetup.phase === "complete";
   const decisionPlayer = activeGame.pendingDecision?.playerIndex ?? activeGame.currentPlayer;
   const soloBotTurn = localSolo && activeGame.phase !== "game-over" && decisionPlayer !== 0;
   const soloOtherPlayerTurn = localSolo && activeGame.currentPlayer !== 0;
@@ -523,7 +525,9 @@ function App() {
   const unavailableReason = pendingAction
     ? "Waiting for the server."
     : !setupComplete
-      ? "Complete setup before taking a gameplay action."
+      ? online && activeSetup?.phase === "complete"
+        ? room?.matchStarted ? "Starting the match after setup." : "Waiting for the match to start."
+        : "Complete setup before taking a gameplay action."
       : online && room?.status === "waiting"
         ? !room.matchStarted
           ? "Waiting for the match to start."
@@ -1632,7 +1636,7 @@ function App() {
       <header>
         <div className="top-turn-summary" aria-live="polite">
           <div className="turn-hud-heading">
-            <div><span className="label">{!setupComplete ? "GAME SETUP" : `ROUND ${activeGame.round}${soloMode && decisionPlayer !== 0 ? " · BOT TURN" : canAct ? " · YOUR TURN" : ""}`}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? action : "Monster and branch selection"}</h2>
+            <div><span className="label">{!setupComplete ? (online && activeSetup?.phase === "complete" ? "STARTING MATCH" : "GAME SETUP") : `ROUND ${activeGame.round}${soloMode && decisionPlayer !== 0 ? " · BOT TURN" : canAct ? " · YOUR TURN" : ""}`}</span><h2 ref={actionHeadingRef} tabIndex={-1}>{setupComplete ? action : online && activeSetup?.phase === "complete" ? "Applying completed setup" : "Monster and branch selection"}</h2>
               {setupComplete && <div className="top-turn-details" aria-label="Current turn details">
                 <span><b>PLAYER</b> {activeGame.monsters[decisionPlayer]?.name ?? "Unknown player"}</span>
                 <span><b>PHASE</b> {activeGame.phase}</span>

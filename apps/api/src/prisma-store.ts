@@ -282,8 +282,8 @@ export class PrismaRoomStore implements RoomStore {
     if (updated.count !== 1) throw new Error("Reconnect before changing readiness.");
     await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { lastActivityAt: new Date() } });
     await this.refreshStatus(room.id, room.maxPlayers, room.state as unknown as GameState);
-    const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { status: true, state: true, version: true } });
-    if (activated?.status === "ACTIVE" && (activated.state as unknown as GameState).setupState?.phase === "complete" && !(activated.state as unknown as GameState).setupApplied) {
+    const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { matchStarted: true, state: true, version: true } });
+    if (activated?.matchStarted && (activated.state as unknown as GameState).setupState?.phase === "complete" && !(activated.state as unknown as GameState).setupApplied) {
       await this.commitSetupCompletion(room.id, participant.id, activated.version, activated.state as unknown as GameState, "human");
     }
     return this.view(room.id, 0, "player", participant.playerIndex ?? undefined);
@@ -316,8 +316,8 @@ export class PrismaRoomStore implements RoomStore {
       await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: "setup.updated", payload: { phase: nextState.setupState.phase, action: action.type }, replayCommand: replayCommand as any } });
     });
     await this.refreshStatus(room.id, room.maxPlayers, nextState);
-    const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { status: true, state: true, version: true } });
-    if (activated?.status === "ACTIVE" && (activated.state as unknown as GameState).setupState?.phase === "complete" && !(activated.state as unknown as GameState).setupApplied) {
+    const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { matchStarted: true, state: true, version: true } });
+    if (activated?.matchStarted && (activated.state as unknown as GameState).setupState?.phase === "complete" && !(activated.state as unknown as GameState).setupApplied) {
       await this.commitSetupCompletion(room.id, actor.id, activated.version, activated.state as unknown as GameState, "human");
     }
     return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
@@ -583,6 +583,13 @@ export class PrismaRoomStore implements RoomStore {
       const participants = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" } });
       const botIndices = new Set<number>(participants.filter((participant: any) => participant.botControlled && participant.playerIndex !== null).map((participant: any) => participant.playerIndex));
       if (!botIndices.size) return;
+      if (state.setupState?.phase === "complete" && !state.setupApplied) {
+        const actor = participants.find((participant: any) => participant.botControlled && participant.playerIndex !== null)
+          ?? participants.find((participant: any) => participant.playerIndex !== null);
+        if (!actor) return;
+        await this.commitSetupCompletion(room.id, actor.id, room.version, state, actor.botControlled ? "bot" : "human").catch(() => false);
+        continue;
+      }
       if (state.setupState && state.setupState.phase !== "complete") {
         const field = state.setupState.phase === "monster-selection" ? "monsterId" : state.setupState.phase === "branch-selection" ? "branch" : state.setupState.phase === "lair-selection" ? "lair" : "startingChoice";
         const seats = [...state.setupState.seats].sort((left, right) => state.setupState?.phase === "branch-selection" ? right.playerIndex - left.playerIndex : left.playerIndex - right.playerIndex);
@@ -604,9 +611,9 @@ export class PrismaRoomStore implements RoomStore {
           await tx.gameEvent.create({ data: { roomId: room.id, version: room.version + 1, actorId: actor.id, type: "setup.updated", controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, replayCommand: replayCommand as any } });
         }).catch(() => undefined);
         await this.refreshStatus(room.id, room.maxPlayers, nextState);
-        const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { status: true, state: true, version: true } });
+        const activated = await this.prismaClient.gameRoom.findUnique({ where: { id: room.id }, select: { matchStarted: true, state: true, version: true } });
         const activatedState = activated?.state as unknown as GameState | undefined;
-        if (activated?.status === "ACTIVE" && activatedState?.setupState?.phase === "complete" && !activatedState.setupApplied) {
+        if (activated?.matchStarted && activatedState?.setupState?.phase === "complete" && !activatedState.setupApplied) {
           await this.commitSetupCompletion(room.id, actor.id, activated.version, activatedState, "bot").catch(() => false);
         }
         continue;
@@ -677,7 +684,7 @@ export class PrismaRoomStore implements RoomStore {
     const nextState = applyCompletedSetup(state);
     const version = expectedVersion + 1;
     return this.prismaClient.$transaction(async (tx: any) => {
-      const changed = await tx.gameRoom.updateMany({ where: { id: roomId, version: expectedVersion, status: "ACTIVE" }, data: { state: nextState as any, version } });
+      const changed = await tx.gameRoom.updateMany({ where: { id: roomId, version: expectedVersion, matchStarted: true, status: { in: ["ACTIVE", "WAITING"] } }, data: { state: nextState as any, version } });
       if (changed.count !== 1) return false;
       const replayCommand: ReplayCommandRecord = { kind: "start" };
       await tx.gameEvent.create({ data: { roomId, version, actorId, type: "match.started", controlSource, payload: { phase: nextState.phase, currentPlayer: nextState.currentPlayer }, replayCommand: replayCommand as any } });

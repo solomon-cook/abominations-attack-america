@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
-import { COMMAND_PROTOCOL_VERSION, applyCommand, boardForState, legalChopperLiftDestinations, legalMonsterPaths, legalUnitPaths, locationIdToHexKey, militaryUnitStats, monsterCombatStats } from "@abominations/game-engine";
+import { COMMAND_PROTOCOL_VERSION, applyCommand, boardForState, createMvpRoomGame, legalChopperLiftDestinations, legalMonsterPaths, legalUnitPaths, locationIdToHexKey, militaryUnitStats, monsterCombatStats } from "@abominations/game-engine";
 import { MAX_RETAINED_ROOM_EVENTS, MemoryRoomStore } from "./store.js";
 import { AUDITED_BOARD } from "../../../packages/game-engine/src/audited-board.js";
+import { chooseBotSetupActionWithRecord } from "../../../packages/game-engine/src/bots.js";
 
 async function completeDevelopmentSetup(store: MemoryRoomStore, sessions: Array<{ token: string; room: { code: string; version: number } }>) {
   const code = sessions[0].room.code;
@@ -1050,6 +1051,46 @@ test("a started match continues the active bot turn while room status is waiting
   assert.ok(room.events.some((event) => event.controlSource === "bot" && event.version > beforeVersion));
   const tomanagiMove = room.events.find((event) => event.type === "monster.moved" && event.controlSource === "bot");
   assert.ok(tomanagiMove, "the Player 2 Tomanagi bot should move instead of remaining stuck");
+  await store.close();
+});
+
+test("a started waiting room finalizes completed setup before resuming bot turns", async () => {
+  const store = new MemoryRoomStore(true);
+  const host = await store.createRoom(2, "Host");
+  await store.joinRoom(host.room.code, "Guest");
+  const internal = (store as unknown as { rooms: Map<string, any> }).rooms.get(host.room.code)!;
+  await store.startMatch(host.room.code, host.token);
+  let setupGame = createMvpRoomGame(2, 7);
+  let setup = setupGame.setupState!;
+  for (let step = 0; step < 100 && setup.phase !== "complete"; step += 1) {
+    const actorIndex = setup.phase === "monster-selection"
+      ? setup.seats.find((seat: any) => !seat.monsterId)?.playerIndex
+      : setup.phase === "branch-selection"
+        ? [...setup.seats].reverse().find((seat: any) => !seat.branch)?.playerIndex
+        : setup.phase === "unused-branch-placement"
+          ? setup.definition.playerCount - 1
+          : setup.phase === "lair-selection"
+            ? setup.seats.find((seat: any) => !seat.lair)?.playerIndex
+            : setup.seats.find((seat: any) => !seat.startingChoice)?.playerIndex;
+    assert.notEqual(actorIndex, undefined);
+    const result = chooseBotSetupActionWithRecord(setupGame, setup, actorIndex!);
+    setup = result.setup;
+  }
+  assert.equal(setup.phase, "complete");
+  internal.state = { ...setupGame, setupState: setup, setupAssignments: setup.seats };
+  internal.status = "waiting";
+  internal.participants[0].connected = false;
+  internal.participants[0].disconnectedAt = Date.now();
+  internal.participants[1].connected = false;
+  internal.participants[1].botControlled = true;
+  internal.state.setupApplied = false;
+  assert.equal(internal.state.setupState.phase, "complete");
+
+  await store.processBotTakeovers();
+
+  const room = await store.getRoom(host.room.code, host.token);
+  assert.equal(room.state.setupApplied, true, "the completed setup should be committed while the room is waiting");
+  assert.ok(room.events.some((event) => event.type === "match.started"), "setup finalization should record match.started");
   await store.close();
 });
 

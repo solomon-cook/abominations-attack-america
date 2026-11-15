@@ -282,7 +282,7 @@ export class MemoryRoomStore implements RoomStore {
     participant.ready = ready;
     this.touch(room);
     this.refreshStatus(room);
-    if ((room.status as RoomStatus) === "active" && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
+    if (room.matchStarted && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
       this.applySetupCompletion(room, participant.id, "human");
     }
     return this.view(room, 0, "player", participant.playerIndex);
@@ -321,7 +321,7 @@ export class MemoryRoomStore implements RoomStore {
     room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: participant.id, type: "setup.updated", payload: { phase: nextSetup.phase, action: action.type }, createdAt: now() });
     room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
     this.refreshStatus(room);
-    if (room.status === "active" && nextSetup.phase === "complete" && !room.state.setupApplied) {
+    if (room.matchStarted && nextSetup.phase === "complete" && !room.state.setupApplied) {
       this.applySetupCompletion(room, participant.id, "human");
     }
     return this.view(room, 0, "player", participant.playerIndex);
@@ -490,6 +490,13 @@ export class MemoryRoomStore implements RoomStore {
       if (!room.matchStarted) continue;
       for (let step = 0; step < MAX_BOT_ACTIONS_PER_WAKE; step += 1) {
         const setup = room.state.setupState;
+        if (setup?.phase === "complete" && !room.state.setupApplied) {
+          const actor = room.participants.find((candidate) => candidate.role === "player" && candidate.botControlled) ?? room.participants.find((candidate) => candidate.role === "player");
+          if (!actor) break;
+          this.applySetupCompletion(room, actor.id, actor.botControlled ? "bot" : "human");
+          updated.push(room.code);
+          continue;
+        }
         if (setup && setup.phase !== "complete") {
           const setupPlayer = this.nextSetupPlayer(setup);
           const actor = room.participants.find((candidate) => candidate.playerIndex === setupPlayer && candidate.role === "player");
@@ -507,7 +514,7 @@ export class MemoryRoomStore implements RoomStore {
           room.events.unshift({ id: randomBytes(10).toString("hex"), roomId: room.id, version: room.version, actorId: actor.id, type: "setup.updated", controlSource: "bot", payload: { phase: nextSetup.phase, automated: true }, createdAt: now() });
           room.events.length = Math.min(room.events.length, MAX_RETAINED_ROOM_EVENTS);
           this.refreshStatus(room);
-          if (room.status === "active" && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
+          if (room.matchStarted && room.state.setupState?.phase === "complete" && !room.state.setupApplied) {
             this.applySetupCompletion(room, actor.id, "bot");
           }
           updated.push(room.code);
