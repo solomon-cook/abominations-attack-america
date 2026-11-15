@@ -142,7 +142,17 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (req.method === "POST" && parts[2] === "rotate-session") return respond(req, res, 200, await store.rotateSession(code, roomToken(req, url, await readBody(req))));
     if (req.method === "POST" && parts[2] === "setup") { const input = await readBody(req); const accessToken = roomToken(req, url, input); await store.setupAction(code, accessToken, input.action, Number(input.expectedRevision)); await store.processBotTakeovers(Date.now(), code); return respond(req, res, 200, await store.getRoom(code, accessToken)); }
     if (req.method === "POST" && parts[2] === "ready") { const input = await readBody(req); const accessToken = roomToken(req, url, input); await store.setReady(code, accessToken, Boolean(input.ready)); await store.processBotTakeovers(Date.now(), code); return respond(req, res, 200, await store.getRoom(code, accessToken)); }
-    if (req.method === "GET" && parts[2] === "state") return respond(req, res, 200, await store.getRoom(code, roomToken(req, url), Number(url.searchParams.get("afterVersion") ?? 0)));
+    if (req.method === "GET" && parts[2] === "state") {
+      const accessToken = roomToken(req, url);
+      const afterVersion = Number(url.searchParams.get("afterVersion") ?? 0);
+      // Authenticate before allowing the poll to wake autonomous room actions.
+      await store.getRoom(code, accessToken, afterVersion);
+      // Vercel functions do not keep the API server's periodic bot worker alive.
+      // Retry bot progress on the room's normal polling path so an interrupted
+      // setup/turn wake cannot leave a room waiting indefinitely.
+      await store.processBotTakeovers(Date.now(), code);
+      return respond(req, res, 200, await store.getRoom(code, accessToken, afterVersion));
+    }
     if (req.method === "POST" && parts[2] === "actions") {
       const input = await readBody(req);
       const envelope = input.envelope ?? { actionId: String(input.actionId ?? randomUUID()), actorId: String(input.actorId ?? ""), expectedRevision: Number(input.expectedRevision), protocolVersion: Number(input.protocolVersion ?? 1), command: input.command };
