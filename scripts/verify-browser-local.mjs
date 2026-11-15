@@ -501,7 +501,7 @@ try {
   }
   await soloPage.waitForFunction(() => document.querySelector(".top-turn-summary")?.textContent?.includes("Deploy"));
   assert.match(await soloPage.locator(".solo-scenario-guidance").innerText(), /Your objective · resolve Deploy/);
-  await soloPage.locator(".board-action-bar .action-dock > button").click();
+  await soloPage.locator(".board-action-bar .action-dock > button").first().click();
   await soloPage.getByRole("button", { name: /Military research/ }).last().click();
   await soloPage.getByRole("button", { name: "Draw a Military Research card instead of deploying a unit" }).click();
   await soloPage.locator("dialog.resolution-research").waitFor({ state: "visible" });
