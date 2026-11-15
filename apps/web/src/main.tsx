@@ -577,6 +577,13 @@ function App() {
     setSetupPlacements([]); setSetupDeploying(false); setSetupSheetOpen(false); setSetupPieceId(null);
   }, [setupSeat?.playerIndex, activeSetup?.phase]);
   useEffect(() => {
+    if (canSetup && activeSetup?.phase === "starting-choice" && setupSeat?.branch) {
+      setSetupPlacementPlayer(setupSeat.playerIndex);
+      setSetupDeploying(true);
+      setSetupSheetOpen(true);
+    }
+  }, [canSetup, activeSetup?.phase, setupSeat?.playerIndex, setupSeat?.branch]);
+  useEffect(() => {
     setSelectedPath([]);
     setHoveredPath([]);
     setSelectedUnitId(null);
@@ -1406,6 +1413,7 @@ function App() {
           board={renderedBoard}
           setupSeat={setupSeat}
           online={online}
+          showSetupSummary={false}
           playerIndex={participant?.playerIndex}
           participants={room?.participants ?? []}
           onChooseOption={(value) => void chooseSetupOption(value)}
