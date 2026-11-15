@@ -1,0 +1,94 @@
+/* Shared AAA interface palette: warm paper, charcoal ink, rust red, and muted olive. */
+:root {
+  --aaa-paper: #efede2;
+  --aaa-panel: #e4e1d5;
+  --aaa-card: #faf6ec;
+  --aaa-ink: #252923;
+  --aaa-muted: #626658;
+  --aaa-line: #c7c8b9;
+  --aaa-rust: #ac3d24;
+  --aaa-olive: #62694e;
+}
+
+.game-screen {
+  --hud-bg: rgba(239, 237, 226, .97);
+  --hud-border: #aaa99d;
+  --civ-brass: var(--aaa-rust);
+  --civ-ivory: var(--aaa-ink);
+  --civ-muted: var(--aaa-muted);
+  color: var(--aaa-ink);
+}
+
+.game-screen > header,
+.game-screen > .status,
+.game-screen > .settings-panel,
+.game-screen > .onboarding,
+.game-screen > .setup-panel,
+.game-screen > .setup-summary,
+.game-screen .action-dock,
+.game-screen .board-context-tray,
+.game-screen .board-minimap,
+.game-screen .board-stack-inspector,
+.game-screen .command-station,
+.game-screen .phase-actions,
+.game-screen .setup-command,
+.game-screen .turn-prompt,
+.game-screen .challenge-arena,
+.game-screen .encounter-overlay,
+.game-screen .terminal-summary,
+.game-screen .selected-piece-tray,
+.game-screen .board-reference-card,
+.game-screen .log-panel,
+.game-screen .account-panel,
+.game-screen .account-panel-content {
+  border-color: var(--aaa-line);
+  background-color: var(--aaa-paper);
+  color: var(--aaa-ink);
+  box-shadow: 0 5px 20px #25292318;
+}
+
+.game-screen .map-controls,
+.game-screen > .board-map-controls > summary,
+.game-screen > .board-map-controls .map-controls {
+  border-color: var(--aaa-line);
+  background-color: var(--aaa-paper);
+  color: var(--aaa-ink);
+}
+
+.game-screen :is(button, .button, select, input, textarea) {
+  border-color: #a8aa9c;
+  border-radius: 2px;
+  color: var(--aaa-ink);
+}
+
+.game-screen button:not(.primary):not([aria-pressed="true"]),
+.game-screen .map-controls button {
+  background-color: var(--aaa-card);
+}
+
+.game-screen button.primary,
+.game-screen button[aria-pressed="true"],
+.game-screen .action-dock button.primary,
+.game-screen .setup-command button.primary {
+  border-color: var(--aaa-ink);
+  background-color: var(--aaa-ink);
+  color: var(--aaa-card);
+}
+
+.game-screen :is(h1, h2, h3, .label, .eyebrow, strong) { color: var(--aaa-ink); }
+.game-screen :is(.label, .eyebrow, .muted, small, .secondary-text) { color: var(--aaa-muted); }
+.game-screen .error,
+.game-screen [role="alert"] { color: #9f3020; }
+.game-screen :is(button, input, select, textarea, summary):focus-visible { outline-color: var(--aaa-rust); }
+.game-screen .settings-room-invite { display:grid; justify-items:start; gap:9px; margin-top:18px; padding-top:16px; border-top:1px solid var(--aaa-line); }
+.game-screen .settings-room-invite h3 { margin:0; font:700 1.05rem/1.2 Georgia,serif; }
+.game-screen .settings-room-invite p { max-width:38rem; color:var(--aaa-muted); font-size:.82rem; line-height:1.45; }
+.game-screen .settings-room-invite img { width:160px; height:160px; padding:6px; background:#fff; }
+.game-screen .settings-room-invite button { min-height:38px; padding:8px 12px; border:1px solid var(--aaa-ink); background:var(--aaa-ink); color:var(--aaa-card); }
+.game-screen .settings-room-invite [role="status"] { color:var(--aaa-muted); font-size:.75rem; overflow-wrap:anywhere; }
+.lobby-room-qr { display:grid; justify-items:start; gap:6px; margin-top:12px; color:var(--aaa-muted); font-size:.75rem; }
+.lobby-room-qr img { width:144px; height:144px; padding:6px; background:#fff; }
+
+/* Keep the board artwork vivid; the parchment palette applies to its controls. */
+.game-screen .board-viewport,
+.game-screen .board-viewport .map-canvas { color: var(--aaa-ink); }

@@ -53,6 +53,7 @@ export function LobbyPanel({
   onLeaveRoom,
 }: LobbyPanelProps) {
   const [inviteStatus, setInviteStatus] = useState("");
+  const roomQrUrl = room?.code ? `${window.location.origin}/?room=${encodeURIComponent(room.code)}&qr=1` : "";
   const copyInviteLink = async () => {
     if (!room?.code) return;
     const inviteUrl = new URL(window.location.href);
@@ -131,6 +132,7 @@ export function LobbyPanel({
               return <div key={index} className="lobby-player-seat"><span>Player {index + 1}</span><strong>{seat?.displayName ?? "Waiting to join"}</strong><small>{seat ? seat.botControlled ? "Bot" : seat.connected ? "Connected" : "Reconnecting" : "Open seat"}</small></div>;
             })}
           </div>
+          {roomQrUrl && <div className="lobby-room-qr"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(roomQrUrl)}`} alt="QR code to join this room or spectate if full"/><span>Scan to join · spectators welcome when full</span></div>}
           <button type="button" className="subtle" disabled={pendingAction || room.participants.filter((candidate) => candidate.role === "player").length >= room.maxPlayers} onClick={onAddBot}>Add bot</button>
           <button type="button" className="ready-button" disabled={pendingAction || room.participants.filter((candidate) => candidate.role === "player").length !== room.maxPlayers || room.participants.some((candidate) => candidate.role === "player" && !candidate.connected && !candidate.botControlled)} onClick={onStartMatch}>Start match</button>
           {room.participants.filter((candidate) => candidate.role === "player").length !== room.maxPlayers && <p className="lobby-waiting-note">Waiting for all {room.maxPlayers} players to join.</p>}
