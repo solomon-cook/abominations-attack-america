@@ -43,7 +43,6 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
       <div className="home-backdrop" aria-hidden="true" />
       <div className="home-frame">
         <header className="home-masthead">
-          <span className="home-wordmark" aria-hidden="true">AAA</span>
           {panel !== "home" && panel !== "auth" && <button type="button" className="home-text-button" onClick={() => openPanel("home")}>Main menu</button>}
         </header>
 

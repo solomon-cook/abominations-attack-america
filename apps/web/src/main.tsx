@@ -1583,7 +1583,6 @@ function App() {
 
   if (online && room && !room.matchStarted && participant?.role === "player") {
     return <main className="pre-match-lobby">
-      <header className="home-masthead"><span className="home-wordmark">AAA</span><span className="home-edition">A game of monsters &amp; military might</span></header>
       <section className="pre-match-lobby-heading"><p className="home-kicker">MULTIPLAYER ROOM</p><h1>Waiting room</h1><p>Share this code with your friends. The match begins when someone starts it.</p><div className="pre-match-room-code" aria-label={`Room code ${room.code}`}>{room.code}</div></section>
       <LobbyPanel online={online} room={room} participant={participant} connectionState={connectionState} displayName={displayName} playerCount={playerCount} roomPrivacy={roomPrivacy} roomCode={roomCode} publicRooms={publicRooms} setupComplete={false} pendingAction={pendingAction} error={error} onDisplayNameChange={setDisplayName} onPlayerCountChange={changePlayerCount} onRoomPrivacyChange={setRoomPrivacy} onRoomCodeChange={setRoomCode} onRefreshPublicRooms={() => void refreshPublicRooms()} onStartSession={(kind) => void startSession(kind)} onToggleReady={() => void toggleReady()} onStartMatch={() => void beginMatch()} onCreateViewerLink={makeViewerLink} onLeaveRoom={leaveRoomSafely} onDeleteRoom={() => void deleteCurrentRoom()} onBackToMenu={() => { sessionStorage.setItem("abominations-return-multiplayer", "1"); void leaveRoom(); }} onAddBot={() => void addBotToRoom()} />
     </main>;
