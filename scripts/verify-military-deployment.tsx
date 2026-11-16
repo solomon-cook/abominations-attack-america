@@ -30,11 +30,19 @@ assert.match(compactList, /Attack/);
 assert.match(compactList, /Defence/);
 assert.match(compactList, /compact-stat-attack/, "attack is represented with the sword icon");
 assert.match(compactList, /compact-stat-defence/, "defence is represented with the shield icon");
+assert.doesNotMatch(compactList, /1 × 1/, "single-attack units show damage without a redundant attack multiplier");
+assert.match(compactList, /You can’t move this\./, "National Guard movement restriction is stated concisely");
+assert.doesNotMatch(compactList, /Only the player with the Guard Commander card/, "the old Guard movement explanation is removed from deployment cards");
 assert.match(compactList, /Makes an extra attack during the first round/);
 assert.match(compactList, /aria-label="3 in reserve"/);
 assert.match(compactList, /aria-label="6 in reserve"/);
 assert.match(compactList, /aria-label="Select National Guard Tank to deploy/);
 assert.equal((compactList.match(/class="compact-deployment-card" type="button"/g) ?? []).length, 4, "branch and Guard unit types should each be one tappable card");
+const guardCommanderGame = structuredClone(game);
+guardCommanderGame.players[0]!.researchCardIds = ["Guard Commander"];
+const guardCommanderList = renderToStaticMarkup(<CompactDeploymentList branch="Army" choices={initial} game={guardCommanderGame} playerIndex={0} onSelect={() => undefined} />);
+assert.doesNotMatch(guardCommanderList, /You can’t move this\./, "Guard Commander removes the movement warning for its holder");
+assert.match(guardCommanderList, /Movement 4 · Land only/, "Guard Commander movement remains visible in the stats");
 for (const unitBranch of ["Army", "Navy", "Air Force", "Marines"] as const) {
   const branchList = renderToStaticMarkup(<CompactDeploymentList branch={unitBranch} choices={[]} game={game} playerIndex={0} onSelect={() => undefined} />);
   const branchUnits = UNIT_DEFINITIONS.filter((unit) => unit.branch === unitBranch);
@@ -124,15 +132,16 @@ for (const cardId of ["Mecha-Monster", "Captain Colossal"] as const) {
   const giantTypeList = renderToStaticMarkup(<CompactDeploymentList branch="Army" choices={deploymentChoices(giantCardState)} game={giantCardState} playerIndex={0} onSelect={() => undefined} onChooseGiant={() => undefined} />);
   assert.match(giantTypeList, new RegExp(cardId));
   assert.match(giantTypeList, new RegExp(`aria-label="Select ${cardId} to place; one Research card available`));
+  if (cardId === "Captain Colossal") assert.match(giantTypeList, /2 × 2/, "multi-attack units retain their attack count");
+  else assert.doesNotMatch(giantTypeList, /1 × 4/, "single-attack giant damage omits the redundant attack count");
   const giantHand = (state: typeof giantCardState) => renderToStaticMarkup(<SheetCards game={projectState(state, "player", state.currentPlayer)} playerIndex={state.currentPlayer} kind="research" canAct runCommand={() => undefined} />);
   const playableGiant = giantHand(giantCardState);
-  assert.match(playableGiant, /Place at /);
-  assert.doesNotMatch(playableGiant, /<button[^>]*disabled=""[^>]*>Place at /);
+  assert.doesNotMatch(playableGiant, /Place at /, "giant placement is selected from the deployment unit picker");
   giantCardState.phase = "move";
   giantCardState.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: giantCardState.monsters[0]!.id };
   assert.doesNotMatch(giantHand(giantCardState), /Place at /);
 }
-console.log("PASS: Mecha-Monster and Captain Colossal hand controls expose active-base placement during Deploy and no action during Move.");
+console.log("PASS: Mecha-Monster and Captain Colossal appear in the deployment picker, with no duplicate hand action.");
 
 const xFighterState = createGame(2);
 xFighterState.currentPlayer = 0;

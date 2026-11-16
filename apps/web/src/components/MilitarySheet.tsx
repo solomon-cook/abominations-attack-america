@@ -30,10 +30,12 @@ function compactUnitSummary(typeId: string, sheet: string, game: GameState, play
   const movement = guardDefinition
     ? guardCommander ? guardDefinition.name === "Fighter" ? "fly" : "land-only" : "stationary"
     : instance?.movement ?? unitDefinition?.movement ?? giantDefinition?.movement;
-  const attacks = instance?.attacks ?? unitDefinition?.attacks ?? (guardDefinition || giantDefinition ? 1 : undefined);
+  const attacks = instance?.attacks ?? unitDefinition?.attacks ?? (guardDefinition ? 1 : giantDefinition?.attacks);
   const damage = unitDefinition?.damage ?? instance?.damage ?? guardDefinition?.damage ?? giantDefinition?.damage;
   const defense = unitDefinition?.defense ?? instance?.defense ?? guardDefinition?.defense ?? giantDefinition?.defense;
-  const specialAbility = unitDefinition?.specialAbilityText ?? guardDefinition?.specialAbilityText ?? (typeId === "x-fighter" ? "Deploy in place of a branch unit." : undefined);
+  const specialAbility = guardDefinition
+    ? guardCommander ? undefined : "You can’t move this."
+    : unitDefinition?.specialAbilityText ?? (typeId === "x-fighter" ? "Deploy in place of a branch unit." : undefined);
   const name = unitDefinition?.name ?? guardDefinition?.name ?? giantDefinition?.name ?? typeId.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
   const reserve = typeId.startsWith("national-guard-")
     ? game.nationalGuard.unitIds.filter((id) => id.startsWith(`${typeId}-`) && !game.removedUnitIds.includes(id) && !game.units.some((unit) => unit.id === id)).length
@@ -45,7 +47,7 @@ function compactUnitSummary(typeId: string, sheet: string, game: GameState, play
     sheet,
     reserve,
     movement: move === undefined ? "—" : `${move} · ${movement ? movementLabel(movement) : "Movement"}`,
-    attack: attacks === undefined ? "—" : `${attacks} × ${displayPrintedValue(damage)}`,
+    attack: attacks === undefined ? "—" : attacks > 1 ? `${attacks} × ${displayPrintedValue(damage)}` : displayPrintedValue(damage),
     defence: displayPrintedValue(defense),
     specialAbility,
   };
