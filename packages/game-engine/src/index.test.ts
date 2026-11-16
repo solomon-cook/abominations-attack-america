@@ -398,7 +398,7 @@ test("redeployment moves one owned branch unit and consumes one branch allowance
   assert.throws(() => applyCommand(result.state, { type: "redeploy", unitId: unit.id, destination: K("denver") }), /unstomped base|allowance|record/i);
 });
 
-test("inventory accounting remains exact across deploy, trophy, destruction, and redeploy boundaries", () => {
+test("inventory accounting remains exact across deploy, automatic base loss, destruction, and redeploy boundaries", () => {
   const deployedState = createGame(2);
   deployedState.phase = "deploy";
   deployedState.pendingDecision = { type: "deployment", playerIndex: 0 };
@@ -414,17 +414,17 @@ test("inventory accounting remains exact across deploy, trophy, destruction, and
   const redeployed = applyCommand(redeployState, { type: "redeploy", unitId: redeployUnit.id, destination: K("denver") });
   assert.deepEqual(validateInventoryAccounting(redeployed.state), []);
 
-  const trophyState = createGame(2);
-  trophyState.setupAssignments = [
+  const baseLossState = createGame(2);
+  baseLossState.setupAssignments = [
     { playerIndex: 0, monsterId: "monster-1", branch: "Navy", lair: "los-angeles", ready: true },
     { playerIndex: 1, monsterId: "monster-2", branch: "Army", lair: "chicago", ready: true },
   ];
-  trophyState.phase = "encounter";
-  trophyState.monsters[0].location = K("denver");
-  const trophyPending = applyCommand(trophyState, { type: "resolve-encounter" });
-  const trophyId = trophyPending.state.pendingTrophyChoice!.unitIds[0];
-  const trophy = applyCommand(trophyPending.state, { type: "resolve-encounter", trophyUnitId: trophyId });
-  assert.deepEqual(validateInventoryAccounting(trophy.state), []);
+  baseLossState.phase = "encounter";
+  baseLossState.monsters[0].location = K("denver");
+  const baseLoss = applyCommand(baseLossState, { type: "resolve-encounter" });
+  assert.equal(baseLoss.state.pendingTrophyChoice, undefined);
+  assert.equal(baseLoss.state.removedUnitIds.length, 1);
+  assert.deepEqual(validateInventoryAccounting(baseLoss.state), []);
 
   const destructionState = createGame(2, 0);
   destructionState.currentPlayer = 0;
@@ -4184,7 +4184,7 @@ test("stomped spaces do not consume another Stomp marker", () => {
   assert.equal(result.state.phase, "deploy");
 });
 
-test("military-base Encounter grants Infamy and requires a legal branch trophy", () => {
+test("military-base stomp grants Infamy and automatically removes the most common ordinary branch unit", () => {
   const state = createGame(2);
   state.setupAssignments = [
     { playerIndex: 0, monsterId: "monster-1", branch: "Navy", lair: "los-angeles", ready: true },
@@ -4193,21 +4193,17 @@ test("military-base Encounter grants Infamy and requires a legal branch trophy",
   state.phase = "encounter";
   state.currentPlayer = 0;
   state.monsters[0].location = K("denver");
-  const pending = applyCommand(state, { type: "resolve-encounter" });
-  assert.equal(pending.eventType, "trophy.choice-required");
-  assert.equal(pending.eventPayload.playerIndex, 0);
-  assert.equal(pending.eventPayload.monsterId, state.monsters[0].id);
-  assert.equal(pending.state.eventLog.at(-1)?.detail.playerIndex, 0);
-  assert.equal(pending.state.monsters[0].infamy, 1);
-  assert.equal(pending.state.pendingDecision?.type, "trophy-choice");
-  const trophyId = pending.state.pendingTrophyChoice!.unitIds[0];
-  const chosen = applyCommand(pending.state, { type: "resolve-encounter", trophyUnitId: trophyId });
-  assert.equal(chosen.eventType, "trophy.chosen");
-  assert.equal(chosen.eventPayload.takerPlayerIndex, 0);
-  assert.equal(chosen.state.eventLog.at(-1)?.detail.takerPlayerIndex, 0);
-  assert.equal(chosen.state.units.find((unit) => unit.id === trophyId)?.location, "permanently-removed");
-  assert.equal(chosen.state.removedUnitIds.includes(trophyId), true);
-  assert.equal(chosen.state.phase, "deploy");
+  const result = applyCommand(state, { type: "resolve-encounter" });
+  assert.equal(result.eventType, "encounter.resolved");
+  assert.equal(result.state.monsters[0].infamy, 1);
+  assert.equal(result.state.pendingDecision?.type, "deployment");
+  assert.equal(result.state.pendingTrophyChoice, undefined);
+  const removed = result.state.units.find((unit) => result.state.removedUnitIds.includes(unit.id))!;
+  const base = boardForState(state).hexes[K("denver")]!.features.find((feature) => feature.kind === "military-base");
+  assert.equal(removed.branch, base?.kind === "military-base" ? base.branch : undefined);
+  assert.equal(UNIT_DEFINITIONS.find((definition) => definition.id === removed.unitTypeId)?.specialAbilityText, undefined);
+  assert.equal(removed.location, "permanently-removed");
+  assert.equal(result.state.phase, "deploy");
 });
 
 test("Iron Stomach lets a monster choose Health instead of military-base Infamy", () => {
@@ -4453,8 +4449,9 @@ test("encounter rewards, trophy removal, health, mutation history, and stomp sta
   assert.equal(encountered.state.monsters[0].health, 23);
   assert.equal(encountered.state.monsters[0].infamy, 15);
   assert.deepEqual(encountered.state.stompedLocations, [K("infamy-site"), K("denver")]);
-  assert.equal(encountered.state.pendingDecision?.type, "trophy-choice");
-  const trophyUnitId = encountered.state.pendingTrophyChoice!.unitIds[0];
+  assert.equal(encountered.state.pendingDecision?.type, "deployment");
+  assert.equal(encountered.state.pendingTrophyChoice, undefined);
+  const removedUnitId = encountered.state.removedUnitIds[0]!;
 
   const reloaded = migrateGameState(JSON.parse(JSON.stringify(encountered.state)) as GameState);
   assert.equal(reloaded.monsters[0].health, encountered.state.monsters[0].health);
@@ -4464,11 +4461,9 @@ test("encounter rewards, trophy removal, health, mutation history, and stomp sta
   assert.deepEqual(reloaded.players[0].mutationCardIds, encountered.state.players[0].mutationCardIds);
   assert.deepEqual(reloaded.pendingTrophyChoice, encountered.state.pendingTrophyChoice);
 
-  const chosen = applyCommand(encountered.state, { type: "resolve-encounter", trophyUnitId });
-  const replayed = applyCommand(reloaded, { type: "resolve-encounter", trophyUnitId });
-  assert.equal(JSON.stringify(replayed.state), JSON.stringify(chosen.state));
-  assert.equal(replayed.state.removedUnitIds.includes(trophyUnitId), true);
-  assert.equal(replayed.state.units.find((unit) => unit.id === trophyUnitId)?.location, "permanently-removed");
+  assert.equal(JSON.stringify(reloaded), JSON.stringify(encountered.state));
+  assert.equal(reloaded.removedUnitIds.includes(removedUnitId), true);
+  assert.equal(reloaded.units.find((unit) => unit.id === removedUnitId)?.location, "permanently-removed");
 });
 
 test("encounter health-roll dice are recorded in the authoritative event payload", () => {

@@ -2685,14 +2685,23 @@ export function resolveEncounterResult(state: GameState, choice?: "health" | "in
   }
   if (!alreadyStomped && baseFeature) {
     const branchOwner = next.setupAssignments?.find((seat) => seat.branch === baseFeature.branch);
-    const trophyUnitIds = next.units
-      .filter((unit) => unit.branch === baseFeature.branch && !next.removedUnitIds.includes(unit.id) && (unit.location === "record-tile" || isHexKey(unit.location)))
-      .map((unit) => unit.id);
-    if (branchOwner?.playerIndex !== undefined && trophyUnitIds.length > 0) {
-      next.pendingTrophyChoice = { playerIndex: branchOwner.playerIndex, location: canonicalLocationKey, branch: baseFeature.branch, unitIds: trophyUnitIds };
-      next.pendingDecision = { type: "trophy-choice", playerIndex: branchOwner.playerIndex, location: canonicalLocationKey, branch: baseFeature.branch, unitIds: trophyUnitIds };
-      next.log.push(`${baseFeature.branch} must choose one legal trophy for the monster.`);
-      return { state: next, effects, rolls, mutationDraws };
+    if (branchOwner?.playerIndex !== undefined) {
+      const ordinaryTypes = UNIT_DEFINITIONS
+        .filter((definition) => definition.branch === baseFeature.branch && !definition.specialAbilityText)
+        .map((definition) => definition.id);
+      const counts = new Map(ordinaryTypes.map((typeId) => [typeId, next.units.filter((unit) =>
+        unit.branch === baseFeature.branch && unit.unitTypeId === typeId && !next.removedUnitIds.includes(unit.id)
+        && (unit.location === "record-tile" || isHexKey(unit.location))).length]));
+      const mostCommonType = [...ordinaryTypes].sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0) || a.localeCompare(b))[0];
+      const unit = mostCommonType && (counts.get(mostCommonType) ?? 0) > 0
+        ? next.units.find((candidate) => candidate.branch === baseFeature.branch && candidate.unitTypeId === mostCommonType
+          && !next.removedUnitIds.includes(candidate.id) && (candidate.location === "record-tile" || isHexKey(candidate.location)))
+        : undefined;
+      if (unit) {
+        unit.location = "permanently-removed";
+        next.removedUnitIds = [...new Set([...next.removedUnitIds, unit.id])];
+        next.log.push(`${baseFeature.branch}'s base was stomped; the most common ordinary unit (${unit.unitTypeId}) was permanently removed.`);
+      }
     }
   }
   next.log.push(`${monster.name} encountered ${board.hexes[canonicalLocationKey]?.label ?? canonicalLocationKey}.`);
