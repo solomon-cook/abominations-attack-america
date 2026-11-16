@@ -28,6 +28,8 @@ assert.match(compactList, /Missile Launcher/);
 assert.match(compactList, /Movement/);
 assert.match(compactList, /Attack/);
 assert.match(compactList, /Defence/);
+assert.match(compactList, /compact-stat-attack/, "attack is represented with the sword icon");
+assert.match(compactList, /compact-stat-defence/, "defence is represented with the shield icon");
 assert.match(compactList, /Makes an extra attack during the first round/);
 assert.match(compactList, /aria-label="3 in reserve"/);
 assert.match(compactList, /aria-label="6 in reserve"/);

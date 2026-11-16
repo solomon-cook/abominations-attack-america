@@ -51,6 +51,29 @@ function compactUnitSummary(typeId: string, sheet: string, game: GameState, play
   };
 }
 
+function CompactUnitCard({ typeId, summary, actionLabel, onSelect }: { typeId: string; summary: ReturnType<typeof compactUnitSummary>; actionLabel: string; onSelect?: () => void }) {
+  const researchGiant = summary.sheet === "Giant · Research";
+  const reserveLabel = researchGiant ? "1 available from Research" : `${summary.reserve} in reserve`;
+  const cardContents = <>
+    <span className="compact-deployment-heading"><span><strong>{summary.name}</strong>{summary.sheet && <small>{summary.sheet}</small>}</span></span>
+    <span className="compact-deployment-stats" aria-label="Unit statistics">
+      <span className="compact-stat compact-stat-attack"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4 10.5 13.5M20 4a12 12 0 0 0-8 3.6L8 12l4 4 4.4-4A12 12 0 0 0 20 4ZM6.5 13.5l4 4M4 20l4.5-4.5" /></svg><b>{summary.attack}</b><span className="sr-only">Attack</span></span>
+      <span className="compact-stat compact-stat-defence"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3Z" /></svg><b>{summary.defence}</b><span className="sr-only">Defence</span></span>
+      <span className="compact-stat compact-stat-movement"><span className="compact-movement-icon" aria-hidden="true">↗</span><b>{summary.movement}</b><span className="sr-only">Movement</span></span>
+    </span>
+    <span className="compact-deployment-art"><img src={`/assets/military/${typeId}.webp`} alt="" /></span>
+    <span className="compact-deployment-count" aria-label={reserveLabel}><b>{summary.reserve}</b><small>LEFT</small></span>
+    {summary.specialAbility && <span className="compact-deployment-ability"><strong>Special:</strong> {summary.specialAbility}</span>}
+    <span className="compact-deployment-select-hint">{onSelect ? `${actionLabel} · select unit` : "No legal placement"}<span aria-hidden="true">{onSelect ? " →" : ""}</span></span>
+  </>;
+  const sheetPrefix = summary.sheet && !researchGiant ? `${summary.sheet} ` : "";
+  const selection = researchGiant ? `one Research card available` : `${summary.reserve} in reserve`;
+  const ariaLabel = `Select ${sheetPrefix}${summary.name} to ${actionLabel.toLowerCase()}; ${selection}. Attack ${summary.attack}. Defence ${summary.defence}. Movement ${summary.movement}.${summary.specialAbility ? ` Special ability: ${summary.specialAbility}` : ""}`;
+  return onSelect
+    ? <button className="compact-deployment-card" type="button" onClick={onSelect} aria-label={ariaLabel}>{cardContents}</button>
+    : <div className="compact-deployment-card compact-deployment-unavailable-card">{cardContents}</div>;
+}
+
 export function CompactDeploymentList({ branch, choices, game, playerIndex, onSelect, onChooseGiant }: { branch: string; choices: readonly DeploymentChoice[]; game: GameState; playerIndex: number; onSelect: (choice: DeploymentChoice) => void; onChooseGiant?: (cardId: "Mecha-Monster" | "Captain Colossal") => void }) {
   const groups = new Map<string, { deploy: DeploymentChoice[]; redeploy: DeploymentChoice[]; sheet: string }>();
   for (const choice of choices) {
@@ -77,43 +100,10 @@ export function CompactDeploymentList({ branch, choices, game, playerIndex, onSe
 
   return <div className="compact-deployment-list" aria-label="Available military unit types">
     {items.map(({ typeId, group, summary }) => <div className={`compact-deployment-option ${summary.reserve === 0 ? "compact-deployment-card-empty" : ""}`} key={typeId}>
-      {(group.deploy[0] || group.redeploy[0])
-        ? <button className="compact-deployment-card" type="button" onClick={() => onSelect(group.deploy[0] ?? group.redeploy[0])} aria-label={`Select ${summary.sheet === branch ? "" : `${summary.sheet} `}${summary.name} to ${group.deploy[0] ? "deploy" : "redeploy"}; ${summary.reserve} in reserve. Movement ${summary.movement}. Attack ${summary.attack}. Defence ${summary.defence}.${summary.specialAbility ? ` Special ability: ${summary.specialAbility}` : ""}`}>
-            <span className="compact-deployment-art"><img src={`/assets/military/${typeId}.webp`} alt="" /></span>
-            <span className="compact-deployment-copy">
-              <span className="compact-deployment-heading"><span><strong>{summary.name}</strong>{summary.sheet !== branch && <small>{summary.sheet}</small>}</span><span className="compact-deployment-count" aria-label={`${summary.reserve} in reserve`}><b>{summary.reserve}</b><small>LEFT</small></span></span>
-              <span className="compact-deployment-stats">
-                <span><small>Movement</small><b>{summary.movement}</b></span>
-                <span><small>Attack</small><b>{summary.attack}</b></span>
-                <span><small>Defence</small><b>{summary.defence}</b></span>
-              </span>
-              {summary.specialAbility && <span className="compact-deployment-ability"><strong>Special:</strong> {summary.specialAbility}</span>}
-              <span className="compact-deployment-select-hint">Select unit <span aria-hidden="true">→</span></span>
-            </span>
-          </button>
-        : <div className="compact-deployment-card compact-deployment-unavailable-card">
-            <span className="compact-deployment-art"><img src={`/assets/military/${typeId}.webp`} alt="" /></span>
-            <span className="compact-deployment-copy">
-              <span className="compact-deployment-heading"><span><strong>{summary.name}</strong>{summary.sheet !== branch && <small>{summary.sheet}</small>}</span><span className="compact-deployment-count" aria-label={`${summary.reserve} in reserve`}><b>{summary.reserve}</b><small>LEFT</small></span></span>
-              <span className="compact-deployment-stats"><span><small>Movement</small><b>{summary.movement}</b></span><span><small>Attack</small><b>{summary.attack}</b></span><span><small>Defence</small><b>{summary.defence}</b></span></span>
-              {summary.specialAbility && <span className="compact-deployment-ability"><strong>Special:</strong> {summary.specialAbility}</span>}
-              <span className="compact-deployment-unavailable">No legal placement</span>
-            </span>
-          </div>}
+      <CompactUnitCard typeId={typeId} summary={{ ...summary, sheet: summary.sheet === branch ? "" : summary.sheet }} actionLabel={group.deploy[0] ? "Deploy" : "Redeploy"} onSelect={group.deploy[0] || group.redeploy[0] ? () => onSelect(group.deploy[0] ?? group.redeploy[0]!) : undefined} />
       {group.deploy[0] && group.redeploy[0] && <button type="button" className="compact-redeploy-link" onClick={() => onSelect(group.redeploy[0])} aria-label={`Redeploy ${summary.name} already on the map`}>Redeploy a {summary.name} already on the map</button>}
     </div>)}
-    {giantItems.map(({ unit, summary }) => <button className="compact-deployment-card" type="button" key={unit.id} onClick={() => onChooseGiant?.(unit.name)} aria-label={`Select ${unit.name} to place; one Research card available. Movement ${summary.movement}. Attack ${summary.attack}. Defence ${summary.defence}.`}>
-      <span className="compact-deployment-art"><img src={`/assets/military/${unit.id}.webp`} alt="" /></span>
-      <span className="compact-deployment-copy">
-        <span className="compact-deployment-heading"><span><strong>{summary.name}</strong><small>Giant · Research</small></span><span className="compact-deployment-count" aria-label="1 available from Research"><b>1</b><small>LEFT</small></span></span>
-        <span className="compact-deployment-stats">
-          <span><small>Movement</small><b>{summary.movement}</b></span>
-          <span><small>Attack</small><b>{summary.attack}</b></span>
-          <span><small>Defence</small><b>{summary.defence}</b></span>
-        </span>
-        <span className="compact-deployment-select-hint">Select unit <span aria-hidden="true">→</span></span>
-      </span>
-    </button>)}
+    {giantItems.map(({ unit, summary }) => <CompactUnitCard key={unit.id} typeId={unit.id} summary={{ ...summary, sheet: "Giant · Research" }} actionLabel="Place" onSelect={() => onChooseGiant?.(unit.name)} />)}
     {!choices.length && <p className="compact-deployment-empty">No legal placements remain. Deployment will continue automatically.</p>}
   </div>;
 }
