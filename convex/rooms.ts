@@ -20,7 +20,7 @@ import { completedMatchRows, emptyMatchCounters, updateMatchCounters } from "../
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
-const RETAINED_EVENTS = 256;
+const LIVE_EVENT_BATCH = 32;
 const now = () => Date.now();
 const randomHex = (byteLength: number) => {
   const bytes = new Uint8Array(byteLength);
@@ -37,10 +37,23 @@ const roomCode = () => randomHex(3).toUpperCase();
 async function roomByCode(ctx: any, code: string) {
   const room = await ctx.db.query("rooms").withIndex("by_code", (q: any) => q.eq("code", code.toUpperCase())).unique();
   if (!room) throw new Error("Room not found.");
+  if (room.status === "deleting") throw new Error("This room is being removed.");
   if (room.status !== "completed" && now() - room.lastActivityAt >= IDLE_TIMEOUT_MS) {
     throw new Error("This room has expired.");
   }
   return room;
+}
+
+async function scheduleRoomPurge(ctx: any, room: any) {
+  if (room.status !== "deleting") await ctx.db.patch(room._id, { status: "deleting", updatedAt: now() });
+  await ctx.scheduler.runAfter(0, internal.rooms.purgeRoomBatch, { roomId: room.externalId });
+}
+
+async function scheduleBotStep(ctx: any, room: any) {
+  if (room.botStepScheduled) return;
+  const generation = (room.botStepGeneration ?? 0) + 1;
+  await ctx.db.patch(room._id, { botStepScheduled: true, botStepGeneration: generation });
+  await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId: room.externalId, generation });
 }
 
 async function getParticipants(ctx: any, roomId: string) {
@@ -106,10 +119,13 @@ async function addParticipant(ctx: any, room: any, displayName: string, role: "p
   return { token, externalId };
 }
 
-async function loadRoomView(ctx: any, room: any, participant: any, afterVersion = 0) {
+async function loadRoomView(ctx: any, room: any, participant: any, afterVersion = room.version) {
   const [roomParticipants, events] = await Promise.all([
     getParticipants(ctx, room.externalId),
-    ctx.db.query("events").withIndex("by_room_version", (q: any) => q.eq("roomId", room.externalId)).order("desc").take(RETAINED_EVENTS),
+    ctx.db.query("events")
+      .withIndex("by_room_version", (q: any) => q.eq("roomId", room.externalId).gt("version", afterVersion))
+      .order("asc")
+      .take(LIVE_EVENT_BATCH),
   ]);
   const participants = await Promise.all(roomParticipants.map(async (item: any) => {
     if (!item.userId) return item;
@@ -117,7 +133,7 @@ async function loadRoomView(ctx: any, room: any, participant: any, afterVersion 
     return user ? { ...item, username: user.username } : item;
   }));
   const result = projectRoom(room, participants, participant);
-  return { ...result, events: events.filter((event: any) => event.version > afterVersion).reverse().map((event: any) => ({
+  return { ...result, events: events.map((event: any) => ({
     id: event.externalId,
     roomId: event.roomId,
     version: event.version,
@@ -281,19 +297,57 @@ export const read = query({
   args: { code: v.string(), tokenHash: v.string(), afterVersion: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const room = await ctx.db.query("rooms").withIndex("by_code", (q) => q.eq("code", args.code.toUpperCase())).unique();
-    if (!room || (room.status !== "completed" && now() - room.lastActivityAt >= IDLE_TIMEOUT_MS)) throw new Error("Room not found or expired.");
+    if (!room || room.status === "deleting" || (room.status !== "completed" && now() - room.lastActivityAt >= IDLE_TIMEOUT_MS)) throw new Error("Room not found or expired.");
     const participant = await ctx.db.query("participants").withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash)).unique();
     if (!participant || participant.roomId !== room.externalId || participant.sessionExpiresAt <= now()) throw new Error("Invalid or expired room token.");
     const participants = await getParticipants(ctx, room.externalId);
-    const events = await ctx.db.query("events").withIndex("by_room_version", (q) => q.eq("roomId", room.externalId)).order("desc").take(RETAINED_EVENTS);
+    const events = await ctx.db.query("events")
+      .withIndex("by_room_version", (q) => q.eq("roomId", room.externalId).gt("version", args.afterVersion ?? 0))
+      .order("asc")
+      .take(LIVE_EVENT_BATCH);
     return {
       ...projectRoom(room, participants, participant),
-      events: events.filter((event) => event.version > (args.afterVersion ?? 0)).reverse().map((event) => ({
+      events: events.map((event) => ({
         id: event.externalId, roomId: event.roomId, version: event.version, actorId: event.actorId,
         type: event.type, controlSource: event.controlSource, payload: event.payload,
         createdAt: new Date(event.createdAt).toISOString(),
       })),
     };
+  },
+});
+
+export const deleteRoom = mutation({
+  args: { code: v.string(), token: v.string() },
+  handler: async (ctx, args) => {
+    const room = await roomByCode(ctx, args.code);
+    const tokenHash = await hashToken(args.token);
+    const participant = await ctx.db.query("participants").withIndex("by_token_hash", (q) => q.eq("tokenHash", tokenHash)).unique();
+    if (!participant || participant.roomId !== room.externalId || participant.sessionExpiresAt <= now()) throw new Error("Invalid or expired room token.");
+    if (participant.role !== "player" || participant.playerIndex !== 0) throw new Error("Only the room creator can delete it.");
+    if (!["waiting", "abandoned", "expired"].includes(room.status)) throw new Error("Only a waiting or abandoned room can be deleted.");
+    await scheduleRoomPurge(ctx, room);
+    return { ok: true as const };
+  },
+});
+
+export const purgeRoomBatch = internalMutation({
+  args: { roomId: v.string() },
+  handler: async (ctx, { roomId }) => {
+    const room = await ctx.db.query("rooms").withIndex("by_external_id", (q) => q.eq("externalId", roomId)).unique();
+    if (!room || room.status !== "deleting") return;
+    const [participants, events, receipts] = await Promise.all([
+      ctx.db.query("participants").withIndex("by_room", (q) => q.eq("roomId", roomId)).take(100),
+      ctx.db.query("events").withIndex("by_room_version", (q) => q.eq("roomId", roomId)).take(100),
+      ctx.db.query("commandReceipts").withIndex("by_room_action", (q) => q.eq("roomId", roomId)).take(100),
+    ]);
+    for (const row of participants) await ctx.db.delete(row._id);
+    for (const row of events) await ctx.db.delete(row._id);
+    for (const row of receipts) await ctx.db.delete(row._id);
+    if (participants.length || events.length || receipts.length) {
+      await ctx.scheduler.runAfter(0, internal.rooms.purgeRoomBatch, { roomId });
+      return;
+    }
+    await ctx.db.delete(room._id);
   },
 });
 
@@ -309,7 +363,7 @@ export const reconnect = mutation({
     const participants = (await getParticipants(ctx, room.externalId)).map((item: any) => item._id === participant._id ? { ...item, connectedAt: timestamp, disconnectedAt: undefined, botControlled: false } : item);
     const status = refreshStatus({ ...room, lastActivityAt: timestamp }, participants);
     await ctx.db.patch(room._id, { status, lastActivityAt: timestamp, updatedAt: timestamp });
-    await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId: room.externalId });
+    await scheduleBotStep(ctx, room);
     const updated = { ...participant, connectedAt: timestamp, disconnectedAt: undefined, botControlled: false, connectionId: args.connectionId };
     return loadRoomView(ctx, { ...room, status, lastActivityAt: timestamp }, updated);
   },
@@ -394,7 +448,7 @@ export const start = mutation({
     if (players.length !== room.maxPlayers || players.some((player: any) => player.connectedAt === undefined && !player.botControlled)) throw new Error("Wait until every player has joined and is connected.");
     const timestamp = now();
     await ctx.db.patch(room._id, { matchStarted: true, lastActivityAt: timestamp, updatedAt: timestamp });
-    if (players.some((player: any) => player.botControlled)) await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId: room.externalId });
+    if (players.some((player: any) => player.botControlled)) await scheduleBotStep(ctx, room);
     return loadRoomView(ctx, { ...room, matchStarted: true, lastActivityAt: timestamp }, starter);
   },
 });
@@ -455,10 +509,10 @@ export const ready = mutation({
     }
     await ctx.db.patch(room._id, patch);
     if (patch.state) await insertEvent(ctx, room, participant.externalId, room.version + 1, "match.started", { phase: (patch.state as GameState).phase, currentPlayer: (patch.state as GameState).currentPlayer }, { kind: "start" });
-    if (nextStatus === "active") await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId: room.externalId });
+    if (nextStatus === "active") await scheduleBotStep(ctx, room);
     const nextRoom = { ...room, ...patch };
     const nextParticipants = participants;
-      return loadRoomView(ctx, nextRoom, participant).then((view) => ({ ...view, participants: nextParticipants.map((item: any) => ({ id: item.externalId, displayName: item.displayName, role: item.role, ...(item.playerIndex === undefined ? {} : { playerIndex: item.playerIndex }), connected: item.connectedAt !== undefined, ready: item.ready, botControlled: item.botControlled, botAssisted: item.botAssisted })) }));
+      return loadRoomView(ctx, nextRoom, participant, room.version).then((view) => ({ ...view, participants: nextParticipants.map((item: any) => ({ id: item.externalId, displayName: item.displayName, role: item.role, ...(item.playerIndex === undefined ? {} : { playerIndex: item.playerIndex }), connected: item.connectedAt !== undefined, ready: item.ready, botControlled: item.botControlled, botAssisted: item.botAssisted })) }));
   },
 });
 
@@ -482,10 +536,10 @@ export const setup = mutation({
     // Wake the bot runner after every accepted setup action; it exits if a human is next.
     const participants = await getParticipants(ctx, room.externalId);
     if (participants.some((candidate: any) => candidate.role === "player" && candidate.botControlled)) {
-      await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId: room.externalId });
+      await scheduleBotStep(ctx, room);
     }
     const updatedRoom = { ...room, state, version, lastActivityAt: timestamp };
-    return loadRoomView(ctx, updatedRoom, participant);
+    return loadRoomView(ctx, updatedRoom, participant, args.expectedRevision);
   },
 });
 
@@ -502,7 +556,7 @@ export const submit = mutation({
     if (envelope.actorId !== participant.externalId) throw new Error("Command actor does not match the room participant.");
     const prior = await ctx.db.query("commandReceipts").withIndex("by_room_action", (q) => q.eq("roomId", room.externalId).eq("actionId", envelope.actionId)).unique();
     const participants = await getParticipants(ctx, room.externalId);
-    if (prior) return loadRoomView(ctx, room, participant);
+    if (prior) return loadRoomView(ctx, room, participant, envelope.expectedRevision);
     if (room.status !== "active") throw new Error("This room is not ready for gameplay.");
     const state = room.state as GameState;
     const decision = state.pendingDecision;
@@ -546,9 +600,9 @@ export const submit = mutation({
       });
     }
     if (!terminal && participants.some((candidate: any) => candidate.role === "player" && candidate.botControlled)) {
-      await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId: room.externalId });
+      await scheduleBotStep(ctx, room);
     }
-    return loadRoomView(ctx, { ...room, state: result.state, playerStats: counters, version, status: terminal ? "completed" : room.status, lastActivityAt: timestamp }, participant);
+    return loadRoomView(ctx, { ...room, state: result.state, playerStats: counters, version, status: terminal ? "completed" : room.status, lastActivityAt: timestamp }, participant, envelope.expectedRevision);
   },
 });
 
@@ -565,32 +619,47 @@ export const processStaleParticipants = internalMutation({
     const timestamp = now();
     const stale = await ctx.db.query("participants")
       .withIndex("by_presence", (q) => q.lte("lastSeenAt", timestamp - 45_000))
-      .collect();
+      .take(100);
     const affected = new Set<string>();
+    const botTakeoverRooms = new Set<string>();
     for (const participant of stale) {
       if (participant.connectedAt !== undefined) {
         const disconnectedAt = participant.lastSeenAt ?? timestamp;
-        await ctx.db.patch(participant._id, { connectedAt: undefined, disconnectedAt });
+        await ctx.db.patch(participant._id, {
+          connectedAt: undefined,
+          disconnectedAt,
+          // Keep the row out of the stale index until its four minute bot takeover is due.
+          lastSeenAt: disconnectedAt + 4 * 60_000 - 45_000,
+        });
+      } else if (participant.disconnectedAt !== undefined && timestamp - participant.disconnectedAt >= 4 * 60_000) {
+        await ctx.db.patch(participant._id, { botControlled: participant.role === "player", botAssisted: participant.role === "player", lastSeenAt: undefined });
+        if (participant.role === "player") botTakeoverRooms.add(participant.roomId);
+      } else if (participant.disconnectedAt !== undefined) {
+        // Schedule one more indexed check at the takeover deadline instead of rereading every 30s.
+        await ctx.db.patch(participant._id, { lastSeenAt: participant.disconnectedAt + 4 * 60_000 - 45_000 });
+      } else {
+        // Retire legacy stale rows without a disconnect timestamp from the repeated scan.
+        await ctx.db.patch(participant._id, { lastSeenAt: undefined });
       }
       if (participant.role === "player") affected.add(participant.roomId);
     }
     for (const roomId of affected) {
       const room = await ctx.db.query("rooms").withIndex("by_external_id", (q) => q.eq("externalId", roomId)).unique();
-      if (!room || (room.status !== "waiting" && room.status !== "active")) continue;
+      if (!room || (room.status !== "waiting" && room.status !== "active" && room.status !== "abandoned" && room.status !== "expired")) continue;
       const players = (await ctx.db.query("participants").withIndex("by_room_role", (q) => q.eq("roomId", roomId).eq("role", "player")).collect());
-      const allDisconnected = players.length > 0 && players.every((participant) => participant.connectedAt === undefined && !participant.botControlled);
-      if (room.status === "active" && allDisconnected) {
-        await ctx.db.patch(room._id, { status: "abandoned" });
+      const connectedHuman = players.some((participant) => !participant.botControlled && participant.connectedAt !== undefined);
+      if (!connectedHuman) {
+        await scheduleRoomPurge(ctx, room);
         continue;
       }
-      let botStarted = false;
+      let botStarted = botTakeoverRooms.has(roomId);
       for (const participant of players) {
         if (!participant.botControlled && participant.connectedAt === undefined && participant.disconnectedAt !== undefined && timestamp - participant.disconnectedAt >= 4 * 60_000) {
           await ctx.db.patch(participant._id, { botControlled: true, botAssisted: true });
           botStarted = true;
         }
       }
-      if (botStarted) await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId });
+      if (botStarted) await scheduleBotStep(ctx, room);
     }
   },
 });
@@ -599,7 +668,7 @@ export const expireIdleRooms = internalMutation({
   args: {},
   handler: async (ctx) => {
     const cutoff = now() - IDLE_TIMEOUT_MS;
-    const candidates = await Promise.all(([["waiting", "abandoned"], ["active"]] as const).map(async (statuses) => {
+    const candidates = await Promise.all(([["waiting", "abandoned", "expired"], ["active"]] as const).map(async (statuses) => {
       const rows = [];
       for (const status of statuses) {
         rows.push(...await ctx.db.query("rooms").withIndex("by_status_activity", (q) => q.eq("status", status).lte("lastActivityAt", cutoff)).take(100));
@@ -607,8 +676,14 @@ export const expireIdleRooms = internalMutation({
       return rows;
     }));
     for (const room of candidates.flat()) {
+      const players = await ctx.db.query("participants").withIndex("by_room_role", (q) => q.eq("roomId", room.externalId).eq("role", "player")).collect();
+      const connectedHuman = players.some((participant) => !participant.botControlled && participant.connectedAt !== undefined);
+      if (!connectedHuman) {
+        await scheduleRoomPurge(ctx, room);
+        continue;
+      }
       if (room.status === "active") {
-        const linkedPlayers = (await ctx.db.query("participants").withIndex("by_room_role", (q) => q.eq("roomId", room.externalId).eq("role", "player")).collect()).some((participant) => participant.userId);
+        const linkedPlayers = players.some((participant) => participant.userId);
         if (linkedPlayers) continue;
       }
       await ctx.db.patch(room._id, { status: "expired" });
@@ -617,9 +692,18 @@ export const expireIdleRooms = internalMutation({
 });
 
 export const runBotStep = internalMutation({
-  args: { roomId: v.string() },
-  handler: async (ctx, { roomId }) => {
-    const room = await ctx.db.query("rooms").withIndex("by_external_id", (q) => q.eq("externalId", roomId)).unique();
+  args: { roomId: v.string(), generation: v.optional(v.number()) },
+  handler: async (ctx, { roomId, generation }) => {
+    let room = await ctx.db.query("rooms").withIndex("by_external_id", (q) => q.eq("externalId", roomId)).unique();
+    if (!room) return;
+    if (generation !== undefined) {
+      if (!room.botStepScheduled || room.botStepGeneration !== generation) return;
+      await ctx.db.patch(room._id, { botStepScheduled: false });
+      room = { ...room, botStepScheduled: false };
+    } else if (room.botStepScheduled) {
+      // Ignore legacy queued jobs while a generation-tracked job is pending.
+      return;
+    }
     if (!room || !room.matchStarted || (room.status !== "waiting" && room.status !== "active")) return;
     const participants = await getParticipants(ctx, roomId);
     const bots = participants.filter((participant: any) => participant.role === "player" && participant.botControlled && participant.playerIndex !== undefined);
@@ -653,7 +737,7 @@ export const runBotStep = internalMutation({
       await ctx.db.patch(room._id, patch);
       await insertEvent(ctx, room, actor.externalId, room.version + 1, "setup.updated", { phase: setup.phase, automated: true }, { kind: "setup", playerIndex, action }, "bot");
       if (version > room.version + 1) await insertEvent(ctx, { ...room, externalId: roomId }, actor.externalId, version, "match.started", { phase: (patch.state as GameState).phase, currentPlayer: (patch.state as GameState).currentPlayer }, { kind: "start" }, "bot");
-      await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId });
+      await scheduleBotStep(ctx, { ...room, botStepScheduled: false });
       return;
     }
 
@@ -686,6 +770,6 @@ export const runBotStep = internalMutation({
       await ctx.db.insert("gameResults", { externalId: crypto.randomUUID(), roomId, ...(winner ? { winnerId: winner.externalId, winnerName: winner.displayName } : {}), summary: { winnerPlayer: applied.state.winnerPlayer, victoryType: applied.state.victoryType, rulesetVersion: applied.state.rulesetVersion, durationRounds: applied.state.round, terminalEvent: { type: applied.eventType, version } }, createdAt: timestamp });
       return;
     }
-    await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId });
+    await scheduleBotStep(ctx, { ...room, botStepScheduled: false });
   },
 });

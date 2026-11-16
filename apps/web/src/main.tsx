@@ -782,7 +782,7 @@ function App() {
           setConnectionState("online");
         }, () => {
           if (!cancelled) setConnectionState("stale");
-        });
+        }, restoredRoom.version);
         heartbeat = setInterval(() => {
           void heartbeatRoom(room.code, session.token).catch(() => {
             if (!cancelled) setConnectionState("stale");

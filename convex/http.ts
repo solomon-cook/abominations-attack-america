@@ -208,6 +208,7 @@ async function handle(ctx: any, request: Request) {
     }
     if (parts[0] === "rooms" && parts[1]) {
       const code = parts[1].toUpperCase();
+      if (request.method === "DELETE" && parts.length === 2) return response(request, 200, await ctx.runMutation(api.rooms.deleteRoom, { code, token }));
       if (request.method === "POST" && parts[2] === "claim") {
         const user = await ctx.runAction(internal.accountAuth.authenticate, { value: accountToken(request) });
         if (!user) return response(request, 401, { error: "Sign in to link this seat." });

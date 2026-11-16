@@ -291,7 +291,11 @@ export const deleteAccount = internalMutation({
     }
     for (const roomId of new Set(participants.map((participant: any) => participant.roomId))) {
       const room = await ctx.db.query("rooms").withIndex("by_external_id", (q) => q.eq("externalId", roomId)).unique();
-      if (room && (room.status === "waiting" || room.status === "active")) await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId });
+      if (room && (room.status === "waiting" || room.status === "active") && !room.botStepScheduled) {
+        const generation = (room.botStepGeneration ?? 0) + 1;
+        await ctx.db.patch(room._id, { botStepScheduled: true, botStepGeneration: generation });
+        await ctx.scheduler.runAfter(0, internal.rooms.runBotStep, { roomId, generation });
+      }
     }
     for (const result of await ctx.db.query("gameResults").withIndex("by_winner_name", (q) => q.eq("winnerName", user.username)).collect()) await ctx.db.patch(result._id, { winnerName: "Deleted player" });
     const [sessions, tokens, stats, links, sent, incoming, asA, asB, savedOwner, savedOpponent] = await Promise.all([

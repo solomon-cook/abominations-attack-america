@@ -3,7 +3,7 @@ import { v } from "convex/values";
 
 const roomStatus = v.union(
   v.literal("waiting"), v.literal("active"), v.literal("completed"),
-  v.literal("abandoned"), v.literal("expired"),
+  v.literal("abandoned"), v.literal("expired"), v.literal("deleting"),
 );
 const privacy = v.union(v.literal("private"), v.literal("public"));
 
@@ -28,6 +28,8 @@ export default defineSchema({
     updatedAt: v.number(),
     lastActivityAt: v.number(),
     completedAt: v.optional(v.number()),
+    botStepScheduled: v.optional(v.boolean()),
+    botStepGeneration: v.optional(v.number()),
     playerStats: v.any(),
     viewerInviteTokenHash: v.optional(v.string()),
     viewerInviteExpiresAt: v.optional(v.number()),

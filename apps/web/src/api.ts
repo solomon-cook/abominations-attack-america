@@ -18,12 +18,36 @@ async function hashRoomToken(token: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
-export function subscribeRoom(code: string, token: string, onUpdate: (room: RoomView) => void, onError: (error: Error) => void) {
+export function subscribeRoom(code: string, token: string, onUpdate: (room: RoomView) => void, onError: (error: Error) => void, afterVersion = 0) {
   let disposed = false;
   let unsubscribe: (() => void) | undefined;
   void hashRoomToken(token).then((tokenHash) => {
     if (disposed) return;
-    unsubscribe = getConvexClient().onUpdate(convexApi.rooms.read, { code: code.toUpperCase(), tokenHash, afterVersion: 0 }, onUpdate, onError);
+    let cursor = afterVersion;
+    const deliveredEvents = new Map<number, RoomView["events"][number]>();
+    const subscribeAtCursor = () => {
+      if (disposed) return;
+      let nextUnsubscribe: (() => void) | undefined;
+      nextUnsubscribe = getConvexClient().onUpdate(convexApi.rooms.read, { code: code.toUpperCase(), tokenHash, afterVersion: cursor }, (room) => {
+        if (disposed) return;
+        const freshEvents = room.events.filter((event) => event.version > cursor);
+        for (const event of freshEvents) deliveredEvents.set(event.version, event);
+        const orderedEvents = [...deliveredEvents.values()].sort((left, right) => left.version - right.version);
+        while (orderedEvents.length > 256) {
+          const removed = orderedEvents.shift()!;
+          deliveredEvents.delete(removed.version);
+        }
+        onUpdate({ ...room, events: orderedEvents });
+        if (freshEvents.length) {
+          cursor = freshEvents[freshEvents.length - 1]!.version;
+          nextUnsubscribe?.();
+          if (unsubscribe === nextUnsubscribe) unsubscribe = undefined;
+          subscribeAtCursor();
+        }
+      }, onError);
+      unsubscribe = nextUnsubscribe;
+    };
+    subscribeAtCursor();
   }).catch((error) => onError(error instanceof Error ? error : new Error("Could not subscribe to the room.")));
   return () => { disposed = true; unsubscribe?.(); };
 }
