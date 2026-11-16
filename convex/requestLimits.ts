@@ -46,3 +46,21 @@ export const deleteExpired = internalMutation({
     await ctx.db.delete(bucketId);
   },
 });
+
+export const bootstrapExpiryJobs = internalMutation({
+  args: { cursor: v.optional(v.union(v.string(), v.null())) },
+  handler: async (ctx, { cursor }) => {
+    const page = await ctx.db.query("httpRateLimitBuckets").order("asc").paginate({ numItems: 100, cursor: cursor ?? null });
+    for (const bucket of page.page) {
+      if (bucket.expiryJobId) continue;
+      const expiryJobId = await ctx.scheduler.runAfter(
+        Math.max(0, bucket.expiresAt - Date.now()),
+        internal.requestLimits.deleteExpired,
+        { bucketId: bucket._id },
+      );
+      await ctx.db.patch(bucket._id, { expiryJobId });
+    }
+    if (!page.isDone) await ctx.scheduler.runAfter(0, internal.requestLimits.bootstrapExpiryJobs, { cursor: page.continueCursor });
+    return { scheduled: page.page.filter((bucket) => !bucket.expiryJobId).length, done: page.isDone };
+  },
+});
