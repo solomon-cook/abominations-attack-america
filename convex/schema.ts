@@ -30,6 +30,9 @@ export default defineSchema({
     completedAt: v.optional(v.number()),
     botStepScheduled: v.optional(v.boolean()),
     botStepGeneration: v.optional(v.number()),
+    presenceCheckScheduled: v.optional(v.boolean()),
+    presenceCheckGeneration: v.optional(v.number()),
+    presenceCheckId: v.optional(v.id("_scheduled_functions")),
     playerStats: v.any(),
     viewerInviteTokenHash: v.optional(v.string()),
     viewerInviteExpiresAt: v.optional(v.number()),
@@ -222,6 +225,7 @@ export default defineSchema({
     windowStartedAt: v.number(),
     count: v.number(),
     expiresAt: v.number(),
+    expiryJobId: v.optional(v.id("_scheduled_functions")),
   })
     .index("by_key", ["keyHash"])
     .index("by_expiry", ["expiresAt"]),

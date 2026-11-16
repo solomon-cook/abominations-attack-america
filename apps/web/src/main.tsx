@@ -802,6 +802,12 @@ function App() {
     let socket: WebSocket | undefined;
     let commandChannel: RoomCommandChannel | undefined;
     let polling: ReturnType<typeof setInterval> | undefined;
+    const heartbeat = setInterval(() => {
+      if (cancelled || disconnected || needsReconnect) return;
+      void heartbeatRoom(room.code, session.token).catch(() => {
+        if (!cancelled) setConnectionState("stale");
+      });
+    }, 25_000);
     let disconnected = false;
     let needsReconnect = true;
     let cancelled = false;
@@ -866,6 +872,7 @@ function App() {
       if (commandChannelRef.current === commandChannel) commandChannelRef.current = null;
       socket?.close();
       if (polling) clearInterval(polling);
+      clearInterval(heartbeat);
     };
   }, [session?.token, room?.code, updateRoomSnapshot]);
 

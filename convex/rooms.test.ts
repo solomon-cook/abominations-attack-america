@@ -330,13 +330,18 @@ test("a room abandons when every player disconnects and resumes after all ready 
 test("stale guest seats become bot controlled after the takeover grace period", async () => {
   const t = convexTest(schema, modules);
   const host = await t.mutation(api.rooms.create, { maxPlayers: 2, displayName: "Host", privacy: "private" });
-  await t.run(async (ctx) => {
+  await t.mutation(api.rooms.join, { code: host.room.code, displayName: "Second" });
+  const generation = await t.run(async (ctx) => {
     const participant = await ctx.db.query("participants").withIndex("by_external_id", (q) => q.eq("externalId", host.participantId)).unique();
+    const room = await ctx.db.query("rooms").withIndex("by_code", (q) => q.eq("code", host.room.code)).unique();
     assert.ok(participant);
+    assert.ok(room);
     const fiveMinutesAgo = Date.now() - 5 * 60_000;
     await ctx.db.patch(participant._id, { connectedAt: fiveMinutesAgo, lastSeenAt: fiveMinutesAgo });
+    await ctx.db.patch(room._id, { status: "active", matchStarted: true });
+    return room.presenceCheckGeneration ?? 0;
   });
-  await t.mutation(internal.rooms.processStaleParticipants, {});
+  await t.mutation(internal.rooms.checkRoomPresence, { roomId: host.room.id, generation });
   const participant = await t.run((ctx) => ctx.db.query("participants").withIndex("by_external_id", (q) => q.eq("externalId", host.participantId)).unique());
   assert.equal(participant?.connectedAt, undefined);
   assert.equal(participant?.botControlled, true);

@@ -45,8 +45,19 @@ async function roomByCode(ctx: any, code: string) {
 }
 
 async function scheduleRoomPurge(ctx: any, room: any) {
-  if (room.status !== "deleting") await ctx.db.patch(room._id, { status: "deleting", updatedAt: now() });
+  if (room.status === "deleting") return;
+  if (room.presenceCheckId) {
+    try { await ctx.scheduler.cancel(room.presenceCheckId); } catch { /* already running */ }
+  }
+  await ctx.db.patch(room._id, { status: "deleting", updatedAt: now(), presenceCheckScheduled: false, presenceCheckGeneration: (room.presenceCheckGeneration ?? 0) + 1 });
   await ctx.scheduler.runAfter(0, internal.rooms.purgeRoomBatch, { roomId: room.externalId });
+}
+
+async function schedulePresenceCheck(ctx: any, room: any, delayMs: number) {
+  if (room.presenceCheckScheduled || ["completed", "deleting"].includes(room.status)) return;
+  const generation = (room.presenceCheckGeneration ?? 0) + 1;
+  const id = await ctx.scheduler.runAfter(Math.max(0, delayMs), internal.rooms.checkRoomPresence, { roomId: room.externalId, generation });
+  await ctx.db.patch(room._id, { presenceCheckScheduled: true, presenceCheckGeneration: generation, presenceCheckId: id });
 }
 
 async function scheduleBotStep(ctx: any, room: any) {
@@ -120,6 +131,7 @@ async function addParticipant(ctx: any, room: any, displayName: string, role: "p
 }
 
 async function loadRoomView(ctx: any, room: any, participant: any, afterVersion = room.version) {
+  await schedulePresenceCheck(ctx, room, 45_000);
   const [roomParticipants, events] = await Promise.all([
     getParticipants(ctx, room.externalId),
     ctx.db.query("events")
@@ -397,7 +409,8 @@ export const heartbeat = mutation({
     if (!participant || participant.roomId !== room.externalId || participant.sessionExpiresAt <= now()) throw new Error("Invalid or expired room token.");
     if (participant.connectionId !== args.connectionId || participant.botControlled) throw new Error("This room connection has been replaced. Reconnect to continue.");
     const timestamp = now();
-    await ctx.db.patch(participant._id, { connectedAt: timestamp, lastSeenAt: timestamp });
+    await ctx.db.patch(participant._id, { connectedAt: timestamp, lastSeenAt: timestamp, disconnectedAt: undefined });
+    await schedulePresenceCheck(ctx, room, 45_000);
     return { ok: true, at: timestamp };
   },
 });
@@ -613,81 +626,81 @@ function nextSetupPlayer(setup: NonNullable<GameState["setupState"]>) {
   return seats.find((seat) => (seat as any)[field] === undefined)?.playerIndex ?? -1;
 }
 
-export const processStaleParticipants = internalMutation({
-  args: {},
-  handler: async (ctx) => {
+export const checkRoomPresence = internalMutation({
+  args: { roomId: v.string(), generation: v.number() },
+  handler: async (ctx, { roomId, generation }) => {
+    let room = await ctx.db.query("rooms").withIndex("by_external_id", (q) => q.eq("externalId", roomId)).unique();
+    if (!room || room.presenceCheckGeneration !== generation || !room.presenceCheckScheduled) return;
+    await ctx.db.patch(room._id, { presenceCheckScheduled: false, presenceCheckId: undefined });
+    room = { ...room, presenceCheckScheduled: false };
+    if (["completed", "deleting"].includes(room.status)) return;
+
     const timestamp = now();
-    const stale = await ctx.db.query("participants")
-      .withIndex("by_presence", (q) => q.lte("lastSeenAt", timestamp - 45_000))
-      .take(100);
-    const affected = new Set<string>();
-    const botTakeoverRooms = new Set<string>();
-    for (const participant of stale) {
-      if (participant.connectedAt !== undefined) {
-        const disconnectedAt = participant.lastSeenAt ?? timestamp;
-        await ctx.db.patch(participant._id, {
-          connectedAt: undefined,
-          disconnectedAt,
-          // Keep the row out of the stale index until its four minute bot takeover is due.
-          lastSeenAt: disconnectedAt + 4 * 60_000 - 45_000,
-        });
-      } else if (participant.disconnectedAt !== undefined && timestamp - participant.disconnectedAt >= 4 * 60_000) {
-        await ctx.db.patch(participant._id, { botControlled: participant.role === "player", botAssisted: participant.role === "player", lastSeenAt: undefined });
-        if (participant.role === "player") botTakeoverRooms.add(participant.roomId);
-      } else if (participant.disconnectedAt !== undefined) {
-        // Schedule one more indexed check at the takeover deadline instead of rereading every 30s.
-        await ctx.db.patch(participant._id, { lastSeenAt: participant.disconnectedAt + 4 * 60_000 - 45_000 });
-      } else {
-        // Retire legacy stale rows without a disconnect timestamp from the repeated scan.
-        await ctx.db.patch(participant._id, { lastSeenAt: undefined });
-      }
-      if (participant.role === "player") affected.add(participant.roomId);
-    }
-    for (const roomId of affected) {
-      const room = await ctx.db.query("rooms").withIndex("by_external_id", (q) => q.eq("externalId", roomId)).unique();
-      if (!room || (room.status !== "waiting" && room.status !== "active" && room.status !== "abandoned" && room.status !== "expired")) continue;
-      const players = (await ctx.db.query("participants").withIndex("by_room_role", (q) => q.eq("roomId", roomId).eq("role", "player")).collect());
-      const connectedHuman = players.some((participant) => !participant.botControlled && participant.connectedAt !== undefined);
-      if (!connectedHuman) {
-        await scheduleRoomPurge(ctx, room);
+    const players = await ctx.db.query("participants").withIndex("by_room_role", (q) => q.eq("roomId", roomId).eq("role", "player")).take(4);
+    const staleCutoff = timestamp - 45_000;
+    let connectedHuman = false;
+    let botStarted = false;
+    let nextDelay = 45_000;
+    const disconnected: typeof players = [];
+    for (const player of players) {
+      if (player.botControlled) continue;
+      if (player.connectedAt !== undefined && (player.lastSeenAt ?? 0) > staleCutoff) {
+        connectedHuman = true;
         continue;
       }
-      let botStarted = botTakeoverRooms.has(roomId);
-      for (const participant of players) {
-        if (!participant.botControlled && participant.connectedAt === undefined && participant.disconnectedAt !== undefined && timestamp - participant.disconnectedAt >= 4 * 60_000) {
-          await ctx.db.patch(participant._id, { botControlled: true, botAssisted: true });
-          botStarted = true;
-        }
-      }
-      if (botStarted) await scheduleBotStep(ctx, room);
+      if (player.connectedAt !== undefined) {
+        const disconnectedAt = player.lastSeenAt ?? timestamp;
+        await ctx.db.patch(player._id, { connectedAt: undefined, disconnectedAt });
+        disconnected.push({ ...player, connectedAt: undefined, disconnectedAt });
+      } else disconnected.push(player);
     }
+    for (const player of disconnected) {
+      const disconnectedAt = player.disconnectedAt ?? player.lastSeenAt ?? room.lastActivityAt;
+      const takeoverAt = disconnectedAt + 4 * 60_000;
+      if (connectedHuman && room.matchStarted && timestamp >= takeoverAt) {
+        await ctx.db.patch(player._id, { botControlled: true, botAssisted: true });
+        botStarted = true;
+      } else if (connectedHuman && room.matchStarted) {
+        nextDelay = Math.min(nextDelay, Math.max(1_000, takeoverAt - timestamp));
+      }
+    }
+
+    if (!connectedHuman) {
+      const latestDisconnect = Math.max(room.lastActivityAt, ...players.map((p) => p.disconnectedAt ?? p.lastSeenAt ?? room.lastActivityAt));
+      const purgeAt = latestDisconnect + 45_000;
+      if (timestamp >= purgeAt) {
+        await scheduleRoomPurge(ctx, room);
+        return;
+      }
+      if (room.status === "active") await ctx.db.patch(room._id, { status: "abandoned", updatedAt: timestamp });
+      await schedulePresenceCheck(ctx, room, purgeAt - timestamp);
+      return;
+    }
+
+    if (timestamp - room.lastActivityAt >= IDLE_TIMEOUT_MS) {
+      if (room.status === "active" && players.some((p) => p.userId)) {
+        await ctx.db.patch(room._id, { status: "expired", updatedAt: timestamp });
+      } else {
+        await scheduleRoomPurge(ctx, room);
+        return;
+      }
+    }
+    if (botStarted) await scheduleBotStep(ctx, room);
+    await schedulePresenceCheck(ctx, room, nextDelay);
   },
 });
 
-export const expireIdleRooms = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const cutoff = now() - IDLE_TIMEOUT_MS;
-    const candidates = await Promise.all(([["waiting", "abandoned", "expired"], ["active"]] as const).map(async (statuses) => {
-      const rows = [];
-      for (const status of statuses) {
-        rows.push(...await ctx.db.query("rooms").withIndex("by_status_activity", (q) => q.eq("status", status).lte("lastActivityAt", cutoff)).take(100));
+export const bootstrapPresenceChecks = internalMutation({
+  args: { cursor: v.optional(v.union(v.string(), v.null())) },
+  handler: async (ctx, { cursor }) => {
+    const page = await ctx.db.query("rooms").order("asc").paginate({ numItems: 100, cursor: cursor ?? null });
+    for (const room of page.page) {
+      if (["waiting", "active", "abandoned", "expired"].includes(room.status)) {
+        await schedulePresenceCheck(ctx, room, 45_000);
       }
-      return rows;
-    }));
-    for (const room of candidates.flat()) {
-      const players = await ctx.db.query("participants").withIndex("by_room_role", (q) => q.eq("roomId", room.externalId).eq("role", "player")).collect();
-      const connectedHuman = players.some((participant) => !participant.botControlled && participant.connectedAt !== undefined);
-      if (!connectedHuman) {
-        await scheduleRoomPurge(ctx, room);
-        continue;
-      }
-      if (room.status === "active") {
-        const linkedPlayers = players.some((participant) => participant.userId);
-        if (linkedPlayers) continue;
-      }
-      await ctx.db.patch(room._id, { status: "expired" });
     }
+    if (!page.isDone) await ctx.scheduler.runAfter(0, internal.rooms.bootstrapPresenceChecks, { cursor: page.continueCursor });
+    return { scheduled: page.page.filter((room) => ["waiting", "active", "abandoned", "expired"].includes(room.status)).length, done: page.isDone };
   },
 });
 
@@ -706,6 +719,10 @@ export const runBotStep = internalMutation({
     }
     if (!room || !room.matchStarted || (room.status !== "waiting" && room.status !== "active")) return;
     const participants = await getParticipants(ctx, roomId);
+    const hasLiveHuman = participants.some((participant: any) =>
+      participant.role === "player" && !participant.botControlled && participant.connectedAt !== undefined && (participant.lastSeenAt ?? 0) > now() - 45_000,
+    );
+    if (!hasLiveHuman) return;
     const bots = participants.filter((participant: any) => participant.role === "player" && participant.botControlled && participant.playerIndex !== undefined);
     if (!bots.length) return;
     const state = room.state as GameState;
