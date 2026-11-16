@@ -765,7 +765,7 @@ function explainBotCommand(state: GameState, command: GameCommand, actor: number
   if (command.type === "use-mutation" && state.phase === "challenge") return `Toxicor used ${command.cardId} to strengthen its Monster Challenge turn.`;
   if (command.type === "use-mutation" && command.cardId === "Berserk") return "Used Berserk to add attacks while the monster faced a concentrated force.";
   if (command.type === "use-monster-ability" && command.ability === "gargantis-heal") return "Gargantis spent only the Mutation cards needed to recover before its next fight.";
-  if (command.type === "launch-submarine-at-monster") return `Launched the Navy submarine at a supported or vulnerable ${state.monsters.find((monster) => monster.id === command.monsterId)?.name ?? "monster"}.`;
+  if (command.type === "launch-submarine-at-monster") return `Launched a Nuclear Submarine missile at ${state.monsters.find((monster) => monster.id === command.monsterId)?.name ?? "the monster"}.`;
   if (command.type === "use-research") {
     if (command.cardId === "Laser Fence") return command.choice === "retreat" ? "Used Laser Fence to pull the monster out of a concentrated military battle." : "Used Laser Fence to make the monster spend Infamy before its next action.";
     if (command.cardId === "Antimatter") return "Armed Antimatter for a supported attack or a chance to finish the monster.";
