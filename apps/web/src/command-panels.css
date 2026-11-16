@@ -84,6 +84,13 @@
 }
 .game-screen .command-station.routine-stomp-pending > .board-action-bar,
 .game-screen .command-station.routine-stomp-pending > .bottom-context-dock { display:none; }
+.game-screen .command-station.has-nuclear-launch { height:112px; }
+.game-screen .command-station.has-nuclear-launch > .board-action-bar { height:112px; }
+.game-screen .command-station .action-dock.action-dock-stacked { grid-template-columns:minmax(0,1fr) 156px; grid-template-rows:1fr 1fr; gap:4px 10px; height:112px; min-height:112px; padding:8px 14px; }
+.game-screen .command-station .action-dock-stacked .action-dock-info { grid-column:1; grid-row:1 / 3; }
+.game-screen .command-station .action-dock-stacked > button:not(.action-dock-secondary) { grid-column:2; grid-row:1; width:100%; height:48px; min-height:48px; }
+.game-screen .command-station .action-dock-stacked > .action-dock-secondary { grid-column:2; grid-row:2; width:100%; height:38px; min-height:38px; padding:6px 10px; border:1px solid #82917e; border-radius:4px; background:#263936; color:#f0e9d0; font-size:12px; font-weight:700; }
+.game-screen .command-station.has-nuclear-launch > .bottom-context-dock { bottom:112px; }
 .piece-context-tab { display:flex; flex-direction:column-reverse; margin:0; }
 .piece-context-tab > summary {
   display:flex; justify-content:space-between; align-items:center; gap:16px; cursor:pointer;
@@ -105,6 +112,9 @@
   .game-screen .layout > .command-station { right:8px; bottom:calc(8px + env(safe-area-inset-bottom)); width:calc(100vw - 16px); }
   .game-screen .command-station .action-dock { grid-template-columns:minmax(0,1fr) 128px; padding:12px; gap:10px; }
   .game-screen .command-station .action-dock > button { width:128px; font-size:12px; }
+  .game-screen .command-station .action-dock.action-dock-stacked { grid-template-columns:minmax(0,1fr) 140px; grid-template-rows:1fr 1fr; gap:4px 8px; padding:6px 10px; }
+  .game-screen .command-station .action-dock-stacked > button:not(.action-dock-secondary) { width:140px; min-height:48px; }
+  .game-screen .command-station .action-dock-stacked > .action-dock-secondary { width:140px; min-height:38px; }
   .game-screen .command-station .action-dock-status { font-size:12px; }
   .context-tab-body { max-height:45dvh; }
 }

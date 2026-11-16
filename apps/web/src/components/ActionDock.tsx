@@ -8,6 +8,8 @@ type Props = {
   secondaryLabel?: string;
   onSecondary?: () => void;
   secondaryDisabled?: boolean;
+  primaryDisabled?: boolean;
+  stacked?: boolean;
   pressed?: boolean;
   canAct: boolean;
   command?: GameCommand;
@@ -15,7 +17,7 @@ type Props = {
   onAction: (command: GameCommand) => void;
 };
 
-export function ActionDock({ contextLabel, guidance, onPrimary, secondaryLabel, onSecondary, secondaryDisabled = false, label, canAct, command, unavailableReason, onAction, pressed }: Props) {
+export function ActionDock({ contextLabel, guidance, onPrimary, secondaryLabel, onSecondary, secondaryDisabled = false, primaryDisabled = false, stacked = false, label, canAct, command, unavailableReason, onAction, pressed }: Props) {
   const actionIcon = command?.type === "move" || command?.type === "move-unit"
     ? "↝"
     : command?.type === "resolve-fight"
@@ -33,9 +35,9 @@ export function ActionDock({ contextLabel, guidance, onPrimary, secondaryLabel, 
       ? "Ready."
       : label;
   return (
-    <div className="action-dock" aria-label="Current action control">
+    <div className={`action-dock${stacked ? " action-dock-stacked" : ""}`} aria-label="Current action control">
       <div className="action-dock-info"><span className="label">{contextLabel ?? "TAKE ACTION"}</span><small id="action-dock-status" className="action-dock-status" aria-live="polite">{!canAct ? status : guidance ?? status}</small></div>
-      <button type="button" data-action-icon={actionIcon} aria-label={label} aria-pressed={pressed} disabled={!canAct || (!command && !onPrimary)} title={status} aria-describedby="action-dock-status" onClick={() => onPrimary ? onPrimary() : command && onAction(command)}>
+      <button type="button" data-action-icon={actionIcon} aria-label={label} aria-pressed={pressed} disabled={!canAct || primaryDisabled || (!command && !onPrimary)} title={status} aria-describedby="action-dock-status" onClick={() => onPrimary ? onPrimary() : command && onAction(command)}>
         {label}
       </button>
       {secondaryLabel && onSecondary && <button type="button" className="action-dock-secondary" disabled={secondaryDisabled} onClick={onSecondary}>{secondaryLabel}</button>}
