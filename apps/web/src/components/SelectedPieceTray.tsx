@@ -35,7 +35,7 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
   const status = game.movedPieceIds.includes(unit.id) ? "Already moved this turn."
     : selectedUnitPath.length > 1 ? `Previewing ${selectedUnitPath.length - 1} spaces to ${locationName(selectedUnitPath.at(-1)!)}.`
     : canMove ? "Choose a glowing destination to preview this unit’s move." : "This unit cannot move at this point in the turn.";
-  const special = definition?.specialAbilityText ?? guard?.specialAbilityText;
+  const special = unit.unitTypeId === "navy-nuclear-submarine" ? undefined : definition?.specialAbilityText ?? guard?.specialAbilityText;
   return <section className="piece-detail-tray unit-command-record" aria-label="Selected piece details" aria-live="polite">
     <div className="unit-detail-heading">
       <img src={giant ? `/assets/military/portraits/${giant.id}.webp` : `/assets/military/${unit.unitTypeId === "navy-nuclear-submarine-missile" ? "navy-launched-cruise-missile" : unit.unitTypeId ?? "army-tank"}.webp`} alt={name} />
@@ -43,8 +43,8 @@ export function SelectedPieceTray({ game, selectedUnitId, selectedUnitPath, onCl
     </div>
     <SheetStats values={{ Move: combatStats.move, Attacks: combatStats.attacks, Defense: combatStats.defense, Damage: combatStats.damage, ...(giant ? { Health: unit.health } : {}) }} />
     <span className="unit-movement-type">{movementLabel(unit.movement)}</span>
-    {unit.unitTypeId === "navy-nuclear-submarine" && <div className="unit-special-rules"><strong>Submarine / cruise missile</strong><p>Submarine: move 4 through sea and seacoast, defense 5, damage 1.</p><p>As a cruise missile: fly up to 8, defense 6, damage 3.</p></div>}
-    {unit.unitTypeId === "navy-nuclear-submarine" && <div><button type="button" disabled={!canLaunchSubmarine || choosingSubmarineTarget} onClick={onLaunchSubmarine}>Launch as cruise missile</button><p>{choosingSubmarineTarget ? "Choose a glowing monster on the board, or cancel." : canLaunchSubmarine ? "Choose an opposing monster within 8 flying spaces." : "Requires an unmoved submarine and an opposing monster within 8 flying spaces during Move."}</p></div>}
+    {unit.unitTypeId === "navy-nuclear-submarine" && <div className="unit-special-rules"><strong>Submarine / nuclear strike</strong><p>Move 4 through sea and seacoast. Launch up to 8 spaces during Move; the missile can be intercepted, then rolls against the monster’s Defense for 3 damage. A 6 adds a smash point and a 1 triggers Mutation.</p></div>}
+    {unit.unitTypeId === "navy-nuclear-submarine" && <div className="nuclear-launch-control"><button className="nuclear-launch-button" type="button" disabled={!canLaunchSubmarine || choosingSubmarineTarget} onClick={onLaunchSubmarine}>{choosingSubmarineTarget ? "Choose a Target" : "Launch Nuclear Missile"}</button><p>{choosingSubmarineTarget ? "Choose a glowing monster on the board, or cancel." : canLaunchSubmarine ? "Select an opposing monster within 8 spaces. The strike resolves immediately." : "Requires an unmoved submarine and an opposing monster within 8 spaces during Move."}</p></div>}
     {special && <details className="unit-special-rules"><summary>Special ability</summary><p>{special}</p></details>}
     {(!canMove || selectedUnitPath.length > 1 || game.phase !== "move") && <p className="unit-selection-status">{status}</p>}
     <button type="button" className="stack-clear" onClick={onClear} aria-label={`Deselect ${name}`} title="Deselect">×</button>

@@ -123,10 +123,8 @@ export function PhaseActions({
       </>}
       {activeGame.pendingBattles.map((battle) => {
         const monster = activeGame.monsters.find((candidate) => candidate.id === battle.monsterId);
-        const submarines = battle.militaryUnitIds.filter((unitId) => activeGame.units.some((unit) => unit.id === unitId && unit.unitTypeId === "navy-nuclear-submarine"));
         return <div key={battle.id}>
           {!hideAttackTargets && <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: battle.id })}>Resolve {monster?.name ?? battle.monsterId} at {getLocationName(battle.location)} ({battle.militaryUnitIds.length} unit{battle.militaryUnitIds.length === 1 ? "" : "s"})</button>}
-          {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: battle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
           {mutationButtons(battle.id)}
         </div>;
       })}
@@ -134,7 +132,6 @@ export function PhaseActions({
   }
 
   if (activeGame.phase === "fight" && pendingBattle && pendingBattleDecision && canSpendInfamyOnPendingBattle) {
-    const submarines = pendingBattle.militaryUnitIds.filter((unitId) => activeGame.units.some((unit) => unit.id === unitId && unit.unitTypeId === "navy-nuclear-submarine"));
     return <div className="battle-choice" aria-label="Choose whether to spend Infamy on this battle">
       <p>Ready to fight. Add an extra attack for 1 Infamy.</p>
       {mutationButtons(pendingBattle.id)}
@@ -142,21 +139,18 @@ export function PhaseActions({
       {antimatterButton}
       {laserFenceControls}
       {pendingBattle && <StabilizerRayControls game={activeGame} battleId={pendingBattle.id} canAct={canAct} runCommand={runCommand} />}
-      {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: pendingBattle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
       {!hideAttackTargets && <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id })}><DieCube value={6} label="Roll battle dice" /> Roll battle dice</button>}
       {!hideAttackTargets && <button disabled={!canAct} onClick={() => void runCommand({ type: "resolve-fight", battleId: pendingBattle.id, spendInfamy: 1 })}>Spend 1 Infamy · add one attack</button>}
     </div>;
   }
 
   if (activeGame.phase === "fight" && pendingBattle && pendingBattleDecision) {
-    const submarines = pendingBattle.militaryUnitIds.filter((unitId) => activeGame.units.some((unit) => unit.id === unitId && unit.unitTypeId === "navy-nuclear-submarine"));
     return <div className="path-controls" aria-label="Battle research options">
       {mutationButtons(pendingBattle.id)}
       {defenseSatellitesButton}
       {antimatterButton}
       {laserFenceControls}
       <StabilizerRayControls game={activeGame} battleId={pendingBattle.id} canAct={canAct} runCommand={runCommand} />
-      {submarines.map((unitId) => <button key={unitId} disabled={!canAct} onClick={() => void runCommand({ type: "launch-submarine", battleId: pendingBattle.id, unitId })}>Launch Nuclear Submarine as cruise missile</button>)}
     </div>;
   }
 

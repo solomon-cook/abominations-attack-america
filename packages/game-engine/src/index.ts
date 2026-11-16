@@ -19,7 +19,7 @@ export { CARD_STACKING_RULES, cardStackingRule, type CardStackingPolicy, type Ca
 export type Phase = "move" | "fight" | "encounter" | "deploy" | "challenge" | "game-over";
 export type Branch = "Army" | "Navy" | "Air Force" | "Marines";
 export type MilitaryUnitBranch = Branch | "National Guard" | "Giant";
-export const MATCH_STATE_SCHEMA_VERSION = 2 as const;
+export const MATCH_STATE_SCHEMA_VERSION = 3 as const;
 export const SUPPORTED_PLAYER_COUNTS = [2, 3, 4] as const;
 
 export function stompMarkerCount(playerCount: number): number {
@@ -147,6 +147,12 @@ export interface GameState {
   round: number;
   stompMarkers: number;
   stompedLocations: HexKey[];
+  /** Hexes permanently marked by an unintercepted nuclear strike. */
+  nuclearGroundZeroHexes: HexKey[];
+  /** Number of submarines launched at each monster during the active turn. */
+  nuclearMissilesLaunchedThisTurn: Record<string, number>;
+  /** Unused hidden interception dice from the active turn's shared roll batches. */
+  nuclearInterceptionRollPool: number[];
   winnerPlayer?: number;
   victoryType?: "development-stomp-exhaustion" | "development-board-exhaustion" | "monster-challenge" | "america-saved" | "concession";
   rng: { seed: number; cursor: number; /** Server-only 256-bit ChaCha20 key for production randomness. */ secretSeed?: string };
@@ -482,7 +488,10 @@ export type StateAudience = "internal" | "player" | "spectator";
 export function projectState(state: GameState, audience: StateAudience, viewerPlayerIndex?: number): GameState {
   if (audience === "internal") return structuredClone(state);
   const projected = structuredClone(state);
+  projected.nuclearGroundZeroHexes ??= [];
+  projected.nuclearMissilesLaunchedThisTurn ??= {};
   projected.rng = { seed: 0, cursor: 0 };
+  projected.nuclearInterceptionRollPool = [];
   const setupPlayer = state.setupState?.phase === "starting-choice" ? state.setupState.seats.find((seat) => !seat.startingChoice)?.playerIndex : undefined;
   const permissionState = setupPlayer === undefined ? state : setupDeploymentState(state, setupPlayer);
   projected.nationalGuard = { ...projected.nationalGuard, deploymentPlayerIndices: state.players.flatMap((_, index) => canDeployNationalGuard(permissionState, index) ? [index] : []) };
@@ -519,7 +528,6 @@ export type GameCommand =
   | { type: "pass-move" }
   | { type: "stay-piece"; pieceId: string }
   | { type: "resolve-fight"; battleId?: string; spendInfamy?: number; targetUnitId?: string }
-  | { type: "launch-submarine"; battleId: string; unitId: string }
   | { type: "launch-submarine-at-monster"; unitId: string; monsterId: string }
   | { type: "use-mutation"; cardId: "Berserk" | "Son of a Monster"; battleId?: string }
   | { type: "choose-mutation-card"; cardId: string }
@@ -581,6 +589,9 @@ export function migrateGameState(input: GameState): GameState {
   const state = structuredClone(input) as GameState & { schemaVersion: number; stompedLocations: string[] };
   if (!state.matchId) state.matchId = `development-match-${state.rng?.seed ?? 0}`;
   if (!Array.isArray(state.dieRollHistory)) state.dieRollHistory = [];
+  if (!Array.isArray(state.nuclearGroundZeroHexes)) state.nuclearGroundZeroHexes = [];
+  if (!state.nuclearMissilesLaunchedThisTurn || typeof state.nuclearMissilesLaunchedThisTurn !== "object") state.nuclearMissilesLaunchedThisTurn = {};
+  if (!Array.isArray(state.nuclearInterceptionRollPool)) state.nuclearInterceptionRollPool = [];
   if (!state.players) state.players = state.monsters.map((_, seat) => ({ id: `player-${seat + 1}`, seat, mutationCardIds: [], researchCardIds: [] }));
   state.players = state.players.map((player) => ({ ...player, mutationCardIds: Array.isArray(player.mutationCardIds) ? player.mutationCardIds : [], researchCardIds: Array.isArray(player.researchCardIds) ? player.researchCardIds : [] }));
   if (!Array.isArray(state.removedResearchCardIds)) state.removedResearchCardIds = [];
@@ -611,16 +622,18 @@ export function migrateGameState(input: GameState): GameState {
   // or current occupancy.
   state.pendingDecision = pendingDecisionForState(state);
   if (state.schemaVersion === MATCH_STATE_SCHEMA_VERSION) return state;
-  if (state.schemaVersion !== 1) throw new GameDomainError("INVALID_COMMAND_ENVELOPE", `Unsupported match-state schema: ${String(state.schemaVersion)}.`);
+  if (state.schemaVersion !== 1 && state.schemaVersion !== 2) throw new GameDomainError("INVALID_COMMAND_ENVELOPE", `Unsupported match-state schema: ${String(state.schemaVersion)}.`);
   const normalize = (value: string): SpaceKey => {
     const normalized = toDevelopmentSpaceKey(value);
     if (!normalized) throw new GameDomainError("INVALID_COMMAND_ENVELOPE", `Cannot migrate unknown development space: ${value}.`);
     return normalized;
   };
-  state.monsters = state.monsters.map((monster) => ({ ...monster, defense: monster.defense ?? 4, damage: monster.damage ?? 1, location: normalize(monster.location) }));
-  state.units = state.units.map((unit) => ({ ...unit, attacks: unit.attacks ?? 1, damage: unit.damage ?? 1, location: normalize(unit.location) }));
-  state.pendingBattles = state.pendingBattles.map((battle) => ({ ...battle, location: normalize(battle.location) as HexKey }));
-  state.stompedLocations = state.stompedLocations.map((location) => normalize(location) as HexKey);
+  if (state.schemaVersion === 1) {
+    state.monsters = state.monsters.map((monster) => ({ ...monster, defense: monster.defense ?? 4, damage: monster.damage ?? 1, location: normalize(monster.location) }));
+    state.units = state.units.map((unit) => ({ ...unit, attacks: unit.attacks ?? 1, damage: unit.damage ?? 1, location: normalize(unit.location) }));
+    state.pendingBattles = state.pendingBattles.map((battle) => ({ ...battle, location: normalize(battle.location) as HexKey }));
+    state.stompedLocations = state.stompedLocations.map((location) => normalize(location) as HexKey);
+  }
   if (state.pendingMutationChoice && !state.pendingMutationChoice.source) {
     state.pendingMutationChoice = { ...state.pendingMutationChoice, source: "mutation-site" };
   }
@@ -785,7 +798,7 @@ export function createGame(playerCount = 2, seed = 0, matchId = `development-mat
   const active = monsters.slice(0, Math.max(2, Math.min(playerCount, 4))).map((monster, i) => ({ ...monster, location: developmentKey(i === 0 ? "los-angeles" : "seattle") }));
   const state: GameState = {
     schemaVersion: MATCH_STATE_SCHEMA_VERSION, matchId, boardId: DEVELOPMENT_BOARD.id, boardVersion: DEVELOPMENT_BOARD.version, boardContentHash: DEVELOPMENT_BOARD.contentHash, rulesetVersion: DEVELOPMENT_BOARD.rulesetVersion,
-    currentPlayer: (seed >>> 0) % active.length, players: active.map((_, seat) => ({ id: `player-${seat + 1}`, seat, mutationCardIds: [], researchCardIds: [] })), phase: "move", round: 1, stompMarkers, stompedLocations: [],
+    currentPlayer: (seed >>> 0) % active.length, players: active.map((_, seat) => ({ id: `player-${seat + 1}`, seat, mutationCardIds: [], researchCardIds: [] })), phase: "move", round: 1, stompMarkers, stompedLocations: [], nuclearGroundZeroHexes: [], nuclearMissilesLaunchedThisTurn: {}, nuclearInterceptionRollPool: [],
     rng: { seed: seed >>> 0, cursor: 0, ...(secretSeed ? { secretSeed } : {}) }, nextUnitSequence: developmentUnitRoster.length,
     decks: {
       mutation: createCardDeckState(shuffledDeck(MONSTER_MUTATION_CARD_IDS, seed ^ 0x4d555441, secretSeed, PRIVATE_RANDOM_COUNTERS.mutationShuffle)),
@@ -1631,12 +1644,13 @@ function effectiveMonsterDamage(state: Pick<GameState, "monsters" | "players">, 
   return monsterContinuousEffects(state, monster).damagePerHit ?? monster.damage;
 }
 
-function effectiveMonsterAttacks(state: Pick<GameState, "monsters" | "players" | "boardId" | "boardVersion" | "boardContentHash">, monster: Monster, round: number): number {
+function effectiveMonsterAttacks(state: Pick<GameState, "monsters" | "players" | "boardId" | "boardVersion" | "boardContentHash" | "nuclearMissilesLaunchedThisTurn">, monster: Monster, round: number): number {
   const effects = monsterContinuousEffects(state, monster);
   const board = boardForState(state);
   const seaCombat = isHexKey(monster.location) && ["sea", "seacoast"].includes(board.hexes[monster.location]?.waterClass ?? "");
   const tomanagiBonus = monster.name === "Tomanagi" && round === 1 && seaCombat ? 1 : 0;
-  return monster.attacks + (round === 1 ? effects.firstRoundAttackBonus : 0) + tomanagiBonus;
+  const nuclearPenalty = round === 1 ? state.nuclearMissilesLaunchedThisTurn?.[monster.id] ?? 0 : 0;
+  return Math.max(0, monster.attacks + (round === 1 ? effects.firstRoundAttackBonus : 0) + tomanagiBonus - nuclearPenalty);
 }
 
 /** Public combat values include face-up mutations in projected online views. */
@@ -1664,7 +1678,7 @@ function awardHollywoodResearch(state: GameState, controllerPlayer: number | und
   return cardId;
 }
 
-function nextD6(state: GameState): number {
+function nextD6(state: GameState, recordRoll = true): number {
   let value: number;
   if (state.rng.secretSeed) {
     value = chacha20Word(state.rng.secretSeed, PRIVATE_RANDOM_COUNTERS.game + state.rng.cursor);
@@ -1676,7 +1690,7 @@ function nextD6(state: GameState): number {
   }
   state.rng.cursor += 1;
   const roll = ((value % 6) + 6) % 6 + 1;
-  (state.dieRollHistory ??= []).push(roll);
+  if (recordRoll) (state.dieRollHistory ??= []).push(roll);
   return roll;
 }
 
@@ -1868,7 +1882,8 @@ function resolvePendingMultiTargetFight(state: GameState, selectedTargetId: stri
     next.pendingDecision = pendingDecisionForState(next);
     return { state: next, rolls, destroyedUnitIds, attacks, combatRounds: round, infamySpent: combat.spendInfamy, hollywoodResearchCardId };
   }
-  if (monster.health > 0) {
+  const initialMonsterAllowance = effectiveMonsterAttacks(next, monster, round) + (round === 1 ? combat.spendInfamy : 0) + bonusAttacks;
+  if (monster.health > 0 && monsterAttackIndex < initialMonsterAllowance) {
     const roll = performMonsterAttack(selectedUnit);
     if (roll === 6 && monsterHasMutation(next, monster, "Whip Tentacles")) bonusAttacks += 1;
     monsterAttackIndex += 1;
@@ -3037,6 +3052,8 @@ function resolveChallengeStep(state: GameState, command: Extract<GameCommand, { 
 }
 
 function advanceAfterDeployment(next: GameState): TurnAdvanceResolution {
+  next.nuclearMissilesLaunchedThisTurn = {};
+  next.nuclearInterceptionRollPool = [];
   if (next.challenge?.declared && !next.challenge.active && next.challenge.startAtEndOfTurn) {
     beginMonsterChallenge(next);
     return {};
@@ -3374,23 +3391,71 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
       next.phase = "move";
       next.pendingDecision = { type: "monster-movement", playerIndex: next.currentPlayer, pieceId: next.monsters[next.currentPlayer].id };
     }
-    const eventPayload = { monsterId: state.monsters[state.currentPlayer].id, path: command.path, destination: command.path.at(-1) };
+    const eventPayload = { path: command.path, destination: command.path.at(-1) };
     return { state: appendEvent(next, "monster.moved", eventPayload), eventType: "monster.moved", eventPayload };
   }
   if (command.type === "launch-submarine-at-monster") {
     requireDecision("monster-movement");
-    const target = legalSubmarineTargets(state, command.unitId).find((monster) => monster.id === command.monsterId);
-    if (!target || !isHexKey(target.location)) throw new GameDomainError("ILLEGAL_COMMAND", "Choose an eligible monster within eight flying spaces of your unmoved Nuclear Submarine.");
+    const legalTarget = legalSubmarineTargets(state, command.unitId).find((monster) => monster.id === command.monsterId);
+    if (!legalTarget || !isHexKey(legalTarget.location)) throw new GameDomainError("ILLEGAL_COMMAND", "Choose an eligible monster within eight flying spaces of your unmoved Nuclear Submarine.");
     const next = structuredClone(state);
     const launched = next.units.find((unit) => unit.id === command.unitId)!;
-    Object.assign(launched, { unitTypeId: "navy-nuclear-submarine-missile", move: 8, movement: "fly", defense: 6, damage: 3, location: target.location });
+    const target = next.monsters.find((monster) => monster.id === command.monsterId)!;
+    const origin = isHexKey(launched.location) ? launched.location : undefined;
+    if (!origin) throw new GameDomainError("ILLEGAL_COMMAND", "The Nuclear Submarine must be on the board to launch.");
+
+    // Roll interception in batches of three. A successful early interception
+    // leaves the later dice in the batch available to other launches this turn.
+    if (next.nuclearInterceptionRollPool.length < 3) {
+      while (next.nuclearInterceptionRollPool.length < 3) next.nuclearInterceptionRollPool.push(nextD6(next, false));
+    }
+    const interceptionRolls: number[] = [];
+    let intercepted = false;
+    for (let index = 0; index < 3; index += 1) {
+      const roll = next.nuclearInterceptionRollPool.shift();
+      if (roll === undefined) break;
+      interceptionRolls.push(roll);
+      if (roll === 6) { intercepted = true; break; }
+    }
+
+    next.nuclearMissilesLaunchedThisTurn[target.id] = (next.nuclearMissilesLaunchedThisTurn[target.id] ?? 0) + 1;
+    const attackRoll = intercepted ? undefined : nextD6(next);
+    const defense = effectiveMonsterDefense(next, target);
+    const hit = attackRoll !== undefined && attackRoll >= defense;
+    const smash = hit && attackRoll === 6;
+    const damage = hit ? 3 + (smash ? 1 : 0) : 0;
+    const healthBefore = target.health;
+    if (damage > 0) target.health = Math.max(0, target.health - damage);
+    const mutationCardId = attackRoll === 1 ? drawMutationForMonster(next, target) : undefined;
+
+    // Every launch spends its submarine. The event snapshot carries the origin
+    // and destination for playback after the unit has returned to its record.
+    launched.location = "record-tile";
     next.movedPieceIds.push(launched.id);
-    const battle = next.pendingBattles.find((candidate) => candidate.monsterId === target.id && candidate.location === target.location);
-    if (battle) battle.militaryUnitIds = [...new Set([...battle.militaryUnitIds, launched.id])];
-    else next.pendingBattles.push({ id: `${target.id}:${next.round}:${target.location}`, monsterId: target.id, location: target.location, militaryUnitIds: [launched.id] });
-    next.log.push(`Navy Nuclear Submarine launched as a cruise missile against ${target.name}.`);
-    const eventPayload = { unitId: launched.id, monsterId: target.id, destination: target.location, mode: "cruise-missile", nextPhase: next.phase };
-    return { state: appendEvent(next, "unit.transformed", eventPayload), eventType: "unit.transformed", eventPayload };
+    if (!intercepted) next.nuclearGroundZeroHexes = [...new Set([...next.nuclearGroundZeroHexes, legalTarget.location as HexKey])];
+    let hollywoodResearchCardId: string | undefined;
+    if (target.health === 0) {
+      target.location = "hollywood";
+      target.infamy = 0;
+      clearPendingChallengerIfLost(next, target.id);
+      next.pendingBattles = next.pendingBattles.filter((battle) => battle.monsterId !== target.id);
+      hollywoodResearchCardId = awardHollywoodResearch(next, monsterPlayerIndex(next, target));
+      next.log.push(`${target.name} was defeated by the nuclear strike and went to Hollywood.`);
+    }
+    next.pendingDecision = pendingDecisionForState(next);
+    next.log.push(intercepted
+      ? `${target.name} intercepted a Nuclear Submarine missile (${interceptionRolls.length} interception ${interceptionRolls.length === 1 ? "roll" : "rolls"}).`
+      : `${target.name} ${hit ? `was hit by a Nuclear Submarine missile (${attackRoll}${smash ? ", smash" : ""}); it took ${damage} damage.` : `avoided a Nuclear Submarine missile (${attackRoll} against Defense ${defense}).`}`);
+    const eventPayload = {
+      playerIndex: state.currentPlayer, unitId: launched.id, monsterId: target.id,
+      origin, destination: legalTarget.location,
+      intercepted, interceptionRollCount: interceptionRolls.length,
+      attackRoll, defense, hit, smash, damage, healthBefore, healthAfter: target.health,
+      mutationTriggered: attackRoll === 1, mutationCardId, hollywoodResearchCardId,
+      missilesThisTurn: next.nuclearMissilesLaunchedThisTurn[target.id],
+      nextPhase: next.phase, nextDecision: next.pendingDecision,
+    };
+    return { state: appendEvent(next, "nuclear-strike.resolved", eventPayload), eventType: "nuclear-strike.resolved", eventPayload };
   }
   if (command.type === "move-unit") {
     requireDecision("monster-movement");
@@ -3451,23 +3516,6 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
     const eventPayload = { researchCardId: result.cardId, removedResearchCardId: command.researchCardId, removedResearchPlayerIndex: command.researchPlayerIndex, battleId: result.battleId, mutationCardId: command.mutationCardId, targetMonsterId: command.targetMonsterId, choice: command.choice, destination: command.destination, rolls: result.rolls, damagedMonsterIds: result.damagedMonsterIds, defeatedMonsterIds: result.defeatedMonsterIds, nextDecision: result.state.pendingDecision, nextPhase: result.state.phase };
     return { state: appendEvent(result.state, "research.used", eventPayload), eventType: "research.used", eventPayload };
   }
-  if (state.phase === "fight" && command.type === "launch-submarine") {
-    requireDecision("battle-resolution");
-    const battle = state.pendingBattles.find((candidate) => candidate.id === command.battleId);
-    const submarine = state.units.find((unit) => unit.id === command.unitId);
-    if (!battle || !submarine || !battle.militaryUnitIds.includes(submarine.id) || submarine.location !== battle.location) throw new GameDomainError("ILLEGAL_COMMAND", "That submarine is not part of the selected battle.");
-    if (submarine.unitTypeId !== "navy-nuclear-submarine") throw new GameDomainError("ILLEGAL_COMMAND", "Only a Nuclear Submarine can launch as a cruise missile.");
-    if (submarine.ownerPlayer !== state.currentPlayer) throw new GameDomainError("ILLEGAL_COMMAND", "You can only launch your own Nuclear Submarine.");
-    const next = structuredClone(state);
-    const launched = next.units.find((unit) => unit.id === command.unitId)!;
-    launched.unitTypeId = "navy-nuclear-submarine-missile";
-    launched.move = 8;
-    launched.movement = "fly";
-    launched.defense = 6;
-    launched.damage = 3;
-    next.log.push(`Navy Nuclear Submarine ${launched.id} launched as a cruise missile.`);
-    return { state: appendEvent(next, "unit.transformed", { battleId: battle.id, unitId: launched.id, mode: "cruise-missile", nextPhase: next.phase }), eventType: "unit.transformed", eventPayload: { battleId: battle.id, unitId: launched.id, mode: "cruise-missile", nextPhase: next.phase } };
-  }
   if (state.phase === "fight" && (command.type === "resolve-fight" || command.type === "advance")) {
     const attackDecision = state.pendingDecision?.type === "attack-target" ? state.pendingDecision : undefined;
     if (attackDecision) {
@@ -3499,13 +3547,15 @@ export function applyCommand(state: GameState, command: GameCommand): GameEventR
         const spendInfamy = command.type === "resolve-fight" ? command.spendInfamy ?? 0 : 0;
         if (!Number.isInteger(spendInfamy) || spendInfamy < 0 || spendInfamy > (monster?.infamy ?? 0)) throw new GameDomainError("ILLEGAL_COMMAND", "A monster cannot spend more Infamy than it currently has.");
         const attackTotal = (monster ? effectiveMonsterAttacks(state, monster, 1) : 0) + spendInfamy + (selectedBattle.bonusMonsterAttacks ?? 0);
-        next.pendingAttackTarget = { battleId: selectedBattle.id, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal, spendInfamy };
-        next.pendingDecision = { type: "attack-target", playerIndex: next.currentPlayer, battleId: selectedBattle.id, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal };
-        if (command.targetUnitId) return applyCommand(next, { ...command, battleId: selectedBattle.id });
-        if (targetIds.length === 1) return applyCommand(next, { ...command, battleId: selectedBattle.id, targetUnitId: targetIds[0] });
-        next.log.push(`Choose the target for ${monster?.name ?? "the monster"}'s attack 1 of ${attackTotal} in combat round 1.`);
-        const eventPayload = { battleId: selectedBattle.id, playerIndex: state.currentPlayer, location: selectedBattle.location, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal, infamySpent: spendInfamy, nextPhase: next.phase };
-        return { state: appendEvent(next, "battle.target-required", eventPayload), eventType: "battle.target-required", eventPayload };
+        if (attackTotal > 0) {
+          next.pendingAttackTarget = { battleId: selectedBattle.id, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal, spendInfamy };
+          next.pendingDecision = { type: "attack-target", playerIndex: next.currentPlayer, battleId: selectedBattle.id, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal };
+          if (command.targetUnitId) return applyCommand(next, { ...command, battleId: selectedBattle.id });
+          if (targetIds.length === 1) return applyCommand(next, { ...command, battleId: selectedBattle.id, targetUnitId: targetIds[0] });
+          next.log.push(`Choose the target for ${monster?.name ?? "the monster"}'s attack 1 of ${attackTotal} in combat round 1.`);
+          const eventPayload = { battleId: selectedBattle.id, playerIndex: state.currentPlayer, location: selectedBattle.location, attackerId: selectedBattle.monsterId, targetIds, round: 1, attackNumber: 1, attackTotal, infamySpent: spendInfamy, nextPhase: next.phase };
+          return { state: appendEvent(next, "battle.target-required", eventPayload), eventType: "battle.target-required", eventPayload };
+        }
       }
     }
     const result = resolveFightResult(state, command.type === "resolve-fight" ? command.battleId : undefined, command.type === "resolve-fight" ? command.spendInfamy ?? 0 : 0, command.type === "resolve-fight" ? command.targetUnitId : undefined);

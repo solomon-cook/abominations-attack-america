@@ -39,6 +39,11 @@
 .unit-movement-type { color:#bacaba; font-size:11px; }
 .game-screen .unit-command-record .unit-selection-status { grid-column:1 / -1; margin:0; font-size:12px; color:#bacaba; }
 .game-screen .unit-command-record .unit-special-rules { grid-column:1 / -1; font-size:12px; color:#bacaba; }
+.game-screen .unit-command-record .nuclear-launch-control { grid-column:1 / -1; display:grid; gap:6px; }
+.game-screen .unit-command-record .nuclear-launch-control p { margin:0; color:#d2c7a0; font-size:11px; }
+.game-screen .unit-command-record .nuclear-launch-button { min-height:44px; border:1px solid #ffcf72; border-radius:5px; background:linear-gradient(120deg,#e2a442,#bc4935); color:#1b1712; font-size:13px; font-weight:950; letter-spacing:.06em; text-transform:uppercase; box-shadow:0 0 16px #ef903b50; }
+.game-screen .unit-command-record .nuclear-launch-button:hover:not(:disabled) { background:linear-gradient(120deg,#ffe081,#e35d3d); }
+.game-screen .unit-command-record .nuclear-launch-button:disabled { opacity:.48; box-shadow:none; }
 .unit-command-record summary { cursor:pointer; padding:8px 0; }
 .game-screen .bottom-context-dock .unit-command-record .stack-clear { position:absolute; right:8px; top:8px; min-width:36px; min-height:36px; padding:0; font-size:24px; border:0; background:transparent; color:#bacaba; }
 @media(max-width:700px) {

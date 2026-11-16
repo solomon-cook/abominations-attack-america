@@ -329,7 +329,7 @@ function App() {
   );
   const submarineTargets = useMemo(() => selectedUnitId ? legalSubmarineTargets(activeGame, selectedUnitId) : [], [activeGame, selectedUnitId]);
   const choosingSubmarineTarget = submarineTargetingId !== null && submarineTargetingId === selectedUnitId && submarineTargets.length > 0;
-  const submarineTargetLocations = new Map<HexKey, string>(submarineTargets.filter((monster) => isHexKey(monster.location)).map((monster) => [monster.location as HexKey, `Launch missile at ${monster.name}`]));
+  const submarineTargetLocations = new Map<HexKey, string>(submarineTargets.filter((monster) => isHexKey(monster.location)).map((monster) => [monster.location as HexKey, `Launch nuclear missile at ${monster.name}`]));
   useEffect(() => { setSubmarineTargetingId(null); }, [activeGame, selectedUnitId]);
   const militaryChoices = useMemo(() => deploymentChoices(activeGame), [activeGame]);
   const giantDeploymentDestinations = useMemo(() => activeGame.phase === "deploy" && activeGame.pendingDecision?.type === "deployment"
@@ -1477,7 +1477,7 @@ function App() {
   useEffect(() => {
     if (!latestEvent?.id) return;
     if (lastSoundEventRef.current === latestEvent.id) return;
-    const category: SoundCategory = latestEvent.action === "fight.resolved" || ["challenge.resolved", "challenge.giant.resolved", "challenge.attack.rolled"].includes(latestEvent.action)
+    const category: SoundCategory = latestEvent.action === "fight.resolved" || latestEvent.action === "nuclear-strike.resolved" || ["challenge.resolved", "challenge.giant.resolved", "challenge.attack.rolled"].includes(latestEvent.action)
       ? "combat"
       : latestEvent.action === "research.drawn" || latestEvent.action === "mutation.used"
         ? "cards"
@@ -1801,7 +1801,11 @@ function App() {
               onSetupLocation={(destination) => {
                 if (choosingSubmarineTarget && canAct && selectedUnitId) {
                   const target = submarineTargets.find((monster) => monster.location === destination);
-                  if (target) void runCommand({ type: "launch-submarine-at-monster", unitId: selectedUnitId, monsterId: target.id });
+                  if (target) void (async () => {
+                    await runCommand({ type: "launch-submarine-at-monster", unitId: selectedUnitId, monsterId: target.id });
+                    setSubmarineTargetingId(null);
+                    setSelectedUnitId(null);
+                  })();
                   return;
                 }
                 if (activeSetup?.phase === "lair-selection") void chooseSetupOption(destination);
@@ -1862,7 +1866,7 @@ function App() {
               onClearPreview={() => setHoveredPath((current) => current.length ? [] : current)}
             />
           </BoardViewport>
-          {choosingSubmarineTarget && <div className="deployment-prompt" role="status">Choose a glowing monster to launch the cruise missile. <button onClick={() => setSubmarineTargetingId(null)}>Cancel</button></div>}
+          {choosingSubmarineTarget && <div className="deployment-prompt" role="status">Choose a glowing monster to launch the nuclear missile. <button onClick={() => setSubmarineTargetingId(null)}>Cancel</button></div>}
           {activeGame.phase === "fight" && activeGame.pendingRetreat?.monsterId && <div className="deployment-prompt retreat-prompt" role="status">
             {activeGame.monsters.find((monster) => monster.id === activeGame.pendingRetreat?.monsterId)?.name ?? "Monster"} retreats · Select a glowing adjacent hex.
           </div>}
@@ -2140,7 +2144,7 @@ function App() {
         monsters={activeGame.monsters}
         units={activeGame.units}
         board={activeBoard}
-        enabled={online || soloMode || Boolean(routineStompPrompt) || routineStompEvent}
+        enabled={online || soloMode || Boolean(routineStompPrompt) || routineStompEvent || activeGame.eventLog.at(-1)?.action === "nuclear-strike.resolved"}
         botPlayback={soloMode}
         spectator={online && participant?.role !== "player"}
         viewerPlayerIndex={online ? participant?.playerIndex : soloMode ? 0 : activeGame.currentPlayer}

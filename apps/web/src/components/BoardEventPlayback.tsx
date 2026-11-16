@@ -48,7 +48,8 @@ function eventPlayerIndex(event: GameLogEntry): number | undefined {
 }
 
 function isBoardPresentationEvent(event: GameLogEntry): event is BoardEvent {
-  return event.action === "encounter.resolved"
+  return event.action === "nuclear-strike.resolved"
+    || event.action === "encounter.resolved"
     || event.action === "encounter.choice-required"
     || event.action === "trophy.choice-required"
     || event.action === "research.drawn";
@@ -125,6 +126,8 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
   const [shownAttack, setShownAttack] = useState<{ eventId: string; index: number }>();
   const [outcomeEventId, setOutcomeEventId] = useState<string>();
   const [position, setPosition] = useState<Position>();
+  const [missilePath, setMissilePath] = useState<string>();
+  const [missileTargetPoint, setMissileTargetPoint] = useState<{ x: number; y: number }>();
   const playbackRef = useRef<HTMLDivElement>(null);
   const current = queue[0];
   const currentMutationReveal = mutationRevealQueue[0];
@@ -136,6 +139,7 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
   const playerName = playerIndex === undefined ? "Monster" : monsters[playerIndex]?.name ?? "Monster";
   const isResearchDraw = current?.action === "research.drawn";
   const isFightPlayback = current?.action === "fight.resolved" || current?.action === "battle.target-required";
+  const isNuclearStrike = current?.action === "nuclear-strike.resolved";
   const shownAttackIndex = current && shownAttack?.eventId === current.id ? shownAttack.index : -1;
   const currentAttack = shownAttackIndex >= 0 ? attacks[shownAttackIndex] : undefined;
   const showOutcome = current?.id === outcomeEventId;
@@ -193,6 +197,7 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
       const owner = eventPlayerIndex(event);
       if (isCompactBotBattle(event, botPlayback, viewerPlayerIndex)) return newBattleAttacks(event, events).length > 0;
       if (event.action === "fight.resolved" || event.action === "battle.target-required") return false;
+      if (event.action === "nuclear-strike.resolved") return true;
       if (!isBoardPresentationEvent(event)) return false;
       return owner !== undefined && (spectator || owner !== viewerPlayerIndex || isRoutineCityStompEvent(event, events, board));
     });
@@ -202,6 +207,22 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
   useEffect(() => {
     if (!current || currentMutationReveal) return;
     let timer: number;
+    if (current.action === "nuclear-strike.resolved") {
+      setShownDice(0);
+      setShownAttack(undefined);
+      setOutcomeEventId(undefined);
+      const reveal = () => setOutcomeEventId(current.id);
+      if (reducedMotion) {
+        reveal();
+        timer = window.setTimeout(() => setQueue((existing) => existing.slice(1)), 1450);
+      } else {
+        timer = window.setTimeout(() => {
+          reveal();
+          timer = window.setTimeout(() => setQueue((existing) => existing.slice(1)), 1500);
+        }, 2850);
+      }
+      return () => window.clearTimeout(timer);
+    }
     let revealed = 0;
     setShownDice(0);
     setShownAttack(undefined);
@@ -233,6 +254,38 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
     }
     return () => window.clearTimeout(timer);
   }, [attacks.length, current?.id, currentMutationReveal?.id, isFightPlayback, reducedMotion, rolls.length]);
+
+  useEffect(() => {
+    setMissilePath(undefined);
+    setMissileTargetPoint(undefined);
+    if (!current || current.action !== "nuclear-strike.resolved") return;
+    const origin = current.detail.origin;
+    const destination = current.detail.destination;
+    if (typeof origin !== "string" || typeof destination !== "string") return;
+    let frame = 0;
+    let attempts = 0;
+    const measure = () => {
+      const from = document.querySelector<HTMLElement>(`.hex-tile[data-hex-key="${origin}"]`)?.getBoundingClientRect();
+      const to = document.querySelector<HTMLElement>(`.hex-tile[data-hex-key="${destination}"]`)?.getBoundingClientRect();
+      if ((!from || !to || !from.width || !to.width) && attempts++ < 60) {
+        frame = requestAnimationFrame(measure);
+        return;
+      }
+      if (!from || !to || !from.width || !to.width) return;
+      const startX = from.left + from.width / 2;
+      const startY = from.top + from.height / 2;
+      const endX = to.left + to.width / 2;
+      const endY = to.top + to.height / 2;
+      setMissileTargetPoint({ x: endX, y: endY });
+      if (reducedMotion) return;
+      const arch = Math.min(230, Math.max(110, window.innerHeight * .2));
+      const controlX = (startX + endX) / 2;
+      const controlY = Math.max(36, Math.min(startY, endY) - arch);
+      setMissilePath(`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`);
+    };
+    frame = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(frame);
+  }, [current?.id, reducedMotion]);
 
   useEffect(() => {
     if (!current && !routineStomp) return;
@@ -305,8 +358,22 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
   const target = currentAttack ? combatant(currentAttack.targetId) : undefined;
   const labels = [playerName, locationName, ...effects.map((effect) => `${effect.type} ${effect.amount > 0 ? "+" : ""}${effect.amount}`), ...cards.map((card) => card.label)].filter(Boolean);
   const prompt = !current ? routineStomp : undefined;
+  const nuclearOutcome = isNuclearStrike && showOutcome
+    ? current?.detail.intercepted === true ? "MISSILE INTERCEPTED"
+      : current?.detail.hit === true ? `NUCLEAR HIT · ${String(current.detail.damage)} DAMAGE`
+        : "DETONATION · NO DAMAGE"
+    : undefined;
+  const missileFlight = isNuclearStrike && missilePath && current ? <svg className="nuclear-missile-flight" aria-hidden="true" viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`}>
+    <path id={`nuclear-path-${current.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`} d={missilePath} />
+    <g className="nuclear-missile-sprite"><path d="M -15 0 L 8 -5 L 2 0 L 8 5 Z" /><path className="nuclear-missile-flame" d="M -15 0 L -24 -5 L -21 0 L -24 5 Z" /><animateMotion dur="2.8s" repeatCount="1" fill="freeze" rotate="auto" path={missilePath} /></g>
+  </svg> : null;
   return createPortal(<>
     {currentMutationReveal && <MutationRevealStage key={currentMutationReveal.id} reveal={currentMutationReveal} onDismiss={dismissMutationReveal} />}
+    {isNuclearStrike && <div className={`nuclear-launch-warning${showOutcome && current?.detail.intercepted !== true ? " has-detonated" : ""}`} role="status" aria-live="assertive">
+      <span aria-hidden="true">☢</span><strong>MISSILE LAUNCHED</strong>{showOutcome && nuclearOutcome && <small>{nuclearOutcome}</small>}
+    </div>}
+    {missileFlight}
+    {isNuclearStrike && showOutcome && current?.detail.intercepted !== true && missileTargetPoint && <div className="nuclear-blast-burst" style={{ left: missileTargetPoint.x, top: missileTargetPoint.y }} aria-hidden="true" />}
     <div
     ref={playbackRef}
     className={`board-event-playback${position.above ? " is-above" : ""}${reducedMotion ? " reduced-motion" : ""}${prompt ? " is-interactive" : ""}`}
@@ -319,7 +386,9 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
     aria-live={prompt ? undefined : "polite"}
     aria-label={prompt
       ? `${prompt.monsterName} ${prompt.choice ? `must choose a reward at ${prompt.locationName}` : `is ready to stomp ${prompt.locationName}${prompt.dice ? `; roll ${prompt.dice} city dice` : ""}`}`
-      : `${playerName}'s ${isFightPlayback ? "battle playback" : isResearchDraw ? "Military Research draw" : isRoutineStompPlayback ? "city stomp" : "Encounter"}${locationName ? ` at ${locationName}` : ""}: ${labels.join(", ")}`}
+      : isNuclearStrike
+        ? `Nuclear missile launched at ${locationName ?? "target"}: ${nuclearOutcome ?? "missile in flight"}`
+        : `${playerName}'s ${isFightPlayback ? "battle playback" : isResearchDraw ? "Military Research draw" : isRoutineStompPlayback ? "city stomp" : "Encounter"}${locationName ? ` at ${locationName}` : ""}: ${labels.join(", ")}`}
     data-event-id={current?.id}
   >
     {prompt ? <>
@@ -338,7 +407,7 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
         {prompt.dice > 0 && <span aria-hidden="true"> ⚄</span>}
       </button>}
     </> : current ? <>
-      <header className="board-event-heading"><span><small>PLAYER {playerIndex === undefined ? "?" : playerIndex + 1} · {isFightPlayback ? "BOT BATTLE" : isResearchDraw ? "RESEARCH" : isRoutineStompPlayback ? "CITY STOMP" : "ENCOUNTER"}</small><strong>{isFightPlayback ? "Battle in progress" : playerName}</strong></span>{locationName && <small className="board-event-location">{locationName}</small>}</header>
+      <header className="board-event-heading"><span><small>{isNuclearStrike ? "NAVY · NUCLEAR STRIKE" : `PLAYER ${playerIndex === undefined ? "?" : playerIndex + 1}`} · {isFightPlayback ? "BOT BATTLE" : isResearchDraw ? "RESEARCH" : isRoutineStompPlayback ? "CITY STOMP" : isNuclearStrike ? "MISSILE" : "ENCOUNTER"}</small><strong>{isNuclearStrike ? showOutcome ? nuclearOutcome : "Missile in flight" : isFightPlayback ? "Battle in progress" : playerName}</strong></span>{locationName && <small className="board-event-location">{locationName}</small>}</header>
       {isFightPlayback && currentAttack && attacker && target && <div key={`${current.id}-${shownAttackIndex}`} className="board-battle-step" role="group" aria-label={`Attack ${shownAttackIndex + 1} of ${attacks.length}`} data-attack-index={shownAttackIndex}>
         <BattleActor actor={attacker} side="attacker" />
         <div className="board-battle-roll"><small>ATTACK</small><span aria-hidden="true">⚄</span><DieCube value={currentAttack.roll} label={`Attack roll ${currentAttack.roll}`} /></div>
@@ -358,6 +427,13 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
         })}
         {cards.map((card, index) => <div className={`board-event-card ${card.kind}`} key={`${current.id}-card-${index}`} aria-label={`${card.label} card drawn`}><span aria-hidden="true">+</span><small>{card.label}</small></div>)}
         {outcomeText && <span className="board-event-note">{outcomeText}</span>}
+      </div>}
+      {showOutcome && isNuclearStrike && <div className="board-event-outcome nuclear-strike-outcome">
+        {current?.detail.intercepted === true ? <span className="board-event-note">The monster intercepted the missile.</span> : <>
+          <span className="nuclear-outcome-symbol" aria-hidden="true">☢</span>
+          <span className="board-event-note">{nuclearOutcome} · {String(current?.detail.healthAfter)} Health remaining</span>
+          {current?.detail.mutationTriggered === true && <span className="board-event-note">Mutation triggered.</span>}
+        </>}
       </div>}
     </> : null}
     </div>

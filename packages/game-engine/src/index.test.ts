@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { CARD_INTERACTION_RULES, CARD_STACKING_RULES, cardInteractionRule, cardStackingRule, createCardDeckState, discardCard, drawCard, MILITARY_RESEARCH_CARD_IDS, MONSTER_MUTATION_CARD_IDS, sourcedCardRule, SOURCED_CARD_RULES } from "./cards.js";
 import { setupDeploymentState, canDeployNationalGuard, canUseAntimatter, canUseDefenseSatellites, applyCommand, applyCommandEnvelope, applyCompletedSetup, assertCardsAvailable, assertMvpBoardReady, boardForState, CARD_DATA_VERSION, CARD_DEFINITIONS, cardDefinition, createDevelopmentVictoryGame, createGame, createGameFromSetup, createMvpRoomGame, createNationalGuardInventory, createProvisionalPlaytestGame, DEVELOPMENT_STOMPABLE_KEYS, discardCardFromGame, drawCardFromGame, hasStompableEncounterFeature, legalMonsterDestinations, legalMonsterPaths, legalNationalGuardDeploymentDestinations, legalOwnedDeploymentDestinations, legalOwnedRedeploymentDestinations, legalGiantPlacementDestinations, legalUnitPaths, legalSubmarineTargets, locations, migrateGameState, militaryUnitStats, monsterCombatStats, movementPathAllowed, occupantsAt, orderEncounterFeatures, projectState, legalMolecularCannonTargets, legalLaserFenceTargets, legalChopperLiftDestinations, provisionalMvpSetupDefinition, resolveEncounterResult, sourceNationalGuardInventoryErrors, sourceUnitInventoryErrors, stompMarkerCount, unsupportedCardIds, validateInventoryAccounting, type BattleAttack, type GameState, type HexKey } from "./index.js";
-import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup, placeUnusedBranches } from "./setup.js";
+import { chooseBranch, chooseLair, chooseMonster, chooseStartingChoice, createSetup } from "./setup.js";
 import { DEVELOPMENT_BOARD, FULL_HONEYCOMB_BOARD, locationIdToHexKey, validateBoardDefinition } from "./board.js";
 import { AUDITED_BOARD } from "./audited-board.js";
 import { MONSTER_DEFINITIONS, monsterDefinition } from "./monsters.js";
@@ -1546,19 +1546,35 @@ test("legacy schema-1 snapshots without eventLog remain command-compatible", () 
   assert.equal(result.state.eventLog.length, 1);
 });
 
-test("schema-1 development positions migrate explicitly to hex keys and schema 2", () => {
+test("schema-1 development positions migrate explicitly to hex keys and current schema", () => {
   const legacy = createGame(2) as any;
   legacy.schemaVersion = 1;
   legacy.monsters[0].location = "los-angeles";
   legacy.units[0].location = "denver";
   legacy.stompedLocations = ["chicago"];
   const migrated = migrateGameState(legacy);
-  assert.equal(migrated.schemaVersion, 2);
+  assert.equal(migrated.schemaVersion, 3);
   assert.equal(migrated.monsters[0].location, K("los-angeles"));
   assert.equal(migrated.units[0].location, K("denver"));
   assert.deepEqual(migrated.stompedLocations, [K("chicago")]);
   assert.equal(migrated.nationalGuard.location, "record-tile");
   assert.equal(migrated.nationalGuard.control, "neutral");
+  assert.deepEqual(migrated.nuclearGroundZeroHexes, []);
+  assert.deepEqual(migrated.nuclearMissilesLaunchedThisTurn, {});
+  assert.deepEqual(migrated.nuclearInterceptionRollPool, []);
+});
+
+test("schema-2 snapshots receive nuclear strike state defaults", () => {
+  const legacy = createGame(2) as any;
+  legacy.schemaVersion = 2;
+  delete legacy.nuclearGroundZeroHexes;
+  delete legacy.nuclearMissilesLaunchedThisTurn;
+  delete legacy.nuclearInterceptionRollPool;
+  const migrated = migrateGameState(legacy);
+  assert.equal(migrated.schemaVersion, 3);
+  assert.deepEqual(migrated.nuclearGroundZeroHexes, []);
+  assert.deepEqual(migrated.nuclearMissilesLaunchedThisTurn, {});
+  assert.deepEqual(migrated.nuclearInterceptionRollPool, []);
 });
 
 test("older snapshots receive stable identity defaults during migration", () => {
@@ -4645,38 +4661,170 @@ test("staying rejects other players' pieces, unknown pieces and decisions outsid
 });
 
 
-test("submarine missile targets enforce range, ownership and movement, and queue combat", () => {
-  const state = createGame(2);
-  state.phase = "move";
-  state.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: state.monsters[0].id };
-  const unit = state.units.find((piece) => piece.unitTypeId === "navy-nuclear-submarine")!;
-  unit.ownerPlayer = 0;
-  state.monsters[1].location = unit.location;
-  const command = { type: "launch-submarine-at-monster" as const, unitId: unit.id, monsterId: state.monsters[1].id };
-  assert.deepEqual(legalSubmarineTargets(state, unit.id).map((m) => m.id), [state.monsters[1].id]);
-  const next = applyCommand(state, command).state;
-  const missile = next.units.find((piece) => piece.id === unit.id)!;
-  assert.equal(missile.unitTypeId, "navy-nuclear-submarine-missile");
-  assert.equal(missile.move, 8);
-  assert.equal(missile.movement, "fly");
-  assert.equal(missile.defense, 6);
-  assert.equal(missile.damage, 3);
-  assert.ok(next.movedPieceIds.includes(unit.id));
-  assert.ok(next.pendingBattles.some((battle) => battle.monsterId === command.monsterId && battle.militaryUnitIds.includes(unit.id)));
-  assert.equal(unit.unitTypeId, "navy-nuclear-submarine");
-  const fought = resolveDevelopmentFight(applyCommand(next, { type: "pass-move" }).state);
-  const spent = fought.units.find((piece) => piece.id === unit.id)!;
-  assert.equal(spent.location, "record-tile");
-  assert.equal(spent.unitTypeId, "navy-nuclear-submarine");
-  assert.equal(spent.move, 4);
-  assert.deepEqual(validateInventoryAccounting(fought), []);
-  assert.throws(() => applyCommand(next, command), /eligible monster/);
-  assert.throws(() => applyCommand(state, { ...command, monsterId: state.monsters[0].id }), /eligible monster/);
-  unit.ownerPlayer = 1;
-  assert.deepEqual(legalSubmarineTargets(state, unit.id), []);
-  unit.ownerPlayer = 0;
-  state.monsters[1].location = "hollywood";
-  assert.throws(() => applyCommand(state, command), /eligible monster/);
+function nuclearLaunchFixture(seed = 0) {
+  const state = createGame(2, seed);
+  state.currentPlayer = 0;
+  state.pendingDecision = { type: "monster-movement", playerIndex: 0, pieceId: state.monsters[0]!.id };
+  const submarines = state.units.filter((piece) => piece.unitTypeId === "navy-nuclear-submarine");
+  submarines.forEach((piece) => { piece.ownerPlayer = 0; });
+  const target = state.monsters[1]!;
+  target.location = submarines[0]!.location;
+  return { state, submarines, target };
+}
+
+test("submarine launch resolves immediately, consumes the sub, damages and marks the target hex", () => {
+  let resolved: ReturnType<typeof applyCommand> | undefined;
+  let unitId = "";
+  for (let seed = 0; seed < 128 && !resolved; seed += 1) {
+    const { state, submarines, target } = nuclearLaunchFixture(seed);
+    const submarine = submarines[0]!;
+    unitId = submarine.id;
+    state.nuclearInterceptionRollPool = [1, 2, 3];
+    target.defense = 6;
+    const result = applyCommand(state, { type: "launch-submarine-at-monster", unitId, monsterId: target.id });
+    if (result.eventPayload.attackRoll === 6) resolved = result;
+  }
+  assert.ok(resolved, "a deterministic seed should produce a natural-six missile attack");
+  const target = resolved!.state.monsters[1]!;
+  const destination = resolved!.eventPayload.destination as HexKey;
+  assert.equal(resolved!.eventType, "nuclear-strike.resolved");
+  assert.equal(resolved!.eventPayload.intercepted, false);
+  assert.equal(resolved!.eventPayload.hit, true);
+  assert.equal(resolved!.eventPayload.smash, true);
+  assert.equal(resolved!.eventPayload.damage, 4);
+  assert.equal(target.health, 7);
+  assert.deepEqual(resolved!.state.nuclearGroundZeroHexes, [destination]);
+  assert.equal(resolved!.state.units.find((piece) => piece.id === unitId)?.location, "record-tile");
+  assert.ok(resolved!.state.movedPieceIds.includes(unitId));
+  assert.deepEqual(resolved!.state.pendingBattles, []);
+  assert.equal(resolved!.state.phase, "move");
+  assert.equal(resolved!.state.nuclearMissilesLaunchedThisTurn[target.id], 1);
+  assert.equal(monsterCombatStats(resolved!.state, target).attacks, 2);
+  assert.deepEqual(validateInventoryAccounting(resolved!.state), []);
+});
+
+test("three submarine launches remove all round-one monster attacks but leave round two intact", () => {
+  const state = createGame(2, 9);
+  state.currentPlayer = 0;
+  const monster = state.monsters[0]!;
+  const units = state.units.filter((unit) => unit.ownerPlayer === 0).slice(0, 2);
+  units.forEach((unit) => { unit.location = monster.location; unit.defense = 99; });
+  const battleId = "nuclear-round-one-penalty";
+  state.pendingBattles = [{ id: battleId, monsterId: monster.id, location: monster.location as HexKey, militaryUnitIds: units.map((unit) => unit.id) }];
+  state.nuclearMissilesLaunchedThisTurn[monster.id] = 3;
+  state.phase = "fight";
+  state.pendingDecision = { type: "battle-resolution", playerIndex: 0, battleId };
+  const result = applyCommand(state, { type: "resolve-fight", battleId });
+  const monsterAttacks = (result.eventPayload.attacks as Array<{ attackerId: string; combatRound: number }>).filter((attack) => attack.attackerId === monster.id);
+  assert.equal(monsterAttacks.filter((attack) => attack.combatRound === 1).length, 0);
+  assert.equal(monsterAttacks.filter((attack) => attack.combatRound === 2).length, monster.attacks);
+});
+
+test("the same submarine launch command deterministically replays from the same snapshot", () => {
+  const { state, submarines, target } = nuclearLaunchFixture(31);
+  const command = { type: "launch-submarine-at-monster" as const, unitId: submarines[0]!.id, monsterId: target.id };
+  const first = applyCommand(state, command);
+  const replayed = applyCommand(structuredClone(state), command);
+  assert.deepEqual(first.eventPayload, replayed.eventPayload);
+  assert.deepEqual(first.state, replayed.state);
+});
+
+test("submarine interception rolls carry through the shared turn pool and intercepted missiles do not detonate", () => {
+  let seedForSix = 0;
+  for (; seedForSix < 128; seedForSix += 1) {
+    const probe = createGame(2, seedForSix);
+    // The legacy fixture d6 stream maps the initial seed deterministically.
+    const word = (probe.rng.seed + Math.imul(1, 0x9e3779b9)) >>> 0;
+    let value = word ^ (word >>> 16);
+    value = Math.imul(value, 0x85ebca6b) >>> 0;
+    value ^= value >>> 13;
+    if (((value % 6) + 6) % 6 + 1 === 6) break;
+  }
+  const { state, submarines, target } = nuclearLaunchFixture(seedForSix);
+  state.nuclearInterceptionRollPool = [6, 2, 1];
+  const first = applyCommand(state, { type: "launch-submarine-at-monster", unitId: submarines[0]!.id, monsterId: target.id });
+  assert.equal(first.eventPayload.intercepted, true);
+  assert.equal(first.eventPayload.interceptionRollCount, 1);
+  assert.equal(first.eventPayload.attackRoll, undefined);
+  assert.deepEqual(first.state.nuclearInterceptionRollPool, [2, 1]);
+  assert.deepEqual(first.state.dieRollHistory, [], "interception dice stay out of the public roll history");
+  assert.deepEqual(projectState(first.state, "player", 0).nuclearInterceptionRollPool, [], "unused hidden dice are redacted from client projections");
+  assert.deepEqual(first.state.nuclearGroundZeroHexes, []);
+  assert.equal(first.state.monsters[1]!.health, target.health);
+
+  first.state.units.find((piece) => piece.id === submarines[1]!.id)!.location = target.location;
+  const second = applyCommand(first.state, { type: "launch-submarine-at-monster", unitId: submarines[1]!.id, monsterId: target.id });
+  assert.equal(second.eventPayload.intercepted, true);
+  assert.equal(second.eventPayload.interceptionRollCount, 3);
+  assert.deepEqual(second.state.nuclearInterceptionRollPool, []);
+  assert.equal(second.state.nuclearMissilesLaunchedThisTurn[target.id], 2);
+  assert.equal(monsterCombatStats(second.state, target).attacks, 1);
+});
+
+test("a missile attack below Defense misses while an attack roll of one still triggers Mutation", () => {
+  let missed: ReturnType<typeof applyCommand> | undefined;
+  let mutated: ReturnType<typeof applyCommand> | undefined;
+  let sixMiss: ReturnType<typeof applyCommand> | undefined;
+  for (let seed = 0; seed < 256 && (!missed || !mutated); seed += 1) {
+    const { state, submarines, target } = nuclearLaunchFixture(seed);
+    state.nuclearInterceptionRollPool = [1, 2, 3];
+    target.defense = 4;
+    state.decks.mutation.order = ["War Spikes", ...state.decks.mutation.order.filter((cardId) => cardId !== "War Spikes")];
+    const result = applyCommand(state, { type: "launch-submarine-at-monster", unitId: submarines[0]!.id, monsterId: target.id });
+    if (result.eventPayload.attackRoll === 1 && result.eventPayload.mutationCardId) mutated = result;
+    if (typeof result.eventPayload.attackRoll === "number" && result.eventPayload.attackRoll > 1 && result.eventPayload.attackRoll < 4) missed = result;
+  }
+  assert.ok(missed, "a deterministic seed should produce an attack roll below Defense");
+  assert.equal(missed!.eventPayload.hit, false);
+  assert.equal(missed!.eventPayload.damage, 0);
+  assert.equal(missed!.state.monsters[1]!.health, 11);
+  assert.equal(missed!.state.nuclearGroundZeroHexes.length, 1, "an unintercepted missile still detonates on a miss");
+  assert.ok(mutated, "a deterministic seed should produce a roll-one Mutation draw");
+  assert.equal(mutated!.eventPayload.attackRoll, 1);
+  assert.equal(mutated!.eventPayload.mutationCardId, "War Spikes");
+  assert.deepEqual(mutated!.state.players[1]!.mutationCardIds, ["War Spikes"]);
+
+  for (let seed = 0; seed < 128 && !sixMiss; seed += 1) {
+    const { state, submarines, target } = nuclearLaunchFixture(seed);
+    state.nuclearInterceptionRollPool = [1, 2, 3];
+    target.defense = 7;
+    const result = applyCommand(state, { type: "launch-submarine-at-monster", unitId: submarines[0]!.id, monsterId: target.id });
+    if (result.eventPayload.attackRoll === 6) sixMiss = result;
+  }
+  assert.ok(sixMiss, "a deterministic seed should produce a natural six below Defense");
+  assert.equal(sixMiss!.eventPayload.hit, false);
+  assert.equal(sixMiss!.eventPayload.smash, false);
+  assert.equal(sixMiss!.eventPayload.damage, 0);
+});
+
+test("a lethal nuclear hit immediately sends the monster to Hollywood", () => {
+  let lethal: ReturnType<typeof applyCommand> | undefined;
+  for (let seed = 0; seed < 128 && !lethal; seed += 1) {
+    const { state, submarines, target } = nuclearLaunchFixture(seed);
+    state.nuclearInterceptionRollPool = [1, 2, 3];
+    target.health = 3;
+    target.defense = 6;
+    const result = applyCommand(state, { type: "launch-submarine-at-monster", unitId: submarines[0]!.id, monsterId: target.id });
+    if (result.eventPayload.attackRoll === 6) lethal = result;
+  }
+  assert.ok(lethal, "a deterministic seed should produce a lethal smash hit");
+  assert.equal(lethal!.state.monsters[1]!.health, 0);
+  assert.equal(lethal!.state.monsters[1]!.location, "hollywood");
+  assert.equal(lethal!.eventPayload.healthAfter, 0);
+  assert.equal(lethal!.eventPayload.hollywoodResearchCardId !== undefined, true);
+});
+
+test("nuclear strike turn counters clear after Deploy while ground zero persists", () => {
+  const { state, target } = nuclearLaunchFixture();
+  state.phase = "deploy";
+  state.pendingDecision = { type: "deployment", playerIndex: state.currentPlayer };
+  state.nuclearMissilesLaunchedThisTurn[target.id] = 2;
+  state.nuclearInterceptionRollPool = [2, 3];
+  state.nuclearGroundZeroHexes = [K("chicago")];
+  const next = applyCommand(state, { type: "pass-deploy" }).state;
+  assert.deepEqual(next.nuclearMissilesLaunchedThisTurn, {});
+  assert.deepEqual(next.nuclearInterceptionRollPool, []);
+  assert.deepEqual(next.nuclearGroundZeroHexes, [K("chicago")]);
 });
 
 test("submarine missile range includes eight spaces and excludes nine", () => {

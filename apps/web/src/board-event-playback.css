@@ -61,5 +61,25 @@
 @keyframes board-battle-impact-flash{0%,100%{filter:brightness(1);scale:1}38%{filter:brightness(1.8);scale:1.12}}
 @keyframes board-battle-impact-ring{0%{opacity:.95;scale:.55}100%{opacity:0;scale:1.4}}
 @media(max-width:700px){.board-event-playback{gap:5px;padding:7px 8px}.board-event-heading strong{font-size:12px}.board-event-dice{min-height:38px}.board-event-die{width:36px;height:36px}.board-event-die .combat-die[data-die]{width:32px;height:32px}}
+@media(max-width:390px){.nuclear-launch-warning{flex-wrap:wrap;justify-content:center;gap:5px 8px;padding:9px 12px}.nuclear-launch-warning strong{font-size:16px}.nuclear-launch-warning small{flex-basis:100%;padding:4px 0 0;border:0;text-align:center}}
 @media(prefers-reduced-motion:reduce){.board-event-playback,.board-event-die,.board-event-outcome,.board-event-card,.board-battle-avatar img,.board-battle-avatar.impact-is-hit,.board-battle-avatar.impact-is-destroyed,.board-battle-avatar.impact-is-hit::after,.board-battle-avatar.impact-is-destroyed::after,.board-battle-roll .combat-die,.board-battle-result{animation:none}}
 .reduced-motion .board-battle-avatar img,.reduced-motion .board-battle-avatar.impact-is-hit,.reduced-motion .board-battle-avatar.impact-is-destroyed,.reduced-motion .board-battle-avatar.impact-is-hit::after,.reduced-motion .board-battle-avatar.impact-is-destroyed::after,.reduced-motion .board-battle-roll .combat-die,.reduced-motion .board-battle-result,.manual-reduced-motion .board-event-playback,.manual-reduced-motion .board-event-die,.manual-reduced-motion .board-event-outcome,.manual-reduced-motion .board-event-card,.manual-reduced-motion .board-battle-avatar img,.manual-reduced-motion .board-battle-avatar.impact-is-hit,.manual-reduced-motion .board-battle-avatar.impact-is-destroyed,.manual-reduced-motion .board-battle-avatar.impact-is-hit::after,.manual-reduced-motion .board-battle-avatar.impact-is-destroyed::after,.manual-reduced-motion .board-battle-roll .combat-die,.manual-reduced-motion .board-battle-result{animation:none}
+.nuclear-launch-warning{position:fixed;z-index:120;top:max(14px,env(safe-area-inset-top));left:50%;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 20px);padding:11px 18px;border:2px solid #ffc968;border-radius:5px;background:linear-gradient(105deg,#471e18f5,#9f2d1df5,#471e18f5);box-shadow:0 0 0 2px #351912,0 0 30px #fc714db3;color:#fff2cb;transform:translateX(-50%);animation:nuclear-warning-flash .42s steps(2,end) infinite;pointer-events:none}
+.nuclear-launch-warning>span{font-size:23px;line-height:1}
+.nuclear-launch-warning strong{font:950 clamp(15px,3vw,25px)/1 Impact,'Arial Narrow',sans-serif;letter-spacing:.11em;white-space:nowrap}
+.nuclear-launch-warning small{padding-left:8px;border-left:1px solid #ffd48a99;color:#ffe2a1;font-size:10px;font-weight:900;letter-spacing:.06em;white-space:nowrap}
+.nuclear-launch-warning.has-detonated{animation:nuclear-warning-flash .8s ease-in-out 2}
+.nuclear-missile-flight{position:fixed;z-index:115;inset:0;width:100vw;height:100vh;overflow:visible;pointer-events:none}
+.nuclear-missile-flight>path{fill:none;stroke:#ffd77a99;stroke-width:2;stroke-dasharray:5 8;filter:drop-shadow(0 0 4px #ff8b36)}
+.nuclear-missile-sprite{fill:#fff0aa;stroke:#d54b26;stroke-width:2.5;filter:drop-shadow(0 0 9px #ff782d)}
+.nuclear-missile-flame{fill:#ff692f;stroke:#ffd374;stroke-width:1}
+.nuclear-blast-burst{position:fixed;z-index:114;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%);background:#fff7c2;box-shadow:0 0 20px 12px #fff4b7,0 0 80px 42px #ff8a32,0 0 160px 90px #e83a1d88;animation:nuclear-blast 1.4s cubic-bezier(.12,.7,.18,1) both;pointer-events:none}
+.nuclear-blast-burst::after{position:absolute;inset:-18px;border:6px solid #ffe7a3;border-radius:50%;content:"";animation:nuclear-blast-ring 1.3s ease-out both}
+.nuclear-strike-outcome{gap:8px;min-height:42px;border-color:#f2a34d66;background:radial-gradient(ellipse,#a9562877,transparent 75%)}
+.nuclear-outcome-symbol{color:#ffd46d;font-size:24px;text-shadow:0 0 12px #ff6d2d}
+.board-event-playback[data-event-action="nuclear-strike.resolved"]{border-color:#eea14e;background:linear-gradient(145deg,#40251df7,#1d201bf9);box-shadow:0 8px 26px #07110fbb,0 0 18px #e9793f66}
+@keyframes nuclear-warning-flash{0%,100%{filter:brightness(1);box-shadow:0 0 0 2px #351912,0 0 24px #fc714d99}50%{filter:brightness(1.45);box-shadow:0 0 0 3px #ffc968,0 0 38px #fc714d}}
+@keyframes nuclear-blast{0%{opacity:0;scale:.12}16%{opacity:1;scale:1.8}100%{opacity:0;scale:5.5}}
+@keyframes nuclear-blast-ring{0%{opacity:.95;scale:.2}100%{opacity:0;scale:3.6}}
+@media(prefers-reduced-motion:reduce){.nuclear-launch-warning,.nuclear-blast-burst,.nuclear-blast-burst::after{animation:none}.nuclear-blast-burst{opacity:.8;scale:1.2}}
+.manual-reduced-motion .nuclear-launch-warning,.manual-reduced-motion .nuclear-blast-burst,.manual-reduced-motion .nuclear-blast-burst::after{animation:none}

@@ -253,6 +253,8 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
         const monstersHere = occupants.monsters.get(placeKey) ?? [];
         const unitsHere = occupants.units.get(placeKey) ?? [];
         const setupLegal = setupLocations?.has(placeKey) ?? false;
+        const setupActionLabel = setupLocations?.get(placeKey);
+        const nuclearTarget = setupActionLabel?.startsWith("Launch nuclear missile at") ?? false;
         const retreatLegal = canAct && game.phase === "fight" && retreatDestinations.has(placeKey);
         const deploymentLegal = setupLegal || canAct && game.phase === "deploy" && deploymentDestinations.has(placeKey);
         const monsterLegal = canAct && game.phase === "move" && legalDestinations.has(placeKey);
@@ -279,7 +281,9 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
           : place?.kind === "mutation"
             ? "Mutation space"
             : undefined;
-        const interactionHint = monsterLegal || unitLegal
+        const interactionHint = nuclearTarget
+          ? setupActionLabel!
+          : monsterLegal || unitLegal
           ? "Legal destination"
           : selectableUnit
             ? `Select ${selectableUnit.branch} unit`
@@ -306,6 +310,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
             : "/assets/board/coast/coast_0deg.webp";
         const boardArt = audited ? undefined : boardArtForHex(hex, place);
         const stomped = game.stompedLocations.includes(placeKey);
+        const nuclearGroundZero = game.nuclearGroundZeroHexes.includes(placeKey);
         const occupantCount = monstersHere.length + unitsHere.length;
         const provisionalBoard = audited || board?.id === PROVISIONAL_AUTHORITATIVE_BOARD.id;
         const trophyChoice = canAct && game.pendingDecision?.type === "trophy-choice";
@@ -336,7 +341,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
         return (
           <button
             key={hex.key}
-            aria-label={`${displayName}${stomped ? ", stomped" : ""}${locationMeta ? `, ${locationMeta}` : ""}${auditCellText ? `, ${auditCellText}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${setupLegal ? "choose starting location" : deploymentLegal ? "legal deployment location" : selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
+            aria-label={`${displayName}${stomped ? ", stomped" : ""}${nuclearGroundZero ? ", nuclear ground zero" : ""}${locationMeta ? `, ${locationMeta}` : ""}${auditCellText ? `, ${auditCellText}` : ""}, hex ${hex.key}, neighbours ${neighbourText || "none recorded"}, ${featureText}${occupantText ? `, occupied by ${occupantText}` : ", unoccupied"}, ${nuclearTarget ? setupActionLabel : setupLegal ? "choose starting location" : deploymentLegal ? "legal deployment location" : selectableUnit ? `select ${selectableUnit.branch} unit` : monsterLegal || unitLegal ? "legal destination" : "not currently reachable"}`}
             data-feature-description={featureText}
             data-hex-key={hex.key}
             data-neighbours={(boardIndex?.neighbours[placeKey] ?? []).join(" ")}
@@ -349,7 +354,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
             tabIndex={keyboardNavigable ? (placeKey === (focusedHexKey ?? (isHexKey(activePlayer?.location ?? "") ? activePlayer?.location : undefined)) ? 0 : -1) : undefined}
             data-stomped={stomped || undefined}
             data-occupied={occupantCount > 0 || undefined}
-            className={`hex-tile ${place?.kind ?? (audited ? "audited-tile" : "unresolved")} ${hex.waterClass === "land" || hex.waterClass === "lakeshore" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${deploymentLegal ? "deployment-legal" : ""} ${retreatLegal ? "retreat-legal" : ""} ${trophySelectableUnit ? "deployment-legal trophy-legal" : deploymentLegal || retreatLegal || monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
+            className={`hex-tile ${place?.kind ?? (audited ? "audited-tile" : "unresolved")} ${hex.waterClass === "land" || hex.waterClass === "lakeshore" ? "land" : "water"} ${developmentFixture ? "development-fixture" : ""} ${nuclearGroundZero ? "nuclear-ground-zero" : ""} ${nuclearTarget ? "nuclear-target" : ""} ${placeKey === activePlayer?.location ? "active" : ""} ${activeNeighbours.has(placeKey) ? "adjacent" : ""} ${deploymentLegal ? "deployment-legal" : ""} ${retreatLegal ? "retreat-legal" : ""} ${trophySelectableUnit ? "deployment-legal trophy-legal" : deploymentLegal || retreatLegal || monsterLegal || unitLegal ? "legal" : selectableUnit ? "selectable" : "unreachable"} ${path.at(-1) === placeKey ? "selected" : ""} ${path.includes(placeKey) ? "path-selected" : ""}`}
             style={{ left: `${left}%`, top: `${top}%`, ...(audited ? { width: `${AUDITED_TILE_WIDTH_PERCENT}%` } : {}) }}
             ref={(node) => { buttonRefs.current[placeKey] = node; }}
             onFocus={() => onFocusHex(placeKey)}
@@ -382,6 +387,7 @@ export function HexGrid({ setupLocations, onSetupLocation, retreatDestinations, 
             )}
             {audited ? <TerrainArt hex={hex} /> : baseArt && <img className="tile-base" src={baseArt} alt="" aria-hidden="true" loading="lazy" />}
             {boardArt && <img className="tile-art" src={boardArt} alt="" aria-hidden="true" loading="lazy" />}
+            {nuclearGroundZero && <span className="nuclear-ground-zero-overlay" aria-hidden="true" />}
             {stomped && audited && <StompedMarker />}
             {stomped && !audited && <img className="tile-stomp" src="/assets/board/tokens/stomp_token.webp" alt="" aria-hidden="true" loading="lazy" />}
             {place?.kind === "infamy" && <img className="tile-infamy" src="/assets/board/tokens/infamy_token.webp" alt="" aria-hidden="true" loading="lazy" />}
