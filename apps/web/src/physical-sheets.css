@@ -259,48 +259,49 @@
 /* Digital deployment cards follow the compact horizontal unit strip: stats, art, reserve. */
 .military-drawer .digital-deployment-sheet{padding:14px 16px 20px;border:0;border-radius:0 0 0 8px;background:#eee6cc;color:#28362b;box-shadow:none;font-size:13px;line-height:1.5}
 .digital-deployment-sheet>h2{margin:0 0 10px;padding:0;border:0;background:none;color:#28362b;font-size:22px;letter-spacing:0;text-shadow:none}
-.compact-deployment-list{display:grid;gap:8px;margin:8px 0 4px}
+.compact-deployment-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0 4px}
 .compact-deployment-option{display:grid;gap:1px;min-width:0}
-.compact-deployment-card{display:grid;width:100%;grid-template-columns:minmax(0,1fr) 54px auto;grid-template-rows:auto auto auto auto;align-items:center;column-gap:8px;row-gap:4px;min-width:0;padding:8px 10px;border:1px solid #b4b99e;border-radius:10px;background:#f8f5e8;color:#26342c;box-shadow:0 2px 4px #26342c12;text-align:left;font:inherit}
+.compact-deployment-card{display:grid;width:100%;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto 40px auto auto;align-items:center;column-gap:4px;row-gap:4px;min-width:0;padding:7px;border:1px solid #b4b99e;border-radius:9px;background:#f8f5e8;color:#26342c;box-shadow:0 2px 4px #26342c12;text-align:left;font:inherit}
 button.compact-deployment-card{cursor:pointer}
 button.compact-deployment-card:hover,button.compact-deployment-card:focus-visible{border-color:#526b43;background:#fffbed;outline:3px solid #9aae75;outline-offset:1px}
 .compact-deployment-card-empty{background:#eeeddf}
 .compact-deployment-card-empty .compact-deployment-card{background:#eeeddf}
-.compact-deployment-heading{grid-column:1/-1;grid-row:1;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.compact-deployment-heading{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:space-between;gap:4px;min-width:0}
 .compact-deployment-heading>span{display:grid;min-width:0}
-.compact-deployment-heading strong{font-size:15px;line-height:1.2}
-.compact-deployment-heading small{margin-top:2px;color:#53634e;font-size:10px;font-weight:700;line-height:1.2}
-.compact-deployment-stats{grid-column:1;grid-row:2;display:grid;align-content:center;gap:3px;min-width:0}
-.compact-stat{display:flex;align-items:center;gap:6px;min-width:0;line-height:1.25}
-.compact-stat svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:#394e38;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.compact-stat b{font-size:11px;overflow-wrap:anywhere}
+.compact-deployment-heading strong{font-size:13px;line-height:1.15;overflow-wrap:anywhere}
+.compact-deployment-heading small{margin-top:2px;color:#53634e;font-size:9px;font-weight:700;line-height:1.2}
+.compact-deployment-stats{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:center;gap:3px 4px;min-width:0}
+.compact-stat{display:flex;align-items:center;gap:4px;min-width:0;line-height:1.15}
+.compact-stat svg{width:13px;height:13px;flex:0 0 13px;fill:none;stroke:#394e38;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.compact-stat b{font-size:10px;overflow-wrap:anywhere}
 .compact-stat .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.compact-movement-icon{width:16px;flex:0 0 16px;color:#394e38;text-align:center;font-size:18px;font-weight:800;line-height:1}
-.compact-deployment-art{grid-column:2;grid-row:2;display:grid;width:52px;height:52px;place-items:center;border-radius:8px;background:#e8ead8}
-.compact-deployment-art img{display:block;width:46px;height:46px;object-fit:contain}
-.compact-deployment-count{grid-column:3;grid-row:2;display:flex;align-items:baseline;gap:4px;white-space:nowrap;color:#263b2a}
-.compact-deployment-count b{font-size:22px;line-height:1}
-.compact-deployment-count small{font-size:9px;font-weight:800;letter-spacing:.7px}
-.compact-deployment-ability{grid-column:1/-1;grid-row:3;display:block;padding-top:4px;border-top:1px solid #d8d9c8;font-size:10px;font-weight:400;line-height:1.35;overflow-wrap:anywhere}
-.compact-deployment-select-hint{grid-column:1/-1;grid-row:4;justify-self:end;color:#3e6043;font-size:9px;font-weight:800;letter-spacing:.35px;text-transform:uppercase}
+.compact-stat-movement{grid-column:1/-1}
+.compact-movement-icon{width:13px;flex:0 0 13px;color:#394e38;text-align:center;font-size:15px;font-weight:800;line-height:1}
+.compact-deployment-art{grid-column:1/-1;grid-row:2;justify-self:center;display:grid;width:38px;height:38px;place-items:center;border-radius:7px;background:#e8ead8}
+.compact-deployment-art img{display:block;width:34px;height:34px;object-fit:contain}
+.compact-deployment-count{grid-column:2;grid-row:1;display:flex;align-items:baseline;gap:3px;white-space:nowrap;color:#263b2a}
+.compact-deployment-count b{font-size:19px;line-height:1}
+.compact-deployment-count small{font-size:8px;font-weight:800;letter-spacing:.5px}
+.compact-deployment-ability{display:block;margin:0;padding:2px 4px;color:#43503d;font-size:9px;font-weight:400;line-height:1.3;overflow-wrap:anywhere}
+.compact-deployment-ability p{margin:3px 0 0;font-size:inherit;line-height:inherit}
+.compact-deployment-ability summary{color:#43503d;font-weight:700;cursor:pointer}
+.compact-deployment-select-hint{grid-column:1/-1;grid-row:4;justify-self:end;color:#3e6043;font-size:8px;font-weight:800;letter-spacing:.2px;text-transform:uppercase}
 .compact-deployment-select-hint span{font-size:13px}
 .compact-redeploy-link{justify-self:start;margin:0;padding:2px 4px;border:0;background:transparent;color:#435c39;font-family:inherit;font-size:10px;font-weight:700;line-height:1.3;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .compact-redeploy-link:focus-visible{border-radius:3px;outline:2px solid #526b43;outline-offset:2px}
 .compact-deployment-unavailable-card{cursor:default;opacity:.72}
 .compact-deployment-unavailable-card .compact-deployment-select-hint{color:#65705f}
 .compact-deployment-empty{margin:4px 0;padding:10px;border-radius:7px;background:#e8ead8;color:#394a3b;font-size:12px;line-height:1.4}
+.compact-deployment-list>.compact-deployment-empty{grid-column:1/-1}
 
 @media(max-width:600px){
-  .compact-deployment-list{gap:7px}
   .digital-deployment-sheet>h2{display:none}
-  .compact-deployment-card{grid-template-columns:minmax(0,1fr) 42px auto;column-gap:6px;padding:7px}
-  .compact-deployment-art{width:40px;height:40px}
-  .compact-deployment-art img{width:36px;height:36px}
-  .compact-deployment-count b{font-size:19px}
-  .compact-stat{gap:4px}
-  .compact-stat svg,.compact-movement-icon{width:14px;flex-basis:14px}
-  .compact-stat b{font-size:10px}
-  .compact-deployment-ability{font-size:9px}
+  .compact-deployment-list{gap:6px}
+  .compact-deployment-card{padding:6px}
+  .compact-deployment-heading strong{font-size:12px}
+  .compact-deployment-count b{font-size:17px}
+  .compact-deployment-art{width:34px;height:34px}
+  .compact-deployment-art img{width:30px;height:30px}
 }
 
 /* Giant records keep their figure visible after deployment. */

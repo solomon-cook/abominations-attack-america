@@ -15,6 +15,7 @@ export function nextDeploymentSheet(choices: readonly DeploymentChoice[], branch
 const displayPrintedValue = (value: number | readonly [number, number] | undefined) => value === undefined
   ? "—"
   : typeof value === "number" ? String(value) : `${value[0]} / ${value[1]} as missile`;
+const compactMovementLabel = (value: string | undefined) => ({ "land-lake": "Land/lake", "land-lake-sea": "Land/lake/sea", "sea-seacoast-only": "Sea/coast", "sea-seacoast-or-fly": "Sea/coast or missile fly" })[value ?? ""] ?? movementLabel(value ?? "Movement");
 
 function compactUnitSummary(typeId: string, sheet: string, game: GameState, playerIndex: number) {
   const unitDefinition = UNIT_DEFINITIONS.find((unit) => unit.id === typeId);
@@ -46,7 +47,7 @@ function compactUnitSummary(typeId: string, sheet: string, game: GameState, play
     name,
     sheet,
     reserve,
-    movement: move === undefined ? "—" : `${move} · ${movement ? movementLabel(movement) : "Movement"}`,
+    movement: move === undefined ? "—" : `${move} · ${compactMovementLabel(movement)}`,
     attack: attacks === undefined ? "—" : attacks > 1 ? `${attacks} × ${displayPrintedValue(damage)}` : displayPrintedValue(damage),
     defence: displayPrintedValue(defense),
     specialAbility,
@@ -65,7 +66,6 @@ function CompactUnitCard({ typeId, summary, actionLabel, onSelect }: { typeId: s
     </span>
     <span className="compact-deployment-art"><img src={`/assets/military/${typeId}.webp`} alt="" /></span>
     <span className="compact-deployment-count" aria-label={reserveLabel}><b>{summary.reserve}</b><small>LEFT</small></span>
-    {summary.specialAbility && <span className="compact-deployment-ability"><strong>Special:</strong> {summary.specialAbility}</span>}
     <span className="compact-deployment-select-hint">{onSelect ? `${actionLabel} · select unit` : "No legal placement"}<span aria-hidden="true">{onSelect ? " →" : ""}</span></span>
   </>;
   const sheetPrefix = summary.sheet && !researchGiant ? `${summary.sheet} ` : "";
@@ -74,6 +74,12 @@ function CompactUnitCard({ typeId, summary, actionLabel, onSelect }: { typeId: s
   return onSelect
     ? <button className="compact-deployment-card" type="button" onClick={onSelect} aria-label={ariaLabel}>{cardContents}</button>
     : <div className="compact-deployment-card compact-deployment-unavailable-card">{cardContents}</div>;
+}
+
+function CompactSpecialAbility({ text }: { text: string }) {
+  return text.length <= 42
+    ? <p className="compact-deployment-ability">{text}</p>
+    : <details className="compact-deployment-ability"><summary>Special ability</summary><p>{text}</p></details>;
 }
 
 export function CompactDeploymentList({ branch, choices, game, playerIndex, onSelect, onChooseGiant }: { branch: string; choices: readonly DeploymentChoice[]; game: GameState; playerIndex: number; onSelect: (choice: DeploymentChoice) => void; onChooseGiant?: (cardId: "Mecha-Monster" | "Captain Colossal") => void }) {
@@ -103,9 +109,10 @@ export function CompactDeploymentList({ branch, choices, game, playerIndex, onSe
   return <div className="compact-deployment-list" aria-label="Available military unit types">
     {items.map(({ typeId, group, summary }) => <div className={`compact-deployment-option ${summary.reserve === 0 ? "compact-deployment-card-empty" : ""}`} key={typeId}>
       <CompactUnitCard typeId={typeId} summary={{ ...summary, sheet: summary.sheet === branch ? "" : summary.sheet }} actionLabel={group.deploy[0] ? "Deploy" : "Redeploy"} onSelect={group.deploy[0] || group.redeploy[0] ? () => onSelect(group.deploy[0] ?? group.redeploy[0]!) : undefined} />
+      {summary.specialAbility && <CompactSpecialAbility text={summary.specialAbility} />}
       {group.deploy[0] && group.redeploy[0] && <button type="button" className="compact-redeploy-link" onClick={() => onSelect(group.redeploy[0])} aria-label={`Redeploy ${summary.name} already on the map`}>Redeploy a {summary.name} already on the map</button>}
     </div>)}
-    {giantItems.map(({ unit, summary }) => <CompactUnitCard key={unit.id} typeId={unit.id} summary={{ ...summary, sheet: "Giant · Research" }} actionLabel="Place" onSelect={() => onChooseGiant?.(unit.name)} />)}
+    {giantItems.map(({ unit, summary }) => <div className="compact-deployment-option" key={unit.id}><CompactUnitCard typeId={unit.id} summary={{ ...summary, sheet: "Giant · Research" }} actionLabel="Place" onSelect={() => onChooseGiant?.(unit.name)} />{summary.specialAbility && <CompactSpecialAbility text={summary.specialAbility} />}</div>)}
     {!choices.length && <p className="compact-deployment-empty">No legal placements remain. Deployment will continue automatically.</p>}
   </div>;
 }
