@@ -29,6 +29,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSum
   const setupSteps = ["Monster", "Branch", "Lair", "Starting choice"];
   const activeStep = activeSetup.phase === "monster-selection" ? 0 : activeSetup.phase === "branch-selection" ? 1 : activeSetup.phase === "lair-selection" ? 2 : 3;
   const lairLabel = (key?: string, monsterId = setupSeat?.monsterId) => key && monsterId ? setupLairLabel(activeSetup, board, monsterId, key) : "Not selected";
+  const selectedUnitName = selectedPiece ? UNIT_DEFINITIONS.find((unit) => unit.id === selectedPiece)?.name ?? selectedPiece.replaceAll("-", " ") : undefined;
   if (activeSetup.phase === "lair-selection") {
     const lairs = setupSeat?.monsterId
       ? activeSetup.definition.lairsByMonster[setupSeat.monsterId]?.filter((lair) => !activeSetup.seats.some((seat) => seat.lair === lair)) ?? [] : [];
@@ -106,7 +107,7 @@ export function SetupPanel({ activeSetup, board, setupSeat, online, showSetupSum
               {!(selectingDeployment && !hasAvailableDeploymentOptions) && <>
                 <button disabled={disabled} onClick={() => onChooseStartingChoice("deploy")}>{selectingDeployment ? "Choose another starting unit" : "Deploy starting troops"}</button>
               </>}
-              {selectingDeployment && !hasAvailableDeploymentOptions && <><p>{deploymentCount} starting troop{deploymentCount === 1 ? "" : "s"} placed.{selectedPiece ? ` Place ${selectedPiece.replaceAll("-", " ")} on a glowing location.` : " Choose a piece from your military sheet."}</p><button disabled={disabled || !deploymentCount} onClick={onFinishDeployment}>Finish starting deployment</button><button disabled={disabled || !deploymentCount} onClick={onUndoDeployment}>Undo last placement</button></>}
+              {selectingDeployment && !hasAvailableDeploymentOptions && <><p>{deploymentCount} starting troop{deploymentCount === 1 ? "" : "s"} placed.{selectedUnitName ? ` Place ${selectedUnitName} on a glowing location.` : " No more starting units can be placed."}</p><button disabled={disabled || !deploymentCount} onClick={onFinishDeployment}>Finish starting deployment</button><button disabled={disabled || !deploymentCount} onClick={onUndoDeployment}>Undo last placement</button></>}
             </>}
           </div>
           <p className="setup-progress">{activeSetup.seats.filter((seat) => seat.startingChoice?.kind === "deploy").length}/{activeSetup.seats.length} players have deployed starting troops</p>
