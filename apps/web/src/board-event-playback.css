@@ -70,16 +70,38 @@
 .nuclear-launch-warning small{padding-left:8px;border-left:1px solid #ffd48a99;color:#ffe2a1;font-size:10px;font-weight:900;letter-spacing:.06em;white-space:nowrap}
 .nuclear-launch-warning.has-detonated{animation:nuclear-warning-flash .8s ease-in-out 2}
 .nuclear-missile-flight{position:fixed;z-index:115;inset:0;width:100vw;height:100vh;overflow:visible;pointer-events:none}
-.nuclear-missile-flight>path{fill:none;stroke:#ffd77a99;stroke-width:2;stroke-dasharray:5 8;filter:drop-shadow(0 0 4px #ff8b36)}
-.nuclear-missile-sprite{fill:#fff0aa;stroke:#d54b26;stroke-width:2.5;filter:drop-shadow(0 0 9px #ff782d)}
-.nuclear-missile-flame{fill:#ff692f;stroke:#ffd374;stroke-width:1}
-.nuclear-blast-burst{position:fixed;z-index:114;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%);background:#fff7c2;box-shadow:0 0 20px 12px #fff4b7,0 0 80px 42px #ff8a32,0 0 160px 90px #e83a1d88;animation:nuclear-blast 1.4s cubic-bezier(.12,.7,.18,1) both;pointer-events:none}
-.nuclear-blast-burst::after{position:absolute;inset:-18px;border:6px solid #ffe7a3;border-radius:50%;content:"";animation:nuclear-blast-ring 1.3s ease-out both}
+.nuclear-flight-smoke,.nuclear-flight-trail{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nuclear-flight-smoke{stroke:#111a1caa;stroke-width:14;filter:blur(5px)}
+.nuclear-flight-trail{stroke:#ffc56b;stroke-width:4;stroke-dasharray:12 7;filter:drop-shadow(0 0 7px #ff5a25);animation:nuclear-trail-flicker .15s steps(2,end) infinite}
+.nuclear-missile-sprite{stroke-linejoin:round;filter:drop-shadow(0 0 7px #ff8b32) drop-shadow(0 2px 3px #17110c)}
+.nuclear-missile-body{fill:#eee4c5;stroke:#21282a;stroke-width:2.5}
+.nuclear-missile-nose{fill:#ca3425;stroke:#57201d;stroke-width:2}
+.nuclear-missile-fins{fill:#bd3928;stroke:#4a2620;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.nuclear-missile-highlight{fill:none;stroke:#fff9d7;stroke-width:1.5;stroke-linecap:round;opacity:.9}
+.nuclear-missile-flame{fill:#ff7028;stroke:#ffc75d;stroke-width:1;filter:drop-shadow(0 0 5px #ff792c);animation:nuclear-engine-flare .12s steps(2,end) infinite alternate}
+.nuclear-missile-engine-glow{fill:#fff4b5;opacity:.9;filter:blur(3px);animation:nuclear-engine-flare .2s ease-in-out infinite alternate}
+.nuclear-blast-screen{position:fixed;z-index:113;inset:0;background:#fff4c9;pointer-events:none;animation:nuclear-screen-flash .72s ease-out both}
+.nuclear-blast-burst{position:fixed;z-index:114;width:1px;height:1px;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 0 16px #ff6a24)}
+.nuclear-blast-burst>span{position:absolute;display:block;left:0;top:0}
+.nuclear-blast-core{z-index:4;width:28px;height:28px;margin:-14px;border-radius:50%;background:#fffef0;box-shadow:0 0 24px 18px #fff7be,0 0 75px 46px #ffb632;animation:nuclear-core-burst .72s ease-out both}
+.nuclear-blast-fireball{z-index:3;width:88px;height:88px;margin:-44px;border-radius:50%;background:radial-gradient(circle at 48% 43%,#fffad1 0 8%,#fff2a0 16%,#ffc13d 31%,#fa6724 52%,#b52219 70%,#401b1b00 73%);filter:drop-shadow(0 0 30px #ff6a24);animation:nuclear-fireball .95s cubic-bezier(.12,.7,.18,1) both}
+.nuclear-blast-stem{z-index:2;width:54px;height:125px;margin:0 0 0 -27px;border-radius:50% 50% 35% 35%;background:linear-gradient(90deg,#7e291b00,#ffab3d 27%,#fff0a1 49%,#f26a26 68%,#711d1d00);filter:blur(3px);animation:nuclear-stem-rise 1.7s .16s ease-out both}
+.nuclear-blast-cap{z-index:3;width:182px;height:112px;margin:-154px 0 0 -91px;border-radius:52% 48% 44% 42%;background:radial-gradient(ellipse at 48% 58%,#fff2a5 0 12%,#ffbd43 31%,#f25827 57%,#8e251e 72%,#2b202000 74%);box-shadow:0 0 45px #f96627;filter:blur(1px);animation:nuclear-cap-rise 1.85s .12s cubic-bezier(.14,.75,.18,1) both}
+.nuclear-blast-ring{z-index:1;width:42px;height:42px;margin:-21px;border:7px solid #fff4b4;border-radius:50%;box-shadow:0 0 18px #ff8d32;animation:nuclear-shockwave 1.35s ease-out both}
+.nuclear-blast-ring.secondary{border-color:#ff6a32;animation-delay:.18s;animation-duration:1.6s}
+.nuclear-blast-debris{z-index:5;width:1px;height:1px;border-radius:50%;background:#fff4bb;box-shadow:32px -42px 0 2px #ffd35c,-47px -25px 0 1px #ff6a32,64px 19px 0 1px #ffae3b,-68px 35px 0 2px #e83b23,16px 54px 0 1px #ffe8a0,-12px -72px 0 1px #f44a25;animation:nuclear-debris-throw 1s ease-out both}
 .nuclear-strike-outcome{gap:8px;min-height:42px;border-color:#f2a34d66;background:radial-gradient(ellipse,#a9562877,transparent 75%)}
 .nuclear-outcome-symbol{color:#ffd46d;font-size:24px;text-shadow:0 0 12px #ff6d2d}
 .board-event-playback[data-event-action="nuclear-strike.resolved"]{border-color:#eea14e;background:linear-gradient(145deg,#40251df7,#1d201bf9);box-shadow:0 8px 26px #07110fbb,0 0 18px #e9793f66}
 @keyframes nuclear-warning-flash{0%,100%{filter:brightness(1);box-shadow:0 0 0 2px #351912,0 0 24px #fc714d99}50%{filter:brightness(1.45);box-shadow:0 0 0 3px #ffc968,0 0 38px #fc714d}}
-@keyframes nuclear-blast{0%{opacity:0;scale:.12}16%{opacity:1;scale:1.8}100%{opacity:0;scale:5.5}}
-@keyframes nuclear-blast-ring{0%{opacity:.95;scale:.2}100%{opacity:0;scale:3.6}}
-@media(prefers-reduced-motion:reduce){.nuclear-launch-warning,.nuclear-blast-burst,.nuclear-blast-burst::after{animation:none}.nuclear-blast-burst{opacity:.8;scale:1.2}}
-.manual-reduced-motion .nuclear-launch-warning,.manual-reduced-motion .nuclear-blast-burst,.manual-reduced-motion .nuclear-blast-burst::after{animation:none}
+@keyframes nuclear-screen-flash{0%{opacity:0}4%{opacity:.92}18%{opacity:.48}100%{opacity:0}}
+@keyframes nuclear-core-burst{0%{opacity:0;scale:.1}12%{opacity:1;scale:1.5}100%{opacity:0;scale:4.5}}
+@keyframes nuclear-fireball{0%{opacity:0;scale:.08}12%{opacity:1;scale:.72}58%{opacity:.96;scale:2.4}100%{opacity:0;scale:3.4}}
+@keyframes nuclear-stem-rise{0%{opacity:0;translate:0 14px;scale:.35 .15}22%{opacity:.9}100%{opacity:0;translate:0 -58px;scale:1.5 1}}
+@keyframes nuclear-cap-rise{0%{opacity:0;translate:0 26px;scale:.12}28%{opacity:1;scale:.7}100%{opacity:0;translate:0 -46px;scale:1.5}}
+@keyframes nuclear-shockwave{0%{opacity:1;scale:.15}100%{opacity:0;scale:14}}
+@keyframes nuclear-debris-throw{0%{opacity:1;scale:.35}100%{opacity:0;scale:2.6;translate:0 -36px}}
+@keyframes nuclear-engine-flare{from{scale:.82 1}to{scale:1.18 1.45}}
+@keyframes nuclear-trail-flicker{to{opacity:.52;stroke-width:6}}
+@media(prefers-reduced-motion:reduce){.nuclear-launch-warning,.nuclear-blast-screen,.nuclear-blast-burst>span,.nuclear-flight-trail,.nuclear-missile-flame,.nuclear-missile-engine-glow{animation:none}.nuclear-blast-fireball{opacity:.9;scale:1.7}.nuclear-blast-cap,.nuclear-blast-stem{opacity:.7}}
+.manual-reduced-motion .nuclear-launch-warning,.manual-reduced-motion .nuclear-blast-screen,.manual-reduced-motion .nuclear-blast-burst>span,.manual-reduced-motion .nuclear-flight-trail,.manual-reduced-motion .nuclear-missile-flame,.manual-reduced-motion .nuclear-missile-engine-glow{animation:none}
