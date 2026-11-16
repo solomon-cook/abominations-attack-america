@@ -12,9 +12,9 @@ export function nextDeploymentSheet(choices: readonly DeploymentChoice[], branch
     : choices[0]?.sheet ?? branch;
 }
 
-const displayPrintedValue = (value: number | readonly [number, number] | undefined) => value === undefined
+const displayCurrentValue = (value: number | readonly [number, number] | undefined) => value === undefined
   ? "—"
-  : typeof value === "number" ? String(value) : `${value[0]} / ${value[1]} as missile`;
+  : typeof value === "number" ? String(value) : String(value[0]);
 const compactMovementLabel = (value: string | undefined) => ({ "land-lake": "Land/lake", "land-lake-sea": "Land/lake/sea", "sea-seacoast-only": "Sea/coast", "sea-seacoast-or-fly": "Sea/coast or missile fly" })[value ?? ""] ?? movementLabel(value ?? "Movement");
 
 function compactUnitSummary(typeId: string, sheet: string, game: GameState, playerIndex: number) {
@@ -34,7 +34,7 @@ function compactUnitSummary(typeId: string, sheet: string, game: GameState, play
   const attacks = instance?.attacks ?? unitDefinition?.attacks ?? (guardDefinition ? 1 : giantDefinition?.attacks);
   const damage = unitDefinition?.damage ?? instance?.damage ?? guardDefinition?.damage ?? giantDefinition?.damage;
   const defense = unitDefinition?.defense ?? instance?.defense ?? guardDefinition?.defense ?? giantDefinition?.defense;
-  const specialAbility = guardDefinition
+  const specialAbility = typeId === "navy-nuclear-submarine" ? undefined : guardDefinition
     ? guardCommander ? undefined : "You can’t move this."
     : unitDefinition?.specialAbilityText ?? (typeId === "x-fighter" ? "Deploy in place of a branch unit." : undefined);
   const name = unitDefinition?.name ?? guardDefinition?.name ?? giantDefinition?.name ?? typeId.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -48,8 +48,8 @@ function compactUnitSummary(typeId: string, sheet: string, game: GameState, play
     sheet,
     reserve,
     movement: move === undefined ? "—" : `${move} · ${compactMovementLabel(movement)}`,
-    attack: attacks === undefined ? "—" : attacks > 1 ? `${attacks} × ${displayPrintedValue(damage)}` : displayPrintedValue(damage),
-    defence: displayPrintedValue(defense),
+    attack: attacks === undefined ? "—" : attacks > 1 ? `${attacks} × ${displayCurrentValue(damage)}` : displayCurrentValue(damage),
+    defence: displayCurrentValue(defense),
     specialAbility,
   };
 }
@@ -59,14 +59,14 @@ function CompactUnitCard({ typeId, summary, actionLabel, onSelect }: { typeId: s
   const reserveLabel = researchGiant ? "1 available from Research" : `${summary.reserve} in reserve`;
   const cardContents = <>
     <span className="compact-deployment-heading"><span><strong>{summary.name}</strong>{summary.sheet && <small>{summary.sheet}</small>}</span></span>
-    <span className="compact-deployment-stats" aria-label="Unit statistics">
-      <span className="compact-stat compact-stat-attack"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4 10.5 13.5M20 4a12 12 0 0 0-8 3.6L8 12l4 4 4.4-4A12 12 0 0 0 20 4ZM6.5 13.5l4 4M4 20l4.5-4.5" /></svg><b>{summary.attack}</b><span className="sr-only">Attack</span></span>
-      <span className="compact-stat compact-stat-defence"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3Z" /></svg><b>{summary.defence}</b><span className="sr-only">Defence</span></span>
-      <span className="compact-stat compact-stat-movement"><span className="compact-movement-icon" aria-hidden="true">↗</span><b>{summary.movement}</b><span className="sr-only">Movement</span></span>
-    </span>
-    <span className="compact-deployment-art"><img src={`/assets/military/${typeId}.webp`} alt="" /></span>
     <span className="compact-deployment-count" aria-label={reserveLabel}><b>{summary.reserve}</b><small>LEFT</small></span>
-    <span className="compact-deployment-select-hint">{onSelect ? `${actionLabel} · select unit` : "No legal placement"}<span aria-hidden="true">{onSelect ? " →" : ""}</span></span>
+    <span className="compact-deployment-art"><img src={`/assets/military/${typeId}.webp`} alt="" /></span>
+    <span className="compact-deployment-stats" aria-label="Unit statistics">
+      <span className="compact-stat compact-stat-attack"><span className="compact-stat-value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4 10.5 13.5M20 4a12 12 0 0 0-8 3.6L8 12l4 4 4.4-4A12 12 0 0 0 20 4ZM6.5 13.5l4 4M4 20l4.5-4.5" /></svg><b>{summary.attack}</b></span><small>Attack</small></span>
+      <span className="compact-stat compact-stat-defence"><span className="compact-stat-value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3Z" /></svg><b>{summary.defence}</b></span><small>Defence</small></span>
+      <span className="compact-stat compact-stat-movement"><span className="compact-stat-value"><span className="compact-movement-icon" aria-hidden="true">↗</span><b>{summary.movement}</b></span><small>Movement</small></span>
+    </span>
+    {!onSelect && <span className="compact-deployment-unavailable">No legal placement</span>}
   </>;
   const sheetPrefix = summary.sheet && !researchGiant ? `${summary.sheet} ` : "";
   const selection = researchGiant ? `one Research card available` : `${summary.reserve} in reserve`;
