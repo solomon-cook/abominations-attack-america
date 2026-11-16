@@ -1,8 +1,8 @@
 import { ownedMilitarySheets } from "./owned-sheets";
 import { SheetCards } from "./SheetCards";
-import { MilitaryReference } from "./SheetReference";
+import { MilitaryReference, movementLabel } from "./SheetReference";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { deploymentChoices, type DeploymentChoice, type GameCommand, type GameState } from "@abominations/game-engine";
+import { deploymentChoices, GIANT_UNIT_DEFINITIONS, legalGiantPlacementDestinations, militaryUnitStats, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS, type DeploymentChoice, type GameCommand, type GameState } from "@abominations/game-engine";
 export { deploymentChoices, type DeploymentChoice } from "@abominations/game-engine";
 
 /** Prefer the branch until its legal allowance is exhausted, then eligible Guard. */
@@ -12,7 +12,98 @@ export function nextDeploymentSheet(choices: readonly DeploymentChoice[], branch
     : choices[0]?.sheet ?? branch;
 }
 
-export function MilitarySheet({ branch, choices, onSelect, onClose, game, referenceOnly = false, canAct = false, runCommand, playerIndex = game?.currentPlayer ?? 0, onDeploy, initialSheet }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onClose: () => void; game?: GameState; referenceOnly?: boolean; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; playerIndex?: number; onDeploy?: (sheet?: string) => void; initialSheet?: string }) {
+const displayPrintedValue = (value: number | readonly [number, number] | undefined) => value === undefined
+  ? "—"
+  : typeof value === "number" ? String(value) : `${value[0]} / ${value[1]} as missile`;
+
+function compactUnitSummary(typeId: string, sheet: string, game: GameState, playerIndex: number) {
+  const unitDefinition = UNIT_DEFINITIONS.find((unit) => unit.id === typeId);
+  const guardDefinition = NATIONAL_GUARD_DEFINITIONS.find((unit) => unit.id === typeId);
+  const giantDefinition = GIANT_UNIT_DEFINITIONS.find((unit) => unit.id === typeId);
+  const instance = game.units.find((unit) => (unit.unitTypeId ?? unit.branch) === typeId && !game.removedUnitIds.includes(unit.id)
+    && (unit.ownerPlayer === playerIndex || unit.ownerPlayer === undefined));
+  const live = instance ? militaryUnitStats(game, instance) : undefined;
+  const guardCommander = game.players[playerIndex]?.researchCardIds.includes("Guard Commander") ?? false;
+  const move = guardDefinition
+    ? guardCommander ? live?.move ?? guardDefinition.move : guardDefinition.printedMove
+    : live?.move ?? unitDefinition?.move ?? giantDefinition?.move;
+  const movement = guardDefinition
+    ? guardCommander ? guardDefinition.name === "Fighter" ? "fly" : "land-only" : "stationary"
+    : instance?.movement ?? unitDefinition?.movement ?? giantDefinition?.movement;
+  const attacks = instance?.attacks ?? unitDefinition?.attacks ?? (guardDefinition || giantDefinition ? 1 : undefined);
+  const damage = unitDefinition?.damage ?? instance?.damage ?? guardDefinition?.damage ?? giantDefinition?.damage;
+  const defense = unitDefinition?.defense ?? instance?.defense ?? guardDefinition?.defense ?? giantDefinition?.defense;
+  const specialAbility = unitDefinition?.specialAbilityText ?? guardDefinition?.specialAbilityText ?? (typeId === "x-fighter" ? "Deploy in place of a branch unit." : undefined);
+  const name = unitDefinition?.name ?? guardDefinition?.name ?? giantDefinition?.name ?? typeId.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const reserve = typeId.startsWith("national-guard-")
+    ? game.nationalGuard.unitIds.filter((id) => id.startsWith(`${typeId}-`) && !game.removedUnitIds.includes(id) && !game.units.some((unit) => unit.id === id)).length
+    : game.units.filter((unit) => (unit.unitTypeId ?? unit.branch) === typeId && unit.location === "record-tile" && !game.removedUnitIds.includes(unit.id)
+      && (unit.ownerPlayer === playerIndex || unit.ownerPlayer === undefined)).length;
+
+  return {
+    name,
+    sheet,
+    reserve,
+    movement: move === undefined ? "—" : `${move} · ${movement ? movementLabel(movement) : "Movement"}`,
+    attack: attacks === undefined ? "—" : `${attacks} × ${displayPrintedValue(damage)}`,
+    defence: displayPrintedValue(defense),
+    specialAbility,
+  };
+}
+
+export function CompactDeploymentList({ branch, choices, game, playerIndex, onSelect, onChooseGiant }: { branch: string; choices: readonly DeploymentChoice[]; game: GameState; playerIndex: number; onSelect: (choice: DeploymentChoice) => void; onChooseGiant?: (cardId: "Mecha-Monster" | "Captain Colossal") => void }) {
+  const groups = new Map<string, { deploy: DeploymentChoice[]; redeploy: DeploymentChoice[]; sheet: string }>();
+  for (const choice of choices) {
+    const group = groups.get(choice.typeId) ?? { deploy: [], redeploy: [], sheet: choice.sheet };
+    group[choice.kind].push(choice);
+    groups.set(choice.typeId, group);
+  }
+  const typeIds = new Set<string>(UNIT_DEFINITIONS.filter((unit) => unit.branch === branch).map((unit) => unit.id));
+  for (const choice of choices) typeIds.add(choice.typeId);
+  const giantCards = game.phase === "deploy" && game.pendingDecision?.type === "deployment" && onChooseGiant
+    ? GIANT_UNIT_DEFINITIONS.filter((unit) => game.players[playerIndex]?.researchCardIds.includes(unit.name)
+      && !game.units.some((piece) => piece.unitTypeId === unit.id && piece.location !== "permanently-removed")
+      && legalGiantPlacementDestinations(game).length > 0)
+    : [];
+  const items = [...typeIds].map((typeId) => {
+    const group = groups.get(typeId) ?? { deploy: [], redeploy: [], sheet: branch };
+    return { typeId, group, summary: compactUnitSummary(typeId, group.sheet, game, playerIndex) };
+  });
+  const giantItems = giantCards.map((unit) => ({ unit, summary: {
+    ...compactUnitSummary(unit.id, "Giant", game, playerIndex),
+    name: unit.name,
+    reserve: 1,
+  } }));
+
+  return <div className="compact-deployment-list" aria-label="Available military unit types">
+    {items.map(({ typeId, group, summary }) => <article className={`compact-deployment-card ${summary.reserve === 0 ? "compact-deployment-card-empty" : ""}`} key={typeId}>
+      <header className="compact-deployment-heading"><div><h3>{summary.name}</h3>{summary.sheet !== branch && <small>{summary.sheet}</small>}</div><span className="compact-deployment-count" aria-label={`${summary.reserve} in reserve`}><b>{summary.reserve}</b><small>LEFT</small></span></header>
+      <dl className="compact-deployment-stats">
+        <div><dt>Movement</dt><dd>{summary.movement}</dd></div>
+        <div><dt>Attack</dt><dd>{summary.attack}</dd></div>
+        <div><dt>Defence</dt><dd>{summary.defence}</dd></div>
+      </dl>
+      {summary.specialAbility && <p className="compact-deployment-ability"><strong>Special:</strong> {summary.specialAbility}</p>}
+      <div className="compact-deployment-actions">
+        {group.deploy[0] && <button type="button" onClick={() => onSelect(group.deploy[0])} aria-label={`Deploy ${summary.sheet === branch ? "" : `${summary.sheet} `}${summary.name}; ${summary.reserve} in reserve`}>Deploy</button>}
+        {group.redeploy[0] && <button type="button" className="compact-redeploy-button" onClick={() => onSelect(group.redeploy[0])} aria-label={`Redeploy ${summary.sheet === branch ? "" : `${summary.sheet} `}${summary.name}`}>Redeploy</button>}
+        {!group.deploy.length && !group.redeploy.length && <span className="compact-deployment-unavailable">No legal placement</span>}
+      </div>
+    </article>)}
+    {giantItems.map(({ unit, summary }) => <article className="compact-deployment-card" key={unit.id}>
+      <header className="compact-deployment-heading"><div><h3>{summary.name}</h3><small>Giant</small></div><span className="compact-deployment-count" aria-label="1 available from Research"><b>1</b><small>LEFT</small></span></header>
+      <dl className="compact-deployment-stats">
+        <div><dt>Movement</dt><dd>{summary.movement}</dd></div>
+        <div><dt>Attack</dt><dd>{summary.attack}</dd></div>
+        <div><dt>Defence</dt><dd>{summary.defence}</dd></div>
+      </dl>
+      <div className="compact-deployment-actions"><button type="button" onClick={() => onChooseGiant?.(unit.name)} aria-label={`Place ${unit.name}; one Research card available`}>Place</button></div>
+    </article>)}
+    {!choices.length && <p className="compact-deployment-empty">No legal placements remain. Deployment will continue automatically.</p>}
+  </div>;
+}
+
+export function MilitarySheet({ branch, choices, onSelect, onChooseGiant, onClose, game, referenceOnly = false, allowPieceSelection = true, canAct = false, runCommand, playerIndex = game?.currentPlayer ?? 0, onDeploy, initialSheet }: { branch: string; choices: DeploymentChoice[]; onSelect: (choice: DeploymentChoice) => void; onChooseGiant?: (cardId: "Mecha-Monster" | "Captain Colossal") => void; onClose: () => void; game?: GameState; referenceOnly?: boolean; allowPieceSelection?: boolean; canAct?: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; playerIndex?: number; onDeploy?: (sheet?: string) => void; initialSheet?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const drawerDrag = useRef<{ y: number; height: number } | null>(null);
@@ -25,7 +116,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
   const sheets = [branch, ...new Set([...choices.map((choice) => choice.sheet), ...extraSheets].filter((sheet) => sheet !== branch))];
   const activeSheet = sheets.includes(selectedSheet) ? selectedSheet : branch;
   const pageIndex = sheets.indexOf(activeSheet);
-  const interactiveChoices = referenceOnly && game && canAct && playerIndex === game.currentPlayer ? deploymentChoices(game) : choices;
+  const interactiveChoices = referenceOnly && allowPieceSelection && game && canAct && playerIndex === game.currentPlayer ? deploymentChoices(game) : choices;
   const pageChoices = interactiveChoices.filter((choice) => choice.sheet === activeSheet);
   const turnPage = (direction: number) => setSelectedSheet(sheets[(pageIndex + direction + sheets.length) % sheets.length]);
   useEffect(() => {
@@ -48,7 +139,7 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
   return <div className="military-drawer-layer">
     <div className={`military-hand military-drawer ${drawerHeight ? "military-drawer-resized" : ""}`} style={drawerStyle} ref={ref} role="dialog" aria-labelledby="military-sheet-title" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => {
       if (event.key === "Escape") onClose();
-      if (!(event.target instanceof HTMLSelectElement) && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); turnPage(event.key === "ArrowRight" ? 1 : -1); }
+      if (referenceOnly && !(event.target instanceof HTMLSelectElement) && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); turnPage(event.key === "ArrowRight" ? 1 : -1); }
 
     }}>
       <div className="military-drawer-grab" role="slider" tabIndex={0} aria-label="Resize military sheet" aria-orientation="vertical" aria-valuemin={96} aria-valuemax={Math.max(260, typeof window === "undefined" ? 800 : window.innerHeight - 54)} aria-valuenow={Math.round(drawerHeight ?? window.innerHeight * .58)} onPointerDown={(event) => {
@@ -75,17 +166,17 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
         <button type="button" aria-pressed={section === "units"} onClick={() => setSection("units")}>Unit deployment</button>
         {game && <button type="button" aria-pressed={section === "research"} onClick={() => setSection("research")}>Military research <span>{game.players[playerIndex]?.researchCardIds.length ?? 0}</span></button>}
       </nav>
-      {section === "units" && sheets.length > 1 && <nav className="military-sheet-tabs" aria-label="Military sheets">
+      {section === "units" && referenceOnly && sheets.length > 1 && <nav className="military-sheet-tabs" aria-label="Military sheets">
         {sheets.map((sheet) => <button key={sheet} aria-pressed={sheet === activeSheet} onClick={() => setSelectedSheet(sheet)}>{sheet}</button>)}
       </nav>}
-      <div className="military-sheet physical-military-sheet" data-branch={activeSheet} key={activeSheet} onTouchStart={(event) => {
+      <div className={`military-sheet ${referenceOnly ? "physical-military-sheet" : "digital-deployment-sheet"}`} data-branch={activeSheet} key={activeSheet} onTouchStart={(event) => {
         suppressSelection.current = false;
         const touch = event.touches[0];
         touchStart.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null;
       }} onTouchCancel={() => { touchStart.current = null; }} onTouchEnd={(event) => {
         const start = touchStart.current;
         touchStart.current = null;
-        if (!start || sheets.length < 2) return;
+        if (!referenceOnly || !start || sheets.length < 2) return;
         const touch = event.changedTouches[0];
         const dx = touch.clientX - start.x, dy = touch.clientY - start.y;
         if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
@@ -95,12 +186,18 @@ export function MilitarySheet({ branch, choices, onSelect, onClose, game, refere
       }} onClickCapture={(event) => {
         if (suppressSelection.current) { event.preventDefault(); event.stopPropagation(); suppressSelection.current = false; }
       }}>
-        <span className="label">MILITARY RECORD SHEET</span>
-        <h2 id="military-sheet-title">{activeSheet}</h2>
+        {referenceOnly && <span className="label">MILITARY RECORD SHEET</span>}
+        <h2 id="military-sheet-title">{referenceOnly ? activeSheet : "Deploy units"}</h2>
         {section === "units" && <>
-        {pageChoices.length > 0 && <p className="deployment-instruction">Select a piece, then a glowing location on the map.</p>}
-        <MilitaryReference choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
-        {!referenceOnly && !pageChoices.length && <p>No pieces on this sheet can be deployed.{sheets.length > 1 ? " Switch to another military sheet." : " No legal placements remain. Deployment will continue automatically."}</p>}
+        {!referenceOnly && game
+          ? <>
+              <p className="deployment-instruction">Choose a unit type, then a glowing location on the map.</p>
+              <CompactDeploymentList branch={branch} choices={interactiveChoices} game={game} playerIndex={playerIndex} onSelect={onSelect} onChooseGiant={onChooseGiant} />
+            </>
+          : <>
+              {pageChoices.length > 0 && <p className="deployment-instruction">Select a piece, then a glowing location on the map.</p>}
+              <MilitaryReference choices={pageChoices} onSelect={onSelect} sheet={activeSheet} game={game && playerIndex !== game.currentPlayer ? { ...game, currentPlayer: playerIndex } : game} />
+            </>}
         </>}
         {section === "research" && game && <div className="military-drawer-research">
           {game.phase === "deploy" && <div className="military-research-turn-action">

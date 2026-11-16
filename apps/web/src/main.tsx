@@ -17,6 +17,7 @@ import {
   PROVISIONAL_AUTHORITATIVE_BOARD,
   isHexKey,
   getLocation,
+  legalGiantPlacementDestinations,
   legalMonsterPaths,
   shortestLegalUnitPaths,
   legalSubmarineTargets,
@@ -215,6 +216,7 @@ function App() {
   const [setupSheetOpen, setSetupSheetOpen] = useState(false);
   const [setupPieceId, setSetupPieceId] = useState<string | null>(null);
   const [deploymentPieceId, setDeploymentPieceId] = useState<string | null>(null);
+  const [deploymentCardId, setDeploymentCardId] = useState<"Mecha-Monster" | "Captain Colossal" | null>(null);
   const autoFinishDeploymentRequested = useRef(false);
   const [submarineTargetingId, setSubmarineTargetingId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
@@ -330,10 +332,18 @@ function App() {
   const submarineTargetLocations = new Map<HexKey, string>(submarineTargets.filter((monster) => isHexKey(monster.location)).map((monster) => [monster.location as HexKey, `Launch missile at ${monster.name}`]));
   useEffect(() => { setSubmarineTargetingId(null); }, [activeGame, selectedUnitId]);
   const militaryChoices = useMemo(() => deploymentChoices(activeGame), [activeGame]);
+  const giantDeploymentDestinations = useMemo(() => activeGame.phase === "deploy" && activeGame.pendingDecision?.type === "deployment"
+    ? legalGiantPlacementDestinations(activeGame) : [], [activeGame]);
+  const availableGiantDeployments = useMemo(() => activeGame.phase === "deploy" && activeGame.pendingDecision?.type === "deployment"
+    ? (["Mecha-Monster", "Captain Colossal"] as const).filter((cardId) => activeGame.players[activeGame.currentPlayer]?.researchCardIds.includes(cardId)
+      && !activeGame.units.some((unit) => unit.unitTypeId === (cardId === "Mecha-Monster" ? "mecha-monster" : "captain-colossal") && unit.location !== "permanently-removed")
+      && giantDeploymentDestinations.length > 0)
+    : [], [activeGame, giantDeploymentDestinations]);
   const deploymentPiece = militaryChoices.find((choice) => choice.id === deploymentPieceId);
   const deploymentDestinations = new Set([
     ...(deploymentPiece?.destinations ?? []),
     ...(activeGame.pendingDecision?.type === "giant-placement" && canAct ? activeGame.pendingDecision.destinations : []),
+    ...(deploymentCardId ? giantDeploymentDestinations : []),
   ]);
   const openMilitarySheet = (sheet?: string) => {
     const requestedSheet = typeof sheet === "string" ? sheet : undefined;
@@ -579,8 +589,8 @@ function App() {
             ? { label: routineStompPrompt.dice > 0 ? `Roll all ${routineStompPrompt.dice} dice` : "Resolve city stomp", command: { type: "resolve-encounter" } as GameCommand }
             : { label: "Resolve encounter", command: { type: "resolve-encounter" } as GameCommand }
         : activeGame.phase === "deploy"
-          ? militaryChoices.length
-            ? { label: deploymentPiece ? "Change deployment piece" : "Deploy military", command: undefined }
+          ? militaryChoices.length || availableGiantDeployments.length
+            ? { label: deploymentPiece || deploymentCardId ? "Change deployment choice" : "Deploy military", command: undefined }
             : { label: "Deployment complete", command: undefined }
           : activeGame.phase === "challenge"
             ? { label: "Resolve Monster Challenge", command: undefined }
@@ -658,6 +668,7 @@ function App() {
     setSelectedUnitPath([]);
     setRetreatChoices({});
     setDeploymentPieceId(null);
+    setDeploymentCardId(null);
     setMilitarySheetOpen(false);
   }, [activeGame.currentPlayer, activeGame.phase, activePlayer.location]);
 
@@ -962,6 +973,7 @@ function App() {
       }
       if (normalized.type === "deploy" || normalized.type === "redeploy") {
         setDeploymentPieceId(null);
+        setDeploymentCardId(null);
         const remaining = deploymentChoices(nextGame);
         if (nextGame.phase === "deploy" && nextGame.currentPlayer === activeGame.currentPlayer && remaining.length) {
           setMilitaryInitialSheet(nextDeploymentSheet(remaining, activeBranch));
@@ -987,14 +999,14 @@ function App() {
   };
 
   useEffect(() => {
-    if (activeGame.phase !== "deploy" || militaryChoices.length > 0) {
+    if (activeGame.phase !== "deploy" || militaryChoices.length > 0 || availableGiantDeployments.length > 0) {
       autoFinishDeploymentRequested.current = false;
       return;
     }
     if (!canAct || pendingAction || autoFinishDeploymentRequested.current) return;
     autoFinishDeploymentRequested.current = true;
     void runCommand({ type: "pass-deploy" });
-  }, [activeGame.phase, canAct, militaryChoices.length, pendingAction]);
+  }, [activeGame.phase, canAct, militaryChoices.length, availableGiantDeployments.length, pendingAction]);
 
   useEffect(() => {
     if (!online || !encounterOverlayOpen || encounterOverlayOwnerRef.current === decisionPlayer) return;
@@ -1810,7 +1822,14 @@ function App() {
                 const monsterId = activeGame.pendingRetreat?.monsterId;
                 if (canAct && monsterId) void runCommand({ type: "retreat", destinations: { [monsterId]: destination } });
               }}
-              onDeploy={(destination) => { if (canAct && deploymentPiece) void runCommand({ type: deploymentPiece.kind, unitId: deploymentPiece.id, destination }); }}
+              onDeploy={(destination) => {
+                if (!canAct) return;
+                if (deploymentCardId) {
+                  const cardId = deploymentCardId;
+                  setDeploymentCardId(null);
+                  void runCommand({ type: "use-research", cardId, destination });
+                } else if (deploymentPiece) void runCommand({ type: deploymentPiece.kind, unitId: deploymentPiece.id, destination });
+              }}
               onSelectMonster={() => { setSelectedUnitId(null); setSelectedUnitPath([]); setHoveredPath([]); }}
               legalUnitDestinations={choosingSubmarineTarget ? new Set() : legalUnitDestinations}
               selectableUnitIds={selectableUnitIds}
@@ -1905,12 +1924,12 @@ function App() {
               command={actionDock.command ?? (actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? undefined : (selectedUnitId ? selectableUnitIds.has(selectedUnitId) : legalPaths.length > 0) ? { type: "stay-piece", pieceId: selectedUnitId ?? activePlayer.id } : { type: "pass-move" })}
               onPrimary={actionDock.label === "Next piece" || actionDock.label === "Choose another piece" ? selectNextMovableUnit : undefined}
               canAct={canAct} unavailableReason={unavailableReason} onAction={runBoardAction}
-            /> : <ActionDock contextLabel={activeGame.phase} guidance={soloScenarioGuidance ?? (activeGame.phase === "deploy" ? deploymentPiece ? `Place ${deploymentPiece.typeId.replaceAll("-", " ")} on a highlighted legal location.` : "Deploy a unit or draw Research." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab.")}
+            /> : <ActionDock contextLabel={activeGame.phase} guidance={soloScenarioGuidance ?? (activeGame.phase === "deploy" ? deploymentCardId ? `Choose a highlighted base for ${deploymentCardId}.` : deploymentPiece ? `Place ${deploymentPiece.typeId.replaceAll("-", " ")} on a highlighted legal location.` : "Deploy a unit or draw Research." : actionDock.command ? "Ready to continue." : "Choose an option in the attached tab.")}
               onPrimary={!actionDock.command ? () => { if (activeGame.phase === "deploy") { openMilitarySheet(); return; } if (activeGame.phase === "fight") { setFightBaselineEventId(lastBattleEvent?.id); setFightOverlayOpen(true); return; } if (activeGame.phase === "move" && selectableUnitIds.size) { selectNextMovableUnit(); return; } const context = document.querySelector<HTMLDetailsElement>("#phase-command-context"); if (context) { context.open = true; context.querySelector<HTMLElement>("button:not(:disabled)")?.focus(); } } : undefined}
               label={actionDock.label} canAct={canAct} command={actionDock.command} unavailableReason={unavailableReason} onAction={runBoardAction}
-              secondaryLabel={activeGame.phase === "deploy" && deploymentPiece ? "Cancel placement" : activeGame.phase === "deploy" && activeGame.deploymentsThisTurn === 0 ? activeGame.decks.research.exhausted ? "Research exhausted" : "Draw Research" : undefined}
-              secondaryDisabled={activeGame.phase === "deploy" && !deploymentPiece && (!canAct || activeGame.decks.research.exhausted)}
-              onSecondary={activeGame.phase === "deploy" && deploymentPiece ? () => setDeploymentPieceId(null) : activeGame.phase === "deploy" && activeGame.deploymentsThisTurn === 0 ? () => { setDeploymentPieceId(null); void runCommand({ type: "draw-research" }); } : undefined} />}
+              secondaryLabel={activeGame.phase === "deploy" && (deploymentPiece || deploymentCardId) ? "Cancel placement" : activeGame.phase === "deploy" && activeGame.deploymentsThisTurn === 0 ? activeGame.decks.research.exhausted ? "Research exhausted" : "Draw Research" : undefined}
+              secondaryDisabled={activeGame.phase === "deploy" && !deploymentPiece && !deploymentCardId && (!canAct || activeGame.decks.research.exhausted)}
+              onSecondary={activeGame.phase === "deploy" && (deploymentPiece || deploymentCardId) ? () => { setDeploymentPieceId(null); setDeploymentCardId(null); } : activeGame.phase === "deploy" && activeGame.deploymentsThisTurn === 0 ? () => { setDeploymentPieceId(null); setDeploymentCardId(null); void runCommand({ type: "draw-research" }); } : undefined} /> }
           </div>
           <div id="mobile-command-details" className="bottom-context-dock">
           {activeGame.pendingDecision?.type === "trophy-choice" && <MilitaryReference
@@ -2073,9 +2092,16 @@ function App() {
       />}
       {militarySheetOpen && canAct && activeGame.phase === "deploy" && <MilitarySheet initialSheet={militaryInitialSheet} canAct={canAct} runCommand={(command) => { setMilitarySheetOpen(false); return runCommand(command); }} game={activeGame} branch={activeBranch} choices={militaryChoices} onClose={() => setMilitarySheetOpen(false)} onSelect={(choice) => {
         setDeploymentPieceId(choice.id);
+        setDeploymentCardId(null);
         setMilitarySheetOpen(false);
         setFocusedHexKey(choice.destinations[0]);
         requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${choice.destinations[0]}"]`)?.focus({ preventScroll: true }));
+      }} onChooseGiant={(cardId) => {
+        setDeploymentPieceId(null);
+        setDeploymentCardId(cardId);
+        setMilitarySheetOpen(false);
+        setFocusedHexKey(giantDeploymentDestinations[0]);
+        requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-hex-key="${giantDeploymentDestinations[0]}"]`)?.focus({ preventScroll: true }));
       }} />}
       {challengeDuelOpen && activeGame.challenge?.active && <ChallengeArena game={activeGame} canAct={canAct} canUseMutation={canUseMutation} playerIndex={online ? participant?.playerIndex : undefined} runCommand={runCommand} error={error} onClose={() => setChallengeDuelOpen(false)} />}
       <FightResolutionPanel open={fightOverlayOpen} onClose={() => setFightOverlayOpen(false)} game={activeGame} canAct={canAct} pendingBattle={pendingBattle} pendingAttackTarget={pendingAttackTarget} event={lastBattleEvent?.id !== fightBaselineEventId ? lastBattleEvent : undefined} onChooseTarget={(unitId, battleId, spendInfamy) => { void runCommand({ type: "resolve-fight", battleId, targetUnitId: unitId, spendInfamy }); }} controls={<>

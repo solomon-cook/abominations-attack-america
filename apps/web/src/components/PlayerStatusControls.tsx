@@ -186,6 +186,6 @@ export function PlayerStatusControls({ game, monster, branch, playerIndex, canAc
     </nav>
     {open && createPortal(open === "monster"
       ? <MonsterSheet monster={monster} game={game} playerIndex={playerIndex} canAct={canAct} runCommand={playCard} onClose={() => setOpen(null)} />
-      : <MilitarySheet key={open} initialSheet={open} playerIndex={playerIndex} canAct={canAct} runCommand={playCard} onDeploy={(sheet) => { setOpen(null); onDeploy(sheet); }} branch={branch} game={game} choices={[]} referenceOnly onSelect={(choice) => { setOpen(null); onSelectDeployment?.(choice); }} onClose={() => setOpen(null)} />, document.body)}
+      : <MilitarySheet key={open} initialSheet={open} playerIndex={playerIndex} canAct={canAct} allowPieceSelection={game.phase !== "deploy"} runCommand={playCard} onDeploy={(sheet) => { setOpen(null); onDeploy(sheet); }} branch={branch} game={game} choices={[]} referenceOnly onSelect={(choice) => { setOpen(null); onSelectDeployment?.(choice); }} onClose={() => setOpen(null)} />, document.body)}
   </>;
 }
