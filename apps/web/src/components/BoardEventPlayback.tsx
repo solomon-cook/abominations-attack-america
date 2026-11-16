@@ -218,7 +218,7 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
       } else {
         timer = window.setTimeout(() => {
           reveal();
-          timer = window.setTimeout(() => setQueue((existing) => existing.slice(1)), 1500);
+          timer = window.setTimeout(() => setQueue((existing) => existing.slice(1)), 2500);
         }, 2850);
       }
       return () => window.clearTimeout(timer);
@@ -364,8 +364,17 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
         : "DETONATION · NO DAMAGE"
     : undefined;
   const missileFlight = isNuclearStrike && missilePath && current ? <svg className="nuclear-missile-flight" aria-hidden="true" viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`}>
-    <path id={`nuclear-path-${current.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`} d={missilePath} />
-    <g className="nuclear-missile-sprite"><path d="M -15 0 L 8 -5 L 2 0 L 8 5 Z" /><path className="nuclear-missile-flame" d="M -15 0 L -24 -5 L -21 0 L -24 5 Z" /><animateMotion dur="2.8s" repeatCount="1" fill="freeze" rotate="auto" path={missilePath} /></g>
+    <path className="nuclear-flight-smoke" d={missilePath} />
+    <path className="nuclear-flight-trail" d={missilePath} />
+    <g className="nuclear-missile-sprite">
+      <path className="nuclear-missile-engine-glow" d="M -31 0 L -52 -13 L -43 0 L -52 13 Z" />
+      <path className="nuclear-missile-flame" d="M -29 0 L -61 -9 L -48 0 L -61 9 Z" />
+      <path className="nuclear-missile-fins" d="M -21 -5 L -34 -16 L -31 -4 M -21 5 L -34 16 L -31 4" />
+      <path className="nuclear-missile-body" d="M -31 -5 L 17 -5 L 32 0 L 17 5 L -31 5 Z" />
+      <path className="nuclear-missile-nose" d="M 17 -5 L 32 0 L 17 5 Z" />
+      <path className="nuclear-missile-highlight" d="M -22 -2 L 15 -2" />
+      <animateMotion dur="2.8s" repeatCount="1" fill="freeze" rotate="auto" path={missilePath} />
+    </g>
   </svg> : null;
   return createPortal(<>
     {currentMutationReveal && <MutationRevealStage key={currentMutationReveal.id} reveal={currentMutationReveal} onDismiss={dismissMutationReveal} />}
@@ -373,7 +382,15 @@ export function BoardEventPlayback({ matchId, events, monsters, units, board, en
       <span aria-hidden="true">☢</span><strong>MISSILE LAUNCHED</strong>{showOutcome && nuclearOutcome && <small>{nuclearOutcome}</small>}
     </div>}
     {missileFlight}
-    {isNuclearStrike && showOutcome && current?.detail.intercepted !== true && missileTargetPoint && <div className="nuclear-blast-burst" style={{ left: missileTargetPoint.x, top: missileTargetPoint.y }} aria-hidden="true" />}
+    {isNuclearStrike && showOutcome && current?.detail.intercepted !== true && missileTargetPoint && <>
+      <div className="nuclear-blast-screen" aria-hidden="true" />
+      <div className="nuclear-blast-burst" style={{ left: missileTargetPoint.x, top: missileTargetPoint.y }} aria-hidden="true">
+        <span className="nuclear-blast-core" /><span className="nuclear-blast-fireball" />
+        <span className="nuclear-blast-stem" /><span className="nuclear-blast-cap" />
+        <span className="nuclear-blast-ring" /><span className="nuclear-blast-ring secondary" />
+        <span className="nuclear-blast-debris" />
+      </div>
+    </>}
     <div
     ref={playbackRef}
     className={`board-event-playback${position.above ? " is-above" : ""}${reducedMotion ? " reduced-motion" : ""}${prompt ? " is-interactive" : ""}`}
