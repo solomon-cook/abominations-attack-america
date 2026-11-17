@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { applyCommand, cardDefinition, sourcedCardRule, legalGiantPlacementDestinations, legalMolecularCannonTargets, type GameCommand, type GameState } from "@abominations/game-engine";
 import { boardForGame } from "../board-pin";
-import { DigitalCard } from "./DigitalCard";
+import { CardArtwork, DigitalCard } from "./DigitalCard";
 import { usePlayerNames } from "./player-name-context";
 
 type CardAction = { label: string; command: GameCommand };
@@ -60,6 +60,20 @@ function kindForMonsterCard(game: GameState, cardId: string): boolean {
     && game.players[game.currentPlayer]?.mutationCardIds.includes(cardId) === true;
 }
 
+function researchEffectSummary(text: string | undefined): string {
+  if (!text) return "Effect details unavailable.";
+  let effect = text.replace(/\s+/g, " ").trim();
+  const discardMarker = "DISCARD THIS CARD AFTER USE.";
+  const discardAt = effect.indexOf(discardMarker);
+  if (discardAt >= 0) effect = effect.slice(discardAt + discardMarker.length).trim();
+  else if (effect.startsWith("Use ")) {
+    const firstSentenceEnd = effect.indexOf(". ");
+    if (firstSentenceEnd >= 0) effect = effect.slice(firstSentenceEnd + 2);
+  }
+  const sentences = effect.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [effect];
+  return sentences.slice(0, 2).join(" ").trim();
+}
+
 function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy, playerName }: { game: GameState; cardId: string; kind: "mutation" | "research"; canPlay: boolean; runCommand?: (command: GameCommand) => void | Promise<void>; onDeploy?: (sheet?: string) => void; playerName: (index: number) => string }) {
   const [selected, setSelected] = useState("");
   const rule = sourcedCardRule(cardId);
@@ -73,6 +87,39 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy, playerNam
     : !canPlay ? "Play on your turn when the card’s timing allows."
     : !actions.length ? "No legal play or target at this point in the turn."
     : "Ready to play.";
+  if (kind === "research") {
+    const passive = rule?.classification === "persistent" || rule?.classification === "conditional";
+    const resolvesOnDraw = rule?.classification === "immediate";
+    const effectSummary = researchEffectSummary(rule?.transcription);
+    return <article className="research-card-row" aria-label={`${cardId} Military Research card`}>
+      <CardArtwork cardId={cardId} kind="research" />
+      <div className="research-card-copy">
+        <header className="research-card-heading"><h4>{cardId}</h4>
+          {passive && <span className="research-card-badge research-card-badge-passive">Passive</span>}
+          {resolvesOnDraw && <span className="research-card-badge">On draw</span>}
+        </header>
+        <p className="research-card-effect">{effectSummary}</p>
+        {rule && <details className="research-card-details"><summary>Full effect &amp; timing</summary>
+          <p>{rule.transcription}</p><small>{rule.timing}</small>
+        </details>}
+      </div>
+      <div className="research-card-controls">
+        {actions.length === 1 && <button type="button" disabled={!runCommand} aria-label={actions[0].label} onClick={() => void runCommand?.(actions[0].command)}>Play</button>}
+        {actions.length > 1 && <>
+          <label className="sr-only" htmlFor={`research-target-${cardId.replaceAll(" ", "-")}`}>Choose target or outcome</label>
+          <select id={`research-target-${cardId.replaceAll(" ", "-")}`} aria-label={`${cardId} target or outcome`} value={chosen ? selected : ""} onChange={(event) => setSelected(event.target.value)}>
+            <option value="">Choose target…</option>{actions.map((action) => <option key={JSON.stringify(action.command)} value={JSON.stringify(action.command)}>{action.label}</option>)}
+          </select>
+          <button type="button" disabled={!chosen || !runCommand} onClick={() => chosen && void runCommand?.(chosen.command)}>Play</button>
+        </>}
+        {!passive && !resolvesOnDraw && !actions.length && <>
+          <button type="button" disabled aria-label={`Play ${cardId}`}>Play</button>
+          <small>{!implemented ? "Not available" : status}</small>
+        </>}
+        {cardId === "X-Fighters" && canPlay && game.phase === "deploy" && onDeploy && <button type="button" onClick={() => onDeploy("X-Fighters")}>Deploy</button>}
+      </div>
+    </article>;
+  }
   return <DigitalCard cardId={cardId} kind={kind} className="sheet-held-card" status={status} tabIndex={0}>
     {actions.length === 1 && runCommand && <button type="button" onClick={() => void runCommand(actions[0].command)}>{actions[0].label}</button>}
     {actions.length > 1 && runCommand && <>
@@ -81,7 +128,6 @@ function HeldCard({ game, cardId, kind, canPlay, runCommand, onDeploy, playerNam
       </select></label>
       <button type="button" disabled={!chosen} onClick={() => chosen && void runCommand(chosen.command)}>Play {cardId}</button>
     </>}
-    {cardId === "X-Fighters" && canPlay && game.phase === "deploy" && onDeploy && <button type="button" onClick={() => onDeploy("X-Fighters")}>Choose an X-Fighter to deploy</button>}
   </DigitalCard>;
 }
 

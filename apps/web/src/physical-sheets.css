@@ -278,6 +278,37 @@ button.compact-deployment-card:focus-visible{border-color:var(--deployment-brass
 .compact-stat b{color:var(--deployment-ink,#26352c);font-size:15px;font-weight:800;line-height:1.05;overflow-wrap:normal;word-break:normal}
 .compact-stat small{color:#53634e;font-size:8px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
 .compact-stat .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Research cards read as compact, horizontal actions in the military hand. */
+.military-drawer .sheet-held-card-grid:has(.research-card-row){display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.research-card-row{--research-paper:#f7f3e5;--research-ink:#26362d;display:grid;grid-template-columns:56px minmax(0,1fr) auto;align-items:center;gap:12px;min-width:0;padding:9px 10px;border:1px solid #b9bea0;border-radius:10px;background:var(--research-paper);color:var(--research-ink);box-shadow:0 2px 5px #27372a12}
+.research-card-row>.digital-card-art{width:56px;height:56px;aspect-ratio:1;border:1px solid #c8c8ad;border-radius:7px;background:#e8e8d4;box-shadow:inset 0 0 0 3px #ffffff80}
+.research-card-row>.digital-card-art img{object-fit:cover}
+.research-card-copy{min-width:0}
+.research-card-heading{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.research-card-heading h4{margin:0;color:var(--research-ink);font-size:14px;line-height:1.2;font-weight:750}
+.research-card-badge{display:inline-flex;align-items:center;min-height:18px;padding:2px 7px;border:1px solid #ccd1b9;border-radius:99px;background:#e8eadb;color:#50624b;font-size:9px;line-height:1.1;font-weight:800;letter-spacing:.045em;text-transform:uppercase}
+.research-card-badge-passive{background:#e1eadb;border-color:#bccdb3;color:#38563c}
+.research-card-effect{margin:3px 0 0;color:#3c493d;font-size:11px;line-height:1.35}
+.research-card-details{margin-top:4px}
+.research-card-details>summary{width:max-content;max-width:100%;min-height:22px;cursor:pointer;color:#53664b;font-size:10px;font-weight:700}
+.research-card-details p{margin:3px 0;color:#3c493d;font-size:11px;line-height:1.4}
+.research-card-details small{display:block;color:#63705e;font-size:10px;line-height:1.35}
+.research-card-controls{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:82px}
+.research-card-controls button,.research-card-controls select{width:100%;min-height:36px;margin:0;padding:7px 9px;border:1px solid #496149;border-radius:7px;background:#34533d;color:#fff8df;font-family:inherit;font-size:11px;font-weight:800;line-height:1.2;cursor:pointer}
+.research-card-controls select{min-height:32px;padding:5px 6px;background:#fffdf2;color:#29372e;border-color:#b8bea2;font-size:10px}
+.research-card-controls button:disabled{opacity:.55;cursor:default}
+.research-card-controls small{color:#64705d;font-size:9px;line-height:1.25;text-align:center}
+.research-card-row button:focus-visible,.research-card-row select:focus-visible,.research-card-details>summary:focus-visible{outline:3px solid #7b925e;outline-offset:2px}
+@media(max-width:600px){
+  .military-drawer .sheet-held-card-grid:has(.research-card-row){gap:7px}
+  .research-card-row{grid-template-columns:48px minmax(0,1fr) 68px;gap:8px;padding:8px}
+  .research-card-row>.digital-card-art{width:48px;height:48px}
+  .research-card-heading h4{font-size:13px}
+  .research-card-effect{font-size:10px}
+  .research-card-controls{width:68px}
+  .research-card-controls button{min-height:34px;padding:6px 5px;font-size:10px}
+}
 .compact-stat-attack{grid-column:1;grid-row:1}
 .compact-stat-defence{grid-column:3;grid-row:1}
 .compact-stat-movement{grid-column:1/-1;grid-row:2;display:grid;justify-items:start;align-content:center;gap:4px;padding:6px 8px}
