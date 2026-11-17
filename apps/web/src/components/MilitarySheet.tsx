@@ -2,6 +2,7 @@ import { ownedMilitarySheets } from "./owned-sheets";
 import { SheetCards } from "./SheetCards";
 import { MilitaryReference, movementLabel } from "./SheetReference";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { MoveUpRight, Shield, Sword } from "lucide-react";
 import { deploymentChoices, GIANT_UNIT_DEFINITIONS, legalGiantPlacementDestinations, militaryUnitStats, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS, type DeploymentChoice, type GameCommand, type GameState } from "@abominations/game-engine";
 export { deploymentChoices, type DeploymentChoice } from "@abominations/game-engine";
 
@@ -62,10 +63,10 @@ function CompactUnitCard({ typeId, summary, actionLabel, onSelect }: { typeId: s
     <span className="compact-deployment-heading"><span><strong>{summary.name}</strong>{summary.sheet && <small>{summary.sheet}</small>}</span></span>
     <span className="compact-deployment-count" aria-label={reserveLabel}><b>{summary.reserve}</b><small>LEFT</small></span>
     <span className="compact-deployment-stats" aria-label="Unit statistics">
-      <span className="compact-stat compact-stat-attack"><span className="compact-stat-value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4 10.5 13.5M20 4a12 12 0 0 0-8 3.6L8 12l4 4 4.4-4A12 12 0 0 0 20 4ZM6.5 13.5l4 4M4 20l4.5-4.5" /></svg><b>{summary.attack}</b></span><small className="sr-only">Attack</small></span>
+      <span className="compact-stat compact-stat-attack"><span className="compact-stat-value"><Sword size={16} strokeWidth={1.6} aria-hidden="true" /><b>{summary.attack}</b></span><small className="sr-only">Attack</small></span>
       <span className="compact-deployment-art"><img src={`/assets/military/${typeId}.webp`} alt="" /></span>
-      <span className="compact-stat compact-stat-defence"><span className="compact-stat-value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3Z" /></svg><b>{summary.defence}</b></span><small className="sr-only">Defence</small></span>
-      <span className={`compact-stat compact-stat-movement${summary.movementUnavailable ? " compact-stat-movement-static" : ""}`}><small className="sr-only">Movement</small><span className="compact-stat-value">{!summary.movementUnavailable && <span className="compact-movement-icon" aria-hidden="true">↗</span>}<b>{summary.movement}</b></span>{summary.specialAbility && <span className="compact-stat-ability">{summary.specialAbility}</span>}</span>
+      <span className="compact-stat compact-stat-defence"><span className="compact-stat-value"><Shield size={16} strokeWidth={1.6} aria-hidden="true" /><b>{summary.defence}</b></span><small className="sr-only">Defence</small></span>
+      <span className={`compact-stat compact-stat-movement${summary.movementUnavailable ? " compact-stat-movement-static" : ""}`}><small className="sr-only">Movement</small><span className="compact-stat-value">{!summary.movementUnavailable && <MoveUpRight className="compact-movement-icon" size={16} strokeWidth={1.6} aria-hidden="true" />}<b>{summary.movement}</b></span>{summary.specialAbility && <span className="compact-stat-ability">{summary.specialAbility}</span>}</span>
     </span>
     {!onSelect && <span className="compact-deployment-unavailable">No legal placement</span>}
   </>;
