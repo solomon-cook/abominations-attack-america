@@ -47,7 +47,7 @@ function compactUnitSummary(typeId: string, sheet: string, game: GameState, play
     name,
     sheet,
     reserve,
-    movement: move === undefined ? "—" : `${move} · ${compactMovementLabel(movement)}`,
+    movement: move === undefined ? "—" : move === 0 ? "Stationary" : `${move} · ${compactMovementLabel(movement)}`,
     attack: attacks === undefined ? "—" : attacks > 1 ? `${attacks} × ${displayCurrentValue(damage)}` : displayCurrentValue(damage),
     defence: displayCurrentValue(defense),
     specialAbility,
@@ -64,8 +64,9 @@ function CompactUnitCard({ typeId, summary, actionLabel, onSelect }: { typeId: s
     <span className="compact-deployment-stats" aria-label="Unit statistics">
       <span className="compact-stat compact-stat-attack"><span className="compact-stat-value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4 10.5 13.5M20 4a12 12 0 0 0-8 3.6L8 12l4 4 4.4-4A12 12 0 0 0 20 4ZM6.5 13.5l4 4M4 20l4.5-4.5" /></svg><b>{summary.attack}</b></span><small>Attack</small></span>
       <span className="compact-stat compact-stat-defence"><span className="compact-stat-value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3Z" /></svg><b>{summary.defence}</b></span><small>Defence</small></span>
-      <span className="compact-stat compact-stat-movement"><span className="compact-stat-value"><span className="compact-movement-icon" aria-hidden="true">↗</span><b>{summary.movement}</b></span><small>Movement</small></span>
+      <span className="compact-stat compact-stat-movement"><small>Movement</small><span className="compact-stat-value"><span className="compact-movement-icon" aria-hidden="true">↗</span><b>{summary.movement}</b></span></span>
     </span>
+    {summary.specialAbility && summary.specialAbility.length <= 42 && <span className="compact-deployment-ability-inline">{summary.specialAbility}</span>}
     {!onSelect && <span className="compact-deployment-unavailable">No legal placement</span>}
   </>;
   const sheetPrefix = summary.sheet && !researchGiant ? `${summary.sheet} ` : "";
@@ -109,10 +110,10 @@ export function CompactDeploymentList({ branch, choices, game, playerIndex, onSe
   return <div className="compact-deployment-list" aria-label="Available military unit types">
     {items.map(({ typeId, group, summary }) => <div className={`compact-deployment-option ${summary.reserve === 0 ? "compact-deployment-card-empty" : ""}`} key={typeId}>
       <CompactUnitCard typeId={typeId} summary={{ ...summary, sheet: summary.sheet === branch ? "" : summary.sheet }} actionLabel={group.deploy[0] ? "Deploy" : "Redeploy"} onSelect={group.deploy[0] || group.redeploy[0] ? () => onSelect(group.deploy[0] ?? group.redeploy[0]!) : undefined} />
-      {summary.specialAbility && <CompactSpecialAbility text={summary.specialAbility} />}
+      {summary.specialAbility && summary.specialAbility.length > 42 && <CompactSpecialAbility text={summary.specialAbility} />}
       {group.deploy[0] && group.redeploy[0] && <button type="button" className="compact-redeploy-link" onClick={() => onSelect(group.redeploy[0])} aria-label={`Redeploy ${summary.name} already on the map`}>Redeploy a {summary.name} already on the map</button>}
     </div>)}
-    {giantItems.map(({ unit, summary }) => <div className="compact-deployment-option" key={unit.id}><CompactUnitCard typeId={unit.id} summary={{ ...summary, sheet: "Giant · Research" }} actionLabel="Place" onSelect={() => onChooseGiant?.(unit.name)} />{summary.specialAbility && <CompactSpecialAbility text={summary.specialAbility} />}</div>)}
+    {giantItems.map(({ unit, summary }) => <div className="compact-deployment-option" key={unit.id}><CompactUnitCard typeId={unit.id} summary={{ ...summary, sheet: "Giant · Research" }} actionLabel="Place" onSelect={() => onChooseGiant?.(unit.name)} />{summary.specialAbility && summary.specialAbility.length > 42 && <CompactSpecialAbility text={summary.specialAbility} />}</div>)}
     {!choices.length && <p className="compact-deployment-empty">No legal placements remain. Deployment will continue automatically.</p>}
   </div>;
 }
