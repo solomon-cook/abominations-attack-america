@@ -31,7 +31,8 @@ assert.match(compactList, /Defence/);
 assert.match(compactList, /compact-stat-attack/, "attack is represented with the sword icon");
 assert.match(compactList, /compact-stat-defence/, "defence is represented with the shield icon");
 assert.doesNotMatch(compactList, /1 × 1/, "single-attack units show damage without a redundant attack multiplier");
-assert.match(compactList, /You can’t move this\./, "National Guard movement restriction is stated concisely");
+assert.match(compactList, /Movement[^]*You can’t move this/, "National Guard movement restriction is shown inside its Movement stat");
+assert.doesNotMatch(compactList, /Stationary/, "immobile Guard units use the plain-language movement restriction");
 assert.doesNotMatch(compactList, /Only the player with the Guard Commander card/, "the old Guard movement explanation is removed from deployment cards");
 assert.match(compactList, /Makes an extra attack during the first round/);
 assert.match(compactList, /aria-label="3 in reserve"/);
@@ -47,7 +48,7 @@ assert.doesNotMatch(navyList, /Special ability/, "the submarine card omits the r
 const guardCommanderGame = structuredClone(game);
 guardCommanderGame.players[0]!.researchCardIds = ["Guard Commander"];
 const guardCommanderList = renderToStaticMarkup(<CompactDeploymentList branch="Army" choices={initial} game={guardCommanderGame} playerIndex={0} onSelect={() => undefined} />);
-assert.doesNotMatch(guardCommanderList, /You can’t move this\./, "Guard Commander removes the movement warning for its holder");
+assert.doesNotMatch(guardCommanderList, /You can’t move this/, "Guard Commander removes the movement warning for its holder");
 assert.match(guardCommanderList, /Movement 4 · Land only/, "Guard Commander movement remains visible in the stats");
 for (const unitBranch of ["Army", "Navy", "Air Force", "Marines"] as const) {
   const branchList = renderToStaticMarkup(<CompactDeploymentList branch={unitBranch} choices={[]} game={game} playerIndex={0} onSelect={() => undefined} />);
