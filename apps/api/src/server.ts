@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { URL } from "node:url";
 import { WebSocketServer, type WebSocket } from "ws";
 import type { GameCommandEnvelope } from "@abominations/game-engine";
-import { MemoryRoomStore, type RoomStore } from "./store.js";
+import { MemoryRoomStore, ROOM_BOT_TAKEOVER_DELAY_MS, type RoomStore } from "./store.js";
 import { PrismaRoomStore } from "./prisma-store.js";
 import { withinRate, type RateBucket } from "./rate-limit.js";
 import { ApiMetrics } from "./metrics.js";
@@ -31,6 +31,28 @@ const testRoomSeed = () => {
   return seed;
 };
 const sockets = new Map<string, Map<WebSocket, string>>();
+const botTakeoverTimers = new Map<string, NodeJS.Timeout>();
+const botTakeoverTimerKey = (roomCode: string, participantId: string) => `${roomCode}:${participantId}`;
+const cancelBotTakeoverTimer = (roomCode: string, participantId: string) => {
+  const key = botTakeoverTimerKey(roomCode, participantId);
+  const timer = botTakeoverTimers.get(key);
+  if (timer) clearTimeout(timer);
+  botTakeoverTimers.delete(key);
+};
+const scheduleBotTakeoverTimer = (roomCode: string, participantId: string) => {
+  cancelBotTakeoverTimer(roomCode, participantId);
+  const key = botTakeoverTimerKey(roomCode, participantId);
+  const timer = setTimeout(() => {
+    botTakeoverTimers.delete(key);
+    void store.processBotTakeovers(Date.now(), roomCode).then(async (roomCodes) => {
+      for (const affectedRoomCode of roomCodes) await broadcast(affectedRoomCode);
+    }).catch((error) => {
+      errorReporter.report({ category: "persistence", path: "/worker/bot-takeover", message: error instanceof Error ? error.message : "Bot takeover check failed." });
+    });
+  }, ROOM_BOT_TAKEOVER_DELAY_MS + 50);
+  timer.unref();
+  botTakeoverTimers.set(key, timer);
+};
 let roomNotificationsReady = !usePrisma;
 const RATE_WINDOW_MS = 60_000;
 const configuredDevelopmentLimit = (name: string, fallback: number) => {
@@ -453,8 +475,13 @@ wsServer.on("connection", async (socket, request) => {
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`); const code = String(url.searchParams.get("code") ?? "").toUpperCase(); const ticket = String(url.searchParams.get("ticket") ?? "");
   try {
     const principal = await store.consumeSocketTicket(code, ticket);
+    cancelBotTakeoverTimer(code, principal.participantId);
     const connectionId = randomUUID();
-    const room = await store.connectParticipant(code, principal.participantId, connectionId, principal.sessionHash);
+    let room = await store.connectParticipant(code, principal.participantId, connectionId, principal.sessionHash);
+    if (room.participants.some((participant) => participant.role === "player" && !participant.connected)) {
+      await store.processBotTakeovers(Date.now(), code);
+      room = await store.getRoomForParticipant(code, principal.participantId);
+    }
     const group = sockets.get(code) ?? new Map<WebSocket, string>();
     metrics.websocketConnection();
     group.set(socket, principal.participantId);
@@ -514,7 +541,11 @@ wsServer.on("connection", async (socket, request) => {
       group.delete(socket);
       if (group.size === 0) sockets.delete(code);
       void store.disconnectParticipant(code, principal.participantId, connectionId)
-        .then(() => broadcast(code))
+        .then(async (room) => {
+          const participant = room.participants.find((item) => item.id === principal.participantId);
+          if (participant?.role === "player" && !participant.connected) scheduleBotTakeoverTimer(code, principal.participantId);
+          await broadcast(code);
+        })
         .catch(() => undefined);
     });
   }
@@ -529,21 +560,23 @@ const websocketHeartbeat = setInterval(() => {
   }
 }, 30_000);
 websocketHeartbeat.unref();
-const botWorker = setInterval(() => {
+const botWorker = store instanceof PrismaRoomStore ? undefined : setInterval(() => {
   void store.processBotTakeovers().then(async (roomCodes) => {
     for (const roomCode of roomCodes) await broadcast(roomCode);
   }).catch((error) => {
     errorReporter.report({ category: "persistence", path: "/worker/bot-takeover", message: error instanceof Error ? error.message : "Bot worker failed." });
   });
 }, 5_000);
-botWorker.unref();
+botWorker?.unref();
 let shuttingDown = false;
 const shutdown = async (signal: string) => {
   if (shuttingDown) return;
   shuttingDown = true;
   operationalLog({ event: "deployment.shutdown", signal });
   clearInterval(websocketHeartbeat);
-  clearInterval(botWorker);
+  if (botWorker) clearInterval(botWorker);
+  for (const timer of botTakeoverTimers.values()) clearTimeout(timer);
+  botTakeoverTimers.clear();
   await roomChangeListener?.close();
   for (const group of sockets.values()) for (const socket of group.keys()) socket.terminate();
   sockets.clear();

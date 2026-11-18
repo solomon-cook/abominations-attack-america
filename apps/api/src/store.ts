@@ -12,6 +12,7 @@ type StoredRoom = { id: string; code: string; status: RoomStatus; matchStarted: 
 export interface RoomSocketPrincipal { roomCode: string; participantId: string; sessionHash: string }
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const ROOM_VIEWER_INVITE_TTL_MS = 24 * 60 * 60 * 1000;
+export const ROOM_BOT_TAKEOVER_DELAY_MS = 4 * 60_000;
 export const MAX_RETAINED_ROOM_EVENTS = 256;
 const MAX_BOT_ACTIONS_PER_WAKE = 64;
 
@@ -481,7 +482,7 @@ export class MemoryRoomStore implements RoomStore {
       if (roomCode && room.code !== roomCode.toUpperCase()) continue;
       if (room.status === "completed" || room.status === "expired") continue;
       for (const participant of room.participants) {
-        if (participant.role === "player" && !participant.connected && participant.disconnectedAt !== undefined && nowMs - participant.disconnectedAt >= 4 * 60_000 && !participant.botControlled) {
+        if (participant.role === "player" && !participant.connected && participant.disconnectedAt !== undefined && nowMs - participant.disconnectedAt >= ROOM_BOT_TAKEOVER_DELAY_MS && !participant.botControlled) {
           participant.botControlled = true;
           participant.botAssisted = true;
           updated.push(room.code);

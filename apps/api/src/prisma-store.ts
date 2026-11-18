@@ -2,7 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupActionWithRecord, createMvpRoomGame, createRoomGame, projectState, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicReplayExport, PublicReplayPage, PublicRoomSummary, ReplayFrame, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 import { completedMatchRows, emptyMatchCounters, updateMatchCounters } from "./player-stats.js";
-import { MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, MAX_RETAINED_ROOM_EVENTS, ROOM_IDLE_TIMEOUT_MS, ROOM_VIEWER_INVITE_TTL_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketPrincipal, type RoomStore } from "./store.js";
+import { MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, MAX_RETAINED_ROOM_EVENTS, ROOM_BOT_TAKEOVER_DELAY_MS, ROOM_IDLE_TIMEOUT_MS, ROOM_VIEWER_INVITE_TTL_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketPrincipal, type RoomStore } from "./store.js";
 import { cacheReplayFrames, getCachedReplayFrames, MAX_REPLAY_EXPORT_BYTES, reconstructReplay, type ReplayCommandRecord, type ReplaySourceEvent } from "./replay.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
@@ -514,8 +514,7 @@ export class PrismaRoomStore implements RoomStore {
       relationLoadStrategy: "join",
       include: {
         participants: {
-          where: { id: participantId, connectionId, tokenHash: sessionHash, connectedAt: { not: null } },
-          take: 1,
+          where: { role: "PLAYER" },
         },
         events: {
           where: { actionId: envelope.actionId },
@@ -525,7 +524,7 @@ export class PrismaRoomStore implements RoomStore {
       },
     });
     if (!room) throw new Error("Room not found.");
-    const actor = room.participants[0];
+    const actor = room.participants.find((participant: any) => participant.id === participantId && participant.connectionId === connectionId && participant.tokenHash === sessionHash && participant.connectedAt !== null);
     if (!actor || actor.role !== "PLAYER") throw new Error("Spectators cannot submit game actions.");
     if (actor.botControlled) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
     if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
@@ -537,6 +536,7 @@ export class PrismaRoomStore implements RoomStore {
     if (room.status !== "ACTIVE") throw new Error("This room is not ready for gameplay.");
     if (actor.playerIndex !== this.requiredPlayer(room.state as unknown as GameState, envelope)) throw new Error("It is not your turn.");
     const status = await this.commitCommand(room, actor, envelope, "human", { tokenHash: sessionHash, connectionId });
+    if (room.participants.some((participant: any) => participant.botControlled || participant.connectedAt === null)) await this.processBotTakeovers(Date.now(), roomCode);
     return { version: room.version + 1, status };
   }
 
@@ -562,10 +562,10 @@ export class PrismaRoomStore implements RoomStore {
 
   async processBotTakeovers(nowMs = Date.now(), roomCode?: string): Promise<string[]> {
     const scopedRoom = roomCode ? { code: roomCode.toUpperCase() } : {};
-    const due = await this.prismaClient.participant.findMany({ where: { role: "PLAYER", connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - 4 * 60_000) }, room: { ...scopedRoom, status: { in: ["WAITING", "ACTIVE"] } } }, select: { id: true, roomId: true } });
+    const due = await this.prismaClient.participant.findMany({ where: { role: "PLAYER", connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - ROOM_BOT_TAKEOVER_DELAY_MS) }, room: { ...scopedRoom, status: { in: ["WAITING", "ACTIVE"] } } }, select: { id: true, roomId: true } });
     const affected = new Set<string>();
     for (const participant of due) {
-      const changed = await this.prismaClient.participant.updateMany({ where: { id: participant.id, connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - 4 * 60_000) } }, data: { botControlled: true, botAssisted: true } });
+      const changed = await this.prismaClient.participant.updateMany({ where: { id: participant.id, connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - ROOM_BOT_TAKEOVER_DELAY_MS) } }, data: { botControlled: true, botAssisted: true } });
       if (changed.count) affected.add(participant.roomId);
     }
     const completedCodes: string[] = [];
