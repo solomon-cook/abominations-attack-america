@@ -77,7 +77,9 @@ export const joinRoom = (code: string, displayName: string) => convexRealtimeEna
 export const addRoomBot = (code: string, token: string) => convexRealtimeEnabled
   ? getConvexClient().mutation(convexApi.rooms.addBot, { code: code.toUpperCase(), token })
   : request<RoomView>(`/rooms/${code.toUpperCase()}/bots`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
-export const fillRoomWithBots = (code: string, token: string) => getConvexClient().mutation(convexApi.rooms.fillWithBots, { code: code.toUpperCase(), token });
+export const fillRoomWithBots = (code: string, token: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.fillWithBots, { code: code.toUpperCase(), token })
+  : request<RoomView>(`/rooms/${code.toUpperCase()}/bots/fill`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const setRoomPrivacy = (code: string, token: string, privacy: RoomPrivacy) => convexRealtimeEnabled
   ? getConvexClient().mutation(convexApi.rooms.setPrivacy, { code: code.toUpperCase(), token, privacy })
   : request<RoomView>(`/rooms/${code.toUpperCase()}/privacy`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ privacy }) });

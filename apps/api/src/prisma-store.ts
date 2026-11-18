@@ -150,6 +150,39 @@ export class PrismaRoomStore implements RoomStore {
     return this.view(room.id, 0, "player", requester.playerIndex ?? undefined);
   }
 
+  async fillRoomWithBots(roomCode: string, accessToken: string) {
+    const room = await this.authorize(roomCode, accessToken);
+    if (room.status !== "WAITING" || room.matchStarted) throw new Error("Bots can only be added while the room is waiting.");
+    const requester = room.participants[0];
+    if (!requester || requester.role !== "PLAYER" || requester.botControlled || requester.playerIndex === null) throw new Error("Only a human player can add bots.");
+    const players = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" }, select: { playerIndex: true } });
+    const occupied = new Set(players.map((player: any) => player.playerIndex));
+    const openSeats = Array.from({ length: room.maxPlayers }, (_, index) => index).filter((index) => !occupied.has(index));
+    if (!openSeats.length) return this.view(room.id, 0, "player", requester.playerIndex);
+    const timestamp = new Date();
+    const rows = openSeats.map((playerIndex) => ({
+      roomId: room.id,
+      displayName: `Bot ${playerIndex + 1}`,
+      role: "PLAYER" as const,
+      playerIndex,
+      ready: true,
+      botControlled: true,
+      connectedAt: null,
+      tokenHash: hash(token()),
+      sessionExpiresAt: sessionExpiresAt(),
+      createdAt: timestamp,
+    }));
+    await this.prismaClient.$transaction(async (tx: any) => {
+      const current = await tx.gameRoom.updateMany({
+        where: { id: room.id, status: "WAITING", matchStarted: false },
+        data: { lastActivityAt: timestamp },
+      });
+      if (current.count !== 1) throw new Error("Bots can only be added while the room is waiting.");
+      await tx.participant.createMany({ data: rows, skipDuplicates: true });
+    });
+    return this.view(room.id, 0, "player", requester.playerIndex);
+  }
+
   async setRoomPrivacy(roomCode: string, accessToken: string, privacy: RoomPrivacy) {
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
     const room = await this.authorize(roomCode, accessToken);

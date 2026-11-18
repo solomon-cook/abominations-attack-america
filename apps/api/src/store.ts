@@ -77,6 +77,7 @@ export interface RoomStore {
   listPublicRooms(): Promise<PublicRoomSummary[]>;
   joinRoom(code: string, displayName: string): Promise<SessionResponse>;
   addBot(code: string, token: string): Promise<RoomView>;
+  fillRoomWithBots(code: string, token: string): Promise<RoomView>;
   setRoomPrivacy(code: string, token: string, privacy: RoomPrivacy): Promise<RoomView>;
   takeOverWithBot(code: string, token: string): Promise<RoomView>;
   deleteRoom(code: string, token: string): Promise<void>;
@@ -179,6 +180,26 @@ export class MemoryRoomStore implements RoomStore {
     bot.ready = true;
     bot.botControlled = true;
     this.touch(room);
+    return this.view(room, 0, "player", requester.playerIndex);
+  }
+
+  async fillRoomWithBots(roomCode: string, accessToken: string) {
+    const room = this.authorize(roomCode, accessToken);
+    if (room.status !== "waiting" || room.matchStarted) throw new Error("Bots can only be added while the room is waiting.");
+    const requester = room.participants.find((candidate) => candidate.tokenHash === hash(accessToken));
+    if (!requester || requester.role !== "player" || requester.botControlled) throw new Error("Only a human player can add bots.");
+    const players = room.participants.filter((candidate) => candidate.role === "player");
+    const occupied = new Set(players.map((player) => player.playerIndex));
+    for (let playerIndex = 0; playerIndex < room.maxPlayers; playerIndex += 1) {
+      if (occupied.has(playerIndex)) continue;
+      const session = this.addParticipant(room, `Bot ${playerIndex + 1}`, "player", playerIndex);
+      const bot = room.participants.find((candidate) => candidate.id === session.participantId)!;
+      bot.connected = false;
+      bot.ready = true;
+      bot.botControlled = true;
+      occupied.add(playerIndex);
+    }
+    if (occupied.size > players.length) this.touch(room);
     return this.view(room, 0, "player", requester.playerIndex);
   }
 

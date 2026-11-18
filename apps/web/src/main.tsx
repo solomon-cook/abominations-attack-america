@@ -1213,7 +1213,7 @@ function App() {
     setPendingAction(true);
     try {
       let latestRoom = room;
-      if (latestRoom.participants.filter((candidate) => candidate.role === "player").length < latestRoom.maxPlayers && convexRealtimeEnabled) {
+      if (latestRoom.participants.filter((candidate) => candidate.role === "player").length < latestRoom.maxPlayers) {
         latestRoom = await fillRoomWithBots(latestRoom.code, session.token);
         updateRoomSnapshot(latestRoom);
       } else {
