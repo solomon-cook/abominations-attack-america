@@ -122,11 +122,11 @@ export class PrismaRoomStore implements RoomStore {
   }
 
   async addBot(roomCode: string, accessToken: string) {
-    const room = await this.authorize(roomCode, accessToken);
+    const room = await this.authorize(roomCode, accessToken, true);
     if (room.status !== "WAITING" || room.matchStarted) throw new Error("Bots can only be added while the room is waiting.");
-    const requester = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
+    const requester = room.participants.find((participant: any) => participant.tokenHash === hash(accessToken));
     if (!requester || requester.botControlled || requester.playerIndex === null) throw new Error("Only a human player can add a bot.");
-    const players = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" }, select: { playerIndex: true } });
+    const players = room.participants.filter((participant: any) => participant.role === "PLAYER");
     if (players.length >= room.maxPlayers) throw new Error("This room is full.");
     const playerIndex = Array.from({ length: room.maxPlayers }, (_, index) => index).find((index) => !players.some((player: any) => player.playerIndex === index));
     if (playerIndex === undefined) throw new Error("This room is full.");
@@ -151,11 +151,11 @@ export class PrismaRoomStore implements RoomStore {
   }
 
   async fillRoomWithBots(roomCode: string, accessToken: string) {
-    const room = await this.authorize(roomCode, accessToken);
+    const room = await this.authorize(roomCode, accessToken, true);
     if (room.status !== "WAITING" || room.matchStarted) throw new Error("Bots can only be added while the room is waiting.");
-    const requester = room.participants[0];
+    const requester = room.participants.find((participant: any) => participant.tokenHash === hash(accessToken));
     if (!requester || requester.role !== "PLAYER" || requester.botControlled || requester.playerIndex === null) throw new Error("Only a human player can add bots.");
-    const players = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" }, select: { playerIndex: true } });
+    const players = room.participants.filter((participant: any) => participant.role === "PLAYER");
     const occupied = new Set(players.map((player: any) => player.playerIndex));
     const openSeats = Array.from({ length: room.maxPlayers }, (_, index) => index).filter((index) => !occupied.has(index));
     if (!openSeats.length) return this.view(room.id, 0, "player", requester.playerIndex);
@@ -186,8 +186,8 @@ export class PrismaRoomStore implements RoomStore {
   async setRoomPrivacy(roomCode: string, accessToken: string, privacy: RoomPrivacy) {
     if (privacy !== "private" && privacy !== "public") throw new Error("Room privacy must be private or public.");
     const room = await this.authorize(roomCode, accessToken);
-    const creator = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER", playerIndex: 0 } });
-    if (!creator) throw new Error("Only the room creator can change privacy.");
+    const creator = room.participants[0];
+    if (!creator || creator.role !== "PLAYER" || creator.playerIndex !== 0) throw new Error("Only the room creator can change privacy.");
     if (room.status !== "WAITING" || room.matchStarted) throw new Error("Room privacy can only be changed before the match starts.");
     await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { privacy: privacy.toUpperCase() as "PRIVATE" | "PUBLIC", lastActivityAt: new Date() } });
     return this.view(room.id, 0, "player", creator.playerIndex ?? undefined);
@@ -195,7 +195,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async takeOverWithBot(roomCode: string, accessToken: string) {
     const room = await this.authorize(roomCode, accessToken);
-    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
+    const participant = room.participants[0];
     if (!participant || participant.playerIndex === null) throw new Error("Only a player can hand their seat to a bot.");
     if (!room.matchStarted || room.status !== "ACTIVE") throw new Error("Bot takeover is only available during an active match.");
     const changed = await this.prismaClient.participant.updateMany({ where: { id: participant.id, tokenHash: hash(accessToken), botControlled: false }, data: { connectedAt: null, disconnectedAt: new Date(), botControlled: true, botAssisted: true, connectionId: null } });
@@ -205,16 +205,16 @@ export class PrismaRoomStore implements RoomStore {
 
   async deleteRoom(roomCode: string, accessToken: string) {
     const room = await this.authorize(roomCode, accessToken);
-    const creator = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER", playerIndex: 0 } });
-    if (!creator) throw new Error("Only the room creator can delete this room.");
+    const creator = room.participants[0];
+    if (!creator || creator.role !== "PLAYER" || creator.playerIndex !== 0) throw new Error("Only the room creator can delete this room.");
     await this.prismaClient.gameRoom.delete({ where: { id: room.id } });
   }
 
   async startMatch(roomCode: string, accessToken: string) {
-    const room = await this.authorize(roomCode, accessToken);
-    const starter = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
-    if (!starter || starter.playerIndex === null || !starter.connectedAt) throw new Error("Only a connected player can start the match.");
-    const players = await this.prismaClient.participant.findMany({ where: { roomId: room.id, role: "PLAYER" }, select: { id: true, connectedAt: true, botControlled: true } });
+    const room = await this.authorize(roomCode, accessToken, true);
+    const starter = room.participants.find((participant: any) => participant.tokenHash === hash(accessToken));
+    if (!starter || starter.role !== "PLAYER" || starter.playerIndex === null || !starter.connectedAt) throw new Error("Only a connected player can start the match.");
+    const players = room.participants.filter((participant: any) => participant.role === "PLAYER");
     if (players.length !== room.maxPlayers || players.some((player: any) => !player.connectedAt && !player.botControlled)) throw new Error("Wait until every player has joined and is connected.");
     const started = await this.prismaClient.gameRoom.updateMany({ where: { id: room.id, status: "WAITING", matchStarted: false }, data: { matchStarted: true, lastActivityAt: new Date() } });
     if (started.count !== 1) throw new Error("This room has already started.");
@@ -223,8 +223,8 @@ export class PrismaRoomStore implements RoomStore {
 
   async createViewerInvite(roomCode: string, accessToken: string) {
     const room = await this.authorize(roomCode, accessToken);
-    const owner = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
-    if (!owner) throw new Error("Only players can create a TV viewing link.");
+    const owner = room.participants[0];
+    if (!owner || owner.role !== "PLAYER") throw new Error("Only players can create a TV viewing link.");
     if (!room.matchStarted) throw new Error("Start the match before creating a TV viewing link.");
     const viewerToken = token();
     const expiresAt = new Date(Date.now() + ROOM_VIEWER_INVITE_TTL_MS);
@@ -244,7 +244,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async disconnect(roomCode: string, accessToken: string, connectionId = "legacy") {
     const room = await this.authorize(roomCode, accessToken);
-    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
+    const participant = room.participants[0];
     if (!participant) throw new Error("Invalid room token.");
     if (participant.connectionId && participant.connectionId !== connectionId) return this.view(room.id, 0, participant.role === "PLAYER" ? "player" : "spectator", participant.playerIndex ?? undefined);
     await this.prismaClient.participant.updateMany({ where: { id: participant.id, tokenHash: hash(accessToken), ...(participant.connectionId ? { connectionId } : {}) }, data: { connectedAt: null, disconnectedAt: new Date() } });
@@ -255,7 +255,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async reconnect(roomCode: string, accessToken: string, connectionId = "legacy") {
     const room = await this.authorize(roomCode, accessToken);
-    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
+    const participant = room.participants[0];
     if (!participant) throw new Error("Invalid room token.");
     const changed = await this.prismaClient.participant.updateMany({ where: { id: participant.id, tokenHash: hash(accessToken) }, data: { connectedAt: new Date(), disconnectedAt: null, botControlled: false, connectionId } });
     if (changed.count !== 1) throw new Error("This room session was replaced. Sign in again to resume.");
@@ -266,7 +266,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async rotateSession(roomCode: string, accessToken: string): Promise<SessionResponse> {
     const room = await this.authorize(roomCode, accessToken);
-    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
+    const participant = room.participants[0];
     if (!participant) throw new Error("Invalid room token.");
     const replacement = token();
     await this.prismaClient.$transaction(async (tx: any) => {
@@ -281,8 +281,8 @@ export class PrismaRoomStore implements RoomStore {
     if (!user.emailVerifiedAt) throw new Error("Verify your email before linking a game seat.");
     const room = await this.authorize(roomCode, accessToken);
     if (room.status === "COMPLETED" || room.status === "EXPIRED") throw new Error("Only an active match seat can be linked to an account.");
-    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken), role: "PLAYER" } });
-    if (!participant) throw new Error("Only a player seat can be linked to an account.");
+    const participant = room.participants[0];
+    if (!participant || participant.role !== "PLAYER") throw new Error("Only a player seat can be linked to an account.");
     if (participant.userId && participant.userId !== user.id) throw new Error("This seat is already linked to another account.");
     const replacement = token();
     await this.prismaClient.$transaction(async (tx: any) => {
@@ -308,7 +308,7 @@ export class PrismaRoomStore implements RoomStore {
     const room = await this.authorize(roomCode, accessToken);
     if (!room.matchStarted) throw new Error("Start the match before players can ready up.");
     if (room.status !== "WAITING") throw new Error("Readiness can only change while a room is waiting.");
-    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
+    const participant = room.participants[0];
     if (!participant || participant.role !== "PLAYER") throw new Error("Only players can change readiness.");
     if (!participant.connectedAt) throw new Error("Reconnect before changing readiness.");
     const updated = await this.prismaClient.participant.updateMany({ where: { id: participant.id, tokenHash: hash(accessToken), botControlled: false, connectedAt: { not: null } }, data: { ready } });
@@ -737,11 +737,15 @@ export class PrismaRoomStore implements RoomStore {
     }
   }
 
-  private async authorize(roomCode: string, accessToken: string) {
+  private async authorize(roomCode: string, accessToken: string, includePlayers = false) {
     const room = await this.prismaClient.gameRoom.findUnique({
       where: { code: roomCode.toUpperCase() },
       relationLoadStrategy: "join",
-      include: { participants: { where: { tokenHash: hash(accessToken) }, take: 1, select: { id: true, role: true, tokenHash: true, sessionExpiresAt: true, playerIndex: true, botControlled: true, disconnectedAt: true } } },
+      include: { participants: {
+        where: includePlayers ? { OR: [{ tokenHash: hash(accessToken) }, { role: "PLAYER" }] } : { tokenHash: hash(accessToken) },
+        ...(!includePlayers ? { take: 1 } : {}),
+        select: { id: true, role: true, tokenHash: true, sessionExpiresAt: true, playerIndex: true, botControlled: true, disconnectedAt: true, connectionId: true, connectedAt: true, userId: true },
+      } },
     });
     if (!room) throw new Error("Room not found.");
     const lastActivityAt = room.lastActivityAt?.getTime?.() ?? Date.now();
@@ -752,7 +756,7 @@ export class PrismaRoomStore implements RoomStore {
         throw new Error("This room has expired.");
       }
     }
-    const participant = room.participants[0];
+    const participant = room.participants.find((candidate: any) => candidate.tokenHash === hash(accessToken));
     if (!participant) throw new Error("Invalid room token.");
     if (isSessionExpired(participant.sessionExpiresAt)) throw new Error("Session token has expired.");
     return room;
