@@ -24,6 +24,8 @@ Each authenticated Prisma room request now loads the room and its matching parti
 
 The WebSocket fan-out projection no longer reads up to 256 persisted event rows on every room update. The browser does not consume `RoomView.events`; it receives current state and its in-state game log, while replay history is loaded through the replay feature. This removes a high-churn read from each realtime broadcast without delaying or polling for opponents' decisions.
 
+For a human-only Prisma WebSocket move, the authenticated command read now includes the room's participant projections. After the durable room and replay writes, the server builds and pushes those views from the already loaded data, avoiding a second full room projection read. Bot or disconnected-seat follow-up still reads the resulting room state after automated actions.
+
 ## Production baseline
 
 On 2026-11-18, Convex's CLI reported 11,198 function calls and 3.044 GB of database I/O month-to-date for production deployment `careful-ibis-752`; it reported no usage limits configured. Convex's published Free allowance is 1 million function calls and 1 GB of database I/O per month. Function-call volume is well below that allowance, while this deployment's database I/O is already over it. This deployment-only reading does not include any usage from other deployments on the team. See [Convex limits](https://docs.convex.dev/production/state/limits).

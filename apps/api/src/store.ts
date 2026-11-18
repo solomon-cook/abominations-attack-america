@@ -10,6 +10,7 @@ export type { ReplayCommandRecord } from "./replay.js";
 type StoredParticipant = RoomParticipantView & { tokenHash: string; sessionExpiresAt: number; connectionId?: string; disconnectedAt?: number };
 type StoredRoom = { id: string; code: string; status: RoomStatus; matchStarted: boolean; privacy: RoomPrivacy; viewerInviteTokenHash?: string; viewerInviteExpiresAt?: number; maxPlayers: number; version: number; state: GameState; initialReplayState: GameState; replayCommands: Array<{ version: number; eventType: string; record: ReplayCommandRecord }>; participants: StoredParticipant[]; events: RoomEvent[]; playerStats: MatchCounters[]; lastActivityAt: number };
 export interface RoomSocketPrincipal { roomCode: string; participantId: string; sessionHash: string }
+export type RoomSocketCommandResult = Pick<RoomView, "version" | "status"> & { roomViews?: Map<string, RoomView> };
 export const ROOM_IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 export const ROOM_VIEWER_INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 export const ROOM_BOT_TAKEOVER_DELAY_MS = 4 * 60_000;
@@ -96,7 +97,7 @@ export interface RoomStore {
   createSocketTicket(code: string, token: string): Promise<string>;
   consumeSocketTicket(code: string, ticket: string): Promise<RoomSocketPrincipal>;
   getRoomForParticipant(code: string, participantId: string, afterVersion?: number): Promise<RoomView>;
-  submitActionForParticipant(code: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<Pick<RoomView, "version" | "status">>;
+  submitActionForParticipant(code: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomSocketCommandResult>;
   connectParticipant(code: string, participantId: string, connectionId: string, sessionHash: string): Promise<boolean>;
   disconnectParticipant(code: string, participantId: string, connectionId?: string): Promise<"player" | "spectator" | false>;
   processBotTakeovers(now?: number, roomCode?: string): Promise<string[]>;

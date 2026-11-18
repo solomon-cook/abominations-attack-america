@@ -2,7 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupActionWithRecord, createMvpRoomGame, createRoomGame, projectState, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicReplayExport, PublicReplayPage, PublicRoomSummary, ReplayFrame, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 import { completedMatchRows, emptyMatchCounters, updateMatchCounters } from "./player-stats.js";
-import { MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, MAX_RETAINED_ROOM_EVENTS, ROOM_BOT_TAKEOVER_DELAY_MS, ROOM_IDLE_TIMEOUT_MS, ROOM_VIEWER_INVITE_TTL_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketPrincipal, type RoomStore } from "./store.js";
+import { MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, MAX_RETAINED_ROOM_EVENTS, ROOM_BOT_TAKEOVER_DELAY_MS, ROOM_IDLE_TIMEOUT_MS, ROOM_VIEWER_INVITE_TTL_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketCommandResult, type RoomSocketPrincipal, type RoomStore } from "./store.js";
 import { cacheReplayFrames, getCachedReplayFrames, MAX_REPLAY_EXPORT_BYTES, reconstructReplay, type ReplayCommandRecord, type ReplaySourceEvent } from "./replay.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
@@ -540,13 +540,13 @@ export class PrismaRoomStore implements RoomStore {
     return views;
   }
 
-  async submitActionForParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<Pick<RoomView, "version" | "status">> {
+  async submitActionForParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomSocketCommandResult> {
     const room = await this.prismaClient.gameRoom.findUnique({
       where: { code: roomCode.toUpperCase() },
       relationLoadStrategy: "join",
       include: {
         participants: {
-          where: { role: "PLAYER" },
+          include: { user: { select: { username: true } } },
         },
         events: {
           where: { actionId: envelope.actionId },
@@ -563,13 +563,14 @@ export class PrismaRoomStore implements RoomStore {
     const duplicate = room.events[0];
     if (duplicate) {
       if (duplicate.actorId !== actor.id) throw new Error("This action ID was already used by another player.");
-      return { version: room.version, status: room.status.toLowerCase() as RoomView["status"] };
+      return { version: room.version, status: room.status.toLowerCase() as RoomView["status"], roomViews: await this.roomViewsFromLoadedRoom(room) };
     }
     if (room.status !== "ACTIVE") throw new Error("This room is not ready for gameplay.");
     if (actor.playerIndex !== this.requiredPlayer(room.state as unknown as GameState, envelope)) throw new Error("It is not your turn.");
     const status = await this.commitCommand(room, actor, envelope, "human", { tokenHash: sessionHash, connectionId });
-    if (room.participants.some((participant: any) => participant.botControlled || participant.connectedAt === null)) await this.processBotTakeovers(Date.now(), roomCode);
-    return { version: room.version + 1, status };
+    if (room.participants.some((participant: any) => participant.role === "PLAYER" && (participant.botControlled || participant.connectedAt === null))) await this.processBotTakeovers(Date.now(), roomCode);
+    else return { version: room.version, status, roomViews: await this.roomViewsFromLoadedRoom(room) };
+    return { version: room.version, status };
   }
 
   async disconnectParticipant(roomCode: string, participantId: string, connectionId = "legacy"): Promise<"player" | "spectator" | false> {
@@ -663,7 +664,26 @@ export class PrismaRoomStore implements RoomStore {
         await tx.gameResult.upsert({ where: { roomId: room.id }, update: { winnerId: winnerParticipant?.id ?? null, winnerName, summary }, create: { roomId: room.id, winnerId: winnerParticipant?.id ?? null, winnerName, summary } });
       }
     });
+    room.state = result.state;
+    room.version = version;
+    room.lastActivityAt = new Date();
+    if (terminal) room.status = "COMPLETED";
     return terminal ? "completed" : room.status.toLowerCase() as RoomView["status"];
+  }
+
+  private async roomViewsFromLoadedRoom(room: any): Promise<Map<string, RoomView>> {
+    const views = new Map<string, RoomView>();
+    room.events = undefined;
+    for (const participant of room.participants) {
+      views.set(participant.id, await this.view(
+        room.id,
+        0,
+        participant.role === "PLAYER" ? "player" : "spectator",
+        participant.playerIndex ?? undefined,
+        room,
+      ));
+    }
+    return views;
   }
 
   private async runBotActions(roomCode: string): Promise<void> {

@@ -168,14 +168,14 @@ const rejectRate = (response: ServerResponse) => {
   response.writeHead(429, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "retry-after": "60", "x-content-type-options": "nosniff" });
   response.end(JSON.stringify({ error: "Too many requests. Try again shortly." }));
 };
-const broadcastRoomNow = async (roomCode: string) => {
+const broadcastRoomNow = async (roomCode: string, suppliedViews?: Map<string, import("@abominations/shared").RoomView>) => {
   const group = sockets.get(roomCode);
   if (!group) return new Map<string, import("@abominations/shared").RoomView>();
   const connected = [...group.entries()].filter(([socket]) => socket.readyState === socket.OPEN);
   if (!connected.length) return new Map<string, import("@abominations/shared").RoomView>();
-  let roomViews: Map<string, import("@abominations/shared").RoomView> | undefined;
+  let roomViews: Map<string, import("@abominations/shared").RoomView> | undefined = suppliedViews;
   let sharedReadError: unknown;
-  if (store instanceof PrismaRoomStore) {
+  if (store instanceof PrismaRoomStore && !roomViews) {
     try {
       roomViews = await store.getRoomViewsForParticipants(roomCode, connected.map(([, participantId]) => participantId));
     } catch (error) {
@@ -204,10 +204,10 @@ const broadcastRoomNow = async (roomCode: string) => {
   return roomViews;
 };
 const inFlightRoomBroadcasts = new Map<string, Promise<Map<string, import("@abominations/shared").RoomView>>>();
-const broadcast = (roomCode: string) => {
+const broadcast = (roomCode: string, suppliedViews?: Map<string, import("@abominations/shared").RoomView>) => {
   const existing = inFlightRoomBroadcasts.get(roomCode);
   if (existing) return existing;
-  const current = broadcastRoomNow(roomCode).finally(() => {
+  const current = broadcastRoomNow(roomCode, suppliedViews).finally(() => {
     if (inFlightRoomBroadcasts.get(roomCode) === current) inFlightRoomBroadcasts.delete(roomCode);
   });
   inFlightRoomBroadcasts.set(roomCode, current);
@@ -522,7 +522,7 @@ wsServer.on("connection", async (socket, request) => {
           if (updatedRoom.status === "completed") metrics.roomCompleted();
           if (updatedRoom.status === "abandoned") metrics.roomAbandoned();
           operationalLog({ event: "command.accepted", transport: "websocket", roomCode: code, actionId: envelope.actionId, actorId: envelope.actorId, commandType: envelope.command.type, revision: updatedRoom.version });
-          const roomViews = await broadcast(code);
+          const roomViews = await broadcast(code, updatedRoom.roomViews);
           const room = roomViews.get(principal.participantId) ?? await store.getRoomForParticipant(code, principal.participantId);
           send({ type: "command.accepted", actionId: envelope.actionId, room });
         })
