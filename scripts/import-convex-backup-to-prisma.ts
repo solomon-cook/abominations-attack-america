@@ -137,11 +137,14 @@ function validateRows(rows: Record<string, Row[]>) {
   for (const row of rows.rooms) {
     if (!row.state || typeof row.state !== "object" || Array.isArray(row.state)) throw new Error(`Invalid game state for room ${row.id} in Convex backup.`);
     if (!Number.isInteger(row.maxPlayers) || !Number.isInteger(row.version)) throw new Error(`Invalid room counters for ${row.id} in Convex backup.`);
+    if (!["WAITING", "ACTIVE", "COMPLETED", "ABANDONED", "EXPIRED"].includes(row.status)) throw new Error(`Room ${row.id} has unsupported status ${row.status}; take a fresh backup after pending cleanup finishes.`);
+    if (row.privacy !== "PRIVATE" && row.privacy !== "PUBLIC") throw new Error(`Invalid privacy for room ${row.id} in Convex backup.`);
   }
   for (const row of rows.participants) {
     if (row.playerIndex != null && !Number.isInteger(row.playerIndex)) throw new Error(`Invalid player seat for participant ${row.id} in Convex backup.`);
     if (row.role !== "PLAYER" && row.role !== "SPECTATOR") throw new Error(`Invalid role for participant ${row.id} in Convex backup.`);
   }
+  for (const row of rows.events) if (row.controlSource !== "human" && row.controlSource !== "bot") throw new Error(`Invalid event control source for ${row.id} in Convex backup.`);
   for (const row of rows.participants) {
     requireRef(rooms.has(row.roomId), `participant ${row.id} room`);
     if (row.userId != null) requireRef(users.has(row.userId), `participant ${row.id} account`);
