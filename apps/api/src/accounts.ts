@@ -214,7 +214,10 @@ export class AccountService {
   async getStats(userId: string, knownUsername?: string): Promise<PlayerStats> {
     const user = knownUsername ? { username: knownUsername } : await this.prisma.userAccount.findUnique({ where: { id: userId }, select: { username: true } });
     if (!user) throw new Error("Account not found.");
-    const rows = await this.prisma.playerMatchStat.findMany({ where: { userId }, orderBy: { completedAt: "desc" } });
+    const rows = await this.prisma.playerMatchStat.findMany({
+      where: { userId },
+      select: { outcome: true, stompedTiles: true, damageTaken: true, healthGained: true, luckTotal: true, luckRolls: true, monsterName: true, branch: true },
+    });
     return sumPlayerStats(rows, user.username);
   }
 
@@ -245,7 +248,10 @@ export class AccountService {
     const username = usernameInput.trim().toLowerCase();
     const user = await this.prisma.userAccount.findUnique({ where: { username }, select: { id: true, username: true, publicStatsEnabled: true } });
     if (!user || !user.publicStatsEnabled) throw new Error("Player not found.");
-    const rows = await this.prisma.playerMatchStat.findMany({ where: { userId: user.id }, orderBy: { completedAt: "desc" } });
+    const rows = await this.prisma.playerMatchStat.findMany({
+      where: { userId: user.id },
+      select: { outcome: true, stompedTiles: true, damageTaken: true, healthGained: true, luckTotal: true, luckRolls: true, monsterName: true, branch: true, botAssisted: true },
+    });
     return { ...sumPlayerStats(rows, user.username), botAssistedMatches: rows.filter((row: any) => row.botAssisted).length };
   }
 
