@@ -83,7 +83,10 @@ export function reconstructReplay(
 ): "ok" | "history-incomplete" | "history-too-large" | "unsupported-content" {
   if (finalVersion > MAX_REPLAY_VERSIONS) return "history-too-large";
   if (!Number.isInteger(finalVersion) || finalVersion < 0 || events.length !== finalVersion) return "history-incomplete";
-  if (initialState.schemaVersion !== 2) return "unsupported-content";
+  // Stored snapshots can predate the current engine type, while new matches
+  // start at schema 3. Command application migrates supported legacy states.
+  const initialSchemaVersion = (initialState as { schemaVersion: number }).schemaVersion;
+  if (![1, 2, 3].includes(initialSchemaVersion)) return "unsupported-content";
 
   let state = structuredClone(initialState);
   visit({ version: 0, eventType: "match.created", state: publicReplayState(state) });

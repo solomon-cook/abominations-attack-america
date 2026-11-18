@@ -53,6 +53,8 @@ const categories: { value: LeaderboardCategory; label: string }[] = [
 ];
 
 export function AccountPanel({ account, session, onAccountChange, onSessionChange, onOpenChange, defaultOpen = false, compact = false, deferAccountRequests = false }: Props) {
+  const [panelOpen, setPanelOpen] = useState(defaultOpen);
+  const [accountResolved, setAccountResolved] = useState(false);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loginName, setLoginName] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
@@ -75,22 +77,24 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
   const [boardCategory, setBoardCategory] = useState<LeaderboardCategory>("wins");
   const [publicProfile, setPublicProfile] = useState<(PlayerStats & { botAssistedMatches: number }) | null>(null);
   const resetToken = new URLSearchParams(window.location.search).get("reset-password") ?? "";
+  const requestsEnabled = panelOpen && !(deferAccountRequests && !defaultOpen);
 
   useEffect(() => {
-    if (deferAccountRequests && !defaultOpen) return;
+    if (!requestsEnabled) return;
     const syncFriendInviteToken = () => setFriendInviteToken(new URLSearchParams(window.location.hash.slice(1)).get("friend-invite") ?? "");
     window.addEventListener("hashchange", syncFriendInviteToken);
     return () => window.removeEventListener("hashchange", syncFriendInviteToken);
-  }, [deferAccountRequests, defaultOpen]);
+  }, [requestsEnabled]);
 
   useEffect(() => {
-    if (deferAccountRequests && !defaultOpen) return;
+    if (!requestsEnabled || account || accountResolved) return;
     let live = true;
     const verifyToken = new URLSearchParams(window.location.search).get("verify-email");
     if (verifyToken) {
       void verifyAccountEmail(verifyToken).then(async (result) => {
         if (!live) return;
         onAccountChange(result.account);
+        setAccountResolved(true);
         setMessage(result.message);
         const remainingUrl = new URL(window.location.href);
         remainingUrl.searchParams.delete("verify-email");
@@ -101,31 +105,31 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
         }
       }).catch((caught: unknown) => { if (live) setError(caught instanceof Error ? caught.message : "Email verification failed."); });
     } else {
-      void getAccount().then(({ account: current }) => { if (live) onAccountChange(current); }).catch(() => { if (live) onAccountChange(null); });
+      void getAccount().then(({ account: current }) => { if (live) { onAccountChange(current); setAccountResolved(true); } }).catch(() => { if (live) { onAccountChange(null); setAccountResolved(true); } });
     }
     return () => { live = false; };
-  }, [deferAccountRequests, defaultOpen]);
+  }, [account, accountResolved, onAccountChange, requestsEnabled]);
 
   useEffect(() => {
-    if (deferAccountRequests && !defaultOpen) return;
+    if (!requestsEnabled) return;
     if (!account) { setGames([]); setStats(null); setSocial(null); setPublicStatsEnabled(null); return; }
     void Promise.all([getAccountGames(), getAccountStats(), getSocialSummary(), getAccountPrivacySettings()]).then(([matches, currentStats, currentSocial, privacy]) => { setGames(matches); setStats(currentStats); setSocial(currentSocial); setPublicStatsEnabled(privacy.publicStatsEnabled); }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load account data."));
-  }, [account?.id, deferAccountRequests, defaultOpen]);
+  }, [account?.id, requestsEnabled]);
 
   useEffect(() => {
-    if (deferAccountRequests && !defaultOpen) return;
+    if (!requestsEnabled) return;
     if (!account || !social?.presenceEnabled) return;
     const heartbeat = () => { if (document.visibilityState === "visible") void refreshPresence().catch(() => undefined); };
     heartbeat();
-    const timer = window.setInterval(heartbeat, 30_000);
+    const timer = window.setInterval(heartbeat, 300_000);
     document.addEventListener("visibilitychange", heartbeat);
     return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", heartbeat); };
-  }, [account?.id, social?.presenceEnabled, deferAccountRequests, defaultOpen]);
+  }, [account?.id, social?.presenceEnabled, requestsEnabled]);
 
   useEffect(() => {
-    if (deferAccountRequests && !defaultOpen) return;
+    if (!requestsEnabled || compact) return;
     void getLeaderboard(boardCategory).then(setBoard).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load leaderboard."));
-  }, [boardCategory, deferAccountRequests, defaultOpen]);
+  }, [boardCategory, compact, requestsEnabled]);
 
   const run = async (action: () => Promise<void>) => {
     setError(""); setMessage(""); setActionLink("");
@@ -152,7 +156,11 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
   };
 
   return (
-    <details className={`account-panel${compact ? " account-panel-compact" : ""}`} open={defaultOpen || undefined} onToggle={(event) => onOpenChange?.((event.currentTarget as HTMLDetailsElement).open)}>
+    <details className={`account-panel${compact ? " account-panel-compact" : ""}`} open={panelOpen} onToggle={(event) => {
+      const open = (event.currentTarget as HTMLDetailsElement).open;
+      setPanelOpen(open);
+      onOpenChange?.(open);
+    }}>
       <summary><span>PLAYER ACCOUNT</span>{account && <GeneralAvatar name={account.username} size={30}/>}<strong>{account ? `@${account.username}` : "Sign in · save matches and stats"}</strong></summary>
       <div className="account-panel-content">
         {error && <p className="error" role="alert">{error}</p>}

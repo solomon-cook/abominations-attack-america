@@ -340,11 +340,6 @@ function App() {
       && giantDeploymentDestinations.length > 0)
     : [], [activeGame, giantDeploymentDestinations]);
   const deploymentPiece = militaryChoices.find((choice) => choice.id === deploymentPieceId);
-  const deploymentDestinations = new Set([
-    ...(deploymentPiece?.destinations ?? []),
-    ...(activeGame.pendingDecision?.type === "giant-placement" && canAct ? activeGame.pendingDecision.destinations : []),
-    ...(deploymentCardId ? giantDeploymentDestinations : []),
-  ]);
   const openMilitarySheet = (sheet?: string) => {
     const requestedSheet = typeof sheet === "string" ? sheet : undefined;
     setGamePanelOpen(false);
@@ -504,6 +499,11 @@ function App() {
     (!online ||
       (room?.status === "active" && participant?.role === "player" &&
         participant.playerIndex === decisionPlayer));
+  const deploymentDestinations = new Set([
+    ...(deploymentPiece?.destinations ?? []),
+    ...(activeGame.pendingDecision?.type === "giant-placement" && canAct ? activeGame.pendingDecision.destinations : []),
+    ...(deploymentCardId ? giantDeploymentDestinations : []),
+  ]);
   const routineStompPrompt = canAct ? pendingRoutineCityStomp(activeGame, activeBoard) : undefined;
   useEffect(() => {
     if (!soloBotTurn) setFollowBotTurns(false);
@@ -765,29 +765,8 @@ function App() {
       }).catch((caught) => setError(caught instanceof Error ? caught.message : "Could not open the TV viewing link."));
       return;
     }
-    const saved = safeStorageGet("abominations-session");
-    if (!saved) return;
-    try {
-      const stored = JSON.parse(saved) as {
-        token: string;
-        participantId: string;
-        room?: { code: string };
-      };
-      if (!stored.token || !stored.room?.code) return;
-      void readRoom(stored.room.code, stored.token)
-        .then((restoredRoom) => {
-          setSession({
-            token: stored.token,
-            participantId: stored.participantId,
-            room: restoredRoom,
-          });
-          updateRoomSnapshot(restoredRoom);
-          setRoomCode(restoredRoom.code);
-        })
-        .catch(() => localStorage.removeItem("abominations-session"));
-    } catch {
-      localStorage.removeItem("abominations-session");
-    }
+    // Saved multiplayer rooms resume only after the player chooses Resume.
+    // Starting a local game must not query Convex in the background.
   }, []);
 
   useEffect(() => {
