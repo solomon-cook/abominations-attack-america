@@ -6,7 +6,8 @@ import { resolveApiBaseUrl } from "./api-origin";
 
 const convexUrl = import.meta.env.VITE_CONVEX_URL || __APP_CONVEX_URL__;
 const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL || __APP_CONVEX_SITE_URL__;
-export const convexRealtimeEnabled = Boolean(convexUrl);
+const gameBackend = import.meta.env.VITE_GAME_BACKEND;
+export const convexRealtimeEnabled = gameBackend === "prisma" ? false : Boolean(convexUrl);
 export const websocketTransportEnabled = !convexRealtimeEnabled
   && (!import.meta.env.DEV || Boolean(import.meta.env.VITE_API_URL))
   && (import.meta.env.VITE_ENABLE_WEBSOCKETS === "true"
