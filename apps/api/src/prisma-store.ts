@@ -293,7 +293,7 @@ export class PrismaRoomStore implements RoomStore {
     const room = await this.authorize(roomCode, accessToken);
     if (!room.matchStarted) throw new Error("This match has not been started yet.");
     if (room.version !== expectedRevision) throw new Error(`Expected revision ${expectedRevision}, current revision is ${room.version}.`);
-    const actor = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
+    const actor = room.participants[0];
     if (!actor || actor.role !== "PLAYER" || actor.playerIndex === null) throw new Error("Only seated players can complete setup.");
     const playerIndex = actor.playerIndex;
     if (actor.botControlled) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
@@ -432,7 +432,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async submitAction(roomCode: string, accessToken: string, envelope: GameCommandEnvelope) {
     const room = await this.authorize(roomCode, accessToken);
-    const actor = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
+    const actor = room.participants[0];
     if (!actor || actor.role !== "PLAYER") throw new Error("Spectators cannot submit game actions.");
     if (actor.botControlled) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
     if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
@@ -460,7 +460,7 @@ export class PrismaRoomStore implements RoomStore {
 
   async createSocketTicket(roomCode: string, accessToken: string): Promise<string> {
     const room = await this.authorize(roomCode, accessToken);
-    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
+    const participant = room.participants[0];
     if (!participant) throw new Error("Invalid room token.");
     const value = token();
     await this.prismaClient.webSocketTicket.create({ data: { roomId: room.id, participantId: participant.id, participantTokenHash: participant.tokenHash, tokenHash: hash(value), expiresAt: new Date(Date.now() + 30_000) } });
@@ -489,7 +489,6 @@ export class PrismaRoomStore implements RoomStore {
       where: { code: roomCode.toUpperCase() },
       include: {
         participants: { include: { user: { select: { username: true } } } },
-        events: { orderBy: { version: "desc" }, take: MAX_RETAINED_ROOM_EVENTS },
       },
     });
     if (!room) throw new Error("Room not found.");
@@ -711,7 +710,7 @@ export class PrismaRoomStore implements RoomStore {
     const room = await this.prismaClient.gameRoom.findUnique({
       where: { code: roomCode.toUpperCase() },
       relationLoadStrategy: "join",
-      include: { participants: { where: { tokenHash: hash(accessToken) }, take: 1 } },
+      include: { participants: { where: { tokenHash: hash(accessToken) }, take: 1, select: { id: true, role: true, tokenHash: true, sessionExpiresAt: true, playerIndex: true, botControlled: true, disconnectedAt: true } } },
     });
     if (!room) throw new Error("Room not found.");
     const lastActivityAt = room.lastActivityAt?.getTime?.() ?? Date.now();
@@ -774,7 +773,7 @@ export class PrismaRoomStore implements RoomStore {
     const room = loadedRoom ?? await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, include: { participants: { include: { user: { select: { username: true } } } }, events: { orderBy: { version: "desc" }, take: MAX_RETAINED_ROOM_EVENTS } } });
     if (!room) throw new Error("Room not found.");
     const newestEvents = room.events ?? [];
-    this.inspectEventHistory(room, newestEvents);
+    if (room.events) this.inspectEventHistory(room, newestEvents);
     // Read the newest bounded suffix, then restore chronological order and
     // apply the caller's cursor so the snapshot can also be checked for gaps.
     const events = newestEvents.map((event: any): RoomEvent => ({ id: event.id, roomId: event.roomId, version: event.version, actorId: event.actorId, type: event.type, controlSource: event.controlSource === "bot" ? "bot" : "human", payload: event.payload as Record<string, unknown>, createdAt: event.createdAt.toISOString() })).reverse().filter((event: RoomEvent) => event.version > afterVersion);
