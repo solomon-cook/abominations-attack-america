@@ -835,6 +835,8 @@ function App() {
     let commandChannel: RoomCommandChannel | undefined;
     let polling: ReturnType<typeof setInterval> | undefined;
     let heartbeat: ReturnType<typeof setInterval> | undefined;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    let reconnectDelayMs = 1_000;
     let socketOwnsPresenceDisconnect = false;
     let disconnected = false;
     let needsReconnect = true;
@@ -886,43 +888,68 @@ function App() {
       polling = setInterval(pollRoom, Number(import.meta.env.VITE_ROOM_POLL_INTERVAL_MS ?? 5000));
       pollRoom();
     };
+    const scheduleSocketReconnect = () => {
+      if (cancelled || reconnectTimer || roomStatusRef.current === "completed") return;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = undefined;
+        connectSocket();
+      }, reconnectDelayMs);
+      reconnectDelayMs = Math.min(reconnectDelayMs * 2, 30_000);
+    };
+    const handleSocketOffline = (socketWillMarkDisconnected: boolean) => {
+      socketOwnsPresenceDisconnect = false;
+      markOffline(socketWillMarkDisconnected);
+      startPolling();
+      scheduleSocketReconnect();
+    };
+    const connectSocket = () => {
+      if (cancelled || roomStatusRef.current === "completed") return;
+      setConnectionState("reconnecting");
+      void createWebSocketTicket(room.code, session.token).then(({ ticket }) => {
+        if (cancelled) return;
+        const nextSocket = new WebSocket(websocketUrl(room.code, ticket));
+        socket = nextSocket;
+        const nextCommandChannel = new RoomCommandChannel(nextSocket);
+        commandChannel = nextCommandChannel;
+        commandChannelRef.current = nextCommandChannel;
+        nextSocket.onopen = () => {
+          if (cancelled || socket !== nextSocket) return;
+          reconnectDelayMs = 1_000;
+          socketOwnsPresenceDisconnect = true;
+          disconnected = false;
+          needsReconnect = false;
+          stopHeartbeat();
+          setConnectionState("online");
+          if (polling) { clearInterval(polling); polling = undefined; }
+        };
+        nextSocket.onmessage = (event) => {
+          if (cancelled || socket !== nextSocket) return;
+          try {
+            const message = JSON.parse(event.data) as { type?: string; room?: RoomView };
+            if (message.type === "room.updated" && message.room) {
+              updateRoomSnapshot(message.room);
+              setConnectionState("online");
+            }
+          } catch {
+            setConnectionState("stale");
+          }
+        };
+        nextSocket.onerror = () => nextSocket.close();
+        nextSocket.onclose = () => {
+          if (socket !== nextSocket) return;
+          handleSocketOffline(socketOwnsPresenceDisconnect);
+        };
+      }).catch(() => {
+        if (cancelled) return;
+        handleSocketOffline(false);
+      });
+    };
     if (!websocketTransportEnabled) {
       startPolling();
-    } else void createWebSocketTicket(room.code, session.token).then(({ ticket }) => {
-      if (cancelled) return;
-      socket = new WebSocket(websocketUrl(room.code, ticket));
-      commandChannel = new RoomCommandChannel(socket);
-      commandChannelRef.current = commandChannel;
-      socket.onopen = () => {
-        socketOwnsPresenceDisconnect = true;
-        stopHeartbeat();
-        setConnectionState("online");
-        if (polling) { clearInterval(polling); polling = undefined; }
-      };
-      socket.onmessage = (event) => {
-        const message = JSON.parse(event.data) as { type: string; room: RoomView };
-        if (message.type === "room.updated") { updateRoomSnapshot(message.room); setConnectionState("online"); }
-      };
-      socket.onerror = () => {
-        const socketWillMarkDisconnected = socketOwnsPresenceDisconnect;
-        socketOwnsPresenceDisconnect = false;
-        socket?.close();
-        markOffline(socketWillMarkDisconnected);
-        startPolling();
-      };
-      socket.onclose = () => {
-        const socketWillMarkDisconnected = socketOwnsPresenceDisconnect;
-        socketOwnsPresenceDisconnect = false;
-        markOffline(socketWillMarkDisconnected);
-        startPolling();
-      };
-    }).catch(() => {
-      if (cancelled) return;
-      markOffline();
-      startPolling();
-    });
+    } else connectSocket();
     return () => {
       cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       if (roomStatusRef.current !== "completed") markOffline(socketOwnsPresenceDisconnect);
       socketOwnsPresenceDisconnect = false;
       commandChannel?.dispose();
