@@ -60,31 +60,39 @@ export class AccountService {
     private readonly production = process.env.NODE_ENV === "production",
   ) {}
 
-  async register(emailInput: string, password: string): Promise<AccountActionResult> {
-    const email = emailFrom(emailInput);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error("Enter a valid email address.");
+  async register(usernameInput: string, password: string): Promise<AccountActionResult> {
+    const identifier = usernameFromInput(usernameInput);
     if (password.length < 12 || password.length > 128) throw new Error("Password must be between 12 and 128 characters.");
+    const legacyEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+    if (legacyEmail && identifier.length > 254) throw new Error("Enter a valid email address.");
+    if (!legacyEmail && !/^[a-z0-9_-]{3,24}$/.test(identifier)) throw new Error("Username must be 3–24 letters, numbers, hyphens, or underscores.");
+    const email = legacyEmail ? identifier : null;
+    const username = legacyEmail ? usernameFrom() : identifier;
     let user: any;
     for (let attempt = 0; attempt < 4; attempt += 1) {
       try {
-        user = await this.prisma.userAccount.create({ data: { email, passwordHash: passwordHash(password), username: usernameFrom() } });
+        user = await this.prisma.userAccount.create({ data: { email, passwordHash: passwordHash(password), username } });
         break;
       } catch (error) {
         if ((error as { code?: string }).code !== "P2002") throw error;
-        const exists = await this.prisma.userAccount.findUnique({ where: { email } });
-        if (exists) throw new Error("An account with that email already exists.");
+        const exists = legacyEmail
+          ? await this.prisma.userAccount.findUnique({ where: { email: email! } })
+          : await this.prisma.userAccount.findUnique({ where: { username } });
+        if (exists) throw new Error(legacyEmail ? "An account with that email already exists." : "That username is already in use.");
       }
     }
     if (!user) throw new Error("Could not create an account. Try again.");
+    if (!legacyEmail) return { account: publicAccount(user), sessionToken: await this.issueSession(user.id), message: "Account created and signed in." };
     const link = await this.createActionToken(user, "EMAIL_VERIFICATION", VERIFY_TTL_MS, "Verify your Abominations Attack America account", "verify-email");
     return { account: publicAccount(user), message: "Check your email for a verification link.", ...(link ? { developmentLink: link } : {}) };
   }
 
-  async login(emailInput: string, password: string): Promise<AccountActionResult> {
-    const email = emailFrom(emailInput);
-    const user = await this.prisma.userAccount.findUnique({ where: { email } });
-    if (!user || !passwordMatches(password, user.passwordHash)) throw new Error("Email or password is incorrect.");
-    if (!user.emailVerifiedAt) throw new Error("Verify your email before signing in.");
+  async login(usernameOrEmail: string, password: string): Promise<AccountActionResult> {
+    const identifier = usernameFromInput(usernameOrEmail);
+    const user = await this.prisma.userAccount.findUnique({ where: { username: identifier } })
+      ?? (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier) ? await this.prisma.userAccount.findUnique({ where: { email: identifier } }) : null);
+    if (!user || !passwordMatches(password, user.passwordHash)) throw new Error("Username or password is incorrect.");
+    if (user.email && !user.emailVerifiedAt) throw new Error("Verify your email before signing in.");
     return { account: publicAccount(user), sessionToken: await this.issueSession(user.id), message: "Signed in." };
   }
 

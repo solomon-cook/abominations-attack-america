@@ -1736,6 +1736,7 @@ export type ParticipantScalarFieldEnum = (typeof ParticipantScalarFieldEnum)[key
 export const GameEventScalarFieldEnum = {
   id: 'id',
   roomId: 'roomId',
+  actionId: 'actionId',
   version: 'version',
   actorId: 'actorId',
   type: 'type',

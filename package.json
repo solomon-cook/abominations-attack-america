@@ -121,6 +121,7 @@
     "test:convex-proxy": "tsx --test scripts/convex-proxy.test.ts",
     "test:convex-migration": "tsx --test scripts/convex-migration-integrity.test.ts",
     "convex:export-migration": "tsx scripts/export-convex-migration.ts",
+    "convex:import-prisma": "tsx scripts/import-convex-backup-to-prisma.ts",
     "api:build": "npm --workspace @abominations/api run build",
     "api:start": "npm --workspace @abominations/api run start",
     "prisma:validate": "prisma validate --config apps/api/prisma.config.ts",

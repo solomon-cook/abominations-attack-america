@@ -60,7 +60,7 @@ model GameRoom {
 
 model UserAccount {
   id                        String             @id @default(cuid())
-  email                     String             @unique
+  email                     String?            @unique
   passwordHash              String
   username                  String             @unique
   emailVerifiedAt           DateTime?
@@ -208,6 +208,7 @@ model GameEvent {
   id            String   @id @default(cuid())
   roomId        String
   room          GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  actionId      String?
   version       Int
   actorId       String
   type          String
@@ -217,6 +218,7 @@ model GameEvent {
   createdAt     DateTime @default(now())
 
   @@unique([roomId, version])
+  @@unique([roomId, actionId])
   @@index([roomId, createdAt])
 }
 

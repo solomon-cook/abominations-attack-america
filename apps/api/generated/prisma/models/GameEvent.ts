@@ -37,6 +37,7 @@ export type GameEventSumAggregateOutputType = {
 export type GameEventMinAggregateOutputType = {
   id: string | null
   roomId: string | null
+  actionId: string | null
   version: number | null
   actorId: string | null
   type: string | null
@@ -47,6 +48,7 @@ export type GameEventMinAggregateOutputType = {
 export type GameEventMaxAggregateOutputType = {
   id: string | null
   roomId: string | null
+  actionId: string | null
   version: number | null
   actorId: string | null
   type: string | null
@@ -57,6 +59,7 @@ export type GameEventMaxAggregateOutputType = {
 export type GameEventCountAggregateOutputType = {
   id: number
   roomId: number
+  actionId: number
   version: number
   actorId: number
   type: number
@@ -79,6 +82,7 @@ export type GameEventSumAggregateInputType = {
 export type GameEventMinAggregateInputType = {
   id?: true
   roomId?: true
+  actionId?: true
   version?: true
   actorId?: true
   type?: true
@@ -89,6 +93,7 @@ export type GameEventMinAggregateInputType = {
 export type GameEventMaxAggregateInputType = {
   id?: true
   roomId?: true
+  actionId?: true
   version?: true
   actorId?: true
   type?: true
@@ -99,6 +104,7 @@ export type GameEventMaxAggregateInputType = {
 export type GameEventCountAggregateInputType = {
   id?: true
   roomId?: true
+  actionId?: true
   version?: true
   actorId?: true
   type?: true
@@ -198,6 +204,7 @@ export type GameEventGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 export type GameEventGroupByOutputType = {
   id: string
   roomId: string
+  actionId: string | null
   version: number
   actorId: string
   type: string
@@ -233,6 +240,7 @@ export type GameEventWhereInput = {
   NOT?: Prisma.GameEventWhereInput | Prisma.GameEventWhereInput[]
   id?: Prisma.StringFilter<"GameEvent"> | string
   roomId?: Prisma.StringFilter<"GameEvent"> | string
+  actionId?: Prisma.StringNullableFilter<"GameEvent"> | string | null
   version?: Prisma.IntFilter<"GameEvent"> | number
   actorId?: Prisma.StringFilter<"GameEvent"> | string
   type?: Prisma.StringFilter<"GameEvent"> | string
@@ -246,6 +254,7 @@ export type GameEventWhereInput = {
 export type GameEventOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
+  actionId?: Prisma.SortOrderInput | Prisma.SortOrder
   version?: Prisma.SortOrder
   actorId?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -259,10 +268,12 @@ export type GameEventOrderByWithRelationInput = {
 export type GameEventWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   roomId_version?: Prisma.GameEventRoomIdVersionCompoundUniqueInput
+  roomId_actionId?: Prisma.GameEventRoomIdActionIdCompoundUniqueInput
   AND?: Prisma.GameEventWhereInput | Prisma.GameEventWhereInput[]
   OR?: Prisma.GameEventWhereInput[]
   NOT?: Prisma.GameEventWhereInput | Prisma.GameEventWhereInput[]
   roomId?: Prisma.StringFilter<"GameEvent"> | string
+  actionId?: Prisma.StringNullableFilter<"GameEvent"> | string | null
   version?: Prisma.IntFilter<"GameEvent"> | number
   actorId?: Prisma.StringFilter<"GameEvent"> | string
   type?: Prisma.StringFilter<"GameEvent"> | string
@@ -271,11 +282,12 @@ export type GameEventWhereUniqueInput = Prisma.AtLeast<{
   replayCommand?: Prisma.JsonNullableFilter<"GameEvent">
   createdAt?: Prisma.DateTimeFilter<"GameEvent"> | Date | string
   room?: Prisma.XOR<Prisma.GameRoomScalarRelationFilter, Prisma.GameRoomWhereInput>
-}, "id" | "roomId_version">
+}, "id" | "roomId_version" | "roomId_actionId">
 
 export type GameEventOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
+  actionId?: Prisma.SortOrderInput | Prisma.SortOrder
   version?: Prisma.SortOrder
   actorId?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -296,6 +308,7 @@ export type GameEventScalarWhereWithAggregatesInput = {
   NOT?: Prisma.GameEventScalarWhereWithAggregatesInput | Prisma.GameEventScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"GameEvent"> | string
   roomId?: Prisma.StringWithAggregatesFilter<"GameEvent"> | string
+  actionId?: Prisma.StringNullableWithAggregatesFilter<"GameEvent"> | string | null
   version?: Prisma.IntWithAggregatesFilter<"GameEvent"> | number
   actorId?: Prisma.StringWithAggregatesFilter<"GameEvent"> | string
   type?: Prisma.StringWithAggregatesFilter<"GameEvent"> | string
@@ -307,6 +320,7 @@ export type GameEventScalarWhereWithAggregatesInput = {
 
 export type GameEventCreateInput = {
   id?: string
+  actionId?: string | null
   version: number
   actorId: string
   type: string
@@ -320,6 +334,7 @@ export type GameEventCreateInput = {
 export type GameEventUncheckedCreateInput = {
   id?: string
   roomId: string
+  actionId?: string | null
   version: number
   actorId: string
   type: string
@@ -331,6 +346,7 @@ export type GameEventUncheckedCreateInput = {
 
 export type GameEventUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  actionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   actorId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
@@ -344,6 +360,7 @@ export type GameEventUpdateInput = {
 export type GameEventUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
+  actionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   actorId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
@@ -356,6 +373,7 @@ export type GameEventUncheckedUpdateInput = {
 export type GameEventCreateManyInput = {
   id?: string
   roomId: string
+  actionId?: string | null
   version: number
   actorId: string
   type: string
@@ -367,6 +385,7 @@ export type GameEventCreateManyInput = {
 
 export type GameEventUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  actionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   actorId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
@@ -379,6 +398,7 @@ export type GameEventUpdateManyMutationInput = {
 export type GameEventUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
+  actionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   actorId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
@@ -403,9 +423,15 @@ export type GameEventRoomIdVersionCompoundUniqueInput = {
   version: number
 }
 
+export type GameEventRoomIdActionIdCompoundUniqueInput = {
+  roomId: string
+  actionId: string
+}
+
 export type GameEventCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
+  actionId?: Prisma.SortOrder
   version?: Prisma.SortOrder
   actorId?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -422,6 +448,7 @@ export type GameEventAvgOrderByAggregateInput = {
 export type GameEventMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
+  actionId?: Prisma.SortOrder
   version?: Prisma.SortOrder
   actorId?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -432,6 +459,7 @@ export type GameEventMaxOrderByAggregateInput = {
 export type GameEventMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
+  actionId?: Prisma.SortOrder
   version?: Prisma.SortOrder
   actorId?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -487,6 +515,7 @@ export type GameEventUncheckedUpdateManyWithoutRoomNestedInput = {
 
 export type GameEventCreateWithoutRoomInput = {
   id?: string
+  actionId?: string | null
   version: number
   actorId: string
   type: string
@@ -498,6 +527,7 @@ export type GameEventCreateWithoutRoomInput = {
 
 export type GameEventUncheckedCreateWithoutRoomInput = {
   id?: string
+  actionId?: string | null
   version: number
   actorId: string
   type: string
@@ -539,6 +569,7 @@ export type GameEventScalarWhereInput = {
   NOT?: Prisma.GameEventScalarWhereInput | Prisma.GameEventScalarWhereInput[]
   id?: Prisma.StringFilter<"GameEvent"> | string
   roomId?: Prisma.StringFilter<"GameEvent"> | string
+  actionId?: Prisma.StringNullableFilter<"GameEvent"> | string | null
   version?: Prisma.IntFilter<"GameEvent"> | number
   actorId?: Prisma.StringFilter<"GameEvent"> | string
   type?: Prisma.StringFilter<"GameEvent"> | string
@@ -550,6 +581,7 @@ export type GameEventScalarWhereInput = {
 
 export type GameEventCreateManyRoomInput = {
   id?: string
+  actionId?: string | null
   version: number
   actorId: string
   type: string
@@ -561,6 +593,7 @@ export type GameEventCreateManyRoomInput = {
 
 export type GameEventUpdateWithoutRoomInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  actionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   actorId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
@@ -572,6 +605,7 @@ export type GameEventUpdateWithoutRoomInput = {
 
 export type GameEventUncheckedUpdateWithoutRoomInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  actionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   actorId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
@@ -583,6 +617,7 @@ export type GameEventUncheckedUpdateWithoutRoomInput = {
 
 export type GameEventUncheckedUpdateManyWithoutRoomInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  actionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   actorId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
@@ -597,6 +632,7 @@ export type GameEventUncheckedUpdateManyWithoutRoomInput = {
 export type GameEventSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   roomId?: boolean
+  actionId?: boolean
   version?: boolean
   actorId?: boolean
   type?: boolean
@@ -610,6 +646,7 @@ export type GameEventSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type GameEventSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   roomId?: boolean
+  actionId?: boolean
   version?: boolean
   actorId?: boolean
   type?: boolean
@@ -623,6 +660,7 @@ export type GameEventSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
 export type GameEventSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   roomId?: boolean
+  actionId?: boolean
   version?: boolean
   actorId?: boolean
   type?: boolean
@@ -636,6 +674,7 @@ export type GameEventSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
 export type GameEventSelectScalar = {
   id?: boolean
   roomId?: boolean
+  actionId?: boolean
   version?: boolean
   actorId?: boolean
   type?: boolean
@@ -645,7 +684,7 @@ export type GameEventSelectScalar = {
   createdAt?: boolean
 }
 
-export type GameEventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "version" | "actorId" | "type" | "controlSource" | "payload" | "replayCommand" | "createdAt", ExtArgs["result"]["gameEvent"]>
+export type GameEventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "actionId" | "version" | "actorId" | "type" | "controlSource" | "payload" | "replayCommand" | "createdAt", ExtArgs["result"]["gameEvent"]>
 export type GameEventInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   room?: boolean | Prisma.GameRoomDefaultArgs<ExtArgs>
 }
@@ -664,6 +703,7 @@ export type $GameEventPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     roomId: string
+    actionId: string | null
     version: number
     actorId: string
     type: string
@@ -1097,6 +1137,7 @@ export interface Prisma__GameEventClient<T, Null = never, ExtArgs extends runtim
 export interface GameEventFieldRefs {
   readonly id: Prisma.FieldRef<"GameEvent", 'String'>
   readonly roomId: Prisma.FieldRef<"GameEvent", 'String'>
+  readonly actionId: Prisma.FieldRef<"GameEvent", 'String'>
   readonly version: Prisma.FieldRef<"GameEvent", 'Int'>
   readonly actorId: Prisma.FieldRef<"GameEvent", 'String'>
   readonly type: Prisma.FieldRef<"GameEvent", 'String'>

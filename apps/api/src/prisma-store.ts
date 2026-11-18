@@ -436,8 +436,11 @@ export class PrismaRoomStore implements RoomStore {
     if (!actor || actor.role !== "PLAYER") throw new Error("Spectators cannot submit game actions.");
     if (actor.botControlled) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
     if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
-    const duplicate = await this.prismaClient.commandReceipt.findUnique({ where: { roomId_actionId: { roomId: room.id, actionId: envelope.actionId } } });
-    if (duplicate) return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
+    const duplicate = await this.prismaClient.gameEvent.findUnique({ where: { roomId_actionId: { roomId: room.id, actionId: envelope.actionId } }, select: { actorId: true } });
+    if (duplicate) {
+      if (duplicate.actorId !== actor.id) throw new Error("This action ID was already used by another player.");
+      return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
+    }
     if (room.status !== "ACTIVE") throw new Error("This room is not ready for gameplay.");
     const gameState = room.state as unknown as GameState;
     const requiredPlayer = this.requiredPlayer(gameState, envelope);
@@ -448,8 +451,8 @@ export class PrismaRoomStore implements RoomStore {
       // A concurrent retry can lose the room-version compare-and-swap after
       // another process commits this same action. Return the durable result
       // only when the winning receipt belongs to this authenticated actor.
-      const concurrentReceipt = await this.prismaClient.commandReceipt.findUnique({ where: { roomId_actionId: { roomId: room.id, actionId: envelope.actionId } } });
-      if (concurrentReceipt?.actorId === actor.id) return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
+      const concurrentEvent = await this.prismaClient.gameEvent.findUnique({ where: { roomId_actionId: { roomId: room.id, actionId: envelope.actionId } }, select: { actorId: true } });
+      if (concurrentEvent?.actorId === actor.id) return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
       throw error;
     }
     return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
@@ -505,19 +508,36 @@ export class PrismaRoomStore implements RoomStore {
     return views;
   }
 
-  async submitActionForParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomView> {
-    const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
+  async submitActionForParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<Pick<RoomView, "version" | "status">> {
+    const room = await this.prismaClient.gameRoom.findUnique({
+      where: { code: roomCode.toUpperCase() },
+      relationLoadStrategy: "join",
+      include: {
+        participants: {
+          where: { id: participantId, connectionId, tokenHash: sessionHash, connectedAt: { not: null } },
+          take: 1,
+        },
+        events: {
+          where: { actionId: envelope.actionId },
+          select: { actorId: true },
+          take: 1,
+        },
+      },
+    });
     if (!room) throw new Error("Room not found.");
-    const actor = await this.prismaClient.participant.findFirst({ where: { id: participantId, roomId: room.id, connectionId, tokenHash: sessionHash, connectedAt: { not: null } } });
+    const actor = room.participants[0];
     if (!actor || actor.role !== "PLAYER") throw new Error("Spectators cannot submit game actions.");
     if (actor.botControlled) throw new Error("This seat is currently being controlled by the room bot. Reconnect to take control.");
     if (envelope.actorId !== actor.id) throw new Error("Command actor does not match the room participant.");
-    const duplicate = await this.prismaClient.commandReceipt.findUnique({ where: { roomId_actionId: { roomId: room.id, actionId: envelope.actionId } } });
-    if (duplicate) return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
+    const duplicate = room.events[0];
+    if (duplicate) {
+      if (duplicate.actorId !== actor.id) throw new Error("This action ID was already used by another player.");
+      return { version: room.version, status: room.status.toLowerCase() as RoomView["status"] };
+    }
     if (room.status !== "ACTIVE") throw new Error("This room is not ready for gameplay.");
     if (actor.playerIndex !== this.requiredPlayer(room.state as unknown as GameState, envelope)) throw new Error("It is not your turn.");
-    await this.commitCommand(room, actor, envelope, "human", { tokenHash: sessionHash, connectionId });
-    return this.view(room.id, 0, "player", actor.playerIndex ?? undefined);
+    const status = await this.commitCommand(room, actor, envelope, "human", { tokenHash: sessionHash, connectionId });
+    return { version: room.version + 1, status };
   }
 
   async disconnectParticipant(roomCode: string, participantId: string, connectionId = "legacy"): Promise<RoomView> {
@@ -566,7 +586,7 @@ export class PrismaRoomStore implements RoomStore {
     return decision && "playerIndex" in decision ? decision.playerIndex : state.currentPlayer;
   }
 
-  private async commitCommand(room: any, actor: any, envelope: GameCommandEnvelope, controlSource: "human" | "bot", humanLease?: { tokenHash?: string; connectionId?: string }): Promise<void> {
+  private async commitCommand(room: any, actor: any, envelope: GameCommandEnvelope, controlSource: "human" | "bot", humanLease?: { tokenHash?: string; connectionId?: string }): Promise<RoomView["status"]> {
     const state = room.state as unknown as GameState;
     const result = applyCommandEnvelope(state, envelope, room.version);
     const version = room.version + 1;
@@ -584,8 +604,7 @@ export class PrismaRoomStore implements RoomStore {
       const changed = await tx.gameRoom.updateMany({ where: { id: room.id, version: room.version, status: { in: allowedStatuses } }, data: { state: result.state as any, playerStats: counters as any, version, lastActivityAt: new Date(), ...(terminal ? { status: "COMPLETED", completedAt: new Date() } : {}) } });
       if (changed.count !== 1) throw new Error("The game changed before this action was committed. Refresh and try again.");
       const replayCommand: ReplayCommandRecord = { kind: "command", playerIndex: actor.playerIndex ?? 0, command: structuredClone(envelope.command) };
-      await tx.gameEvent.create({ data: { roomId: room.id, version, actorId: actor.id, type: result.eventType, controlSource, payload: { ...result.eventPayload, receipt: result.receipt }, replayCommand: replayCommand as any } });
-      await tx.commandReceipt.create({ data: { roomId: room.id, actionId: envelope.actionId, actorId: actor.id, version, eventType: result.eventType } });
+      await tx.gameEvent.create({ data: { roomId: room.id, actionId: envelope.actionId, version, actorId: actor.id, type: result.eventType, controlSource, payload: { ...result.eventPayload, receipt: result.receipt }, replayCommand: replayCommand as any } });
       if (terminal) {
         const participants = await tx.participant.findMany({ where: { roomId: room.id, role: "PLAYER", userId: { not: null }, playerIndex: { not: null } }, include: { user: { select: { username: true } } } });
         const identities = participants.map((participant: any) => ({ participantId: participant.id, userId: participant.userId, username: participant.user?.username ?? participant.displayName, playerIndex: participant.playerIndex, botAssisted: participant.botAssisted }));
@@ -598,6 +617,7 @@ export class PrismaRoomStore implements RoomStore {
         await tx.gameResult.upsert({ where: { roomId: room.id }, update: { winnerId: winnerParticipant?.id ?? null, winnerName, summary }, create: { roomId: room.id, winnerId: winnerParticipant?.id ?? null, winnerName, summary } });
       }
     });
+    return terminal ? "completed" : room.status.toLowerCase() as RoomView["status"];
   }
 
   private async runBotActions(roomCode: string): Promise<void> {

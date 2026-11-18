@@ -94,7 +94,7 @@ export interface RoomStore {
   createSocketTicket(code: string, token: string): Promise<string>;
   consumeSocketTicket(code: string, ticket: string): Promise<RoomSocketPrincipal>;
   getRoomForParticipant(code: string, participantId: string, afterVersion?: number): Promise<RoomView>;
-  submitActionForParticipant(code: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomView>;
+  submitActionForParticipant(code: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<Pick<RoomView, "version" | "status">>;
   connectParticipant(code: string, participantId: string, connectionId: string, sessionHash: string): Promise<RoomView>;
   disconnectParticipant(code: string, participantId: string, connectionId?: string): Promise<RoomView>;
   processBotTakeovers(now?: number, roomCode?: string): Promise<string[]>;

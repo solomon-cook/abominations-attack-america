@@ -108,6 +108,7 @@ const safeAccountErrors = new Set([
   "An account with that email already exists.",
   "Could not create an account. Try again.",
   "Email or password is incorrect.",
+  "Username or password is incorrect.",
   "Verify your email before signing in.",
   "This account link is invalid.",
   "This account link is expired or has already been used.",
@@ -144,11 +145,11 @@ const rejectRate = (response: ServerResponse) => {
   response.writeHead(429, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "retry-after": "60", "x-content-type-options": "nosniff" });
   response.end(JSON.stringify({ error: "Too many requests. Try again shortly." }));
 };
-const broadcast = async (roomCode: string) => {
+const broadcastRoomNow = async (roomCode: string) => {
   const group = sockets.get(roomCode);
-  if (!group) return;
+  if (!group) return new Map<string, import("@abominations/shared").RoomView>();
   const connected = [...group.entries()].filter(([socket]) => socket.readyState === socket.OPEN);
-  if (!connected.length) return;
+  if (!connected.length) return new Map<string, import("@abominations/shared").RoomView>();
   let roomViews: Map<string, import("@abominations/shared").RoomView> | undefined;
   let sharedReadError: unknown;
   if (store instanceof PrismaRoomStore) {
@@ -158,6 +159,7 @@ const broadcast = async (roomCode: string) => {
       sharedReadError = error;
     }
   }
+  roomViews ??= new Map();
   await Promise.all(connected.map(async ([socket, participantId]) => {
     if (socket.readyState !== socket.OPEN) return;
     try {
@@ -166,6 +168,7 @@ const broadcast = async (roomCode: string) => {
         ? roomViews.get(participantId)
         : await store.getRoomForParticipant(roomCode, participantId);
       if (!room) throw new Error("Room participant not found.");
+      roomViews.set(participantId, room);
       socket.send(JSON.stringify({ type: "room.updated", room }));
     } catch (error) {
       metrics.errorReport("divergence");
@@ -175,11 +178,22 @@ const broadcast = async (roomCode: string) => {
     }
   }));
   if (group.size === 0) sockets.delete(roomCode);
+  return roomViews;
+};
+const inFlightRoomBroadcasts = new Map<string, Promise<Map<string, import("@abominations/shared").RoomView>>>();
+const broadcast = (roomCode: string) => {
+  const existing = inFlightRoomBroadcasts.get(roomCode);
+  if (existing) return existing;
+  const current = broadcastRoomNow(roomCode).finally(() => {
+    if (inFlightRoomBroadcasts.get(roomCode) === current) inFlightRoomBroadcasts.delete(roomCode);
+  });
+  inFlightRoomBroadcasts.set(roomCode, current);
+  return current;
 };
 
 const roomChangeListener = usePrisma && roomNotificationsUrl ? new RoomChangeListener(
   roomNotificationsUrl,
-  (roomCode) => broadcast(roomCode),
+  async (roomCode) => { await broadcast(roomCode); },
   (error) => {
     metrics.errorReport("persistence");
     errorReporter.report({ category: "persistence", path: "/worker/room-notifications", message: error instanceof Error ? error.message : "PostgreSQL room notification failed." });
@@ -230,9 +244,13 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
         if (!user) throw new HttpError(401, "Sign in to use this account feature.");
         return user;
       };
-      if (request.method === "POST" && parts[1] === "register") return json(response, 201, await accountService.register(String(input.email ?? ""), String(input.password ?? "")));
+      if (request.method === "POST" && parts[1] === "register") {
+        const result = await accountService.register(String(input.username ?? input.email ?? ""), String(input.password ?? ""));
+        const { sessionToken, ...publicResult } = result;
+        return json(response, 201, publicResult, sessionToken ? { "set-cookie": accountSessionCookie(sessionToken) } : {});
+      }
       if (request.method === "POST" && parts[1] === "login") {
-        const result = await accountService.login(String(input.email ?? ""), String(input.password ?? ""));
+        const result = await accountService.login(String(input.username ?? input.email ?? ""), String(input.password ?? ""));
         return json(response, 200, { account: result.account, message: result.message }, { "set-cookie": accountSessionCookie(result.sessionToken!) });
       }
       if (request.method === "POST" && parts[1] === "logout") {
@@ -479,8 +497,9 @@ wsServer.on("connection", async (socket, request) => {
           if (updatedRoom.status === "completed") metrics.roomCompleted();
           if (updatedRoom.status === "abandoned") metrics.roomAbandoned();
           operationalLog({ event: "command.accepted", transport: "websocket", roomCode: code, actionId: envelope.actionId, actorId: envelope.actorId, commandType: envelope.command.type, revision: updatedRoom.version });
-          send({ type: "command.accepted", actionId: envelope.actionId, room: updatedRoom });
-          await broadcast(code);
+          const roomViews = await broadcast(code);
+          const room = roomViews.get(principal.participantId) ?? await store.getRoomForParticipant(code, principal.participantId);
+          send({ type: "command.accepted", actionId: envelope.actionId, room });
         })
         .catch((error) => {
           metrics.commandFailed();

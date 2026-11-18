@@ -1,0 +1,1 @@
+ALTER TABLE "UserAccount" ALTER COLUMN "email" DROP NOT NULL;

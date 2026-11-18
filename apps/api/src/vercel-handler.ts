@@ -82,9 +82,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         if (!user) throw Object.assign(new Error("Sign in to use this account feature."), { status: 401 });
         return user;
       };
-      if (req.method === "POST" && parts[1] === "register") return respond(req, res, 201, await accountService.register(String(input.email ?? ""), String(input.password ?? "")));
+      if (req.method === "POST" && parts[1] === "register") {
+        const result = await accountService.register(String(input.username ?? input.email ?? ""), String(input.password ?? ""));
+        const { sessionToken, ...publicResult } = result;
+        if (sessionToken) (res as ServerResponse & { pendingCookies?: string[] }).pendingCookies = [accountSessionCookie(sessionToken)];
+        return respond(req, res, 201, publicResult);
+      }
       if (req.method === "POST" && parts[1] === "login") {
-        const result = await accountService.login(String(input.email ?? ""), String(input.password ?? ""));
+        const result = await accountService.login(String(input.username ?? input.email ?? ""), String(input.password ?? ""));
         (res as ServerResponse & { pendingCookies?: string[] }).pendingCookies = [accountSessionCookie(result.sessionToken!)];
         return respond(req, res, 200, { account: result.account, message: result.message });
       }
