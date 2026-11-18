@@ -13,6 +13,7 @@ import type * as accountData from "../accountData.js";
 import type * as accounts from "../accounts.js";
 import type * as crons from "../crons.js";
 import type * as errorReports from "../errorReports.js";
+import type * as gameStateStorage from "../gameStateStorage.js";
 import type * as http from "../http.js";
 import type * as migration from "../migration.js";
 import type * as replays from "../replays.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   accounts: typeof accounts;
   crons: typeof crons;
   errorReports: typeof errorReports;
+  gameStateStorage: typeof gameStateStorage;
   http: typeof http;
   migration: typeof migration;
   replays: typeof replays;
