@@ -6,9 +6,17 @@
   "functions": {
     "api/[...path].ts": {
       "maxDuration": 60
+    },
+    "api/game/[...path].ts": {
+      "maxDuration": 60,
+      "includeFiles": "apps/api/generated/prisma/**"
     }
   },
   "rewrites": [
+    {
+      "source": "/api/game/:path*",
+      "destination": "/api/game/[...path]?path=:path*"
+    },
     {
       "source": "/api/:path*",
       "destination": "/api/[...path]?path=:path*"

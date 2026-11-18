@@ -1,8 +1,8 @@
 import { build } from "esbuild";
 
 await build({
-  entryPoints: ["apps/api/src/vercel-handler.ts"],
-  outfile: "apps/api/dist/vercel-handler.mjs",
+  entryPoints: ["apps/api/src/server.ts"],
+  outfile: "apps/api/dist/server.mjs",
   bundle: true,
   platform: "node",
   format: "esm",

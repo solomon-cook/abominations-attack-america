@@ -479,6 +479,32 @@ export class PrismaRoomStore implements RoomStore {
     return this.view(room.id, afterVersion, participant.role === "PLAYER" ? "player" : "spectator", participant.playerIndex ?? undefined);
   }
 
+  async getRoomViewsForParticipants(roomCode: string, participantIds: readonly string[]): Promise<Map<string, RoomView>> {
+    const views = new Map<string, RoomView>();
+    if (!participantIds.length) return views;
+    const room = await this.prismaClient.gameRoom.findUnique({
+      where: { code: roomCode.toUpperCase() },
+      include: {
+        participants: { include: { user: { select: { username: true } } } },
+        events: { orderBy: { version: "desc" }, take: MAX_RETAINED_ROOM_EVENTS },
+      },
+    });
+    if (!room) throw new Error("Room not found.");
+    const participants = new Map(room.participants.map((participant: any) => [participant.id, participant]));
+    for (const participantId of new Set(participantIds)) {
+      const participant = participants.get(participantId);
+      if (!participant) continue;
+      views.set(participantId, await this.view(
+        room.id,
+        0,
+        participant.role === "PLAYER" ? "player" : "spectator",
+        participant.playerIndex ?? undefined,
+        room,
+      ));
+    }
+    return views;
+  }
+
   async submitActionForParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<RoomView> {
     const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
     if (!room) throw new Error("Room not found.");

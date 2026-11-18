@@ -15,7 +15,12 @@ import { RoomChangeListener } from "./room-change-listener.js";
 
 const port = Number(process.env.PORT ?? 8787);
 const { databaseUrl, roomNotificationsUrl } = resolveDatabaseConnections();
-const runtimeConfig = validateRuntimeConfig();
+const runtimeEnvironment = process.env.VERCEL_ENV === "preview"
+  && !process.env.ALLOWED_ORIGIN?.trim()
+  && process.env.VERCEL_URL
+  ? { ...process.env, ALLOWED_ORIGIN: `https://${process.env.VERCEL_URL}` }
+  : process.env;
+const runtimeConfig = validateRuntimeConfig(runtimeEnvironment);
 const allowedOrigin = runtimeConfig.allowedOrigin === "*" ? "http://localhost:5173" : runtimeConfig.allowedOrigin;
 const allowDevelopmentFixture = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEVELOPMENT_FIXTURE === "true";
 const usePrisma = Boolean(databaseUrl) && process.env.PERSISTENCE !== "memory" && (!allowDevelopmentFixture || process.env.PERSISTENCE === "prisma");
@@ -142,10 +147,25 @@ const rejectRate = (response: ServerResponse) => {
 const broadcast = async (roomCode: string) => {
   const group = sockets.get(roomCode);
   if (!group) return;
-  await Promise.all([...group.entries()].map(async ([socket, participantId]) => {
+  const connected = [...group.entries()].filter(([socket]) => socket.readyState === socket.OPEN);
+  if (!connected.length) return;
+  let roomViews: Map<string, import("@abominations/shared").RoomView> | undefined;
+  let sharedReadError: unknown;
+  if (store instanceof PrismaRoomStore) {
+    try {
+      roomViews = await store.getRoomViewsForParticipants(roomCode, connected.map(([, participantId]) => participantId));
+    } catch (error) {
+      sharedReadError = error;
+    }
+  }
+  await Promise.all(connected.map(async ([socket, participantId]) => {
     if (socket.readyState !== socket.OPEN) return;
     try {
-      const room = await store.getRoomForParticipant(roomCode, participantId);
+      if (sharedReadError) throw sharedReadError;
+      const room = roomViews
+        ? roomViews.get(participantId)
+        : await store.getRoomForParticipant(roomCode, participantId);
+      if (!room) throw new Error("Room participant not found.");
       socket.send(JSON.stringify({ type: "room.updated", room }));
     } catch (error) {
       metrics.errorReport("divergence");
@@ -184,7 +204,10 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
     return rejectRate(response);
   }
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
-  const parts = url.pathname.split("/").filter(Boolean);
+  const queryPath = (request as IncomingMessage & { query?: { path?: string | string[] } }).query?.path ?? url.searchParams.get("path") ?? undefined;
+  const routedPath = (Array.isArray(queryPath) ? queryPath.join("/") : queryPath)
+    ?? url.pathname.replace(/^\/api\/game\/?/, "").replace(/^\/api\/?/, "");
+  const parts = routedPath.split("/").filter(Boolean);
   try {
     if (request.method === "GET" && parts[0] === "health") {
       try {
@@ -391,7 +414,18 @@ server.on("error", (error) => {
   operationalLog({ event: "deployment.failure", message: error instanceof Error ? error.message : "API listen failure" });
   process.exitCode = 1;
 });
-const wsServer = new WebSocketServer({ server, path: "/ws", maxPayload: MAX_JSON_BODY_BYTES });
+const wsServer = new WebSocketServer({ noServer: true, maxPayload: MAX_JSON_BODY_BYTES });
+server.on("upgrade", (request, socket, head) => {
+  const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
+  const queryPath = (request as IncomingMessage & { query?: { path?: string | string[] } }).query?.path ?? url.searchParams.get("path") ?? undefined;
+  const routedPath = (Array.isArray(queryPath) ? queryPath.join("/") : queryPath)
+    ?? url.pathname.replace(/^\/api\/game\/?/, "").replace(/^\/api\/?/, "");
+  if (routedPath.replace(/^\/+/, "") !== "ws") {
+    socket.destroy();
+    return;
+  }
+  wsServer.handleUpgrade(request, socket, head, (websocket) => wsServer.emit("connection", websocket, request));
+});
 wsServer.on("connection", async (socket, request) => {
   if (!withinRate(socketRate, requestAddress(request), Date.now(), RATE_WINDOW_MS, WEBSOCKET_RATE_LIMIT)) {
     metrics.websocketFailure();
@@ -505,7 +539,8 @@ const shutdown = async (signal: string) => {
 };
 process.once("SIGTERM", () => { void shutdown("SIGTERM"); });
 process.once("SIGINT", () => { void shutdown("SIGINT"); });
-server.listen(port, () => console.log(`API listening on http://localhost:${port}`));
+export { server };
+if (process.env.VERCEL !== "1") server.listen(port, () => console.log(`API listening on http://localhost:${port}`));
 
 function isCommandSubmitMessage(value: unknown): value is { type: "command.submit"; envelope: GameCommandEnvelope } {
   if (!value || typeof value !== "object") return false;

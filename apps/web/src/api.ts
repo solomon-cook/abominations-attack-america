@@ -8,10 +8,13 @@ const convexUrl = import.meta.env.VITE_CONVEX_URL || __APP_CONVEX_URL__;
 const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL || __APP_CONVEX_SITE_URL__;
 export const convexRealtimeEnabled = Boolean(convexUrl);
 export const websocketTransportEnabled = !convexRealtimeEnabled
-  && Boolean(import.meta.env.VITE_API_URL)
+  && (!import.meta.env.DEV || Boolean(import.meta.env.VITE_API_URL))
   && import.meta.env.VITE_ENABLE_WEBSOCKETS === "true";
 const explicitApiOrigin = convexRealtimeEnabled && (!import.meta.env.DEV || convexSiteUrl) ? undefined : import.meta.env.VITE_API_URL;
-const API_URL = resolveApiBaseUrl(explicitApiOrigin, import.meta.env.DEV ? (convexSiteUrl ? "/api" : "http://localhost:8787") : `${window.location.origin}/api`);
+const defaultApiOrigin = import.meta.env.DEV
+  ? (convexSiteUrl ? "/api" : "http://localhost:8787")
+  : `${window.location.origin}${convexRealtimeEnabled ? "/api" : "/api/game"}`;
+const API_URL = resolveApiBaseUrl(explicitApiOrigin, defaultApiOrigin);
 let convexClient: ConvexClient | undefined;
 function getConvexClient() {
   if (!convexUrl) throw new Error("Convex is not configured for this web build.");

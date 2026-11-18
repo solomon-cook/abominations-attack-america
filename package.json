@@ -71,7 +71,7 @@
     "dev": "npm --workspace @abominations/web run dev --",
     "dev:api": "npm --workspace @abominations/api run dev --",
     "prebuild": "node scripts/run-convex-migration-build.mjs",
-    "build": "npm --workspace @abominations/web run build",
+    "build": "npm run vercel:api:build && npm --workspace @abominations/web run build",
     "build:api": "npm --workspace @abominations/api run build",
     "typecheck": "npm run typecheck:web && npm run typecheck:api",
     "typecheck:web": "npm --workspace @abominations/web run typecheck",
