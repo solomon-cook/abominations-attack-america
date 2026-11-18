@@ -15,6 +15,10 @@ const accountToken = (request: Request) => {
   if (!pair) return "";
   try { return decodeURIComponent(pair.slice(accountCookieName.length + 1)); } catch { return ""; }
 };
+const hashToken = async (value: string) => {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+};
 const localOrigins = new Set(["http://localhost:5173", "http://127.0.0.1:5173"]);
 const configuredOrigins = () => (process.env.WEB_APP_ORIGINS ?? process.env.ALLOWED_ORIGIN ?? "https://abominations-attack-america.vercel.app")
   .split(",").map((value) => value.trim()).filter(Boolean);
@@ -109,14 +113,12 @@ async function handle(ctx: any, request: Request) {
   const parts = url.pathname.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
   if (parts[0] === "internal" && parts[1] === "migration") return handleMigration(ctx, request, parts);
   try {
-    const forwardedFor = request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(forwardedFor));
-    const keyHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-    const limit = await ctx.runMutation(internal.requestLimits.consumeHttpRequest, { keyHash, at: Date.now() });
-    if (!limit.allowed) return response(request, 429, { error: "Too many requests. Try again shortly." }, { "retry-after": String(limit.retryAfterSeconds) });
     const body = ["POST", "PATCH", "DELETE"].includes(request.method) ? await readBody(request) : {};
     const token = String(request.headers.get("x-room-token") ?? url.searchParams.get("token") ?? body.token ?? "");
     if (parts[0] === "accounts") {
+      if (request.method === "GET" && parts[1] === "me" && parts[2] === "dashboard") {
+        return response(request, 200, await ctx.runMutation(internal.accountData.dashboard, { tokenHash: await hashToken(accountToken(request)) }));
+      }
       if (request.method === "POST" && parts[1] === "register") {
         const result = await ctx.runAction(internal.accountAuth.register, { ...(body.username !== undefined ? { usernameInput: String(body.username) } : { emailInput: String(body.email ?? "") }), password: String(body.password ?? "") });
         return response(request, 201, { account: result.account, message: result.message }, result.sessionToken ? { "set-cookie": sessionCookie(result.sessionToken, secureRequest(request)) } : {});
@@ -198,7 +200,7 @@ async function handle(ctx: any, request: Request) {
       }
       return response(request, 404, { error: "Not found" });
     }
-    if (request.method === "GET" && parts[0] === "players" && parts[1]) return response(request, 200, await ctx.runQuery(internal.accountData.publicProfile, { usernameInput: parts[1]! }));
+    if (request.method === "GET" && parts[0] === "players" && parts[1]) return response(request, 200, await ctx.runMutation(internal.accountData.publicProfile, { usernameInput: parts[1]! }));
     if (request.method === "GET" && parts[0] === "leaderboard") return response(request, 200, await ctx.runQuery(internal.accountData.leaderboard, { category: url.searchParams.get("category") ?? "wins" }));
     if (request.method === "GET" && parts[0] === "health") return response(request, 200, { ok: true, persistence: "convex", realtimeFanout: { mode: "reactive-subscription", ready: true } });
     if (request.method === "GET" && parts[0] === "rooms" && parts[1] === "public") return response(request, 200, await ctx.runQuery(api.rooms.publicRooms, {}));
@@ -228,7 +230,7 @@ async function handle(ctx: any, request: Request) {
       if (request.method === "GET" && parts[2] === "state") {
         const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
         const tokenHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-        return response(request, 200, await ctx.runQuery(api.rooms.read, { code, tokenHash, afterVersion: Number(url.searchParams.get("afterVersion") ?? 0) }));
+        return response(request, 200, await ctx.runQuery(api.rooms.read, { code, tokenHash }));
       }
       if (request.method === "POST" && parts[2] === "actions") {
         const envelope = body.envelope ?? {

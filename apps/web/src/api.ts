@@ -1,5 +1,5 @@
 import { COMMAND_PROTOCOL_VERSION, type GameCommand, type GameCommandEnvelope, type SetupAction } from "@abominations/game-engine";
-import type { AccountGameSummary, AccountPrivacySettings, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, PublicReplayExport, PublicReplayPage, PublicRoomSummary, RoomPrivacy, RoomSocketServerMessage, RoomView, SessionResponse, SocialSummary } from "@abominations/shared";
+import type { AccountDashboard, AccountGameSummary, AccountPrivacySettings, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, PublicReplayExport, PublicReplayPage, PublicRoomSummary, RoomActionResult, RoomPrivacy, RoomSocketServerMessage, RoomView, SessionResponse, SocialSummary } from "@abominations/shared";
 import { ConvexClient } from "convex/browser";
 import { api as convexApi } from "../../../convex/_generated/api.js";
 import { resolveApiBaseUrl } from "./api-origin";
@@ -7,6 +7,9 @@ import { resolveApiBaseUrl } from "./api-origin";
 const convexUrl = import.meta.env.VITE_CONVEX_URL || __APP_CONVEX_URL__;
 const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL || __APP_CONVEX_SITE_URL__;
 export const convexRealtimeEnabled = Boolean(convexUrl);
+export const websocketTransportEnabled = !convexRealtimeEnabled
+  && Boolean(import.meta.env.VITE_API_URL)
+  && import.meta.env.VITE_ENABLE_WEBSOCKETS === "true";
 const explicitApiOrigin = convexRealtimeEnabled && (!import.meta.env.DEV || convexSiteUrl) ? undefined : import.meta.env.VITE_API_URL;
 const API_URL = resolveApiBaseUrl(explicitApiOrigin, import.meta.env.DEV ? (convexSiteUrl ? "/api" : "http://localhost:8787") : `${window.location.origin}/api`);
 let convexClient: ConvexClient | undefined;
@@ -18,38 +21,29 @@ async function hashRoomToken(token: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
-export function subscribeRoom(code: string, token: string, onUpdate: (room: RoomView) => void, onError: (error: Error) => void, afterVersion = 0) {
+export function subscribeRoom(code: string, token: string, onUpdate: (room: RoomView) => void, onError: (error: Error) => void) {
   let disposed = false;
-  let unsubscribe: (() => void) | undefined;
+  let unsubscribeState: (() => void) | undefined;
+  let unsubscribeParticipants: (() => void) | undefined;
+  let roomState: Omit<RoomView, "participants" | "events"> | undefined;
+  let participants: RoomView["participants"] | undefined;
+  const publish = () => {
+    if (disposed || !roomState || !participants) return;
+    onUpdate({ ...roomState, participants, events: [] });
+  };
   void hashRoomToken(token).then((tokenHash) => {
     if (disposed) return;
-    let cursor = afterVersion;
-    const deliveredEvents = new Map<number, RoomView["events"][number]>();
-    const subscribeAtCursor = () => {
-      if (disposed) return;
-      let nextUnsubscribe: (() => void) | undefined;
-      nextUnsubscribe = getConvexClient().onUpdate(convexApi.rooms.read, { code: code.toUpperCase(), tokenHash, afterVersion: cursor }, (room) => {
-        if (disposed) return;
-        const freshEvents = room.events.filter((event) => event.version > cursor);
-        for (const event of freshEvents) deliveredEvents.set(event.version, event);
-        const orderedEvents = [...deliveredEvents.values()].sort((left, right) => left.version - right.version);
-        while (orderedEvents.length > 256) {
-          const removed = orderedEvents.shift()!;
-          deliveredEvents.delete(removed.version);
-        }
-        onUpdate({ ...room, events: orderedEvents });
-        if (freshEvents.length) {
-          cursor = freshEvents[freshEvents.length - 1]!.version;
-          nextUnsubscribe?.();
-          if (unsubscribe === nextUnsubscribe) unsubscribe = undefined;
-          subscribeAtCursor();
-        }
-      }, onError);
-      unsubscribe = nextUnsubscribe;
-    };
-    subscribeAtCursor();
+    const client = getConvexClient();
+    unsubscribeState = client.onUpdate(convexApi.rooms.readLiveState, { code: code.toUpperCase(), tokenHash }, (nextState) => {
+      roomState = nextState;
+      publish();
+    }, onError);
+    unsubscribeParticipants = client.onUpdate(convexApi.rooms.readParticipants, { tokenHash }, (nextParticipants) => {
+      participants = nextParticipants;
+      publish();
+    }, onError);
   }).catch((error) => onError(error instanceof Error ? error : new Error("Could not subscribe to the room.")));
-  return () => { disposed = true; unsubscribe?.(); };
+  return () => { disposed = true; unsubscribeState?.(); unsubscribeParticipants?.(); };
 }
 const connectionId = () => {
   const key = "abominations-connection-id";
@@ -67,23 +61,58 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export const createRoom = (maxPlayers = 4, displayName = "Player 1", privacy: RoomPrivacy = "private") => request<SessionResponse>("/rooms", { method: "POST", body: JSON.stringify({ maxPlayers, displayName, privacy }) });
-export const listPublicRooms = () => request<PublicRoomSummary[]>("/rooms/public");
-export const joinRoom = (code: string, displayName: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/join`, { method: "POST", body: JSON.stringify({ displayName }) });
-export const addRoomBot = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/bots`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
-export const setRoomPrivacy = (code: string, token: string, privacy: RoomPrivacy) => request<RoomView>(`/rooms/${code.toUpperCase()}/privacy`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ privacy }) });
-export const takeOverRoomWithBot = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/bot-takeover`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
-export const deleteRoom = (code: string, token: string) => request<{ ok: true }>(`/rooms/${code.toUpperCase()}`, { method: "DELETE", headers: { "x-room-token": token } });
-export const spectateRoom = (code: string, displayName: string, viewerToken?: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/spectate`, { method: "POST", body: JSON.stringify({ displayName, ...(viewerToken ? { viewerToken } : {}) }) });
-export const createViewerInvite = (code: string, token: string) => request<{ token: string; expiresAt: string }>(`/rooms/${code.toUpperCase()}/viewer-link`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
-export const markDisconnected = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/disconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
-export const markReconnected = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/reconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
-export const heartbeatRoom = (code: string, token: string) => request<{ ok: true; at: number }>(`/rooms/${code.toUpperCase()}/heartbeat`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
+export const createRoom = (maxPlayers = 4, displayName = "Player 1", privacy: RoomPrivacy = "private") => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.create, { maxPlayers, displayName, privacy })
+  : request<SessionResponse>("/rooms", { method: "POST", body: JSON.stringify({ maxPlayers, displayName, privacy }) });
+export const listPublicRooms = async (): Promise<PublicRoomSummary[]> => convexRealtimeEnabled
+  ? getConvexClient().query(convexApi.rooms.publicRooms, {}) as Promise<PublicRoomSummary[]>
+  : request<PublicRoomSummary[]>("/rooms/public");
+export const joinRoom = (code: string, displayName: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.join, { code: code.toUpperCase(), displayName })
+  : request<SessionResponse>(`/rooms/${code.toUpperCase()}/join`, { method: "POST", body: JSON.stringify({ displayName }) });
+export const addRoomBot = (code: string, token: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.addBot, { code: code.toUpperCase(), token })
+  : request<RoomView>(`/rooms/${code.toUpperCase()}/bots`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
+export const fillRoomWithBots = (code: string, token: string) => getConvexClient().mutation(convexApi.rooms.fillWithBots, { code: code.toUpperCase(), token });
+export const setRoomPrivacy = (code: string, token: string, privacy: RoomPrivacy) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.setPrivacy, { code: code.toUpperCase(), token, privacy })
+  : request<RoomView>(`/rooms/${code.toUpperCase()}/privacy`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ privacy }) });
+export const takeOverRoomWithBot = (code: string, token: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.takeOverWithBot, { code: code.toUpperCase(), token })
+  : request<RoomView>(`/rooms/${code.toUpperCase()}/bot-takeover`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
+export const deleteRoom = (code: string, token: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.deleteRoom, { code: code.toUpperCase(), token })
+  : request<{ ok: true }>(`/rooms/${code.toUpperCase()}`, { method: "DELETE", headers: { "x-room-token": token } });
+export const spectateRoom = (code: string, displayName: string, viewerToken?: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.spectate, { code: code.toUpperCase(), displayName, ...(viewerToken ? { viewerToken } : {}) })
+  : request<SessionResponse>(`/rooms/${code.toUpperCase()}/spectate`, { method: "POST", body: JSON.stringify({ displayName, ...(viewerToken ? { viewerToken } : {}) }) });
+export const createViewerInvite = (code: string, token: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.createViewerInvite, { code: code.toUpperCase(), token })
+  : request<{ token: string; expiresAt: string }>(`/rooms/${code.toUpperCase()}/viewer-link`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
+export const markDisconnected = (code: string, token: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.disconnect, { code: code.toUpperCase(), token, connectionId: connectionId() })
+  : request<RoomView>(`/rooms/${code.toUpperCase()}/disconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
+export const markReconnected = (code: string, token: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.reconnect, { code: code.toUpperCase(), token, connectionId: connectionId() }) as Promise<{ ok: true }>
+  : request<RoomView>(`/rooms/${code.toUpperCase()}/reconnect`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
+export const heartbeatRoom = (code: string, token: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.heartbeat, { code: code.toUpperCase(), token, connectionId: connectionId() })
+  : request<{ ok: true; at: number }>(`/rooms/${code.toUpperCase()}/heartbeat`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ connectionId: connectionId() }) });
 export const rotateSession = (code: string, token: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/rotate-session`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const claimRoomSeat = (code: string, token: string) => request<SessionResponse>(`/rooms/${code.toUpperCase()}/claim`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const createWebSocketTicket = (code: string, token: string) => request<{ ticket: string }>(`/rooms/${code.toUpperCase()}/ws-ticket`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
 export const resumeAccountGame = (roomId: string) => request<SessionResponse>(`/accounts/me/games/${encodeURIComponent(roomId)}/resume`, { method: "POST", body: "{}" });
 export const getAccount = () => request<{ account: AccountSummary }>("/accounts/me");
+export const getAccountDashboard = async (): Promise<AccountDashboard | null> => {
+  if (convexRealtimeEnabled) return request<AccountDashboard | null>("/accounts/me/dashboard");
+  try {
+    const { account } = await getAccount();
+    const [games, stats, social, privacy] = await Promise.all([getAccountGames(), getAccountStats(), getSocialSummary(), getAccountPrivacySettings()]);
+    return { account, games, stats, social, privacy };
+  } catch {
+    return null;
+  }
+};
 export const registerAccount = (username: string, password: string) => request<{ account: AccountSummary; message: string }>("/accounts/register", { method: "POST", body: JSON.stringify({ username, password }) });
 export const loginAccount = (username: string, password: string) => request<{ account: AccountSummary; message: string }>("/accounts/login", { method: "POST", body: JSON.stringify({ username, password }) });
 export const logoutAccount = () => request<{ message: string }>("/accounts/logout", { method: "POST", body: "{}" });
@@ -110,10 +139,25 @@ export const acceptFriendInviteLink = (token: string) => request<{ message: stri
 export const revokeFriendInviteLink = (id: string) => request<{ message: string }>(`/accounts/me/friend-invite-links/${encodeURIComponent(id)}`, { method: "DELETE" });
 export const getPlayerProfile = (username: string) => request<PlayerStats & { botAssistedMatches: number }>(`/players/${encodeURIComponent(username)}`);
 export const getLeaderboard = (category: LeaderboardCategory) => request<LeaderboardEntry[]>(`/leaderboard?category=${encodeURIComponent(category)}`);
-export const setReady = (code: string, token: string, ready: boolean) => request<RoomView>(`/rooms/${code.toUpperCase()}/ready`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ ready }) });
-export const startMatch = (code: string, token: string) => request<RoomView>(`/rooms/${code.toUpperCase()}/start`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
-export const sendSetupAction = (code: string, token: string, expectedRevision: number, action: SetupAction) => request<RoomView>(`/rooms/${code.toUpperCase()}/setup`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ expectedRevision, action }) });
-export const readRoom = (code: string, token: string, afterVersion = 0) => request<RoomView>(`/rooms/${code}/state?token=${encodeURIComponent(token)}&afterVersion=${afterVersion}`);
+export const setReady = (code: string, token: string, ready: boolean) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.ready, { code: code.toUpperCase(), token, ready })
+  : request<RoomView>(`/rooms/${code.toUpperCase()}/ready`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ ready }) });
+export const startMatch = (code: string, token: string) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.start, { code: code.toUpperCase(), token })
+  : request<RoomView>(`/rooms/${code.toUpperCase()}/start`, { method: "POST", headers: { "x-room-token": token }, body: "{}" });
+export const sendSetupAction = (code: string, token: string, expectedRevision: number, action: SetupAction) => convexRealtimeEnabled
+  ? getConvexClient().mutation(convexApi.rooms.setup, { code: code.toUpperCase(), token, expectedRevision, action })
+  : request<RoomView>(`/rooms/${code.toUpperCase()}/setup`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ expectedRevision, action }) });
+export const readRoom = async (code: string, token: string, afterVersion = 0) => convexRealtimeEnabled
+  ? (async () => {
+      const tokenHash = await hashRoomToken(token);
+      const [roomState, participants] = await Promise.all([
+        getConvexClient().query(convexApi.rooms.readLiveState, { code: code.toUpperCase(), tokenHash }),
+        getConvexClient().query(convexApi.rooms.readParticipants, { tokenHash }),
+      ]);
+      return { ...roomState, participants, events: [] };
+    })()
+  : request<RoomView>(`/rooms/${code}/state?token=${encodeURIComponent(token)}&afterVersion=${afterVersion}`);
 export const readPublicReplay = (code: string, fromVersion = 0, limit = 8) => request<PublicReplayPage>(`/rooms/${code.toUpperCase()}/replay?fromVersion=${fromVersion}&limit=${limit}`);
 export const exportPublicReplay = (code: string) => request<PublicReplayExport>(`/rooms/${code.toUpperCase()}/replay/export`);
 export class SocketUnavailableError extends Error {}
@@ -126,6 +170,10 @@ export class RoomCommandChannel {
     socket.addEventListener("message", this.onMessage);
     socket.addEventListener("close", this.onClose);
     socket.addEventListener("error", this.onClose);
+  }
+
+  get isOpen(): boolean {
+    return !this.disposed && this.socket.readyState === WebSocket.OPEN;
   }
 
   submit(envelope: GameCommandEnvelope): Promise<RoomView> {
@@ -198,7 +246,7 @@ export const sendCommand = async (
   expectedRevision: number,
   command: GameCommand,
   channel?: RoomCommandChannel | null,
-) => {
+): Promise<RoomView | RoomActionResult> => {
   const envelope: GameCommandEnvelope = {
     actionId: crypto.randomUUID(),
     actorId,
@@ -214,7 +262,7 @@ export const sendCommand = async (
       // Reuse the action ID so a command accepted just before a disconnect is idempotent.
     }
   }
+  if (convexRealtimeEnabled) return getConvexClient().mutation(convexApi.rooms.submit, { code: code.toUpperCase(), token, envelope });
   return request<RoomView>(`/rooms/${code}/actions`, { method: "POST", headers: { "x-room-token": token }, body: JSON.stringify({ envelope }) });
 };
 export const websocketUrl = (code: string, ticket: string) => `${API_URL.replace(/^http/, "ws")}/ws?code=${encodeURIComponent(code)}&ticket=${encodeURIComponent(ticket)}`;
-export const websocketTransportEnabled = false; // Enable after this deployment has a durable cross-instance WebSocket fanout path.

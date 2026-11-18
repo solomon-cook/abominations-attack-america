@@ -7,6 +7,8 @@ type Props = LobbyPanelProps & {
   rulesOpen: boolean;
   onToggleRules: () => void;
   onStartLocal: () => void;
+  savedOnlineRoom?: { code: string } | null;
+  onResumeSavedRoom?: () => void;
   onStartSolo: () => void;
   onStartSoloScenario: () => void;
   botDifficulty: BotDifficulty;
@@ -19,8 +21,14 @@ type Props = LobbyPanelProps & {
 
 type MenuPanel = "auth" | "home" | "solo" | "multiplayer";
 
-export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo, onStartSoloScenario, botDifficulty, onBotDifficultyChange, onStartProvisionalPlaytest, onOpenBoardReview, onStartVictoryScenario, accountPanel, ...lobbyProps }: Props) {
-  const [panel, setPanel] = useState<MenuPanel>(() => { const returnToMultiplayer = sessionStorage.getItem("abominations-return-multiplayer") === "1"; sessionStorage.removeItem("abominations-return-multiplayer"); return returnToMultiplayer ? "multiplayer" : "auth"; });
+export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, savedOnlineRoom, onResumeSavedRoom, onStartSolo, onStartSoloScenario, botDifficulty, onBotDifficultyChange, onStartProvisionalPlaytest, onOpenBoardReview, onStartVictoryScenario, accountPanel, ...lobbyProps }: Props) {
+  const [panel, setPanel] = useState<MenuPanel>(() => {
+    const returnToMultiplayer = sessionStorage.getItem("abominations-return-multiplayer") === "1";
+    sessionStorage.removeItem("abominations-return-multiplayer");
+    const accountLink = new URLSearchParams(window.location.search).has("verify-email")
+      || new URLSearchParams(window.location.search).has("reset-password");
+    return returnToMultiplayer ? "multiplayer" : accountLink ? "auth" : "home";
+  });
   const [qrJoinRequested, setQrJoinRequested] = useState(false);
   void rulesOpen; void onToggleRules; void onStartSoloScenario; void onStartProvisionalPlaytest; void onOpenBoardReview; void onStartVictoryScenario;
 
@@ -43,7 +51,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
       <div className="home-backdrop" aria-hidden="true" />
       <div className="home-frame">
         <header className="home-masthead">
-          {panel !== "home" && panel !== "auth" && <button type="button" className="home-text-button" onClick={() => openPanel("home")}>Main menu</button>}
+          {panel !== "home" && <button type="button" className="home-text-button" onClick={() => openPanel("home")}>Main menu</button>}
         </header>
 
         <section className="home-intro" aria-labelledby="home-title">
@@ -52,7 +60,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
             <div className="home-menu-panel" aria-live="polite">
               <div className="home-menu-scroll">
                 {panel === "auth" && <section aria-labelledby="auth-menu-title">
-                  <h2 id="auth-menu-title">Sign in to continue</h2>
+                  <h2 id="auth-menu-title">Player account</h2>
                   <div className="home-account-form">{cloneElement(accountPanel as ReactElement<{ defaultOpen?: boolean; compact?: boolean; deferAccountRequests?: boolean; onAccountChange?: (account: AccountSummary | null) => void }>, { defaultOpen: true, compact: true, deferAccountRequests: true, onAccountChange: (nextAccount: AccountSummary | null) => { const original = (accountPanel as ReactElement<{ onAccountChange?: (account: AccountSummary | null) => void }>).props.onAccountChange; original?.(nextAccount); if (nextAccount) { if (new URLSearchParams(window.location.search).get("qr") === "1" && lobbyProps.roomCode) setQrJoinRequested(true); else setPanel("home"); } } })}</div>
                 </section>}
 
@@ -60,6 +68,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
                   <h2>Choose how to play</h2>
                   <button type="button" className="home-menu-button home-menu-button-primary" onClick={() => openPanel("solo")}>Single player <span aria-hidden="true">→</span></button>
                   <button type="button" className="home-menu-button" onClick={() => openPanel("multiplayer")}>Multiplayer <span aria-hidden="true">→</span></button>
+                  <button type="button" className="home-text-button" onClick={() => openPanel("auth")}>Player account</button>
                 </nav>}
 
                 {panel === "solo" && <section aria-labelledby="solo-menu-title">
@@ -75,6 +84,7 @@ export function HomeScreen({ rulesOpen, onToggleRules, onStartLocal, onStartSolo
                 {panel === "multiplayer" && <section aria-labelledby="multiplayer-menu-title">
                   <h2 id="multiplayer-menu-title">Multiplayer</h2>
                   <button type="button" className="home-back" onClick={() => openPanel("home")}>← Back</button>
+                  {savedOnlineRoom && onResumeSavedRoom && <button className="home-start" type="button" onClick={onResumeSavedRoom}>Resume room {savedOnlineRoom.code} <span aria-hidden="true">→</span></button>}
                   <LobbyPanel {...lobbyProps} onBackToMenu={() => setPanel("home")} />
                 </section>}
               </div>

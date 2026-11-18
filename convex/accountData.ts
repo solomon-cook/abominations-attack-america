@@ -3,6 +3,9 @@ import { internalMutation, internalQuery } from "./_generated/server.js";
 import { internal } from "./_generated/api.js";
 import { sumPlayerStats } from "../apps/api/src/player-stats.js";
 
+const ACCOUNT_PRESENCE_TTL_MS = 6 * 60 * 1000;
+const ACCOUNT_PRESENCE_REFRESH_THRESHOLD_MS = 90 * 1000;
+
 async function userById(ctx: any, userId: string) {
   const user = await ctx.db.query("userAccounts").withIndex("by_external_id", (q: any) => q.eq("externalId", userId)).unique();
   if (!user) throw new Error("Account not found.");
@@ -10,6 +13,57 @@ async function userById(ctx: any, userId: string) {
 }
 async function statsForUser(ctx: any, userId: string) {
   return ctx.db.query("playerMatchStats").withIndex("by_user_completed", (q: any) => q.eq("userId", userId)).order("desc").collect();
+}
+function summarizeRows(userId: string, rows: any[], username: string) {
+  const stats = sumPlayerStats(rows, username);
+  return {
+    userId,
+    gamesPlayed: stats.gamesPlayed,
+    wins: stats.wins,
+    losses: stats.losses,
+    ties: stats.ties,
+    stompedTiles: stats.stompedTiles,
+    damageTaken: stats.damageTaken,
+    healthGained: stats.healthGained,
+    luckTotal: stats.luckTotal,
+    luckRolls: stats.luckRolls,
+    botAssistedMatches: rows.filter((row) => row.botAssisted).length,
+    monsterChoices: stats.monsterChoices,
+    branchChoices: stats.branchChoices,
+    updatedAt: Date.now(),
+  };
+}
+function statsFromSummary(summary: any, username: string) {
+  const mostChosen = (choices: Record<string, number>) => Object.entries(choices)
+    .sort(([leftName, leftCount], [rightName, rightCount]) => rightCount - leftCount || leftName.localeCompare(rightName))[0]?.[0];
+  return {
+    username,
+    gamesPlayed: summary.gamesPlayed,
+    wins: summary.wins,
+    losses: summary.losses,
+    ties: summary.ties,
+    winRate: summary.gamesPlayed ? summary.wins / summary.gamesPlayed : 0,
+    stompedTiles: summary.stompedTiles,
+    damageTaken: summary.damageTaken,
+    healthGained: summary.healthGained,
+    luckTotal: summary.luckTotal,
+    luckRolls: summary.luckRolls,
+    luckAverage: summary.luckRolls ? summary.luckTotal / summary.luckRolls : null,
+    monsterChoices: summary.monsterChoices as Record<string, number>,
+    branchChoices: summary.branchChoices as Record<string, number>,
+    mostChosenMonster: mostChosen(summary.monsterChoices),
+    mostChosenBranch: mostChosen(summary.branchChoices),
+  };
+}
+async function ensureStatsSummary(ctx: any, user: any) {
+  let summary = user.statsSummary;
+  if (!summary) {
+    summary = summarizeRows(user.externalId, await statsForUser(ctx, user.externalId), user.username);
+    await ctx.db.patch(user._id, { statsSummary: summary, statsSummaryEnabled: true });
+  } else if (!user.statsSummaryEnabled) {
+    await ctx.db.patch(user._id, { statsSummaryEnabled: true });
+  }
+  return summary;
 }
 const digestToken = async (value: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
@@ -29,33 +83,36 @@ async function createFriendship(ctx: any, firstId: string, secondId: string) {
   if (!existing) await ctx.db.insert("friendships", { externalId: crypto.randomUUID(), userAId, userBId, createdAt: Date.now() });
 }
 
+async function gamesForUser(ctx: any, userId: string) {
+  const participants = await ctx.db.query("participants").withIndex("by_user_role_created", (q: any) => q.eq("userId", userId).eq("role", "player")).order("desc").take(20);
+  const result = [];
+  for (const participant of participants) {
+    const room = await ctx.db.query("rooms").withIndex("by_external_id", (q: any) => q.eq("externalId", participant.roomId)).unique();
+    if (!room || room.isTest) continue;
+    const matchStats = await ctx.db.query("playerMatchStats").withIndex("by_room_participant", (q: any) => q.eq("roomId", room.externalId).eq("participantId", participant.externalId)).unique();
+    result.push({
+      roomId: room.externalId, code: room.code, status: room.status, privacy: room.privacy,
+      playerIndex: participant.playerIndex ?? 0, displayName: participant.displayName,
+      botControlled: participant.botControlled, botAssisted: participant.botAssisted,
+      ...(room.completedAt ? { completedAt: new Date(room.completedAt).toISOString() } : {}),
+      ...(matchStats ? { outcome: matchStats.outcome } : {}),
+    });
+  }
+  return result;
+}
+
 export const stats = internalQuery({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
     const user = await userById(ctx, userId);
-    return sumPlayerStats(await statsForUser(ctx, userId), user.username);
+    const summary = user.statsSummary;
+    return summary ? statsFromSummary(summary, user.username) : sumPlayerStats(await statsForUser(ctx, userId), user.username);
   },
 });
 
 export const games = internalQuery({
   args: { userId: v.string() },
-  handler: async (ctx, { userId }) => {
-    const participants = await ctx.db.query("participants").withIndex("by_user_role_created", (q) => q.eq("userId", userId).eq("role", "player")).order("desc").collect();
-    const result = [];
-    for (const participant of participants) {
-      const room = await ctx.db.query("rooms").withIndex("by_external_id", (q) => q.eq("externalId", participant.roomId)).unique();
-      if (!room || room.isTest) continue;
-      const gameResult = await ctx.db.query("gameResults").withIndex("by_room", (q) => q.eq("roomId", room.externalId)).unique();
-      result.push({
-        roomId: room.externalId, code: room.code, status: room.status, privacy: room.privacy,
-        playerIndex: participant.playerIndex ?? 0, displayName: participant.displayName,
-        botControlled: participant.botControlled, botAssisted: participant.botAssisted,
-        ...(room.completedAt ? { completedAt: new Date(room.completedAt).toISOString() } : {}),
-        ...(gameResult ? { outcome: gameResult.summary?.winnerPlayer == null ? "tie" : gameResult.winnerId === participant.externalId ? "win" : "loss" } : {}),
-      });
-    }
-    return result;
-  },
+  handler: async (ctx, { userId }) => gamesForUser(ctx, userId),
 });
 
 export const privacy = internalQuery({
@@ -82,21 +139,18 @@ export const updateUsername = internalMutation({
     if (duplicate && duplicate.externalId !== userId) throw new Error("That username is already in use.");
     await ctx.db.patch(user._id, { username, updatedAt: Date.now() });
     for (const participant of await ctx.db.query("participants").withIndex("by_user_role", (q) => q.eq("userId", userId)).collect()) await ctx.db.patch(participant._id, { displayName: username });
-    for (const row of await statsForUser(ctx, userId)) await ctx.db.patch(row._id, { username });
-    const results = await ctx.db.query("gameResults").withIndex("by_winner_name", (q) => q.eq("winnerName", user.username)).collect();
-    for (const result of results) await ctx.db.patch(result._id, { winnerName: username });
     return { id: userId, username, emailVerified: Boolean(user.emailVerifiedAt) };
   },
 });
 
-export const publicProfile = internalQuery({
+export const publicProfile = internalMutation({
   args: { usernameInput: v.string() },
   handler: async (ctx, { usernameInput }) => {
     const username = usernameInput.trim().toLowerCase();
     const user = await ctx.db.query("userAccounts").withIndex("by_username", (q) => q.eq("username", username)).unique();
     if (!user?.publicStatsEnabled) throw new Error("Player not found.");
-    const rows = await statsForUser(ctx, user.externalId);
-    return { ...sumPlayerStats(rows, username), botAssistedMatches: rows.filter((row: any) => row.botAssisted).length };
+    const summary = await ensureStatsSummary(ctx, user);
+    return { ...statsFromSummary(summary, username), botAssistedMatches: summary.botAssistedMatches };
   },
 });
 
@@ -108,7 +162,8 @@ export const leaderboard = internalQuery({
     const users = await ctx.db.query("userAccounts").collect();
     const entries: Array<Record<string, any>> = [];
     for (const user of users.filter((row) => row.publicStatsEnabled)) {
-      const stats = sumPlayerStats(await statsForUser(ctx, user.externalId), user.username);
+    const summary = user.statsSummary;
+    const stats = summary ? statsFromSummary(summary, user.username) : sumPlayerStats(await statsForUser(ctx, user.externalId), user.username);
       if (category === "win-rate" && stats.gamesPlayed < 5) continue;
       if (category === "luck" && stats.luckRolls < 20) continue;
       const value = category === "wins" ? stats.wins : category === "win-rate" ? stats.winRate : category === "stomped-tiles" ? stats.stompedTiles : category === "damage-taken" ? stats.damageTaken : category === "health-gained" ? stats.healthGained : stats.luckAverage ?? 0;
@@ -119,42 +174,65 @@ export const leaderboard = internalQuery({
   },
 });
 
+async function socialSummaryForUser(ctx: any, userId: string, user: any) {
+  const [asA, asB, incomingRows, outgoingRows, linkRows, savedRows] = await Promise.all([
+    ctx.db.query("friendships").withIndex("by_user_a_created", (q: any) => q.eq("userAId", userId)).collect(),
+    ctx.db.query("friendships").withIndex("by_user_b_created", (q: any) => q.eq("userBId", userId)).collect(),
+    ctx.db.query("friendInvitations").withIndex("by_recipient_state", (q: any) => q.eq("recipientId", userId)).collect(),
+    ctx.db.query("friendInvitations").withIndex("by_sender_created", (q: any) => q.eq("senderId", userId)).collect(),
+    ctx.db.query("friendInviteLinks").withIndex("by_sender_created", (q: any) => q.eq("senderId", userId)).collect(),
+    ctx.db.query("savedOpponents").withIndex("by_owner_opponent", (q: any) => q.eq("ownerId", userId)).collect(),
+  ]);
+  const timestamp = Date.now();
+  const friends = [];
+  for (const relation of [...asA, ...asB].sort((a, b) => a.createdAt - b.createdAt)) {
+    const id = relation.userAId === userId ? relation.userBId : relation.userAId;
+    const friend = await ctx.db.query("userAccounts").withIndex("by_external_id", (q: any) => q.eq("externalId", id)).unique();
+    if (friend) friends.push({ username: friend.username, online: Boolean(friend.presenceEnabled && friend.presenceExpiresAt && friend.presenceExpiresAt > timestamp) });
+  }
+  const incoming = [];
+  for (const row of incomingRows.filter((item: any) => !item.acceptedAt && !item.declinedAt && !item.revokedAt && item.expiresAt > timestamp).sort((a: any, b: any) => b.createdAt - a.createdAt)) {
+    const sender = await ctx.db.query("userAccounts").withIndex("by_external_id", (q: any) => q.eq("externalId", row.senderId)).unique();
+    if (sender) incoming.push({ id: row.externalId, username: sender.username, createdAt: new Date(row.createdAt).toISOString(), expiresAt: new Date(row.expiresAt).toISOString() });
+  }
+  const outgoing = [];
+  for (const row of outgoingRows.filter((item: any) => !item.acceptedAt && !item.declinedAt && !item.revokedAt && item.expiresAt > timestamp).sort((a: any, b: any) => b.createdAt - a.createdAt)) {
+    const recipient = await ctx.db.query("userAccounts").withIndex("by_external_id", (q: any) => q.eq("externalId", row.recipientId)).unique();
+    if (recipient) outgoing.push({ id: row.externalId, username: recipient.username, createdAt: new Date(row.createdAt).toISOString(), expiresAt: new Date(row.expiresAt).toISOString() });
+  }
+  const inviteLinks = linkRows.filter((item: any) => !item.acceptedAt && !item.revokedAt && item.expiresAt > timestamp).sort((a: any, b: any) => b.createdAt - a.createdAt).map((item: any) => ({ id: item.externalId, createdAt: new Date(item.createdAt).toISOString(), expiresAt: new Date(item.expiresAt).toISOString() }));
+  const savedOpponents = [];
+  for (const row of savedRows.sort((a: any, b: any) => a.createdAt - b.createdAt)) {
+    const opponent = await ctx.db.query("userAccounts").withIndex("by_external_id", (q: any) => q.eq("externalId", row.opponentId)).unique();
+    if (opponent) savedOpponents.push(opponent.username);
+  }
+  return { presenceEnabled: Boolean(user.presenceEnabled), friends, incoming, outgoing, inviteLinks, savedOpponents };
+}
+
 export const socialSummary = internalQuery({
   args: { userId: v.string() },
-  handler: async (ctx, { userId }) => {
+  handler: async (ctx, { userId }) => socialSummaryForUser(ctx, userId, await userById(ctx, userId)),
+});
+
+export const dashboard = internalMutation({
+  args: { tokenHash: v.string() },
+  handler: async (ctx, { tokenHash }) => {
+    const session = await ctx.db.query("accountSessions").withIndex("by_token_hash", (q) => q.eq("tokenHash", tokenHash)).unique();
+    if (!session || session.revokedAt || session.expiresAt <= Date.now()) return null;
+    const userId = session.userId;
     const user = await userById(ctx, userId);
-    const [asA, asB, incomingRows, outgoingRows, linkRows, savedRows] = await Promise.all([
-      ctx.db.query("friendships").withIndex("by_user_a_created", (q) => q.eq("userAId", userId)).collect(),
-      ctx.db.query("friendships").withIndex("by_user_b_created", (q) => q.eq("userBId", userId)).collect(),
-      ctx.db.query("friendInvitations").withIndex("by_recipient_state", (q) => q.eq("recipientId", userId)).collect(),
-      ctx.db.query("friendInvitations").withIndex("by_sender_created", (q) => q.eq("senderId", userId)).collect(),
-      ctx.db.query("friendInviteLinks").withIndex("by_sender_created", (q) => q.eq("senderId", userId)).collect(),
-      ctx.db.query("savedOpponents").withIndex("by_owner_opponent", (q) => q.eq("ownerId", userId)).collect(),
+    const [games, summary, social] = await Promise.all([
+      gamesForUser(ctx, userId),
+      ensureStatsSummary(ctx, user),
+      socialSummaryForUser(ctx, userId, user),
     ]);
-    const timestamp = Date.now();
-    const friends = [];
-    for (const relation of [...asA, ...asB].sort((a, b) => a.createdAt - b.createdAt)) {
-      const id = relation.userAId === userId ? relation.userBId : relation.userAId;
-      const friend = await ctx.db.query("userAccounts").withIndex("by_external_id", (q) => q.eq("externalId", id)).unique();
-      if (friend) friends.push({ username: friend.username, online: Boolean(friend.presenceEnabled && friend.presenceExpiresAt && friend.presenceExpiresAt > timestamp) });
-    }
-    const incoming = [];
-    for (const row of incomingRows.filter((item) => !item.acceptedAt && !item.declinedAt && !item.revokedAt && item.expiresAt > timestamp).sort((a, b) => b.createdAt - a.createdAt)) {
-      const sender = await ctx.db.query("userAccounts").withIndex("by_external_id", (q) => q.eq("externalId", row.senderId)).unique();
-      if (sender) incoming.push({ id: row.externalId, username: sender.username, createdAt: new Date(row.createdAt).toISOString(), expiresAt: new Date(row.expiresAt).toISOString() });
-    }
-    const outgoing = [];
-    for (const row of outgoingRows.filter((item) => !item.acceptedAt && !item.declinedAt && !item.revokedAt && item.expiresAt > timestamp).sort((a, b) => b.createdAt - a.createdAt)) {
-      const recipient = await ctx.db.query("userAccounts").withIndex("by_external_id", (q) => q.eq("externalId", row.recipientId)).unique();
-      if (recipient) outgoing.push({ id: row.externalId, username: recipient.username, createdAt: new Date(row.createdAt).toISOString(), expiresAt: new Date(row.expiresAt).toISOString() });
-    }
-    const inviteLinks = linkRows.filter((item) => !item.acceptedAt && !item.revokedAt && item.expiresAt > timestamp).sort((a, b) => b.createdAt - a.createdAt).map((item) => ({ id: item.externalId, createdAt: new Date(item.createdAt).toISOString(), expiresAt: new Date(item.expiresAt).toISOString() }));
-    const savedOpponents = [];
-    for (const row of savedRows.sort((a, b) => a.createdAt - b.createdAt)) {
-      const opponent = await ctx.db.query("userAccounts").withIndex("by_external_id", (q) => q.eq("externalId", row.opponentId)).unique();
-      if (opponent) savedOpponents.push(opponent.username);
-    }
-    return { presenceEnabled: Boolean(user.presenceEnabled), friends, incoming, outgoing, inviteLinks, savedOpponents };
+    return {
+      account: { id: user.externalId, username: user.username, emailVerified: Boolean(user.emailVerifiedAt) },
+      games,
+      stats: statsFromSummary(summary, user.username),
+      social,
+      privacy: { publicStatsEnabled: Boolean(user.publicStatsEnabled) },
+    };
   },
 });
 
@@ -162,7 +240,8 @@ export const setPresence = internalMutation({
   args: { userId: v.string(), enabled: v.boolean() },
   handler: async (ctx, { userId, enabled }) => {
     const user = await userById(ctx, userId);
-    await ctx.db.patch(user._id, { presenceEnabled: enabled, presenceExpiresAt: enabled ? Date.now() + 90_000 : undefined, updatedAt: Date.now() });
+    const timestamp = Date.now();
+    await ctx.db.patch(user._id, { presenceEnabled: enabled, presenceExpiresAt: enabled ? timestamp + ACCOUNT_PRESENCE_TTL_MS : undefined, updatedAt: timestamp });
   },
 });
 
@@ -171,7 +250,9 @@ export const refreshPresence = internalMutation({
   handler: async (ctx, { userId }) => {
     const user = await userById(ctx, userId);
     const timestamp = Date.now();
-    if (user.presenceEnabled && (!user.presenceExpiresAt || user.presenceExpiresAt <= timestamp + 75_000)) await ctx.db.patch(user._id, { presenceExpiresAt: timestamp + 90_000 });
+    if (user.presenceEnabled && (!user.presenceExpiresAt || user.presenceExpiresAt <= timestamp + ACCOUNT_PRESENCE_REFRESH_THRESHOLD_MS)) {
+      await ctx.db.patch(user._id, { presenceExpiresAt: timestamp + ACCOUNT_PRESENCE_TTL_MS });
+    }
   },
 });
 

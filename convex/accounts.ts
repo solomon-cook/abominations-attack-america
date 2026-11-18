@@ -38,7 +38,11 @@ export const createUser = internalMutation({
     if (await ctx.db.query("userAccounts").withIndex("by_username", (q) => q.eq("username", args.username)).unique()) throw new Error("That username is already in use.");
     const timestamp = Date.now();
     const externalId = crypto.randomUUID();
-    await ctx.db.insert("userAccounts", { externalId, ...(args.email ? { email: args.email } : {}), passwordHash: args.passwordHash, username: args.username, publicStatsEnabled: true, presenceEnabled: false, createdAt: timestamp, updatedAt: timestamp });
+    await ctx.db.insert("userAccounts", {
+      externalId, ...(args.email ? { email: args.email } : {}), passwordHash: args.passwordHash, username: args.username,
+      publicStatsEnabled: true, presenceEnabled: false,
+      createdAt: timestamp, updatedAt: timestamp,
+    });
     if (args.tokenHash && args.tokenExpiresAt) await ctx.db.insert("accountTokens", { externalId: crypto.randomUUID(), userId: externalId, tokenHash: args.tokenHash, purpose: "EMAIL_VERIFICATION", expiresAt: args.tokenExpiresAt, createdAt: timestamp });
     return { id: externalId, username: args.username, ...(args.email ? { email: args.email } : {}) };
   },

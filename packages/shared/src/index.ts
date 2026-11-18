@@ -104,6 +104,14 @@ export interface AccountGameSummary {
   outcome?: "win" | "loss" | "tie";
 }
 
+export interface AccountDashboard {
+  account: AccountSummary;
+  games: AccountGameSummary[];
+  stats: PlayerStats;
+  social: SocialSummary;
+  privacy: AccountPrivacySettings;
+}
+
 export interface RoomView {
   id: string;
   code: string;
@@ -115,6 +123,13 @@ export interface RoomView {
   state: GameState;
   participants: RoomParticipantView[];
   events: RoomEvent[];
+}
+
+/** Compact acknowledgement for a command whose full room state arrives via the live subscription. */
+export interface RoomActionResult {
+  state: GameState;
+  version: number;
+  status: RoomStatus;
 }
 
 export interface ReplayFrame {

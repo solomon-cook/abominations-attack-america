@@ -30,6 +30,9 @@ export default defineSchema({
     completedAt: v.optional(v.number()),
     botStepScheduled: v.optional(v.boolean()),
     botStepGeneration: v.optional(v.number()),
+    // Avoid scanning participant rows on every game command to find bots.
+    hasBots: v.optional(v.boolean()),
+    // Legacy fields remain optional for rooms created before scheduler state moved out.
     presenceCheckScheduled: v.optional(v.boolean()),
     presenceCheckGeneration: v.optional(v.number()),
     presenceCheckId: v.optional(v.id("_scheduled_functions")),
@@ -53,6 +56,7 @@ export default defineSchema({
     sessionExpiresAt: v.number(),
     connectedAt: v.optional(v.number()),
     lastSeenAt: v.optional(v.number()),
+    presenceId: v.optional(v.id("roomPresence")),
     connectionId: v.optional(v.string()),
     ready: v.boolean(),
     userId: v.optional(v.string()),
@@ -72,6 +76,21 @@ export default defineSchema({
     .index("by_bot_disconnected", ["botControlled", "disconnectedAt"])
     .index("by_presence", ["lastSeenAt"]),
 
+  roomPresence: defineTable({
+    participantId: v.string(),
+    roomId: v.string(),
+    lastSeenAt: v.number(),
+  })
+    .index("by_room", ["roomId"])
+    .index("by_participant", ["participantId"]),
+
+  roomRuntime: defineTable({
+    roomId: v.string(),
+    presenceCheckScheduled: v.optional(v.boolean()),
+    presenceCheckGeneration: v.optional(v.number()),
+    presenceCheckId: v.optional(v.id("_scheduled_functions")),
+  }).index("by_room", ["roomId"]),
+
   events: defineTable({
     externalId: v.string(),
     roomId: v.string(),
@@ -85,6 +104,11 @@ export default defineSchema({
   })
     .index("by_room_version", ["roomId", "version"])
     .index("by_room_created", ["roomId", "createdAt"]),
+
+  roomReplaySeeds: defineTable({
+    roomId: v.string(),
+    initialState: v.bytes(),
+  }).index("by_room", ["roomId"]),
 
   commandReceipts: defineTable({
     roomId: v.string(),
@@ -113,6 +137,8 @@ export default defineSchema({
     publicStatsEnabled: v.boolean(),
     presenceEnabled: v.boolean(),
     presenceExpiresAt: v.optional(v.number()),
+    statsSummary: v.optional(v.any()),
+    statsSummaryEnabled: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

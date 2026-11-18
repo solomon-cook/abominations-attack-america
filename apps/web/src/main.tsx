@@ -26,12 +26,13 @@ import {
   type HexKey,
   type SetupState,
 } from "@abominations/game-engine";
-import { botUsernameForSeat, type AccountSummary, type RoomView, type SessionResponse } from "@abominations/shared";
+import { botUsernameForSeat, type AccountSummary, type RoomActionResult, type RoomView, type SessionResponse } from "@abominations/shared";
 import {
   addRoomBot,
   claimRoomSeat,
   createRoom,
   deleteRoom as deleteOnlineRoom,
+  fillRoomWithBots,
   createViewerInvite,
   createWebSocketTicket,
   convexRealtimeEnabled,
@@ -160,6 +161,19 @@ function safeStorageGet(key: string): string | null {
   }
 }
 
+type SavedOnlineRoom = { token: string; participantId: string; room: { code: string } };
+
+function readSavedOnlineRoom(): SavedOnlineRoom | null {
+  const saved = safeStorageGet("abominations-session");
+  if (!saved) return null;
+  try {
+    const session = JSON.parse(saved) as SavedOnlineRoom;
+    return session.token && session.participantId && session.room?.code ? session : null;
+  } catch {
+    return null;
+  }
+}
+
 function safeStoredNumber(key: string, fallback: number): number {
   const value = Number(safeStorageGet(key));
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
@@ -185,10 +199,23 @@ function App() {
   const botTurnRunning = useRef(false);
   const nextBotStepDelay = useRef(650);
   const [session, setSession] = useState<SessionResponse | null>(null);
+  const [savedOnlineRoom, setSavedOnlineRoom] = useState<SavedOnlineRoom | null>(readSavedOnlineRoom);
   const [room, setRoom] = useState<RoomView | null>(null);
+  const roomStatusRef = useRef<RoomView["status"] | undefined>(undefined);
+  roomStatusRef.current = room?.status;
   const updateRoomSnapshot = useCallback((nextRoom: RoomView) => {
     setRoom((current) => preferRoomSnapshot(current, nextRoom));
   }, []);
+  const updateAfterRoomAction = useCallback((fallbackRoom: RoomView, result: RoomView | RoomActionResult) => {
+    if ("participants" in result) {
+      updateRoomSnapshot(result);
+      return;
+    }
+    setRoom((current) => {
+      const base = current && current.code === fallbackRoom.code && current.version <= result.version ? current : fallbackRoom;
+      return preferRoomSnapshot(current, { ...base, state: result.state, version: result.version, status: result.status });
+    });
+  }, [updateRoomSnapshot]);
   const [account, setAccount] = useState<AccountSummary | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState(() => {
@@ -758,6 +785,7 @@ function App() {
       window.history.replaceState(null, "", url.toString());
       void spectateRoom(viewerRoomCode, "TV Viewer", viewerToken).then((viewerSession) => {
         setSession(viewerSession);
+        setSavedOnlineRoom({ token: viewerSession.token, participantId: viewerSession.participantId, room: { code: viewerSession.room.code } });
         updateRoomSnapshot(viewerSession.room);
         setRoomCode(viewerSession.room.code);
         setGamePanelOpen(true);
@@ -778,19 +806,20 @@ function App() {
       setConnectionState("reconnecting");
       void markReconnected(room.code, session.token).then((restoredRoom) => {
         if (cancelled) return;
-        updateRoomSnapshot(restoredRoom);
+        if ("state" in restoredRoom) updateRoomSnapshot(restoredRoom);
         unsubscribe = subscribeRoom(room.code, session.token, (nextRoom) => {
           if (cancelled) return;
           updateRoomSnapshot(nextRoom);
           setConnectionState("online");
         }, () => {
           if (!cancelled) setConnectionState("stale");
-        }, restoredRoom.version);
+        });
         heartbeat = setInterval(() => {
+          if (roomStatusRef.current === "completed") return;
           void heartbeatRoom(room.code, session.token).catch(() => {
             if (!cancelled) setConnectionState("stale");
           });
-        }, 25_000);
+        }, 300_000);
         setConnectionState("online");
       }).catch(() => {
         if (!cancelled) setConnectionState("stale");
@@ -799,26 +828,36 @@ function App() {
         cancelled = true;
         unsubscribe?.();
         if (heartbeat) clearInterval(heartbeat);
-        void markDisconnected(room.code, session.token).catch(() => undefined);
+        if (roomStatusRef.current !== "completed") void markDisconnected(room.code, session.token).catch(() => undefined);
       };
     }
     let socket: WebSocket | undefined;
     let commandChannel: RoomCommandChannel | undefined;
     let polling: ReturnType<typeof setInterval> | undefined;
-    const heartbeat = setInterval(() => {
-      if (cancelled || disconnected || needsReconnect) return;
-      void heartbeatRoom(room.code, session.token).catch(() => {
-        if (!cancelled) setConnectionState("stale");
-      });
-    }, 25_000);
+    let heartbeat: ReturnType<typeof setInterval> | undefined;
+    let socketOwnsPresenceDisconnect = false;
     let disconnected = false;
     let needsReconnect = true;
     let cancelled = false;
-    const markOffline = () => {
+    const startHeartbeat = () => {
+      if (heartbeat || roomStatusRef.current === "completed") return;
+      heartbeat = setInterval(() => {
+        if (cancelled || disconnected || needsReconnect || roomStatusRef.current === "completed") return;
+        void heartbeatRoom(room.code, session.token).catch(() => {
+          if (!cancelled) setConnectionState("stale");
+        });
+      }, 25_000);
+    };
+    const stopHeartbeat = () => {
+      if (heartbeat) clearInterval(heartbeat);
+      heartbeat = undefined;
+    };
+    const markOffline = (socketWillMarkDisconnected = false) => {
+      if (roomStatusRef.current === "completed") return;
       if (disconnected) return;
       disconnected = true;
       needsReconnect = true;
-      void markDisconnected(room.code, session.token).catch(() => undefined);
+      if (!socketWillMarkDisconnected) void markDisconnected(room.code, session.token).catch(() => undefined);
     };
     const pollRoom = () => {
       if (cancelled) return;
@@ -830,7 +869,7 @@ function App() {
         }
         return markReconnected(room.code, session.token).then((reconnectedRoom) => {
           if (cancelled) return;
-          updateRoomSnapshot(reconnectedRoom);
+          if ("state" in reconnectedRoom) updateRoomSnapshot(reconnectedRoom);
           disconnected = false;
           needsReconnect = false;
           setConnectionState("online");
@@ -842,6 +881,7 @@ function App() {
     };
     const startPolling = () => {
       if (polling) return;
+      startHeartbeat();
       setConnectionState("reconnecting");
       polling = setInterval(pollRoom, Number(import.meta.env.VITE_ROOM_POLL_INTERVAL_MS ?? 5000));
       pollRoom();
@@ -854,6 +894,8 @@ function App() {
       commandChannel = new RoomCommandChannel(socket);
       commandChannelRef.current = commandChannel;
       socket.onopen = () => {
+        socketOwnsPresenceDisconnect = true;
+        stopHeartbeat();
         setConnectionState("online");
         if (polling) { clearInterval(polling); polling = undefined; }
       };
@@ -861,8 +903,19 @@ function App() {
         const message = JSON.parse(event.data) as { type: string; room: RoomView };
         if (message.type === "room.updated") { updateRoomSnapshot(message.room); setConnectionState("online"); }
       };
-      socket.onerror = () => { markOffline(); startPolling(); };
-      socket.onclose = () => { markOffline(); startPolling(); };
+      socket.onerror = () => {
+        const socketWillMarkDisconnected = socketOwnsPresenceDisconnect;
+        socketOwnsPresenceDisconnect = false;
+        socket?.close();
+        markOffline(socketWillMarkDisconnected);
+        startPolling();
+      };
+      socket.onclose = () => {
+        const socketWillMarkDisconnected = socketOwnsPresenceDisconnect;
+        socketOwnsPresenceDisconnect = false;
+        markOffline(socketWillMarkDisconnected);
+        startPolling();
+      };
     }).catch(() => {
       if (cancelled) return;
       markOffline();
@@ -870,12 +923,13 @@ function App() {
     });
     return () => {
       cancelled = true;
-      markOffline();
+      if (roomStatusRef.current !== "completed") markOffline(socketOwnsPresenceDisconnect);
+      socketOwnsPresenceDisconnect = false;
       commandChannel?.dispose();
       if (commandChannelRef.current === commandChannel) commandChannelRef.current = null;
       socket?.close();
       if (polling) clearInterval(polling);
-      clearInterval(heartbeat);
+      stopHeartbeat();
     };
   }, [session?.token, room?.code, updateRoomSnapshot]);
 
@@ -913,7 +967,7 @@ function App() {
     try {
       let nextGame: GameState;
       if (online && session && room) {
-        const nextRoom = await sendCommand(
+        const actionResult = await sendCommand(
           room.code,
           session.token,
           session.participantId,
@@ -921,10 +975,10 @@ function App() {
           normalized,
           commandChannelRef.current,
         );
-        updateRoomSnapshot(nextRoom);
-        nextGame = nextRoom.state;
+        updateAfterRoomAction(room, actionResult);
+        nextGame = actionResult.state;
         if (normalized.type === "draw-research") {
-          const event = nextRoom.state.eventLog.at(-1);
+          const event = actionResult.state.eventLog.at(-1);
           if (typeof event?.detail.cardId === "string") setResearchReveal(event.detail.cardId);
         }
         const actionLabel = acceptedActionLabel(normalized);
@@ -1022,13 +1076,32 @@ function App() {
     if (!next) {
       setSession(null);
       setRoom(null);
+      setSavedOnlineRoom(null);
       localStorage.removeItem("abominations-session");
       return;
     }
     setSession(next);
+    setSavedOnlineRoom({ token: next.token, participantId: next.participantId, room: { code: next.room.code } });
     updateRoomSnapshot(next.room);
     setRoomCode(next.room.code);
     localStorage.setItem("abominations-session", JSON.stringify({ token: next.token, participantId: next.participantId, room: { code: next.room.code } }));
+  };
+  const resumeSavedOnlineRoom = async () => {
+    if (!savedOnlineRoom) return;
+    setError("");
+    try {
+      const restoredRoom = await readRoom(savedOnlineRoom.room.code, savedOnlineRoom.token);
+      const restored = { ...savedOnlineRoom, room: { code: restoredRoom.code } };
+      setSavedOnlineRoom(restored);
+      setSession({ token: restored.token, participantId: restored.participantId, room: restoredRoom });
+      updateRoomSnapshot(restoredRoom);
+      setRoomCode(restoredRoom.code);
+      localStorage.setItem("abominations-session", JSON.stringify(restored));
+    } catch (caught) {
+      setSavedOnlineRoom(null);
+      localStorage.removeItem("abominations-session");
+      setError(caught instanceof Error ? caught.message : "Could not resume the saved room.");
+    }
   };
   const startSession = async (kind: "create" | "join" | "spectate") => {
     setError("");
@@ -1113,16 +1186,21 @@ function App() {
     setPendingAction(true);
     try {
       let latestRoom = room;
-      while (latestRoom.participants.filter((candidate) => candidate.role === "player").length < latestRoom.maxPlayers) {
-        try {
-          latestRoom = await addRoomBot(latestRoom.code, session.token);
-          updateRoomSnapshot(latestRoom);
-        } catch (caught) {
-          const refreshed = await readRoom(room.code, session.token);
-          const playerCountNow = refreshed.participants.filter((candidate) => candidate.role === "player").length;
-          if (!(caught instanceof Error) || !caught.message.toLowerCase().includes("room is full") || playerCountNow <= latestRoom.participants.filter((candidate) => candidate.role === "player").length) throw caught;
-          latestRoom = refreshed;
-          updateRoomSnapshot(refreshed);
+      if (latestRoom.participants.filter((candidate) => candidate.role === "player").length < latestRoom.maxPlayers && convexRealtimeEnabled) {
+        latestRoom = await fillRoomWithBots(latestRoom.code, session.token);
+        updateRoomSnapshot(latestRoom);
+      } else {
+        while (latestRoom.participants.filter((candidate) => candidate.role === "player").length < latestRoom.maxPlayers) {
+          try {
+            latestRoom = await addRoomBot(latestRoom.code, session.token);
+            updateRoomSnapshot(latestRoom);
+          } catch (caught) {
+            const refreshed = await readRoom(room.code, session.token);
+            const playerCountNow = refreshed.participants.filter((candidate) => candidate.role === "player").length;
+            if (!(caught instanceof Error) || !caught.message.toLowerCase().includes("room is full") || playerCountNow <= latestRoom.participants.filter((candidate) => candidate.role === "player").length) throw caught;
+            latestRoom = refreshed;
+            updateRoomSnapshot(refreshed);
+          }
         }
       }
       updateRoomSnapshot(await startMatch(room.code, session.token));
@@ -1263,7 +1341,7 @@ function App() {
       setupActionPendingRef.current = true;
       setSetupActionPending(true);
       try {
-        updateRoomSnapshot(
+        updateAfterRoomAction(room,
           await sendSetupAction(
             room.code,
             session.token,
@@ -1315,7 +1393,7 @@ function App() {
       setupActionPendingRef.current = true;
       setSetupActionPending(true);
       try {
-        updateRoomSnapshot(
+        updateAfterRoomAction(room,
           await sendSetupAction(room.code, session.token, room.version, {
             type: "choose-starting-choice",
             startingChoice,
@@ -1352,6 +1430,7 @@ function App() {
     setGamePanelOpen(true);
     setSession(null);
     setRoom(null);
+    setSavedOnlineRoom(null);
     setError("");
     const next = createMvpRoomGame(playerCount);
     setLocalSetup(next.setupState!);
@@ -1370,6 +1449,7 @@ function App() {
     setGamePanelOpen(true);
     setSession(null);
     setRoom(null);
+    setSavedOnlineRoom(null);
     setError("");
     const soloPlayerCount = guidedScenario ? 2 : playerCount;
     if (guidedScenario) setPlayerCount(2);
@@ -1386,6 +1466,7 @@ function App() {
     setGamePanelOpen(true);
     setSession(null);
     setRoom(null);
+    setSavedOnlineRoom(null);
     setError("");
     setPlayerCount(2);
     setLocalSetup(createCompletedDevelopmentSetup());
@@ -1403,6 +1484,7 @@ function App() {
     }
     setSession(null);
     setRoom(null);
+    setSavedOnlineRoom(null);
     setError("");
     localStorage.removeItem("abominations-session");
     window.location.assign("/");
@@ -1601,6 +1683,8 @@ function App() {
         rulesOpen={homeRulesOpen}
         onToggleRules={() => setHomeRulesOpen((open) => !open)}
         onStartLocal={resetLocal}
+        savedOnlineRoom={savedOnlineRoom ? { code: savedOnlineRoom.room.code } : null}
+        onResumeSavedRoom={() => void resumeSavedOnlineRoom()}
         onStartSolo={() => startSolo()}
         onStartSoloScenario={() => startSolo(true)}
         botDifficulty={botDifficulty}

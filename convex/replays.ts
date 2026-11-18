@@ -5,6 +5,7 @@ import { MAX_REPLAY_EXPORT_BYTES, MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES,
 import { publicReplayState } from "../apps/api/src/replay.js";
 import type { GameState } from "../packages/game-engine/src/index.js";
 import type { PublicReplayExport, PublicReplayPage, ReplayFrame } from "../packages/shared/src/index.js";
+import { decodeGameState } from "./gameStateStorage.js";
 
 export const getSource = internalQuery({
   args: { code: v.string() },
@@ -12,13 +13,18 @@ export const getSource = internalQuery({
     const room = await ctx.db.query("rooms").withIndex("by_code", (q) => q.eq("code", code.toUpperCase())).unique();
     if (!room || room.privacy !== "public") return { kind: "not-found" as const };
     if (room.status !== "completed") return { kind: "not-completed" as const };
-    const events = await ctx.db.query("events").withIndex("by_room_version", (q) => q.eq("roomId", room.externalId)).order("asc").take(MAX_REPLAY_VERSIONS + 1);
+    const [events, replaySeed] = await Promise.all([
+      ctx.db.query("events").withIndex("by_room_version", (q) => q.eq("roomId", room.externalId)).order("asc").take(MAX_REPLAY_VERSIONS + 1),
+      ctx.db.query("roomReplaySeeds").withIndex("by_room", (q) => q.eq("roomId", room.externalId)).unique(),
+    ]);
     return {
       kind: "ready" as const,
       room: {
         code: room.code, version: room.version,
-        initial: room.initialReplayState as GameState | undefined,
-        final: room.state as GameState,
+        initial: replaySeed?.initialState
+          ? decodeGameState(replaySeed.initialState)
+          : room.initialReplayState ? decodeGameState(room.initialReplayState) : undefined,
+        final: decodeGameState(room.state),
       },
       events: events.map((event) => ({
         version: event.version, eventType: event.type,

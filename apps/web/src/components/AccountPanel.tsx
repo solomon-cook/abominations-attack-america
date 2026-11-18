@@ -7,10 +7,7 @@ import {
   acceptFriendInviteLink,
   createFriendInviteLink,
   deleteAccount,
-  getAccount,
-  getAccountGames,
-  getAccountPrivacySettings,
-  getAccountStats,
+  getAccountDashboard,
   getSocialSummary,
   getLeaderboard,
   getPlayerProfile,
@@ -66,6 +63,7 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
   const [error, setError] = useState("");
   const [actionLink, setActionLink] = useState("");
   const [games, setGames] = useState<AccountGameSummary[]>([]);
+  const [loadedAccountId, setLoadedAccountId] = useState<string | null>(null);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [publicStatsEnabled, setPublicStatsEnabled] = useState<boolean | null>(null);
   const [social, setSocial] = useState<SocialSummary | null>(null);
@@ -74,7 +72,9 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
   const [createdInviteLink, setCreatedInviteLink] = useState("");
   const [friendInviteToken, setFriendInviteToken] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get("friend-invite") ?? "");
   const [board, setBoard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [boardCategory, setBoardCategory] = useState<LeaderboardCategory>("wins");
+  const [loadedBoardCategory, setLoadedBoardCategory] = useState<LeaderboardCategory | null>(null);
   const [publicProfile, setPublicProfile] = useState<(PlayerStats & { botAssistedMatches: number }) | null>(null);
   const resetToken = new URLSearchParams(window.location.search).get("reset-password") ?? "";
   const requestsEnabled = panelOpen && !(deferAccountRequests && !defaultOpen);
@@ -105,16 +105,36 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
         }
       }).catch((caught: unknown) => { if (live) setError(caught instanceof Error ? caught.message : "Email verification failed."); });
     } else {
-      void getAccount().then(({ account: current }) => { if (live) { onAccountChange(current); setAccountResolved(true); } }).catch(() => { if (live) { onAccountChange(null); setAccountResolved(true); } });
+      void getAccountDashboard().then((dashboard) => {
+        if (!live) return;
+        if (dashboard) {
+          onAccountChange(dashboard.account);
+          setGames(dashboard.games);
+          setStats(dashboard.stats);
+          setSocial(dashboard.social);
+          setPublicStatsEnabled(dashboard.privacy.publicStatsEnabled);
+          setLoadedAccountId(dashboard.account.id);
+        } else onAccountChange(null);
+        setAccountResolved(true);
+      }).catch(() => { if (live) { onAccountChange(null); setAccountResolved(true); } });
     }
     return () => { live = false; };
   }, [account, accountResolved, onAccountChange, requestsEnabled]);
 
   useEffect(() => {
     if (!requestsEnabled) return;
-    if (!account) { setGames([]); setStats(null); setSocial(null); setPublicStatsEnabled(null); return; }
-    void Promise.all([getAccountGames(), getAccountStats(), getSocialSummary(), getAccountPrivacySettings()]).then(([matches, currentStats, currentSocial, privacy]) => { setGames(matches); setStats(currentStats); setSocial(currentSocial); setPublicStatsEnabled(privacy.publicStatsEnabled); }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load account data."));
-  }, [account?.id, requestsEnabled]);
+    if (!account) { setGames([]); setStats(null); setSocial(null); setPublicStatsEnabled(null); setLoadedAccountId(null); return; }
+    if (loadedAccountId === account.id) return;
+    void getAccountDashboard().then((dashboard) => {
+      if (!dashboard) { onAccountChange(null); return; }
+      onAccountChange(dashboard.account);
+      setGames(dashboard.games);
+      setStats(dashboard.stats);
+      setSocial(dashboard.social);
+      setPublicStatsEnabled(dashboard.privacy.publicStatsEnabled);
+      setLoadedAccountId(dashboard.account.id);
+    }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load account data."));
+  }, [account?.id, loadedAccountId, onAccountChange, requestsEnabled]);
 
   useEffect(() => {
     if (!requestsEnabled) return;
@@ -127,9 +147,9 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
   }, [account?.id, social?.presenceEnabled, requestsEnabled]);
 
   useEffect(() => {
-    if (!requestsEnabled || compact) return;
-    void getLeaderboard(boardCategory).then(setBoard).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load leaderboard."));
-  }, [boardCategory, compact, requestsEnabled]);
+    if (!requestsEnabled || compact || !leaderboardOpen || loadedBoardCategory === boardCategory) return;
+    void getLeaderboard(boardCategory).then((entries) => { setBoard(entries); setLoadedBoardCategory(boardCategory); }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load leaderboard."));
+  }, [boardCategory, compact, leaderboardOpen, loadedBoardCategory, requestsEnabled]);
 
   const run = async (action: () => Promise<void>) => {
     setError(""); setMessage(""); setActionLink("");
@@ -200,7 +220,7 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
           <form className="account-inline-form" onSubmit={(event) => { event.preventDefault(); void run(async () => { const result = await updateAccountUsername(username || account.username); onAccountChange(result.account); setUsername(""); setMessage("Username updated."); }); }}><label>Change username<input minLength={3} maxLength={24} pattern="[A-Za-z0-9_-]+" value={username} placeholder={account.username} onChange={(event) => setUsername(event.target.value)} /></label><button type="submit">Save</button></form>
           {social && <section className="account-social" aria-label="Friends and saved opponents">
             <h3>Friends and saved opponents</h3>
-            <label className="account-presence"><input type="checkbox" checked={social.presenceEnabled} onChange={(event) => socialAction(async () => { await setPresence(event.target.checked); })} /> Show online status to friends while this tab is active</label>
+            <label className="account-presence"><input type="checkbox" checked={social.presenceEnabled} onChange={(event) => socialAction(async () => { await setPresence(event.target.checked); })} /> Show online status to friends while this account panel is open</label>
             <div className="account-invite-link-tools"><button type="button" onClick={() => socialAction(async () => { const link = await createFriendInviteLink(); setCreatedInviteLink(link.url); })}>Create private friend link</button>{createdInviteLink && <><label>Private friend link<input aria-label="Private friend link" readOnly value={createdInviteLink} /></label><button type="button" onClick={() => void run(async () => { await navigator.clipboard.writeText(createdInviteLink); setMessage("Friend link copied."); })}>Copy link</button></>}</div>
             {social.inviteLinks.length > 0 && <div className="account-social-group"><h4>Active private links</h4>{social.inviteLinks.map((invite) => <div className="account-social-row" key={invite.id}><span>Expires {new Date(invite.expiresAt).toLocaleDateString()}</span><button type="button" onClick={() => socialAction(() => revokeFriendInviteLink(invite.id))}>Revoke</button></div>)}</div>}
             <form className="account-inline-form" onSubmit={(event) => { event.preventDefault(); const target = friendUsername.trim(); if (!target) return; socialAction(async () => { await sendFriendInvitation(target); setFriendUsername(""); }); }}><label>Invite by username<input value={friendUsername} onChange={(event) => setFriendUsername(event.target.value)} placeholder="player username" /></label><button type="submit">Invite</button></form>
@@ -217,7 +237,7 @@ export function AccountPanel({ account, session, onAccountChange, onSessionChang
           <button className="account-signout" type="button" onClick={() => void run(async () => { await logoutAccount(); onAccountChange(null); setMessage("Signed out."); })}>Sign out</button>
           <button className="account-delete" type="button" onClick={() => { if (window.confirm("Delete your account? Your public profile and stats will be removed. Shared match history will remain anonymized.")) void run(async () => { await deleteAccount(); onAccountChange(null); onSessionChange(null); setMessage("Account deleted."); }); }}>Delete account</button>
         </>}
-        {!compact && <section className="account-leaderboard"><h3>Public rankings</h3><select aria-label="Leaderboard category" value={boardCategory} onChange={(event) => setBoardCategory(event.target.value as LeaderboardCategory)}>{categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}</select>{board.slice(0, 10).map((entry) => <div className="leaderboard-row" key={entry.username}><span>{entry.rank}. <button className="leaderboard-profile-button" type="button" onClick={() => void run(async () => { setLookup(entry.username); setPublicProfile(await getPlayerProfile(entry.username)); })}>@{entry.username}</button></span><strong>{boardCategory === "win-rate" ? `${(entry.value * 100).toFixed(1)}%` : boardCategory === "luck" ? entry.value.toFixed(2) : entry.value}</strong></div>)}</section>}
+        {!compact && <details className="account-leaderboard" onToggle={(event) => setLeaderboardOpen((event.currentTarget as HTMLDetailsElement).open)}><summary><h3>Public rankings</h3></summary><select aria-label="Leaderboard category" value={boardCategory} onChange={(event) => setBoardCategory(event.target.value as LeaderboardCategory)}>{categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}</select>{board.slice(0, 10).map((entry) => <div className="leaderboard-row" key={entry.username}><span>{entry.rank}. <button className="leaderboard-profile-button" type="button" onClick={() => void run(async () => { setLookup(entry.username); setPublicProfile(await getPlayerProfile(entry.username)); })}>@{entry.username}</button></span><strong>{boardCategory === "win-rate" ? `${(entry.value * 100).toFixed(1)}%` : boardCategory === "luck" ? entry.value.toFixed(2) : entry.value}</strong></div>)}</details>}
         {!compact && <>
           <form className="account-inline-form" onSubmit={(event) => { event.preventDefault(); void run(async () => setPublicProfile(await getPlayerProfile(lookup))); }}><label>View public profile<input value={lookup} onChange={(event) => setLookup(event.target.value)} placeholder="player username" /></label><button type="submit">View</button></form>
           {publicProfile && <div className="account-public-profile"><GeneralAvatar name={publicProfile.username} size={64}/><strong>@{publicProfile.username}</strong><span>{publicProfile.wins} wins · {publicProfile.losses} losses · {publicProfile.ties} ties · {Math.round(publicProfile.winRate * 100)}% win rate</span><span>Most chosen: {publicProfile.mostChosenMonster ?? "—"} · {publicProfile.mostChosenBranch ?? "—"}</span><span>{publicProfile.botAssistedMatches} bot-assisted results</span></div>}

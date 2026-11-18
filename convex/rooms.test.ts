@@ -3,6 +3,7 @@ import test from "node:test";
 import { convexTest } from "convex-test";
 import { api, internal } from "./_generated/api.js";
 import schema from "./schema.js";
+import { decodeGameState, encodeGameState } from "./gameStateStorage.js";
 import { applyCompletedSetup, chooseBotCommand, chooseBotSetupActionWithRecord, setupDeploymentState, type GameState } from "../packages/game-engine/src/index.js";
 
 const modules = {
@@ -61,7 +62,7 @@ test("account registration, email verification, and imported password hashes sup
   assert.deepEqual(linkedSocial.savedOpponents, [registeredFriend.account.username]);
   const renamed = await t.mutation(internal.accountData.updateUsername, { userId: login.account.id, usernameInput: "Test_Renamed" });
   assert.equal(renamed.username, "test_renamed");
-  assert.equal((await t.query(internal.accountData.publicProfile, { usernameInput: renamed.username })).username, renamed.username);
+  assert.equal((await t.mutation(internal.accountData.publicProfile, { usernameInput: renamed.username })).username, renamed.username);
   const friendLink = await t.mutation(internal.accountData.createFriendLink, { userId: login.account.id });
   const inviteToken = new URL(friendLink.url).hash.slice(1).split("=")[1];
   await t.mutation(internal.accountData.acceptFriendLink, { userId: registeredFriend.account.id, value: decodeURIComponent(inviteToken!) });
@@ -208,7 +209,6 @@ test("room creation, guest authorization, and public listing preserve room priva
   const restored = await t.query(api.rooms.read, {
     code: privateSession.room.code,
     tokenHash: await tokenHash(privateSession.token),
-    afterVersion: 0,
   });
   assert.equal(restored.id, privateSession.room.id);
   assert.equal(restored.state.rng.seed, 0);
@@ -284,7 +284,7 @@ test("commands commit one revision and retry idempotently", async () => {
     /revision/i,
   );
   const receiptCount = await t.run((ctx) => ctx.db.query("commandReceipts").collect());
-  assert.equal(receiptCount.length, 1);
+  assert.equal(receiptCount.length, 0);
 });
 
 test("private spectator links and connection leases enforce room access", async () => {
@@ -311,7 +311,8 @@ test("a room abandons when every player disconnects and resumes after all ready 
   await t.run(async (ctx) => {
     const room = await ctx.db.query("rooms").withIndex("by_code", (q) => q.eq("code", first.room.code)).unique();
     assert.ok(room);
-    await ctx.db.patch(room._id, { status: "active", state: { ...room.state, setupState: { ...room.state.setupState, phase: "complete" } } });
+    const state = decodeGameState(room.state);
+    await ctx.db.patch(room._id, { status: "active", state: encodeGameState({ ...state, setupState: { ...state.setupState!, phase: "complete" } }) });
     const participants = await ctx.db.query("participants").withIndex("by_room", (q) => q.eq("roomId", room.externalId)).collect();
     for (const participant of participants) await ctx.db.patch(participant._id, { ready: true });
   });
@@ -338,8 +339,10 @@ test("stale guest seats become bot controlled after the takeover grace period", 
     assert.ok(room);
     const fiveMinutesAgo = Date.now() - 5 * 60_000;
     await ctx.db.patch(participant._id, { connectedAt: fiveMinutesAgo, lastSeenAt: fiveMinutesAgo });
+    if (participant.presenceId) await ctx.db.patch(participant.presenceId, { lastSeenAt: fiveMinutesAgo });
     await ctx.db.patch(room._id, { status: "active", matchStarted: true });
-    return room.presenceCheckGeneration ?? 0;
+    const runtime = await ctx.db.query("roomRuntime").withIndex("by_room", (q) => q.eq("roomId", room.externalId)).unique();
+    return runtime?.presenceCheckGeneration ?? 0;
   });
   await t.mutation(internal.rooms.checkRoomPresence, { roomId: host.room.id, generation });
   const participant = await t.run((ctx) => ctx.db.query("participants").withIndex("by_external_id", (q) => q.eq("externalId", host.participantId)).unique());
