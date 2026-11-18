@@ -118,6 +118,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         (res as ServerResponse & { pendingCookies?: string[] }).pendingCookies = [clearAccountSessionCookie()];
         return respond(req, res, 200, { message: "Account deleted." });
       }
+      if (req.method === "GET" && parts[1] === "me" && parts[2] === "dashboard") { const user = await currentUser(); return respond(req, res, 200, await accountService.dashboard(user)); }
       if (req.method === "GET" && parts[1] === "me" && parts[2] === "games") { const user = await currentUser(); return respond(req, res, 200, await accountService.listGames(user.id)); }
       if (req.method === "GET" && parts[1] === "me" && parts[2] === "stats") { const user = await currentUser(); return respond(req, res, 200, await accountService.getStats(user.id)); }
       if (req.method === "GET" && parts[1] === "me" && parts[2] === "privacy") { const user = await currentUser(); return respond(req, res, 200, await accountService.getPrivacySettings(user.id)); }

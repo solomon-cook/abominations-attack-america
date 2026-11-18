@@ -1,5 +1,5 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import type { AccountGameSummary, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, SocialSummary } from "@abominations/shared";
+import type { AccountDashboard, AccountGameSummary, AccountSummary, LeaderboardCategory, LeaderboardEntry, PlayerStats, SocialSummary } from "@abominations/shared";
 import { sumPlayerStats } from "./player-stats.js";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -195,6 +195,7 @@ export class AccountService {
       where: { userId, role: "PLAYER", room: { isTest: false } },
       include: { room: { include: { result: true } } },
       orderBy: { createdAt: "desc" },
+      take: 20,
     });
     return participants.map((participant: any) => ({
       roomId: participant.roomId,
@@ -210,17 +211,29 @@ export class AccountService {
     }));
   }
 
-  async getStats(userId: string): Promise<PlayerStats> {
-    const user = await this.prisma.userAccount.findUnique({ where: { id: userId }, select: { username: true } });
+  async getStats(userId: string, knownUsername?: string): Promise<PlayerStats> {
+    const user = knownUsername ? { username: knownUsername } : await this.prisma.userAccount.findUnique({ where: { id: userId }, select: { username: true } });
     if (!user) throw new Error("Account not found.");
     const rows = await this.prisma.playerMatchStat.findMany({ where: { userId }, orderBy: { completedAt: "desc" } });
     return sumPlayerStats(rows, user.username);
   }
 
-  async getPrivacySettings(userId: string): Promise<{ publicStatsEnabled: boolean }> {
-    const user = await this.prisma.userAccount.findUnique({ where: { id: userId }, select: { publicStatsEnabled: true } });
+  async getPrivacySettings(userId: string, knownPublicStatsEnabled?: boolean): Promise<{ publicStatsEnabled: boolean }> {
+    const user = knownPublicStatsEnabled === undefined
+      ? await this.prisma.userAccount.findUnique({ where: { id: userId }, select: { publicStatsEnabled: true } })
+      : { publicStatsEnabled: knownPublicStatsEnabled };
     if (!user) throw new Error("Account not found.");
     return { publicStatsEnabled: Boolean(user.publicStatsEnabled) };
+  }
+
+  async dashboard(user: any): Promise<AccountDashboard> {
+    const [games, stats, social, privacy] = await Promise.all([
+      this.listGames(user.id),
+      this.getStats(user.id, user.username),
+      this.socialSummary(user.id, { presenceEnabled: user.presenceEnabled }),
+      this.getPrivacySettings(user.id, Boolean(user.publicStatsEnabled)),
+    ]);
+    return { account: publicAccount(user), games, stats, social, privacy };
   }
 
   async updatePrivacySettings(userId: string, publicStatsEnabled: boolean): Promise<{ publicStatsEnabled: boolean }> {
@@ -236,9 +249,9 @@ export class AccountService {
     return { ...sumPlayerStats(rows, user.username), botAssistedMatches: rows.filter((row: any) => row.botAssisted).length };
   }
 
-  async socialSummary(userId: string): Promise<SocialSummary> {
+  async socialSummary(userId: string, knownUser?: { presenceEnabled: boolean }): Promise<SocialSummary> {
     const [user, friendships, incoming, outgoing, inviteLinks, saved] = await Promise.all([
-      this.prisma.userAccount.findUnique({ where: { id: userId }, select: { presenceEnabled: true } }),
+      knownUser ? Promise.resolve(null) : this.prisma.userAccount.findUnique({ where: { id: userId }, select: { presenceEnabled: true } }),
       this.prisma.friendship.findMany({
         where: { OR: [{ userAId: userId }, { userBId: userId }] },
         include: { userA: { select: { id: true, username: true, presenceEnabled: true, presenceExpiresAt: true } }, userB: { select: { id: true, username: true, presenceEnabled: true, presenceExpiresAt: true } } },
@@ -258,10 +271,10 @@ export class AccountService {
       }),
       this.prisma.savedOpponent.findMany({ where: { ownerId: userId }, include: { opponent: { select: { username: true } } }, orderBy: { createdAt: "asc" } }),
     ]);
-    if (!user) throw new Error("Account not found.");
+    if (!user && !knownUser) throw new Error("Account not found.");
     const now = this.now();
     return {
-      presenceEnabled: Boolean(user.presenceEnabled),
+      presenceEnabled: Boolean(knownUser?.presenceEnabled ?? user?.presenceEnabled),
       friends: friendships.map((row: any) => {
         const friend = row.userAId === userId ? row.userB : row.userA;
         return { username: friend.username, online: Boolean(friend.presenceEnabled && friend.presenceExpiresAt && friend.presenceExpiresAt > now) };

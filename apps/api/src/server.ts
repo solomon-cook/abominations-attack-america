@@ -302,6 +302,10 @@ async function handler(request: IncomingMessage, response: ServerResponse) {
         await accountService.deleteAccount(user);
         return json(response, 200, { message: "Account deleted." }, { "set-cookie": clearAccountSessionCookie() });
       }
+      if (request.method === "GET" && parts[1] === "me" && parts[2] === "dashboard") {
+        const user = await currentUser();
+        return json(response, 200, await accountService.dashboard(user));
+      }
       if (request.method === "GET" && parts[1] === "me" && parts[2] === "games") {
         const user = await currentUser();
         return json(response, 200, await accountService.listGames(user.id));

@@ -113,9 +113,7 @@ export const getAccount = () => request<{ account: AccountSummary }>("/accounts/
 export const getAccountDashboard = async (): Promise<AccountDashboard | null> => {
   if (convexRealtimeEnabled) return request<AccountDashboard | null>("/accounts/me/dashboard");
   try {
-    const { account } = await getAccount();
-    const [games, stats, social, privacy] = await Promise.all([getAccountGames(), getAccountStats(), getSocialSummary(), getAccountPrivacySettings()]);
-    return { account, games, stats, social, privacy };
+    return await request<AccountDashboard | null>("/accounts/me/dashboard");
   } catch {
     return null;
   }
