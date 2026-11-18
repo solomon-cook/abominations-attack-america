@@ -14,6 +14,8 @@ On the Prisma WebSocket path, a normal accepted move writes the room snapshot an
 
 The Prisma server no longer runs its five-second global bot-takeover scan. Bot turns are processed after relevant room actions, and a disconnected seat gets one delayed room-scoped takeover check; later room activity also catches an overdue takeover if the serverless process restarted before that timer fired. The in-memory development store keeps its local bot worker, which does not query a database.
 
+WebSocket connect now relies on the shared room broadcast for its initial view instead of sending a per-socket view and immediately broadcasting it again. Disconnect handling returns only whether the current connection actually changed the seat, so stale socket closes do not trigger extra room reads or broadcasts. Room-status refresh reads player seats and room state together, and skips status writes when the status is already correct.
+
 ## Production baseline
 
 On 2026-11-18, Convex's CLI reported 11,198 function calls and 3.044 GB of database I/O month-to-date for production deployment `careful-ibis-752`; it reported no usage limits configured. Convex's published Free allowance is 1 million function calls and 1 GB of database I/O per month. Function-call volume is well below that allowance, while this deployment's database I/O is already over it. This deployment-only reading does not include any usage from other deployments on the team. See [Convex limits](https://docs.convex.dev/production/state/limits).

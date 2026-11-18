@@ -477,11 +477,8 @@ wsServer.on("connection", async (socket, request) => {
     const principal = await store.consumeSocketTicket(code, ticket);
     cancelBotTakeoverTimer(code, principal.participantId);
     const connectionId = randomUUID();
-    let room = await store.connectParticipant(code, principal.participantId, connectionId, principal.sessionHash);
-    if (room.participants.some((participant) => participant.role === "player" && !participant.connected)) {
-      await store.processBotTakeovers(Date.now(), code);
-      room = await store.getRoomForParticipant(code, principal.participantId);
-    }
+    const shouldCheckBots = await store.connectParticipant(code, principal.participantId, connectionId, principal.sessionHash);
+    if (shouldCheckBots) await store.processBotTakeovers(Date.now(), code);
     const group = sockets.get(code) ?? new Map<WebSocket, string>();
     metrics.websocketConnection();
     group.set(socket, principal.participantId);
@@ -489,7 +486,6 @@ wsServer.on("connection", async (socket, request) => {
     const healthSocket = socket as WebSocket & { isAlive?: boolean };
     healthSocket.isAlive = true;
     socket.on("pong", () => { healthSocket.isAlive = true; });
-    socket.send(JSON.stringify({ type: "room.updated", room }));
     await broadcast(code);
     socket.on("message", (data, isBinary) => {
       const send = (message: unknown) => {
@@ -541,9 +537,9 @@ wsServer.on("connection", async (socket, request) => {
       group.delete(socket);
       if (group.size === 0) sockets.delete(code);
       void store.disconnectParticipant(code, principal.participantId, connectionId)
-        .then(async (room) => {
-          const participant = room.participants.find((item) => item.id === principal.participantId);
-          if (participant?.role === "player" && !participant.connected) scheduleBotTakeoverTimer(code, principal.participantId);
+        .then(async (role) => {
+          if (!role) return;
+          if (role === "player") scheduleBotTakeoverTimer(code, principal.participantId);
           await broadcast(code);
         })
         .catch(() => undefined);

@@ -96,8 +96,8 @@ export interface RoomStore {
   consumeSocketTicket(code: string, ticket: string): Promise<RoomSocketPrincipal>;
   getRoomForParticipant(code: string, participantId: string, afterVersion?: number): Promise<RoomView>;
   submitActionForParticipant(code: string, participantId: string, connectionId: string, sessionHash: string, envelope: GameCommandEnvelope): Promise<Pick<RoomView, "version" | "status">>;
-  connectParticipant(code: string, participantId: string, connectionId: string, sessionHash: string): Promise<RoomView>;
-  disconnectParticipant(code: string, participantId: string, connectionId?: string): Promise<RoomView>;
+  connectParticipant(code: string, participantId: string, connectionId: string, sessionHash: string): Promise<boolean>;
+  disconnectParticipant(code: string, participantId: string, connectionId?: string): Promise<"player" | "spectator" | false>;
   processBotTakeovers(now?: number, roomCode?: string): Promise<string[]>;
 }
 
@@ -450,19 +450,19 @@ export class MemoryRoomStore implements RoomStore {
     return this.applyRoomCommand(room, actor, envelope, "human");
   }
 
-  async disconnectParticipant(roomCode: string, participantId: string, connectionId = "legacy"): Promise<RoomView> {
+  async disconnectParticipant(roomCode: string, participantId: string, connectionId = "legacy"): Promise<"player" | "spectator" | false> {
     const room = this.requireRoom(roomCode);
     const participant = room.participants.find((candidate) => candidate.id === participantId);
     if (!participant) throw new Error("Room participant not found.");
-    if (participant.connectionId && participant.connectionId !== connectionId) return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+    if (participant.connectionId && participant.connectionId !== connectionId) return false;
     participant.connected = false;
     participant.disconnectedAt = Date.now();
     this.touch(room);
     this.refreshStatus(room);
-    return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+    return participant.role;
   }
 
-  async connectParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string): Promise<RoomView> {
+  async connectParticipant(roomCode: string, participantId: string, connectionId: string, sessionHash: string): Promise<boolean> {
     const room = this.requireRoom(roomCode);
     const participant = room.participants.find((candidate) => candidate.id === participantId);
     if (!participant) throw new Error("Room participant not found.");
@@ -473,7 +473,7 @@ export class MemoryRoomStore implements RoomStore {
     participant.connectionId = connectionId;
     this.touch(room);
     this.refreshStatus(room);
-    return this.view(room, 0, participant.role === "player" ? "player" : "spectator", participant.playerIndex);
+    return room.participants.some((item) => item.role === "player" && !item.connected);
   }
 
   async processBotTakeovers(nowMs = Date.now(), roomCode?: string): Promise<string[]> {
