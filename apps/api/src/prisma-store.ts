@@ -708,15 +708,21 @@ export class PrismaRoomStore implements RoomStore {
   }
 
   private async authorize(roomCode: string, accessToken: string) {
-    const room = await this.prismaClient.gameRoom.findUnique({ where: { code: roomCode.toUpperCase() } });
+    const room = await this.prismaClient.gameRoom.findUnique({
+      where: { code: roomCode.toUpperCase() },
+      relationLoadStrategy: "join",
+      include: { participants: { where: { tokenHash: hash(accessToken) }, take: 1 } },
+    });
     if (!room) throw new Error("Room not found.");
     const lastActivityAt = room.lastActivityAt?.getTime?.() ?? Date.now();
-    const linkedActive = room.status === "ACTIVE" && await this.prismaClient.participant.count({ where: { roomId: room.id, userId: { not: null }, role: "PLAYER" } }) > 0;
-    if (room.status !== "COMPLETED" && !linkedActive && Date.now() - lastActivityAt >= ROOM_IDLE_TIMEOUT_MS) {
-      await this.prismaClient.gameRoom.update({ where: { id: room.id }, data: { status: "EXPIRED" } });
-      throw new Error("This room has expired.");
+    if (room.status !== "COMPLETED" && Date.now() - lastActivityAt >= ROOM_IDLE_TIMEOUT_MS) {
+      const linkedActive = room.status === "ACTIVE" && await this.prismaClient.participant.count({ where: { roomId: room.id, userId: { not: null }, role: "PLAYER" } }) > 0;
+      if (!linkedActive) {
+        await this.prismaClient.gameRoom.updateMany({ where: { id: room.id, status: { not: "COMPLETED" } }, data: { status: "EXPIRED" } });
+        throw new Error("This room has expired.");
+      }
     }
-    const participant = await this.prismaClient.participant.findFirst({ where: { roomId: room.id, tokenHash: hash(accessToken) } });
+    const participant = room.participants[0];
     if (!participant) throw new Error("Invalid room token.");
     if (isSessionExpired(participant.sessionExpiresAt)) throw new Error("Session token has expired.");
     return room;

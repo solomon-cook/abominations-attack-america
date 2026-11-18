@@ -18,6 +18,8 @@ WebSocket connect now relies on the shared room broadcast for its initial view i
 
 The HTTP fallback now runs bot/takeover processing only when the returned room contains a bot-controlled or disconnected player. Adding a bot in the waiting lobby no longer starts a bot scan before the match begins. Human-only rooms therefore avoid the follow-up scans while preserving automated setup, takeover, and bot-turn processing where needed.
 
+Each authenticated Prisma room request now loads the room and its matching participant token in one joined read instead of reading the room and then querying the participant separately. The extra linked-account check for idle-room expiry runs only after the room has actually passed its idle timeout; active room traffic avoids that count query.
+
 ## Production baseline
 
 On 2026-11-18, Convex's CLI reported 11,198 function calls and 3.044 GB of database I/O month-to-date for production deployment `careful-ibis-752`; it reported no usage limits configured. Convex's published Free allowance is 1 million function calls and 1 GB of database I/O per month. Function-call volume is well below that allowance, while this deployment's database I/O is already over it. This deployment-only reading does not include any usage from other deployments on the team. See [Convex limits](https://docs.convex.dev/production/state/limits).
