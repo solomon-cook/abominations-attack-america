@@ -577,21 +577,19 @@ export class PrismaRoomStore implements RoomStore {
 
   async processBotTakeovers(nowMs = Date.now(), roomCode?: string): Promise<string[]> {
     const scopedRoom = roomCode ? { code: roomCode.toUpperCase() } : {};
-    const due = await this.prismaClient.participant.findMany({ where: { role: "PLAYER", connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - ROOM_BOT_TAKEOVER_DELAY_MS) }, room: { ...scopedRoom, status: { in: ["WAITING", "ACTIVE"] } } }, select: { id: true, roomId: true } });
-    const affected = new Set<string>();
+    const due = await this.prismaClient.participant.findMany({ where: { role: "PLAYER", connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - ROOM_BOT_TAKEOVER_DELAY_MS) }, room: { ...scopedRoom, status: { in: ["WAITING", "ACTIVE"] } } }, select: { id: true, room: { select: { code: true } } } });
+    const affectedRoomCodes = new Set<string>();
     for (const participant of due) {
       const changed = await this.prismaClient.participant.updateMany({ where: { id: participant.id, connectedAt: null, botControlled: false, disconnectedAt: { lte: new Date(nowMs - ROOM_BOT_TAKEOVER_DELAY_MS) } }, data: { botControlled: true, botAssisted: true } });
-      if (changed.count) affected.add(participant.roomId);
+      if (changed.count) affectedRoomCodes.add(participant.room.code);
     }
-    const completedCodes: string[] = [];
-    for (const roomId of affected) {
-      const info = await this.prismaClient.gameRoom.findUnique({ where: { id: roomId }, select: { code: true } });
-      if (info) completedCodes.push(info.code);
+    if (roomCode) affectedRoomCodes.add(roomCode.toUpperCase());
+    else {
+      const activeRooms = await this.prismaClient.gameRoom.findMany({ where: { status: { in: ["WAITING", "ACTIVE"] }, participants: { some: { botControlled: true, role: "PLAYER" } } }, select: { code: true } });
+      for (const item of activeRooms) affectedRoomCodes.add(item.code);
     }
-    const activeRooms = await this.prismaClient.gameRoom.findMany({ where: { ...scopedRoom, status: { in: ["WAITING", "ACTIVE"] }, participants: { some: { botControlled: true, role: "PLAYER" } } }, select: { code: true } });
-    for (const item of activeRooms) if (!completedCodes.includes(item.code)) completedCodes.push(item.code);
-    for (const roomCode of completedCodes) await this.runBotActions(roomCode);
-    return completedCodes;
+    for (const affectedCode of affectedRoomCodes) await this.runBotActions(affectedCode);
+    return [...affectedRoomCodes];
   }
 
   private requiredPlayer(state: GameState, envelope?: GameCommandEnvelope): number {

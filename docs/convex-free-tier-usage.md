@@ -18,6 +18,8 @@ WebSocket connect now relies on the shared room broadcast for its initial view i
 
 The HTTP fallback now runs bot/takeover processing only when the returned room contains a bot-controlled or disconnected player. Adding a bot in the waiting lobby no longer starts a bot scan before the match begins. Human-only rooms therefore avoid the follow-up scans while preserving automated setup, takeover, and bot-turn processing where needed.
 
+Room-scoped bot processing now gets the room code from the due participant query and limits its bot wake to that room, removing a second active-room scan and per-room code lookups after each action or takeover timer.
+
 Each authenticated Prisma room request now loads the room and its matching participant token in one joined read instead of reading the room and then querying the participant separately. The extra linked-account check for idle-room expiry runs only after the room has actually passed its idle timeout; active room traffic avoids that count query.
 
 The WebSocket fan-out projection no longer reads up to 256 persisted event rows on every room update. The browser does not consume `RoomView.events`; it receives current state and its in-state game log, while replay history is loaded through the replay feature. This removes a high-churn read from each realtime broadcast without delaying or polling for opponents' decisions.
