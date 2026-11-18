@@ -1,6 +1,6 @@
 # Convex usage and realtime budget
 
-Local singleplayer is an in-browser game. Opening the app no longer restores a saved online room automatically, and account data is loaded only after the account panel is opened. A saved online room can be resumed from the multiplayer menu. This keeps ordinary singleplayer play off Convex.
+Local singleplayer is an in-browser game. A source audit of the app startup path found no Convex request on an ordinary app open or solo match: saved online rooms are not restored automatically, the account panel makes no request while closed, and the public-room list is fetched only when a player asks to refresh it. A saved online room can be resumed from the multiplayer menu. An explicit TV viewing link still connects to its room on open; account, multiplayer, and replay links also intentionally use their requested online features. This keeps ordinary singleplayer play off Convex.
 
 The checked-in production baseline (`499e296`) explains the reported singleplayer traffic: it restored a saved room during app startup, and its collapsed account panel queried the current account and leaderboard when mounted. A signed-in player could then trigger four more separate account requests. The current working tree removes the automatic room read, defers account requests until the panel is opened, loads account details in one request, and fetches the leaderboard only when its section is opened. These fixes are local and have not reached production yet.
 
