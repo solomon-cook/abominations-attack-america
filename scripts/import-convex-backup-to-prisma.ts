@@ -24,6 +24,13 @@ function date(value: unknown, label: string): Date {
   return result;
 }
 
+function dateOnly(value: unknown, label: string): Date {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(`Invalid ${label} in Convex backup.`);
+  const result = new Date(`${value}T00:00:00.000Z`);
+  if (!Number.isFinite(result.getTime()) || result.toISOString().slice(0, 10) !== value) throw new Error(`Invalid ${label} in Convex backup.`);
+  return result;
+}
+
 function object(value: unknown, label: string): Row {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`Invalid ${label} document in Convex backup.`);
   return value as Row;
@@ -69,10 +76,11 @@ function mapRows(docs: Record<(typeof tables)[number], Row[]> & { roomReplaySeed
   const rooms = docs.rooms.map((r) => {
     const id = requiredString(r, "externalId", "rooms");
     const seed = seeds.get(id);
-    return { id, code: requiredString(r, "code", "rooms"), status: requiredString(r, "status", "rooms").toUpperCase() as any, matchStarted: Boolean(r.matchStarted), privacy: requiredString(r, "privacy", "rooms").toUpperCase() as any, isTest: Boolean(r.isTest), maxPlayers: requireNumber(r.maxPlayers, "rooms.maxPlayers"), version: requireNumber(r.version, "rooms.version"), state: state(r.state, `room ${id} state`) as any, initialReplayState: r.initialReplayState == null ? (seed ? state(seed.initialState, `room ${id} replay seed`) : null) : state(r.initialReplayState, `room ${id} initial replay state`) as any, createdAt: date(r.createdAt, "rooms.createdAt"), updatedAt: date(r.updatedAt, "rooms.updatedAt"), lastActivityAt: date(r.lastActivityAt, "rooms.lastActivityAt"), completedAt: r.completedAt == null ? null : date(r.completedAt, "rooms.completedAt"), playerStats: r.playerStats ?? [], viewerInviteTokenHash: r.viewerInviteTokenHash ?? null, viewerInviteExpiresAt: r.viewerInviteExpiresAt == null ? null : date(r.viewerInviteExpiresAt, "rooms.viewerInviteExpiresAt") };
+    const initialReplayState = r.initialReplayState == null ? (seed ? state(seed.initialState, `room ${id} replay seed`) : undefined) : state(r.initialReplayState, `room ${id} initial replay state`);
+    return { id, code: requiredString(r, "code", "rooms"), status: requiredString(r, "status", "rooms").toUpperCase() as any, matchStarted: Boolean(r.matchStarted), privacy: requiredString(r, "privacy", "rooms").toUpperCase() as any, isTest: Boolean(r.isTest), maxPlayers: requireNumber(r.maxPlayers, "rooms.maxPlayers"), version: requireNumber(r.version, "rooms.version"), state: state(r.state, `room ${id} state`) as any, ...(initialReplayState == null ? {} : { initialReplayState: initialReplayState as any }), createdAt: date(r.createdAt, "rooms.createdAt"), updatedAt: date(r.updatedAt, "rooms.updatedAt"), lastActivityAt: date(r.lastActivityAt, "rooms.lastActivityAt"), completedAt: r.completedAt == null ? null : date(r.completedAt, "rooms.completedAt"), playerStats: r.playerStats ?? [], viewerInviteTokenHash: r.viewerInviteTokenHash ?? null, viewerInviteExpiresAt: r.viewerInviteExpiresAt == null ? null : date(r.viewerInviteExpiresAt, "rooms.viewerInviteExpiresAt") };
   });
   const participants = docs.participants.map((r) => ({ id: requiredString(r, "externalId", "participants"), roomId: requiredString(r, "roomId", "participants"), displayName: requiredString(r, "displayName", "participants"), role: requiredString(r, "role", "participants").toUpperCase() as any, playerIndex: r.playerIndex ?? null, tokenHash: requiredString(r, "tokenHash", "participants"), sessionExpiresAt: date(r.sessionExpiresAt, "participants.sessionExpiresAt"), connectedAt: null, connectionId: null, ready: Boolean(r.ready), userId: r.userId ?? null, disconnectedAt: new Date(), botControlled: Boolean(r.botControlled), botAssisted: Boolean(r.botAssisted), createdAt: date(r.createdAt, "participants.createdAt") }));
-  const events = docs.events.map((r) => ({ id: requiredString(r, "externalId", "events"), roomId: requiredString(r, "roomId", "events"), actionId: typeof r.payload?.receipt?.actionId === "string" ? r.payload.receipt.actionId : null, version: requireNumber(r.version, "events.version"), actorId: requiredString(r, "actorId", "events"), type: requiredString(r, "type", "events"), controlSource: requiredString(r, "controlSource", "events"), payload: r.payload ?? {}, replayCommand: r.replayCommand ?? null, createdAt: date(r.createdAt, "events.createdAt") }));
+  const events = docs.events.map((r) => ({ id: requiredString(r, "externalId", "events"), roomId: requiredString(r, "roomId", "events"), actionId: typeof r.payload?.receipt?.actionId === "string" ? r.payload.receipt.actionId : null, version: requireNumber(r.version, "events.version"), actorId: requiredString(r, "actorId", "events"), type: requiredString(r, "type", "events"), controlSource: requiredString(r, "controlSource", "events"), payload: r.payload ?? {}, ...(r.replayCommand == null ? {} : { replayCommand: r.replayCommand }), createdAt: date(r.createdAt, "events.createdAt") }));
   const commandReceipts = docs.commandReceipts.map((r) => ({ roomId: requiredString(r, "roomId", "commandReceipts"), actionId: requiredString(r, "actionId", "commandReceipts"), actorId: requiredString(r, "actorId", "commandReceipts"), version: requireNumber(r.version, "commandReceipts.version"), eventType: requiredString(r, "eventType", "commandReceipts"), createdAt: date(r.createdAt, "commandReceipts.createdAt") }));
   const gameResults = docs.gameResults.map((r) => ({ id: requiredString(r, "externalId", "gameResults"), roomId: requiredString(r, "roomId", "gameResults"), winnerId: r.winnerId ?? null, winnerName: r.winnerName ?? null, summary: r.summary ?? {}, createdAt: date(r.createdAt, "gameResults.createdAt") }));
   const accountSessions = docs.accountSessions.map((r) => ({ id: requiredString(r, "externalId", "accountSessions"), userId: requiredString(r, "userId", "accountSessions"), tokenHash: requiredString(r, "tokenHash", "accountSessions"), expiresAt: date(r.expiresAt, "accountSessions.expiresAt"), revokedAt: r.revokedAt == null ? null : date(r.revokedAt, "accountSessions.revokedAt"), createdAt: date(r.createdAt, "accountSessions.createdAt") }));
@@ -82,7 +90,7 @@ function mapRows(docs: Record<(typeof tables)[number], Row[]> & { roomReplaySeed
   const friendships = docs.friendships.map((r) => ({ userAId: requiredString(r, "userAId", "friendships"), userBId: requiredString(r, "userBId", "friendships"), createdAt: date(r.createdAt, "friendships.createdAt") }));
   const savedOpponents = docs.savedOpponents.map((r) => ({ ownerId: requiredString(r, "ownerId", "savedOpponents"), opponentId: requiredString(r, "opponentId", "savedOpponents"), createdAt: date(r.createdAt, "savedOpponents.createdAt") }));
   const playerMatchStats = docs.playerMatchStats.map((r) => ({ id: requiredString(r, "externalId", "playerMatchStats"), roomId: requiredString(r, "roomId", "playerMatchStats"), participantId: requiredString(r, "participantId", "playerMatchStats"), userId: requiredString(r, "userId", "playerMatchStats"), playerIndex: requireNumber(r.playerIndex, "playerMatchStats.playerIndex"), username: requiredString(r, "username", "playerMatchStats"), outcome: requiredString(r, "outcome", "playerMatchStats"), monsterId: requiredString(r, "monsterId", "playerMatchStats"), monsterName: requiredString(r, "monsterName", "playerMatchStats"), branch: requiredString(r, "branch", "playerMatchStats"), stompedTiles: requireNumber(r.stompedTiles, "playerMatchStats.stompedTiles"), damageTaken: requireNumber(r.damageTaken, "playerMatchStats.damageTaken"), healthGained: requireNumber(r.healthGained, "playerMatchStats.healthGained"), luckTotal: requireNumber(r.luckTotal, "playerMatchStats.luckTotal"), luckRolls: requireNumber(r.luckRolls, "playerMatchStats.luckRolls"), botAssisted: Boolean(r.botAssisted), rounds: requireNumber(r.rounds, "playerMatchStats.rounds"), completedAt: date(r.completedAt, "playerMatchStats.completedAt") }));
-  const errorReportAggregates = docs.errorReportAggregates.map((r) => ({ bucketDate: new Date(`${requiredString(r, "bucketDate", "errorReportAggregates")}T00:00:00.000Z`), category: requiredString(r, "category", "errorReportAggregates"), count: requireNumber(r.count, "errorReportAggregates.count"), updatedAt: date(r.updatedAt, "errorReportAggregates.updatedAt") }));
+  const errorReportAggregates = docs.errorReportAggregates.map((r) => ({ bucketDate: dateOnly(r.bucketDate, "errorReportAggregates.bucketDate"), category: requiredString(r, "category", "errorReportAggregates"), count: requireNumber(r.count, "errorReportAggregates.count"), updatedAt: date(r.updatedAt, "errorReportAggregates.updatedAt") }));
   const counts = { rooms: rooms.length, participants: participants.length, events: events.length, commandReceipts: commandReceipts.length, gameResults: gameResults.length, userAccounts: users.length, accountSessions: accountSessions.length, accountTokens: accountTokens.length, friendInvitations: friendInvitations.length, friendInviteLinks: friendInviteLinks.length, friendships: friendships.length, savedOpponents: savedOpponents.length, playerMatchStats: playerMatchStats.length, errorReportAggregates: errorReportAggregates.length };
   return { counts, rows: { rooms, participants, events, commandReceipts, gameResults, userAccounts: users, accountSessions, accountTokens, friendInvitations, friendInviteLinks, friendships, savedOpponents, playerMatchStats, errorReportAggregates } };
 }
@@ -103,6 +111,9 @@ function validateRows(rows: Record<string, Row[]>) {
   const participants = new Set(rows.participants.map((row) => row.id));
   assertUnique(rows.rooms, (row) => row.id, "room ID");
   assertUnique(rows.rooms, (row) => row.code, "room code");
+  assertUnique(rows.commandReceipts, (row) => `${row.roomId}:${row.actionId}`, "room action receipt");
+  assertUnique(rows.gameResults, (row) => row.id, "game result ID");
+  assertUnique(rows.gameResults, (row) => row.roomId, "room game result");
   assertUnique(rows.participants, (row) => row.id, "participant ID");
   assertUnique(rows.participants, (row) => row.tokenHash, "participant token hash");
   assertUnique(rows.participants, (row) => row.playerIndex == null ? undefined : `${row.roomId}:${row.role}:${row.playerIndex}`, "room seat");
@@ -123,6 +134,14 @@ function validateRows(rows: Record<string, Row[]>) {
   assertUnique(rows.playerMatchStats, (row) => `${row.roomId}:${row.participantId}`, "room participant stat");
   assertUnique(rows.errorReportAggregates, (row) => `${row.bucketDate}:${row.category}`, "error report aggregate");
   const requireRef = (present: boolean, label: string) => { if (!present) throw new Error(`Broken ${label} reference in Convex backup.`); };
+  for (const row of rows.rooms) {
+    if (!row.state || typeof row.state !== "object" || Array.isArray(row.state)) throw new Error(`Invalid game state for room ${row.id} in Convex backup.`);
+    if (!Number.isInteger(row.maxPlayers) || !Number.isInteger(row.version)) throw new Error(`Invalid room counters for ${row.id} in Convex backup.`);
+  }
+  for (const row of rows.participants) {
+    if (row.playerIndex != null && !Number.isInteger(row.playerIndex)) throw new Error(`Invalid player seat for participant ${row.id} in Convex backup.`);
+    if (row.role !== "PLAYER" && row.role !== "SPECTATOR") throw new Error(`Invalid role for participant ${row.id} in Convex backup.`);
+  }
   for (const row of rows.participants) {
     requireRef(rooms.has(row.roomId), `participant ${row.id} room`);
     if (row.userId != null) requireRef(users.has(row.userId), `participant ${row.id} account`);
