@@ -9,6 +9,12 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, repositoryRoot, "");
   const convexUrl = env.VITE_CONVEX_URL ?? (mode === "development" ? env.CONVEX_URL : undefined);
   const siteUrl = env.VITE_CONVEX_SITE_URL ?? (mode === "development" ? env.CONVEX_SITE_URL : undefined);
+  if (process.env.VERCEL_ENV === "preview" && (convexUrl || siteUrl)) {
+    throw new Error("Vercel Preview builds must not include Convex URLs; use the Prisma WebSocket backend to avoid preview Convex usage.");
+  }
+  if (process.env.VERCEL_ENV === "preview" && env.VITE_ENABLE_WEBSOCKETS === "false") {
+    throw new Error("Vercel Preview builds must keep WebSockets enabled instead of falling back to database polling.");
+  }
   return {
     envDir: repositoryRoot,
     plugins: [{
