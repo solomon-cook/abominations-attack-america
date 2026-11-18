@@ -16,7 +16,7 @@ The Prisma server no longer runs its five-second global bot-takeover scan. Bot t
 
 WebSocket connect now relies on the shared room broadcast for its initial view instead of sending a per-socket view and immediately broadcasting it again. Disconnect handling returns only whether the current connection actually changed the seat, so stale socket closes do not trigger extra room reads or broadcasts. Room-status refresh reads player seats and room state together, and skips status writes when the status is already correct.
 
-The HTTP fallback now runs bot/takeover processing only when the returned room contains a bot-controlled or disconnected player. Adding a bot in the waiting lobby no longer starts a bot scan before the match begins. Human-only rooms therefore avoid the follow-up scans while preserving automated setup, takeover, and bot-turn processing where needed.
+The HTTP fallback now runs bot/takeover processing only when a disconnected seat may need takeover or the current setup/game decision belongs to a bot. The WebSocket path makes that same decision from the state it already loaded, and checks disconnected-seat age before querying for a missed takeover timer. A room with bots therefore avoids bot queries after human turns while preserving automated setup, overdue takeover, and bot-turn processing. Adding a bot in the waiting lobby still does not start a bot scan before the match begins.
 
 Room-scoped bot processing now gets the room code from the due participant query and limits its bot wake to that room, removing a second active-room scan and per-room code lookups after each action or takeover timer.
 

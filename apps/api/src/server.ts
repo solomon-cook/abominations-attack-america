@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { URL } from "node:url";
 import { WebSocketServer, type WebSocket } from "ws";
 import type { GameCommandEnvelope } from "@abominations/game-engine";
-import { MemoryRoomStore, ROOM_BOT_TAKEOVER_DELAY_MS, type RoomStore } from "./store.js";
+import type { RoomView } from "@abominations/shared";
+import { botActionIsNext, MemoryRoomStore, ROOM_BOT_TAKEOVER_DELAY_MS, type RoomStore } from "./store.js";
 import { PrismaRoomStore } from "./prisma-store.js";
 import { withinRate, type RateBucket } from "./rate-limit.js";
 import { ApiMetrics } from "./metrics.js";
@@ -162,7 +163,8 @@ const body = async (request: IncomingMessage) => {
 };
 const tokenFrom = (request: IncomingMessage, url: URL, input?: Record<string, unknown>) => String(request.headers["x-room-token"] ?? url.searchParams.get("token") ?? input?.token ?? "");
 const operationalLog = (entry: Record<string, unknown>) => console.info(JSON.stringify({ service: "abominations-api", at: new Date().toISOString(), ...entry }));
-const roomNeedsBotWork = (room: { participants: Array<{ role: string; connected: boolean; botControlled?: boolean }> }) => room.participants.some((participant) => participant.role === "player" && (participant.botControlled || !participant.connected));
+const roomNeedsBotWork = (room: RoomView) => room.participants.some((participant) => participant.role === "player" && !participant.connected && !participant.botControlled)
+  || botActionIsNext(room.state, room.participants, room.matchStarted);
 const requestAddress = (request: IncomingMessage) => request.socket.remoteAddress ?? "unknown";
 const rejectRate = (response: ServerResponse) => {
   response.writeHead(429, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "retry-after": "60", "x-content-type-options": "nosniff" });

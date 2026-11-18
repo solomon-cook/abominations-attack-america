@@ -51,6 +51,36 @@ export function laserFenceCardOwner(state: GameState, envelope: GameCommandEnvel
   return state.players.findIndex((player) => player.researchCardIds.includes("Laser Fence"));
 }
 
+export function botActionIsNext(
+  state: GameState,
+  participants: readonly { role: string; playerIndex?: number | null; botControlled?: boolean }[],
+  matchStarted = true,
+): boolean {
+  if (!matchStarted) return false;
+  const botIndices = new Set(participants.filter((participant) => participant.role === "PLAYER" || participant.role === "player")
+    .filter((participant) => participant.botControlled && participant.playerIndex !== undefined && participant.playerIndex !== null)
+    .map((participant) => participant.playerIndex!));
+  if (!botIndices.size) return false;
+  if (state.setupState?.phase === "complete" && !state.setupApplied) return true;
+  if (state.setupState && state.setupState.phase !== "complete") {
+    const field = state.setupState.phase === "monster-selection" ? "monsterId" : state.setupState.phase === "branch-selection" ? "branch" : state.setupState.phase === "lair-selection" ? "lair" : "startingChoice";
+    const seats = [...state.setupState.seats].sort((left, right) => state.setupState?.phase === "branch-selection" ? right.playerIndex - left.playerIndex : left.playerIndex - right.playerIndex);
+    const playerIndex = state.setupState.phase === "unused-branch-placement"
+      ? state.setupState.definition.playerCount - 1
+      : seats.find((seat) => (seat as any)[field] === undefined)?.playerIndex;
+    return playerIndex !== undefined && botIndices.has(playerIndex);
+  }
+  if (state.phase === "game-over") return false;
+  const proposed = chooseBotCommand(state, botIndices);
+  const command = proposed ?? (state.phase === "move" ? { type: "pass-move" as const } : state.phase === "deploy" ? { type: "pass-deploy" as const } : undefined);
+  if (!command) return false;
+  const probe: GameCommandEnvelope = { command, actorId: "bot-probe", actionId: "bot-probe", expectedRevision: 0, protocolVersion: 1 };
+  const specialOwner = laserFenceCardOwner(state, probe) ?? mutationBattleOwner(state, probe);
+  const decision = state.pendingDecision;
+  const playerIndex = specialOwner ?? (decision && "playerIndex" in decision ? decision.playerIndex : state.currentPlayer);
+  return botIndices.has(playerIndex);
+}
+
 export function terminalResultSummary(state: GameState, terminalEvent: { type: string; version: number }): Record<string, unknown> {
   return {
     winnerPlayer: state.winnerPlayer,

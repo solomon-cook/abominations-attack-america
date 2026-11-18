@@ -2,7 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { setupDeploymentState, applyCommandEnvelope, applyCompletedSetup, applySetupAction, chooseBotCommand, chooseBotSetupActionWithRecord, createMvpRoomGame, createRoomGame, projectState, type GameCommandEnvelope, type GameState, type SetupAction, type StateAudience } from "@abominations/game-engine";
 import type { PublicReplayExport, PublicReplayPage, PublicRoomSummary, ReplayFrame, RoomEvent, RoomPrivacy, RoomView, SessionResponse } from "@abominations/shared";
 import { completedMatchRows, emptyMatchCounters, updateMatchCounters } from "./player-stats.js";
-import { MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, MAX_RETAINED_ROOM_EVENTS, ROOM_BOT_TAKEOVER_DELAY_MS, ROOM_IDLE_TIMEOUT_MS, ROOM_VIEWER_INVITE_TTL_MS, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketCommandResult, type RoomSocketPrincipal, type RoomStore } from "./store.js";
+import { MAX_REPLAY_PAGE_BYTES, MAX_REPLAY_PAGE_FRAMES, MAX_REPLAY_VERSIONS, MAX_RETAINED_ROOM_EVENTS, ROOM_BOT_TAKEOVER_DELAY_MS, ROOM_IDLE_TIMEOUT_MS, ROOM_VIEWER_INVITE_TTL_MS, botActionIsNext, laserFenceCardOwner, mutationBattleOwner, terminalResultSummary, type RoomSocketCommandResult, type RoomSocketPrincipal, type RoomStore } from "./store.js";
 import { cacheReplayFrames, getCachedReplayFrames, MAX_REPLAY_EXPORT_BYTES, reconstructReplay, type ReplayCommandRecord, type ReplaySourceEvent } from "./replay.js";
 import { isSessionExpired, sessionExpiresAt } from "./session.js";
 import { prisma } from "../lib/prisma.js";
@@ -568,9 +568,19 @@ export class PrismaRoomStore implements RoomStore {
     if (room.status !== "ACTIVE") throw new Error("This room is not ready for gameplay.");
     if (actor.playerIndex !== this.requiredPlayer(room.state as unknown as GameState, envelope)) throw new Error("It is not your turn.");
     const status = await this.commitCommand(room, actor, envelope, "human", { tokenHash: sessionHash, connectionId });
-    if (room.participants.some((participant: any) => participant.role === "PLAYER" && (participant.botControlled || participant.connectedAt === null))) await this.processBotTakeovers(Date.now(), roomCode);
-    else return { version: room.version, status, roomViews: await this.roomViewsFromLoadedRoom(room) };
-    return { version: room.version, status };
+    const takeoverDue = room.participants.some((participant: any) => participant.role === "PLAYER"
+      && participant.connectedAt === null && !participant.botControlled && participant.disconnectedAt
+      && Date.now() - participant.disconnectedAt.getTime() >= ROOM_BOT_TAKEOVER_DELAY_MS);
+    if (takeoverDue) {
+      await this.processBotTakeovers(Date.now(), roomCode);
+      return { version: room.version, status };
+    }
+    const currentState = room.state as unknown as GameState;
+    if (botActionIsNext(currentState, room.participants, room.matchStarted)) {
+      await this.runBotActions(roomCode);
+      return { version: room.version, status };
+    }
+    return { version: room.version, status, roomViews: await this.roomViewsFromLoadedRoom(room) };
   }
 
   async disconnectParticipant(roomCode: string, participantId: string, connectionId = "legacy"): Promise<"player" | "spectator" | false> {
