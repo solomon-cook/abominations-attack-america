@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const gameBackend = env.VITE_GAME_BACKEND;
   const convexUrl = env.VITE_CONVEX_URL ?? (mode === "development" ? env.CONVEX_URL : undefined);
   const siteUrl = env.VITE_CONVEX_SITE_URL ?? (mode === "development" ? env.CONVEX_SITE_URL : undefined);
+  const hasSeparatePreviewDatabase = Boolean((env.PREVIEW_DATABASE_URL_POOLED || env.PREVIEW_DATABASE_URL) && env.PREVIEW_DIRECT_URL);
   if (gameBackend && gameBackend !== "convex" && gameBackend !== "prisma") {
     throw new Error("VITE_GAME_BACKEND must be either convex or prisma.");
   }
@@ -21,6 +22,9 @@ export default defineConfig(({ mode }) => {
   }
   if (process.env.VERCEL_ENV === "preview" && env.VITE_ENABLE_WEBSOCKETS === "false") {
     throw new Error("Vercel Preview builds must keep WebSockets enabled instead of falling back to database polling.");
+  }
+  if (process.env.VERCEL_ENV === "preview" && !hasSeparatePreviewDatabase) {
+    throw new Error("Vercel Preview builds require a separate PREVIEW_DATABASE_URL(_POOLED) and PREVIEW_DIRECT_URL; shared database connections are not allowed.");
   }
   return {
     envDir: repositoryRoot,

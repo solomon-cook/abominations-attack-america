@@ -34,8 +34,11 @@ export function resolveDatabaseConnections(environment: NodeJS.ProcessEnv = proc
   directUrl?: string;
   roomNotificationsUrl?: string;
 } {
-  const databaseUrl = environment.DATABASE_URL_POOLED ?? environment.DATABASE_URL ?? environment.PRISMA_DATABASE_URL ?? environment.POSTGRES_URL;
-  const directUrl = environment.DIRECT_URL?.trim() || undefined;
+  const isVercelPreview = environment.VERCEL_ENV === "preview";
+  const databaseUrl = isVercelPreview
+    ? environment.PREVIEW_DATABASE_URL_POOLED ?? environment.PREVIEW_DATABASE_URL
+    : environment.DATABASE_URL_POOLED ?? environment.DATABASE_URL ?? environment.PRISMA_DATABASE_URL ?? environment.POSTGRES_URL;
+  const directUrl = (isVercelPreview ? environment.PREVIEW_DIRECT_URL : environment.DIRECT_URL)?.trim() || undefined;
   return {
     ...(databaseUrl?.trim() ? { databaseUrl: databaseUrl.trim() } : {}),
     ...(directUrl ? { directUrl } : {}),
@@ -48,6 +51,9 @@ export function validateRuntimeConfig(environment: NodeJS.ProcessEnv = process.e
   const allowedOrigin = resolveAllowedOrigin(nodeEnvironment, environment.ALLOWED_ORIGIN);
   const errorAlertUrl = resolveErrorAlertUrl(environment.ERROR_ALERT_URL);
   const { databaseUrl, directUrl } = resolveDatabaseConnections(environment);
+  if (environment.VERCEL_ENV === "preview" && (!databaseUrl?.trim() || !directUrl)) {
+    throw new Error("Vercel Preview requires isolated PREVIEW_DATABASE_URL and PREVIEW_DIRECT_URL connections; shared production URLs are ignored.");
+  }
   if (nodeEnvironment === "production" && !databaseUrl?.trim()) {
     throw new Error("A production API requires DATABASE_URL_POOLED, DATABASE_URL, PRISMA_DATABASE_URL, or POSTGRES_URL.");
   }
