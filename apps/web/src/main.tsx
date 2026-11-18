@@ -1059,7 +1059,9 @@ function App() {
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Action failed");
-      if (online && session && room) {
+      // Convex room subscriptions already deliver the latest accepted state,
+      // so don't issue two more queries just to recover from a rejected action.
+      if (online && session && room && !convexRealtimeEnabled) {
         try {
           updateRoomSnapshot(await readRoom(room.code, session.token));
         } catch {
