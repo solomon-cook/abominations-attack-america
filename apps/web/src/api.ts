@@ -9,7 +9,8 @@ const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL || __APP_CONVEX_SITE_
 export const convexRealtimeEnabled = Boolean(convexUrl);
 export const websocketTransportEnabled = !convexRealtimeEnabled
   && (!import.meta.env.DEV || Boolean(import.meta.env.VITE_API_URL))
-  && import.meta.env.VITE_ENABLE_WEBSOCKETS === "true";
+  && (import.meta.env.VITE_ENABLE_WEBSOCKETS === "true"
+    || (!import.meta.env.DEV && import.meta.env.VITE_ENABLE_WEBSOCKETS !== "false"));
 const explicitApiOrigin = convexRealtimeEnabled && (!import.meta.env.DEV || convexSiteUrl) ? undefined : import.meta.env.VITE_API_URL;
 const defaultApiOrigin = import.meta.env.DEV
   ? (convexSiteUrl ? "/api" : "http://localhost:8787")
