@@ -159,9 +159,12 @@ function validateRows(rows: Record<string, Row[]>) {
 }
 
 async function insertBatches(delegate: any, rows: Row[]) {
+  let inserted = 0;
   for (let offset = 0; offset < rows.length; offset += 500) {
-    await delegate.createMany({ data: rows.slice(offset, offset + 500) });
+    const result = await delegate.createMany({ data: rows.slice(offset, offset + 500) });
+    inserted += result.count;
   }
+  return inserted;
 }
 
 async function main() {
@@ -191,7 +194,10 @@ async function main() {
       if (occupied.length) throw new Error(`Refusing import because the Prisma target is not empty (${occupied.join(", ")}).`);
       const rows = mapped.rows as Record<string, Row[]>;
       for (const table of ["userAccounts", "rooms", "participants", "events", "commandReceipts", "gameResults", "accountSessions", "accountTokens", "friendInvitations", "friendInviteLinks", "friendships", "savedOpponents", "playerMatchStats", "errorReportAggregates"]) {
-        await insertBatches(tx[delegates[table]], rows[table]);
+        const inserted = await insertBatches(tx[delegates[table]], rows[table]);
+        if (inserted !== rows[table].length) {
+          throw new Error(`Imported ${inserted} of ${rows[table].length} ${table} rows; rolling back the migration.`);
+        }
       }
     }, { isolationLevel: "Serializable", timeout: 600_000, maxWait: 30_000 });
     console.log(`Imported a consistent Convex backup into the empty Prisma target: ${JSON.stringify(mapped.counts)}`);
