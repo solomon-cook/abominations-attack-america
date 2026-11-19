@@ -331,6 +331,8 @@
 .compact-stat-movement .compact-stat-value{display:flex;align-items:center;justify-content:center;gap:1px;min-width:0}
 .compact-stat-movement .compact-stat-value b{min-width:0;max-width:100%;font-size:11px;font-weight:400;line-height:1.1;text-align:center;overflow-wrap:normal;white-space:nowrap}
 .compact-stat-movement-static .compact-stat-value b{max-width:100%;font-size:11px;font-weight:400;line-height:1.1;text-align:center;white-space:normal;overflow-wrap:normal}
+.compact-movement-number{font-size:13px;font-weight:800;line-height:1.05}
+.compact-movement-label{font-size:11px;font-weight:400;line-height:inherit}
 .compact-movement-icon{width:16px;height:16px;flex:0 0 16px;color:#304a35}
 .compact-stat-movement .compact-movement-icon{width:13px;height:13px;flex-basis:13px}
 .compact-stat-ability{position:relative;z-index:2;grid-column:1;grid-row:4;align-self:center;min-width:0;margin:6px 0 0;padding:0;border:0;border-radius:9px;background:#e5e7d3;color:#40533c;font-size:11px;line-height:1.3}
@@ -419,6 +421,7 @@
   .compact-stat-movement .compact-movement-icon{display:none}
   .compact-stat-movement .compact-stat-value{width:100%}
   .compact-stat-movement .compact-stat-value b{white-space:normal}
+  .compact-stat-movement .compact-movement-label{font-size:10px}
   .compact-stat b{font-size:13px}
 }
 @media(max-width:300px){
@@ -431,6 +434,7 @@
   .compact-stat svg{width:13px;height:13px;flex-basis:13px}
   .compact-stat b{font-size:12px}
   .compact-stat-attack .compact-stat-value b,.compact-stat-defence .compact-stat-value b{font-size:12px}
+  .compact-stat-movement .compact-movement-number{font-size:12px}
   .compact-stat-attack,.compact-stat-defence{padding-inline:0}
   .compact-stat-attack svg,.compact-stat-defence svg{width:13px;height:13px;flex-basis:13px}
   .compact-stat-attack .compact-stat-value,.compact-stat-defence .compact-stat-value{gap:2px}

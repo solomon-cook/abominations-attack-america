@@ -81,10 +81,12 @@ function compactAbilitySummary(text: string): string {
 
 function movementDisplay(value: string) {
   const separator = value.indexOf(" · ");
-  const slash = value.indexOf("/", separator + 3);
-  return separator >= 0 && slash >= 0
-    ? <>{value.slice(0, slash + 1)}<wbr />{value.slice(slash + 1)}</>
-    : value;
+  if (separator < 0) return value;
+  const movementLabel = value.slice(separator + 3);
+  const slash = movementLabel.indexOf("/");
+  return <><span className="compact-movement-number">{value.slice(0, separator)}</span> · <span className="compact-movement-label">
+    {slash >= 0 ? <>{movementLabel.slice(0, slash + 1)}<wbr />{movementLabel.slice(slash + 1)}</> : movementLabel}
+  </span></>;
 }
 
 function CompactUnitCard({ typeId, summary, actionLabel, onSelect, abilityExpanded, onToggleAbility }: { typeId: string; summary: ReturnType<typeof compactUnitSummary>; actionLabel: string; onSelect?: () => void; abilityExpanded?: boolean; onToggleAbility?: () => void }) {
