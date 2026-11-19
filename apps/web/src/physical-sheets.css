@@ -393,6 +393,9 @@
   .compact-deployment-header{height:46px}
   .compact-deployment-heading strong{font-size:13px}
 }
+@media(min-width:701px) and (max-width:720px){
+  .compact-deployment-heading strong{font-size:11px;overflow-wrap:normal;word-break:normal}
+}
 @media(max-width:360px){
   .compact-deployment-list{gap:5px}
   .compact-deployment-card{grid-template-rows:44px 96px 44px minmax(46px,auto) 20px;padding:10px 12px 0}
