@@ -79,6 +79,14 @@ function compactAbilitySummary(text: string): string {
   return text;
 }
 
+function movementDisplay(value: string) {
+  const separator = value.indexOf(" · ");
+  const slash = value.indexOf("/", separator + 3);
+  return separator >= 0 && slash >= 0
+    ? <>{value.slice(0, slash + 1)}<wbr />{value.slice(slash + 1)}</>
+    : value;
+}
+
 function CompactUnitCard({ typeId, summary, actionLabel, onSelect, abilityExpanded, onToggleAbility }: { typeId: string; summary: ReturnType<typeof compactUnitSummary>; actionLabel: string; onSelect?: () => void; abilityExpanded?: boolean; onToggleAbility?: () => void }) {
   const researchGiant = summary.sheet === "Giant · Research";
   const imagePath = `/assets/military/${typeId}.webp`;
@@ -96,7 +104,7 @@ function CompactUnitCard({ typeId, summary, actionLabel, onSelect, abilityExpand
       <span className={`compact-deployment-art${typeId.includes("nuclear-submarine") || typeId.includes("cruise-missile") ? " compact-deployment-art-tall" : ""}`}><img src={imagePath} srcSet={imageSrcSet} alt="" /></span>
       <span className="compact-deployment-stats" aria-label="Unit statistics">
         <span className="compact-stat compact-stat-attack"><span className="compact-stat-value"><Sword size={16} strokeWidth={1.6} aria-hidden="true" /><b>{summary.attack}</b></span><small className="sr-only">Attack</small></span>
-        <span className={`compact-stat compact-stat-movement${summary.movementUnavailable ? " compact-stat-movement-static" : ""}`}><small className="sr-only">Movement</small><span className="compact-stat-value">{!summary.movementUnavailable && <MoveUpRight className="compact-movement-icon" size={16} strokeWidth={1.6} aria-hidden="true" />}<b>{summary.movement}</b></span></span>
+        <span className={`compact-stat compact-stat-movement${summary.movementUnavailable ? " compact-stat-movement-static" : ""}`}><small className="sr-only">Movement</small><span className="compact-stat-value">{!summary.movementUnavailable && <MoveUpRight className="compact-movement-icon" size={16} strokeWidth={1.6} aria-hidden="true" />}<b>{movementDisplay(summary.movement)}</b></span></span>
         <span className="compact-stat compact-stat-defence"><span className="compact-stat-value"><Shield size={16} strokeWidth={1.6} aria-hidden="true" /><b>{summary.defence}</b></span><small className="sr-only">Defence</small></span>
       </span>
     </div>
