@@ -9,21 +9,24 @@
       "branch": "Marines",
       "unit": "fighter",
       "color": "#D9483F",
-      "src": "/assets/military/marines-fighter.webp"
+      "src": "/assets/military/marines-fighter.webp",
+      "src2x": "/assets/military/retina/marines-fighter.webp"
     },
     {
       "id": "marines-rocket-launcher",
       "branch": "Marines",
       "unit": "rocket-launcher",
       "color": "#D9483F",
-      "src": "/assets/military/marines-rocket-launcher.webp"
+      "src": "/assets/military/marines-rocket-launcher.webp",
+      "src2x": "/assets/military/retina/marines-rocket-launcher.webp"
     },
     {
       "id": "air-force-fighter",
       "branch": "Air Force",
       "unit": "fighter",
       "color": "#F2C230",
-      "src": "/assets/military/air-force-fighter.webp"
+      "src": "/assets/military/air-force-fighter.webp",
+      "src2x": "/assets/military/retina/air-force-fighter.webp"
     },
     {
       "id": "air-force-cruise-missile",
@@ -37,7 +40,8 @@
       "branch": "Army",
       "unit": "tank",
       "color": "#647A2E",
-      "src": "/assets/military/army-tank.webp"
+      "src": "/assets/military/army-tank.webp",
+      "src2x": "/assets/military/retina/army-tank.webp"
     },
     {
       "id": "army-missile-launcher",
@@ -51,7 +55,8 @@
       "branch": "Navy",
       "unit": "fighter",
       "color": "#1F78B4",
-      "src": "/assets/military/navy-fighter.webp"
+      "src": "/assets/military/navy-fighter.webp",
+      "src2x": "/assets/military/retina/navy-fighter.webp"
     },
     {
       "id": "navy-nuclear-submarine",
@@ -59,7 +64,8 @@
       "unit": "nuclear-submarine",
       "state": "submarine",
       "color": "#1F78B4",
-      "src": "/assets/military/navy-nuclear-submarine.webp"
+      "src": "/assets/military/navy-nuclear-submarine.webp",
+      "src2x": "/assets/military/retina/navy-nuclear-submarine.webp"
     },
     {
       "id": "navy-nuclear-submarine-launched",

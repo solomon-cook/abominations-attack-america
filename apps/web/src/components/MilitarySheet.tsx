@@ -1,7 +1,7 @@
 import { ownedMilitarySheets } from "./owned-sheets";
 import { SheetCards } from "./SheetCards";
 import { MilitaryReference, movementLabel } from "./SheetReference";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
 import { MoveUpRight, Shield, Sword } from "lucide-react";
 import { deploymentChoices, GIANT_UNIT_DEFINITIONS, legalGiantPlacementDestinations, militaryUnitStats, NATIONAL_GUARD_DEFINITIONS, UNIT_DEFINITIONS, type DeploymentChoice, type GameCommand, type GameState } from "@abominations/game-engine";
 export { deploymentChoices, type DeploymentChoice } from "@abominations/game-engine";
@@ -16,7 +16,15 @@ export function nextDeploymentSheet(choices: readonly DeploymentChoice[], branch
 const displayCurrentValue = (value: number | readonly [number, number] | undefined) => value === undefined
   ? "—"
   : typeof value === "number" ? String(value) : String(value[0]);
-const compactMovementLabel = (value: string | undefined) => ({ "land-lake": "Land/lake", "land-lake-sea": "Land/lake/sea", "sea-seacoast-only": "Sea/coast", "sea-seacoast-or-fly": "Sea/coast or missile fly" })[value ?? ""] ?? movementLabel(value ?? "Movement");
+const compactMovementLabel = (value: string | undefined) => ({ "land-only": "Land only", "land-lake": "Land/lake", "land-lake-sea": "Land/sea", "sea-seacoast-only": "Sea/coast", "sea-seacoast-or-fly": "Sea/fly", fly: "Fly", stationary: "Stationary" })[value ?? ""] ?? movementLabel(value ?? "Movement");
+const highDensityMilitaryArt = new Set([
+  "army-tank",
+  "air-force-fighter",
+  "marines-fighter",
+  "marines-rocket-launcher",
+  "navy-fighter",
+  "navy-nuclear-submarine",
+]);
 
 function compactUnitSummary(typeId: string, sheet: string, game: GameState, playerIndex: number) {
   const unitDefinition = UNIT_DEFINITIONS.find((unit) => unit.id === typeId);
@@ -35,9 +43,11 @@ function compactUnitSummary(typeId: string, sheet: string, game: GameState, play
   const attacks = instance?.attacks ?? unitDefinition?.attacks ?? (guardDefinition ? 1 : giantDefinition?.attacks);
   const damage = unitDefinition?.damage ?? instance?.damage ?? guardDefinition?.damage ?? giantDefinition?.damage;
   const defense = unitDefinition?.defense ?? instance?.defense ?? guardDefinition?.defense ?? giantDefinition?.defense;
-  const specialAbility = typeId === "navy-nuclear-submarine" ? undefined : guardDefinition
-    ? undefined
-    : unitDefinition?.specialAbilityText ?? (typeId === "x-fighter" ? "Deploy in place of a branch unit." : undefined);
+  const specialAbility = typeId === "navy-nuclear-submarine"
+    ? "During Move, launch a nuclear missile up to 8 spaces. It can be intercepted, then rolls against the monster’s Defense for 3 damage. A 6 adds a smash point; a 1 triggers Mutation."
+    : guardDefinition
+      ? undefined
+      : unitDefinition?.specialAbilityText ?? (typeId === "x-fighter" ? "Deploy in place of a branch unit." : undefined);
   const name = unitDefinition?.name ?? guardDefinition?.name ?? giantDefinition?.name ?? typeId.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
   const reserve = typeId.startsWith("national-guard-")
     ? game.nationalGuard.unitIds.filter((id) => id.startsWith(`${typeId}-`) && !game.removedUnitIds.includes(id) && !game.units.some((unit) => unit.id === id)).length
@@ -56,29 +66,55 @@ function compactUnitSummary(typeId: string, sheet: string, game: GameState, play
   };
 }
 
-function CompactUnitCard({ typeId, summary, actionLabel, onSelect }: { typeId: string; summary: ReturnType<typeof compactUnitSummary>; actionLabel: string; onSelect?: () => void }) {
+function compactAbilitySummary(text: string): string {
+  if (text.startsWith("During Move, launch a nuclear missile")) {
+    return "Nuclear missile · range 8";
+  }
+  if (text.startsWith("Makes an extra attack during the first round of combat")) {
+    return "Round 1 extra attack";
+  }
+  if (text.startsWith("Destroyed after the first round of combat")) {
+    return "Roll 1: mutates monster";
+  }
+  return text;
+}
+
+function CompactUnitCard({ typeId, summary, actionLabel, onSelect, abilityExpanded, onToggleAbility }: { typeId: string; summary: ReturnType<typeof compactUnitSummary>; actionLabel: string; onSelect?: () => void; abilityExpanded?: boolean; onToggleAbility?: () => void }) {
   const researchGiant = summary.sheet === "Giant · Research";
+  const imagePath = `/assets/military/${typeId}.webp`;
+  const imageSrcSet = highDensityMilitaryArt.has(typeId) ? `/assets/military/retina/${typeId}.webp 2x` : undefined;
   const reserveLabel = researchGiant ? "1 available from Research" : `${summary.reserve} in reserve`;
-  const cardContents = <>
-    <span className="compact-deployment-heading"><span><strong>{summary.name}</strong>{summary.sheet && <small>{summary.sheet}</small>}</span></span>
-    <span className="compact-deployment-count" aria-label={reserveLabel}><b>{summary.reserve}</b><small>LEFT</small></span>
-    <span className="compact-deployment-stats" aria-label="Unit statistics">
-      <span className="compact-stat compact-stat-attack"><span className="compact-stat-value"><Sword size={16} strokeWidth={1.6} aria-hidden="true" /><b>{summary.attack}</b></span><small className="sr-only">Attack</small></span>
-      <span className="compact-deployment-art"><img src={`/assets/military/${typeId}.webp`} alt="" /></span>
-      <span className="compact-stat compact-stat-defence"><span className="compact-stat-value"><Shield size={16} strokeWidth={1.6} aria-hidden="true" /><b>{summary.defence}</b></span><small className="sr-only">Defence</small></span>
-      <span className={`compact-stat compact-stat-movement${summary.movementUnavailable ? " compact-stat-movement-static" : ""}`}><small className="sr-only">Movement</small><span className="compact-stat-value">{!summary.movementUnavailable && <MoveUpRight className="compact-movement-icon" size={16} strokeWidth={1.6} aria-hidden="true" />}<b>{summary.movement}</b></span>{summary.specialAbility && <span className="compact-stat-ability">{summary.specialAbility}</span>}</span>
-    </span>
-    {!onSelect && <span className="compact-deployment-unavailable">No legal placement</span>}
-  </>;
   const sheetPrefix = summary.sheet && !researchGiant ? `${summary.sheet} ` : "";
   const selection = researchGiant ? `one Research card available` : `${summary.reserve} in reserve`;
   const ariaLabel = `Select ${sheetPrefix}${summary.name} to ${actionLabel.toLowerCase()}; ${selection}. Attack ${summary.attack}. Defence ${summary.defence}. Movement ${summary.movement}.${summary.specialAbility ? ` Special ability: ${summary.specialAbility}` : ""}`;
-  return onSelect
-    ? <button className="compact-deployment-card" type="button" onClick={onSelect} aria-label={ariaLabel}>{cardContents}</button>
-    : <div className="compact-deployment-card compact-deployment-unavailable-card">{cardContents}</div>;
+  const cardContents = <>
+    <div className="compact-deployment-visual" aria-hidden={onSelect ? true : undefined}>
+      <div className="compact-deployment-header">
+        <span className="compact-deployment-heading"><span><strong>{summary.name}</strong>{summary.sheet && !(summary.sheet === "National Guard" && summary.movementUnavailable) && <small>{summary.sheet}</small>}</span></span>
+        <span className="compact-deployment-count" aria-label={reserveLabel}><b>{summary.reserve}</b><small>LEFT</small></span>
+      </div>
+      <span className={`compact-deployment-art${typeId.includes("nuclear-submarine") || typeId.includes("cruise-missile") ? " compact-deployment-art-tall" : ""}`}><img src={imagePath} srcSet={imageSrcSet} alt="" /></span>
+      <span className="compact-deployment-stats" aria-label="Unit statistics">
+        <span className="compact-stat compact-stat-attack"><span className="compact-stat-value"><Sword size={16} strokeWidth={1.6} aria-hidden="true" /><b>{summary.attack}</b></span><small className="sr-only">Attack</small></span>
+        <span className={`compact-stat compact-stat-movement${summary.movementUnavailable ? " compact-stat-movement-static" : ""}`}><small className="sr-only">Movement</small><span className="compact-stat-value">{!summary.movementUnavailable && <MoveUpRight className="compact-movement-icon" size={16} strokeWidth={1.6} aria-hidden="true" />}<b>{summary.movement}</b></span></span>
+        <span className="compact-stat compact-stat-defence"><span className="compact-stat-value"><Shield size={16} strokeWidth={1.6} aria-hidden="true" /><b>{summary.defence}</b></span><small className="sr-only">Defence</small></span>
+      </span>
+    </div>
+    {onSelect && <button className="compact-deployment-select" type="button" onClick={onSelect} aria-label={ariaLabel} />}
+    {summary.specialAbility
+      ? <div className="compact-stat-ability"><button className="compact-stat-ability-toggle" type="button" aria-expanded={abilityExpanded} onClick={onToggleAbility} aria-label={`${abilityExpanded ? "Hide" : "Show"} special ability details for ${summary.name}`}><span>{compactAbilitySummary(summary.specialAbility)}</span><small aria-hidden="true">{abilityExpanded ? "−" : "+"}</small></button></div>
+      : !onSelect && <span className="compact-deployment-action-hint">No legal location</span>}
+    <span className="compact-deployment-footer-seal" aria-hidden="true">
+      <svg viewBox="0 0 24 20"><path d="M2 18c6-2 11-7 17-15M5 15c-3-3-2-5 2-6 2 2 1 4-2 6Zm5-4c-2-3 0-5 4-5 1 3-1 5-4 5Zm4-4c-1-3 1-5 4-5 1 3-1 5-4 5Z" /></svg>
+      <b>★</b>
+      <svg className="compact-footer-sprig-reverse" viewBox="0 0 24 20"><path d="M2 18c6-2 11-7 17-15M5 15c-3-3-2-5 2-6 2 2 1 4-2 6Zm5-4c-2-3 0-5 4-5 1 3-1 5-4 5Zm4-4c-1-3 1-5 4-5 1 3-1 5-4 5Z" /></svg>
+    </span>
+  </>;
+  return <div className={`compact-deployment-card${onSelect ? " compact-deployment-card-selectable" : " compact-deployment-unavailable-card"}`}>{cardContents}</div>;
 }
 
 export function CompactDeploymentList({ branch, choices, game, playerIndex, onSelect, onChooseGiant }: { branch: string; choices: readonly DeploymentChoice[]; game: GameState; playerIndex: number; onSelect: (choice: DeploymentChoice) => void; onChooseGiant?: (cardId: "Mecha-Monster" | "Captain Colossal") => void }) {
+  const [expandedAbilityTypeId, setExpandedAbilityTypeId] = useState<string | null>(null);
   const groups = new Map<string, { deploy: DeploymentChoice[]; redeploy: DeploymentChoice[]; sheet: string }>();
   for (const choice of choices) {
     const group = groups.get(choice.typeId) ?? { deploy: [], redeploy: [], sheet: choice.sheet };
@@ -101,13 +137,42 @@ export function CompactDeploymentList({ branch, choices, game, playerIndex, onSe
     name: unit.name,
     reserve: 1,
   } }));
+  const deploymentItems = [
+    ...items.map((item) => ({ kind: "unit" as const, ...item, canRedeploy: Boolean(item.group.deploy[0] && item.group.redeploy[0]) })),
+    ...giantItems.map((item) => ({ kind: "giant" as const, ...item, canRedeploy: false })),
+  ];
 
   return <div className="compact-deployment-list" aria-label="Available military unit types">
-    {items.map(({ typeId, group, summary }) => <div className={`compact-deployment-option ${summary.reserve === 0 ? "compact-deployment-card-empty" : ""}`} key={typeId}>
-      <CompactUnitCard typeId={typeId} summary={{ ...summary, sheet: summary.sheet === branch ? "" : summary.sheet }} actionLabel={group.deploy[0] ? "Deploy" : "Redeploy"} onSelect={group.deploy[0] || group.redeploy[0] ? () => onSelect(group.deploy[0] ?? group.redeploy[0]!) : undefined} />
-      {group.deploy[0] && group.redeploy[0] && <button type="button" className="compact-redeploy-link" onClick={() => onSelect(group.redeploy[0])} aria-label={`Redeploy ${summary.name} already on the map`}>Redeploy a {summary.name} already on the map</button>}
-    </div>)}
-    {giantItems.map(({ unit, summary }) => <div className="compact-deployment-option" key={unit.id}><CompactUnitCard typeId={unit.id} summary={{ ...summary, sheet: "Giant · Research" }} actionLabel="Place" onSelect={() => onChooseGiant?.(unit.name)} /></div>)}
+    {deploymentItems.map((item, index) => {
+      const pairedItem = deploymentItems[index % 2 === 0 ? index + 1 : index - 1];
+      const reserveRedeploySlot = !item.canRedeploy && Boolean(pairedItem?.canRedeploy);
+      const itemKey = item.kind === "unit" ? item.typeId : item.unit.id;
+      const abilityExpanded = item.kind === "unit" && expandedAbilityTypeId === item.typeId;
+      const unitCard = item.kind === "unit"
+        ? <CompactUnitCard typeId={item.typeId} summary={{ ...item.summary, sheet: item.summary.sheet === branch ? "" : item.summary.sheet }} actionLabel={item.group.deploy[0] ? "Deploy" : "Redeploy"} abilityExpanded={abilityExpanded} onToggleAbility={() => setExpandedAbilityTypeId(abilityExpanded ? null : item.typeId)} onSelect={item.group.deploy[0] || item.group.redeploy[0] ? () => onSelect(item.group.deploy[0] ?? item.group.redeploy[0]!) : undefined} />
+        : <CompactUnitCard typeId={item.unit.id} summary={{ ...item.summary, sheet: "Giant · Research" }} actionLabel="Place" onSelect={() => onChooseGiant?.(item.unit.name)} />;
+      const expandedAbilityIndex = deploymentItems.findIndex((candidate) => candidate.kind === "unit" && candidate.typeId === expandedAbilityTypeId);
+      const rowLastIndex = Math.min(Math.floor(index / 2) * 2 + 1, deploymentItems.length - 1);
+      const showAbilityDetail = expandedAbilityTypeId !== null
+        && expandedAbilityIndex >= 0
+        && Math.floor(expandedAbilityIndex / 2) === Math.floor(index / 2)
+        && index === rowLastIndex;
+      const expandedAbility = expandedAbilityIndex >= 0 && deploymentItems[expandedAbilityIndex]?.kind === "unit"
+        ? deploymentItems[expandedAbilityIndex]
+        : undefined;
+      return <Fragment key={itemKey}>
+        <div className={`compact-deployment-option ${item.summary.reserve === 0 ? "compact-deployment-card-empty" : ""}`}>
+          {unitCard}
+          {item.canRedeploy && item.kind === "unit"
+            ? <button type="button" className="compact-redeploy-link" onClick={() => onSelect(item.group.redeploy[0]!)} aria-label={`Redeploy ${item.summary.name} already on the map`}>Redeploy existing</button>
+            : reserveRedeploySlot && <span className="compact-redeploy-slot" aria-hidden="true" />}
+        </div>
+        {showAbilityDetail && expandedAbility?.kind === "unit" && expandedAbility.summary.specialAbility && <section className="compact-ability-detail" style={{ "--ability-origin": expandedAbilityIndex % 2 === 0 ? "25%" : "75%" } as CSSProperties} aria-live="polite">
+          <h3>{expandedAbility.summary.name} <span>Special ability</span></h3>
+          <p>{expandedAbility.summary.specialAbility}</p>
+        </section>}
+      </Fragment>;
+    })}
     {!choices.length && <p className="compact-deployment-empty">No legal placements remain. Deployment will continue automatically.</p>}
   </div>;
 }
@@ -119,7 +184,7 @@ export function MilitarySheet({ branch, choices, onSelect, onChooseGiant, onClos
   const suppressSelection = useRef(false);
   const [section, setSection] = useState<"units" | "research">("units");
   const [selectedSheet, setSelectedSheet] = useState(initialSheet ?? nextDeploymentSheet(choices, branch));
-  const [compactDeployment, setCompactDeployment] = useState(() => window.matchMedia("(max-width: 600px)").matches);
+  const [compactDeployment, setCompactDeployment] = useState(() => window.matchMedia("(max-width: 700px)").matches);
   const [drawerHeight, setDrawerHeight] = useState<number | null>(null);
   const extraSheets = game ? ownedMilitarySheets(game, playerIndex, branch) : [];
   const sheets = [branch, ...new Set([...choices.map((choice) => choice.sheet), ...extraSheets].filter((sheet) => sheet !== branch))];
@@ -134,7 +199,7 @@ export function MilitarySheet({ branch, choices, onSelect, onChooseGiant, onClos
     return () => previous?.focus({ preventScroll: true });
   }, []);
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 600px)");
+    const media = window.matchMedia("(max-width: 700px)");
     const update = () => setCompactDeployment(media.matches);
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
@@ -200,7 +265,7 @@ export function MilitarySheet({ branch, choices, onSelect, onChooseGiant, onClos
         {section === "units" && <>
         {!referenceOnly && game
           ? <>
-              <p className="deployment-instruction">Choose a unit type, then a glowing location on the map.</p>
+              <p className="deployment-instruction">Select a unit; its available spaces glow.</p>
               <CompactDeploymentList branch={branch} choices={interactiveChoices} game={game} playerIndex={playerIndex} onSelect={onSelect} onChooseGiant={onChooseGiant} />
             </>
           : <>
