@@ -271,7 +271,7 @@
 .digital-deployment-sheet>h2{margin:0 0 10px;padding:0;border:0;background:none;color:#28362b;font-size:22px;letter-spacing:0;text-shadow:none}
 .compact-deployment-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:8px;margin:8px 0 4px}
 .compact-deployment-option{display:grid;gap:1px;min-width:0}
-.compact-deployment-card{position:relative;display:grid;width:100%;grid-template-columns:minmax(0,1fr);grid-template-rows:46px 106px 32px minmax(46px,auto) 22px;align-content:start;align-items:center;column-gap:0;row-gap:0;min-width:0;padding:10px 12px 0;overflow:hidden;border:2px solid #21392b;border-radius:15px;background:#f7f2e3;color:var(--deployment-ink,#26352c);box-shadow:0 3px 8px #101b1628;text-align:left;font:inherit}
+.compact-deployment-card{position:relative;display:grid;width:100%;grid-template-columns:minmax(0,1fr);grid-template-rows:46px 106px 38px minmax(46px,auto) 22px;align-content:start;align-items:center;column-gap:0;row-gap:0;min-width:0;padding:10px 12px 0;overflow:hidden;border:2px solid #21392b;border-radius:15px;background:#f7f2e3;color:var(--deployment-ink,#26352c);box-shadow:0 3px 8px #101b1628;text-align:left;font:inherit}
 .compact-deployment-card::before{position:absolute;z-index:2;inset:4px;border:1px solid #c4aa65;border-radius:9px;content:"";pointer-events:none}
 .compact-deployment-visual{display:contents}
 .compact-deployment-select{position:absolute;z-index:1;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:inherit;background:transparent;cursor:pointer}
@@ -286,12 +286,12 @@
 .compact-deployment-heading>span{display:grid;min-width:0}
 .compact-deployment-heading strong{color:#f7f0d8;font-size:12px;font-weight:700;line-height:1.15;overflow-wrap:anywhere}
 .compact-deployment-heading small{margin-top:2px;color:#d4d8bd;font-size:8px;font-weight:650;line-height:1.2}
-.compact-deployment-stats{position:relative;z-index:1;grid-column:1;grid-row:3;display:grid;grid-template-columns:minmax(26px,.65fr) minmax(0,1.85fr) minmax(26px,.65fr);grid-template-rows:36px;align-content:center;align-self:stretch;gap:1px;min-width:0;margin:0;padding:1px;border:1px solid #78835e;border-radius:8px;background:#d9dac7;overflow:hidden}
+.compact-deployment-stats{position:relative;z-index:1;grid-column:1;grid-row:3;display:grid;grid-template-columns:minmax(26px,.65fr) minmax(0,1.85fr) minmax(26px,.65fr);grid-template-rows:38px;align-content:center;align-self:stretch;gap:1px;min-width:0;margin:0;padding:1px;border:1px solid #78835e;border-radius:8px;background:#d9dac7;overflow:hidden}
 .compact-stat{display:grid;justify-items:center;align-content:center;gap:2px;min-width:0;padding:2px 2px;border-radius:5px;background:var(--deployment-sage,#e5e7d3);line-height:1.1;text-align:center}
 .compact-stat-value{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0}
 .compact-stat-attack .compact-stat-value,.compact-stat-defence .compact-stat-value{gap:2px}
-.compact-stat svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:#304a35;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.compact-stat b{color:var(--deployment-ink,#26352c);font-size:12px;font-weight:800;line-height:1.05;overflow-wrap:normal;word-break:normal}
+.compact-stat svg{width:17px;height:17px;flex:0 0 17px;fill:none;stroke:#304a35;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.compact-stat b{color:var(--deployment-ink,#26352c);font-size:14px;font-weight:800;line-height:1.05;overflow-wrap:normal;word-break:normal}
 .compact-stat small{color:#53634e;font-size:8px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
 .compact-stat .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
@@ -373,16 +373,17 @@
   .digital-deployment-sheet>h2{display:none}
   .compact-deployment-list{gap:6px}
   .compact-deployment-card{padding:10px 12px 0}
-  .compact-deployment-stats{grid-template-rows:32px}
+  .compact-deployment-stats{grid-template-rows:38px}
   .compact-deployment-heading strong{font-size:12px}
   .compact-deployment-art{width:100%;height:auto;min-height:96px}
   .compact-deployment-art img{width:100%;height:100px}
   .compact-stat-ability{margin-inline:0}
-  .compact-stat b{font-size:12px}
+  .compact-stat b{font-size:13px}
+  .compact-stat svg{width:14px;height:14px;flex-basis:14px}
 }
 @media(min-width:441px){
-  .compact-deployment-card{grid-template-rows:46px clamp(112px,calc(40.8vw - 68px),218px) 32px minmax(46px,auto) 22px}
-  .compact-deployment-stats{grid-template-rows:32px}
+  .compact-deployment-card{grid-template-rows:46px clamp(112px,calc(40.8vw - 68px),218px) 38px minmax(46px,auto) 22px}
+  .compact-deployment-stats{grid-template-rows:38px}
   .compact-deployment-art{width:min(220px,calc(100% - 18px));min-height:clamp(112px,calc(40.8vw - 68px),218px)}
   .compact-deployment-art img{width:100%;height:min(208px,calc(40.8vw - 72px));max-width:min(194px,calc(32.3vw - 32px));max-height:min(208px,calc(40.8vw - 72px));transform:none}
   .compact-deployment-art-tall img{transform:none}
@@ -395,6 +396,8 @@
 }
 @media(min-width:701px) and (max-width:720px){
   .compact-deployment-heading strong{font-size:11px;overflow-wrap:normal;word-break:normal}
+  .compact-stat b{font-size:14px}
+  .compact-stat-attack svg,.compact-stat-defence svg{width:14px;height:14px;flex-basis:14px}
 }
 @media(max-width:360px){
   .compact-deployment-list{gap:5px}
@@ -416,7 +419,7 @@
   .compact-stat-movement .compact-movement-icon{display:none}
   .compact-stat-movement .compact-stat-value{width:100%}
   .compact-stat-movement .compact-stat-value b{white-space:normal}
-  .compact-stat b{font-size:12px}
+  .compact-stat b{font-size:13px}
 }
 @media(max-width:300px){
   .military-section-nav{gap:4px}
@@ -437,10 +440,10 @@
   .compact-deployment-action-hint{letter-spacing:0}
 }
 @media(min-width:361px) and (max-width:440px){
-  .compact-deployment-card{grid-template-rows:46px 112px 32px minmax(46px,auto) 22px}
-  .compact-deployment-stats{grid-template-rows:32px}
+  .compact-deployment-card{grid-template-rows:46px 112px 38px minmax(46px,auto) 22px}
+  .compact-deployment-stats{grid-template-rows:38px}
   .compact-stat-attack .compact-stat-value,.compact-stat-defence .compact-stat-value{gap:1px}
-  .compact-stat-attack svg,.compact-stat-defence svg{width:13px;height:13px;flex-basis:13px}
+  .compact-stat-attack svg,.compact-stat-defence svg{width:14px;height:14px;flex-basis:14px}
   .compact-deployment-art{min-height:112px}
   .compact-deployment-art img{height:108px;max-width:110px;max-height:108px;transform:none}
   .compact-deployment-art-tall img{transform:none}
